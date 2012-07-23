@@ -4,7 +4,7 @@ import unittest
 from eip_client.utils import eip_argparse
 
 
-class EIPArgParseTest(unittest.TestCase):
+class LeapArgParseTest(unittest.TestCase):
     """
     Test argparse options for eip client
     """
