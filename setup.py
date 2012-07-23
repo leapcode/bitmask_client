@@ -22,7 +22,7 @@ setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
 
 setup(
-    name='eip-client',
+    name='leap-client',
     package_dir={"": "src"},
     version=version,
     description="the internet encryption toolkit",
