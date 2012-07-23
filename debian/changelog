@@ -1,0 +1,5 @@
+python-leap-client (0.1.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- unknown <cal@croatan>  Sat, 21 Jul 2012 00:11:05 -0700

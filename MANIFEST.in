@@ -1,0 +1,3 @@
+# ??? not needed from win
+include setup/linux/polkit/*
+include docs/*

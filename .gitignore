@@ -1,0 +1,15 @@
+*.swp
+*.swo
+*.pyc
+.*
+bin/
+build/
+core
+debian/python-leap-client/
+dist/
+docs/_build
+include/
+lib/
+local/
+share/
+src/leap.egg-info/

@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=0.1.0
+Encoding=UTF-8
+Name=EIP
+Comment=Anonymity and privacy
+Comment[en]=Anonymity and privacy
+Comment[es]=Anonimato y privacidad
+Comment[sv]=Anonymitet och avlyssningsskydd
+Exec=leap
+Terminal=false
+Type=Application
+Icon=leap.png
+Categories=Network;

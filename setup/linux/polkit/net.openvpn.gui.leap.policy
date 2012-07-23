@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>LEAP Project</vendor>
+  <vendor_url>http://leap.se/</vendor_url>
+
+  <action id="net.openvpn,gui.leap.run-openvpn">
+    <description>Runs the openvpn binary</description>
+    <description xml:lang="es">Ejecuta el binario openvpn</description>
+    <message>OpenVPN needs that you authenticate to start</message>
+    <message xml:lang="es">OpenVPN necesita autorizacion para comenzar</message>
+    <icon_name>package-x-generic</icon_name> 
+    <defaults>
+      <allow_any>auth_self_keep</allow_any>
+      <allow_inactive>auth_self_keep</allow_inactive>
+      <allow_active>auth_self_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/openvpn</annotate>
+  </action>
+</policyconfig>

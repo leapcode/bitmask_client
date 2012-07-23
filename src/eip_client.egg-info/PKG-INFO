@@ -1,0 +1,11 @@
+Metadata-Version: 1.0
+Name: eip-client
+Version: 0.1dev
+Summary: the internet encryption toolkit
+Home-page: http://leap.se
+Author: leap project
+Author-email: info@leap.se
+License: GPL
+Description: UNKNOWN
+Keywords: leap,client,qt,encryption
+Platform: all

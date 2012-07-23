@@ -1,0 +1,8 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix="/">
+   <file>../images/conn_error.png</file>
+   <file>../images/conn_connecting.png</file>
+   <file>../images/conn_connected.png</file>
+   <file>../images/leapfrog.jpg</file>
+</qresource>
+</RCC>

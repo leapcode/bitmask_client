@@ -1,0 +1,59 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+#
+#
+
+# needed???
+# DEB_PYTHON_SYSTEM=pysupport
+
+# Uncomment this to turn on verbose mode.
+#DH_VERBOSE=1
+
+PYTHON2=$(shell pyversions -vr)
+
+%:
+	dh $@ --with python2
+	#,sphinxdoc
+
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+
+# run tests!
+#
+test-python%:
+	python$* setup.py test -vv
+
+override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
+endif
+
+#dh_auto_build should be enough to build the python2 version
+
+#build-python%:
+#        python$* setup.py build
+
+#override_dh_auto_build: $(PYTHON3:%=build-python%)
+#        dh_auto_build
+
+#install-python%:
+#        python$* setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
+
+#override_dh_auto_install: $(PYTHON3:%=install-python%)
+#        dh_auto_install
+
+override_dh_installchangelogs:
+	dh_installchangelogs -k CHANGES.txt
+
+# build and install sphinx docs
+# 
+#override_dh_installdocs:
+#        python setup.py build_sphinx
+#	 dh_installdocs build/sphinx/html
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf build
+	rm -rf *.egg-info
