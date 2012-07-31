@@ -13,3 +13,4 @@ lib/
 local/
 share/
 src/leap.egg-info/
+src/leap_client.egg-info/
