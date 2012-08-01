@@ -222,6 +222,7 @@ technolust</i>")
         self.trayIconMenu.addAction(self.quitAction)
 
         self.trayIcon = QSystemTrayIcon(self)
+        self.setIcon('disconnected')
         self.trayIcon.setContextMenu(self.trayIconMenu)
 
     def createLogBrowser(self):
