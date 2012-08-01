@@ -1,3 +1,4 @@
+import errno
 from itertools import chain
 import os
 import platform
@@ -71,3 +72,16 @@ def which(program):
 
     # sorry bro.
     return None
+
+
+def mkdir_p(path):
+    """
+    implements mkdir -p functionality
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST:
+            pass
+        else:
+            raise

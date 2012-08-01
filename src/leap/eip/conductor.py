@@ -7,7 +7,8 @@ from functools import partial
 import logging
 
 from leap.util.coroutines import spawn_and_watch_process
-from leap.baseapp.config import get_config, get_vpn_stdout_mockup
+
+from leap.eip.config import get_config, get_vpn_stdout_mockup
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
 
@@ -39,6 +40,10 @@ class UnrecoverableError(EIPClientError):
     """
     we cannot do anything about it, sorry
     """
+    # XXX we should catch this and raise
+    # to qtland, so we emit signal
+    # to translate whatever kind of error
+    # to user-friendly msg in dialog.
     pass
 
 
@@ -78,7 +83,7 @@ to be triggered for each one of them.
 
         self.autostart = True
 
-        self._get_config()
+        self._get_or_create_config()
 
     def _set_command_mockup(self):
         """
@@ -88,16 +93,19 @@ to be triggered for each one of them.
         command, args = get_vpn_stdout_mockup()
         self.command, self.args = command, args
 
-    def _get_config(self):
+    def _get_or_create_config(self):
         """
         retrieves the config options from defaults or
         home file, or config file passed in command line.
         """
         config = get_config(config_file=self.config_file)
         self.config = config
+        import ipdb;ipdb.set_trace()
 
         if config.has_option('openvpn', 'command'):
             commandline = config.get('openvpn', 'command')
+            #XXX remove mockup from here.
+            #it was just for testing early.
             if commandline == "mockup":
                 self._set_command_mockup()
                 return
