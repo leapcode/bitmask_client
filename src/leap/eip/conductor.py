@@ -6,7 +6,7 @@ from __future__ import (division, unicode_literals, print_function)
 from functools import partial
 import logging
 
-from leap.utils.coroutines import spawn_and_watch_process
+from leap.util.coroutines import spawn_and_watch_process
 from leap.baseapp.config import get_config, get_vpn_stdout_mockup
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
