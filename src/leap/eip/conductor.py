@@ -98,32 +98,40 @@ to be triggered for each one of them.
         retrieves the config options from defaults or
         home file, or config file passed in command line.
         """
+        #print('get or create config')
         config = get_config(config_file=self.config_file)
         self.config = config
-        import ipdb;ipdb.set_trace()
 
         if config.has_option('openvpn', 'command'):
             commandline = config.get('openvpn', 'command')
+
             #XXX remove mockup from here.
             #it was just for testing early.
             if commandline == "mockup":
                 self._set_command_mockup()
                 return
+
             command_split = commandline.split(' ')
             command = command_split[0]
             if len(command_split) > 1:
                 args = command_split[1:]
             else:
                 args = []
+
+            # XXX CALL BUILD COMMAND
             self.command = command
-            #print("debug: command = %s" % command)
             self.args = args
         else:
             self._set_command_mockup()
 
         if config.has_option('openvpn', 'autostart'):
-            autostart = config.get('openvpn', 'autostart')
+            autostart = config.getboolean('openvpn', 'autostart')
+            print('autostart = %s' % autostart)
             self.autostart = autostart
+        else:
+            if config.has_option('DEFAULT', 'autostart'):
+                autostart = config.getboolean('DEFAULT', 'autostart')
+                self.autostart = autostart
 
     def _launch_openvpn(self):
         """
@@ -194,7 +202,7 @@ class EIPConductor(OpenVPNConnection):
         """
         self.manager.forget_errors()
         self._try_connection()
-        # XXX should capture errors?
+        # XXX should capture errors here?
 
     def disconnect(self):
         """
@@ -202,25 +210,7 @@ class EIPConductor(OpenVPNConnection):
         """
         self._disconnect()
         self.status.change_to(self.status.DISCONNECTED)
-        pass
 
-    def shutdown(self):
-        """
-        shutdown and quit
-        """
-        self.desired_con_state = self.status.DISCONNECTED
-
-    def connection_state(self):
-        """
-        returns the current connection state
-        """
-        return self.status.current
-
-    def desired_connection_state(self):
-        """
-        returns the desired_connection state
-        """
-        return self.desired_con_state
 
     def poll_connection_state(self):
         """
