@@ -8,7 +8,7 @@ import logging
 
 from leap.util.coroutines import spawn_and_watch_process
 
-from leap.eip.config import get_config, get_vpn_stdout_mockup
+from leap.eip.config import get_config, build_ovpn_command
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
 
@@ -82,21 +82,13 @@ to be triggered for each one of them.
         self.proto = None
 
         self.autostart = True
-
         self._get_or_create_config()
-
-    def _set_command_mockup(self):
-        """
-        sets command and args for a command mockup
-        that just mimics the output from the real thing
-        """
-        command, args = get_vpn_stdout_mockup()
-        self.command, self.args = command, args
 
     def _get_or_create_config(self):
         """
         retrieves the config options from defaults or
         home file, or config file passed in command line.
+        populates command and args to be passed to subprocess.
         """
         #print('get or create config')
         config = get_config(config_file=self.config_file)
@@ -104,12 +96,6 @@ to be triggered for each one of them.
 
         if config.has_option('openvpn', 'command'):
             commandline = config.get('openvpn', 'command')
-
-            #XXX remove mockup from here.
-            #it was just for testing early.
-            if commandline == "mockup":
-                self._set_command_mockup()
-                return
 
             command_split = commandline.split(' ')
             command = command_split[0]
@@ -122,11 +108,14 @@ to be triggered for each one of them.
             self.command = command
             self.args = args
         else:
-            self._set_command_mockup()
+        # no command in config, we build it up.
+        # XXX check also for command-line --command flag
+            command, args = build_ovpn_command(config)
+            self.command = command
+            self.args = args
 
         if config.has_option('openvpn', 'autostart'):
             autostart = config.getboolean('openvpn', 'autostart')
-            print('autostart = %s' % autostart)
             self.autostart = autostart
         else:
             if config.has_option('DEFAULT', 'autostart'):
@@ -210,7 +199,6 @@ class EIPConductor(OpenVPNConnection):
         """
         self._disconnect()
         self.status.change_to(self.status.DISCONNECTED)
-
 
     def poll_connection_state(self):
         """
