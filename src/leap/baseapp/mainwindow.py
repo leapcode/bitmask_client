@@ -77,6 +77,16 @@ class LeapWindow(QMainWindow):
 
         print('debugmode:%s' % self.debugmode)
 
+        if self.conductor.missing_auth_agent is True:
+            dialog = ErrorDialog()
+            dialog.warningMessage(
+                'We could not find any authentication '
+                'agent in your system.<br/>'
+                'Make sure you have '
+                '<b>polkit-gnome-authentication-agent-1</b> '
+                'running and try again.',
+                'error')
+
         if self.conductor.missing_pkexec is True:
             dialog = ErrorDialog()
             dialog.warningMessage(

@@ -10,7 +10,7 @@ from leap.util.coroutines import spawn_and_watch_process
 
 
 from leap.eip.config import (get_config, build_ovpn_command,
-                             EIPNoPkexecAvailable)
+                             EIPNoPkexecAvailable, EIPNoPolkitAuthAgentAvailable)
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
 
@@ -90,6 +90,7 @@ to be triggered for each one of them.
         self.proto = None
 
         self.missing_pkexec = False
+        self.missing_auth_agent = False
         self.command = None
         self.args = None
 
@@ -132,6 +133,9 @@ to be triggered for each one of them.
             try:
                 command, args = build_ovpn_command(config,
                                                    debug=self.debug)
+            except EIPNoPolkitAuthAgentAvailable:
+                command = args = None
+                self.missing_auth_agent = True
             except EIPNoPkexecAvailable:
                 command = args = None
                 self.missing_pkexec = True

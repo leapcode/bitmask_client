@@ -4,10 +4,15 @@ import os
 import platform
 
 from leap.util.fileutil import which, mkdir_p
-from leap.baseapp.permcheck import is_pkexec_in_system
+from leap.baseapp.permcheck import (is_pkexec_in_system,
+                                    is_auth_agent_running)
 
 
 class EIPNoPkexecAvailable(Exception):
+    pass
+
+
+class EIPNoPolkitAuthAgentAvailable(Exception):
     pass
 
 
@@ -34,6 +39,7 @@ def build_ovpn_options(daemon=False):
 
     opts = []
     opts.append('--persist-tun')
+    opts.append('--persist-key')
 
     # set user and group
     opts.append('--user')
@@ -104,9 +110,8 @@ def build_ovpn_command(config, debug=False):
         if not is_pkexec_in_system():
             raise EIPNoPkexecAvailable
 
-        #TBD --
-        #if not is_auth_agent_running()
-        # raise EIPNoPolkitAuthAgentAvailable
+        if not is_auth_agent_running():
+            raise EIPNoPolkitAuthAgentAvailable
 
         command.append('pkexec')
 
