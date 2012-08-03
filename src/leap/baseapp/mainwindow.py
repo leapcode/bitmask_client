@@ -11,8 +11,9 @@ from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
                          QTextBrowser, qApp)
 from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
+from leap.baseapp.dialogs import ErrorDialog
+from leap.eip.conductor import EIPConductor, EIPNoCommandError
 from leap.gui import mainwindow_rc
-from leap.eip.conductor import EIPConductor
 
 
 class LeapWindow(QMainWindow):
@@ -64,15 +65,24 @@ class LeapWindow(QMainWindow):
         # we pass a tuple of signals that will be
         # triggered when status changes.
         #
+        self.trayIcon.show()
         config_file = getattr(opts, 'config_file', None)
+
         self.conductor = EIPConductor(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
             status_signals=(self.statusChange.emit, ))
 
-        self.trayIcon.show()
+        if self.conductor.missing_pkexec is True:
+            dialog = ErrorDialog()
+            dialog.warningMessage(
+                'We could not find <b>pkexec</b> in your '
+                'system.<br/> Do you want to try '
+                '<b>setuid workaround</b>? '
+                '(<i>DOES NOTHING YET</i>)',
+                'error')
 
-        self.setWindowTitle("Leap")
+        self.setWindowTitle("LEAP Client")
         self.resize(400, 300)
 
         self.set_statusbarMessage('ready')
@@ -316,7 +326,14 @@ technolust</i>")
         stub for running child process with vpn
         """
         if self.vpn_service_started is False:
-            self.conductor.connect()
+            try:
+                self.conductor.connect()
+            except EIPNoCommandError:
+                dialog = ErrorDialog()
+                dialog.warningMessage(
+                    'No suitable openvpn command found. '
+                    '<br/>(Might be a permissions problem)',
+                    'error')
             if self.debugmode:
                 self.startStopButton.setText('&Disconnect')
             self.vpn_service_started = True

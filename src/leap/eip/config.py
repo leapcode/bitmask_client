@@ -4,6 +4,11 @@ import os
 import platform
 
 from leap.util.fileutil import which, mkdir_p
+from leap.baseapp.permcheck import is_pkexec_in_system
+
+
+class EIPNoPkexecAvailable(Exception):
+    pass
 
 
 def build_ovpn_options():
@@ -79,19 +84,35 @@ def build_ovpn_command(config):
         and a list of options.
     """
     command = []
-    use_pkexec = False
+    use_pkexec = True
     ovpn = None
-
-    if config.has_option('openvpn', 'openvpn_binary'):
-        ovpn = config.get('openvpn', 'openvpn_binary')
-    if not ovpn and config.has_option('DEFAULT', 'openvpn_binary'):
-        ovpn = config.get('DEFAULT', 'openvpn_binary')
 
     if config.has_option('openvpn', 'use_pkexec'):
         use_pkexec = config.get('openvpn', 'use_pkexec')
+    if platform.system() == "Linux" and use_pkexec:
 
-    if use_pkexec:
+        # XXX check for both pkexec (done)
+        # AND a suitable authentication
+        # agent running.
+
+        if not is_pkexec_in_system():
+            raise EIPNoPkexecAvailable
+
+        #TBD --
+        #if not is_auth_agent_running()
+        # raise EIPNoPolkitAuthAgentAvailable
+
         command.append('pkexec')
+
+    if config.has_option('openvpn',
+                         'openvpn_binary'):
+        ovpn = config.get('openvpn',
+                          'openvpn_binary')
+    if not ovpn and config.has_option('DEFAULT',
+                                      'openvpn_binary'):
+        ovpn = config.get('DEFAULT',
+                          'openvpn_binary')
+
     if ovpn:
         command.append(ovpn)
 

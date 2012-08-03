@@ -8,7 +8,9 @@ import logging
 
 from leap.util.coroutines import spawn_and_watch_process
 
-from leap.eip.config import get_config, build_ovpn_command
+
+from leap.eip.config import (get_config, build_ovpn_command,
+                             EIPNoPkexecAvailable)
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
 
@@ -16,6 +18,9 @@ logger = logging.getLogger(name=__name__)
 
 
 # TODO Move exceptions to their own module
+
+class EIPNoCommandError(Exception):
+    pass
 
 
 class ConnectionError(Exception):
@@ -81,6 +86,10 @@ to be triggered for each one of them.
         self.port = None
         self.proto = None
 
+        self.missing_pkexec = False
+        self.command = None
+        self.args = None
+
         self.autostart = True
         self._get_or_create_config()
 
@@ -93,6 +102,14 @@ to be triggered for each one of them.
         #print('get or create config')
         config = get_config(config_file=self.config_file)
         self.config = config
+
+        if config.has_option('openvpn', 'autostart'):
+            autostart = config.getboolean('openvpn', 'autostart')
+            self.autostart = autostart
+        else:
+            if config.has_option('DEFAULT', 'autostart'):
+                autostart = config.getboolean('DEFAULT', 'autostart')
+                self.autostart = autostart
 
         if config.has_option('openvpn', 'command'):
             commandline = config.get('openvpn', 'command')
@@ -110,17 +127,15 @@ to be triggered for each one of them.
         else:
         # no command in config, we build it up.
         # XXX check also for command-line --command flag
-            command, args = build_ovpn_command(config)
+            try:
+                command, args = build_ovpn_command(config)
+            except EIPNoPkexecAvailable:
+                command = args = None
+                self.missing_pkexec = True
+
+            # XXX if not command, signal error.
             self.command = command
             self.args = args
-
-        if config.has_option('openvpn', 'autostart'):
-            autostart = config.getboolean('openvpn', 'autostart')
-            self.autostart = autostart
-        else:
-            if config.has_option('DEFAULT', 'autostart'):
-                autostart = config.getboolean('DEFAULT', 'autostart')
-                self.autostart = autostart
 
     def _launch_openvpn(self):
         """
@@ -152,6 +167,8 @@ to be triggered for each one of them.
         """
         attempts to connect
         """
+        if self.command is None:
+            raise EIPNoCommandError
         if self.subp is not None:
             print('cowardly refusing to launch subprocess again')
             return
