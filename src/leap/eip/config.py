@@ -11,7 +11,7 @@ class EIPNoPkexecAvailable(Exception):
     pass
 
 
-def build_ovpn_options():
+def build_ovpn_options(daemon=False):
     """
     build a list of options
     to be passed in the
@@ -68,10 +68,16 @@ def build_ovpn_options():
     opts.append('--config')
     opts.append(ovpncnf)
 
+    # we cannot run in daemon mode
+    # with the current subp setting.
+    # see: https://leap.se/code/issues/383
+    #if daemon is True:
+    #    opts.append('--daemon')
+
     return opts
 
 
-def build_ovpn_command(config):
+def build_ovpn_command(config, debug=False):
     """
     build a string with the
     complete openvpn invocation
@@ -116,7 +122,9 @@ def build_ovpn_command(config):
     if ovpn:
         command.append(ovpn)
 
-    for opt in build_ovpn_options():
+    daemon_mode = not debug
+
+    for opt in build_ovpn_options(daemon=daemon_mode):
         command.append(opt)
 
     # XXX check len and raise proper error
@@ -191,11 +199,3 @@ def get_config(config_file=None):
     config.readfp(config_file)
 
     return config
-
-
-def get_vpn_stdout_mockup():
-    # XXX REMOVE ME
-    command = "python"
-    args = ["-u", "-c", ("from eip_client import fakeclient;"
-                         "fakeclient.write_output()")]
-    return command, args

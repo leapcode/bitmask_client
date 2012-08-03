@@ -59,19 +59,23 @@ class LeapWindow(QMainWindow):
             mainLayout.addWidget(self.loggerBox)
         widget.setLayout(mainLayout)
 
+        self.trayIcon.show()
+        config_file = getattr(opts, 'config_file', None)
+
         #
         # conductor is in charge of all
         # vpn-related configuration / monitoring.
         # we pass a tuple of signals that will be
         # triggered when status changes.
         #
-        self.trayIcon.show()
-        config_file = getattr(opts, 'config_file', None)
 
         self.conductor = EIPConductor(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
-            status_signals=(self.statusChange.emit, ))
+            status_signals=(self.statusChange.emit, ),
+            debug=self.debugmode)
+
+        print('debugmode:%s' % self.debugmode)
 
         if self.conductor.missing_pkexec is True:
             dialog = ErrorDialog()

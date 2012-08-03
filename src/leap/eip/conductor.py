@@ -59,7 +59,8 @@ class OpenVPNConnection(object):
     """
     # Connection Methods
 
-    def __init__(self, config_file=None, watcher_cb=None):
+    def __init__(self, config_file=None,
+                 watcher_cb=None, debug=False):
         #XXX FIXME
         #change watcher_cb to line_observer
         """
@@ -74,6 +75,8 @@ to be triggered for each one of them.
         """
         # XXX get host/port from config
         self.manager = OpenVPNManager()
+        self.debug = debug
+        print('conductor:%s' % debug)
 
         self.config_file = config_file
         self.watcher_cb = watcher_cb
@@ -99,7 +102,6 @@ to be triggered for each one of them.
         home file, or config file passed in command line.
         populates command and args to be passed to subprocess.
         """
-        #print('get or create config')
         config = get_config(config_file=self.config_file)
         self.config = config
 
@@ -128,7 +130,8 @@ to be triggered for each one of them.
         # no command in config, we build it up.
         # XXX check also for command-line --command flag
             try:
-                command, args = build_ovpn_command(config)
+                command, args = build_ovpn_command(config,
+                                                   debug=self.debug)
             except EIPNoPkexecAvailable:
                 command = args = None
                 self.missing_pkexec = True
