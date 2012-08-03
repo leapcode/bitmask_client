@@ -1,11 +1,14 @@
 import ConfigParser
 import grp
+import logging
 import os
 import platform
 
 from leap.util.fileutil import which, mkdir_p
 from leap.baseapp.permcheck import (is_pkexec_in_system,
                                     is_auth_agent_running)
+
+logger = logging.getLogger(name=__name__)
 
 
 class EIPNoPkexecAvailable(Exception):
@@ -106,11 +109,18 @@ def build_ovpn_command(config, debug=False):
         # XXX check for both pkexec (done)
         # AND a suitable authentication
         # agent running.
+        logger.info('use_pkexec set to True')
 
         if not is_pkexec_in_system():
+            logger.error('no pkexec in system')
             raise EIPNoPkexecAvailable
 
         if not is_auth_agent_running():
+            logger.warning(
+                "no polkit auth agent found. "
+                "pkexec will use its own text "
+                "based authentication agent. "
+                "that's probably a bad idea")
             raise EIPNoPolkitAuthAgentAvailable
 
         command.append('pkexec')
