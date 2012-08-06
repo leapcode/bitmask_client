@@ -5,12 +5,15 @@ from __future__ import (division, unicode_literals, print_function)
 #import threading
 from functools import partial
 import logging
+import os
 
 from leap.util.coroutines import spawn_and_watch_process
 
 
 from leap.eip.config import (get_config, build_ovpn_command,
-                             EIPNoPkexecAvailable, EIPNoPolkitAuthAgentAvailable)
+                             check_or_create_default_vpnconf,
+                             EIPNoPkexecAvailable,
+                             EIPNoPolkitAuthAgentAvailable)
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
 
@@ -51,6 +54,10 @@ class UnrecoverableError(EIPClientError):
     # to user-friendly msg in dialog.
     pass
 
+#
+# Openvpn related classes
+#
+
 
 class OpenVPNConnection(object):
     """
@@ -76,7 +83,7 @@ to be triggered for each one of them.
         # XXX get host/port from config
         self.manager = OpenVPNManager()
         self.debug = debug
-        print('conductor:%s' % debug)
+        #print('conductor:%s' % debug)
 
         self.config_file = config_file
         self.watcher_cb = watcher_cb
@@ -97,23 +104,20 @@ to be triggered for each one of them.
         self.autostart = True
         self._get_or_create_config()
 
-    def _get_or_create_config(self):
-        """
-        retrieves the config options from defaults or
-        home file, or config file passed in command line.
-        populates command and args to be passed to subprocess.
-        """
-        config = get_config(config_file=self.config_file)
-        self.config = config
-
+    def _set_autostart(self):
+        config = self.config
         if config.has_option('openvpn', 'autostart'):
-            autostart = config.getboolean('openvpn', 'autostart')
+            autostart = config.getboolean('openvpn',
+                                          'autostart')
             self.autostart = autostart
         else:
             if config.has_option('DEFAULT', 'autostart'):
-                autostart = config.getboolean('DEFAULT', 'autostart')
+                autostart = config.getboolean('DEFAULT',
+                                              'autostart')
                 self.autostart = autostart
 
+    def _set_ovpn_command(self):
+        config = self.config
         if config.has_option('openvpn', 'command'):
             commandline = config.get('openvpn', 'command')
 
@@ -124,7 +128,6 @@ to be triggered for each one of them.
             else:
                 args = []
 
-            # XXX CALL BUILD COMMAND
             self.command = command
             self.args = args
         else:
@@ -143,6 +146,29 @@ to be triggered for each one of them.
             # XXX if not command, signal error.
             self.command = command
             self.args = args
+
+    def _check_ovpn_config(self):
+        """
+        checks if there is a default openvpn config.
+        if not, it writes one with info from the provider
+        definition file
+        """
+        # TODO
+        # - get --with-openvpn-config from opts
+        check_or_create_default_vpnconf(self.config)
+
+    def _get_or_create_config(self):
+        """
+        retrieves the config options from defaults or
+        home file, or config file passed in command line.
+        populates command and args to be passed to subprocess.
+        """
+        config = get_config(config_file=self.config_file)
+        self.config = config
+
+        self._set_autostart()
+        self._set_ovpn_command()
+        self._check_ovpn_config()
 
     def _launch_openvpn(self):
         """
@@ -167,8 +193,8 @@ to be triggered for each one of them.
         self.subp = subp
         self.watcher = watcher
 
-        conn_result = self.status.CONNECTED
-        return conn_result
+        #conn_result = self.status.CONNECTED
+        #return conn_result
 
     def _try_connection(self):
         """

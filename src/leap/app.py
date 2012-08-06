@@ -6,6 +6,7 @@ from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
 
 from leap.baseapp.mainwindow import LeapWindow
 
+logging.basicConfig()
 logger = logging.getLogger(name=__name__)
 
 
@@ -21,7 +22,8 @@ def main():
 
     #XXX get debug level and set logger accordingly
     if debug:
-        logger.debug('args: ', opts)
+        logger.setLevel('DEBUG')
+        logger.debug('args: %s' % opts)
 
     app = QApplication(sys.argv)
 

@@ -1,15 +1,34 @@
 ========================================
 =               LEAP                   =
-=   The Internet Encryption Toolkit    =
+=  The LEAP Encryption Access Project  =
+=   your internet encryption toolkit   =
 ========================================
 
 Install
 =======
 python setup.py install
 
+Running
+=======
+
+You need to set up a provider in your eip.cfg file:
+
+cd ~/.config/leap
+vim eip.cfg
+
+[provider]
+remote_ip = XXX.XXX.XXX.XXX
+
+and then run:
+
+leap --debug
+
+(or python app.py --debug if you run it from the src/leap folder).
+
 Running tests
 =============
 nosetests -v
+[ currently broken ]
 
 Deps
 ====

@@ -75,7 +75,7 @@ class LeapWindow(QMainWindow):
             status_signals=(self.statusChange.emit, ),
             debug=self.debugmode)
 
-        print('debugmode:%s' % self.debugmode)
+        #print('debugmode:%s' % self.debugmode)
 
         if self.conductor.missing_auth_agent is True:
             dialog = ErrorDialog()
@@ -310,11 +310,11 @@ technolust</i>")
         updating icon, status bar, etc.
         """
 
-        print('STATUS CHANGED! (on Qt-land)')
-        print('%s -> %s' % (status.previous, status.current))
+        #print('STATUS CHANGED! (on Qt-land)')
+        #print('%s -> %s' % (status.previous, status.current))
         icon_name = self.conductor.get_icon_name()
         self.setIcon(icon_name)
-        print 'icon = ', icon_name
+        #print 'icon = ', icon_name
 
         # change connection pixmap widget
         self.setConnWidget(icon_name)
