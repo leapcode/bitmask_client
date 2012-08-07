@@ -8,12 +8,16 @@ import logging
 
 from leap.util.coroutines import spawn_and_watch_process
 
-# XXX import eip.config as eipconfig
+# XXX from leap.eip import config as eipconfig
+# from leap.eip import exceptions as eip_exceptions
+
 from leap.eip.config import (get_config, build_ovpn_command,
                              check_or_create_default_vpnconf,
                              check_vpn_keys,
                              EIPNoPkexecAvailable,
                              EIPNoPolkitAuthAgentAvailable,
+                             EIPInitNoProviderError,
+                             EIPInitBadProviderError,
                              EIPInitNoKeyFileError,
                              EIPInitBadKeyFilePermError)
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
@@ -103,6 +107,8 @@ to be triggered for each one of them.
         self.missing_auth_agent = False
         self.bad_keyfile_perms = False
         self.missing_vpn_keyfile = False
+        self.missing_provider = False
+        self.bad_provider = False
 
         self.command = None
         self.args = None
@@ -162,7 +168,14 @@ to be triggered for each one of them.
         """
         # TODO
         # - get --with-openvpn-config from opts
-        check_or_create_default_vpnconf(self.config)
+        try:
+            check_or_create_default_vpnconf(self.config)
+        except EIPInitNoProviderError:
+            logger.error('missing default provider definition')
+            self.missing_provider = True
+        except EIPInitBadProviderError:
+            logger.error('bad provider definition')
+            self.bad_provider = True
 
     def _get_or_create_config(self):
         """

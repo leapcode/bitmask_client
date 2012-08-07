@@ -3,6 +3,7 @@ import grp
 import logging
 import os
 import platform
+import socket
 
 from leap.util.fileutil import (which, mkdir_p,
                                 check_and_fix_urw_only)
@@ -21,6 +22,14 @@ class EIPNoPkexecAvailable(Exception):
 
 
 class EIPNoPolkitAuthAgentAvailable(Exception):
+    pass
+
+
+class EIPInitNoProviderError(Exception):
+    pass
+
+
+class EIPInitBadProviderError(Exception):
     pass
 
 
@@ -90,6 +99,14 @@ def get_default_provider_path():
     return default_provider_path
 
 
+def validate_ip(ip_str):
+    """
+    raises exception if the ip_str is
+    not a valid representation of an ip
+    """
+    socket.inet_aton(ip_str)
+
+
 def check_or_create_default_vpnconf(config):
     """
     checks that a vpn config file
@@ -118,10 +135,18 @@ def check_or_create_default_vpnconf(config):
     # by now. Get it from a list of gateways
     # instead.
 
-    remote_ip = config.get('provider',
-                           'remote_ip')
+    try:
+        remote_ip = config.get('provider',
+                               'remote_ip')
+        validate_ip(remote_ip)
 
-    # XXX check that IT LOOKS LIKE AN IP!!!
+    except ConfigParser.NoOptionError:
+        raise EIPInitNoProviderError
+
+    except socket.error:
+        # this does not look like an ip, dave
+        raise EIPInitBadProviderError
+
     if config.has_option('provider', 'remote_port'):
         remote_port = config.get('provider',
                                  'remote_port')

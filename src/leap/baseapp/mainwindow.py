@@ -79,8 +79,17 @@ class LeapWindow(QMainWindow):
             status_signals=(self.statusChange.emit, ),
             debug=self.debugmode)
 
+        #
         # bunch of self checks.
         # XXX move somewhere else alltogether.
+        #
+
+        if self.conductor.missing_provider is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'Missing provider. Add a remote_ip entry '
+                'under section [provider] in eip.cfg',
+                'error')
 
         if self.conductor.missing_vpn_keyfile is True:
             dialog = ErrorDialog()
@@ -91,6 +100,13 @@ class LeapWindow(QMainWindow):
         # ... btw, review pending.
         # os.kill of subprocess fails if we have
         # some of this errors.
+
+        if self.conductor.bad_provider is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'Bad provider entry. Check that remote_ip entry '
+                'has an IP under section [provider] in eip.cfg',
+                'error')
 
         if self.conductor.bad_keyfile_perms is True:
             dialog = ErrorDialog()
