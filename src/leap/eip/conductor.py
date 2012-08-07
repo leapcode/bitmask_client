@@ -14,6 +14,7 @@ from leap.eip.config import (get_config, build_ovpn_command,
                              check_vpn_keys,
                              EIPNoPkexecAvailable,
                              EIPNoPolkitAuthAgentAvailable,
+                             EIPInitNoKeyFileError,
                              EIPInitBadKeyFilePermError)
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
@@ -101,6 +102,7 @@ to be triggered for each one of them.
         self.missing_pkexec = False
         self.missing_auth_agent = False
         self.bad_keyfile_perms = False
+        self.missing_vpn_keyfile = False
 
         self.command = None
         self.args = None
@@ -181,6 +183,8 @@ to be triggered for each one of them.
         """
         try:
             check_vpn_keys(self.config)
+        except EIPInitNoKeyFileError:
+            self.missing_vpn_keyfile = True
         except EIPInitBadKeyFilePermError:
             logger.error('error while checking vpn keys')
             self.bad_keyfile_perms = True

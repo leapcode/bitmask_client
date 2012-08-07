@@ -79,6 +79,19 @@ class LeapWindow(QMainWindow):
             status_signals=(self.statusChange.emit, ),
             debug=self.debugmode)
 
+        # bunch of self checks.
+        # XXX move somewhere else alltogether.
+
+        if self.conductor.missing_vpn_keyfile is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'Could not find the vpn keys file',
+                'error')
+
+        # ... btw, review pending.
+        # os.kill of subprocess fails if we have
+        # some of this errors.
+
         if self.conductor.bad_keyfile_perms is True:
             dialog = ErrorDialog()
             dialog.criticalMessage(
