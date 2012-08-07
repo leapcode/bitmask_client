@@ -4,12 +4,16 @@ import logging
 import os
 import platform
 
-from leap.util.fileutil import which, mkdir_p
+from leap.util.fileutil import (which, mkdir_p,
+                                check_and_fix_urw_only)
 from leap.baseapp.permcheck import (is_pkexec_in_system,
                                     is_auth_agent_running)
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
+
+# XXX move exceptions to
+# from leap.eip import exceptions as eip_exceptions
 
 
 class EIPNoPkexecAvailable(Exception):
@@ -17,6 +21,14 @@ class EIPNoPkexecAvailable(Exception):
 
 
 class EIPNoPolkitAuthAgentAvailable(Exception):
+    pass
+
+
+class EIPInitNoKeyFileError(Exception):
+    pass
+
+
+class EIPInitBadKeyFilePermError(Exception):
     pass
 
 
@@ -345,3 +357,45 @@ def get_config(config_file=None):
     config.readfp(config_file)
 
     return config
+
+
+def check_vpn_keys(config):
+    """
+    performs an existance and permission check
+    over the openvpn keys file.
+    Currently we're expecting a single file
+    per provider, containing the CA cert,
+    the provider key, and our client certificate
+    """
+
+    keyopt = ('provider', 'keyfile')
+
+    # XXX at some point,
+    # should separate between CA, provider cert
+    # and our certificate.
+    # make changes in the default provider template
+    # accordingly.
+
+    # get vpn keys
+    if config.has_option(*keyopt):
+        keyfile = config.get(*keyopt)
+    else:
+        keyfile = get_config_file(
+            'openvpn.keys',
+            folder=get_default_provider_path())
+        logger.debug('keyfile = %s', keyfile)
+
+    # if no keys, raise error.
+    # should be catched by the ui and signal user.
+
+    if not os.path.isfile(keyfile):
+        logger.error('key file %s not found. aborting.',
+                     keyfile)
+        raise EIPInitNoKeyFileError
+
+    # check proper permission on keys
+    # bad perms? try to fix them
+    try:
+        check_and_fix_urw_only(keyfile)
+    except OSError:
+        raise EIPInitBadKeyFilePermError

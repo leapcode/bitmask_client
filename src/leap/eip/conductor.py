@@ -5,15 +5,16 @@ from __future__ import (division, unicode_literals, print_function)
 #import threading
 from functools import partial
 import logging
-import os
 
 from leap.util.coroutines import spawn_and_watch_process
 
-
+# XXX import eip.config as eipconfig
 from leap.eip.config import (get_config, build_ovpn_command,
                              check_or_create_default_vpnconf,
+                             check_vpn_keys,
                              EIPNoPkexecAvailable,
-                             EIPNoPolkitAuthAgentAvailable)
+                             EIPNoPolkitAuthAgentAvailable,
+                             EIPInitBadKeyFilePermError)
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(name=__name__)
 
 
 # TODO Move exceptions to their own module
+# eip.exceptions
 
 class EIPNoCommandError(Exception):
     pass
@@ -98,11 +100,14 @@ to be triggered for each one of them.
 
         self.missing_pkexec = False
         self.missing_auth_agent = False
+        self.bad_keyfile_perms = False
+
         self.command = None
         self.args = None
 
         self.autostart = True
         self._get_or_create_config()
+        self._check_vpn_keys()
 
     def _set_autostart(self):
         config = self.config
@@ -169,6 +174,16 @@ to be triggered for each one of them.
         self._set_autostart()
         self._set_ovpn_command()
         self._check_ovpn_config()
+
+    def _check_vpn_keys(self):
+        """
+        checks for correct permissions on vpn keys
+        """
+        try:
+            check_vpn_keys(self.config)
+        except EIPInitBadKeyFilePermError:
+            logger.error('error while checking vpn keys')
+            self.bad_keyfile_perms = True
 
     def _launch_openvpn(self):
         """

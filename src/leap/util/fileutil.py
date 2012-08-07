@@ -1,8 +1,12 @@
 import errno
 from itertools import chain
+import logging
 import os
 import platform
 import stat
+
+
+logger = logging.getLogger()
 
 
 def is_user_executable(fpath):
@@ -84,4 +88,24 @@ def mkdir_p(path):
         if exc.errno == errno.EEXIST:
             pass
         else:
+            raise
+
+
+def check_and_fix_urw_only(_file):
+    """
+    test for 600 mode and try
+    to set it if anything different found
+    """
+    mode = os.stat(_file).st_mode
+    if mode != int('600', 8):
+        try:
+            logger.warning(
+                'bad permission on %s '
+                'attempting to set 600',
+                _file)
+            os.chmod(_file, stat.S_IRUSR | stat.S_IWUSR)
+        except OSError:
+            logger.error(
+                'error while trying to chmod 600 %s',
+                _file)
             raise

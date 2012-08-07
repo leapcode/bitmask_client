@@ -12,7 +12,12 @@ from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
 from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
 from leap.baseapp.dialogs import ErrorDialog
-from leap.eip.conductor import EIPConductor, EIPNoCommandError
+from leap.eip.conductor import (EIPConductor,
+                                EIPNoCommandError)
+
+from leap.eip.config import (EIPInitBadKeyFilePermError)
+# from leap.eip import exceptions as eip_exceptions
+
 from leap.gui import mainwindow_rc
 
 
@@ -68,14 +73,17 @@ class LeapWindow(QMainWindow):
         # we pass a tuple of signals that will be
         # triggered when status changes.
         #
-
         self.conductor = EIPConductor(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
             status_signals=(self.statusChange.emit, ),
             debug=self.debugmode)
 
-        #print('debugmode:%s' % self.debugmode)
+        if self.conductor.bad_keyfile_perms is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'The vpn keys file has bad permissions',
+                'error')
 
         if self.conductor.missing_auth_agent is True:
             dialog = ErrorDialog()

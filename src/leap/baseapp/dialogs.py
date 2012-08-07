@@ -20,3 +20,14 @@ class ErrorDialog(QDialog):
             self.warningLabel.setText("Save Again")
         else:
             self.warningLabel.setText("Continue")
+
+    def criticalMessage(self, msg, label):
+        msgBox = QMessageBox(QMessageBox.Critical,
+                             "QMessageBox.critical()", msg,
+                             QMessageBox.NoButton, self)
+        msgBox.addButton("&Ok", QMessageBox.AcceptRole)
+        msgBox.addButton("&Cancel", QMessageBox.RejectRole)
+        if msgBox.exec_() == QMessageBox.AcceptRole:
+            self.warningLabel.setText("Save Again")
+        else:
+            self.warningLabel.setText("Continue")
