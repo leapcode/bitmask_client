@@ -1,6 +1,9 @@
 # ################################
 # Makefile for compiling resources
 # files.
+# TODO move to setup scripts
+# and implement it in python
+# http://die-offenbachs.homelinux.org:48888/hg/eric5/file/5072605ad4dd/compileUiFiles.py
 ###### EDIT ###################### 
 #Directory with ui and resource files
 RESOURCE_DIR = data/resources

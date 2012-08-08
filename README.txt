@@ -27,12 +27,26 @@ leap --debug
 
 Running tests
 =============
-nosetests -v
-[ currently broken ]
+
+./run_tests.sh
+
+if you want to run specific tests, pass the (sub)module to nose:
+
+nosetests leap.util
+
+or
+
+nosetests leap.util.test_leap_argparse
 
 Deps
 ====
+
 apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools
+
+Test-deps
+=========
+
+test-requires
 
 Hack
 ====
