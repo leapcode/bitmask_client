@@ -96,7 +96,9 @@ def check_and_fix_urw_only(_file):
     test for 600 mode and try
     to set it if anything different found
     """
-    mode = os.stat(_file).st_mode
+    mode = stat.S_IMODE(
+        os.stat(_file).st_mode)
+
     if mode != int('600', 8):
         try:
             logger.warning(
