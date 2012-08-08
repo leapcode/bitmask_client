@@ -11,6 +11,7 @@ docs/_build
 include/
 lib/
 local/
+man/
 share/
 src/leap.egg-info/
 src/leap_client.egg-info
