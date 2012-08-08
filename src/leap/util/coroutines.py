@@ -74,8 +74,8 @@ def watch_output(out, observers):
 for each event
     :type ovservers: tuple
     """
-    observer_dict = {observer: process_events(observer)
-                     for observer in observers}
+    observer_dict = dict(((observer, process_events(observer))
+                         for observer in observers))
     for line in iter(out.readline, b''):
         for obs in observer_dict:
             observer_dict[obs].send(line)
