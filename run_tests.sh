@@ -81,7 +81,11 @@ function run_pep8 {
   ${wrapper} pep8 ${pep8_opts} ${srcfiles}
 }
 
-NOSETESTS="nosetests $noseopts $noseargs"
+# XXX we cannot run tests that need X server
+# in the current debhelper build process,
+# so I exclude the topmost tests
+
+NOSETESTS="nosetests leap $noseopts $noseargs"
 
 if [ $never_venv -eq 0 ]
 then
