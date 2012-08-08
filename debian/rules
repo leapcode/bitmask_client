@@ -8,8 +8,11 @@
 #
 #
 
-# needed??? no
+# needed??? no, should transition to use dhpython2
+# http://wiki.debian.org/Python/TransitionToDHPython2
+#
 #DEB_PYTHON_SYSTEM=pysupport
+
 
 # Uncomment this to turn on verbose mode.
 #DH_VERBOSE=1
@@ -17,30 +20,28 @@
 PYTHON2=$(shell pyversions -vr)
 
 %:
-	dh $@ --with python2
-	#,sphinxdoc
+	dh $@ --with python2 --buildsystem=python_distutils  #,sphinxdoc
 
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 
 # run tests!
 #
 test-python%:
-	#python$* setup.py test -vv
-	run.tests.sh
+	./run_tests.sh
 
 override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
 endif
 
 #dh_auto_build should be enough to build the python2 version
 
-#build-python%:
-#        python$* setup.py build
+build-python%:
+	python$* setup.py build
 
 #override_dh_auto_build: $(PYTHON3:%=build-python%)
 #        dh_auto_build
 
-#install-python%:
-#        python$* setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
+install-python%:
+	python$* setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
 
 #override_dh_auto_install: $(PYTHON3:%=install-python%)
 #        dh_auto_install

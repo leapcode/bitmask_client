@@ -14,6 +14,6 @@ Architecture: any
 #Depends: ${shlibs:Depends}, ${misc:Depends}
 Depends: openvpn, python-qt4
 #XXX should deprecate python-support methinks
-#Build-Depends: debhelper (>= 8.0.0), python-support, pyqt4-dev-tools, python-sphinx
+Build-Depends: debhelper (>= 8.0.0), python-support, pyqt4-dev-tools, python-sphinx, pep8
 Description: the encrypted interned toolkit
  <insert long description, indented with spaces>
