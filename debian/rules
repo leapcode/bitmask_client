@@ -8,8 +8,8 @@
 #
 #
 
-# needed???
-# DEB_PYTHON_SYSTEM=pysupport
+# needed??? no
+#DEB_PYTHON_SYSTEM=pysupport
 
 # Uncomment this to turn on verbose mode.
 #DH_VERBOSE=1
@@ -25,7 +25,8 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 # run tests!
 #
 test-python%:
-	python$* setup.py test -vv
+	#python$* setup.py test -vv
+	run.tests.sh
 
 override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
 endif
