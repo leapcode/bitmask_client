@@ -121,17 +121,21 @@ fi
 
 run_tests
 
-# NOTE(sirp): we only want to run pep8 when we're running the full-test suite,
-# not when we're running tests individually. To handle this, we need to
-# distinguish between options (noseopts), which begin with a '-', and
-# arguments (noseargs).
 if [ -z "$noseargs" ]; then
   if [ $no_pep8 -eq 0 ]; then
     run_pep8
   fi
 fi
 
+function run_coverage {
+    # XXX not working? getting 3rd party modules
+    coverage_opts="--include `pwd`/src/leap/*,`pwd`/src/leap/eip/*"
+    ${wrapper} coverage html -d docs/covhtml -i $coverage_opts
+    echo "now point your browser at docs/covhtml/index.html"
+}
+
 if [ $coverage -eq 1 ]; then
-    echo "Generating coverage report in covhtml/"
-    ${wrapper} coverage html -d covhtml -i
+    echo "Generating coverage report in docs/covhtml/"
+    run_coverage
+    exit
 fi

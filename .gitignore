@@ -8,6 +8,7 @@ core
 debian/python-leap-client/
 dist/
 docs/_build
+docs/covhtml
 include/
 lib/
 local/
