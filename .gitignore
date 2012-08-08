@@ -12,4 +12,4 @@ include/
 lib/
 local/
 share/
-src/leap_client.egg-info/
+src/leap.egg-info/

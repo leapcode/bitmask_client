@@ -6,6 +6,7 @@ import telnetlib
 import time
 
 logger = logging.getLogger(name=__name__)
+logger.setLevel('DEBUG')
 
 TELNET_PORT = 23
 
@@ -74,7 +75,7 @@ class OpenVPNManager(object):
         self.with_errors = False
 
     def forget_errors(self):
-        print('forgetting errors')
+        logger.debug('forgetting errors')
         self.with_errors = False
 
     def connect(self):
