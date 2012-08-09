@@ -1,4 +1,4 @@
-python-leap-client (0.1.0-1) unstable; urgency=low
+python-leap-client (0.1.0+01234-1) unstable; urgency=low
 
   * Initial release (Closes: #XXX)
 
