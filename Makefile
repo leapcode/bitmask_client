@@ -27,6 +27,10 @@ PYRCC = pyrcc4
  
 COMPILED_UI = $(UI_FILES:%.ui=$(COMPILED_DIR)/ui_%.py)
 COMPILED_RESOURCES = $(RESOURCES:%.qrc=$(COMPILED_DIR)/%_rc.py)
+
+DEBVER = $(shell dpkg-parsechangelog | sed -ne 's,Version: ,,p')
+
+#
  
 all : resources ui 
  
@@ -39,6 +43,10 @@ $(COMPILED_DIR)/ui_%.py : $(RESOURCE_DIR)/%.ui
  
 $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
- 
+
+deb:
+	@git tag -a debian/$(DEBVER) -m "..."
+	@debuild -us -uc -i.git
+
 clean : 
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)  
