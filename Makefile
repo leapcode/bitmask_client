@@ -45,8 +45,10 @@ $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
 
 deb:
-	@git tag -a debian/$(DEBVER) -m "..."
-	@debuild -us -uc -i.git
+	#XXX finish this!
+	#should tag upstream/VERSION in upstream branch...
+	#@git tag -a upstream/$(DEBVER) -m "..."
+	@git-buildpackage --git-ignore-new --git-builder="debuild -us -uc -i'.*|bin|share|lib|local|include|\.git'"  --git-upstream-branch=upstream --git-upstream-tree=branch --git-debian-branch=debian
 
 clean : 
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)  
