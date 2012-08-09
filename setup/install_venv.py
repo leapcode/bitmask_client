@@ -55,7 +55,8 @@ def run_command_with_code(cmd, redirect_output=True, check_exit_code=True):
         stdout = subprocess.PIPE
     else:
         stdout = None
-
+    
+    print 'executing command: %s', cmd
     proc = subprocess.Popen(cmd, cwd=ROOT, stdout=stdout)
     output = proc.communicate()[0]
     if check_exit_code and proc.returncode != 0:
@@ -169,14 +170,14 @@ def create_virtualenv(venv=VENV, no_site_packages=True):
         run_command(['virtualenv', '-q', VENV])
     print 'done.'
     print 'Installing pip in virtualenv...',
-    if not run_command(['tools/with_venv.sh', 'easy_install',
+    if not run_command(['setup/tools/with_venv.sh', 'easy_install',
                         'pip>1.0']).strip():
         die("Failed to install pip.")
     print 'done.'
 
 
 def pip_install(*args):
-    run_command(['tools/with_venv.sh',
+    run_command(['setup/tools/with_venv.sh',
                  'pip', 'install', '--upgrade'] + list(args),
                 redirect_output=False)
 
@@ -191,9 +192,9 @@ def install_dependencies(venv=VENV):
     pip_install('-r', PIP_REQUIRES)
     pip_install('-r', TEST_REQUIRES)
 
-    # Tell the virtual env how to "import nova"
+    # "
     pthfile = os.path.join(venv, "lib", PY_VERSION, "site-packages",
-                        "novaclient.pth")
+                        "leap-client.pth")
     f = open(pthfile, 'w')
     f.write("%s\n" % ROOT)
 
@@ -204,12 +205,7 @@ def post_process():
 
 def print_help():
     help = """
-    python-novaclient development environment setup is complete.
-
-    python-novaclient development uses virtualenv to track and manage Python
-    dependencies while in development and testing.
-
-    To activate the python-novaclient virtualenv for the extent of your current
+    To activate the leap virtualenv for the extent of your current
     shell session you can run:
 
     $ source .venv/bin/activate
@@ -217,7 +213,7 @@ def print_help():
     Or, if you prefer, you can run commands in the virtualenv on a case by case
     basis by running:
 
-    $ tools/with_venv.sh <your command>
+    $ setup/tools/with_venv.sh <your command>
 
     Also, make test will automatically use the virtualenv.
     """
