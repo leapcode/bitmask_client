@@ -55,6 +55,9 @@ Running tests
 
 ./run_tests.sh
 
+force no virtualenv and create coverage reports:
+./run_tests.sh -N -c
+
 if you want to run specific tests, pass the (sub)module to nose:
 
 nosetests leap.util
