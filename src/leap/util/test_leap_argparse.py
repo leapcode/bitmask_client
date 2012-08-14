@@ -1,10 +1,10 @@
 from argparse import Namespace
 import unittest
 
-from eip_client.utils import eip_argparse
+from leap.util import leap_argparse
 
 
-class EIPArgParseTest(unittest.TestCase):
+class LeapArgParseTest(unittest.TestCase):
     """
     Test argparse options for eip client
     """
@@ -13,14 +13,15 @@ class EIPArgParseTest(unittest.TestCase):
         """
         get the parser
         """
-        self.parser = eip_argparse.build_parser()
+        self.parser = leap_argparse.build_parser()
 
     def test_debug_mode(self):
         """
         test debug mode option
         """
         opts = self.parser.parse_args(
-                ['--debug'])
-        self.assertEqual(opts,
-                Namespace(config=None,
-                    debug=True))
+            ['--debug'])
+        self.assertEqual(
+            opts,
+            Namespace(config_file=None,
+                      debug=True))

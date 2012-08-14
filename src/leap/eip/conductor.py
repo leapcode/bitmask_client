@@ -6,8 +6,20 @@ from __future__ import (division, unicode_literals, print_function)
 from functools import partial
 import logging
 
-from leap.utils.coroutines import spawn_and_watch_process
-from leap.baseapp.config import get_config, get_vpn_stdout_mockup
+from leap.util.coroutines import spawn_and_watch_process
+
+# XXX from leap.eip import config as eipconfig
+# from leap.eip import exceptions as eip_exceptions
+
+from leap.eip.config import (get_config, build_ovpn_command,
+                             check_or_create_default_vpnconf,
+                             check_vpn_keys,
+                             EIPNoPkexecAvailable,
+                             EIPNoPolkitAuthAgentAvailable,
+                             EIPInitNoProviderError,
+                             EIPInitBadProviderError,
+                             EIPInitNoKeyFileError,
+                             EIPInitBadKeyFilePermError)
 from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
 
@@ -15,6 +27,10 @@ logger = logging.getLogger(name=__name__)
 
 
 # TODO Move exceptions to their own module
+# eip.exceptions
+
+class EIPNoCommandError(Exception):
+    pass
 
 
 class ConnectionError(Exception):
@@ -39,7 +55,15 @@ class UnrecoverableError(EIPClientError):
     """
     we cannot do anything about it, sorry
     """
+    # XXX we should catch this and raise
+    # to qtland, so we emit signal
+    # to translate whatever kind of error
+    # to user-friendly msg in dialog.
     pass
+
+#
+# Openvpn related classes
+#
 
 
 class OpenVPNConnection(object):
@@ -49,7 +73,8 @@ class OpenVPNConnection(object):
     """
     # Connection Methods
 
-    def __init__(self, config_file=None, watcher_cb=None):
+    def __init__(self, config_file=None,
+                 watcher_cb=None, debug=False):
         #XXX FIXME
         #change watcher_cb to line_observer
         """
@@ -64,6 +89,8 @@ to be triggered for each one of them.
         """
         # XXX get host/port from config
         self.manager = OpenVPNManager()
+        self.debug = debug
+        #print('conductor:%s' % debug)
 
         self.config_file = config_file
         self.watcher_cb = watcher_cb
@@ -76,46 +103,104 @@ to be triggered for each one of them.
         self.port = None
         self.proto = None
 
+        self.missing_pkexec = False
+        self.missing_auth_agent = False
+        self.bad_keyfile_perms = False
+        self.missing_vpn_keyfile = False
+        self.missing_provider = False
+        self.bad_provider = False
+
+        self.command = None
+        self.args = None
+
         self.autostart = True
+        self._get_or_create_config()
+        self._check_vpn_keys()
 
-        self._get_config()
+    def _set_autostart(self):
+        config = self.config
+        if config.has_option('openvpn', 'autostart'):
+            autostart = config.getboolean('openvpn',
+                                          'autostart')
+            self.autostart = autostart
+        else:
+            if config.has_option('DEFAULT', 'autostart'):
+                autostart = config.getboolean('DEFAULT',
+                                              'autostart')
+                self.autostart = autostart
 
-    def _set_command_mockup(self):
-        """
-        sets command and args for a command mockup
-        that just mimics the output from the real thing
-        """
-        command, args = get_vpn_stdout_mockup()
-        self.command, self.args = command, args
-
-    def _get_config(self):
-        """
-        retrieves the config options from defaults or
-        home file, or config file passed in command line.
-        """
-        config = get_config(config_file=self.config_file)
-        self.config = config
-
+    def _set_ovpn_command(self):
+        config = self.config
         if config.has_option('openvpn', 'command'):
             commandline = config.get('openvpn', 'command')
-            if commandline == "mockup":
-                self._set_command_mockup()
-                return
+
             command_split = commandline.split(' ')
             command = command_split[0]
             if len(command_split) > 1:
                 args = command_split[1:]
             else:
                 args = []
+
             self.command = command
-            #print("debug: command = %s" % command)
             self.args = args
         else:
-            self._set_command_mockup()
+        # no command in config, we build it up.
+        # XXX check also for command-line --command flag
+            try:
+                command, args = build_ovpn_command(config,
+                                                   debug=self.debug)
+            except EIPNoPolkitAuthAgentAvailable:
+                command = args = None
+                self.missing_auth_agent = True
+            except EIPNoPkexecAvailable:
+                command = args = None
+                self.missing_pkexec = True
 
-        if config.has_option('openvpn', 'autostart'):
-            autostart = config.get('openvpn', 'autostart')
-            self.autostart = autostart
+            # XXX if not command, signal error.
+            self.command = command
+            self.args = args
+
+    def _check_ovpn_config(self):
+        """
+        checks if there is a default openvpn config.
+        if not, it writes one with info from the provider
+        definition file
+        """
+        # TODO
+        # - get --with-openvpn-config from opts
+        try:
+            check_or_create_default_vpnconf(self.config)
+        except EIPInitNoProviderError:
+            logger.error('missing default provider definition')
+            self.missing_provider = True
+        except EIPInitBadProviderError:
+            logger.error('bad provider definition')
+            self.bad_provider = True
+
+    def _get_or_create_config(self):
+        """
+        retrieves the config options from defaults or
+        home file, or config file passed in command line.
+        populates command and args to be passed to subprocess.
+        """
+        config = get_config(config_file=self.config_file)
+        self.config = config
+
+        self._set_autostart()
+        self._set_ovpn_command()
+        self._check_ovpn_config()
+
+    def _check_vpn_keys(self):
+        """
+        checks for correct permissions on vpn keys
+        """
+        try:
+            check_vpn_keys(self.config)
+        except EIPInitNoKeyFileError:
+            self.missing_vpn_keyfile = True
+        except EIPInitBadKeyFilePermError:
+            logger.error('error while checking vpn keys')
+            self.bad_keyfile_perms = True
 
     def _launch_openvpn(self):
         """
@@ -140,13 +225,15 @@ to be triggered for each one of them.
         self.subp = subp
         self.watcher = watcher
 
-        conn_result = self.status.CONNECTED
-        return conn_result
+        #conn_result = self.status.CONNECTED
+        #return conn_result
 
     def _try_connection(self):
         """
         attempts to connect
         """
+        if self.command is None:
+            raise EIPNoCommandError
         if self.subp is not None:
             print('cowardly refusing to launch subprocess again')
             return
@@ -186,7 +273,7 @@ class EIPConductor(OpenVPNConnection):
         """
         self.manager.forget_errors()
         self._try_connection()
-        # XXX should capture errors?
+        # XXX should capture errors here?
 
     def disconnect(self):
         """
@@ -194,25 +281,6 @@ class EIPConductor(OpenVPNConnection):
         """
         self._disconnect()
         self.status.change_to(self.status.DISCONNECTED)
-        pass
-
-    def shutdown(self):
-        """
-        shutdown and quit
-        """
-        self.desired_con_state = self.status.DISCONNECTED
-
-    def connection_state(self):
-        """
-        returns the current connection state
-        """
-        return self.status.current
-
-    def desired_connection_state(self):
-        """
-        returns the desired_connection state
-        """
-        return self.desired_con_state
 
     def poll_connection_state(self):
         """

@@ -8,8 +8,11 @@ core
 debian/python-leap-client/
 dist/
 docs/_build
+docs/covhtml
 include/
 lib/
 local/
+man/
 share/
 src/leap.egg-info/
+src/leap_client.egg-info

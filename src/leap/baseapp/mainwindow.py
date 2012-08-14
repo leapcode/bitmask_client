@@ -11,8 +11,14 @@ from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
                          QTextBrowser, qApp)
 from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
+from leap.baseapp.dialogs import ErrorDialog
+from leap.eip.conductor import (EIPConductor,
+                                EIPNoCommandError)
+
+from leap.eip.config import (EIPInitBadKeyFilePermError)
+# from leap.eip import exceptions as eip_exceptions
+
 from leap.gui import mainwindow_rc
-from leap.eip.conductor import EIPConductor
 
 
 class LeapWindow(QMainWindow):
@@ -58,21 +64,76 @@ class LeapWindow(QMainWindow):
             mainLayout.addWidget(self.loggerBox)
         widget.setLayout(mainLayout)
 
+        self.trayIcon.show()
+        config_file = getattr(opts, 'config_file', None)
+
         #
         # conductor is in charge of all
         # vpn-related configuration / monitoring.
         # we pass a tuple of signals that will be
         # triggered when status changes.
         #
-        config_file = getattr(opts, 'config_file', None)
         self.conductor = EIPConductor(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
-            status_signals=(self.statusChange.emit, ))
+            status_signals=(self.statusChange.emit, ),
+            debug=self.debugmode)
 
-        self.trayIcon.show()
+        #
+        # bunch of self checks.
+        # XXX move somewhere else alltogether.
+        #
 
-        self.setWindowTitle("Leap")
+        if self.conductor.missing_provider is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'Missing provider. Add a remote_ip entry '
+                'under section [provider] in eip.cfg',
+                'error')
+
+        if self.conductor.missing_vpn_keyfile is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'Could not find the vpn keys file',
+                'error')
+
+        # ... btw, review pending.
+        # os.kill of subprocess fails if we have
+        # some of this errors.
+
+        if self.conductor.bad_provider is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'Bad provider entry. Check that remote_ip entry '
+                'has an IP under section [provider] in eip.cfg',
+                'error')
+
+        if self.conductor.bad_keyfile_perms is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'The vpn keys file has bad permissions',
+                'error')
+
+        if self.conductor.missing_auth_agent is True:
+            dialog = ErrorDialog()
+            dialog.warningMessage(
+                'We could not find any authentication '
+                'agent in your system.<br/>'
+                'Make sure you have '
+                '<b>polkit-gnome-authentication-agent-1</b> '
+                'running and try again.',
+                'error')
+
+        if self.conductor.missing_pkexec is True:
+            dialog = ErrorDialog()
+            dialog.warningMessage(
+                'We could not find <b>pkexec</b> in your '
+                'system.<br/> Do you want to try '
+                '<b>setuid workaround</b>? '
+                '(<i>DOES NOTHING YET</i>)',
+                'error')
+
+        self.setWindowTitle("LEAP Client")
         self.resize(400, 300)
 
         self.set_statusbarMessage('ready')
@@ -222,6 +283,7 @@ technolust</i>")
         self.trayIconMenu.addAction(self.quitAction)
 
         self.trayIcon = QSystemTrayIcon(self)
+        self.setIcon('disconnected')
         self.trayIcon.setContextMenu(self.trayIconMenu)
 
     def createLogBrowser(self):
@@ -285,11 +347,11 @@ technolust</i>")
         updating icon, status bar, etc.
         """
 
-        print('STATUS CHANGED! (on Qt-land)')
-        print('%s -> %s' % (status.previous, status.current))
+        #print('STATUS CHANGED! (on Qt-land)')
+        #print('%s -> %s' % (status.previous, status.current))
         icon_name = self.conductor.get_icon_name()
         self.setIcon(icon_name)
-        print 'icon = ', icon_name
+        #print 'icon = ', icon_name
 
         # change connection pixmap widget
         self.setConnWidget(icon_name)
@@ -315,7 +377,14 @@ technolust</i>")
         stub for running child process with vpn
         """
         if self.vpn_service_started is False:
-            self.conductor.connect()
+            try:
+                self.conductor.connect()
+            except EIPNoCommandError:
+                dialog = ErrorDialog()
+                dialog.warningMessage(
+                    'No suitable openvpn command found. '
+                    '<br/>(Might be a permissions problem)',
+                    'error')
             if self.debugmode:
                 self.startStopButton.setText('&Disconnect')
             self.vpn_service_started = True
