@@ -19,6 +19,7 @@ from leap.eip.config import (EIPInitBadKeyFilePermError)
 # from leap.eip import exceptions as eip_exceptions
 
 from leap.gui import mainwindow_rc
+from leap.EIPConnection import EIPConnection
 
 
 class LeapWindow(QMainWindow):
@@ -46,7 +47,6 @@ class LeapWindow(QMainWindow):
         self.timer = QTimer()
 
         # bind signals
-
         self.trayIcon.activated.connect(self.iconActivated)
         self.newLogLine.connect(self.onLoggerNewLine)
         self.statusChange.connect(self.onStatusChange)
@@ -73,7 +73,8 @@ class LeapWindow(QMainWindow):
         # we pass a tuple of signals that will be
         # triggered when status changes.
         #
-        self.conductor = EIPConductor(
+        config_file = getattr(opts, 'config_file', None)
+        self.conductor = EIPConnection(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
             status_signals=(self.statusChange.emit, ),
@@ -424,7 +425,7 @@ technolust</i>")
 
         # XXX remove all access to manager layer
         # from here.
-        if self.conductor.manager.with_errors:
+        if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
             time.sleep(10)
@@ -448,7 +449,7 @@ technolust</i>")
 
         # status i/o
 
-        status = self.conductor.manager.get_status_io()
+        status = self.conductor.get_status_io()
         if status and self.debugmode:
             #XXX move this to systray menu indicators
             ts, (tun_read, tun_write, tcp_read, tcp_write, auth_read) = status

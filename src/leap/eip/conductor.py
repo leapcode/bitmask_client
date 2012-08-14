@@ -337,4 +337,3 @@ class EIPConductor(OpenVPNConnection):
             self.error_queue.append(except_msg)
             logger.error("Failed Connection: %s" %
                          unicode(except_msg))
-        return conn_result
