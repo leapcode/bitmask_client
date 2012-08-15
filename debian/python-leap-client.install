@@ -1,2 +1,0 @@
-#usr/share/polkit-1/actions/net.openvpn.gui.leap
-polkit/net.openvpn.gui.leap.policy usr/share/polkit-1/actions/
