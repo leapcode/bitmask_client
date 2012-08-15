@@ -6,11 +6,11 @@ Standards-Version: 3.9.3
 Homepage: http://leap.se
 #Vcs-Git: git://git.debian.org/collab-maint/python-leap-client.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/python-leap-client.git;a=summary
+Build-Depends: debhelper (>= 8.0.0), pyqt4-dev-tools, python-nose, python-moc, python-sphinx, pep8
 X-Python-Version: >= 2.6
 
 Package: python-leap-client
 Architecture: all
 Depends: openvpn, python-qt4
-Build-Depends: debhelper (>= 8.0.0), pyqt4-dev-tools, python-nose, python-moc, python-sphinx, pep8
 Description: the encrypted interned toolkit
  <insert long description, indented with spaces>
