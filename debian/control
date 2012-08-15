@@ -10,8 +10,6 @@ X-Python-Version: >= 2.6
 
 Package: python-leap-client
 Architecture: all
-#XXX ???
-#Depends: ${shlibs:Depends}, ${misc:Depends}
 Depends: openvpn, python-qt4
 Build-Depends: debhelper (>= 8.0.0), pyqt4-dev-tools, python-nose, python-moc, python-sphinx, pep8
 Description: the encrypted interned toolkit
