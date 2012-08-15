@@ -1,5 +1,11 @@
 python-leap-client (0.1.0+d2250c4) unstable; urgency=low
 
+  [ Micah Anderson ]
+  * removed unused comments from control file
+  * move build-depends to source package section of control file
+  * switch source/format to 3.0 (native)
+  * fix build-dependency on python-mock
+  [ Kali ]
   * Initial release (Closes: #XXX)
 
  -- kali <kali@leap.se>  Sat, 21 Jul 2012 00:11:05 -0700
