@@ -7,6 +7,7 @@ import socket
 import time
 from functools import partial
 
+logging.basicConfig()
 logger = logging.getLogger(name=__name__)
 
 from leap.base.connection import Connection
@@ -182,14 +183,20 @@ to be triggered for each one of them.
         #deprecate watcher_cb,
         #use _only_ signal_maps instead
 
+        logger.debug('_launch_openvpn called')
         if self.watcher_cb is not None:
             linewrite_callback = self.watcher_cb
         else:
             #XXX get logger instead
             linewrite_callback = lambda line: print('watcher: %s' % line)
 
+        # the partial is not
+        # being applied now because we're not observing the process
+        # stdout like we did in the early stages. but I leave it
+        # here since it will be handy for observing patterns in the
+        # thru-the-manager updates (with regex)
         observers = (linewrite_callback,
-                     partial(lambda: None, self.status))
+                     partial(lambda con_status, line: None, self.status))
         subp, watcher = spawn_and_watch_process(
             self.command,
             self.args,
@@ -235,7 +242,7 @@ to be triggered for each one of them.
         except:
             #XXX don't like this general
             #catch here.
-            pass
+            raise
         if self.connected():
             return True
         self.tn = UDSTelnet(self.host, self.port)
@@ -250,7 +257,7 @@ to be triggered for each one of them.
         #self.tn.read_until('SUCCESS:', 2)
 
         self._seek_to_eof()
-        self.forget_errors()
+        #self.forget_errors()
         return True
 
     def _seek_to_eof(self):
@@ -289,6 +296,8 @@ to be triggered for each one of them.
         Send a command to openvpn and return response as list
         """
         if tries > 3:
+            return []
+        if self.tn is None:
             return []
         if not self.connected():
             try:
