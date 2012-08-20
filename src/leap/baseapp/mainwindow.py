@@ -12,14 +12,14 @@ from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
 from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
 from leap.baseapp.dialogs import ErrorDialog
-from leap.eip.conductor import (EIPConductor,
-                                EIPNoCommandError)
 
-from leap.eip.config import (EIPInitBadKeyFilePermError)
-# from leap.eip import exceptions as eip_exceptions
+#from leap.eip.conductor import (EIPConductor,
+                                #EIPNoCommandError)
+#from leap.eip.config import (EIPInitBadKeyFilePermError)
+from leap.eip import exceptions as eip_exceptions
+from leap.eip.eipconnection import EIPConnection
 
 from leap.gui import mainwindow_rc
-from leap.eip.eipconnection import EIPConnection
 
 
 class LeapWindow(QMainWindow):
@@ -380,7 +380,7 @@ technolust</i>")
         if self.vpn_service_started is False:
             try:
                 self.conductor.connect()
-            except EIPNoCommandError:
+            except eip_exceptions.EIPNoCommandError:
                 dialog = ErrorDialog()
                 dialog.warningMessage(
                     'No suitable openvpn command found. '

@@ -8,8 +8,7 @@ logger = logging.getLogger(name=__name__)
 
 from leap.base.connection import ConnectionError
 from leap.eip import exceptions as eip_exceptions
-from leap.eip.openvpnconnection import (
-    OpenVPNConnection, ConnectionRefusedError)
+from leap.eip.openvpnconnection import OpenVPNConnection
 
 
 class EIPConnection(OpenVPNConnection):
@@ -25,7 +24,7 @@ class EIPConnection(OpenVPNConnection):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
         self.error_queue = []
-        self.desired_con_state = None  # ???
+        #self.desired_con_state = None  # not in use
 
         status_signals = kwargs.pop('status_signals', None)
         self.status = EIPConnectionStatus(callbacks=status_signals)
@@ -70,7 +69,7 @@ class EIPConnection(OpenVPNConnection):
         """
         try:
             state = self.get_connection_state()
-        except ConnectionRefusedError:
+        except eip_exceptions.ConnectionRefusedError:
             # connection refused. might be not ready yet.
             return
         if not state:

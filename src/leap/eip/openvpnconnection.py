@@ -1,20 +1,20 @@
 """
 OpenVPN Connection
 """
-
 from __future__ import (print_function)
 import logging
-import os
 import socket
-import telnetlib
 import time
 from functools import partial
 
 logger = logging.getLogger(name=__name__)
 
-from leap.util.coroutines import spawn_and_watch_process
-from leap.eip.config import get_config
 from leap.base.connection import Connection
+from leap.util.coroutines import spawn_and_watch_process
+
+from leap.eip.udstelnet import UDSTelnet
+from leap.eip import config as eip_config
+from leap.eip import exceptions as eip_exceptions
 
 
 class OpenVPNConnection(Connection):
@@ -43,6 +43,8 @@ to be triggered for each one of them.
         :type watcher_cb: function
         :type signal_map: dict
         """
+        self.debug = debug
+        #print('conductor:%s' % debug)
 
         self.config_file = config_file
         self.watcher_cb = watcher_cb
@@ -55,12 +57,29 @@ to be triggered for each one of them.
         self.port = None
         self.proto = None
 
+        self.missing_pkexec = False
+        self.missing_auth_agent = False
+        self.bad_keyfile_perms = False
+        self.missing_vpn_keyfile = False
+        self.missing_provider = False
+        self.bad_provider = False
+
+        #XXX workaround for signaling
+        #the ui that we don't know how to
+        #manage a connection error
+        self.with_errors = False
+
+        self.command = None
+        self.args = None
+
         self.autostart = True
+        self._get_or_create_config()
+        self._check_vpn_keys()
 
-        self._get_config()
+        #
+        # management init methods
+        #
 
-        #Get this info from the Configuration Class
-        #XXX hardcoded host here. change.
         self.host = host
         if isinstance(port, str) and port.isdigit():
             port = int(port)
@@ -68,48 +87,92 @@ to be triggered for each one of them.
         self.password = password
         self.tn = None
 
-        #XXX workaround for signaling
-        #the ui that we don't know how to
-        #manage a connection error
-        self.with_errors = False
+    def _set_autostart(self):
+        config = self.config
+        if config.has_option('openvpn', 'autostart'):
+            autostart = config.getboolean('openvpn',
+                                          'autostart')
+            self.autostart = autostart
+        else:
+            if config.has_option('DEFAULT', 'autostart'):
+                autostart = config.getboolean('DEFAULT',
+                                              'autostart')
+                self.autostart = autostart
 
-    #def _set_command_mockup(self):
-        #"""
-        #sets command and args for a command mockup
-        #that just mimics the output from the real thing
-        #"""
-        #command, args = get_vpn_stdout_mockup()
-        #self.command, self.args = command, args
-
-    def _get_config(self):
-        """
-        retrieves the config options from defaults or
-        home file, or config file passed in command line.
-        """
-        #XXX merge! was changed in test-eip branch!!!
-        config = get_config(config_file=self.config_file)
-        self.config = config
-
+    def _set_ovpn_command(self):
+        config = self.config
         if config.has_option('openvpn', 'command'):
             commandline = config.get('openvpn', 'command')
-            if commandline == "mockup":
-                self._set_command_mockup()
-                return
+
             command_split = commandline.split(' ')
             command = command_split[0]
             if len(command_split) > 1:
                 args = command_split[1:]
             else:
                 args = []
-            self.command = command
-            #print("debug: command = %s" % command)
-            self.args = args
-        #else:
-            #self._set_command_mockup()
 
-        if config.has_option('openvpn', 'autostart'):
-            autostart = config.get('openvpn', 'autostart')
-            self.autostart = autostart
+            self.command = command
+            self.args = args
+        else:
+        # no command in config, we build it up.
+        # XXX check also for command-line --command flag
+            try:
+                command, args = eip_config.build_ovpn_command(
+                    config,
+                    debug=self.debug)
+            except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
+                command = args = None
+                self.missing_auth_agent = True
+            except eip_exceptions.EIPNoPkexecAvailable:
+                command = args = None
+                self.missing_pkexec = True
+
+            # XXX if not command, signal error.
+            self.command = command
+            self.args = args
+
+    def _check_ovpn_config(self):
+        """
+        checks if there is a default openvpn config.
+        if not, it writes one with info from the provider
+        definition file
+        """
+        # TODO
+        # - get --with-openvpn-config from opts
+        try:
+            eip_config.check_or_create_default_vpnconf(self.config)
+        except eip_exceptions.EIPInitNoProviderError:
+            logger.error('missing default provider definition')
+            self.missing_provider = True
+        except eip_exceptions.EIPInitBadProviderError:
+            logger.error('bad provider definition')
+            self.bad_provider = True
+
+    def _get_or_create_config(self):
+        """
+        retrieves the config options from defaults or
+        home file, or config file passed in command line.
+        populates command and args to be passed to subprocess.
+        """
+        config = eip_config.get_config(
+            config_file=self.config_file)
+        self.config = config
+
+        self._set_autostart()
+        self._set_ovpn_command()
+        self._check_ovpn_config()
+
+    def _check_vpn_keys(self):
+        """
+        checks for correct permissions on vpn keys
+        """
+        try:
+            eip_config.check_vpn_keys(self.config)
+        except eip_exceptions.EIPInitNoKeyFileError:
+            self.missing_vpn_keyfile = True
+        except eip_exceptions.EIPInitBadKeyFilePermError:
+            logger.error('error while checking vpn keys')
+            self.bad_keyfile_perms = True
 
     def _launch_openvpn(self):
         """
@@ -126,7 +189,7 @@ to be triggered for each one of them.
             linewrite_callback = lambda line: print('watcher: %s' % line)
 
         observers = (linewrite_callback,
-                     partial(self.status_watcher, self.status))
+                     partial(lambda: None, self.status))
         subp, watcher = spawn_and_watch_process(
             self.command,
             self.args,
@@ -134,13 +197,12 @@ to be triggered for each one of them.
         self.subp = subp
         self.watcher = watcher
 
-        conn_result = self.status.CONNECTED
-        return conn_result
-
     def _try_connection(self):
         """
         attempts to connect
         """
+        if self.command is None:
+            raise eip_exceptions.EIPNoCommandError
         if self.subp is not None:
             print('cowardly refusing to launch subprocess again')
             return
@@ -153,17 +215,14 @@ to be triggered for each one of them.
         if self.subp:
             self.subp.terminate()
 
-
-    #Here are the actual code to manage OpenVPN Connection
-    #TODO: Look into abstraction them and moving them up into base class 
-    # this code based on code from cube-routed project
-
-    """
-    Run commands over OpenVPN management interface
-    and parses the output.
-    """
-    # XXX might need a lock to avoid
-    # race conditions here...
+    #
+    # management methods
+    #
+    # XXX REVIEW-ME
+    # REFACTOR INFO: (former "manager".
+    # Can we move to another
+    # base class to test independently?)
+    #
 
     def forget_errors(self):
         print('forgetting errors')
@@ -182,7 +241,7 @@ to be triggered for each one of them.
         self.tn = UDSTelnet(self.host, self.port)
 
         # XXX make password optional
-        # specially for win plat. we should generate
+        # specially for win. we should generate
         # the pass on the fly when invoking manager
         # from conductor
 
@@ -207,7 +266,6 @@ to be triggered for each one of them.
         Returns True if connected
         rtype: bool
         """
-        #return bool(getattr(self, 'tn', None))
         try:
             assert self.tn
             return True
@@ -235,7 +293,7 @@ to be triggered for each one of them.
         if not self.connected():
             try:
                 self.connect()
-            except MissingSocketError:
+            except eip_exceptions.MissingSocketError:
                 #XXX capture more helpful error
                 #messages
                 #pass
@@ -352,64 +410,3 @@ to be triggered for each one of them.
             ts = time.gmtime(float(ts))
             # XXX this could be a named tuple. prettier.
             return ts, status_step, ok, ip, remote
-
-    def status_watcher(self, cs, line):
-        """
-        a wrapper that calls to ConnectionStatus object
-        :param cs: a EIPConnectionStatus instance
-        :type cs: EIPConnectionStatus object
-        :param line: a single line of the watched output
-        :type line: str
-        """
-        #print('status watcher watching')
-
-        # from the mullvad code, should watch for
-        # things like:
-        # "Initialization Sequence Completed"
-        # "With Errors"
-        # "Tap-Win32"
-
-        if "Completed" in line:
-            cs.change_to(cs.CONNECTED)
-            return
-
-        if "Initial packet from" in line:
-            cs.change_to(cs.CONNECTING)
-            return
-
-
-
-class MissingSocketError(Exception):
-    pass
-
-
-class ConnectionRefusedError(Exception):
-    pass
-
-class UDSTelnet(telnetlib.Telnet):
-
-    def open(self, host, port=23, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
-        """Connect to a host. If port is 'unix', it
-        will open a connection over unix docmain sockets.
-
-        The optional second argument is the port number, which
-        defaults to the standard telnet port (23).
-
-        Don't try to reopen an already connected instance.
-        """
-        self.eof = 0
-        self.host = host
-        self.port = port
-        self.timeout = timeout
-
-        if self.port == "unix":
-            # unix sockets spoken
-            if not os.path.exists(self.host):
-                raise MissingSocketError
-            self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            try:
-                self.sock.connect(self.host)
-            except socket.error:
-                raise ConnectionRefusedError
-        else:
-            self.sock = socket.create_connection((host, port), timeout)

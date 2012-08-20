@@ -29,3 +29,37 @@ class UnrecoverableError(EIPClientError):
     # to translate whatever kind of error
     # to user-friendly msg in dialog.
     pass
+
+
+class MissingSocketError(Exception):
+    pass
+
+
+class ConnectionRefusedError(Exception):
+    pass
+
+
+class EIPNoPkexecAvailable(Exception):
+    pass
+
+
+class EIPNoPolkitAuthAgentAvailable(Exception):
+    pass
+
+
+class EIPInitNoProviderError(Exception):
+    pass
+
+
+class EIPInitBadProviderError(Exception):
+    pass
+
+
+class EIPInitNoKeyFileError(Exception):
+    pass
+
+
+class EIPInitBadKeyFilePermError(Exception):
+    pass
+
+
