@@ -6,9 +6,10 @@ import logging
 
 logger = logging.getLogger(name=__name__)
 
+from leap.base.connection import ConnectionError
+from leap.eip import exceptions as eip_exceptions
 from leap.eip.openvpnconnection import (
     OpenVPNConnection, ConnectionRefusedError)
-from leap.base.connection import ConnectionError
 
 
 class EIPConnection(OpenVPNConnection):
@@ -112,7 +113,7 @@ class EIPConnection(OpenVPNConnection):
         #conn_result = ConState.DISCONNECTED
         try:
             conn_result = self._try_connection()
-        except UnrecoverableError as except_msg:
+        except eip_exceptions.UnrecoverableError as except_msg:
             logger.error("FATAL: %s" % unicode(except_msg))
             conn_result = self.status.UNRECOVERABLE
         except Exception as except_msg:
