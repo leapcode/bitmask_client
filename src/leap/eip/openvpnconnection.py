@@ -12,9 +12,10 @@ from functools import partial
 
 logger = logging.getLogger(name=__name__)
 
-from leap.utils.coroutines import spawn_and_watch_process
-from leap.baseapp.config import get_config
-from leap.Connection import Connection
+from leap.util.coroutines import spawn_and_watch_process
+from leap.eip.config import get_config
+from leap.base.connection import Connection
+
 
 class OpenVPNConnection(Connection):
     """
@@ -23,7 +24,13 @@ class OpenVPNConnection(Connection):
     """
     # Connection Methods
 
-    def __init__(self, config_file=None, watcher_cb=None,host="/tmp/.eip.sock", port="unix", password=None):
+    def __init__(self, config_file=None,
+                 watcher_cb=None,
+                 debug=False,
+                 host="/tmp/.eip.sock",
+                 port="unix",
+                 password=None,
+                 *args, **kwargs):
         #XXX FIXME
         #change watcher_cb to line_observer
         """
@@ -66,20 +73,20 @@ to be triggered for each one of them.
         #manage a connection error
         self.with_errors = False
 
-
-    def _set_command_mockup(self):
-        """
-        sets command and args for a command mockup
-        that just mimics the output from the real thing
-        """
-        command, args = get_vpn_stdout_mockup()
-        self.command, self.args = command, args
+    #def _set_command_mockup(self):
+        #"""
+        #sets command and args for a command mockup
+        #that just mimics the output from the real thing
+        #"""
+        #command, args = get_vpn_stdout_mockup()
+        #self.command, self.args = command, args
 
     def _get_config(self):
         """
         retrieves the config options from defaults or
         home file, or config file passed in command line.
         """
+        #XXX merge! was changed in test-eip branch!!!
         config = get_config(config_file=self.config_file)
         self.config = config
 
@@ -97,8 +104,8 @@ to be triggered for each one of them.
             self.command = command
             #print("debug: command = %s" % command)
             self.args = args
-        else:
-            self._set_command_mockup()
+        #else:
+            #self._set_command_mockup()
 
         if config.has_option('openvpn', 'autostart'):
             autostart = config.get('openvpn', 'autostart')

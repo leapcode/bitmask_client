@@ -1,9 +1,15 @@
 """
 EIP Connection Class
 """
+from __future__ import (absolute_import,)
+import logging
 
-from leap.OpenVPNConnection import OpenVPNConnection, MissingSocketError, ConnectionRefusedError
-from leap.Connection import ConnectionError
+logger = logging.getLogger(name=__name__)
+
+from leap.eip.openvpnconnection import (
+    OpenVPNConnection, ConnectionRefusedError)
+from leap.base.connection import ConnectionError
+
 
 class EIPConnection(OpenVPNConnection):
     """
@@ -39,7 +45,6 @@ class EIPConnection(OpenVPNConnection):
         """
         self._disconnect()
         self.status.change_to(self.status.DISCONNECTED)
-        pass
 
     def shutdown(self):
         """
@@ -262,7 +267,7 @@ class EIPConnectionStatus(object):
                         cb(self)
 
 
-
+# XXX move to exceptions
 class EIPClientError(ConnectionError):
     """
     base EIPClient Exception

@@ -2,6 +2,9 @@
 Base Connection Classs
 """
 from __future__ import (division, unicode_literals, print_function)
+
+#XXX move these imports to util.coroutines!!!
+
 #import threading
 #from functools import partial
 import logging
@@ -11,8 +14,8 @@ import logging
 #from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
 from leap.eip.vpnmanager import ConnectionRefusedError
 
-from leap.configuration import Configuration
-from leap.authentication import Authentication
+from leap.base.configuration import Configuration
+from leap.base.authentication import Authentication
 
 logger = logging.getLogger(name=__name__)
 

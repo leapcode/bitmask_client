@@ -19,7 +19,7 @@ from leap.eip.config import (EIPInitBadKeyFilePermError)
 # from leap.eip import exceptions as eip_exceptions
 
 from leap.gui import mainwindow_rc
-from leap.EIPConnection import EIPConnection
+from leap.eip.eipconnection import EIPConnection
 
 
 class LeapWindow(QMainWindow):
