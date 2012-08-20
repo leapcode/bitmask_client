@@ -3,23 +3,26 @@ Base Connection Classs
 """
 from __future__ import (division, unicode_literals, print_function)
 #import threading
-from functools import partial
+#from functools import partial
 import logging
 
-from leap.utils.coroutines import spawn_and_watch_process
-from leap.baseapp.config import get_config, get_vpn_stdout_mockup
-from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
-from leap.eip.vpnmanager import OpenVPNManager, ConnectionRefusedError
+#from leap.utils.coroutines import spawn_and_watch_process
+#from leap.baseapp.config import get_config, get_vpn_stdout_mockup
+#from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
+from leap.eip.vpnmanager import ConnectionRefusedError
 
-from leap.Configuration  import Configuration
-from leap.Authentication import Authentication
+from leap.configuration import Configuration
+from leap.authentication import Authentication
 
 logger = logging.getLogger(name=__name__)
+
 
 class Connection(Configuration, Authentication):
     def __init__(self, *args, **kwargs):
         self.connection_state = None
         self.desired_connection_state = None
+        #XXX FIXME this is only initializing one
+        #of the bases..
         super(Connection, self).__init__(*args, **kwargs)
 
     def connect(self):
@@ -108,7 +111,6 @@ class Connection(Configuration, Authentication):
             logger.error("Failed Connection: %s" %
                          unicode(except_msg))
         return conn_result
-	
 
 
 class ConnectionError(Exception):
