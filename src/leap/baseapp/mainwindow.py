@@ -13,9 +13,6 @@ from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
 from leap.baseapp.dialogs import ErrorDialog
 
-#from leap.eip.conductor import (EIPConductor,
-                                #EIPNoCommandError)
-#from leap.eip.config import (EIPInitBadKeyFilePermError)
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
 
