@@ -2,6 +2,7 @@ import ConfigParser
 import grp
 import logging
 import os
+import json
 import platform
 import socket
 
@@ -118,8 +119,8 @@ def check_or_create_default_vpnconf(config):
                                'remote_ip')
         validate_ip(remote_ip)
 
-    except ConfigParser.NoOptionError:
-        raise EIPInitNoProviderError
+    except ConfigParser.NoSectionError:
+        raise eip_exceptions.EIPInitNoProviderError
 
     except socket.error:
         # this does not look like an ip, dave
@@ -394,7 +395,7 @@ def check_vpn_keys(config):
     if not os.path.isfile(keyfile):
         logger.error('key file %s not found. aborting.',
                      keyfile)
-        raise EIPInitNoKeyFileError
+        raise eip_exceptions.EIPInitNoKeyFileError
 
     # check proper permission on keys
     # bad perms? try to fix them
@@ -402,3 +403,27 @@ def check_vpn_keys(config):
         check_and_fix_urw_only(keyfile)
     except OSError:
         raise EIPInitBadKeyFilePermError
+        
+        
+def get_config_json(config_file=None):
+    """
+    will replace get_config function be developing them
+    in parralel for branch purposes.
+    @param: configuration file
+    @type: file 
+    @rparam: configuration turples
+    @rtype: dictionary
+    """
+    if not config_file:
+        fpath = get_config_file('eip.json')
+        if not os.path.isfile(fpath):
+            dpath, cfile = os.path.split(fpath)
+            if not os.path.isdir(dpath):
+                mkdir_p(dpath)
+            with open(fpath, 'wb') as configfile:
+                configfile.write()
+        config_file = open(fpath)
+
+    config = json.load(config_file)
+
+    return config
