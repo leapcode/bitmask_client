@@ -3,16 +3,7 @@ Base Connection Classs
 """
 from __future__ import (division, unicode_literals, print_function)
 
-#XXX move these imports to util.coroutines!!!
-
-#import threading
-#from functools import partial
 import logging
-
-#from leap.utils.coroutines import spawn_and_watch_process
-#from leap.baseapp.config import get_config, get_vpn_stdout_mockup
-#from leap.eip.vpnwatcher import EIPConnectionStatus, status_watcher
-from leap.eip.vpnmanager import ConnectionRefusedError
 
 from leap.base.configuration import Configuration
 from leap.base.authentication import Authentication
@@ -58,21 +49,21 @@ class Connection(Configuration, Authentication):
         """
         return self.desired_connection_state
 
-    def poll_connection_state(self):
-        """
-        """
-        try:
-            state = self.get_connection_state()
-        except ConnectionRefusedError:
+    #def poll_connection_state(self):
+        #"""
+        #"""
+        #try:
+            #state = self.get_connection_state()
+        #except ConnectionRefusedError:
             # connection refused. might be not ready yet.
-            return
-        if not state:
-            return
-        (ts, status_step,
-         ok, ip, remote) = state
-        self.status.set_vpn_state(status_step)
-        status_step = self.status.get_readable_status()
-        return (ts, status_step, ok, ip, remote)
+            #return
+        #if not state:
+            #return
+        #(ts, status_step,
+         #ok, ip, remote) = state
+        #self.status.set_vpn_state(status_step)
+        #status_step = self.status.get_readable_status()
+        #return (ts, status_step, ok, ip, remote)
 
     def get_icon_name(self):
         """
