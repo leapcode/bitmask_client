@@ -26,13 +26,11 @@ import optparse
 import os
 import subprocess
 import sys
-import platform
-
 
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VENV = os.path.join(ROOT, '.venv')
-PIP_REQUIRES = os.path.join(ROOT, 'tools', 'pip-requires')
-TEST_REQUIRES = os.path.join(ROOT, 'tools', 'test-requires')
+PIP_REQUIRES = os.path.join(ROOT, 'setup', 'requirements.pip')
+TEST_REQUIRES = os.path.join(ROOT, 'setup', 'test-requirements.pip')
 PY_VERSION = "python%s.%s" % (sys.version_info[0], sys.version_info[1])
 
 
@@ -55,7 +53,7 @@ def run_command_with_code(cmd, redirect_output=True, check_exit_code=True):
         stdout = subprocess.PIPE
     else:
         stdout = None
-    
+
     print 'executing command: %s', cmd
     proc = subprocess.Popen(cmd, cwd=ROOT, stdout=stdout)
     output = proc.communicate()[0]
