@@ -52,8 +52,7 @@ class FileUtilTest(unittest.TestCase):
 
     def test_is_user_executable(self):
         """
-        test that a 700 file
-        is an 700 file. kindda oximoronic, but...
+        touch_exec_file creates in mode 700?
         """
         # XXX could check access X_OK
 
@@ -63,10 +62,10 @@ class FileUtilTest(unittest.TestCase):
 
     def test_which(self):
         """
+        which implementation ok?
         not a very reliable test,
         but I cannot think of anything smarter now
         I guess it's highly improbable that copy
-        command is somewhere else..?
         """
         # XXX yep, we can change the syspath
         # for the test... !
@@ -78,7 +77,7 @@ class FileUtilTest(unittest.TestCase):
 
     def test_mkdir_p(self):
         """
-        test our mkdir -p implementation
+        our own mkdir -p implementation ok?
         """
         testdir = self.get_file_path(
             os.path.join('test', 'foo', 'bar'))
@@ -88,8 +87,7 @@ class FileUtilTest(unittest.TestCase):
 
     def test_check_and_fix_urw_only(self):
         """
-        test function that fixes perms on
-        files that should be rw only for owner
+        ensure check_and_fix_urx_only ok?
         """
         fp = self.touch_exec_file()
         mode = self.get_mode(fp)
