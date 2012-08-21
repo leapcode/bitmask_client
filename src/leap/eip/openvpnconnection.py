@@ -9,6 +9,7 @@ from functools import partial
 
 logging.basicConfig()
 logger = logging.getLogger(name=__name__)
+logger.setLevel(logging.DEBUG)
 
 from leap.base.connection import Connection
 from leap.util.coroutines import spawn_and_watch_process
@@ -86,7 +87,7 @@ to be triggered for each one of them.
             port = int(port)
         self.port = port
         self.password = password
-        self.tn = None
+        #self.tn = None
 
     def _set_autostart(self):
         config = self.config
@@ -235,16 +236,11 @@ to be triggered for each one of them.
         print('forgetting errors')
         self.with_errors = False
 
-    def connect(self):
+    def connect_to_management(self):
         """Connect to openvpn management interface"""
-        try:
+        #logger.debug('connecting socket')
+        if hasattr(self, 'tn'):
             self.close()
-        except:
-            #XXX don't like this general
-            #catch here.
-            raise
-        if self.connected():
-            return True
         self.tn = UDSTelnet(self.host, self.port)
 
         # XXX make password optional
@@ -273,47 +269,39 @@ to be triggered for each one of them.
         Returns True if connected
         rtype: bool
         """
-        try:
-            assert self.tn
-            return True
-        except:
-            #XXX get rid of
-            #this pokemon exception!!!
-            return False
+        return hasattr(self, 'tn')
 
     def close(self, announce=True):
         """
         Close connection to openvpn management interface
         """
+        logger.debug('closing socket')
         if announce:
             self.tn.write("quit\n")
             self.tn.read_all()
         self.tn.get_socket().close()
         del self.tn
 
-    def _send_command(self, cmd, tries=0):
+    def _send_command(self, cmd):
         """
         Send a command to openvpn and return response as list
         """
-        if tries > 3:
-            return []
-        if self.tn is None:
-            return []
+        #logger.debug('connected? %s' % self.connected())
         if not self.connected():
             try:
-                self.connect()
+                #logger.debug('try to connect')
+                self.connect_to_management()
             except eip_exceptions.MissingSocketError:
                 #XXX capture more helpful error
-                #messages
-                #pass
                 return self.make_error()
+            except:
+                raise
         try:
-            self.tn.write(cmd + "\n")
+            if hasattr(self, 'tn'):
+                self.tn.write(cmd + "\n")
         except socket.error:
             logger.error('socket error')
-            print('socket error!')
             self.close(announce=False)
-            self._send_command(cmd, tries=tries + 1)
             return []
         buf = self.tn.read_until(b"END", 2)
         self._seek_to_eof()
@@ -371,14 +359,14 @@ to be triggered for each one of them.
             else:
                 return state[-1]
 
-    def status(self):
+    def vpn_status(self):
         """
         OpenVPN command: status
         """
         status = self._send_command("status")
         return status
 
-    def status2(self):
+    def vpn_status2(self):
         """
         OpenVPN command: last 2 statuses
         """
@@ -389,7 +377,7 @@ to be triggered for each one of them.
     #
 
     def get_status_io(self):
-        status = self.status()
+        status = self.vpn_status()
         if isinstance(status, str):
             lines = status.split('\n')
         if isinstance(status, list):

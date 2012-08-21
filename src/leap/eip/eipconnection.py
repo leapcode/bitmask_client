@@ -4,7 +4,9 @@ EIP Connection Class
 from __future__ import (absolute_import,)
 import logging
 
+logging.basicConfig()
 logger = logging.getLogger(name=__name__)
+logger.setLevel(logging.DEBUG)
 
 from leap.base.connection import ConnectionError
 from leap.eip import exceptions as eip_exceptions
@@ -67,12 +69,17 @@ class EIPConnection(OpenVPNConnection):
     def poll_connection_state(self):
         """
         """
+        # XXX this separation does not
+        # make sense anymore after having
+        # merged Connection and Manager classes.
         try:
             state = self.get_connection_state()
         except eip_exceptions.ConnectionRefusedError:
             # connection refused. might be not ready yet.
+            logger.warning('connection refused')
             return
         if not state:
+            logger.debug('no state')
             return
         (ts, status_step,
          ok, ip, remote) = state
@@ -172,9 +179,9 @@ class EIPConnectionStatus(object):
         :param callbacks: a tuple of (callable) observers
         :type callbacks: tuple
         """
-        # (callbacks to connect to signals in Qt-land)
         self.current = self.DISCONNECTED
         self.previous = None
+        # (callbacks to connect to signals in Qt-land)
         self.callbacks = callbacks
 
     def get_readable_status(self):
