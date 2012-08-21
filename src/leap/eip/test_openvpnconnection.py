@@ -105,7 +105,7 @@ class OpenVPNConnectionTest(unittest.TestCase):
             self.manager.connect_to_management()
 
     def test_uds_telnet_called_on_connect(self):
-        self.manager.connect()
+        self.manager.connect_to_management()
         mock_UDSTelnet.assert_called_with(
             self.manager.host,
             port=self.manager.port)
