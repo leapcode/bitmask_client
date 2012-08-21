@@ -61,5 +61,3 @@ class EIPInitNoKeyFileError(Exception):
 
 class EIPInitBadKeyFilePermError(Exception):
     pass
-
-

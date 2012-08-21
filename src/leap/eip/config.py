@@ -403,14 +403,14 @@ def check_vpn_keys(config):
         check_and_fix_urw_only(keyfile)
     except OSError:
         raise EIPInitBadKeyFilePermError
-        
-        
+
+
 def get_config_json(config_file=None):
     """
     will replace get_config function be developing them
     in parralel for branch purposes.
     @param: configuration file
-    @type: file 
+    @type: file
     @rparam: configuration turples
     @rtype: dictionary
     """
@@ -421,7 +421,7 @@ def get_config_json(config_file=None):
             if not os.path.isdir(dpath):
                 mkdir_p(dpath)
             with open(fpath, 'wb') as configfile:
-                configfile.write()
+                configfile.flush()
         config_file = open(fpath)
 
     config = json.load(config_file)
