@@ -85,9 +85,12 @@ to be triggered for each one of them.
         self.host = host
         if isinstance(port, str) and port.isdigit():
             port = int(port)
+        elif port == "unix":
+            port = "unix"
+        else:
+            port = None
         self.port = port
         self.password = password
-        #self.tn = None
 
     def _set_autostart(self):
         config = self.config
