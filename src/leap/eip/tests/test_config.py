@@ -204,6 +204,15 @@ class EIPConfigTest(unittest.TestCase):
         self.assertEqual(command, 'openvpn')
         self.assertEqual(args, self.get_expected_openvpn_args())
 
+    # json config
+
+    def test_get_config_json(self):
+        config_js = config.get_config_json()
+        self.assertTrue(isinstance(config_js, dict))
+        self.assertTrue('transport' in config_js)
+        self.assertTrue('provider' in config_js)
+        self.assertEqual(config_js['provider'], "testprovider.org")
+
 
 if __name__ == "__main__":
     unittest.main()
