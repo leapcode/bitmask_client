@@ -95,3 +95,6 @@ class FileUtilTest(unittest.TestCase):
         fileutil.check_and_fix_urw_only(fp)
         mode = self.get_mode(fp)
         self.assertEqual(mode, int('600', 8))
+
+if __name__ == "__main__":
+    unittest.main()
