@@ -33,8 +33,24 @@ setup(
 
     # XXX FIXME DEPS
     # deps: pyqt
-    # test_deps: nose
+
     # build_deps: pyqt-utils
+    # XXX fixme move resource reloading
+    # to this setup script.
+
+    # XXX should implement a parse_requirements
+    # and get them from the pip reqs. workaround needed
+    # for argparse and <=2.6
+    install_requires=[
+        # -*- Extra requirements: -*-
+    ],
+    test_suite='nose.collector',
+
+    # XXX change to parse_test_requirements and
+    # get them from pip reqs.
+    test_requires=[
+        "nose",
+        "mock"],
 
     keywords='leap, client, qt, encryption',
     author='leap project',
@@ -46,9 +62,8 @@ setup(
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
     include_package_data=True,
     zip_safe=False,
-    install_requires=[
-        # -*- Extra requirements: -*-
-    ],
+
+    # XXX platform switch
     data_files=[
         ("share/man/man1",
             ["docs/leap.1"]),

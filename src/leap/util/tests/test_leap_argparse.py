@@ -25,3 +25,6 @@ class LeapArgParseTest(unittest.TestCase):
             opts,
             Namespace(config_file=None,
                       debug=True))
+
+if __name__ == "__main__":
+    unittest.main()
