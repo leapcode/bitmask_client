@@ -10,6 +10,7 @@ from leap.util.fileutil import (which, mkdir_p,
                                 check_and_fix_urw_only)
 from leap.baseapp.permcheck import (is_pkexec_in_system,
                                     is_auth_agent_running)
+from leap.eip import exceptions as eip_exceptions
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
@@ -122,7 +123,7 @@ def check_or_create_default_vpnconf(config):
 
     except socket.error:
         # this does not look like an ip, dave
-        raise EIPInitBadProviderError
+        raise eip_exceptions.EIPInitBadProviderError
 
     if config.has_option('provider', 'remote_port'):
         remote_port = config.get('provider',
@@ -265,7 +266,7 @@ def build_ovpn_command(config, debug=False, do_pkexec_check=True):
 
         if not is_pkexec_in_system():
             logger.error('no pkexec in system')
-            raise EIPNoPkexecAvailable
+            raise eip_exceptions.EIPNoPkexecAvailable
 
         if not is_auth_agent_running():
             logger.warning(
@@ -273,7 +274,7 @@ def build_ovpn_command(config, debug=False, do_pkexec_check=True):
                 "pkexec will use its own text "
                 "based authentication agent. "
                 "that's probably a bad idea")
-            raise EIPNoPolkitAuthAgentAvailable
+            raise eip_exceptions.EIPNoPolkitAuthAgentAvailable
 
         command.append('pkexec')
 
@@ -410,7 +411,7 @@ def check_vpn_keys(config):
     try:
         check_and_fix_urw_only(keyfile)
     except OSError:
-        raise EIPInitBadKeyFilePermError
+        raise eip_exceptions.EIPInitBadKeyFilePermError
 
 
 def get_config_json(config_file=None):
