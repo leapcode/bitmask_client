@@ -195,7 +195,6 @@ class EIPConfigTest(unittest.TestCase):
     # many combinations. we should inject some
     # params in the function call, to disable
     # some checks.
-    # XXX breaking!
 
     def test_build_ovpn_command_empty_config(self):
         _config = self.get_empty_config()
