@@ -10,35 +10,22 @@ try:
 except ImportError:
     import unittest
 
+from leap.testing.basetest import BaseLeapTest
 from leap.eip import config
 
 _system = platform.system()
 
 
-class NotImplementedError(Exception):
-    pass
-
-# XXX use mock_open here?
-
-
-class EIPConfigTest(unittest.TestCase):
+class EIPConfigTest(BaseLeapTest):
 
     __name__ = "eip_config_tests"
 
     def setUp(self):
-        self.old_path = os.environ['PATH']
-
-        self.tdir = tempfile.mkdtemp()
-
-        bin_tdir = os.path.join(
-            self.tdir,
-            'bin')
-        os.mkdir(bin_tdir)
-        os.environ['PATH'] = bin_tdir
+        pass
 
     def tearDown(self):
-        os.environ['PATH'] = self.old_path
-        shutil.rmtree(self.tdir)
+        pass
+
     #
     # helpers
     #
@@ -58,7 +45,7 @@ class EIPConfigTest(unittest.TestCase):
 
     def touch_exec(self):
         tfile = os.path.join(
-            self.tdir,
+            self.tempfile,
             'bin',
             'openvpn')
         open(tfile, 'bw').close()
