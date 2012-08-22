@@ -13,8 +13,10 @@ from leap.testing.basetest import BaseLeapTest
 _tempdir = None
 
 
-class TestCaseRunner(object):
-    def run_testcase(self, testcase):
+class _TestCaseRunner(object):
+    def run_testcase(self, testcase=None):
+        if not testcase:
+            return None
         loader = unittest.TestLoader()
         suite = loader.loadTestsFromTestCase(testcase)
 
@@ -25,7 +27,7 @@ class TestCaseRunner(object):
         return results
 
 
-class TestAbstractBaseLeapTest(unittest.TestCase, TestCaseRunner):
+class TestAbstractBaseLeapTest(unittest.TestCase, _TestCaseRunner):
 
     def test_abstract_base_class(self):
         class _BaseTest(BaseLeapTest):
@@ -60,7 +62,7 @@ class TestInitBaseLeapTest(BaseLeapTest):
         self.assertTrue(len(self.old_path) > 1)
 
 
-class TestCleanedBaseLeapTest(unittest.TestCase, TestCaseRunner):
+class TestCleanedBaseLeapTest(unittest.TestCase, _TestCaseRunner):
 
     def test_tempdir_is_cleaned_after_tests(self):
         class _BaseTest(BaseLeapTest):
