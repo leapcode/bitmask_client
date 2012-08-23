@@ -5,13 +5,13 @@ from __future__ import (division, unicode_literals, print_function)
 
 import logging
 
-from leap.base.configuration import Configuration
+from leap.base.config import JSONLeapConfig
 from leap.base.authentication import Authentication
 
 logger = logging.getLogger(name=__name__)
 
 
-class Connection(Configuration, Authentication):
+class Connection(JSONLeapConfig, Authentication):
     def __init__(self, *args, **kwargs):
         self.connection_state = None
         self.desired_connection_state = None
