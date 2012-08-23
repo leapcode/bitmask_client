@@ -1,9 +1,7 @@
 import ConfigParser
 import os
 import platform
-import shutil
 import socket
-import tempfile
 
 try:
     import unittest2 as unittest
@@ -11,9 +9,16 @@ except ImportError:
     import unittest
 
 from leap.testing.basetest import BaseLeapTest
-from leap.eip import config
+from leap.base import config as base_config
+from leap.eip import config as eip_config
 
 _system = platform.system()
+
+#
+# XXX we moved a lot of stuff from eip_config
+# to base_config.
+# We should move most of these tests too.
+#
 
 
 class EIPConfigTest(BaseLeapTest):
@@ -31,10 +36,10 @@ class EIPConfigTest(BaseLeapTest):
     #
 
     def get_username(self):
-        return config.get_username()
+        return base_config.get_username()
 
     def get_groupname(self):
-        return config.get_groupname()
+        return base_config.get_groupname()
 
     def _missing_test_for_plat(self, do_raise=False):
         if do_raise:
@@ -95,7 +100,7 @@ class EIPConfigTest(BaseLeapTest):
         config file path where expected? (linux)
         """
         self.assertEqual(
-            config.get_config_file(
+            base_config.get_config_file(
                 'test', folder="foo/bar"),
             '/home/%s/.config/leap/foo/bar/test' %
             self.get_username())
@@ -128,7 +133,7 @@ class EIPConfigTest(BaseLeapTest):
         nice config dir? (linux)
         """
         self.assertEqual(
-            config.get_config_dir(),
+            base_config.get_config_dir(),
             '/home/%s/.config/leap' %
             self.get_username())
 
@@ -153,8 +158,9 @@ class EIPConfigTest(BaseLeapTest):
         """
         is default provider path ok?
         """
+        #XXX bad home assumption
         self.assertEqual(
-            config.get_default_provider_path(),
+            base_config.get_default_provider_path(),
             '/home/%s/.config/leap/providers/default/' %
             self.get_username())
 
@@ -164,11 +170,11 @@ class EIPConfigTest(BaseLeapTest):
         """
         check our ip validation
         """
-        config.validate_ip('3.3.3.3')
+        base_config.validate_ip('3.3.3.3')
         with self.assertRaises(socket.error):
-            config.validate_ip('255.255.255.256')
+            base_config.validate_ip('255.255.255.256')
         with self.assertRaises(socket.error):
-            config.validate_ip('foobar')
+            base_config.validate_ip('foobar')
 
     @unittest.skip
     def test_validate_domain(self):
@@ -185,7 +191,7 @@ class EIPConfigTest(BaseLeapTest):
 
     def test_build_ovpn_command_empty_config(self):
         _config = self.get_empty_config()
-        command, args = config.build_ovpn_command(
+        command, args = eip_config.build_ovpn_command(
             _config,
             do_pkexec_check=False)
         self.assertEqual(command, 'openvpn')
@@ -194,7 +200,7 @@ class EIPConfigTest(BaseLeapTest):
     # json config
 
     def test_get_config_json(self):
-        config_js = config.get_config_json()
+        config_js = base_config.get_config_json()
         self.assertTrue(isinstance(config_js, dict))
         self.assertTrue('transport' in config_js)
         self.assertTrue('provider' in config_js)
