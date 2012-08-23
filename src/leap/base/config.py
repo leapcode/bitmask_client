@@ -12,7 +12,6 @@ import os
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
 
-from leap.eip import config as eip_config
 from leap.util.fileutil import (mkdir_p)
 
 
@@ -86,7 +85,7 @@ class JSONLeapConfig(BaseLeapConfig):
         # is this going to work in winland if slug is "foo/bar" ?
         folder, filename = os.path.split(self.slug)
         # XXX fix import
-        config_file = eip_config.get_config_file(filename, folder)
+        config_file = get_config_file(filename, folder)
         return config_file
 
 #
