@@ -3,9 +3,12 @@ Configuration Base Class
 """
 
 import grp
+import json
 import logging
 import requests
 import os
+
+from leap.util.fileutil import mkdir_p
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
@@ -13,10 +16,46 @@ logger.setLevel('DEBUG')
 
 class Configuration(object):
     """
-    I have no idea how configuration
-    (txt vs. sqlite) will be done, but let's stub it now.
+    All configurations (providers et al) will be managed in this class.
     """
-    pass
+    def __init__(self, provider_url=None):
+        try:
+            self.providers = {}
+            self.error = False
+            provider_file = self.check_and_get_definition_file(provider_url)
+            self.providers['default'] = get_config_json(provider_file)
+        except (requests.HTTPError, requests.RequestException) as e:
+            self.error = e.message
+        except requests.ConnectionError as e:
+            if e.message == "[Errno 113] No route to host":
+                if not is_internet_up:
+                    self.error = "No valid internet connection found"
+                else:
+                    self.error = "Provider server appears currently down."
+
+    def check_and_get_definition_file(self, provider_url):
+        """
+        checks if provider definition.json file is present.
+        if not downloads one from the web.
+        """
+        default_provider_path = get_default_provider_path()
+
+        if not os.path.isdir(default_provider_path):
+            mkdir_p(default_provider_path)
+
+        definition_file = get_config_file(
+            'definition.json',
+            folder=default_provider_path)
+
+        if os.path.isfile(definition_file):
+            return
+
+        else:
+            r = requests.get(provider_url)
+            r.raise_for_status()
+            with open(definition_file, 'wb') as f:
+                f.write(json.dumps(r.json, indent=4))
+            return definition_file
 
 
 def get_config_dir():
@@ -87,6 +126,7 @@ def get_config_json(config_file=None):
     @rtype: dictionary
     """
     if not config_file:
+        #TODO: NOT SURE WHAT this default should be, if anything
         fpath = get_config_file('eip.json')
         if not os.path.isfile(fpath):
             dpath, cfile = os.path.split(fpath)
@@ -94,16 +134,19 @@ def get_config_json(config_file=None):
                 mkdir_p(dpath)
             with open(fpath, 'wb') as configfile:
                 configfile.flush()
-        config_file = open(fpath)
+        return json.load(open(fpath))
 
-    config = json.load(config_file)
+    else:
+        #TODO: add validity checks of file
+        return json.load(open(config_file))
 
-    return config
 
-
-def get_definition_file(url=None):
+def is_internet_up():
+    """TODO: Build more robust network diagnosis capabilities
     """
-    """
-    #TODO: determine good default location of definition file.
-    r = requests.get(url)
-    return r.json
+    try:
+        response = requests.get('http://128.30.52.45', timeout=1)
+        return True
+    except requests.Timeout as err:
+        pass
+    return False

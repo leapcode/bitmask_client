@@ -11,12 +11,17 @@ from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
                          QTextBrowser, qApp)
 from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
+from leap.base.configuration import Configuration
+
 from leap.baseapp.dialogs import ErrorDialog
 
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
 
 from leap.gui import mainwindow_rc
+
+#TODO: Get rid of this and do something clever
+DEFAULT_PROVIDER_URL = "http://localhost/definition.json"
 
 
 class LeapWindow(QMainWindow):
@@ -29,6 +34,8 @@ class LeapWindow(QMainWindow):
     def __init__(self, opts):
         super(LeapWindow, self).__init__()
         self.debugmode = getattr(opts, 'debug', False)
+
+        self.configuration = Configuration()
 
         self.vpn_service_started = False
 
@@ -81,6 +88,12 @@ class LeapWindow(QMainWindow):
         # bunch of self checks.
         # XXX move somewhere else alltogether.
         #
+        if self.configuration.error is True:
+            dialog = ErrorDialog()
+            dialog.criticalMessage(
+                'There is a problem with the default '
+                'definition.json file',
+                'error')
 
         if self.conductor.missing_provider is True:
             dialog = ErrorDialog()

@@ -82,101 +82,6 @@ class EIPConfigTest(BaseLeapTest):
                     username)
         return args
 
-    #
-    # tests
-    #
-
-    # XXX fixme! /home/user should
-    # be replaced for proper home lookup.
-
-    @unittest.skipUnless(_system == "Linux", "linux only")
-    def test_lin_get_config_file(self):
-        """
-        config file path where expected? (linux)
-        """
-        self.assertEqual(
-            config.get_config_file(
-                'test', folder="foo/bar"),
-            '/home/%s/.config/leap/foo/bar/test' %
-            self.get_username())
-
-    @unittest.skipUnless(_system == "Darwin", "mac only")
-    def test_mac_get_config_file(self):
-        """
-        config file path where expected? (mac)
-        """
-        self._missing_test_for_plat(do_raise=True)
-
-    @unittest.skipUnless(_system == "Windows", "win only")
-    def test_win_get_config_file(self):
-        """
-        config file path where expected?
-        """
-        self._missing_test_for_plat(do_raise=True)
-
-    #
-    # XXX hey, I'm raising exceptions here
-    # on purpose. just wanted to make sure
-    # that the skip stuff is doing it right.
-    # If you're working on win/macos tests,
-    # feel free to remove tests that you see
-    # are too redundant.
-
-    @unittest.skipUnless(_system == "Linux", "linux only")
-    def test_lin_get_config_dir(self):
-        """
-        nice config dir? (linux)
-        """
-        self.assertEqual(
-            config.get_config_dir(),
-            '/home/%s/.config/leap' %
-            self.get_username())
-
-    @unittest.skipUnless(_system == "Darwin", "mac only")
-    def test_mac_get_config_dir(self):
-        """
-        nice config dir? (mac)
-        """
-        self._missing_test_for_plat(do_raise=True)
-
-    @unittest.skipUnless(_system == "Windows", "win only")
-    def test_win_get_config_dir(self):
-        """
-        nice config dir? (win)
-        """
-        self._missing_test_for_plat(do_raise=True)
-
-    # provider paths
-
-    @unittest.skipUnless(_system == "Linux", "linux only")
-    def test_get_default_provider_path(self):
-        """
-        is default provider path ok?
-        """
-        self.assertEqual(
-            config.get_default_provider_path(),
-            '/home/%s/.config/leap/providers/default/' %
-            self.get_username())
-
-    # validate ip
-
-    def test_validate_ip(self):
-        """
-        check our ip validation
-        """
-        config.validate_ip('3.3.3.3')
-        with self.assertRaises(socket.error):
-            config.validate_ip('255.255.255.256')
-        with self.assertRaises(socket.error):
-            config.validate_ip('foobar')
-
-    @unittest.skip
-    def test_validate_domain(self):
-        """
-        code to be written yet
-        """
-        pass
-
     # build command string
     # these tests are going to have to check
     # many combinations. we should inject some
@@ -190,15 +95,6 @@ class EIPConfigTest(BaseLeapTest):
             do_pkexec_check=False)
         self.assertEqual(command, 'openvpn')
         self.assertEqual(args, self.get_expected_openvpn_args())
-
-    # json config
-
-    def test_get_config_json(self):
-        config_js = config.get_config_json()
-        self.assertTrue(isinstance(config_js, dict))
-        self.assertTrue('transport' in config_js)
-        self.assertTrue('provider' in config_js)
-        self.assertEqual(config_js['provider'], "testprovider.org")
 
 
 if __name__ == "__main__":
