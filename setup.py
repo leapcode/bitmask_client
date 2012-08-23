@@ -43,6 +43,8 @@ setup(
     # for argparse and <=2.6
     install_requires=[
         # -*- Extra requirements: -*-
+        "configuration",
+        "requests",
     ],
     test_suite='nose.collector',
 
