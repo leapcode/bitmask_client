@@ -1,4 +1,5 @@
 import os
+import platform
 import shutil
 import tempfile
 
@@ -6,6 +7,10 @@ try:
     import unittest2 as unittest
 except ImportError:
     import unittest
+
+from leap.base.config import get_username, get_groupname
+
+_system = platform.system()
 
 
 class BaseLeapTest(unittest.TestCase):
@@ -43,5 +48,15 @@ class BaseLeapTest(unittest.TestCase):
     def get_tempfile(self, filename):
         return os.path.join(self.tempdir, filename)
 
-if __name__ == "__main__":
-    unittest.main()
+    def get_username(self):
+        return get_username()
+
+    def get_groupname(self):
+        return get_groupname()
+
+    def _missing_test_for_plat(self, do_raise=False):
+        if do_raise:
+            raise NotImplementedError(
+                "This test is not implemented "
+                "for the running platform: %s" %
+                _system)
