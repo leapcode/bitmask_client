@@ -26,12 +26,22 @@ class BaseLeapTest(unittest.TestCase):
         os.environ["PATH"] = cls.old_path
         shutil.rmtree(cls.tempdir)
 
+    # you have to override these methods
+    # this way we ensure we did not put anything
+    # here that you can forget to call.
+
     def setUp(self):
         raise NotImplementedError("abstract base class")
 
     def tearDown(self):
         raise NotImplementedError("abstract base class")
 
+    #
+    # helper methods
+    #
+
+    def get_tempfile(self, filename):
+        return os.path.join(self.tempdir, filename)
 
 if __name__ == "__main__":
     unittest.main()
