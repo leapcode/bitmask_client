@@ -13,6 +13,7 @@ logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
 
 from leap.base import exceptions
+from leap.base import constants
 from leap.util.fileutil import (mkdir_p)
 
 
@@ -135,7 +136,7 @@ def get_config_file(filename, folder=None):
 
 def get_default_provider_path():
     default_subpath = os.path.join("providers",
-                                   "default")
+                                   constants.DEFAULT_TEST_PROVIDER)
     default_provider_path = get_config_file(
         '',
         folder=default_subpath)

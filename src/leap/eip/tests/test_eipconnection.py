@@ -1,6 +1,7 @@
 import ConfigParser
 import logging
 import platform
+import os
 
 logging.basicConfig()
 logger = logging.getLogger(name=__name__)
@@ -12,6 +13,7 @@ except ImportError:
 
 from mock import Mock, patch  # MagicMock
 
+from leap.base import constants
 from leap.eip.eipconnection import EIPConnection
 from leap.eip.exceptions import ConnectionRefusedError
 
@@ -59,6 +61,10 @@ class EIPConductorTest(unittest.TestCase):
                 "for the running platform: %s" %
                 _system)
 
+    def touch(self, filepath):
+        with open(filepath, 'w') as fp:
+            fp.write('')
+
     #
     # tests
     #
@@ -75,6 +81,19 @@ class EIPConductorTest(unittest.TestCase):
         """
         default attrs as expected
         """
+        # XXX there's a conceptual/design
+        # mistake here.
+        # If we're testing just attrs after init,
+        # init shold not be doing so much side effects.
+
+        # for instance:
+        # We have to TOUCH a keys file because
+        # we're triggerig the key checks FROM
+        # the constructo. me not like that,
+        # key checker should better be called explicitelly.
+        self.touch(os.path.expanduser(
+            '~/.config/leap/providers/%s/openvpn.keys'
+            % constants.DEFAULT_TEST_PROVIDER))
         con = self.con
         self.assertEqual(con.autostart, True)
         self.assertEqual(con.missing_pkexec, False)

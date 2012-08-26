@@ -8,6 +8,7 @@ import mock
 import requests
 
 from leap.base import config
+from leap.base import constants
 from leap.base import exceptions
 from leap.util.fileutil import mkdir_p
 from leap.testing.basetest import BaseLeapTest
@@ -215,7 +216,9 @@ class ConfigHelperFunctions(BaseLeapTest):
         """
         self.assertEqual(
             config.get_default_provider_path(),
-            os.path.expanduser('~/.config/leap/providers/default/')
+            os.path.expanduser(
+                '~/.config/leap/providers/%s/' %
+                constants.DEFAULT_TEST_PROVIDER)
         )
 
     # validate ip

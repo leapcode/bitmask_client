@@ -7,8 +7,9 @@ try:
 except ImportError:
     import unittest
 
-from leap.testing.basetest import BaseLeapTest
+from leap.base import constants
 from leap.eip import config as eip_config
+from leap.testing.basetest import BaseLeapTest
 
 _system = platform.system()
 
@@ -62,7 +63,8 @@ class EIPConfigTest(BaseLeapTest):
         args.append('unix')
         args.append('--config')
         args.append(os.path.expanduser(
-            '~/.config/leap/providers/default/openvpn.conf'))
+            '~/.config/leap/providers/%s/openvpn.conf'
+            % constants.DEFAULT_TEST_PROVIDER))
         return args
 
     # build command string
