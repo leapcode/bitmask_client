@@ -20,15 +20,19 @@ class BaseLeapTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.old_path = os.environ['PATH']
-        cls.tempdir = tempfile.mkdtemp()
+        cls.old_home = os.environ['HOME']
+        cls.tempdir = tempfile.mkdtemp(prefix="leap_tests-")
+        cls.home = cls.tempdir
         bin_tdir = os.path.join(
             cls.tempdir,
             'bin')
         os.environ["PATH"] = bin_tdir
+        os.environ["HOME"] = cls.tempdir
 
     @classmethod
     def tearDownClass(cls):
         os.environ["PATH"] = cls.old_path
+        os.environ["HOME"] = cls.old_home
         shutil.rmtree(cls.tempdir)
 
     # you have to override these methods

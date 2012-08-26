@@ -48,6 +48,7 @@ class TestLeapProviderDefinition(BaseLeapTest):
         # XXX THIS TEST SHOULD MOVE TO test_baseconfig
         self.definition.save()
         filename = self.definition.filename
+        self.assertTrue(os.path.isfile(filename))
         deserialized = json.load(open(filename, 'rb'))
         self.assertEqual(deserialized, EXPECTED_DEFAULT_CONFIG)
 

@@ -1,0 +1,2 @@
+class MissingConfigFileError(Exception):
+    pass

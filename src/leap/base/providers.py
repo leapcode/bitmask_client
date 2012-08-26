@@ -1,3 +1,4 @@
+"""all dealing with leap-providers: definition files, updating"""
 import configuration
 
 from leap.base.config import JSONLeapConfig
@@ -6,15 +7,24 @@ from leap.base.config import JSONLeapConfig
 # hacking in progress:
 
 # Specs are instances of configuration.Configuration class
+# -yeah, that's an external app, not ours-
 # and have to carry an options attr.
 #
 # Configs have:
-# - slug
-# - definition
+# - a slug (from where a filename/folder is derived)
+# - a spec (for validation and defaults).
+
+# all config objects, as BaseConfig derived, implment basic
+# useful methods:
+# - save
+# - load
+# - get_config (returns a optparse.OptionParser object)
 
 # TODO:
-# - have a good type cast repertory
-# - raise validation errors?
+# - have a good type cast repertory (uris, version, hashes...)
+# - raise validation errors
+# - multilingual objects
+
 ##########################################################
 
 
@@ -76,9 +86,17 @@ class LeapProviderDefinition(JSONLeapConfig):
 
 
 class LeapProvider(object):
-    # XXX ???
-    # do we need this?
-    # can we hook here the network fetching stuff?
+    # bring slug here (property)
+    # constructor: pass name
+
+    # constructor: init definition class
+    # (__cls__.__name__ + Definition)
+    # initializes a JSONLeapConfig with slug and
+    # initializes also cls.name + Spec
+
+    # and Abstract this thing out!
+
+    # how can we hook here the network fetching stuff?
     # maybe (bstorming a little bit):
 
     # config = LeapProviderDefinition
@@ -87,5 +105,6 @@ class LeapProvider(object):
 
 
 class LeapProviderSet(object):
+    # we gather them from the filesystem
     def __init__(self):
         self.count = 0

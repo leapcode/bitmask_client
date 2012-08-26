@@ -12,13 +12,15 @@ import os
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
 
+from leap.base import exceptions
 from leap.util.fileutil import (mkdir_p)
 
 
 class BaseLeapConfig(object):
     slug = None
 
-    # XXX we have to enforce that we have a slug (via interface)
+    # XXX we have to enforce that every derived class
+    # has a slug (via interface)
     # get property getter that raises NI..
 
     def save(self):
@@ -58,6 +60,9 @@ class JSONLeapConfig(BaseLeapConfig):
     def save(self, to=None):
         if to is None:
             to = self.filename
+        folder, filename = os.path.split(to)
+        if folder and not os.path.isdir(folder):
+            mkdir_p(folder)
         self._config.serialize(to)
 
     def load(self, fromfile=None):
@@ -175,11 +180,17 @@ def get_config_json(config_file=None):
                 mkdir_p(dpath)
             with open(fpath, 'wb') as configfile:
                 configfile.flush()
-        return json.load(open(fpath))
+        try:
+            return json.load(open(fpath))
+        except ValueError:
+            raise exceptions.MissingConfigFileError
 
     else:
         #TODO: add validity checks of file
-        return json.load(open(config_file))
+        try:
+            return json.load(open(config_file))
+        except IOError:
+            raise exceptions.MissingConfigFileError
 
 
 def get_definition_file(url=None):
@@ -214,6 +225,7 @@ class Configuration(object):
     """
     def __init__(self, provider_url=None):
         try:
+            #requests.get('foo')
             self.providers = {}
             self.error = False
             provider_file = self.check_and_get_definition_file(provider_url)
