@@ -104,6 +104,13 @@ class ProviderDefinitionTestCase(ProviderTest):
 # doing an extra wipe of the tempdir... but be careful!!!! do not mess with
 # os.environ home more than needed... that could potentially bite!
 
+# XXX actually, another thing to fix here is separating tests:
+# - test that requests has been called.
+# - check deeper for error types/msgs
+
+# we SHOULD inject requests dep in the constructor
+# (so we can pass mock easily).
+
 
 class ProviderFetchConError(ProviderTest):
     def test_connection_error(self):
