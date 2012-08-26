@@ -16,6 +16,7 @@ from mock import Mock, patch  # MagicMock
 from leap.base import constants
 from leap.eip.eipconnection import EIPConnection
 from leap.eip.exceptions import ConnectionRefusedError
+from leap.testing.basetest import BaseLeapTest
 
 _system = platform.system()
 
@@ -36,11 +37,30 @@ class MockedEIPConnection(EIPConnection):
         self.args = [1, 2, 3]
 
 
-class EIPConductorTest(unittest.TestCase):
+class EIPConductorTest(BaseLeapTest):
 
     __name__ = "eip_conductor_tests"
 
     def setUp(self):
+        # XXX there's a conceptual/design
+        # mistake here.
+        # If we're testing just attrs after init,
+        # init shold not be doing so much side effects.
+
+        # for instance:
+        # We have to TOUCH a keys file because
+        # we're triggerig the key checks FROM
+        # the constructo. me not like that,
+        # key checker should better be called explicitelly.
+        filepath = os.path.expanduser(
+            '~/.config/leap/providers/%s/openvpn.keys'
+            % constants.DEFAULT_TEST_PROVIDER)
+        self.touch(filepath)
+        self.chmod600(filepath)
+
+        # we init the manager with only
+        # some methods mocked
+
         self.manager = Mock(
             name="openvpnmanager_mock")
 
@@ -49,21 +69,6 @@ class EIPConductorTest(unittest.TestCase):
 
     def tearDown(self):
         del self.con
-
-    #
-    # helpers
-    #
-
-    def _missing_test_for_plat(self, do_raise=False):
-        if do_raise:
-            raise NotImplementedError(
-                "This test is not implemented "
-                "for the running platform: %s" %
-                _system)
-
-    def touch(self, filepath):
-        with open(filepath, 'w') as fp:
-            fp.write('')
 
     #
     # tests
@@ -81,19 +86,6 @@ class EIPConductorTest(unittest.TestCase):
         """
         default attrs as expected
         """
-        # XXX there's a conceptual/design
-        # mistake here.
-        # If we're testing just attrs after init,
-        # init shold not be doing so much side effects.
-
-        # for instance:
-        # We have to TOUCH a keys file because
-        # we're triggerig the key checks FROM
-        # the constructo. me not like that,
-        # key checker should better be called explicitelly.
-        self.touch(os.path.expanduser(
-            '~/.config/leap/providers/%s/openvpn.keys'
-            % constants.DEFAULT_TEST_PROVIDER))
         con = self.con
         self.assertEqual(con.autostart, True)
         self.assertEqual(con.missing_pkexec, False)

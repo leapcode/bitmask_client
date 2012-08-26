@@ -9,6 +9,7 @@ except ImportError:
     import unittest
 
 from leap.base.config import get_username, get_groupname
+from leap.util.fileutil import mkdir_p, check_and_fix_urw_only
 
 _system = platform.system()
 
@@ -64,3 +65,19 @@ class BaseLeapTest(unittest.TestCase):
                 "This test is not implemented "
                 "for the running platform: %s" %
                 _system)
+
+    def touch(self, filepath):
+        folder, filename = os.path.split(filepath)
+        if not os.path.isdir(folder):
+            mkdir_p(folder)
+        # XXX should move to test_basetest
+        self.assertTrue(os.path.isdir(folder))
+
+        with open(filepath, 'w') as fp:
+            fp.write(' ')
+
+        # XXX should move to test_basetest
+        self.assertTrue(os.path.isfile(filepath))
+
+    def chmod600(self, filepath):
+        check_and_fix_urw_only(filepath)
