@@ -1,7 +1,6 @@
 import ConfigParser
 import os
 import platform
-import socket
 
 try:
     import unittest2 as unittest
@@ -9,7 +8,6 @@ except ImportError:
     import unittest
 
 from leap.testing.basetest import BaseLeapTest
-from leap.base import config as base_config
 from leap.eip import config as eip_config
 
 _system = platform.system()
@@ -63,9 +61,8 @@ class EIPConfigTest(BaseLeapTest):
         args.append('/tmp/.eip.sock')
         args.append('unix')
         args.append('--config')
-        #XXX bad assumption. FIXME: expand $HOME
-        args.append('/home/%s/.config/leap/providers/default/openvpn.conf' %
-                    username)
+        args.append(os.path.expanduser(
+            '~/.config/leap/providers/default/openvpn.conf'))
         return args
 
     # build command string
