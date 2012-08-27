@@ -1,4 +1,5 @@
-import ConfigParser
+import ConfigParser  # to be deprecated
+import json
 import logging
 import os
 import platform
@@ -6,6 +7,8 @@ import socket
 
 from leap.util.fileutil import (which, mkdir_p,
                                 check_and_fix_urw_only)
+
+# from leap.base import config as baseconfig
 from leap.base.config import (get_default_provider_path,
                               get_config_file,
                               get_username,
@@ -14,6 +17,7 @@ from leap.base.config import (get_default_provider_path,
 from leap.baseapp.permcheck import (is_pkexec_in_system,
                                     is_auth_agent_running)
 from leap.eip import exceptions as eip_exceptions
+from leap.eip import constants as eipconstants
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
@@ -276,6 +280,8 @@ def get_sensible_defaults():
     return defaults
 
 
+# XXX to be deprecated. see dump_default_eipconfig
+# and the new JSONConfig classes.
 def get_config(config_file=None):
     """
     temporary method for getting configs,
@@ -286,10 +292,6 @@ def get_config(config_file=None):
     @rtype: ConfigParser instance
     @rparam: a config object
     """
-    # TODO
-    # - refactor out common things and get
-    # them to util/ or baseapp/
-
     defaults = get_sensible_defaults()
     config = ConfigParser.ConfigParser(defaults)
 
@@ -302,19 +304,22 @@ def get_config(config_file=None):
             with open(fpath, 'wb') as configfile:
                 config.write(configfile)
         config_file = open(fpath)
-
-    #TODO
-    # - convert config_file to list;
-    #   look in places like /etc/leap/eip.cfg
-    #   for global settings.
-    # - raise warnings/error if bad options.
-
-    # at this point, the file should exist.
-    # errors would have been raised above.
-
     config.readfp(config_file)
-
     return config
+
+
+def dump_default_eipconfig(filepath):
+    """
+    writes a sample eip config
+    in the given location
+    """
+    # XXX TODO:
+    # use EIPConfigSpec istead
+    folder, filename = os.path.split(filepath)
+    if not os.path.isdir(folder):
+        mkdir_p(folder)
+    with open(filepath, 'w') as fp:
+        json.dump(eipconstants.EIP_SAMPLE_JSON, fp)
 
 
 def check_vpn_keys(config):

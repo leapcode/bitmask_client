@@ -162,7 +162,7 @@ def get_groupname():
 
 # json stuff
 
-# XXX merge with JSONConfig
+# XXX merge with JSONConfig / EIPChecks as appropiate.
 def get_config_json(config_file=None):
     """
     will replace get_config function be developing them
@@ -236,6 +236,7 @@ class Configuration(object):
         except requests.ConnectionError as e:
             if e.message == "[Errno 113] No route to host":
                 if not is_internet_up:
+                    # this was meant to be a function invocation I guess...
                     self.error = "No valid internet connection found"
                 else:
                     self.error = "Provider server appears currently down."

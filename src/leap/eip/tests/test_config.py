@@ -81,6 +81,10 @@ class EIPConfigTest(BaseLeapTest):
         self.assertEqual(command, 'openvpn')
         self.assertEqual(args, self.get_expected_openvpn_args())
 
+    # XXX TODO:
+    # - should use touch_exec to plant an "executabe" in the path
+    # - should check that "which" for openvpn returns what's expected.
+
 
 if __name__ == "__main__":
     unittest.main()

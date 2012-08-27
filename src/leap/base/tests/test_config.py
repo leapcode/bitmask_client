@@ -10,6 +10,7 @@ import requests
 from leap.base import config
 from leap.base import constants
 from leap.base import exceptions
+from leap.eip import constants as eipconstants
 from leap.util.fileutil import mkdir_p
 from leap.testing.basetest import BaseLeapTest
 
@@ -50,26 +51,13 @@ class ProviderDefinitionTestCase(ProviderTest):
     def setUp(self):
         # dump a sample eip file
         # XXX Move to Use EIP Spec Instead!!!
-        EIP_JSON = {
-            "provider": "testprovider.org",
-            "transport": "openvpn",
-            "openvpn_protocol": "tcp",
-            "openvpn_port": "80",
-            "openvpn_ca_certificate": "~/.config/leap/testprovider.org/"
-                                      "keys/ca/testprovider-ca-cert-"
-                                      "2013-01-01.pem",
-            "openvpn_client_certificate": "~/.config/leap/testprovider.org/"
-                                          "keys/client/openvpn-2012-09-31.pem",
-            "connect_on_login": True,
-            "block_cleartext_traffic": True,
-            "primary_gateway": "usa_west",
-            "secondary_gateway": "france",
-            "management_password": "oph7Que1othahwiech6J"
-        }
+        # XXX tests to be moved to eip.checks and eip.providers
+        # XXX can use eipconfig.dump_default_eipconfig
+
         path = os.path.join(self.home, '.config', 'leap')
         mkdir_p(path)
         with open(os.path.join(path, 'eip.json'), 'w') as fp:
-            json.dump(EIP_JSON, fp)
+            json.dump(eipconstants.EIP_SAMPLE_JSON, fp)
 
     def test_complete_file(self):
         with mock.patch.object(requests, "get") as mock_method:
@@ -88,6 +76,7 @@ class ProviderDefinitionTestCase(ProviderTest):
                 u'serial': 1,
                 u'services': [u'eip'],
                 u'version': u'0.1.0'}
+            # XXX why init to localhost?
             cf = config.Configuration("http://localhost/")
             self.assertIn('default', cf.providers)
 
@@ -238,7 +227,7 @@ class ConfigHelperFunctions(BaseLeapTest):
         """
         code to be written yet
         """
-        pass
+        raise NotImplementedError
 
 
 if __name__ == "__main__":
