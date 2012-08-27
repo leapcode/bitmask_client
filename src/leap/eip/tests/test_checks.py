@@ -11,7 +11,8 @@ from mock import patch, Mock
 import requests
 
 from leap.base import config as baseconfig
-from leap.base.constants import DEFAULT_PROVIDER_DEFINITION
+from leap.base.constants import (DEFAULT_PROVIDER_DEFINITION,
+                                 DEFINITION_EXPECTED_PATH)
 from leap.eip import checks as eipchecks
 from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
@@ -57,8 +58,8 @@ class EIPCheckTest(BaseLeapTest):
                         "not called")
         self.assertTrue(mc.check_complete_eip_config.called,
                         "not called")
-        self.assertTrue(mc.ping_gateway.called,
-                        "not called")
+        #self.assertTrue(mc.ping_gateway.called,
+                        #"not called")
 
     # test individual check methods
 
@@ -107,10 +108,38 @@ class EIPCheckTest(BaseLeapTest):
             sampleconfig = eipconstants.EIP_SAMPLE_JSON
             checker.fetch_definition(config=sampleconfig)
 
-         # XXX TODO check for ConnectionError, HTTPError, InvalidUrl
-         # (and proper EIPExceptions are raised).
+        fn = os.path.join(baseconfig.get_default_provider_path(),
+                          DEFINITION_EXPECTED_PATH)
+        with open(fn, 'r') as fp:
+            deserialized = json.load(fp)
+        self.assertEqual(DEFAULT_PROVIDER_DEFINITION, deserialized)
 
-         # Look at base.test_config.
+        # XXX TODO check for ConnectionError, HTTPError, InvalidUrl
+        # (and proper EIPExceptions are raised).
+        # Look at base.test_config.
+
+    def test_fetch_eip_config(self):
+        with patch.object(requests, "get") as mocked_get:
+            mocked_get.return_value.status_code = 200
+            mocked_get.return_value.json = eipconstants.EIP_SAMPLE_SERVICE
+            checker = eipchecks.EIPChecker(fetcher=requests)
+            sampleconfig = eipconstants.EIP_SAMPLE_JSON
+            checker.fetch_definition(config=sampleconfig)
+
+    def test_check_complete_eip_config(self):
+        checker = eipchecks.EIPChecker()
+        with self.assertRaises(eipexceptions.EIPConfigurationError):
+            sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+            sampleconfig['provider'] = None
+            checker.check_complete_eip_config(config=sampleconfig)
+        with self.assertRaises(eipexceptions.EIPConfigurationError):
+            sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+            del sampleconfig['provider']
+            checker.check_complete_eip_config(config=sampleconfig)
+
+        # normal case
+        sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+        checker.check_complete_eip_config(config=sampleconfig)
 
 if __name__ == "__main__":
     unittest.main()

@@ -53,7 +53,7 @@ class EIPChecker(object):
         checker.fetch_definition()
         checker.fetch_eip_config()
         checker.check_complete_eip_config()
-        checker.ping_gateway()
+        #checker.ping_gateway()
 
     # public checks
 
@@ -97,6 +97,13 @@ class EIPChecker(object):
     def fetch_definition(self, skip_download=False,
                          config=None, uri=None):
         # check_and_get_definition_file
+        """
+        fetches a definition file from server
+        """
+        # TODO:
+        # - Implement diff
+        # - overwrite if different.
+
         if skip_download:
             return True
         if config is None:
@@ -123,11 +130,47 @@ class EIPChecker(object):
         with open(definition_file, 'wb') as f:
             f.write(json.dumps(request.json, indent=4))
 
-    def fetch_eip_config(self):
-        raise NotImplementedError
+    def fetch_eip_config(self, skip_download=False,
+                         config=None, uri=None):
+        if skip_download:
+            return True
+        if config is None:
+            config = self.config
+        if uri is None:
+            if config:
+                domain = config.get('provider', None)
+            else:
+                domain = None
+            uri = self._get_eip_service_uri(
+                domain=domain)
 
-    def check_complete_eip_config(self):
-        raise NotImplementedError
+        # XXX move to JSONConfig Fetcher
+        request = self.fetcher.get(uri)
+        request.raise_for_status()
+
+        definition_file = os.path.join(
+            baseconfig.get_default_provider_path(),
+            eipconstants.EIP_SERVICE_EXPECTED_PATH)
+
+        folder, filename = os.path.split(definition_file)
+        if not os.path.isdir(folder):
+            mkdir_p(folder)
+        with open(definition_file, 'wb') as f:
+            f.write(json.dumps(request.json, indent=4))
+
+    def check_complete_eip_config(self, config=None):
+        if config is None:
+            config = self.config
+        try:
+            'trying assertions'
+            assert 'provider' in config
+            assert config['provider'] is not None
+        except AssertionError:
+            raise eipexceptions.EIPConfigurationError
+
+        # XXX TODO:
+        # We should WRITE eip config if missing or
+        # incomplete at this point
 
     def ping_gateway(self):
         raise NotImplementedError
@@ -154,3 +197,9 @@ class EIPChecker(object):
             path = baseconstants.DEFINITION_EXPECTED_PATH
         return "https://%s/%s" % (domain, path)
 
+    def _get_eip_service_uri(self, domain=None, path=None):
+        if domain is None:
+            domain = baseconstants.DEFAULT_TEST_PROVIDER
+        if path is None:
+            path = eipconstants.EIP_SERVICE_EXPECTED_PATH
+        return "https://%s/%s" % (domain, path)
