@@ -61,3 +61,7 @@ class EIPInitNoKeyFileError(Exception):
 
 class EIPInitBadKeyFilePermError(Exception):
     pass
+
+
+class EIPMissingDefaultProvider(Exception):
+    pass

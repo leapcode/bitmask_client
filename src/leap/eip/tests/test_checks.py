@@ -1,3 +1,4 @@
+import copy
 import json
 try:
     import unittest2 as unittest
@@ -5,11 +6,15 @@ except ImportError:
     import unittest
 import os
 
-from mock import Mock
+from mock import patch, Mock
+
+import requests
 
 from leap.base import config as baseconfig
+from leap.base.constants import DEFAULT_PROVIDER_DEFINITION
 from leap.eip import checks as eipchecks
 from leap.eip import constants as eipconstants
+from leap.eip import exceptions as eipexceptions
 from leap.testing.basetest import BaseLeapTest
 
 
@@ -57,7 +62,7 @@ class EIPCheckTest(BaseLeapTest):
 
     # test individual check methods
 
-    def test_dump_default_eipconfig(self):
+    def test_check_default_eipconfig(self):
         checker = eipchecks.EIPChecker()
         # no eip config (empty home)
         eipconfig = baseconfig.get_config_file(eipconstants.EIP_CONFIG)
@@ -72,6 +77,40 @@ class EIPCheckTest(BaseLeapTest):
         # TODO: when new JSONConfig class is in place, we shold
         # run validation methods.
 
+    def test_check_is_there_default_provider(self):
+        checker = eipchecks.EIPChecker()
+        # we do dump a sample eip config, but lacking a
+        # default provider entry.
+        # This error will be possible catched in a different
+        # place, when JSONConfig does validation of required fields.
+
+        sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+        # blank out default_provider
+        sampleconfig['provider'] = None
+        eipcfg_path = checker._get_default_eipconfig_path()
+        with open(eipcfg_path, 'w') as fp:
+            json.dump(sampleconfig, fp)
+        with self.assertRaises(eipexceptions.EIPMissingDefaultProvider):
+            checker.check_is_there_default_provider()
+
+        sampleconfig = eipconstants.EIP_SAMPLE_JSON
+        eipcfg_path = checker._get_default_eipconfig_path()
+        with open(eipcfg_path, 'w') as fp:
+            json.dump(sampleconfig, fp)
+        self.assertTrue(checker.check_is_there_default_provider())
+
+    def test_fetch_definition(self):
+        with patch.object(requests, "get") as mocked_get:
+            mocked_get.return_value.status_code = 200
+            mocked_get.return_value.json = DEFAULT_PROVIDER_DEFINITION
+            checker = eipchecks.EIPChecker(fetcher=requests)
+            sampleconfig = eipconstants.EIP_SAMPLE_JSON
+            checker.fetch_definition(config=sampleconfig)
+
+         # XXX TODO check for ConnectionError, HTTPError, InvalidUrl
+         # (and proper EIPExceptions are raised).
+
+         # Look at base.test_config.
 
 if __name__ == "__main__":
     unittest.main()

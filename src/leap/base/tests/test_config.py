@@ -59,26 +59,27 @@ class ProviderDefinitionTestCase(ProviderTest):
         with open(os.path.join(path, 'eip.json'), 'w') as fp:
             json.dump(eipconstants.EIP_SAMPLE_JSON, fp)
 
-    def test_complete_file(self):
-        with mock.patch.object(requests, "get") as mock_method:
-            mock_method.return_value.status_code = 200
-            mock_method.return_value.json = {
+    # moved to eip.test_checks.test_fetch_definition
+    #def test_complete_file(self):
+        #with mock.patch.object(requests, "get") as mock_method:
+            #mock_method.return_value.status_code = 200
+            #mock_method.return_value.json = {
                 #XXX get from providers template
-                u'api_uri': u'https://api.testprovider.org/',
-                u'api_version': u'0.1.0',
-                u'ca_cert': u'8aab80ae4326fd30721689db813733783fe0bd7e',
-                u'ca_cert_uri': u'https://testprovider.org/cacert.pem',
-                u'description': {u'en': u'This is a test provider'},
-                u'display_name': {u'en': u'Test Provider'},
-                u'domain': u'testprovider.org',
-                u'enrollment_policy': u'open',
-                u'public_key': u'cb7dbd679f911e85bc2e51bd44afd7308ee19c21',
-                u'serial': 1,
-                u'services': [u'eip'],
-                u'version': u'0.1.0'}
+                #u'api_uri': u'https://api.testprovider.org/',
+                #u'api_version': u'0.1.0',
+                #u'ca_cert': u'8aab80ae4326fd30721689db813733783fe0bd7e',
+                #u'ca_cert_uri': u'https://testprovider.org/cacert.pem',
+                #u'description': {u'en': u'This is a test provider'},
+                #u'display_name': {u'en': u'Test Provider'},
+                #u'domain': u'testprovider.org',
+                #u'enrollment_policy': u'open',
+                #u'public_key': u'cb7dbd679f911e85bc2e51bd44afd7308ee19c21',
+                #u'serial': 1,
+                #u'services': [u'eip'],
+                #u'version': u'0.1.0'}
             # XXX why init to localhost?
-            cf = config.Configuration("http://localhost/")
-            self.assertIn('default', cf.providers)
+            #cf = config.Configuration("http://localhost/")
+            #self.assertIn('default', cf.providers)
 
 #
 # provider fetch tests block
