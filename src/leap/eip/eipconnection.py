@@ -8,7 +8,7 @@ logging.basicConfig()
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.DEBUG)
 
-from leap.eip.checks import EIPChecker
+from leap.eip.checks import EIPConfigChecker
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.openvpnconnection import OpenVPNConnection
 
@@ -18,18 +18,19 @@ class EIPConnection(OpenVPNConnection):
     Manages the execution of the OpenVPN process, auto starts, monitors the
     network connection, handles configuration, fixes leaky hosts, handles
     errors, etc.
-    Preferences will be stored via the Storage API. (TBD)
     Status updates (connected, bandwidth, etc) are signaled to the GUI.
     """
 
-    def __init__(self, checker=EIPChecker, *args, **kwargs):
+    def __init__(self, config_checker=EIPConfigChecker, *args, **kwargs):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
+
+        # not used atm. but should.
         self.error_queue = []
 
         status_signals = kwargs.pop('status_signals', None)
         self.status = EIPConnectionStatus(callbacks=status_signals)
-        self.checker = checker()
+        self.config_checker = config_checker()
 
         super(EIPConnection, self).__init__(*args, **kwargs)
 
@@ -37,7 +38,7 @@ class EIPConnection(OpenVPNConnection):
         """
         run all eip checks previous to attempting a connection
         """
-        self.checker.run_all(skip_download=skip_download)
+        self.config_checker.run_all(skip_download=skip_download)
 
     def connect(self):
         """

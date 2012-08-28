@@ -15,21 +15,40 @@ from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
 from leap.util.fileutil import mkdir_p
 
+"""
+EIPConfigChecker
+----------
+this is the first of 3 consecutive checks that we're implementing.
 
-class EIPChecker(object):
+It is used from the eip conductor (a instance of EIPConnection that is
+managed from the QtApp), running run_all method before trying to call
+`connect` or any other of the state switching methods.
+
+It checks that the needed files are provided or can be discovered over the
+net. Much of these tests are not specific to EIP module, and can be splitted
+into base.tests to be invoked by the base leap init routines.
+However, I'm testing them alltogether for the sake of having the whole unit
+reachable and testable as a whole.
+
+Other related checkers - not implemented yet -:
+* LeapNetworkChecker
+* ProviderCertChecker
+"""
+
+
+class EIPConfigChecker(object):
     """
     Several tests needed
     to ensure a EIPConnection
-    can be sucessful
+    can be sucessfully established.
     use run_all to run all checks.
     """
 
     def __init__(self, fetcher=requests):
-        """
-        we do not want to accept too many
-        argument on init. we want tests
-        to be explicitely run.
-        """
+        # we do not want to accept too many
+        # argument on init.
+        # we want tests
+        # to be explicitely run.
         self.config = None
         self.fetcher = fetcher
 
@@ -100,7 +119,6 @@ class EIPChecker(object):
 
     def fetch_definition(self, skip_download=False,
                          config=None, uri=None):
-        # check_and_get_definition_file
         """
         fetches a definition file from server
         """

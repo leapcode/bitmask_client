@@ -32,7 +32,7 @@ class EIPCheckTest(BaseLeapTest):
     # test methods are there, and can be called from run_all
 
     def test_checker_should_implement_check_methods(self):
-        checker = eipchecks.EIPChecker()
+        checker = eipchecks.EIPConfigChecker()
 
         self.assertTrue(hasattr(checker, "check_default_eipconfig"),
                         "missing meth")
@@ -45,7 +45,7 @@ class EIPCheckTest(BaseLeapTest):
         self.assertTrue(hasattr(checker, "ping_gateway"), "missing meth")
 
     def test_checker_should_actually_call_all_tests(self):
-        checker = eipchecks.EIPChecker()
+        checker = eipchecks.EIPConfigChecker()
 
         mc = Mock()
         checker.run_all(checker=mc)
@@ -64,7 +64,7 @@ class EIPCheckTest(BaseLeapTest):
     # test individual check methods
 
     def test_check_default_eipconfig(self):
-        checker = eipchecks.EIPChecker()
+        checker = eipchecks.EIPConfigChecker()
         # no eip config (empty home)
         eipconfig = baseconfig.get_config_file(eipconstants.EIP_CONFIG)
         self.assertFalse(os.path.isfile(eipconfig))
@@ -79,7 +79,7 @@ class EIPCheckTest(BaseLeapTest):
         # run validation methods.
 
     def test_check_is_there_default_provider(self):
-        checker = eipchecks.EIPChecker()
+        checker = eipchecks.EIPConfigChecker()
         # we do dump a sample eip config, but lacking a
         # default provider entry.
         # This error will be possible catched in a different
@@ -104,7 +104,7 @@ class EIPCheckTest(BaseLeapTest):
         with patch.object(requests, "get") as mocked_get:
             mocked_get.return_value.status_code = 200
             mocked_get.return_value.json = DEFAULT_PROVIDER_DEFINITION
-            checker = eipchecks.EIPChecker(fetcher=requests)
+            checker = eipchecks.EIPConfigChecker(fetcher=requests)
             sampleconfig = eipconstants.EIP_SAMPLE_JSON
             checker.fetch_definition(config=sampleconfig)
 
@@ -122,12 +122,12 @@ class EIPCheckTest(BaseLeapTest):
         with patch.object(requests, "get") as mocked_get:
             mocked_get.return_value.status_code = 200
             mocked_get.return_value.json = eipconstants.EIP_SAMPLE_SERVICE
-            checker = eipchecks.EIPChecker(fetcher=requests)
+            checker = eipchecks.EIPConfigChecker(fetcher=requests)
             sampleconfig = eipconstants.EIP_SAMPLE_JSON
             checker.fetch_definition(config=sampleconfig)
 
     def test_check_complete_eip_config(self):
-        checker = eipchecks.EIPChecker()
+        checker = eipchecks.EIPConfigChecker()
         with self.assertRaises(eipexceptions.EIPConfigurationError):
             sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
             sampleconfig['provider'] = None

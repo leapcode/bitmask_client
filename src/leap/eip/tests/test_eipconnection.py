@@ -50,8 +50,12 @@ class EIPConductorTest(BaseLeapTest):
         # for instance:
         # We have to TOUCH a keys file because
         # we're triggerig the key checks FROM
-        # the constructo. me not like that,
+        # the constructor. me not like that,
         # key checker should better be called explicitelly.
+
+        # XXX change to keys_checker invocation
+        # (see config_checker)
+
         filepath = os.path.expanduser(
             '~/.config/leap/providers/%s/openvpn.keys'
             % constants.DEFAULT_TEST_PROVIDER)
@@ -60,12 +64,8 @@ class EIPConductorTest(BaseLeapTest):
 
         # we init the manager with only
         # some methods mocked
-
-        self.manager = Mock(
-            name="openvpnmanager_mock")
-
+        self.manager = Mock(name="openvpnmanager_mock")
         self.con = MockedEIPConnection()
-            #manager=self.manager)
 
     def tearDown(self):
         del self.con
@@ -73,14 +73,6 @@ class EIPConductorTest(BaseLeapTest):
     #
     # tests
     #
-
-    @unittest.skip
-    #ain't manager anymore!
-    def test_manager_was_initialized(self):
-        """
-        manager init ok during conductor init?
-        """
-        self.manager.assert_called_once_with()
 
     def test_vpnconnection_defaults(self):
         """
@@ -108,6 +100,16 @@ class EIPConductorTest(BaseLeapTest):
                          "mock_command")
         self.assertEqual(self.con.args,
                          [1, 2, 3])
+
+    # config checks
+
+    def test_config_checked_called(self):
+        del(self.con)
+        config_checker = Mock()
+        self.con = MockedEIPConnection(config_checker=config_checker)
+        self.assertTrue(config_checker.called)
+        self.con.run_checks()
+        self.con.config_checker.run_all.assert_called_with(skip_download=False)
 
     # connect/disconnect calls
 
