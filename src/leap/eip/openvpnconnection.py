@@ -59,11 +59,14 @@ to be triggered for each one of them.
         self.port = None
         self.proto = None
 
+        # XXX move all error messages
+        # into a more encapsulated object.
         self.missing_pkexec = False
         self.missing_auth_agent = False
         self.bad_keyfile_perms = False
         self.missing_vpn_keyfile = False
         self.missing_provider = False
+        self.missing_definition = False
         self.bad_provider = False
 
         #XXX workaround for signaling

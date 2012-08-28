@@ -11,17 +11,10 @@ from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
                          QTextBrowser, qApp)
 from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
-from leap.base.config import Configuration
-
 from leap.baseapp.dialogs import ErrorDialog
-
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
-
 from leap.gui import mainwindow_rc
-
-#TODO: Get rid of this and do something clever
-DEFAULT_PROVIDER_URL = "http://localhost/definition.json"
 
 
 class LeapWindow(QMainWindow):
@@ -35,9 +28,7 @@ class LeapWindow(QMainWindow):
         super(LeapWindow, self).__init__()
         self.debugmode = getattr(opts, 'debug', False)
 
-        self.configuration = Configuration()
-
-        self.vpn_service_started = False
+        self.eip_service_started = False
 
         self.createWindowHeader()
         self.createIconGroupBox()
@@ -69,7 +60,9 @@ class LeapWindow(QMainWindow):
         widget.setLayout(mainLayout)
 
         self.trayIcon.show()
-        config_file = getattr(opts, 'config_file', None)
+        self.setWindowTitle("LEAP Client")
+        self.resize(400, 300)
+        self.set_statusbarMessage('ready')
 
         #
         # conductor is in charge of all
@@ -84,15 +77,19 @@ class LeapWindow(QMainWindow):
             status_signals=(self.statusChange.emit, ),
             debug=self.debugmode)
 
+        # XXX remove skip download when sample service is ready
+        self.conductor.run_checks(skip_download=True)
+
+        ####### error checking ################
         #
         # bunch of self checks.
         # XXX move somewhere else alltogether.
         #
-        if self.configuration.error is True:
+        if self.conductor.missing_definition is True:
             dialog = ErrorDialog()
             dialog.criticalMessage(
-                'There is a problem with the default '
-                'definition.json file',
+                'The default '
+                'definition.json file cannot be found',
                 'error')
 
         if self.conductor.missing_provider is True:
@@ -144,10 +141,7 @@ class LeapWindow(QMainWindow):
                 '(<i>DOES NOTHING YET</i>)',
                 'error')
 
-        self.setWindowTitle("LEAP Client")
-        self.resize(400, 300)
-
-        self.set_statusbarMessage('ready')
+        ############ end error checking ###################
 
         if self.conductor.autostart:
             self.start_or_stopVPN()
@@ -387,9 +381,10 @@ technolust</i>")
         """
         stub for running child process with vpn
         """
-        if self.vpn_service_started is False:
+        if self.eip_service_started is False:
             try:
                 self.conductor.connect()
+                # XXX move this to error queue
             except eip_exceptions.EIPNoCommandError:
                 dialog = ErrorDialog()
                 dialog.warningMessage(
@@ -398,7 +393,7 @@ technolust</i>")
                     'error')
             if self.debugmode:
                 self.startStopButton.setText('&Disconnect')
-            self.vpn_service_started = True
+            self.eip_service_started = True
 
             # XXX what is optimum polling interval?
             # too little is overkill, too much
@@ -406,13 +401,11 @@ technolust</i>")
 
             self.timer.start(250.0)
             return
-        if self.vpn_service_started is True:
+        if self.eip_service_started is True:
             self.conductor.disconnect()
-            # FIXME this should trigger also
-            # statuschange event. why isn't working??
             if self.debugmode:
                 self.startStopButton.setText('&Connect')
-            self.vpn_service_started = False
+            self.eip_service_started = False
             self.timer.stop()
             return
 
@@ -430,7 +423,7 @@ technolust</i>")
         # XXX it's too expensive to poll
         # continously. move to signal events instead.
 
-        if not self.vpn_service_started:
+        if not self.eip_service_started:
             return
 
         # XXX remove all access to manager layer

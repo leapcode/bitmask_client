@@ -2,7 +2,9 @@ import json
 import logging
 import os
 
+logging.basicConfig()
 logger = logging.getLogger(name=__name__)
+logger.setLevel(logging.DEBUG)
 
 import requests
 
@@ -31,7 +33,7 @@ class EIPChecker(object):
         self.config = None
         self.fetcher = fetcher
 
-    def run_all(self, checker=None):
+    def run_all(self, checker=None, skip_download=False):
         """
         runs all checks in a row.
         will raise if some error encountered.
@@ -50,8 +52,8 @@ class EIPChecker(object):
         checker.check_default_eipconfig()
 
         checker.check_is_there_default_provider()
-        checker.fetch_definition()
-        checker.fetch_eip_config()
+        checker.fetch_definition(skip_download=skip_download)
+        checker.fetch_eip_config(skip_download=skip_download)
         checker.check_complete_eip_config()
         #checker.ping_gateway()
 
@@ -70,6 +72,7 @@ class EIPChecker(object):
         # dump it right now, we can get an in-memory
         # config object and dump it to disk in a
         # later moment
+        logger.debug('checking default eip config')
         if not self._is_there_default_eipconfig():
             self._dump_default_eipconfig()
 
@@ -84,6 +87,7 @@ class EIPChecker(object):
         # else: self.get_eipconfig
         # XXX parse EIPConfig.
         # XXX get default_provider.
+        logger.debug('checking default provider')
         eipcfg = self._get_default_eipconfig_path()
         with open(eipcfg, 'r') as fp:
             config = json.load(fp)
@@ -103,8 +107,10 @@ class EIPChecker(object):
         # TODO:
         # - Implement diff
         # - overwrite if different.
+        logger.debug('fetching definition')
 
         if skip_download:
+            logger.debug('(fetching def skipped)')
             return True
         if config is None:
             config = self.config

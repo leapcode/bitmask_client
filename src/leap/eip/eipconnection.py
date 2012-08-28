@@ -8,7 +8,7 @@ logging.basicConfig()
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.DEBUG)
 
-from leap.base.connection import ConnectionError
+from leap.eip.checks import EIPChecker
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.openvpnconnection import OpenVPNConnection
 
@@ -22,16 +22,22 @@ class EIPConnection(OpenVPNConnection):
     Status updates (connected, bandwidth, etc) are signaled to the GUI.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, checker=EIPChecker, *args, **kwargs):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
         self.error_queue = []
-        #self.desired_con_state = None  # not in use
 
         status_signals = kwargs.pop('status_signals', None)
         self.status = EIPConnectionStatus(callbacks=status_signals)
+        self.checker = checker()
 
         super(EIPConnection, self).__init__(*args, **kwargs)
+
+    def run_checks(self, skip_download=False):
+        """
+        run all eip checks previous to attempting a connection
+        """
+        self.checker.run_all(skip_download=skip_download)
 
     def connect(self):
         """
@@ -127,10 +133,6 @@ class EIPConnection(OpenVPNConnection):
             logger.error("Failed Connection: %s" %
                          unicode(except_msg))
         return conn_result
-
-"""generic watcher object that keeps track of connection status"""
-# This should be deprecated in favor of daemon mode + management
-# interface. But we can leave it here for debug purposes.
 
 
 class EIPConnectionStatus(object):
@@ -272,11 +274,3 @@ class EIPConnectionStatus(object):
                 for cb in self.callbacks:
                     if callable(cb):
                         cb(self)
-
-
-# XXX move to exceptions
-class EIPClientError(ConnectionError):
-    """
-    base EIPClient Exception
-    """
-    pass
