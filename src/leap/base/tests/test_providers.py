@@ -35,6 +35,21 @@ class TestLeapProviderDefinition(BaseLeapTest):
 
     # tests
 
+    # XXX most of these tests can be made more abstract
+    # and moved to test_baseconfig *triangulate!*
+
+    def test_provider_slug_property(self):
+        slug = self.definition.slug
+        self.assertEquals(
+            slug,
+            os.path.join(
+                self.home,
+                '.config', 'leap', 'providers',
+                'testprovider.example.org',
+                'definition.json'))
+        with self.assertRaises(AttributeError):
+            self.definition.slug = 23
+
     def test_provider_dump(self):
         # check a good provider definition is dumped to disk
         self.testfile = self.get_tempfile('test.json')
