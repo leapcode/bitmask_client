@@ -165,6 +165,7 @@ class EIPChecker(object):
             'trying assertions'
             assert 'provider' in config
             assert config['provider'] is not None
+            # XXX assert there is gateway !!
         except AssertionError:
             raise eipexceptions.EIPConfigurationError
 
