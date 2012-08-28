@@ -11,7 +11,7 @@ from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
                          QTextBrowser, qApp)
 from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
 
-from leap.base.configuration import Configuration
+from leap.base.config import Configuration
 
 from leap.baseapp.dialogs import ErrorDialog
 
