@@ -1,7 +1,6 @@
 """
 Configuration Base Class
 """
-import configuration  # python configuration module, not local!
 import grp
 import json
 import logging
@@ -11,6 +10,8 @@ import os
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
+
+import configuration
 
 from leap.base import exceptions
 from leap.base import constants
@@ -45,7 +46,53 @@ class BaseLeapConfig(object):
         raise NotImplementedError("abstract base class")
 
 
+class MetaConfigWithSpec(type):
+    """
+    metaclass for JSONLeapConfig classes.
+    It creates a configuration spec out of
+    the `spec` dictionary.
+    """
+    # XXX in the near future, this is the
+    # place where we want to enforce
+    # singletons, read-only and stuff.
+    def __new__(meta, classname, bases, classDict):
+        spec_options = classDict.get('spec', None)
+        # XXX if not spec_options, raise BadConfiguration or something
+        # we create a configuration spec attribute from the spec dict
+        config_class = type(
+            classname + "Spec",
+            (configuration.Configuration, object),
+            {'options': spec_options})
+        classDict['spec'] = config_class
+
+        return type.__new__(meta, classname, bases, classDict)
+
+##########################################################
+# hacking in progress:
+
+# Configs have:
+# - a slug (from where a filename/folder is derived)
+# - a spec (for validation and defaults).
+#   this spec is basically a dict that will be used
+#   for type casting and validation, and defaults settings.
+
+# all config objects, since they are derived from  BaseConfig, implement basic
+# useful methods:
+# - save
+# - load
+# - get_config (returns a optparse.OptionParser object)
+
+# TODO:
+# - have a good type cast repertory (uris, version, hashes...)
+# - raise validation errors
+# - multilingual objects
+
+##########################################################
+
+
 class JSONLeapConfig(BaseLeapConfig):
+
+    __metaclass__ = MetaConfigWithSpec
 
     def __init__(self, *args, **kwargs):
         # sanity check
@@ -93,6 +140,7 @@ class JSONLeapConfig(BaseLeapConfig):
         # XXX fix import
         config_file = get_config_file(filename, folder)
         return config_file
+
 
 #
 # utility functions
