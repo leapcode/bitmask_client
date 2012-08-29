@@ -431,7 +431,7 @@ technolust</i>")
         if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
-            time.sleep(10)
+            time.sleep(5)
             print('errors. disconnect.')
             self.start_or_stopVPN()  # is stop
 

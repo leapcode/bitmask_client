@@ -160,7 +160,7 @@ class EIPConfigChecker(object):
     def check_complete_eip_config(self, config=None):
         # TODO check for gateway
         if config is None:
-            config = self.config
+            config = self.eipconfig.get_config()
         try:
             'trying assertions'
             assert 'provider' in config

@@ -139,23 +139,6 @@ to be triggered for each one of them.
             self.command = command
             self.args = args
 
-    def _check_ovpn_config(self):
-        """
-        checks if there is a default openvpn config.
-        if not, it writes one with info from the provider
-        definition file
-        """
-        # TODO
-        # - get --with-openvpn-config from opts
-        try:
-            eip_config.check_or_create_default_vpnconf(self.config)
-        except eip_exceptions.EIPInitNoProviderError:
-            logger.error('missing default provider definition')
-            self.missing_provider = True
-        except eip_exceptions.EIPInitBadProviderError:
-            logger.error('bad provider definition')
-            self.bad_provider = True
-
     def _get_or_create_config(self):
         """
         retrieves the config options from defaults or
@@ -168,7 +151,6 @@ to be triggered for each one of them.
 
         self._set_autostart()
         self._set_ovpn_command()
-        self._check_ovpn_config()
 
     def _check_vpn_keys(self):
         """

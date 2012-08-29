@@ -48,6 +48,22 @@ class EIPConfigTest(BaseLeapTest):
         username = self.get_username()
         groupname = self.get_groupname()
 
+        args.append('--client')
+        args.append('--dev')
+        #does this have to be tap for win??
+        args.append('tun')
+        args.append('--persist-tun')
+        args.append('--persist-key')
+        args.append('--remote')
+        args.append('testprovider.example.org')
+        # XXX get port!?
+        args.append('1194')
+        # XXX get proto
+        args.append('udp')
+        args.append('--tls-client')
+        args.append('--remote-cert-tls')
+        args.append('server')
+
         args.append('--user')
         args.append(username)
         args.append('--group')
@@ -55,16 +71,36 @@ class EIPConfigTest(BaseLeapTest):
         args.append('--management-client-user')
         args.append(username)
         args.append('--management-signal')
-        args.append('--management')
 
+        args.append('--management')
         #XXX hey!
         #get platform switches here!
         args.append('/tmp/.eip.sock')
         args.append('unix')
-        args.append('--config')
-        args.append(os.path.expanduser(
-            '~/.config/leap/providers/%s/openvpn.conf'
-            % constants.DEFAULT_TEST_PROVIDER))
+
+        # certs
+        # XXX get values from specs?
+        args.append('--cert')
+        args.append(os.path.join(
+            self.home,
+            '.config', 'leap', 'providers',
+            'testprovider.example.org',
+            'keys', 'client',
+            'openvpn.pem'))
+        args.append('--key')
+        args.append(os.path.join(
+            self.home,
+            '.config', 'leap', 'providers',
+            'testprovider.example.org',
+            'keys', 'client',
+            'openvpn.pem'))
+        args.append('--ca')
+        args.append(os.path.join(
+            self.home,
+            '.config', 'leap', 'providers',
+            'testprovider.example.org',
+            'keys', 'ca',
+            'testprovider-ca-cert.pem'))
         return args
 
     # build command string
