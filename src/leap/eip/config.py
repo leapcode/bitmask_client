@@ -163,8 +163,7 @@ def build_ovpn_options(daemon=False):
 
     opts = []
 
-    opts.append('--mode')
-    opts.append('client')
+    opts.append('--client')
 
     opts.append('--dev')
     # XXX same in win?

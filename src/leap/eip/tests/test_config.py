@@ -48,8 +48,7 @@ class EIPConfigTest(BaseLeapTest):
         username = self.get_username()
         groupname = self.get_groupname()
 
-        args.append('--mode')
-        args.append('client')
+        args.append('--client')
         args.append('--dev')
         #does this have to be tap for win??
         args.append('tun')
@@ -102,10 +101,6 @@ class EIPConfigTest(BaseLeapTest):
             'testprovider.example.org',
             'keys', 'ca',
             'testprovider-ca-cert.pem'))
-        #args.append('--config')
-        #args.append(os.path.expanduser(
-            #'~/.config/leap/providers/%s/openvpn.conf'
-            #% constants.DEFAULT_TEST_PROVIDER))
         return args
 
     # build command string
