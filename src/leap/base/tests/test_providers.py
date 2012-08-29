@@ -46,7 +46,7 @@ class TestLeapProviderDefinition(BaseLeapTest):
                 self.home,
                 '.config', 'leap', 'providers',
                 'testprovider.example.org',
-                'definition.json'))
+                'provider-definition.json'))
         with self.assertRaises(AttributeError):
             self.definition.slug = 23
 

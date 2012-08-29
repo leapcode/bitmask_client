@@ -40,7 +40,8 @@ class EIPCheckTest(BaseLeapTest):
         self.assertTrue(hasattr(checker, "check_is_there_default_provider"),
                         "missing meth")
         self.assertTrue(hasattr(checker, "fetch_definition"), "missing meth")
-        self.assertTrue(hasattr(checker, "fetch_eip_config"), "missing meth")
+        self.assertTrue(hasattr(checker, "fetch_eip_service_config"),
+                        "missing meth")
         self.assertTrue(hasattr(checker, "check_complete_eip_config"),
                         "missing meth")
         self.assertTrue(hasattr(checker, "ping_gateway"), "missing meth")
@@ -55,7 +56,7 @@ class EIPCheckTest(BaseLeapTest):
                         "not called")
         self.assertTrue(mc.fetch_definition.called,
                         "not called")
-        self.assertTrue(mc.fetch_eip_config.called,
+        self.assertTrue(mc.fetch_eip_service_config.called,
                         "not called")
         self.assertTrue(mc.check_complete_eip_config.called,
                         "not called")
@@ -133,13 +134,13 @@ class EIPCheckTest(BaseLeapTest):
         # (and proper EIPExceptions are raised).
         # Look at base.test_config.
 
-    def test_fetch_eip_config(self):
+    def test_fetch_eip_service_config(self):
         with patch.object(requests, "get") as mocked_get:
             mocked_get.return_value.status_code = 200
             mocked_get.return_value.json = testdata.EIP_SAMPLE_SERVICE
             checker = eipchecks.EIPConfigChecker(fetcher=requests)
             sampleconfig = testdata.EIP_SAMPLE_JSON
-            checker.fetch_definition(config=sampleconfig)
+            checker.fetch_eip_service_config(config=sampleconfig)
 
     def test_check_complete_eip_config(self):
         checker = eipchecks.EIPConfigChecker()

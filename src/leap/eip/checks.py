@@ -8,12 +8,11 @@ logger.setLevel(logging.DEBUG)
 
 import requests
 
-from leap.base import config as baseconfig
 from leap.base import constants as baseconstants
+from leap.base import providers
 from leap.eip import config as eipconfig
 from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
-from leap.util.fileutil import mkdir_p
 
 """
 EIPConfigChecker
@@ -49,10 +48,11 @@ class EIPConfigChecker(object):
         # argument on init.
         # we want tests
         # to be explicitely run.
-        self.config = None
         self.fetcher = fetcher
 
         self.eipconfig = eipconfig.EIPConfig()
+        self.defaultprovider = providers.LeapProviderDefinition()
+        self.eipserviceconfig = eipconfig.EIPServiceConfig()
 
     def run_all(self, checker=None, skip_download=False):
         """
@@ -74,7 +74,7 @@ class EIPConfigChecker(object):
 
         checker.check_is_there_default_provider()
         checker.fetch_definition(skip_download=skip_download)
-        checker.fetch_eip_config(skip_download=skip_download)
+        checker.fetch_eip_service_config(skip_download=skip_download)
         checker.check_complete_eip_config()
         #checker.ping_gateway()
 
@@ -109,8 +109,7 @@ class EIPConfigChecker(object):
         provider = config.get('provider', None)
         if provider is None:
             raise eipexceptions.EIPMissingDefaultProvider
-        if config:
-            self.config = config
+        # XXX raise also if malformed ProviderDefinition?
         return True
 
     def fetch_definition(self, skip_download=False,
@@ -120,65 +119,38 @@ class EIPConfigChecker(object):
         """
         # TODO:
         # - Implement diff
-        # - overwrite if different.
+        # - overwrite only if different.
+        #   (attend to serial field different, for instance)
+
         logger.debug('fetching definition')
 
         if skip_download:
             logger.debug('(fetching def skipped)')
             return True
         if config is None:
-            config = self.config
+            config = self.defaultprovider.get_config()
         if uri is None:
-            if config:
-                domain = config.get('provider', None)
-            else:
-                domain = None
-            uri = self._get_provider_definition_uri(
-                domain=domain)
+            domain = config.get('provider', None)
+            uri = self._get_provider_definition_uri(domain=domain)
 
-        # XXX move to JSONConfig Fetcher
-        request = self.fetcher.get(uri)
-        request.raise_for_status()
+        self.defaultprovider.load(from_uri=uri, fetcher=self.fetcher)
+        self.defaultprovider.save()
 
-        definition_file = os.path.join(
-            baseconfig.get_default_provider_path(),
-            baseconstants.DEFINITION_EXPECTED_PATH)
-
-        folder, filename = os.path.split(definition_file)
-        if not os.path.isdir(folder):
-            mkdir_p(folder)
-        with open(definition_file, 'wb') as f:
-            f.write(json.dumps(request.json, indent=4))
-
-    def fetch_eip_config(self, skip_download=False,
-                         config=None, uri=None):
+    def fetch_eip_service_config(self, skip_download=False,
+                                 config=None, uri=None):
         if skip_download:
             return True
         if config is None:
-            config = self.config
+            config = self.eipserviceconfig.get_config()
         if uri is None:
-            if config:
-                domain = config.get('provider', None)
-            else:
-                domain = None
-            uri = self._get_eip_service_uri(
-                domain=domain)
+            domain = config.get('provider', None)
+            uri = self._get_eip_service_uri(domain=domain)
 
-        # XXX move to JSONConfig Fetcher
-        request = self.fetcher.get(uri)
-        request.raise_for_status()
-
-        definition_file = os.path.join(
-            baseconfig.get_default_provider_path(),
-            eipconstants.EIP_SERVICE_EXPECTED_PATH)
-
-        folder, filename = os.path.split(definition_file)
-        if not os.path.isdir(folder):
-            mkdir_p(folder)
-        with open(definition_file, 'wb') as f:
-            f.write(json.dumps(request.json, indent=4))
+        self.eipserviceconfig.load(from_uri=uri, fetcher=self.fetcher)
+        self.eipserviceconfig.save()
 
     def check_complete_eip_config(self, config=None):
+        # TODO check for gateway
         if config is None:
             config = self.config
         try:

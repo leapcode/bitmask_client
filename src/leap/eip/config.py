@@ -49,6 +49,20 @@ class EIPConfig(baseconfig.JSONLeapConfig):
     slug = property(_get_slug, _set_slug)
 
 
+class EIPServiceConfig(baseconfig.JSONLeapConfig):
+    spec = eipspecs.eipservice_config_spec
+
+    def _get_slug(self):
+        return baseconfig.get_config_file(
+            'eip-service.json',
+            folder=baseconfig.get_default_provider_path())
+
+    def _set_slug(self):
+        raise AttributeError("you cannot set slug")
+
+    slug = property(_get_slug, _set_slug)
+
+
 def check_or_create_default_vpnconf(config):
     """
     checks that a vpn config file

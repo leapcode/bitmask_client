@@ -9,7 +9,7 @@ class LeapProviderDefinition(baseconfig.JSONLeapConfig):
     def _get_slug(self):
         provider_path = baseconfig.get_default_provider_path()
         return baseconfig.get_config_file(
-            'definition.json',
+            'provider-definition.json',
             folder=provider_path)
 
     def _set_slug(self, *args, **kwargs):

@@ -64,3 +64,32 @@ eipconfig_spec = {
         'type': unicode
     }
 }
+
+eipservice_config_spec = {
+    'serial': {
+        'type': int,
+        'required': True,
+        'default': 1
+    },
+    'version': {
+        'type': unicode,
+        'required': True,
+        'default': "0.1.0"
+    },
+    'capabilities': {
+        'type': dict,
+        'default': {
+            "transport": ["openvpn"],
+            "ports": ["80", "53"],
+            "protocols": ["udp", "tcp"],
+            "static_ips": True,
+            "adblock": True}
+    },
+    'gateways': {
+        'type': list,
+        'default': [{"country_code": "us",
+                    "label": {"en":"west"},
+                    "capabilities": {},
+                    "hosts": ["1.2.3.4", "1.2.3.5"]}]
+    }
+}

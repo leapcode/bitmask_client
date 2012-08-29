@@ -6,12 +6,14 @@ import json
 import logging
 import requests
 import socket
+import tempfile
 import os
 
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
 
 import configuration
+import requests
 
 from leap.base import exceptions
 from leap.base import constants
@@ -55,6 +57,11 @@ class MetaConfigWithSpec(type):
     # XXX in the near future, this is the
     # place where we want to enforce
     # singletons, read-only and stuff.
+
+    # TODO:
+    # - add a error handler for missing options that
+    #   we can act easily upon (sys.exit is ugly, for $deity's sake)
+
     def __new__(meta, classname, bases, classDict):
         spec_options = classDict.get('spec', None)
         # XXX if not spec_options, raise BadConfiguration or something
@@ -102,6 +109,7 @@ class JSONLeapConfig(BaseLeapConfig):
 
         self._config = self.spec()
         self._config.parse_args(list(args))
+        self.fetcher = kwargs.pop('fetcher', requests)
 
     # mandatory baseconfig interface
 
@@ -111,7 +119,7 @@ class JSONLeapConfig(BaseLeapConfig):
         folder, filename = os.path.split(to)
         if folder and not os.path.isdir(folder):
             mkdir_p(folder)
-        # lazy evaluation until first level nest
+        # lazy evaluation until first level of nesting
         # to allow lambdas with context-dependant info
         # like os.path.expanduser
         config = self.get_config()
@@ -120,14 +128,27 @@ class JSONLeapConfig(BaseLeapConfig):
                 config[k] = v()
         self._config.serialize(to)
 
-    def load(self, fromfile=None):
-        # load should get a much more generic
-        # argument. it could be, f.i., from_uri,
-        # and call to Fetcher
-
+    def load(self, fromfile=None, from_uri=None, fetcher=None):
+        if from_uri is not None:
+            fetched = self.fetch(from_uri, fetcher=fetcher)
+            if fetched:
+                return
         if fromfile is None:
             fromfile = self.filename
-        self._config.config = self._config.deserialize(fromfile)
+        newconfig = self._config.deserialize(fromfile)
+        # XXX check for no errors, etc
+        self._config.config = newconfig
+
+    def fetch(self, uri, fetcher=None):
+        if not fetcher:
+            fetcher = self.fetcher
+        request = fetcher.get(uri)
+        request.raise_for_status()
+        fd, fname = tempfile.mkstemp(suffix=".json")
+        with open(fname, 'w') as tmp:
+            tmp.write(json.dumps(request.json))
+        self._loadtemp(fname)
+        return True
 
     def get_config(self):
         return self._config.config
@@ -140,6 +161,12 @@ class JSONLeapConfig(BaseLeapConfig):
     @property
     def filename(self):
         return self.get_filename()
+
+    # private
+
+    def _loadtemp(self, filename):
+        self.load(fromfile=filename)
+        os.remove(filename)
 
     def _slug_to_filename(self):
         # is this going to work in winland if slug is "foo/bar" ?
@@ -157,6 +184,7 @@ class JSONLeapConfig(BaseLeapConfig):
 #
 # (might be moved to some class as we see fit, but
 # let's remain functional for a while)
+# maybe base.config.util ??
 #
 
 

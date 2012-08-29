@@ -38,13 +38,5 @@ EIP_SAMPLE_SERVICE = {
      "label": {"en":"west"},
      "capabilities": {},
      "hosts": ["1.2.3.4", "1.2.3.5"]},
-    {"country_code": "us",
-     "label": {"en":"east"},
-     "capabilities": {},
-     "hosts": ["1.2.3.4", "1.2.3.5"]},
-    {"country_code": "fr",
-     "label": {},
-     "capabilities": {},
-     "hosts": ["1.2.3.4", "1.2.3.5"]}
     ]
 }
