@@ -63,6 +63,7 @@ class EIPServiceConfig(baseconfig.JSONLeapConfig):
     slug = property(_get_slug, _set_slug)
 
 
+# XXX deprecate by #447
 def check_or_create_default_vpnconf(config):
     """
     checks that a vpn config file
@@ -162,6 +163,26 @@ def build_ovpn_options(daemon=False):
 
     opts = []
 
+    opts.append('--mode')
+    opts.append('client')
+
+    opts.append('--dev')
+    # XXX same in win?
+    opts.append('tun')
+    opts.append('--persist-tun')
+    opts.append('--persist-key')
+
+    # remote
+    # XXX get remote from eip.json
+    opts.append('--remote')
+    opts.append('testprovider.example.org')
+    opts.append('1194')
+    opts.append('udp')
+
+    opts.append('--tls-client')
+    opts.append('--remote-cert-tls')
+    opts.append('server')
+
     # set user and group
     opts.append('--user')
     opts.append('%s' % user)
@@ -179,6 +200,7 @@ def build_ovpn_options(daemon=False):
     ourplatform = platform.system()
     if ourplatform in ("Linux", "Mac"):
         opts.append('--management')
+        # XXX get a different sock each time ...
         opts.append('/tmp/.eip.sock')
         opts.append('unix')
     if ourplatform == "Windows":
@@ -187,21 +209,13 @@ def build_ovpn_options(daemon=False):
         # XXX which is a good choice?
         opts.append('7777')
 
-    # remaining config options will go in a file
-
-    # NOTE: we will build this file from
-    # the service definition file.
-    # XXX override from --with-openvpn-config
-
-    opts.append('--config')
-
-    default_provider_path = baseconfig.get_default_provider_path()
-
-    # XXX get rid of config_file at all
-    ovpncnf = baseconfig.get_config_file(
-        'openvpn.conf',
-        folder=default_provider_path)
-    opts.append(ovpncnf)
+    # certs
+    opts.append('--cert')
+    opts.append(eipspecs.client_cert_path())
+    opts.append('--key')
+    opts.append(eipspecs.client_cert_path())
+    opts.append('--ca')
+    opts.append(eipspecs.provider_ca_path())
 
     # we cannot run in daemon mode
     # with the current subp setting.
