@@ -5,18 +5,25 @@ from __future__ import (division, unicode_literals, print_function)
 
 import logging
 
-from leap.base.config import JSONLeapConfig
+#from leap.base.config import JSONLeapConfig
 from leap.base.authentication import Authentication
 
 logger = logging.getLogger(name=__name__)
 
 
-class Connection(JSONLeapConfig, Authentication):
+class Connection(Authentication):
+    # JSONLeapConfig
+    #spec = {}
+
     def __init__(self, *args, **kwargs):
         self.connection_state = None
         self.desired_connection_state = None
-        #XXX FIXME this is only initializing one
-        #of the bases..
+        #XXX FIXME diamond inheritance gotcha..
+        #If you inherit from >1 class,
+        #super is only initializing one
+        #of the bases..!!
+        # I think we better pass config as a constructor
+        # parameter -- kali 2012-08-30 04:33
         super(Connection, self).__init__(*args, **kwargs)
 
     def connect(self):

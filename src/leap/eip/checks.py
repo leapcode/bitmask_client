@@ -35,6 +35,14 @@ Other related checkers - not implemented yet -:
 """
 
 
+class LeapNetworkChecker(object):
+    pass
+
+
+class ProviderCertChecker(object):
+    pass
+
+
 class EIPConfigChecker(object):
     """
     Several tests needed

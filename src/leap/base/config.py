@@ -4,7 +4,6 @@ Configuration Base Class
 import grp
 import json
 import logging
-import requests
 import socket
 import tempfile
 import os
@@ -64,7 +63,15 @@ class MetaConfigWithSpec(type):
 
     def __new__(meta, classname, bases, classDict):
         spec_options = classDict.get('spec', None)
-        # XXX if not spec_options, raise BadConfiguration or something
+        # not quite happy with this workaround.
+        # I want to raise if missing spec dict, but only
+        # for grand-children of this metaclass.
+        # maybe should use abc module for this.
+        abcderived = ("JSONLeapConfig",)
+        if spec_options is None and classname not in abcderived:
+            raise exceptions.ImproperlyConfigured(
+                "missing spec dict on your derived class")
+
         # we create a configuration spec attribute from the spec dict
         config_class = type(
             classname + "Spec",
@@ -103,8 +110,18 @@ class JSONLeapConfig(BaseLeapConfig):
 
     def __init__(self, *args, **kwargs):
         # sanity check
-        assert self.slug is not None
-        assert self.spec is not None
+        try:
+            assert self.slug is not None
+        except AssertionError:
+            raise exceptions.ImproperlyConfigured(
+                "missing slug on JSONLeapConfig"
+                " derived class")
+        try:
+            assert self.spec is not None
+        except AssertionError:
+            raise exceptions.ImproperlyConfigured(
+                "missing spec on JSONLeapConfig"
+                " derived class")
         assert issubclass(self.spec, configuration.Configuration)
 
         self._config = self.spec()
@@ -298,9 +315,11 @@ def is_internet_up():
         pass
     return False
 
+# XXX DEPRECATE.
+# move to eip.checks
 #
 # XXX merge conflict
-# tests are still using this deprecated Configuration object.
+# some tests are still using this deprecated Configuration object.
 # moving it here transiently until I clean merge commit.
 # -- kali 2012-08-24 00:32
 #

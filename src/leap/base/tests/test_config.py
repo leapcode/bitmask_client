@@ -23,6 +23,38 @@ except ImportError:
 _system = platform.system()
 
 
+class JSONLeapConfigTest(BaseLeapTest):
+    def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_metaclass(self):
+        with self.assertRaises(exceptions.ImproperlyConfigured) as exc:
+            class DummyTestConfig(config.JSONLeapConfig):
+                __metaclass__ = config.MetaConfigWithSpec
+            exc.startswith("missing spec dict")
+
+        class DummyTestConfig(config.JSONLeapConfig):
+            __metaclass__ = config.MetaConfigWithSpec
+            spec = {}
+        with self.assertRaises(exceptions.ImproperlyConfigured) as exc:
+            DummyTestConfig()
+            exc.startswith("missing slug")
+
+        class DummyTestConfig(config.JSONLeapConfig):
+            __metaclass__ = config.MetaConfigWithSpec
+            spec = {}
+            slug = "foo"
+        DummyTestConfig()
+
+######################################3
+#
+# provider fetch tests block
+#
+
+
 class ProviderTest(BaseLeapTest):
     # override per test fixtures
 
@@ -45,7 +77,7 @@ class BareHomeTestCase(ProviderTest):
 
 
 class ProviderDefinitionTestCase(ProviderTest):
-    # XXX See how to merge with test_providers
+    # XXX MOVE TO eip.test_checks
     # -- kali 2012-08-24 00:38
 
     __name__ = "provider_config_tests"
@@ -61,10 +93,6 @@ class ProviderDefinitionTestCase(ProviderTest):
         with open(os.path.join(path, 'eip.json'), 'w') as fp:
             json.dump(eipconstants.EIP_SAMPLE_JSON, fp)
 
-
-#
-# provider fetch tests block
-#
 
 # these tests below should move to wherever
 # we put the fetcher for provider files and related stuff.
@@ -107,6 +135,7 @@ class ProviderFetchInvalidUrl(ProviderTest):
 
 
 # end provider fetch tests
+###########################################
 
 
 class ConfigHelperFunctions(BaseLeapTest):
