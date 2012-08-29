@@ -14,8 +14,9 @@ from leap.base import config as baseconfig
 from leap.base.constants import (DEFAULT_PROVIDER_DEFINITION,
                                  DEFINITION_EXPECTED_PATH)
 from leap.eip import checks as eipchecks
-from leap.eip import constants as eipconstants
+from leap.eip import specs as eipspecs
 from leap.eip import exceptions as eipexceptions
+from leap.eip.tests import data as testdata
 from leap.testing.basetest import BaseLeapTest
 
 
@@ -66,17 +67,24 @@ class EIPCheckTest(BaseLeapTest):
     def test_check_default_eipconfig(self):
         checker = eipchecks.EIPConfigChecker()
         # no eip config (empty home)
-        eipconfig = baseconfig.get_config_file(eipconstants.EIP_CONFIG)
-        self.assertFalse(os.path.isfile(eipconfig))
+        eipconfig_path = checker.eipconfig.filename
+        self.assertFalse(os.path.isfile(eipconfig_path))
         checker.check_default_eipconfig()
         # we've written one, so it should be there.
-        self.assertTrue(os.path.isfile(eipconfig))
-        with open(eipconfig, 'rb') as fp:
+        self.assertTrue(os.path.isfile(eipconfig_path))
+        with open(eipconfig_path, 'rb') as fp:
             deserialized = json.load(fp)
-        self.assertEqual(deserialized,
-                         eipconstants.EIP_SAMPLE_JSON)
-        # TODO: when new JSONConfig class is in place, we shold
-        # run validation methods.
+
+        # force re-evaluation of the paths
+        # small workaround for evaluating home dirs correctly
+        EIP_SAMPLE_JSON = copy.copy(testdata.EIP_SAMPLE_JSON)
+        EIP_SAMPLE_JSON['openvpn_client_certificate'] = \
+            eipspecs.client_cert_path()
+        EIP_SAMPLE_JSON['openvpn_ca_certificate'] = \
+            eipspecs.provider_ca_path()
+        self.assertEqual(deserialized, EIP_SAMPLE_JSON)
+
+        # TODO: shold ALSO run validation methods.
 
     def test_check_is_there_default_provider(self):
         checker = eipchecks.EIPConfigChecker()
@@ -85,7 +93,7 @@ class EIPCheckTest(BaseLeapTest):
         # This error will be possible catched in a different
         # place, when JSONConfig does validation of required fields.
 
-        sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+        sampleconfig = copy.copy(testdata.EIP_SAMPLE_JSON)
         # blank out default_provider
         sampleconfig['provider'] = None
         eipcfg_path = checker._get_default_eipconfig_path()
@@ -94,7 +102,7 @@ class EIPCheckTest(BaseLeapTest):
         with self.assertRaises(eipexceptions.EIPMissingDefaultProvider):
             checker.check_is_there_default_provider()
 
-        sampleconfig = eipconstants.EIP_SAMPLE_JSON
+        sampleconfig = testdata.EIP_SAMPLE_JSON
         eipcfg_path = checker._get_default_eipconfig_path()
         with open(eipcfg_path, 'w') as fp:
             json.dump(sampleconfig, fp)
@@ -105,7 +113,7 @@ class EIPCheckTest(BaseLeapTest):
             mocked_get.return_value.status_code = 200
             mocked_get.return_value.json = DEFAULT_PROVIDER_DEFINITION
             checker = eipchecks.EIPConfigChecker(fetcher=requests)
-            sampleconfig = eipconstants.EIP_SAMPLE_JSON
+            sampleconfig = testdata.EIP_SAMPLE_JSON
             checker.fetch_definition(config=sampleconfig)
 
         fn = os.path.join(baseconfig.get_default_provider_path(),
@@ -121,24 +129,24 @@ class EIPCheckTest(BaseLeapTest):
     def test_fetch_eip_config(self):
         with patch.object(requests, "get") as mocked_get:
             mocked_get.return_value.status_code = 200
-            mocked_get.return_value.json = eipconstants.EIP_SAMPLE_SERVICE
+            mocked_get.return_value.json = testdata.EIP_SAMPLE_SERVICE
             checker = eipchecks.EIPConfigChecker(fetcher=requests)
-            sampleconfig = eipconstants.EIP_SAMPLE_JSON
+            sampleconfig = testdata.EIP_SAMPLE_JSON
             checker.fetch_definition(config=sampleconfig)
 
     def test_check_complete_eip_config(self):
         checker = eipchecks.EIPConfigChecker()
         with self.assertRaises(eipexceptions.EIPConfigurationError):
-            sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+            sampleconfig = copy.copy(testdata.EIP_SAMPLE_JSON)
             sampleconfig['provider'] = None
             checker.check_complete_eip_config(config=sampleconfig)
         with self.assertRaises(eipexceptions.EIPConfigurationError):
-            sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+            sampleconfig = copy.copy(testdata.EIP_SAMPLE_JSON)
             del sampleconfig['provider']
             checker.check_complete_eip_config(config=sampleconfig)
 
         # normal case
-        sampleconfig = copy.copy(eipconstants.EIP_SAMPLE_JSON)
+        sampleconfig = copy.copy(testdata.EIP_SAMPLE_JSON)
         checker.check_complete_eip_config(config=sampleconfig)
 
 if __name__ == "__main__":

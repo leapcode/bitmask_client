@@ -52,7 +52,7 @@ class EIPConfigChecker(object):
         self.config = None
         self.fetcher = fetcher
 
-        #self.eipconfig = eipconfig.EIPConfig()
+        self.eipconfig = eipconfig.EIPConfig()
 
     def run_all(self, checker=None, skip_download=False):
         """
@@ -211,14 +211,17 @@ class EIPConfigChecker(object):
 
     def _is_there_default_eipconfig(self):
         #XXX
-        #self.eipconfig.exists()
-        return os.path.isfile(
-            self._get_default_eipconfig_path())
+        return self.eipconfig.exists()
+        #return os.path.isfile(
+            #self._get_default_eipconfig_path())
 
     def _dump_default_eipconfig(self):
         #XXX self.eipconfig.save()
-        eipconfig.dump_default_eipconfig(
-            self._get_default_eipconfig_path())
+        logger.debug('saving eipconfig')
+        #import ipdb;ipdb.set_trace()
+        self.eipconfig.save()
+        #eipconfig.dump_default_eipconfig(
+            #self._get_default_eipconfig_path())
 
     def _get_provider_definition_uri(self, domain=None, path=None):
         if domain is None:

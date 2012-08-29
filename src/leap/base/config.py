@@ -111,6 +111,13 @@ class JSONLeapConfig(BaseLeapConfig):
         folder, filename = os.path.split(to)
         if folder and not os.path.isdir(folder):
             mkdir_p(folder)
+        # lazy evaluation until first level nest
+        # to allow lambdas with context-dependant info
+        # like os.path.expanduser
+        config = self.get_config()
+        for k, v in config.iteritems():
+            if callable(v):
+                config[k] = v()
         self._config.serialize(to)
 
     def load(self, fromfile=None):

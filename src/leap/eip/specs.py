@@ -1,19 +1,21 @@
+from __future__ import (unicode_literals)
 import os
 
 from leap.base import config as baseconfig
 
 
-provider_ca_path = os.path.join(
+provider_ca_path = lambda: unicode(os.path.join(
     baseconfig.get_default_provider_path(),
     'keys', 'ca',
     'testprovider-ca-cert.pem'
-)
+))
 
-client_cert_path = os.path.join(
+
+client_cert_path = lambda: unicode(os.path.join(
     baseconfig.get_default_provider_path(),
     'keys', 'client',
     'openvpn.pem'
-)
+))
 
 eipconfig_spec = {
     'provider': {
@@ -33,7 +35,7 @@ eipconfig_spec = {
         'type': int,
         'default': 80
     },
-    'oepnvpn_ca_certificate': {
+    'openvpn_ca_certificate': {
         'type': unicode,  # path
         'default': provider_ca_path
     },
@@ -45,7 +47,7 @@ eipconfig_spec = {
         'type': bool,
         'default': True
     },
-    'block_cleartext_tr affic': {
+    'block_cleartext_traffic': {
         'type': bool,
         'default': True
     },

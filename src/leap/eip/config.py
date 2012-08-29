@@ -15,6 +15,7 @@ from leap.eip import exceptions as eip_exceptions
 from leap.eip import constants as eipconstants
 from leap.eip import specs as eipspecs
 
+logging.basicConfig()
 logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
 
@@ -262,6 +263,7 @@ def build_ovpn_command(config, debug=False, do_pkexec_check=True):
     return [command[0], command[1:]]
 
 
+# XXX deprecate
 def get_sensible_defaults():
     """
     gathers a dict of sensible defaults,
