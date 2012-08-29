@@ -93,19 +93,26 @@ class EIPCheckTest(BaseLeapTest):
         # This error will be possible catched in a different
         # place, when JSONConfig does validation of required fields.
 
-        sampleconfig = copy.copy(testdata.EIP_SAMPLE_JSON)
+        # passing direct config
+        with self.assertRaises(eipexceptions.EIPMissingDefaultProvider):
+            checker.check_is_there_default_provider(config={})
+
+        # ok. now, messing with real files...
         # blank out default_provider
+        sampleconfig = copy.copy(testdata.EIP_SAMPLE_JSON)
         sampleconfig['provider'] = None
-        eipcfg_path = checker._get_default_eipconfig_path()
+        eipcfg_path = checker.eipconfig.filename
         with open(eipcfg_path, 'w') as fp:
             json.dump(sampleconfig, fp)
         with self.assertRaises(eipexceptions.EIPMissingDefaultProvider):
+            checker.eipconfig.load(fromfile=eipcfg_path)
             checker.check_is_there_default_provider()
 
         sampleconfig = testdata.EIP_SAMPLE_JSON
-        eipcfg_path = checker._get_default_eipconfig_path()
+        #eipcfg_path = checker._get_default_eipconfig_path()
         with open(eipcfg_path, 'w') as fp:
             json.dump(sampleconfig, fp)
+        checker.eipconfig.load()
         self.assertTrue(checker.check_is_there_default_provider())
 
     def test_fetch_definition(self):

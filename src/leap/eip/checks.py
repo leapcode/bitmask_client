@@ -21,8 +21,8 @@ EIPConfigChecker
 this is the first of 3 consecutive checks that we're implementing.
 
 It is used from the eip conductor (a instance of EIPConnection that is
-managed from the QtApp), running run_all method before trying to call
-`connect` or any other of the state switching methods.
+managed from the QtApp), running `run_all` method before trying to call
+`connect` or any other of the state-changing methods.
 
 It checks that the needed files are provided or can be discovered over the
 net. Much of these tests are not specific to EIP module, and can be splitted
@@ -69,7 +69,7 @@ class EIPConfigChecker(object):
 
         # TODO: get rid of check_default.
         # check_complete should
-        # be enough.
+        # be enough. but here to make early tests easier.
         checker.check_default_eipconfig()
 
         checker.check_is_there_default_provider()
@@ -103,15 +103,9 @@ class EIPConfigChecker(object):
         default provider found on eip config.
         This is catched by ui and runs FirstRunWizard (MVS+)
         """
-        # if config is not None:
-        # config = config
-        # else: self.get_eipconfig
-        # XXX parse EIPConfig.
-        # XXX get default_provider.
+        if config is None:
+            config = self.eipconfig.get_config()
         logger.debug('checking default provider')
-        eipcfg = self._get_default_eipconfig_path()
-        with open(eipcfg, 'r') as fp:
-            config = json.load(fp)
         provider = config.get('provider', None)
         if provider is None:
             raise eipexceptions.EIPMissingDefaultProvider
@@ -206,22 +200,11 @@ class EIPConfigChecker(object):
     # private helpers
     #
 
-    def _get_default_eipconfig_path(self):
-        return baseconfig.get_config_file(eipconstants.EIP_CONFIG)
-
     def _is_there_default_eipconfig(self):
-        #XXX
         return self.eipconfig.exists()
-        #return os.path.isfile(
-            #self._get_default_eipconfig_path())
 
     def _dump_default_eipconfig(self):
-        #XXX self.eipconfig.save()
-        logger.debug('saving eipconfig')
-        #import ipdb;ipdb.set_trace()
         self.eipconfig.save()
-        #eipconfig.dump_default_eipconfig(
-            #self._get_default_eipconfig_path())
 
     def _get_provider_definition_uri(self, domain=None, path=None):
         if domain is None:

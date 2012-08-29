@@ -127,7 +127,7 @@ class JSONLeapConfig(BaseLeapConfig):
 
         if fromfile is None:
             fromfile = self.filename
-        self._config.deserialize(fromfile)
+        self._config.config = self._config.deserialize(fromfile)
 
     def get_config(self):
         return self._config.config
