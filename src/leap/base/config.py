@@ -141,6 +141,9 @@ class JSONLeapConfig(BaseLeapConfig):
         config_file = get_config_file(filename, folder)
         return config_file
 
+    def exists(self):
+        return os.path.isfile(self.filename)
+
 
 #
 # utility functions

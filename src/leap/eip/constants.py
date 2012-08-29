@@ -1,5 +1,8 @@
 EIP_CONFIG = "eip.json"
 
+# XXX deprecate. EIPConfig used instead
+# can move for testing purposes.
+
 EIP_SAMPLE_JSON = {
     "provider": "testprovider.example.org",
     "transport": "openvpn",

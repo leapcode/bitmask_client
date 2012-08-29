@@ -52,6 +52,8 @@ class EIPConfigChecker(object):
         self.config = None
         self.fetcher = fetcher
 
+        #self.eipconfig = eipconfig.EIPConfig()
+
     def run_all(self, checker=None, skip_download=False):
         """
         runs all checks in a row.
@@ -208,10 +210,13 @@ class EIPConfigChecker(object):
         return baseconfig.get_config_file(eipconstants.EIP_CONFIG)
 
     def _is_there_default_eipconfig(self):
+        #XXX
+        #self.eipconfig.exists()
         return os.path.isfile(
             self._get_default_eipconfig_path())
 
     def _dump_default_eipconfig(self):
+        #XXX self.eipconfig.save()
         eipconfig.dump_default_eipconfig(
             self._get_default_eipconfig_path())
 
