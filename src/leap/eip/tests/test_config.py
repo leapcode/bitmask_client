@@ -1,15 +1,16 @@
-import ConfigParser
 import os
 import platform
+import stat
 
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 
-from leap.base import constants
-from leap.eip import config as eip_config
+#from leap.base import constants
+#from leap.eip import config as eip_config
 from leap.testing.basetest import BaseLeapTest
+from leap.util.fileutil import mkdir_p
 
 _system = platform.system()
 
@@ -29,19 +30,14 @@ class EIPConfigTest(BaseLeapTest):
     #
 
     def touch_exec(self):
+        path = os.path.join(
+            self.tempdir, 'bin')
+        mkdir_p(path)
         tfile = os.path.join(
-            self.tempfile,
-            'bin',
+            path,
             'openvpn')
-        open(tfile, 'bw').close()
-
-    def get_empty_config(self):
-        _config = ConfigParser.ConfigParser()
-        return _config
-
-    def get_minimal_config(self):
-        _config = ConfigParser.ConfigParser()
-        return _config
+        open(tfile, 'wb').close()
+        os.chmod(tfile, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     def get_expected_openvpn_args(self):
         args = []
@@ -110,16 +106,17 @@ class EIPConfigTest(BaseLeapTest):
     # some checks.
 
     def test_build_ovpn_command_empty_config(self):
-        _config = self.get_empty_config()
-        command, args = eip_config.build_ovpn_command(
-            _config,
-            do_pkexec_check=False)
-        self.assertEqual(command, 'openvpn')
+        self.touch_exec()
+        from leap.eip import config as eipconfig
+        from leap.util.fileutil import which
+        path = os.environ['PATH']
+        vpnbin = which('openvpn', path=path)
+        print 'path =', path
+        print 'vpnbin = ', vpnbin
+        command, args = eipconfig.build_ovpn_command(
+            do_pkexec_check=False, vpnbin=vpnbin)
+        self.assertEqual(command, self.home + '/bin/openvpn')
         self.assertEqual(args, self.get_expected_openvpn_args())
-
-    # XXX TODO:
-    # - should use touch_exec to plant an "executable" in the path
-    # - should check that "which" for openvpn returns what's expected.
 
 
 if __name__ == "__main__":

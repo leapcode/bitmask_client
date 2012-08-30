@@ -21,7 +21,7 @@ def extend_path():
     # XXX add mac / win extended search paths?
 
 
-def which(program):
+def which(program, path=None):
     """
     an implementation of which
     that extends the path with
@@ -67,8 +67,10 @@ def which(program):
     else:
         # extended iterator
         # with extra path
+        if path is None:
+            path = os.environ['PATH']
         extended_path = chain(
-            iter_path(os.environ["PATH"]),
+            iter_path(path),
             iter_path(extend_path()))
         for candidate in extended_path:
             if candidate is not None:

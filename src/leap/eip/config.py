@@ -1,18 +1,13 @@
-import ConfigParser  # to be deprecated
-import json
 import logging
 import os
 import platform
-import socket
 
-from leap.util.fileutil import (which, mkdir_p,
-                                check_and_fix_urw_only)
+from leap.util.fileutil import (which, check_and_fix_urw_only)
 
 from leap.base import config as baseconfig
 from leap.baseapp.permcheck import (is_pkexec_in_system,
                                     is_auth_agent_running)
 from leap.eip import exceptions as eip_exceptions
-from leap.eip import constants as eipconstants
 from leap.eip import specs as eipspecs
 
 logging.basicConfig()
@@ -104,7 +99,9 @@ def build_ovpn_options(daemon=False):
     ourplatform = platform.system()
     if ourplatform in ("Linux", "Mac"):
         opts.append('--management')
+
         # XXX get a different sock each time ...
+        # XXX #505
         opts.append('/tmp/.eip.sock')
         opts.append('unix')
     if ourplatform == "Windows":
@@ -130,13 +127,10 @@ def build_ovpn_options(daemon=False):
     return opts
 
 
-def build_ovpn_command(config, debug=False, do_pkexec_check=True):
+def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None):
     """
     build a string with the
     complete openvpn invocation
-
-    @param config: config object
-    @type config: ConfigParser instance
 
     @rtype [string, [list of strings]]
     @rparam: a list containing the command string
@@ -146,11 +140,11 @@ def build_ovpn_command(config, debug=False, do_pkexec_check=True):
     use_pkexec = True
     ovpn = None
 
-    if config.has_option('openvpn', 'use_pkexec'):
-        use_pkexec = config.get('openvpn', 'use_pkexec')
+    # XXX get use_pkexec from config instead.
+
     if platform.system() == "Linux" and use_pkexec and do_pkexec_check:
 
-        # XXX check for both pkexec (done)
+        # check for both pkexec
         # AND a suitable authentication
         # agent running.
         logger.info('use_pkexec set to True')
@@ -168,23 +162,15 @@ def build_ovpn_command(config, debug=False, do_pkexec_check=True):
             raise eip_exceptions.EIPNoPolkitAuthAgentAvailable
 
         command.append('pkexec')
-
-    if config.has_option('openvpn',
-                         'openvpn_binary'):
-        ovpn = config.get('openvpn',
-                          'openvpn_binary')
-    if not ovpn and config.has_option('DEFAULT',
-                                      'openvpn_binary'):
-        ovpn = config.get('DEFAULT',
-                          'openvpn_binary')
-
+    if vpnbin is None:
+        ovpn = which('openvpn')
+    else:
+        ovpn = vpnbin
     if ovpn:
         vpn_command = ovpn
     else:
         vpn_command = "openvpn"
-
     command.append(vpn_command)
-
     daemon_mode = not debug
 
     for opt in build_ovpn_options(daemon=daemon_mode):
@@ -195,77 +181,7 @@ def build_ovpn_command(config, debug=False, do_pkexec_check=True):
     return [command[0], command[1:]]
 
 
-# XXX deprecate
-def get_sensible_defaults():
-    """
-    gathers a dict of sensible defaults,
-    platform sensitive,
-    to be used to initialize the config parser
-    @rtype: dict
-    @rparam: default options.
-    """
-
-    # this way we're passing a simple dict
-    # that will initialize the configparser
-    # and will get written to "DEFAULTS" section,
-    # which is fine for now.
-    # if we want to write to a particular section
-    # we can better pass a tuple of triples
-    # (('section1', 'foo', '23'),)
-    # and config.set them
-
-    defaults = dict()
-    defaults['openvpn_binary'] = which('openvpn')
-    defaults['autostart'] = 'true'
-
-    # TODO
-    # - management.
-    return defaults
-
-
-# XXX to be deprecated. see dump_default_eipconfig
-# and the new JSONConfig classes.
-def get_config(config_file=None):
-    """
-    temporary method for getting configs,
-    mainly for early stage development process.
-    in the future we will get preferences
-    from the storage api
-
-    @rtype: ConfigParser instance
-    @rparam: a config object
-    """
-    defaults = get_sensible_defaults()
-    config = ConfigParser.ConfigParser(defaults)
-
-    if not config_file:
-        fpath = baseconfig.get_config_file('eip.cfg')
-        if not os.path.isfile(fpath):
-            dpath, cfile = os.path.split(fpath)
-            if not os.path.isdir(dpath):
-                mkdir_p(dpath)
-            with open(fpath, 'wb') as configfile:
-                config.write(configfile)
-        config_file = open(fpath)
-    config.readfp(config_file)
-    return config
-
-
-def dump_default_eipconfig(filepath):
-    """
-    writes a sample eip config
-    in the given location
-    """
-    # XXX TODO:
-    # use EIPConfigSpec istead
-    folder, filename = os.path.split(filepath)
-    if not os.path.isdir(folder):
-        mkdir_p(folder)
-    with open(filepath, 'w') as fp:
-        json.dump(eipconstants.EIP_SAMPLE_JSON, fp)
-
-
-def check_vpn_keys(config):
+def check_vpn_keys():
     """
     performs an existance and permission check
     over the openvpn keys file.
@@ -273,35 +189,24 @@ def check_vpn_keys(config):
     per provider, containing the CA cert,
     the provider key, and our client certificate
     """
+    provider_ca = eipspecs.provider_ca_path()
+    client_cert = eipspecs.client_cert_path()
 
-    keyopt = ('provider', 'keyfile')
-
-    # XXX at some point,
-    # should separate between CA, provider cert
-    # and our certificate.
-    # make changes in the default provider template
-    # accordingly.
-
-    # get vpn keys
-    if config.has_option(*keyopt):
-        keyfile = config.get(*keyopt)
-    else:
-        keyfile = baseconfig.get_config_file(
-            'openvpn.keys',
-            folder=baseconfig.get_default_provider_path())
-        logger.debug('keyfile = %s', keyfile)
+    logger.debug('provider ca = %s', provider_ca)
+    logger.debug('client cert = %s', client_cert)
 
     # if no keys, raise error.
     # should be catched by the ui and signal user.
 
-    if not os.path.isfile(keyfile):
-        logger.error('key file %s not found. aborting.',
-                     keyfile)
-        raise eip_exceptions.EIPInitNoKeyFileError
+    for keyfile in (provider_ca, client_cert):
+        if not os.path.isfile(keyfile):
+            logger.error('key file %s not found. aborting.',
+                         keyfile)
+            raise eip_exceptions.EIPInitNoKeyFileError
 
-    # check proper permission on keys
-    # bad perms? try to fix them
-    try:
-        check_and_fix_urw_only(keyfile)
-    except OSError:
-        raise eip_exceptions.EIPInitBadKeyFilePermError
+        # check proper permission on keys
+        # bad perms? try to fix them
+        try:
+            check_and_fix_urw_only(keyfile)
+        except OSError:
+            raise eip_exceptions.EIPInitBadKeyFilePermError

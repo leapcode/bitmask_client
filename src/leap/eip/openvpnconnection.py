@@ -77,8 +77,10 @@ to be triggered for each one of them.
         self.command = None
         self.args = None
 
+        # XXX get autostart from config
         self.autostart = True
-        self._get_or_create_config()
+        #self._get_or_create_config()
+        self._set_ovpn_command()
         self._check_vpn_keys()
 
         #
@@ -95,49 +97,21 @@ to be triggered for each one of them.
         self.port = port
         self.password = password
 
-    def _set_autostart(self):
-        config = self.config
-        if config.has_option('openvpn', 'autostart'):
-            autostart = config.getboolean('openvpn',
-                                          'autostart')
-            self.autostart = autostart
-        else:
-            if config.has_option('DEFAULT', 'autostart'):
-                autostart = config.getboolean('DEFAULT',
-                                              'autostart')
-                self.autostart = autostart
-
     def _set_ovpn_command(self):
-        config = self.config
-        if config.has_option('openvpn', 'command'):
-            commandline = config.get('openvpn', 'command')
-
-            command_split = commandline.split(' ')
-            command = command_split[0]
-            if len(command_split) > 1:
-                args = command_split[1:]
-            else:
-                args = []
-
-            self.command = command
-            self.args = args
-        else:
-        # no command in config, we build it up.
         # XXX check also for command-line --command flag
-            try:
-                command, args = eip_config.build_ovpn_command(
-                    config,
-                    debug=self.debug)
-            except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
-                command = args = None
-                self.missing_auth_agent = True
-            except eip_exceptions.EIPNoPkexecAvailable:
-                command = args = None
-                self.missing_pkexec = True
+        try:
+            command, args = eip_config.build_ovpn_command(
+                debug=self.debug)
+        except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
+            command = args = None
+            self.missing_auth_agent = True
+        except eip_exceptions.EIPNoPkexecAvailable:
+            command = args = None
+            self.missing_pkexec = True
 
-            # XXX if not command, signal error.
-            self.command = command
-            self.args = args
+        # XXX if not command, signal error.
+        self.command = command
+        self.args = args
 
     def _get_or_create_config(self):
         """
@@ -145,19 +119,16 @@ to be triggered for each one of them.
         home file, or config file passed in command line.
         populates command and args to be passed to subprocess.
         """
-        config = eip_config.get_config(
-            config_file=self.config_file)
-        self.config = config
-
-        self._set_autostart()
-        self._set_ovpn_command()
+        # XXX does nothing.
+        # XXX should get config? or get from checker?
+        pass
 
     def _check_vpn_keys(self):
         """
         checks for correct permissions on vpn keys
         """
         try:
-            eip_config.check_vpn_keys(self.config)
+            eip_config.check_vpn_keys()
         except eip_exceptions.EIPInitNoKeyFileError:
             self.missing_vpn_keyfile = True
         except eip_exceptions.EIPInitBadKeyFilePermError:

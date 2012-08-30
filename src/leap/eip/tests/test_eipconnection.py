@@ -1,4 +1,3 @@
-import ConfigParser
 import logging
 import platform
 import os
@@ -13,9 +12,9 @@ except ImportError:
 
 from mock import Mock, patch  # MagicMock
 
-from leap.base import constants
 from leap.eip.eipconnection import EIPConnection
 from leap.eip.exceptions import ConnectionRefusedError
+from leap.eip import specs as eipspecs
 from leap.testing.basetest import BaseLeapTest
 
 _system = platform.system()
@@ -29,7 +28,6 @@ class NotImplementedError(Exception):
 @patch('OpenVPNConnection._set_ovpn_command')
 class MockedEIPConnection(EIPConnection):
     def _get_or_create_config(self):
-        self.config = ConfigParser.ConfigParser()
         self._set_ovpn_command()
 
     def _set_ovpn_command(self):
@@ -56,11 +54,11 @@ class EIPConductorTest(BaseLeapTest):
         # XXX change to keys_checker invocation
         # (see config_checker)
 
-        filepath = os.path.expanduser(
-            '~/.config/leap/providers/%s/openvpn.keys'
-            % constants.DEFAULT_TEST_PROVIDER)
-        self.touch(filepath)
-        self.chmod600(filepath)
+        keyfiles = (eipspecs.provider_ca_path(),
+                    eipspecs.client_cert_path())
+        for filepath in keyfiles:
+            self.touch(filepath)
+            self.chmod600(filepath)
 
         # we init the manager with only
         # some methods mocked
@@ -84,13 +82,6 @@ class EIPConductorTest(BaseLeapTest):
         self.assertEqual(con.missing_vpn_keyfile, False)
         self.assertEqual(con.missing_provider, False)
         self.assertEqual(con.bad_provider, False)
-
-    def test_config_was_init(self):
-        """
-        is there a config object?
-        """
-        self.assertTrue(isinstance(self.con.config,
-                        ConfigParser.ConfigParser))
 
     def test_ovpn_command(self):
         """
