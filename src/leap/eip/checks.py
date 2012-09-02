@@ -1,6 +1,7 @@
-import json
+#import json
 import logging
-import os
+import ssl
+#import os
 
 logging.basicConfig()
 logger = logging.getLogger(name=__name__)
@@ -13,6 +14,7 @@ from leap.base import providers
 from leap.eip import config as eipconfig
 from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
+from leap.eip import specs as eipspecs
 
 """
 EIPConfigChecker
@@ -47,6 +49,7 @@ class ProviderCertChecker(object):
     """
     def __init__(self, fetcher=requests):
         self.fetcher = fetcher
+        self.cacert = None
 
     def run_all(self, checker=None, skip_download=False):
         if not checker:
@@ -88,17 +91,62 @@ class ProviderCertChecker(object):
         # certs package.
         try:
             from leap.custom import certs
-            certs.ca.pemfile
         except ImportError:
             raise
+        self.cacert = certs.where('cacert.pem')
 
-    def is_https_working(self, uri=None, cacert=None, verify=True):
+    def is_https_working(self, uri=None, verify=True):
+        # XXX raise InsecureURI or something better
         assert uri.startswith('https')
+        if verify is True and self.cacert is not None:
+            verify = self.cacert
         self.fetcher.get(uri, verify=verify)
         return True
 
-    def download_new_client_cert(self):
+    def download_new_client_cert(self, uri=None, verify=True):
+        if uri is None:
+            uri = self._get_client_cert_uri()
+        # XXX raise InsecureURI or something better
+        assert uri.startswith('https')
+        if verify is True and self.cacert is not None:
+            verify = self.cacert
+        req = self.fetcher.get(uri, verify=verify)
+        pemfile_content = req.content
+        self.validate_pemfile(pemfile_content)
+        cert_path = self._get_client_cert_path()
+        self.write_cert(pemfile_content, to=cert_path)
         return True
+
+    def validate_pemfile(self, cert_s):
+        """
+        checks that the passed string
+        is a valid pem certificate
+        @param cert_s: string containing pem content
+        @type cert_s: string
+        @rtype: bool
+        """
+        try:
+            # XXX get a real cert validation
+            # so far this is only checking begin/end
+            # delimiters :)
+            ssl.PEM_cert_to_DER_cert(cert_s)
+        except:
+            # XXX raise proper exception
+            raise
+        return True
+
+    def _get_client_cert_uri(self):
+        # XXX TODO
+        # get from provider definition?
+        pass
+
+    def _get_client_cert_path(self):
+        # MVS+ : get provider path
+        return eipspecs.client_cert_path()
+
+    def write_cert(self, pemfile_content, to=None):
+        with open(to, 'w') as cert_f:
+            cert_f.write(pemfile_content)
 
 
 class EIPConfigChecker(object):

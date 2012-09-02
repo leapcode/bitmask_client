@@ -58,7 +58,10 @@ class BaseHTTPSServerTestCase(unittest.TestCase):
         self.thread.stop()
 
     def get_server(self):
-        return "%s:%s" % (self.HOST, self.PORT)
+        host, port = self.HOST, self.PORT
+        if host == "127.0.0.1":
+            host = "localhost"
+        return "%s:%s" % (host, port)
 
 
 if __name__ == "__main__":

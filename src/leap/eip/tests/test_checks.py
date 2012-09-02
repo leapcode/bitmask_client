@@ -6,6 +6,7 @@ try:
 except ImportError:
     import unittest
 import os
+import urlparse
 
 from mock import patch, Mock
 
@@ -20,6 +21,7 @@ from leap.eip import exceptions as eipexceptions
 from leap.eip.tests import data as testdata
 from leap.testing.basetest import BaseLeapTest
 from leap.testing.https_server import BaseHTTPSServerTestCase
+from leap.testing.https_server import where as where_cert
 
 
 class NoLogRequestHandler:
@@ -228,13 +230,18 @@ class ProviderCertCheckerTest(BaseLeapTest):
 
 class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase):
     class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+        responses = {
+            '/': ['OK', ''],
+            '/client.cert': [
+                '-----BEGIN CERTIFICATE-----',
+                '-----END CERTIFICATE-----'],
+            '/badclient.cert': [
+                'BADCERT']}
+
         def do_GET(self):
-            #XXX use path to deliver foo stuff
-            #path = urlparse.urlparse(self.path)
-            #print path
-            message = '\n'.join([
-                'OK',
-                ''])
+            path = urlparse.urlparse(self.path)
+            message = '\n'.join(self.responses.get(
+                path.path, None))
             self.send_response(200)
             self.end_headers()
             self.wfile.write(message)
@@ -254,13 +261,13 @@ class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase):
 
         # for the two checks below, I know they fail because no ca
         # cert is passed to them, and I know that's the error that
-        # requests return with our implementation. However, I believe
-        # the right error should be SSL23_READ_BYTES: alert bad certificate
-        # or something similar. I guess we're receiving this because our
+        # requests return with our implementation.
+        # We're receiving this because our
         # server is dying prematurely when the handshake is interrupted on the
-        # client side. In any case I think that requests could handle
-        # this error more consistently and return a ConnectionError on a
-        # higher level.
+        # client side.
+        # Since we have access to the server, we could check that
+        # the error raised has been:
+        # SSL23_READ_BYTES: alert bad certificate
         with self.assertRaises(requests.exceptions.SSLError) as exc:
             fetcher.get(uri, verify=True)
             self.assertTrue(
@@ -270,15 +277,37 @@ class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase):
             self.assertTrue(
                 "SSL23_GET_SERVER_HELLO:unknown protocol" in exc.message)
 
-        # XXX get cacert from testing.https_server
+        # get cacert from testing.https_server
+        cacert = where_cert('cacert.pem')
+        fetcher.get(uri, verify=cacert)
+        self.assertTrue(checker.is_https_working(uri=uri, verify=cacert))
+
+        # same, but get cacert from leap.custom
+        # XXX TODO!
 
     def test_download_new_client_cert(self):
+        uri = "https://%s/client.cert" % (self.get_server())
+        cacert = where_cert('cacert.pem')
         checker = eipchecks.ProviderCertChecker()
-        self.assertTrue(checker.download_new_client_cert())
+        self.assertTrue(checker.download_new_client_cert(
+                        uri=uri, verify=cacert))
 
-    #def test_download_bad_client_cert(self):
-        #checker = eipchecks.ProviderCertChecker()
-        #self.assertTrue(checker.download_new_client_cert())
+        # now download a malformed cert
+        uri = "https://%s/badclient.cert" % (self.get_server())
+        cacert = where_cert('cacert.pem')
+        checker = eipchecks.ProviderCertChecker()
+        with self.assertRaises(ValueError):
+            self.assertTrue(checker.download_new_client_cert(
+                            uri=uri, verify=cacert))
+
+        # did we write cert to its path?
+        self.assertTrue(os.path.isfile(eipspecs.client_cert_path()))
+        certfile = eipspecs.client_cert_path()
+        with open(certfile, 'r') as cf:
+            certcontent = cf.read()
+        self.assertEqual(certcontent,
+                         '\n'.join(
+                             self.request_handler.responses['/client.cert']))
 
 
 if __name__ == "__main__":
