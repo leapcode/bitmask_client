@@ -40,12 +40,70 @@ class LeapNetworkChecker(object):
 
 
 class ProviderCertChecker(object):
-    pass
+    """
+    Several checks needed for getting
+    client certs and checking tls connection
+    with provider.
+    """
+    def __init__(self, fetcher=requests):
+        self.fetcher = fetcher
+
+    def run_all(self, checker=None, skip_download=False):
+        if not checker:
+            checker = self
+
+        # For MVS+
+        # checker.download_ca_cert()
+        # checker.download_ca_signature()
+        # checker.get_ca_signatures()
+        # checker.is_there_trust_path()
+
+        # For MVS
+        checker.is_there_provider_ca()
+        checker.is_https_working()
+        checker.download_new_client_cert()
+
+    def download_ca_cert(self):
+        # MVS+
+        raise NotImplementedError
+
+    def download_ca_signature(self):
+        # MVS+
+        raise NotImplementedError
+
+    def get_ca_signatures(self):
+        # MVS+
+        raise NotImplementedError
+
+    def is_there_trust_path(self):
+        # MVS+
+        raise NotImplementedError
+
+    def is_there_provider_ca(self):
+        # XXX fake it till you make it! :P
+        return True
+
+        # enable this when we have
+        # a custom "branded" bundle
+        # certs package.
+        try:
+            from leap.custom import certs
+            certs.ca.pemfile
+        except ImportError:
+            raise
+
+    def is_https_working(self, uri=None, cacert=None, verify=True):
+        assert uri.startswith('https')
+        self.fetcher.get(uri, verify=verify)
+        return True
+
+    def download_new_client_cert(self):
+        return True
 
 
 class EIPConfigChecker(object):
     """
-    Several tests needed
+    Several checks needed
     to ensure a EIPConnection
     can be sucessfully established.
     use run_all to run all checks.
