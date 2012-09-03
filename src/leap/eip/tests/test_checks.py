@@ -228,7 +228,7 @@ class ProviderCertCheckerTest(BaseLeapTest):
             checker.is_there_provider_ca())
 
 
-class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase):
+class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase, BaseLeapTest):
     class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
         responses = {
             '/': ['OK', ''],

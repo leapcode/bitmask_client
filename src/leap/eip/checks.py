@@ -15,6 +15,7 @@ from leap.eip import config as eipconfig
 from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
 from leap.eip import specs as eipspecs
+from leap.util.fileutil import mkdir_p
 
 """
 EIPConfigChecker
@@ -33,7 +34,6 @@ reachable and testable as a whole.
 
 Other related checkers - not implemented yet -:
 * LeapNetworkChecker
-* ProviderCertChecker
 """
 
 
@@ -131,9 +131,9 @@ class ProviderCertChecker(object):
         exists = lambda: self.is_certificate_exists()
         valid_pemfile = lambda: self.is_valid_pemfile()
         not_expired = lambda: self.is_cert_not_expired()
-        print 'exists?', exists
-        print 'valid', valid_pemfile
-        print 'not expired', not_expired
+        #print 'exists?', exists
+        #print 'valid', valid_pemfile
+        #print 'not expired', not_expired
 
         valid = exists() and valid_pemfile() and not_expired()
         if not valid:
@@ -181,12 +181,13 @@ class ProviderCertChecker(object):
 
     def _get_client_cert_path(self):
         # MVS+ : get provider path
+        #import ipdb;ipdb.set_trace()
         return eipspecs.client_cert_path()
 
-    def is_cert_still_valid(self):
-        raise NotImplementedError
-
     def write_cert(self, pemfile_content, to=None):
+        folder, filename = os.path.split(to)
+        if not os.path.isdir(folder):
+            mkdir_p(folder)
         with open(to, 'w') as cert_f:
             cert_f.write(pemfile_content)
 
