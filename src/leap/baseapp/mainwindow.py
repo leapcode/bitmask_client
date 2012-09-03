@@ -1,456 +1,31 @@
 # vim: set fileencoding=utf-8 :
 #!/usr/bin/env python
 import logging
-import time
 logging.basicConfig()
 logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.DEBUG)
 
-from PyQt4.QtGui import (QMainWindow, QWidget, QVBoxLayout, QMessageBox,
-                         QSystemTrayIcon, QGroupBox, QLabel, QPixmap,
-                         QHBoxLayout, QIcon,
-                         QPushButton, QGridLayout, QAction, QMenu,
-                         QTextBrowser, qApp)
-from PyQt4.QtCore import (pyqtSlot, pyqtSignal, QTimer)
+from PyQt4 import QtCore
+from PyQt4 import QtGui
 
-from leap.baseapp.dialogs import ErrorDialog
-from leap.eip import exceptions as eip_exceptions
-from leap.eip.eipconnection import EIPConnection
+from leap.baseapp.eip import EIPConductorApp
+from leap.baseapp.log import LogPane
+from leap.baseapp.systray import StatusAwareTrayIcon
+from leap.baseapp.leap_app import MainWindow
 
 from leap.gui import mainwindow_rc
 
 
-class EIPConductorApp(object):
-
-    def __init__(self, *args, **kwargs):
-        #
-        # conductor is in charge of all
-        # vpn-related configuration / monitoring.
-        # we pass a tuple of signals that will be
-        # triggered when status changes.
-        #
-        opts = kwargs.pop('opts')
-        config_file = getattr(opts, 'config_file', None)
-
-        self.conductor = EIPConnection(
-            watcher_cb=self.newLogLine.emit,
-            config_file=config_file,
-            status_signals=(self.statusChange.emit, ),
-            debug=self.debugmode)
-
-        # XXX remove skip download when sample service is ready
-        self.conductor.run_checks(skip_download=True)
-        self.error_check()
-        if self.conductor.autostart:
-            self.start_or_stopVPN()
-
-    def error_check(self):
-        ####### error checking ################
-        #
-        # bunch of self checks.
-        # XXX move somewhere else alltogether.
-        #
-        if self.conductor.missing_definition is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'The default '
-                'definition.json file cannot be found',
-                'error')
-
-        if self.conductor.missing_provider is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'Missing provider. Add a remote_ip entry '
-                'under section [provider] in eip.cfg',
-                'error')
-
-        if self.conductor.missing_vpn_keyfile is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'Could not find the vpn keys file',
-                'error')
-
-        # ... btw, review pending.
-        # os.kill of subprocess fails if we have
-        # some of this errors.
-
-        if self.conductor.bad_provider is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'Bad provider entry. Check that remote_ip entry '
-                'has an IP under section [provider] in eip.cfg',
-                'error')
-
-        if self.conductor.bad_keyfile_perms is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'The vpn keys file has bad permissions',
-                'error')
-
-        if self.conductor.missing_auth_agent is True:
-            dialog = ErrorDialog()
-            dialog.warningMessage(
-                'We could not find any authentication '
-                'agent in your system.<br/>'
-                'Make sure you have '
-                '<b>polkit-gnome-authentication-agent-1</b> '
-                'running and try again.',
-                'error')
-
-        if self.conductor.missing_pkexec is True:
-            dialog = ErrorDialog()
-            dialog.warningMessage(
-                'We could not find <b>pkexec</b> in your '
-                'system.<br/> Do you want to try '
-                '<b>setuid workaround</b>? '
-                '(<i>DOES NOTHING YET</i>)',
-                'error')
-
-        ############ end error checking ###################
-    @pyqtSlot()
-    def statusUpdate(self):
-        """
-        called on timer tick
-        polls status and updates ui with real time
-        info about transferred bytes / connection state.
-        """
-        # XXX it's too expensive to poll
-        # continously. move to signal events instead.
-
-        if not self.eip_service_started:
-            return
-
-        # XXX remove all access to manager layer
-        # from here.
-        if self.conductor.with_errors:
-            #XXX how to wait on pkexec???
-            #something better that this workaround, plz!!
-            time.sleep(5)
-            print('errors. disconnect.')
-            self.start_or_stopVPN()  # is stop
-
-        state = self.conductor.poll_connection_state()
-        if not state:
-            return
-
-        ts, con_status, ok, ip, remote = state
-        self.set_statusbarMessage(con_status)
-        self.setIconToolTip()
-
-        ts = time.strftime("%a %b %d %X", ts)
-        if self.debugmode:
-            self.updateTS.setText(ts)
-            self.status_label.setText(con_status)
-            self.ip_label.setText(ip)
-            self.remote_label.setText(remote)
-
-        # status i/o
-
-        status = self.conductor.get_status_io()
-        if status and self.debugmode:
-            #XXX move this to systray menu indicators
-            ts, (tun_read, tun_write, tcp_read, tcp_write, auth_read) = status
-            ts = time.strftime("%a %b %d %X", ts)
-            self.updateTS.setText(ts)
-            self.tun_read_bytes.setText(tun_read)
-            self.tun_write_bytes.setText(tun_write)
-
-    @pyqtSlot()
-    def start_or_stopVPN(self):
-        """
-        stub for running child process with vpn
-        """
-        if self.eip_service_started is False:
-            try:
-                self.conductor.connect()
-                # XXX move this to error queue
-            except eip_exceptions.EIPNoCommandError:
-                dialog = ErrorDialog()
-                dialog.warningMessage(
-                    'No suitable openvpn command found. '
-                    '<br/>(Might be a permissions problem)',
-                    'error')
-            if self.debugmode:
-                self.startStopButton.setText('&Disconnect')
-            self.eip_service_started = True
-
-            # XXX what is optimum polling interval?
-            # too little is overkill, too much
-            # will miss transition states..
-
-            self.timer.start(250.0)
-            return
-        if self.eip_service_started is True:
-            self.conductor.disconnect()
-            if self.debugmode:
-                self.startStopButton.setText('&Connect')
-            self.eip_service_started = False
-            self.timer.stop()
-            return
-
-
-class StatusAwareTrayIcon(object):
-
-    def createIconGroupBox(self):
-        """
-        dummy icongroupbox
-        (to be removed from here -- reference only)
-        """
-        icons = {
-            'disconnected': ':/images/conn_error.png',
-            'connecting': ':/images/conn_connecting.png',
-            'connected': ':/images/conn_connected.png'
-        }
-        con_widgets = {
-            'disconnected': QLabel(),
-            'connecting': QLabel(),
-            'connected': QLabel(),
-        }
-        con_widgets['disconnected'].setPixmap(
-            QPixmap(icons['disconnected']))
-        con_widgets['connecting'].setPixmap(
-            QPixmap(icons['connecting']))
-        con_widgets['connected'].setPixmap(
-            QPixmap(icons['connected'])),
-        self.ConnectionWidgets = con_widgets
-
-        con_icons = {
-            'disconnected': QIcon(icons['disconnected']),
-            'connecting': QIcon(icons['connecting']),
-            'connected': QIcon(icons['connected'])
-        }
-        self.Icons = con_icons
-
-        self.statusIconBox = QGroupBox("Connection Status")
-        statusIconLayout = QHBoxLayout()
-        statusIconLayout.addWidget(self.ConnectionWidgets['disconnected'])
-        statusIconLayout.addWidget(self.ConnectionWidgets['connecting'])
-        statusIconLayout.addWidget(self.ConnectionWidgets['connected'])
-        statusIconLayout.itemAt(1).widget().hide()
-        statusIconLayout.itemAt(2).widget().hide()
-        self.statusIconBox.setLayout(statusIconLayout)
-
-    def createTrayIcon(self):
-        """
-        creates the tray icon
-        """
-        self.trayIconMenu = QMenu(self)
-
-        self.trayIconMenu.addAction(self.connectVPNAction)
-        self.trayIconMenu.addAction(self.dis_connectAction)
-        self.trayIconMenu.addSeparator()
-        self.trayIconMenu.addAction(self.minimizeAction)
-        self.trayIconMenu.addAction(self.maximizeAction)
-        self.trayIconMenu.addAction(self.restoreAction)
-        self.trayIconMenu.addSeparator()
-        self.trayIconMenu.addAction(self.quitAction)
-
-        self.trayIcon = QSystemTrayIcon(self)
-        self.setIcon('disconnected')
-        self.trayIcon.setContextMenu(self.trayIconMenu)
-
-    def createActions(self):
-        """
-        creates actions to be binded to tray icon
-        """
-        self.connectVPNAction = QAction("Connect to &VPN", self,
-                                        triggered=self.hide)
-        # XXX change action name on (dis)connect
-        self.dis_connectAction = QAction(
-            "&(Dis)connect", self,
-            triggered=lambda: self.start_or_stopVPN())
-        self.minimizeAction = QAction("Mi&nimize", self,
-                                      triggered=self.hide)
-        self.maximizeAction = QAction("Ma&ximize", self,
-                                      triggered=self.showMaximized)
-        self.restoreAction = QAction("&Restore", self,
-                                     triggered=self.showNormal)
-        self.quitAction = QAction("&Quit", self,
-                                  triggered=self.cleanupAndQuit)
-
-    def setConnWidget(self, icon_name):
-        #print 'changing icon to %s' % icon_name
-        oldlayout = self.statusIconBox.layout()
-
-        # XXX reuse with icons
-        # XXX move states to StateWidget
-        states = {"disconnected": 0,
-                  "connecting": 1,
-                  "connected": 2}
-
-        for i in range(3):
-            oldlayout.itemAt(i).widget().hide()
-        new = states[icon_name]
-        oldlayout.itemAt(new).widget().show()
-
-    def setIcon(self, name):
-        icon = self.Icons.get(name)
-        self.trayIcon.setIcon(icon)
-        self.setWindowIcon(icon)
-
-    def getIcon(self, icon_name):
-        # XXX get from connection dict
-        icons = {'disconnected': 0,
-                 'connecting': 1,
-                 'connected': 2}
-        return icons.get(icon_name, None)
-
-    def setIconToolTip(self):
-        """
-        get readable status and place it on systray tooltip
-        """
-        status = self.conductor.status.get_readable_status()
-        self.trayIcon.setToolTip(status)
-
-    def iconActivated(self, reason):
-        """
-        handles left click, left double click
-        showing the trayicon menu
-        """
-        #XXX there's a bug here!
-        #menu shows on (0,0) corner first time,
-        #until double clicked at least once.
-        if reason in (QSystemTrayIcon.Trigger,
-                      QSystemTrayIcon.DoubleClick):
-            self.trayIconMenu.show()
-
-    @pyqtSlot()
-    def onTimerTick(self):
-        self.statusUpdate()
-
-    @pyqtSlot(object)
-    def onStatusChange(self, status):
-        """
-        slot for status changes. triggers new signals for
-        updating icon, status bar, etc.
-        """
-
-        #print('STATUS CHANGED! (on Qt-land)')
-        #print('%s -> %s' % (status.previous, status.current))
-        icon_name = self.conductor.get_icon_name()
-        self.setIcon(icon_name)
-        #print 'icon = ', icon_name
-
-        # change connection pixmap widget
-        self.setConnWidget(icon_name)
-
-
-class LeapMainWindow(object):
-
-    def createWindowHeader(self):
-        """
-        description lines for main window
-        """
-        #XXX good candidate to refactor out! :)
-        self.headerBox = QGroupBox()
-        self.headerLabel = QLabel("<font size=40><b>E</b>ncryption \
-<b>I</b>nternet <b>P</b>roxy</font>")
-        self.headerLabelSub = QLabel("<i>trust your \
-technolust</i>")
-
-        pixmap = QPixmap(':/images/leapfrog.jpg')
-        frog_lbl = QLabel()
-        frog_lbl.setPixmap(pixmap)
-
-        headerLayout = QHBoxLayout()
-        headerLayout.addWidget(frog_lbl)
-        headerLayout.addWidget(self.headerLabel)
-        headerLayout.addWidget(self.headerLabelSub)
-        headerLayout.addStretch()
-        self.headerBox.setLayout(headerLayout)
-
-    def set_statusbarMessage(self, msg):
-        self.statusBar().showMessage(msg)
-
-    def closeEvent(self, event):
-        """
-        redefines close event (persistent window behaviour)
-        """
-        if self.trayIcon.isVisible() and not self.debugmode:
-            QMessageBox.information(self, "Systray",
-                                    "The program will keep running "
-                                    "in the system tray. To "
-                                    "terminate the program, choose "
-                                    "<b>Quit</b> in the "
-                                    "context menu of the system tray entry.")
-            self.hide()
-            event.ignore()
-        if self.debugmode:
-            self.cleanupAndQuit()
-
-    def cleanupAndQuit(self):
-        """
-        cleans state before shutting down app.
-        """
-        # TODO:make sure to shutdown all child process / threads
-        # in conductor
-        # XXX send signal instead?
-        self.conductor.cleanup()
-        qApp.quit()
-
-
-class LogPane(object):
-
-    def createLogBrowser(self):
-        """
-        creates Browser widget for displaying logs
-        (in debug mode only).
-        """
-        self.loggerBox = QGroupBox()
-        logging_layout = QVBoxLayout()
-        self.logbrowser = QTextBrowser()
-
-        startStopButton = QPushButton("&Connect")
-        #startStopButton.clicked.connect(self.start_or_stopVPN)
-        self.startStopButton = startStopButton
-
-        logging_layout.addWidget(self.logbrowser)
-        logging_layout.addWidget(self.startStopButton)
-        self.loggerBox.setLayout(logging_layout)
-
-        # status box
-
-        self.statusBox = QGroupBox()
-        grid = QGridLayout()
-
-        self.updateTS = QLabel('')
-        self.status_label = QLabel('Disconnected')
-        self.ip_label = QLabel('')
-        self.remote_label = QLabel('')
-
-        tun_read_label = QLabel("tun read")
-        self.tun_read_bytes = QLabel("0")
-        tun_write_label = QLabel("tun write")
-        self.tun_write_bytes = QLabel("0")
-
-        grid.addWidget(self.updateTS, 0, 0)
-        grid.addWidget(self.status_label, 0, 1)
-        grid.addWidget(self.ip_label, 1, 0)
-        grid.addWidget(self.remote_label, 1, 1)
-        grid.addWidget(tun_read_label, 2, 0)
-        grid.addWidget(self.tun_read_bytes, 2, 1)
-        grid.addWidget(tun_write_label, 3, 0)
-        grid.addWidget(self.tun_write_bytes, 3, 1)
-
-        self.statusBox.setLayout(grid)
-
-    @pyqtSlot(str)
-    def onLoggerNewLine(self, line):
-        """
-        simple slot: writes new line to logger Pane.
-        """
-        if self.debugmode:
-            self.logbrowser.append(line[:-1])
-
-
-# XXX
-# main (leave only this here)
-class LeapWindow(QMainWindow, LeapMainWindow, EIPConductorApp,
+class LeapWindow(QtGui.QMainWindow,
+                 MainWindow, EIPConductorApp,
                  StatusAwareTrayIcon,
                  LogPane):
 
-    newLogLine = pyqtSignal([str])
-    statusChange = pyqtSignal([object])
+    # move to log
+    newLogLine = QtCore.pyqtSignal([str])
+
+    # move to icons
+    statusChange = QtCore.pyqtSignal([object])
 
     def __init__(self, opts):
         logger.debug('init leap window')
@@ -459,8 +34,10 @@ class LeapWindow(QMainWindow, LeapMainWindow, EIPConductorApp,
         self.debugmode = getattr(opts, 'debug', False)
         self.eip_service_started = False
 
-        # create timer
-        self.timer = QTimer()
+        # create timer ##############################
+        # move to Icons init??
+        self.timer = QtCore.QTimer()
+        #############################################
 
         if self.debugmode:
             self.createLogBrowser()
@@ -469,22 +46,25 @@ class LeapWindow(QMainWindow, LeapMainWindow, EIPConductorApp,
         # LeapWindow init
         self.createWindowHeader()
 
-        # StatusAwareTrayIcon init
+        # StatusAwareTrayIcon init ###################
         self.createIconGroupBox()
         self.createActions()
         self.createTrayIcon()
+        ##############################################
 
-        widget = QWidget()
+        # move to MainWindow init ####################
+        widget = QtGui.QWidget()
         self.setCentralWidget(widget)
 
         # add widgets to layout
-        mainLayout = QVBoxLayout()
+        mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(self.headerBox)
         mainLayout.addWidget(self.statusIconBox)
         if self.debugmode:
             mainLayout.addWidget(self.statusBox)
             mainLayout.addWidget(self.loggerBox)
         widget.setLayout(mainLayout)
+        ###############################################
 
         # move to icons?
         self.trayIcon.show()
