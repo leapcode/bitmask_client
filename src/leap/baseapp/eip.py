@@ -3,6 +3,7 @@ import time
 from PyQt4 import QtCore
 
 from leap.baseapp.dialogs import ErrorDialog
+from leap.baseapp import constants
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
 
@@ -182,8 +183,7 @@ class EIPConductorApp(object):
             # should bring it here?
             # to its own class?
 
-            # XXX get constant from somewhere else
-            self.timer.start(250.0)
+            self.timer.start(constants.TIMER_MILLISECONDS)
             return
 
         if self.eip_service_started is True:
