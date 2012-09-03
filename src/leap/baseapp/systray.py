@@ -11,6 +11,24 @@ class StatusAwareTrayIcon(object):
     get updated from conductor status
     polling.
     """
+    states = {
+        "disconnected": 0,
+        "connecting": 1,
+        "connected": 2}
+
+    iconpath = {
+        "disconnected": ':/images/conn_error.png',
+        "connecting": ':/images/conn_connecting.png',
+        "connected": ':/images/conn_connected.png'}
+
+    Icons = {
+        'disconnected': lambda self: QtGui.QIcon(
+            self.iconpath['disconnected']),
+        'connecting': lambda self: QtGui.QIcon(
+            self.iconpath['connecting']),
+        'connected': lambda self: QtGui.QIcon(
+            self.iconpath['connected'])
+    }
 
     def __init__(self, *args, **kwargs):
         self.createIconGroupBox()
@@ -26,30 +44,21 @@ class StatusAwareTrayIcon(object):
         dummy icongroupbox
         (to be removed from here -- reference only)
         """
-        icons = {
-            'disconnected': ':/images/conn_error.png',
-            'connecting': ':/images/conn_connecting.png',
-            'connected': ':/images/conn_connected.png'
-        }
         con_widgets = {
             'disconnected': QtGui.QLabel(),
             'connecting': QtGui.QLabel(),
             'connected': QtGui.QLabel(),
         }
         con_widgets['disconnected'].setPixmap(
-            QtGui.QPixmap(icons['disconnected']))
+            QtGui.QPixmap(
+                self.iconpath['disconnected']))
         con_widgets['connecting'].setPixmap(
-            QtGui.QPixmap(icons['connecting']))
+            QtGui.QPixmap(
+                self.iconpath['connecting']))
         con_widgets['connected'].setPixmap(
-            QtGui.QPixmap(icons['connected'])),
+            QtGui.QPixmap(
+                self.iconpath['connected'])),
         self.ConnectionWidgets = con_widgets
-
-        con_icons = {
-            'disconnected': QtGui.QIcon(icons['disconnected']),
-            'connecting': QtGui.QIcon(icons['connecting']),
-            'connected': QtGui.QIcon(icons['connected'])
-        }
-        self.Icons = con_icons
 
         self.statusIconBox = QtGui.QGroupBox("Connection Status")
         statusIconLayout = QtGui.QHBoxLayout()
@@ -99,31 +108,20 @@ class StatusAwareTrayIcon(object):
                                         triggered=self.cleanupAndQuit)
 
     def setConnWidget(self, icon_name):
-        #print 'changing icon to %s' % icon_name
         oldlayout = self.statusIconBox.layout()
-
-        # XXX reuse with icons
-        # XXX move states to StateWidget
-        states = {"disconnected": 0,
-                  "connecting": 1,
-                  "connected": 2}
 
         for i in range(3):
             oldlayout.itemAt(i).widget().hide()
-        new = states[icon_name]
+        new = self.states[icon_name]
         oldlayout.itemAt(new).widget().show()
 
     def setIcon(self, name):
-        icon = self.Icons.get(name)
+        icon = self.Icons.get(name)(self)
         self.trayIcon.setIcon(icon)
         self.setWindowIcon(icon)
 
     def getIcon(self, icon_name):
-        # XXX get from connection dict
-        icons = {'disconnected': 0,
-                 'connecting': 1,
-                 'connected': 2}
-        return icons.get(icon_name, None)
+        return self.states.get(icon_name, None)
 
     def setIconToolTip(self):
         """
@@ -154,12 +152,7 @@ class StatusAwareTrayIcon(object):
         slot for status changes. triggers new signals for
         updating icon, status bar, etc.
         """
-
-        #print('STATUS CHANGED! (on Qt-land)')
-        #print('%s -> %s' % (status.previous, status.current))
         icon_name = self.conductor.get_icon_name()
         self.setIcon(icon_name)
-        #print 'icon = ', icon_name
-
         # change connection pixmap widget
         self.setConnWidget(icon_name)
