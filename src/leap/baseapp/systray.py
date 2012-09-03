@@ -6,6 +6,17 @@ from leap.gui import mainwindow_rc
 
 class StatusAwareTrayIcon(object):
 
+    def __init__(self, *args, **kwargs):
+        # StatusAwareTrayIcon init ###################
+        self.createIconGroupBox()
+        self.createActions()
+        self.createTrayIcon()
+
+        self.trayIcon.show()
+        ##############################################
+
+        self.timer = QtCore.QTimer()
+
     def createIconGroupBox(self):
         """
         dummy icongroupbox

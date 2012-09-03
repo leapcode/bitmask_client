@@ -5,6 +5,28 @@ from leap.gui import mainwindow_rc
 
 class MainWindow(object):
 
+    def __init__(self, *args, **kwargs):
+        # XXX set initial visibility
+        # debug = no visible
+
+        widget = QtGui.QWidget()
+        self.setCentralWidget(widget)
+
+        self.createWindowHeader()
+
+        # add widgets to layout
+        mainLayout = QtGui.QVBoxLayout()
+        mainLayout.addWidget(self.headerBox)
+        mainLayout.addWidget(self.statusIconBox)
+        if self.debugmode:
+            mainLayout.addWidget(self.statusBox)
+            mainLayout.addWidget(self.loggerBox)
+        widget.setLayout(mainLayout)
+
+        self.setWindowTitle("LEAP Client")
+        self.resize(400, 300)
+        self.set_statusbarMessage('ready')
+
     def createWindowHeader(self):
         """
         description lines for main window

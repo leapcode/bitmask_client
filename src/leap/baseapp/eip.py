@@ -19,6 +19,8 @@ class EIPConductorApp(object):
         opts = kwargs.pop('opts')
         config_file = getattr(opts, 'config_file', None)
 
+        self.eip_service_started = False
+
         self.conductor = EIPConnection(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
@@ -28,8 +30,15 @@ class EIPConductorApp(object):
         # XXX remove skip download when sample service is ready
         self.conductor.run_checks(skip_download=True)
         self.error_check()
-        if self.conductor.autostart:
-            self.start_or_stopVPN()
+
+        # XXX should receive "ready" signal
+        #if self.conductor.autostart:
+            #self.start_or_stopVPN()
+
+        # move to eipconductor init?
+        if self.debugmode:
+            self.startStopButton.clicked.connect(
+                lambda: self.start_or_stopVPN())
 
     def error_check(self):
         ####### error checking ################
