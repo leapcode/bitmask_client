@@ -199,7 +199,7 @@ class ProviderCertCheckerTest(BaseLeapTest):
         self.assertTrue(hasattr(checker, "is_there_provider_ca"),
                         "missing meth")
         self.assertTrue(hasattr(checker, "is_https_working"), "missing meth")
-        self.assertTrue(hasattr(checker, "download_new_client_cert"),
+        self.assertTrue(hasattr(checker, "check_new_cert_needed"),
                         "missing meth")
 
     def test_checker_should_actually_call_all_tests(self):
@@ -217,7 +217,7 @@ class ProviderCertCheckerTest(BaseLeapTest):
         self.assertTrue(mc.is_there_provider_ca.called, "not called")
         self.assertTrue(mc.is_https_working.called,
                         "not called")
-        self.assertTrue(mc.download_new_client_cert.called,
+        self.assertTrue(mc.check_new_cert_needed.called,
                         "not called")
 
     # test individual check methods
@@ -233,6 +233,7 @@ class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase):
         responses = {
             '/': ['OK', ''],
             '/client.cert': [
+                # XXX get sample cert
                 '-----BEGIN CERTIFICATE-----',
                 '-----END CERTIFICATE-----'],
             '/badclient.cert': [
@@ -301,13 +302,30 @@ class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase):
                             uri=uri, verify=cacert))
 
         # did we write cert to its path?
-        self.assertTrue(os.path.isfile(eipspecs.client_cert_path()))
+        clientcertfile = eipspecs.client_cert_path()
+        self.assertTrue(os.path.isfile(clientcertfile))
         certfile = eipspecs.client_cert_path()
         with open(certfile, 'r') as cf:
             certcontent = cf.read()
         self.assertEqual(certcontent,
                          '\n'.join(
                              self.request_handler.responses['/client.cert']))
+        os.remove(clientcertfile)
+
+    def test_is_cert_valid(self):
+        checker = eipchecks.ProviderCertChecker()
+        # TODO: better exception catching
+        with self.assertRaises(Exception) as exc:
+            self.assertFalse(checker.is_cert_valid())
+            exc.message = "missing cert"
+
+    def test_check_new_cert_needed(self):
+        # check: missing cert
+        checker = eipchecks.ProviderCertChecker()
+        self.assertTrue(checker.check_new_cert_needed(skip_download=True))
+        # TODO check: malformed cert
+        # TODO check: expired cert
+        # TODO check: pass test server uri instead of skip
 
 
 if __name__ == "__main__":
