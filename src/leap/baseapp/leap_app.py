@@ -4,6 +4,10 @@ from leap.gui import mainwindow_rc
 
 
 class MainWindow(object):
+    """
+    create the main window
+    for leap app
+    """
 
     def __init__(self, *args, **kwargs):
         # XXX set initial visibility

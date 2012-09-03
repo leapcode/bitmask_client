@@ -5,16 +5,20 @@ from leap.gui import mainwindow_rc
 
 
 class StatusAwareTrayIcon(object):
+    """
+    a mix of several functions needed
+    to create a systray and make it
+    get updated from conductor status
+    polling.
+    """
 
     def __init__(self, *args, **kwargs):
-        # StatusAwareTrayIcon init ###################
         self.createIconGroupBox()
         self.createActions()
         self.createTrayIcon()
-
         self.trayIcon.show()
-        ##############################################
 
+        # not sure if this really belongs here, but...
         self.timer = QtCore.QTimer()
 
     def createIconGroupBox(self):

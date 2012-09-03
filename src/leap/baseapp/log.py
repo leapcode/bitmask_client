@@ -3,6 +3,10 @@ from PyQt4 import QtCore
 
 
 class LogPane(object):
+    """
+    a simple log pane
+    that writes new lines as they come
+    """
 
     def createLogBrowser(self):
         """

@@ -8,18 +8,24 @@ from leap.eip.eipconnection import EIPConnection
 
 
 class EIPConductorApp(object):
+    """
+    initializes an instance of EIPConnection,
+    gathers errors, and passes status-change signals
+    from Qt land along to the conductor.
+    Connects the eip connect/disconnect logic
+    to the switches in the app (buttons/menu items).
+    """
 
     def __init__(self, *args, **kwargs):
-        #
-        # conductor is in charge of all
-        # vpn-related configuration / monitoring.
-        # we pass a tuple of signals that will be
-        # triggered when status changes.
-        #
         opts = kwargs.pop('opts')
         config_file = getattr(opts, 'config_file', None)
 
         self.eip_service_started = False
+
+        # conductor (eip connection) is in charge of all
+        # vpn-related configuration / monitoring.
+        # we pass a tuple of signals that will be
+        # triggered when status changes.
 
         self.conductor = EIPConnection(
             watcher_cb=self.newLogLine.emit,
@@ -32,20 +38,18 @@ class EIPConductorApp(object):
         self.error_check()
 
         # XXX should receive "ready" signal
+        # it is called from LeapWindow now.
         #if self.conductor.autostart:
             #self.start_or_stopVPN()
 
-        # move to eipconductor init?
         if self.debugmode:
             self.startStopButton.clicked.connect(
                 lambda: self.start_or_stopVPN())
 
     def error_check(self):
-        ####### error checking ################
-        #
-        # bunch of self checks.
-        # XXX move somewhere else alltogether.
-        #
+
+        # XXX refactor (by #504)
+
         if self.conductor.missing_definition is True:
             dialog = ErrorDialog()
             dialog.criticalMessage(
@@ -105,22 +109,23 @@ class EIPConductorApp(object):
     @QtCore.pyqtSlot()
     def statusUpdate(self):
         """
-        called on timer tick
         polls status and updates ui with real time
         info about transferred bytes / connection state.
+        right now is triggered by a timer tick
+        (timer controlled by StatusAwareTrayIcon class)
         """
-        # XXX it's too expensive to poll
+        # TODO I guess it's too expensive to poll
         # continously. move to signal events instead.
+        # (i.e., subscribe to connection status changes
+        # from openvpn manager)
 
         if not self.eip_service_started:
             return
 
-        # XXX remove all access to manager layer
-        # from here.
         if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
-            time.sleep(5)
+            time.sleep(2)
             print('errors. disconnect.')
             self.start_or_stopVPN()  # is stop
 
@@ -173,8 +178,14 @@ class EIPConductorApp(object):
             # too little is overkill, too much
             # will miss transition states..
 
+            # XXX decouple! (timer is init by icons class).
+            # should bring it here?
+            # to its own class?
+
+            # XXX get constant from somewhere else
             self.timer.start(250.0)
             return
+
         if self.eip_service_started is True:
             self.conductor.disconnect()
             if self.debugmode:

@@ -18,6 +18,12 @@ class LeapWindow(QtGui.QMainWindow,
                  MainWindow, EIPConductorApp,
                  StatusAwareTrayIcon,
                  LogPane):
+    """
+    main window for the leap app.
+    Initializes all of its base classes
+    We keep here some signal initialization
+    that gets tricky otherwise.
+    """
 
     newLogLine = QtCore.pyqtSignal([str])
     statusChange = QtCore.pyqtSignal([object])
