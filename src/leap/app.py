@@ -17,6 +17,7 @@ def main():
     parser, opts = leap_argparse.init_leapc_args()
     debug = getattr(opts, 'debug', False)
 
+    # XXX get severity from command line args
     if debug:
         level = logging.DEBUG
     else:
@@ -31,6 +32,15 @@ def main():
         '- %(name)s - %(levelname)s - %(message)s')
     console.setFormatter(formatter)
     logger.addHandler(console)
+
+    logfile = getattr(opts, 'log_file', False)
+    if logfile:
+        logger.debug('setting logfile ', logfile)
+        fileh = logging.FileHandler(logfile)
+        fileh.setLevel(logging.DEBUG)
+        fileh.setFormatter(formatter)
+        logger.addHandler(fileh)
+
     logger.debug('args: %s' % opts)
     logger.info('Starting app')
 
