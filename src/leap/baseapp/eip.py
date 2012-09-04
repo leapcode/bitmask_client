@@ -130,7 +130,6 @@ class EIPConductorApp(object):
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
             time.sleep(5)
-            #print('errors. disconnect.')
             logger.debug('timeout')
             logger.error('errors. disconnect')
             self.start_or_stopVPN()  # is stop

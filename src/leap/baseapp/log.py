@@ -1,5 +1,9 @@
+import logging
+
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+
+vpnlogger = logging.getLogger('leap.openvpn')
 
 
 class LogPane(object):
@@ -56,5 +60,7 @@ class LogPane(object):
         """
         simple slot: writes new line to logger Pane.
         """
+        msg = line[:-1]
         if self.debugmode:
-            self.logbrowser.append(line[:-1])
+            self.logbrowser.append(msg)
+        vpnlogger.info(msg)
