@@ -7,9 +7,7 @@ import socket
 import time
 from functools import partial
 
-logging.basicConfig()
 logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.DEBUG)
 
 from leap.base.connection import Connection
 from leap.util.coroutines import spawn_and_watch_process
@@ -45,6 +43,7 @@ to be triggered for each one of them.
         :type watcher_cb: function
         :type signal_map: dict
         """
+        logger.debug('init openvpn connection')
         self.debug = debug
         #print('conductor:%s' % debug)
 
@@ -192,7 +191,8 @@ to be triggered for each one of them.
     #
 
     def forget_errors(self):
-        print('forgetting errors')
+        #print('forgetting errors')
+        logger.debug('forgetting errors')
         self.with_errors = False
 
     def connect_to_management(self):

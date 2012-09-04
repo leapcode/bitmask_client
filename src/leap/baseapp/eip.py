@@ -1,3 +1,4 @@
+import logging
 import time
 
 from PyQt4 import QtCore
@@ -6,6 +7,8 @@ from leap.baseapp.dialogs import ErrorDialog
 from leap.baseapp import constants
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
+
+logger = logging.getLogger(name=__name__)
 
 
 class EIPConductorApp(object):
@@ -126,8 +129,10 @@ class EIPConductorApp(object):
         if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
-            time.sleep(2)
-            print('errors. disconnect.')
+            time.sleep(5)
+            #print('errors. disconnect.')
+            logger.debug('timeout')
+            logger.error('errors. disconnect')
             self.start_or_stopVPN()  # is stop
 
         state = self.conductor.poll_connection_state()

@@ -10,9 +10,7 @@ from leap.baseapp.permcheck import (is_pkexec_in_system,
 from leap.eip import exceptions as eip_exceptions
 from leap.eip import specs as eipspecs
 
-logging.basicConfig()
 logger = logging.getLogger(name=__name__)
-logger.setLevel('DEBUG')
 
 
 class EIPConfig(baseconfig.JSONLeapConfig):

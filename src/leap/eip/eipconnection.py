@@ -4,13 +4,11 @@ EIP Connection Class
 from __future__ import (absolute_import,)
 import logging
 
-logging.basicConfig()
-logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.DEBUG)
-
 from leap.eip.checks import EIPConfigChecker
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.openvpnconnection import OpenVPNConnection
+
+logger = logging.getLogger(name=__name__)
 
 
 class EIPConnection(OpenVPNConnection):

@@ -6,9 +6,6 @@ from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
 
 from leap.baseapp.mainwindow import LeapWindow
 
-logging.basicConfig()
-logger = logging.getLogger(name=__name__)
-
 
 def main():
     """
@@ -20,17 +17,29 @@ def main():
     parser, opts = leap_argparse.init_leapc_args()
     debug = getattr(opts, 'debug', False)
 
-    #XXX get debug level and set logger accordingly
     if debug:
-        logger.setLevel('DEBUG')
-        logger.debug('args: %s' % opts)
+        level = logging.DEBUG
+    else:
+        level = logging.WARNING
+
+    logger = logging.getLogger(name='leap')
+    logger.setLevel(level)
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    formatter = logging.Formatter(
+        '%(asctime)s '
+        '- %(name)s - %(levelname)s - %(message)s')
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+    logger.debug('args: %s' % opts)
+    logger.info('Starting app')
 
     app = QApplication(sys.argv)
 
     if not QSystemTrayIcon.isSystemTrayAvailable():
         QMessageBox.critical(None, "Systray",
-                             "I couldn't detect any \
-system tray on this system.")
+                             "I couldn't detect"
+                             "any system tray on this system.")
         sys.exit(1)
     if not debug:
         QApplication.setQuitOnLastWindowClosed(False)

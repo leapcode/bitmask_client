@@ -1,11 +1,6 @@
-#import json
 import logging
 import ssl
 import os
-
-logging.basicConfig()
-logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.DEBUG)
 
 import requests
 
@@ -16,6 +11,8 @@ from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
 from leap.eip import specs as eipspecs
 from leap.util.fileutil import mkdir_p
+
+logger = logging.getLogger(name=__name__)
 
 """
 EIPConfigChecker

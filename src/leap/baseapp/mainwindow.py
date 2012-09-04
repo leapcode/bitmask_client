@@ -1,9 +1,6 @@
 # vim: set fileencoding=utf-8 :
 #!/usr/bin/env python
 import logging
-logging.basicConfig()
-logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.DEBUG)
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -12,6 +9,8 @@ from leap.baseapp.eip import EIPConductorApp
 from leap.baseapp.log import LogPane
 from leap.baseapp.systray import StatusAwareTrayIcon
 from leap.baseapp.leap_app import MainWindow
+
+logger = logging.getLogger(name=__name__)
 
 
 class LeapWindow(QtGui.QMainWindow,

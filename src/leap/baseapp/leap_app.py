@@ -1,6 +1,10 @@
+import logging
+
 from PyQt4 import QtGui
 
 from leap.gui import mainwindow_rc
+
+logger = logging.getLogger(name=__name__)
 
 
 class MainWindow(object):
@@ -79,5 +83,7 @@ technolust</i>")
         # TODO:make sure to shutdown all child process / threads
         # in conductor
         # XXX send signal instead?
+        logger.info('Shutting down')
         self.conductor.cleanup()
+        logger.info('Exiting')
         QtGui.qApp.quit()
