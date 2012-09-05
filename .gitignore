@@ -16,3 +16,4 @@ man/
 share/
 src/leap.egg-info/
 src/leap_client.egg-info
+pkg/RELEASE_VERSION
