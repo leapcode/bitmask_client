@@ -6,12 +6,8 @@ import sys
 try:
     from setuptools import setup, find_packages
 except ImportError:
-    #FIXME old?
-    #use distribute_setup instead??
-    #http://packages.python.org/distribute/setuptools.html#using-setuptools-without-bundling-it
-    import ez_setup
-    #XXX move ez_setup somewhere else?
-    ez_setup.use_setuptools()
+    from pkg import distribute_setup
+    distribute_setup.use_setuptools()
     from setuptools import setup, find_packages
 import os
 
@@ -57,13 +53,8 @@ setup(
     classifiers=trove_classifiers,
     install_requires=utils.parse_requirements(),
     test_suite='nose.collector',
-
-    # XXX change to parse_test_requirements and
-    # get them from pip reqs.
-    test_requires=[
-        "nose",
-        "mock"],
-
+    test_requires=utils.parse_requirements(
+        reqfiles=['pkg/test-requirements.pip']),
     keywords='leap, client, qt, encryption, proxy',
     author='The LEAP project',
     author_email='info@leap.se',
@@ -75,7 +66,7 @@ setup(
     include_package_data=True,
     zip_safe=False,
 
-    # XXX platform switch
+    # add platform switch
     data_files=[
         ("share/man/man1",
             ["docs/leap.1"]),
