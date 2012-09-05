@@ -12,6 +12,7 @@ logger = logging.getLogger(name=__name__)
 
 
 class EIPConductorApp(object):
+    # XXX EIPConductorMixin ?
     """
     initializes an instance of EIPConnection,
     gathers errors, and passes status-change signals
@@ -51,8 +52,38 @@ class EIPConductorApp(object):
                 lambda: self.start_or_stopVPN())
 
     def error_check(self):
+        logger.debug('error check')
 
-        # XXX refactor (by #504)
+        #####################################
+        # XXX refactor in progress (by #504)
+        errq = self.conductor.error_queue
+        while errq.qsize() != 0:
+            logger.debug('%s errors left in conductor queue', errq.qsize())
+            error = errq.get()
+            logger.error('%s: %s', error.__class__.__name__, error.message)
+
+            if issubclass(error.__class__, eip_exceptions.EIPClientError):
+                if error.critical:
+                    logger.critical(error.message)
+                    logger.error('quitting')
+
+                    # XXX
+                    # check headless = False before
+                    # launching dialog.
+                    # (for Qt tests)
+
+                    dialog = ErrorDialog()
+                    if getattr(error, 'usermessage', None):
+                        message = error.usermessage
+                    else:
+                        message = error.message
+                    dialog.criticalMessage(message, 'error')
+                else:
+                    logger.exception(error.message)
+            else:
+                import traceback
+                traceback.print_exc()
+                raise error
 
         if self.conductor.missing_definition is True:
             dialog = ErrorDialog()
@@ -78,27 +109,19 @@ class EIPConductorApp(object):
         # os.kill of subprocess fails if we have
         # some of this errors.
 
-        if self.conductor.bad_provider is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'Bad provider entry. Check that remote_ip entry '
-                'has an IP under section [provider] in eip.cfg',
-                'error')
+        # deprecated.
+        # get something alike.
+        #if self.conductor.bad_provider is True:
+            #dialog = ErrorDialog()
+            #dialog.criticalMessage(
+                #'Bad provider entry. Check that remote_ip entry '
+                #'has an IP under section [provider] in eip.cfg',
+                #'error')
 
         if self.conductor.bad_keyfile_perms is True:
             dialog = ErrorDialog()
             dialog.criticalMessage(
                 'The vpn keys file has bad permissions',
-                'error')
-
-        if self.conductor.missing_auth_agent is True:
-            dialog = ErrorDialog()
-            dialog.warningMessage(
-                'We could not find any authentication '
-                'agent in your system.<br/>'
-                'Make sure you have '
-                '<b>polkit-gnome-authentication-agent-1</b> '
-                'running and try again.',
                 'error')
 
         if self.conductor.missing_pkexec is True:

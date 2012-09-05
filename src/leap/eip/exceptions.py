@@ -1,49 +1,37 @@
-class EIPNoCommandError(Exception):
-    pass
-
-
-class ConnectionError(Exception):
-    """
-    generic connection error
-    """
-    pass
-
-
 class EIPClientError(Exception):
     """
     base EIPClient exception
     """
-    def __str__(self):
-        if len(self.args) >= 1:
-            return repr(self.args[0])
-        else:
-            return ConnectionError
+    # Should inherit from LeapException
+    # and move basic attrs there
+    critical = False
+
+    #def __str__(self):
+        #if len(self.args) >= 1:
+            #return repr(self.args[0])
+        #else:
+            #return ConnectionError
 
 
-class UnrecoverableError(EIPClientError):
+class CriticalError(EIPClientError):
     """
     we cannot do anything about it, sorry
     """
-    # XXX we should catch this and raise
-    # to qtland, so we emit signal
-    # to translate whatever kind of error
-    # to user-friendly msg in dialog.
-    pass
+    critical = True
 
 
-class MissingSocketError(Exception):
-    pass
+class EIPNoPolkitAuthAgentAvailable(CriticalError):
+    message = "No polkit authentication agent could be found"
+    usermessage = ("We could not find any authentication "
+                   "agent in your system.<br/>"
+                   "Make sure you have "
+                   "<b>polkit-gnome-authentication-agent-1</b> "
+                   "running and try again.")
 
-
-class ConnectionRefusedError(Exception):
-    pass
+# Errors needing some work
 
 
 class EIPNoPkexecAvailable(Exception):
-    pass
-
-
-class EIPNoPolkitAuthAgentAvailable(Exception):
     pass
 
 
@@ -61,6 +49,22 @@ class EIPInitNoKeyFileError(Exception):
 
 class EIPInitBadKeyFilePermError(Exception):
     pass
+
+
+class EIPNoCommandError(Exception):
+    pass
+
+# Errors that probably we don't need anymore
+
+
+class MissingSocketError(Exception):
+    pass
+
+
+class ConnectionRefusedError(Exception):
+    pass
+
+
 
 
 class EIPMissingDefaultProvider(Exception):

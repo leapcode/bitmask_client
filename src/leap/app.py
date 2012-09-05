@@ -35,7 +35,7 @@ def main():
 
     logfile = getattr(opts, 'log_file', False)
     if logfile:
-        logger.debug('setting logfile ', logfile)
+        logger.debug('setting logfile to %s ', logfile)
         fileh = logging.FileHandler(logfile)
         fileh.setLevel(logging.DEBUG)
         fileh.setFormatter(formatter)
