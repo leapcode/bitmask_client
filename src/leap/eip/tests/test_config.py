@@ -71,7 +71,7 @@ class EIPConfigTest(BaseLeapTest):
         args.append('--management')
         #XXX hey!
         #get platform switches here!
-        args.append('/tmp/.eip.sock')
+        args.append('/tmp/test.socket')
         args.append('unix')
 
         # certs
@@ -114,7 +114,8 @@ class EIPConfigTest(BaseLeapTest):
         print 'path =', path
         print 'vpnbin = ', vpnbin
         command, args = eipconfig.build_ovpn_command(
-            do_pkexec_check=False, vpnbin=vpnbin)
+            do_pkexec_check=False, vpnbin=vpnbin,
+            socket_path="/tmp/test.socket")
         self.assertEqual(command, self.home + '/bin/openvpn')
         self.assertEqual(args, self.get_expected_openvpn_args())
 

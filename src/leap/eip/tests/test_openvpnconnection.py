@@ -1,5 +1,7 @@
 import logging
+import os
 import platform
+import shutil
 #import socket
 
 logging.basicConfig()
@@ -12,9 +14,10 @@ except ImportError:
 
 from mock import Mock, patch  # MagicMock
 
+from leap.eip import config as eipconfig
 from leap.eip import openvpnconnection
-from leap.eip import exceptions as eip_exceptions
 from leap.eip.udstelnet import UDSTelnet
+from leap.testing.basetest import BaseLeapTest
 
 _system = platform.system()
 
@@ -46,28 +49,25 @@ class MockedOpenVPNConnection(openvpnconnection.OpenVPNConnection):
         self.tn = mock_UDSTelnet(self.host, port=self.port)
 
 
-class OpenVPNConnectionTest(unittest.TestCase):
+class OpenVPNConnectionTest(BaseLeapTest):
 
     __name__ = "vpnconnection_tests"
 
     def setUp(self):
-        self.manager = MockedOpenVPNConnection()
+        # XXX this will have to change for win, host=localhost
+        host = eipconfig.get_socket_path()
+        self.manager = MockedOpenVPNConnection(host=host)
 
     def tearDown(self):
+        # remove the socket folder.
+        # XXX only if posix. in win, host is localhost, so nothing
+        # has to be done.
+        if self.manager.host:
+            folder, fpath = os.path.split(self.manager.host)
+            assert folder.startswith('/tmp/leap-tmp')  # safety check
+            shutil.rmtree(folder)
+
         del self.manager
-
-    #
-    # helpers
-    #
-
-    # XXX hey, refactor this to basetestclass
-
-    def _missing_test_for_plat(self, do_raise=False):
-        if do_raise:
-            raise NotImplementedError(
-                "This test is not implemented "
-                "for the running platform: %s" %
-                _system)
 
     #
     # tests
@@ -78,7 +78,7 @@ class OpenVPNConnectionTest(unittest.TestCase):
         """
         check default host for management iface
         """
-        self.assertEqual(self.manager.host, '/tmp/.eip.sock')
+        self.assertTrue(self.manager.host.startswith('/tmp/leap-tmp'))
         self.assertEqual(self.manager.port, 'unix')
 
     @unittest.skipUnless(_system == "Windows", "win only")
@@ -98,11 +98,6 @@ class OpenVPNConnectionTest(unittest.TestCase):
         self.assertEqual(self.manager.port, "unix")
         self.manager = MockedOpenVPNConnection(port="bad")
         self.assertEqual(self.manager.port, None)
-
-    def test_connect_raises_missing_socket(self):
-        self.manager = openvpnconnection.OpenVPNConnection()
-        with self.assertRaises(eip_exceptions.MissingSocketError):
-            self.manager.connect_to_management()
 
     def test_uds_telnet_called_on_connect(self):
         self.manager.connect_to_management()

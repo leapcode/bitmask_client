@@ -6,6 +6,7 @@ import logging
 import Queue
 
 from leap.eip.checks import EIPConfigChecker
+from leap.eip import config as eipconfig
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.openvpnconnection import OpenVPNConnection
 
@@ -29,6 +30,9 @@ class EIPConnection(OpenVPNConnection):
         status_signals = kwargs.pop('status_signals', None)
         self.status = EIPConnectionStatus(callbacks=status_signals)
         self.config_checker = config_checker()
+
+        host = eipconfig.get_socket_path()
+        kwargs['host'] = host
 
         super(EIPConnection, self).__init__(*args, **kwargs)
 
@@ -71,12 +75,6 @@ class EIPConnection(OpenVPNConnection):
         returns the current connection state
         """
         return self.status.current
-
-    #def desired_connection_state(self):
-        #"""
-        #returns the desired_connection state
-        #"""
-        #return self.desired_con_state
 
     def poll_connection_state(self):
         """
