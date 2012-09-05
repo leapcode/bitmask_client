@@ -26,12 +26,10 @@ class OpenVPNConnection(Connection):
     def __init__(self, config_file=None,
                  watcher_cb=None,
                  debug=False,
-                 host="/tmp/.eip.sock",
+                 host=None,
                  port="unix",
                  password=None,
                  *args, **kwargs):
-        #XXX FIXME
-        #change watcher_cb to line_observer
         """
         :param config_file: configuration file to read from
         :param watcher_cb: callback to be \
@@ -42,8 +40,12 @@ to be triggered for each one of them.
         :type watcher_cb: function
         :type signal_map: dict
         """
+        #XXX FIXME
+        #change watcher_cb to line_observer
+
         logger.debug('init openvpn connection')
         self.debug = debug
+        # XXX if not host: raise ImproperlyConfigured
 
         self.config_file = config_file
         self.watcher_cb = watcher_cb
@@ -103,7 +105,8 @@ to be triggered for each one of them.
         # XXX check also for command-line --command flag
         try:
             command, args = eip_config.build_ovpn_command(
-                debug=self.debug)
+                debug=self.debug,
+                socket_path=self.host)
         except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
             command = args = None
             # XXX deprecate

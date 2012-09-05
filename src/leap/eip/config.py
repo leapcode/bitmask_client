@@ -1,6 +1,7 @@
 import logging
 import os
 import platform
+import tempfile
 
 from leap.util.fileutil import (which, check_and_fix_urw_only)
 
@@ -39,7 +40,15 @@ class EIPServiceConfig(baseconfig.JSONLeapConfig):
     slug = property(_get_slug, _set_slug)
 
 
-def build_ovpn_options(daemon=False):
+def get_socket_path():
+    socket_path = os.path.join(
+        tempfile.mkdtemp(prefix="leap-tmp"),
+        'openvpn.socket')
+    logger.debug('socket path: %s', socket_path)
+    return socket_path
+
+
+def build_ovpn_options(daemon=False, socket_path=None):
     """
     build a list of options
     to be passed in the
@@ -98,10 +107,11 @@ def build_ovpn_options(daemon=False):
     if ourplatform in ("Linux", "Mac"):
         opts.append('--management')
 
-        # XXX get a different sock each time ...
-        # XXX #505
-        opts.append('/tmp/.eip.sock')
+        if socket_path is None:
+            socket_path = get_socket_path()
+        opts.append(socket_path)
         opts.append('unix')
+
     if ourplatform == "Windows":
         opts.append('--management')
         opts.append('localhost')
@@ -125,7 +135,8 @@ def build_ovpn_options(daemon=False):
     return opts
 
 
-def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None):
+def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
+                       socket_path=None):
     """
     build a string with the
     complete openvpn invocation
@@ -171,7 +182,7 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None):
     command.append(vpn_command)
     daemon_mode = not debug
 
-    for opt in build_ovpn_options(daemon=daemon_mode):
+    for opt in build_ovpn_options(daemon=daemon_mode, socket_path=socket_path):
         command.append(opt)
 
     # XXX check len and raise proper error
