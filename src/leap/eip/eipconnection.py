@@ -33,7 +33,7 @@ class EIPConnection(OpenVPNConnection):
         super(EIPConnection, self).__init__(*args, **kwargs)
 
     def has_errors(self):
-        return True if self.error_queue.qsize != 0 else True
+        return True if self.error_queue.qsize() != 0 else False
 
     def run_checks(self, skip_download=False):
         """
