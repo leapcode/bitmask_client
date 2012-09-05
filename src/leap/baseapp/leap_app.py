@@ -7,7 +7,7 @@ from leap.gui import mainwindow_rc
 logger = logging.getLogger(name=__name__)
 
 
-class MainWindow(object):
+class MainWindowMixin(object):
     """
     create the main window
     for leap app

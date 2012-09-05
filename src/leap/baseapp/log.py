@@ -6,7 +6,7 @@ from PyQt4 import QtCore
 vpnlogger = logging.getLogger('leap.openvpn')
 
 
-class LogPane(object):
+class LogPaneMixin(object):
     """
     a simple log pane
     that writes new lines as they come
@@ -22,7 +22,6 @@ class LogPane(object):
         self.logbrowser = QtGui.QTextBrowser()
 
         startStopButton = QtGui.QPushButton("&Connect")
-        #startStopButton.clicked.connect(self.start_or_stopVPN)
         self.startStopButton = startStopButton
 
         logging_layout.addWidget(self.logbrowser)

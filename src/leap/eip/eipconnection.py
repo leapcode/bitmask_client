@@ -24,7 +24,6 @@ class EIPConnection(OpenVPNConnection):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
 
-        # XXX USE THIS
         self.error_queue = Queue.Queue()
 
         status_signals = kwargs.pop('status_signals', None)
@@ -32,6 +31,9 @@ class EIPConnection(OpenVPNConnection):
         self.config_checker = config_checker()
 
         super(EIPConnection, self).__init__(*args, **kwargs)
+
+    def has_errors(self):
+        return True if self.error_queue.qsize != 0 else True
 
     def run_checks(self, skip_download=False):
         """

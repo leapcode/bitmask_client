@@ -4,7 +4,7 @@ from PyQt4 import QtGui
 from leap.gui import mainwindow_rc
 
 
-class StatusAwareTrayIcon(object):
+class StatusAwareTrayIconMixin(object):
     """
     a mix of several functions needed
     to create a systray and make it

@@ -5,18 +5,18 @@ import logging
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-from leap.baseapp.eip import EIPConductorApp
-from leap.baseapp.log import LogPane
-from leap.baseapp.systray import StatusAwareTrayIcon
-from leap.baseapp.leap_app import MainWindow
+from leap.baseapp.eip import EIPConductorAppMixin
+from leap.baseapp.log import LogPaneMixin
+from leap.baseapp.systray import StatusAwareTrayIconMixin
+from leap.baseapp.leap_app import MainWindowMixin
 
 logger = logging.getLogger(name=__name__)
 
 
 class LeapWindow(QtGui.QMainWindow,
-                 MainWindow, EIPConductorApp,
-                 StatusAwareTrayIcon,
-                 LogPane):
+                 MainWindowMixin, EIPConductorAppMixin,
+                 StatusAwareTrayIconMixin,
+                 LogPaneMixin):
     """
     main window for the leap app.
     Initializes all of its base classes
@@ -34,9 +34,9 @@ class LeapWindow(QtGui.QMainWindow,
         super(LeapWindow, self).__init__()
         if self.debugmode:
             self.createLogBrowser()
-        EIPConductorApp.__init__(self, opts=opts)
-        StatusAwareTrayIcon.__init__(self)
-        MainWindow.__init__(self)
+        EIPConductorAppMixin.__init__(self, opts=opts)
+        StatusAwareTrayIconMixin.__init__(self)
+        MainWindowMixin.__init__(self)
 
         # bind signals
         # XXX move to parent classes init??
