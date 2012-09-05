@@ -1,3 +1,4 @@
 # ??? not needed from win
 include pkg/linux/polkit/*
 include docs/*
+include pkg/RELEASE_VERSION

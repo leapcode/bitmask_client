@@ -16,9 +16,7 @@ except ImportError:
 import os
 
 from pkg import utils
-
-# XXX get version from somewhere else
-version = '0.1.0'
+from pkg import version
 
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
@@ -42,7 +40,7 @@ trove_classifiers = [
 setup(
     name='leap-client',
     package_dir={"": "src"},
-    version=version,
+    version=version.get_git_version(),
     description="the internet encryption toolkit",
     long_description=(
         "Desktop Client for the LEAP Platform."
@@ -57,14 +55,6 @@ setup(
         "and has an enhanced level of security."
     ),
     classifiers=trove_classifiers,
-
-    # XXX FIXME DEPS
-    # deps: pyqt
-
-    # build_deps: pyqt-utils
-    # XXX fixme move resource reloading
-    # to this setup script.
-
     install_requires=utils.parse_requirements(),
     test_suite='nose.collector',
 
@@ -74,8 +64,8 @@ setup(
         "nose",
         "mock"],
 
-    keywords='leap, client, qt, encryption',
-    author='leap project',
+    keywords='leap, client, qt, encryption, proxy',
+    author='The LEAP project',
     author_email='info@leap.se',
     url='http://leap.se',
     license='GPL',
