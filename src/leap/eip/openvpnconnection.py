@@ -7,9 +7,7 @@ import socket
 import time
 from functools import partial
 
-logging.basicConfig()
 logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.DEBUG)
 
 from leap.base.connection import Connection
 from leap.util.coroutines import spawn_and_watch_process
@@ -24,7 +22,6 @@ class OpenVPNConnection(Connection):
     All related to invocation
     of the openvpn binary
     """
-    # Connection Methods
 
     def __init__(self, config_file=None,
                  watcher_cb=None,
@@ -45,8 +42,8 @@ to be triggered for each one of them.
         :type watcher_cb: function
         :type signal_map: dict
         """
+        logger.debug('init openvpn connection')
         self.debug = debug
-        #print('conductor:%s' % debug)
 
         self.config_file = config_file
         self.watcher_cb = watcher_cb
@@ -59,15 +56,18 @@ to be triggered for each one of them.
         self.port = None
         self.proto = None
 
+        ##################################
         # XXX move all error messages
         # into a more encapsulated object.
         self.missing_pkexec = False
         self.missing_auth_agent = False
+
         self.bad_keyfile_perms = False
         self.missing_vpn_keyfile = False
         self.missing_provider = False
         self.missing_definition = False
         self.bad_provider = False
+        #################################
 
         #XXX workaround for signaling
         #the ui that we don't know how to
@@ -79,9 +79,6 @@ to be triggered for each one of them.
 
         # XXX get autostart from config
         self.autostart = True
-        #self._get_or_create_config()
-        self._set_ovpn_command()
-        self._check_vpn_keys()
 
         #
         # management init methods
@@ -97,6 +94,11 @@ to be triggered for each one of them.
         self.port = port
         self.password = password
 
+    def run_openvpn_checks(self):
+        logger.debug('running openvpn checks')
+        self._set_ovpn_command()
+        self._check_vpn_keys()
+
     def _set_ovpn_command(self):
         # XXX check also for command-line --command flag
         try:
@@ -104,10 +106,13 @@ to be triggered for each one of them.
                 debug=self.debug)
         except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
             command = args = None
+            # XXX deprecate
             self.missing_auth_agent = True
+            raise
         except eip_exceptions.EIPNoPkexecAvailable:
             command = args = None
             self.missing_pkexec = True
+            raise
 
         # XXX if not command, signal error.
         self.command = command
@@ -192,7 +197,8 @@ to be triggered for each one of them.
     #
 
     def forget_errors(self):
-        print('forgetting errors')
+        #print('forgetting errors')
+        logger.debug('forgetting errors')
         self.with_errors = False
 
     def connect_to_management(self):

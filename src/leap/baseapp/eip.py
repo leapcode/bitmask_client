@@ -1,3 +1,4 @@
+import logging
 import time
 
 from PyQt4 import QtCore
@@ -7,8 +8,10 @@ from leap.baseapp import constants
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
 
+logger = logging.getLogger(name=__name__)
 
-class EIPConductorApp(object):
+
+class EIPConductorAppMixin(object):
     """
     initializes an instance of EIPConnection,
     gathers errors, and passes status-change signals
@@ -48,64 +51,90 @@ class EIPConductorApp(object):
                 lambda: self.start_or_stopVPN())
 
     def error_check(self):
+        """
+        consumes the conductor error queue.
+        pops errors, and acts accordingly (launching user dialogs).
+        """
+        logger.debug('error check')
 
-        # XXX refactor (by #504)
+        #####################################
+        # XXX refactor in progress (by #504)
 
-        if self.conductor.missing_definition is True:
+        errq = self.conductor.error_queue
+        while errq.qsize() != 0:
+            logger.debug('%s errors left in conductor queue', errq.qsize())
+            error = errq.get()
+
+            # redundant log, debugging the loop.
+            logger.error('%s: %s', error.__class__.__name__, error.message)
+
+            if issubclass(error.__class__, eip_exceptions.EIPClientError):
+                self.handle_eip_error(error)
+
+            else:
+                # This is not quite working. FIXME
+                import traceback
+                traceback.print_exc()
+                raise error
+
+            if error.failfirst is True:
+                break
+
+        #############################################
+        # old errors to check
+        # write test for them and them remove
+        # their corpses from here.
+
+        #if self.conductor.missing_vpn_keyfile is True:
+            #dialog = ErrorDialog()
+            #dialog.criticalMessage(
+                #'Could not find the vpn keys file',
+                #'error')
+
+        #if self.conductor.bad_keyfile_perms is True:
+            #dialog = ErrorDialog()
+            #dialog.criticalMessage(
+                #'The vpn keys file has bad permissions',
+                #'error')
+
+        # deprecated. configchecker takes care of that.
+        #if self.conductor.missing_definition is True:
+            #dialog = ErrorDialog()
+            #dialog.criticalMessage(
+                #'The default '
+                #'definition.json file cannot be found',
+                #'error')
+
+    def handle_eip_error(self, error):
+        """
+        check severity and launches
+        dialogs informing user about the errors.
+        in the future we plan to derive errors to
+        our log viewer.
+        """
+
+        if getattr(error, 'usermessage', None):
+            message = error.usermessage
+        else:
+            message = error.message
+
+        # XXX
+        # check headless = False before
+        # launching dialog.
+        # (so Qt tests can assert stuff)
+
+        if error.critical:
+            logger.critical(error.message)
+            #critical error (non recoverable),
+            #we give user some info and quit.
+            #(critical error dialog will exit app)
+            ErrorDialog(errtype="critical",
+                        msg=message,
+                        label="critical error")
+
+        else:
             dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'The default '
-                'definition.json file cannot be found',
-                'error')
-
-        if self.conductor.missing_provider is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'Missing provider. Add a remote_ip entry '
-                'under section [provider] in eip.cfg',
-                'error')
-
-        if self.conductor.missing_vpn_keyfile is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'Could not find the vpn keys file',
-                'error')
-
-        # ... btw, review pending.
-        # os.kill of subprocess fails if we have
-        # some of this errors.
-
-        if self.conductor.bad_provider is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'Bad provider entry. Check that remote_ip entry '
-                'has an IP under section [provider] in eip.cfg',
-                'error')
-
-        if self.conductor.bad_keyfile_perms is True:
-            dialog = ErrorDialog()
-            dialog.criticalMessage(
-                'The vpn keys file has bad permissions',
-                'error')
-
-        if self.conductor.missing_auth_agent is True:
-            dialog = ErrorDialog()
-            dialog.warningMessage(
-                'We could not find any authentication '
-                'agent in your system.<br/>'
-                'Make sure you have '
-                '<b>polkit-gnome-authentication-agent-1</b> '
-                'running and try again.',
-                'error')
-
-        if self.conductor.missing_pkexec is True:
-            dialog = ErrorDialog()
-            dialog.warningMessage(
-                'We could not find <b>pkexec</b> in your '
-                'system.<br/> Do you want to try '
-                '<b>setuid workaround</b>? '
-                '(<i>DOES NOTHING YET</i>)',
-                'error')
+            dialog.warningMessage(message, 'error')
 
     @QtCore.pyqtSlot()
     def statusUpdate(self):
@@ -126,8 +155,9 @@ class EIPConductorApp(object):
         if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
-            time.sleep(2)
-            print('errors. disconnect.')
+            time.sleep(5)
+            logger.debug('timeout')
+            logger.error('errors. disconnect')
             self.start_or_stopVPN()  # is stop
 
         state = self.conductor.poll_connection_state()
@@ -161,29 +191,30 @@ class EIPConductorApp(object):
         """
         stub for running child process with vpn
         """
+        if self.conductor.has_errors():
+            logger.debug('not starting vpn; conductor has errors')
+
         if self.eip_service_started is False:
             try:
                 self.conductor.connect()
-                # XXX move this to error queue
-            except eip_exceptions.EIPNoCommandError:
-                dialog = ErrorDialog()
-                dialog.warningMessage(
-                    'No suitable openvpn command found. '
-                    '<br/>(Might be a permissions problem)',
-                    'error')
-            if self.debugmode:
-                self.startStopButton.setText('&Disconnect')
-            self.eip_service_started = True
 
-            # XXX what is optimum polling interval?
-            # too little is overkill, too much
-            # will miss transition states..
+            except eip_exceptions.EIPNoCommandError as exc:
+                self.handle_eip_error(exc)
 
-            # XXX decouple! (timer is init by icons class).
-            # should bring it here?
-            # to its own class?
+            except Exception as err:
+                # raise generic exception (Bad Thing Happened?)
+                logger.exception(err)
+            else:
+                # no errors, so go on.
+                if self.debugmode:
+                    self.startStopButton.setText('&Disconnect')
+                self.eip_service_started = True
 
-            self.timer.start(constants.TIMER_MILLISECONDS)
+                # XXX decouple! (timer is init by icons class).
+                # we could bring Timer Init to this Mixin
+                # or to its own Mixin.
+                self.timer.start(constants.TIMER_MILLISECONDS)
+
             return
 
         if self.eip_service_started is True:

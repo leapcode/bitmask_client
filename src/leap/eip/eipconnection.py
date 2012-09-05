@@ -3,14 +3,13 @@ EIP Connection Class
 """
 from __future__ import (absolute_import,)
 import logging
-
-logging.basicConfig()
-logger = logging.getLogger(name=__name__)
-logger.setLevel(logging.DEBUG)
+import Queue
 
 from leap.eip.checks import EIPConfigChecker
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.openvpnconnection import OpenVPNConnection
+
+logger = logging.getLogger(name=__name__)
 
 
 class EIPConnection(OpenVPNConnection):
@@ -25,8 +24,7 @@ class EIPConnection(OpenVPNConnection):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
 
-        # not used atm. but should.
-        self.error_queue = []
+        self.error_queue = Queue.Queue()
 
         status_signals = kwargs.pop('status_signals', None)
         self.status = EIPConnectionStatus(callbacks=status_signals)
@@ -34,11 +32,19 @@ class EIPConnection(OpenVPNConnection):
 
         super(EIPConnection, self).__init__(*args, **kwargs)
 
+    def has_errors(self):
+        return True if self.error_queue.qsize != 0 else True
+
     def run_checks(self, skip_download=False):
         """
         run all eip checks previous to attempting a connection
         """
-        self.config_checker.run_all(skip_download=skip_download)
+        logger.debug('running conductor checks')
+        try:
+            self.config_checker.run_all(skip_download=skip_download)
+            self.run_openvpn_checks()
+        except Exception as exc:
+            self.error_queue.put(exc)
 
     def connect(self):
         """
@@ -46,7 +52,6 @@ class EIPConnection(OpenVPNConnection):
         """
         self.forget_errors()
         self._try_connection()
-        # XXX should capture errors?
 
     def disconnect(self):
         """
@@ -67,11 +72,11 @@ class EIPConnection(OpenVPNConnection):
         """
         return self.status.current
 
-    def desired_connection_state(self):
-        """
-        returns the desired_connection state
-        """
-        return self.desired_con_state
+    #def desired_connection_state(self):
+        #"""
+        #returns the desired_connection state
+        #"""
+        #return self.desired_con_state
 
     def poll_connection_state(self):
         """
@@ -109,26 +114,27 @@ class EIPConnection(OpenVPNConnection):
         private method for disconnecting
         """
         if self.subp is not None:
+            logger.debug('disconnecting...')
             self.subp.terminate()
             self.subp = None
-        # XXX signal state changes! :)
 
-    def _is_alive(self):
-        """
-        don't know yet
-        """
-        pass
+    #def _is_alive(self):
+        #"""
+        #don't know yet
+        #"""
+        #pass
 
     def _connect(self):
         """
         entry point for connection cascade methods.
         """
-        #conn_result = ConState.DISCONNECTED
         try:
             conn_result = self._try_connection()
         except eip_exceptions.UnrecoverableError as except_msg:
             logger.error("FATAL: %s" % unicode(except_msg))
             conn_result = self.status.UNRECOVERABLE
+
+        # XXX enqueue exceptions themselves instead?
         except Exception as except_msg:
             self.error_queue.append(except_msg)
             logger.error("Failed Connection: %s" %

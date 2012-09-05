@@ -11,6 +11,10 @@ Launches main LEAP Client""", epilog=epilog)
                         action="store", dest="config_file",
                         type=argparse.FileType('r'),
                         help='optional config file')
+    parser.add_argument('--logfile', metavar="LOG FILE", nargs='?',
+                        action="store", dest="log_file",
+                        #type=argparse.FileType('w'),
+                        help='optional log file')
     return parser
 
 
