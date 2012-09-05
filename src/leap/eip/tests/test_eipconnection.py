@@ -27,9 +27,6 @@ class NotImplementedError(Exception):
 @patch('OpenVPNConnection._get_or_create_config')
 @patch('OpenVPNConnection._set_ovpn_command')
 class MockedEIPConnection(EIPConnection):
-    def _get_or_create_config(self):
-        self._set_ovpn_command()
-
     def _set_ovpn_command(self):
         self.command = "mock_command"
         self.args = [1, 2, 3]
@@ -64,6 +61,7 @@ class EIPConductorTest(BaseLeapTest):
         # some methods mocked
         self.manager = Mock(name="openvpnmanager_mock")
         self.con = MockedEIPConnection()
+        self.con.run_openvpn_checks()
 
     def tearDown(self):
         del self.con
@@ -78,10 +76,6 @@ class EIPConductorTest(BaseLeapTest):
         """
         con = self.con
         self.assertEqual(con.autostart, True)
-        self.assertEqual(con.missing_pkexec, False)
-        self.assertEqual(con.missing_vpn_keyfile, False)
-        self.assertEqual(con.missing_provider, False)
-        self.assertEqual(con.bad_provider, False)
 
     def test_ovpn_command(self):
         """

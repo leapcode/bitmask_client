@@ -193,6 +193,7 @@ class EIPConductorAppMixin(object):
         """
         if self.conductor.has_errors():
             logger.debug('not starting vpn; conductor has errors')
+            #import ipdb;ipdb.set_trace()
 
         if self.eip_service_started is False:
             try:

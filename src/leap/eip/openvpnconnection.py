@@ -57,16 +57,16 @@ to be triggered for each one of them.
         self.proto = None
 
         ##################################
-        # XXX move all error messages
-        # into a more encapsulated object.
-        self.missing_pkexec = False
-        self.missing_auth_agent = False
+        # This is handled by Exception attrs
+        # now (see #504)
+        #self.missing_pkexec = False
+        #self.missing_auth_agent = False
 
-        self.bad_keyfile_perms = False
-        self.missing_vpn_keyfile = False
-        self.missing_provider = False
-        self.missing_definition = False
-        self.bad_provider = False
+        #self.bad_keyfile_perms = False
+        #self.missing_vpn_keyfile = False
+        #self.missing_provider = False
+        #self.missing_definition = False
+        #self.bad_provider = False
         #################################
 
         #XXX workaround for signaling
@@ -107,26 +107,16 @@ to be triggered for each one of them.
         except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
             command = args = None
             # XXX deprecate
-            self.missing_auth_agent = True
+            #self.missing_auth_agent = True
             raise
         except eip_exceptions.EIPNoPkexecAvailable:
             command = args = None
-            self.missing_pkexec = True
+            #self.missing_pkexec = True
             raise
 
         # XXX if not command, signal error.
         self.command = command
         self.args = args
-
-    def _get_or_create_config(self):
-        """
-        retrieves the config options from defaults or
-        home file, or config file passed in command line.
-        populates command and args to be passed to subprocess.
-        """
-        # XXX does nothing.
-        # XXX should get config? or get from checker?
-        pass
 
     def _check_vpn_keys(self):
         """
