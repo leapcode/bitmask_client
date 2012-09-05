@@ -15,21 +15,46 @@ except ImportError:
     from setuptools import setup, find_packages
 import os
 
-# get version from somewhere else
-version = '0.1'
+# XXX get version from somewhere else
+version = '0.1.0'
 
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
+
+trove_classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    ("License :: OSI Approved :: GNU General "
+     "Public License v3 or later (GPLv3+)"),
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2.6",
+    "Programming Language :: Python :: 2.7",
+    "Topic :: Communications",
+    "Topic :: Security",
+    "Topic :: System :: Networking",
+    "Topic :: Utilities"
+]
 
 setup(
     name='leap-client',
     package_dir={"": "src"},
     version=version,
     description="the internet encryption toolkit",
-    long_description="""\
-""",
-    classifiers=[],  # Get strings from
-    # http://pypi.python.org/pypi?%3Aaction=list_classifiers
+    long_description=(
+        "Desktop Client for the LEAP Platform."
+        "\n"
+        "LEAP (LEAP Encryption Access Project) develops "
+        "a multi-year plan to secure everyday communication, breaking down"
+        "into discrete services, to be rolled out one at a time.\n"
+        "The client for the current phase gives support to the EIP Service."
+        "EIP (the Encrypted Internet Proxy) provides circumvention, location "
+        "anonymization, and traffic "
+        "encryption in a hassle-free, automatically self-configuring fashion, "
+        "and has an enhanced level of security."
+    ),
+    classifiers=trove_classifiers,
 
     # XXX FIXME DEPS
     # deps: pyqt
