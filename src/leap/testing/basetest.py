@@ -34,6 +34,8 @@ class BaseLeapTest(unittest.TestCase):
     def tearDownClass(cls):
         os.environ["PATH"] = cls.old_path
         os.environ["HOME"] = cls.old_home
+        # safety check
+        assert cls.tempdir.startswith('/tmp/leap_tests-')
         shutil.rmtree(cls.tempdir)
 
     # you have to override these methods
