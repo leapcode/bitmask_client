@@ -39,7 +39,7 @@ function process_option {
 }
 
 venv=.venv
-with_venv=setup/tools/with_venv.sh
+with_venv=pkg/tools/with_venv.sh
 always_venv=0
 never_venv=0
 force=0
@@ -99,14 +99,14 @@ then
   else
     if [ $always_venv -eq 1 ]; then
       # Automatically install the virtualenv
-      python setup/install_venv.py $installvenvopts
+      python pkg/install_venv.py $installvenvopts
       wrapper="${with_venv}"
     else
       echo -e "No virtual environment found...create one? (Y/n) \c"
       read use_ve
       if [ "x$use_ve" = "xY" -o "x$use_ve" = "x" -o "x$use_ve" = "xy" ]; then
         # Install the virtualenv and run the test suite in it
-        python setup/install_venv.py $installvenvopts
+        python pkg/install_venv.py $installvenvopts
         wrapper=${with_venv}
       fi
     fi

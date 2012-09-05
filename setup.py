@@ -15,6 +15,8 @@ except ImportError:
     from setuptools import setup, find_packages
 import os
 
+from pkg import utils
+
 # XXX get version from somewhere else
 version = '0.1.0'
 
@@ -63,14 +65,7 @@ setup(
     # XXX fixme move resource reloading
     # to this setup script.
 
-    # XXX should implement a parse_requirements
-    # and get them from the pip reqs. workaround needed
-    # for argparse and <=2.6
-    install_requires=[
-        # -*- Extra requirements: -*-
-        "configuration",
-        "requests",
-    ],
+    install_requires=utils.parse_requirements(),
     test_suite='nose.collector',
 
     # XXX change to parse_test_requirements and
@@ -95,10 +90,10 @@ setup(
         ("share/man/man1",
             ["docs/leap.1"]),
         ("share/polkit-1/actions",
-            ["setup/linux/polkit/net.openvpn.gui.leap.policy"])
+            ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
     ],
     platforms="all",
-    scripts=["setup/scripts/leap"],
+    scripts=["pkg/scripts/leap"],
     entry_points="""
     # -*- Entry points: -*-
     """,
