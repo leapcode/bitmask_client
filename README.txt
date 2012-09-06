@@ -23,27 +23,31 @@ apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools python-setuptools pyth
 Install
 ---------------
 
-If not using virtualenv:
+Global install:
 sudo python setup.py install
 
 If using virtualenv:
 python setup.py install
 
+Install PyQt
+------------
+pip install PyQt will fail because PyQt4 does not use the standard setup.py mechanism.
+Instead, they use configure.py which generates a Makefile.
+
+python configure.py
+make && make install
+
+You can:
+
+* install PyQt globally and make a virtualenv with --site-packages
+* run pkg/install_pyqt.sh inside your virtualenv (with --no-site-packages)
+* run pkg/postmkvenv.sh after creating your virtualenv, for making symlinks to your global PyQt installation.
+
 
 Running the App
 -----------------
 
-You need to set up a provider in your eip.cfg file:
-
-cd ~/.config/leap
-vim eip.cfg
-
-[provider]
-remote_ip = XXX.XXX.XXX.XXX
-
-and then run:
-
-leap --debug
+leap --debug --logfile /tmp/leap.log
 
 (or python app.py --debug if you run it from the src/leap folder).
 
@@ -66,6 +70,11 @@ or
 
 nosetests leap.util.test_leap_argparse
 
+Tox
+---
+For running testsuite against all the supported python versions (currently 2.6 and 2.7), run:
+
+tox -v
 
 Test-deps
 ---------
@@ -78,14 +87,9 @@ Hack
 (recommended)
 virtualenv .  # ensure your .gitignore knows about it
 bin/activate
-
-# you should probably simlink sip.so and PyQt4 to your system-wide
-# install, there are some issues with it.
-
+pkg/postmkvenv.sh
 python setup.py develop  
 
-# ... TBD: finish develop howto.
-# ... and explain how is python setup develop useful.
 
 Compiling resource/ui files
 -----------------------------
