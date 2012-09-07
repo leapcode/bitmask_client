@@ -33,10 +33,16 @@ trove_classifiers = [
     "Topic :: Utilities"
 ]
 
+try:
+    version = version.get_git_version()
+except ValueError:
+    # workaround since that needs a tag.
+    version = "0.1.0"
+
 setup(
     name='leap-client',
     package_dir={"": "src"},
-    version=version.get_git_version(),
+    version=version,
     description="the internet encryption toolkit",
     long_description=(
         "Desktop Client for the LEAP Platform."
