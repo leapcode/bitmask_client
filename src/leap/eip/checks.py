@@ -1,7 +1,10 @@
 import logging
 import ssl
+import platform
 import os
 
+import netifaces
+import ping
 import requests
 
 from leap.base import constants as baseconstants
@@ -319,8 +322,54 @@ class EIPConfigChecker(object):
         # We should WRITE eip config if missing or
         # incomplete at this point
 
-    def ping_gateway(self):
-        raise NotImplementedError
+    def test_internet_connection(self):
+        try:
+            requests.get('http://216.172.161.165')
+        except (requests.HTTPError, requests.RequestException) as e:
+            self.error = e.message
+        except requests.ConenctionError as e:
+            if e.message == "[Errno 113] No route to host":
+                if not self.is_internet_up():
+                    self.error = "No valid internet connection found."
+                else:
+                    self.error = "Provider server appears to be down."
+
+    def is_internet_up(self):
+        iface, gateway = self.get_default_interface_gateway()
+        self.ping_gateway(self)
+
+    def get_default_interface_gateway(self):
+        """only impletemented for linux so far."""
+        if not platform.system() == "Linux":
+            raise NotImplementedError
+
+        f = open("/proc/net/route")
+        route_table = f.readlines()
+        #toss out header
+        route_table.pop(0)
+
+        default_iface = None
+        gateway = None
+        while route_table:
+            line = route_table.pop(0)
+            iface, destination, gateway = line.split('\t')[0:3]
+            if destination == '00000000':
+                default_iface = iface
+                break
+
+        if not default_iface:
+            raise eipexceptions.NoDefaultInterfaceFoundError
+
+        if default_iface not in netifaces.interfaces():
+            raise eipexceptions.InterfaceNotFoundError
+
+        return default_iface, gateway
+
+    def ping_gateway(self, gateway):
+        #TODO: Discuss how much packet loss (%) is acceptable.
+        packet_loss = ping.quiet_ping(gateway)[0]
+        if packet_loss > 10:
+            raise eipexceptions.NoConnectionToGateway
 
     #
     # private helpers

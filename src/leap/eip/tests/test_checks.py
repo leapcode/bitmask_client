@@ -8,8 +8,10 @@ except ImportError:
 import os
 import urlparse
 
-from mock import patch, Mock
+from StringIO import StringIO
+from mock import patch, Mock, MagicMock
 
+import ping
 import requests
 
 from leap.base import config as baseconfig
@@ -22,6 +24,8 @@ from leap.eip.tests import data as testdata
 from leap.testing.basetest import BaseLeapTest
 from leap.testing.https_server import BaseHTTPSServerTestCase
 from leap.testing.https_server import where as where_cert
+
+_uid = os.getuid()
 
 
 class NoLogRequestHandler:
@@ -169,6 +173,26 @@ class EIPCheckTest(BaseLeapTest):
         # normal case
         sampleconfig = copy.copy(testdata.EIP_SAMPLE_JSON)
         checker.check_complete_eip_config(config=sampleconfig)
+
+    def test_get_default_interface_no_interface(self):
+        checker = eipchecks.EIPConfigChecker()
+        with patch('leap.eip.checks.open', create=True) as mock_open:
+            with self.assertRaises(eipexceptions.NoDefaultInterfaceFoundError):
+                mock_open.return_value = \
+                    StringIO("Iface\tDestination Gateway\tFlags\tRefCntd\tUse\tMetric\tMask\tMTU\tWindow\tIRTT")
+                checker.get_default_interface_gateway()
+
+    def test_ping_gateway_fail(self):
+        checker = eipchecks.EIPConfigChecker()
+        with patch.object(ping, "quiet_ping") as mocked_ping:
+            with self.assertRaises(eipexceptions.NoConnectionToGateway):
+                mocked_ping.return_value = [11, "", ""]
+                checker.ping_gateway("4.2.2.2")
+
+    @unittest.skipUnless(_uid == 0, "root only")
+    def test_ping_gateway(self):
+        checker = eipchecks.EIPConfigChecker()
+        checker.ping_gateway("4.2.2.2")
 
 
 class ProviderCertCheckerTest(BaseLeapTest):

@@ -108,6 +108,19 @@ class EIPInitBadProviderError(EIPClientError):
 class EIPConfigurationError(EIPClientError):
     pass
 
+
+class NoDefaultInterfaceFoundError(EIPClientError):
+    pass
+
+
+class InterfaceNotFoundError(EIPClientError):
+    pass
+
+
+class NoConnectionToGateway(EIPClientError):
+    pass
+
+
 #
 # Errors that probably we don't need anymore
 # chase down for them and check.
