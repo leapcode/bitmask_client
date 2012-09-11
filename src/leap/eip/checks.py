@@ -84,8 +84,9 @@ class LeapNetworkChecker(object):
         if not platform.system() == "Linux":
             raise NotImplementedError
 
-        with open("/proc/net/route") as f:
-            route_table = f.readlines()
+        f = open("/proc/net/route")
+        route_table = f.readlines()
+        f.close()
         #toss out header
         route_table.pop(0)
 
@@ -394,7 +395,6 @@ class EIPConfigChecker(object):
         # XXX TODO:
         # We should WRITE eip config if missing or
         # incomplete at this point
-
 
     #
     # private helpers
