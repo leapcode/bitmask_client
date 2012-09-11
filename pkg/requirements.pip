@@ -1,4 +1,5 @@
 argparse
 configuration
-ping
 requests
+ping
+netifaces
