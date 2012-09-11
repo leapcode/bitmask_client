@@ -178,8 +178,10 @@ class EIPCheckTest(BaseLeapTest):
         checker = eipchecks.EIPConfigChecker()
         with patch('leap.eip.checks.open', create=True) as mock_open:
             with self.assertRaises(eipexceptions.NoDefaultInterfaceFoundError):
-                mock_open.return_value = \
-                    StringIO("Iface\tDestination Gateway\tFlags\tRefCntd\tUse\tMetric\tMask\tMTU\tWindow\tIRTT")
+                mock_open.return_value = StringIO(
+                    "Iface\tDestination Gateway\t"
+                    "Flags\tRefCntd\tUse\tMetric\t"
+                    "Mask\tMTU\tWindow\tIRTT")
                 checker.get_default_interface_gateway()
 
     def test_ping_gateway_fail(self):
