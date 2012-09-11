@@ -32,7 +32,6 @@ class ErrorDialog(QDialog):
             # closing the dialog. we can pass that
             # in the constructor
 
-
     def criticalMessage(self, msg, label):
         msgBox = QMessageBox(QMessageBox.Critical,
                              "QMessageBox.critical()", msg,
