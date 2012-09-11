@@ -1,3 +1,4 @@
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import logging
 
 from PyQt4.QtGui import (QDialog, QFrame, QPushButton, QLabel, QMessageBox)
@@ -45,3 +46,13 @@ class ErrorDialog(QDialog):
         logger.info('Quitting')
         import sys
         sys.exit()
+
+    def confirmMessage(self, msg, label, action):
+        msgBox = QMessageBox(QMessageBox.Critical,
+                             "QMessageBox.critical()", msg,
+                             QMessageBox.NoButton, self)
+        msgBox.addButton("&Ok", QMessageBox.AcceptRole)
+        msgBox.addButton("&Cancel", QMessageBox.RejectRole)
+
+        if msgBox.exec_() == QMessageBox.AcceptRole:
+            action()

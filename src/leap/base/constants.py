@@ -1,4 +1,5 @@
 """constants to be used in base module"""
+APP_NAME = "leap"
 
 # default provider placeholder
 # using `example.org` we make sure that this
