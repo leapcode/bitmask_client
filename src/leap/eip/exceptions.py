@@ -110,15 +110,18 @@ class EIPConfigurationError(EIPClientError):
 
 
 class NoDefaultInterfaceFoundError(EIPClientError):
-    pass
+    message = "no default interface found"
+    usermessage = "Looks like your computer is not connected to the internet"
 
 
 class InterfaceNotFoundError(EIPClientError):
-    pass
+    # XXX should take iface arg on init maybe?
+    message = "interface not found"
 
 
 class NoConnectionToGateway(EIPClientError):
-    pass
+    message = "no connection to gateway"
+    usermessage = "Looks like there are problems with your internet connection"
 
 
 #
