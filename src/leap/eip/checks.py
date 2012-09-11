@@ -1,7 +1,10 @@
 import logging
 import ssl
+import platform
 import os
 
+import netifaces
+import ping
 import requests
 
 from leap.base import constants as baseconstants
@@ -17,8 +20,6 @@ logger = logging.getLogger(name=__name__)
 """
 EIPConfigChecker
 ----------
-this is the first of 3 consecutive checks that we're implementing.
-
 It is used from the eip conductor (a instance of EIPConnection that is
 managed from the QtApp), running `run_all` method before trying to call
 `connect` or any other of the state-changing methods.
@@ -29,13 +30,88 @@ into base.tests to be invoked by the base leap init routines.
 However, I'm testing them alltogether for the sake of having the whole unit
 reachable and testable as a whole.
 
-Other related checkers - not implemented yet -:
-* LeapNetworkChecker
+LeapNetworkChecker
+------------------
+Network checks. To be moved to base.
+docs TBD
+
+ProviderCertChecker
+-------------------
+Checks on certificates.
+docs TBD
 """
 
 
 class LeapNetworkChecker(object):
-    pass
+    """
+    all network related checks
+    """
+    # XXX to be moved to leap.base.checks
+    # TODO eventually, use a more portable solution
+    # like psutil
+
+    def run_all(self, checker=None):
+        if not checker:
+            checker = self
+        self.error = None  # ?
+
+        # for MVS
+        checker.test_internet_connection()
+        checker.is_internet_up()
+        checker.ping_gateway()
+
+    def test_internet_connection(self):
+        # XXX we're not passing the error anywhere.
+        # XXX we probably should raise an exception here?
+        # unless we use this as smoke test
+        try:
+            requests.get('http://216.172.161.165')
+        except (requests.HTTPError, requests.RequestException) as e:
+            self.error = e.message
+        except requests.ConenctionError as e:
+            if e.message == "[Errno 113] No route to host":
+                if not self.is_internet_up():
+                    self.error = "No valid internet connection found."
+                else:
+                    self.error = "Provider server appears to be down."
+
+    def is_internet_up(self):
+        iface, gateway = self.get_default_interface_gateway()
+        self.ping_gateway(self)
+
+    def get_default_interface_gateway(self):
+        """only impletemented for linux so far."""
+        if not platform.system() == "Linux":
+            raise NotImplementedError
+
+        f = open("/proc/net/route")
+        route_table = f.readlines()
+        f.close()
+        #toss out header
+        route_table.pop(0)
+
+        default_iface = None
+        gateway = None
+        while route_table:
+            line = route_table.pop(0)
+            iface, destination, gateway = line.split('\t')[0:3]
+            if destination == '00000000':
+                default_iface = iface
+                break
+
+        if not default_iface:
+            raise eipexceptions.NoDefaultInterfaceFoundError
+
+        if default_iface not in netifaces.interfaces():
+            raise eipexceptions.InterfaceNotFoundError
+
+        return default_iface, gateway
+
+    def ping_gateway(self, gateway):
+        #TODO: Discuss how much packet loss (%) is acceptable.
+        packet_loss = ping.quiet_ping(gateway)[0]
+        if packet_loss > baseconstants.MAX_ICMP_PACKET_LOSS:
+            raise eipexceptions.NoConnectionToGateway
 
 
 class ProviderCertChecker(object):
@@ -150,6 +226,7 @@ class ProviderCertChecker(object):
         # XXX TODO
         # waiting on #507. If we're not using PyOpenSSL or anything alike
         # we will have to roll our own x509 parsing to extract time info.
+        # XXX use gnutls
 
     def is_valid_pemfile(self, cert_s=None):
         """
@@ -318,9 +395,6 @@ class EIPConfigChecker(object):
         # XXX TODO:
         # We should WRITE eip config if missing or
         # incomplete at this point
-
-    def ping_gateway(self):
-        raise NotImplementedError
 
     #
     # private helpers

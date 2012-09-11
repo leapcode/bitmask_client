@@ -23,3 +23,5 @@ DEFAULT_PROVIDER_DEFINITION = {
     u'serial': 1,
     u'services': [u'eip'],
     u'version': u'0.1.0'}
+
+MAX_ICMP_PACKET_LOSS = 10
