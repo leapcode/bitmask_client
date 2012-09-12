@@ -6,6 +6,7 @@ try:
 except ImportError:
     import unittest
 import os
+import time
 import urlparse
 
 from StringIO import StringIO
@@ -372,9 +373,21 @@ class ProviderCertCheckerHTTPSTests(BaseHTTPSServerTestCase, BaseLeapTest):
     def test_is_cert_valid(self):
         checker = eipchecks.ProviderCertChecker()
         # TODO: better exception catching
+        # should raise eipexceptions.BadClientCertificate, and give reasons
+        # on msg.
         with self.assertRaises(Exception) as exc:
             self.assertFalse(checker.is_cert_valid())
             exc.message = "missing cert"
+
+    def test_bad_validity_certs(self):
+        checker = eipchecks.ProviderCertChecker()
+        certfile = where_cert('leaptestscert.pem')
+        self.assertFalse(checker.is_cert_not_expired(
+            certfile=certfile,
+            now=lambda: time.mktime((2038, 1, 1, 1, 1, 1, 1, 1, 1))))
+        self.assertFalse(checker.is_cert_not_expired(
+            certfile=certfile,
+            now=lambda: time.mktime((1970, 1, 1, 1, 1, 1, 1, 1, 1))))
 
     def test_check_new_cert_needed(self):
         # check: missing cert

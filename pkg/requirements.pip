@@ -3,3 +3,4 @@ configuration
 requests
 ping
 netifaces
+python-gnutls

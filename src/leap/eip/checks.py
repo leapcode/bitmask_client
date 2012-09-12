@@ -1,8 +1,10 @@
 import logging
 import ssl
 import platform
+import time
 import os
 
+from gnutls import crypto
 import netifaces
 import ping
 import requests
@@ -221,12 +223,13 @@ class ProviderCertChecker(object):
             certfile = self._get_client_cert_path()
         return os.path.isfile(certfile)
 
-    def is_cert_not_expired(self):
-        return True
-        # XXX TODO
-        # waiting on #507. If we're not using PyOpenSSL or anything alike
-        # we will have to roll our own x509 parsing to extract time info.
-        # XXX use gnutls
+    def is_cert_not_expired(self, certfile=None, now=time.gmtime):
+        if certfile is None:
+            certfile = self._get_client_cert_path()
+        with open(certfile) as cf:
+            cert_s = cf.read()
+        cert = crypto.X509Certificate(cert_s)
+        return cert.activation_time < now() < cert.expiration_time
 
     def is_valid_pemfile(self, cert_s=None):
         """
@@ -244,6 +247,9 @@ class ProviderCertChecker(object):
             # XXX get a real cert validation
             # so far this is only checking begin/end
             # delimiters :)
+            # XXX use gnutls for get proper
+            # validation.
+            # crypto.X509Certificate(cert_s)
             ssl.PEM_cert_to_DER_cert(cert_s)
         except:
             # XXX raise proper exception
