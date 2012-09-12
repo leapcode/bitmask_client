@@ -1,3 +1,4 @@
+# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import logging
 # This is only needed for Python v2 but is harmless for Python v3.
 import sip
@@ -5,6 +6,7 @@ sip.setapi('QVariant', 2)
 from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
 
 from leap.baseapp.mainwindow import LeapWindow
+from leap.baseapp import unitychecks
 
 
 def main():
@@ -45,6 +47,7 @@ def main():
     logger.info('Starting app')
 
     app = QApplication(sys.argv)
+    unitychecks.do_check()
 
     if not QSystemTrayIcon.isSystemTrayAvailable():
         QMessageBox.critical(None, "Systray",

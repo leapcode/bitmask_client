@@ -1,8 +1,12 @@
 #!/bin/bash
 # This hook is run after a new virtualenv is activated.
 # ~/.virtualenvs/postmkvirtualenv
+# tested and working in debian
 
 # Symlinks PyQt4 from global installation into virtualenv site-packages
+# XXX TODO:
+# script fails in ubuntu, with path: /usr/lib/pymodules/python2.7/PyQt4
+# use import PyQt4; PyQt4.__path__ instead
 
 LIBS=( PyQt4 sip.so )
 
