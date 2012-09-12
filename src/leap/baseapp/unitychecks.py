@@ -10,9 +10,7 @@ import platform
 import sys
 from subprocess import Popen, PIPE
 
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel('DEBUG')
 
 from leap.base.constants import APP_NAME
 from leap.baseapp.dialogs import ErrorDialog
