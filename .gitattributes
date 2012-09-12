@@ -16,3 +16,4 @@ man/ export-ignore
 share/ export-ignore
 src/leap.egg-info/ export-ignore
 src/leap_client.egg-info export-ignore
+src/leap/_version.py export-subst

@@ -1,3 +1,3 @@
 include pkg/*
 include docs/*
-include pkg/RELEASE_VERSION
+include versioneer.py

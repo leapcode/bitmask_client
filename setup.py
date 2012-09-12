@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+from __future__ import print_function
 import sys
 
 try:
@@ -12,7 +12,11 @@ except ImportError:
 import os
 
 from pkg import utils
-from pkg import version
+import versioneer
+versioneer.versionfile_source = 'src/leap/_version.py'
+versioneer.versionfile_build = 'leap/_version.py'
+versioneer.tag_prefix = ''  # tags are like 1.2.0
+versioneer.parentdir_prefix = 'leap_client-'
 
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
@@ -33,16 +37,11 @@ trove_classifiers = [
     "Topic :: Utilities"
 ]
 
-try:
-    version = version.get_git_version()
-except ValueError:
-    # workaround since that needs a tag.
-    version = "0.1.0"
-
 setup(
     name='leap-client',
     package_dir={"": "src"},
-    version=version,
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description="the internet encryption toolkit",
     long_description=(
         "Desktop Client for the LEAP Platform."
@@ -64,7 +63,7 @@ setup(
     keywords='leap, client, qt, encryption, proxy',
     author='The LEAP project',
     author_email='info@leap.se',
-    url='http://leap.se',
+    url='https://leap.se',
     license='GPL',
     packages=find_packages(
         'src',
