@@ -1,6 +1,7 @@
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+from leap import __version__ as VERSION
 from leap.gui import mainwindow_rc
 
 
@@ -82,6 +83,9 @@ class StatusAwareTrayIconMixin(object):
         self.trayIconMenu.addAction(self.maximizeAction)
         self.trayIconMenu.addAction(self.restoreAction)
         self.trayIconMenu.addSeparator()
+        self.trayIconMenu.addAction(self.aboutAct)
+        self.trayIconMenu.addAction(self.aboutQtAct)
+        self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.quitAction)
 
         self.trayIcon = QtGui.QSystemTrayIcon(self)
@@ -104,8 +108,18 @@ class StatusAwareTrayIconMixin(object):
                                             triggered=self.showMaximized)
         self.restoreAction = QtGui.QAction("&Restore", self,
                                            triggered=self.showNormal)
+        self.aboutAct = QtGui.QAction("&About", self,
+                                      triggered=self.about)
+        self.aboutQtAct = QtGui.QAction("About Q&t", self,
+                                        triggered=QtGui.qApp.aboutQt)
         self.quitAction = QtGui.QAction("&Quit", self,
                                         triggered=self.cleanupAndQuit)
+
+    def about(self):
+        # move to widget
+        QtGui.QMessageBox.about(self, "About",
+                                "Running LEAP client<br>"
+                                "version <b>%s</b>" % VERSION)
 
     def setConnWidget(self, icon_name):
         oldlayout = self.statusIconBox.layout()
