@@ -35,7 +35,8 @@ class EIPConductorAppMixin(object):
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
             status_signals=(self.statusChange.emit, ),
-            debug=self.debugmode)
+            debug=self.debugmode,
+            ovpn_verbosity=opts.openvpn_verb)
 
         # XXX remove skip download when sample service is ready
         self.conductor.run_checks(skip_download=True)

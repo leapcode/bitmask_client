@@ -23,7 +23,8 @@ class OpenVPNConnection(Connection):
     of the openvpn binary
     """
 
-    def __init__(self, config_file=None,
+    def __init__(self,
+                 #config_file=None,
                  watcher_cb=None,
                  debug=False,
                  host=None,
@@ -46,8 +47,9 @@ to be triggered for each one of them.
         logger.debug('init openvpn connection')
         self.debug = debug
         # XXX if not host: raise ImproperlyConfigured
+        self.ovpn_verbosity = kwargs.get('ovpn_verbosity', None)
 
-        self.config_file = config_file
+        #self.config_file = config_file
         self.watcher_cb = watcher_cb
         #self.signal_maps = signal_maps
 
@@ -57,19 +59,6 @@ to be triggered for each one of them.
         self.server = None
         self.port = None
         self.proto = None
-
-        ##################################
-        # This is handled by Exception attrs
-        # now (see #504)
-        #self.missing_pkexec = False
-        #self.missing_auth_agent = False
-
-        #self.bad_keyfile_perms = False
-        #self.missing_vpn_keyfile = False
-        #self.missing_provider = False
-        #self.missing_definition = False
-        #self.bad_provider = False
-        #################################
 
         #XXX workaround for signaling
         #the ui that we don't know how to
@@ -106,7 +95,8 @@ to be triggered for each one of them.
         try:
             command, args = eip_config.build_ovpn_command(
                 debug=self.debug,
-                socket_path=self.host)
+                socket_path=self.host,
+                ovpn_verbosity=self.ovpn_verbosity)
         except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
             command = args = None
             # XXX deprecate

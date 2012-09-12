@@ -15,6 +15,10 @@ Launches main LEAP Client""", epilog=epilog)
                         action="store", dest="log_file",
                         #type=argparse.FileType('w'),
                         help='optional log file')
+    parser.add_argument('--openvpn-verbosity', nargs='?',
+                        type=int,
+                        action="store", dest="openvpn_verb",
+                        help='verbosity level for openvpn logs [1-6]')
     return parser
 
 

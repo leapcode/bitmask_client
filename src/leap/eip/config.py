@@ -48,7 +48,7 @@ def get_socket_path():
     return socket_path
 
 
-def build_ovpn_options(daemon=False, socket_path=None):
+def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     """
     build a list of options
     to be passed in the
@@ -77,6 +77,11 @@ def build_ovpn_options(daemon=False, socket_path=None):
     opts.append('tun')
     opts.append('--persist-tun')
     opts.append('--persist-key')
+
+    verbosity = kwargs.get('ovpn_verbosity', None)
+    if verbosity and 1 <= verbosity <= 6:
+        opts.append('--verb')
+        opts.append("%s" % verbosity)
 
     # remote
     # XXX get remote from eip.json
@@ -136,7 +141,7 @@ def build_ovpn_options(daemon=False, socket_path=None):
 
 
 def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
-                       socket_path=None):
+                       socket_path=None, **kwargs):
     """
     build a string with the
     complete openvpn invocation
@@ -182,7 +187,8 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
     command.append(vpn_command)
     daemon_mode = not debug
 
-    for opt in build_ovpn_options(daemon=daemon_mode, socket_path=socket_path):
+    for opt in build_ovpn_options(daemon=daemon_mode, socket_path=socket_path,
+                                  **kwargs):
         command.append(opt)
 
     # XXX check len and raise proper error

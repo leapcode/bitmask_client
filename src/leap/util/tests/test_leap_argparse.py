@@ -26,7 +26,8 @@ class LeapArgParseTest(unittest.TestCase):
             Namespace(
                 config_file=None,
                 debug=True,
-                log_file=None))
+                log_file=None,
+                openvpn_verb=None))
 
 if __name__ == "__main__":
     unittest.main()
