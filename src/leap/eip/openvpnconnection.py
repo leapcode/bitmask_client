@@ -99,12 +99,9 @@ to be triggered for each one of them.
                 ovpn_verbosity=self.ovpn_verbosity)
         except eip_exceptions.EIPNoPolkitAuthAgentAvailable:
             command = args = None
-            # XXX deprecate
-            #self.missing_auth_agent = True
             raise
         except eip_exceptions.EIPNoPkexecAvailable:
             command = args = None
-            #self.missing_pkexec = True
             raise
 
         # XXX if not command, signal error.
@@ -159,7 +156,7 @@ to be triggered for each one of them.
         if self.command is None:
             raise eip_exceptions.EIPNoCommandError
         if self.subp is not None:
-            print('cowardly refusing to launch subprocess again')
+            logger.debug('cowardly refusing to launch subprocess again')
             return
         self._launch_openvpn()
 
@@ -234,16 +231,17 @@ to be triggered for each one of them.
         """
         Send a command to openvpn and return response as list
         """
-        #logger.debug('connected? %s' % self.connected())
         if not self.connected():
             try:
-                #logger.debug('try to connect')
                 self.connect_to_management()
             except eip_exceptions.MissingSocketError:
-                #XXX capture more helpful error
-                return self.make_error()
-            except:
-                raise
+                logger.warning('missing management socket')
+                # This should only happen briefly during
+                # the first invocation. Race condition make
+                # the polling begin before management socket
+                # is ready
+                return []
+                #return self.make_error()
         try:
             if hasattr(self, 'tn'):
                 self.tn.write(cmd + "\n")
@@ -311,6 +309,7 @@ to be triggered for each one of them.
         """
         OpenVPN command: status
         """
+        #logger.debug('status called')
         status = self._send_command("status")
         return status
 

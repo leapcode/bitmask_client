@@ -45,7 +45,7 @@ class MainWindowMixin(object):
         self.headerLabelSub = QtGui.QLabel("<i>trust your \
 technolust</i>")
 
-        pixmap = QtGui.QPixmap(':/images/leapfrog.jpg')
+        pixmap = QtGui.QPixmap(':/images/leap-color-small.png')
         frog_lbl = QtGui.QLabel()
         frog_lbl.setPixmap(pixmap)
 

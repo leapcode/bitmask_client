@@ -151,13 +151,18 @@ class EIPConductorAppMixin(object):
         # from openvpn manager)
 
         if not self.eip_service_started:
+            # there is a race condition 
+            # going on here. Depending on how long we take
+            # to init the qt app, the management socket
+            # is not ready yet.
             return
 
         if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
-            time.sleep(5)
-            logger.debug('timeout')
+            #I removed the pkexec pass authentication at all.
+            #time.sleep(5)
+            #logger.debug('timeout')
             logger.error('errors. disconnect')
             self.start_or_stopVPN()  # is stop
 
