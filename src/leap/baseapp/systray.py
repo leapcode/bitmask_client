@@ -1,8 +1,17 @@
+import logging
+
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 from leap import __version__ as VERSION
 from leap.gui import mainwindow_rc
+
+logger = logging.getLogger(__name__)
+
+
+class PseudoAction(QtGui.QAction):
+    def isSeparator(self):
+        return True
 
 
 class StatusAwareTrayIconMixin(object):
@@ -76,12 +85,15 @@ class StatusAwareTrayIconMixin(object):
         """
         self.trayIconMenu = QtGui.QMenu(self)
 
-        self.trayIconMenu.addAction(self.connectVPNAction)
-        self.trayIconMenu.addAction(self.dis_connectAction)
+        self.trayIconMenu.addAction(self.statusAct)
+        self.trayIconMenu.addAction(self.connAct)
+        #self.trayIconMenu.addAction(self.dis_connectAction)
+        #self.trayIconMenu.addSeparator()
+        #self.trayIconMenu.addAction(self.minimizeAction)
+        #self.trayIconMenu.addAction(self.maximizeAction)
+        #self.trayIconMenu.addAction(self.restoreAction)
         self.trayIconMenu.addSeparator()
-        self.trayIconMenu.addAction(self.minimizeAction)
-        self.trayIconMenu.addAction(self.maximizeAction)
-        self.trayIconMenu.addAction(self.restoreAction)
+        self.trayIconMenu.addAction(self.detailsAct)
         self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.aboutAct)
         self.trayIconMenu.addAction(self.aboutQtAct)
@@ -92,22 +104,32 @@ class StatusAwareTrayIconMixin(object):
         self.setIcon('disconnected')
         self.trayIcon.setContextMenu(self.trayIconMenu)
 
+    def bad(self):
+        logger.error('this should not be called')
+
     def createActions(self):
         """
         creates actions to be binded to tray icon
         """
-        self.connectVPNAction = QtGui.QAction("Connect to &VPN", self,
-                                              triggered=self.hide)
         # XXX change action name on (dis)connect
-        self.dis_connectAction = QtGui.QAction(
-            "&(Dis)connect", self,
-            triggered=lambda: self.start_or_stopVPN())
-        self.minimizeAction = QtGui.QAction("Mi&nimize", self,
-                                            triggered=self.hide)
-        self.maximizeAction = QtGui.QAction("Ma&ximize", self,
-                                            triggered=self.showMaximized)
-        self.restoreAction = QtGui.QAction("&Restore", self,
-                                           triggered=self.showNormal)
+        statusAct = PseudoAction(
+            "Encryption OFF", self)  # ,
+        statusAct.setSeparator(True)
+        self.statusAct = statusAct
+        self.statusAct.isSeparator = lambda: True
+            #triggered=self.bad)
+        self.connAct = QtGui.QAction("      turn &on", self,
+                                     triggered=lambda: self.start_or_stopVPN())
+
+        self.detailsAct = QtGui.QAction("&Details...",
+                                        self,
+                                        triggered=self.detailsWin)
+        #self.minimizeAction = QtGui.QAction("Mi&nimize", self,
+                                            #triggered=self.hide)
+        #self.maximizeAction = QtGui.QAction("Ma&ximize", self,
+                                            #triggered=self.showMaximized)
+        #self.restoreAction = QtGui.QAction("&Restore", self,
+                                           #triggered=self.showNormal)
         self.aboutAct = QtGui.QAction("&About", self,
                                       triggered=self.about)
         self.aboutQtAct = QtGui.QAction("About Q&t", self,
@@ -115,11 +137,19 @@ class StatusAwareTrayIconMixin(object):
         self.quitAction = QtGui.QAction("&Quit", self,
                                         triggered=self.cleanupAndQuit)
 
+    def detailsWin(self):
+        logger.debug('details win toggle')
+        # XXX toggle main window visibility
+        # if visible: self.hide
+        # if hidden: self.show
+
     def about(self):
         # move to widget
         QtGui.QMessageBox.about(self, "About",
-                                "Running LEAP client<br>"
-                                "version <b>%s</b>" % VERSION)
+                                "LEAP client<br>"
+                                "(version <b>%s</b>)<br>"
+                                "<a href='https://leap.se/'>"
+                                "https://leap.se</a>" % VERSION)
 
     def setConnWidget(self, icon_name):
         oldlayout = self.statusIconBox.layout()
@@ -132,7 +162,7 @@ class StatusAwareTrayIconMixin(object):
     def setIcon(self, name):
         icon = self.Icons.get(name)(self)
         self.trayIcon.setIcon(icon)
-        self.setWindowIcon(icon)
+        #self.setWindowIcon(icon)
 
     def getIcon(self, icon_name):
         return self.states.get(icon_name, None)
