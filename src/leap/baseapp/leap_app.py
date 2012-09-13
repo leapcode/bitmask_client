@@ -85,5 +85,5 @@ technolust</i>")
         # XXX send signal instead?
         logger.info('Shutting down')
         self.conductor.cleanup()
-        logger.info('Exiting')
+        logger.info('Exiting. Bye.')
         QtGui.qApp.quit()

@@ -61,7 +61,7 @@ class StatusAwareTrayIconMixin(object):
                 self.iconpath['connected'])),
         self.ConnectionWidgets = con_widgets
 
-        self.statusIconBox = QtGui.QGroupBox("Connection Status")
+        self.statusIconBox = QtGui.QGroupBox("EIP Connection Status")
         statusIconLayout = QtGui.QHBoxLayout()
         statusIconLayout.addWidget(self.ConnectionWidgets['disconnected'])
         statusIconLayout.addWidget(self.ConnectionWidgets['connecting'])

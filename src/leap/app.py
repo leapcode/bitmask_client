@@ -36,6 +36,9 @@ def main():
     console.setFormatter(formatter)
     logger.addHandler(console)
 
+    logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+    logger.info('LEAP client version %s', VERSION)
+    logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logfile = getattr(opts, 'log_file', False)
     if logfile:
         logger.debug('setting logfile to %s ', logfile)
@@ -44,10 +47,7 @@ def main():
         fileh.setFormatter(formatter)
         logger.addHandler(fileh)
 
-    logger.debug('args: %s' % opts)
     logger.info('Starting app')
-    logger.info('Running client version %s', VERSION)
-
     app = QApplication(sys.argv)
     unitychecks.do_check()
 
