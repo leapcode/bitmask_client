@@ -87,7 +87,8 @@ Hack
 
 (recommended)
 virtualenv .  # ensure your .gitignore knows about it
-bin/activate
+source bin/activate
+git checkout develop
 pkg/postmkvenv.sh
 python setup.py develop  
 
