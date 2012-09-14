@@ -19,7 +19,7 @@ Dependencies
 
 If you are on a debian-based system, you can run:
 
-apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools python-gnutls python-setuptools python-nose
+apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools python-gnutls libgnutls-dev python-setuptools python-nose
 
 Install
 ---------------
