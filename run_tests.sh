@@ -77,7 +77,7 @@ function run_pep8 {
   echo "Running pep8 ..."
   srcfiles="src/leap tests"
   # Just run PEP8 in current environment
-  pep8_opts="--ignore=E202,W602 --exclude=*_rc.py --repeat"
+  pep8_opts="--ignore=E202,W602 --exclude=*_rc.py,_version.py --repeat"
   ${wrapper} pep8 ${pep8_opts} ${srcfiles}
 }
 
