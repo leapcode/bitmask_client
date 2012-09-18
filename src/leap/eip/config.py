@@ -21,7 +21,11 @@ class EIPConfig(baseconfig.JSONLeapConfig):
     spec = eipspecs.eipconfig_spec
 
     def _get_slug(self):
-        return baseconfig.get_config_file('eip.json')
+        dppath = baseconfig.get_default_provider_path()
+        eipjsonpath = baseconfig.get_config_file(
+            'eip-service.json',
+            folder=dppath)
+        return eipjsonpath
 
     def _set_slug(self, *args, **kwargs):
         raise AttributeError("you cannot set slug")
@@ -49,6 +53,25 @@ def get_socket_path():
         'openvpn.socket')
     logger.debug('socket path: %s', socket_path)
     return socket_path
+
+
+def get_eip_gateway():
+    """
+    return the first host in the list of hosts
+    under gateways list
+    """
+    eipconfig = EIPConfig()
+    eipconfig.load()
+    conf = eipconfig.get_config()
+    gateways = conf.get('gateways', None)
+    if len(gateways) > 0:
+        # we just pick first
+        gw = gateways[0]
+    hosts = gw['hosts']
+    if len(hosts) > 0:
+        return hosts[0]
+    else:
+        return "testprovider.example.org"
 
 
 def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
@@ -87,9 +110,10 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
         opts.append("%s" % verbosity)
 
     # remote
-    # XXX get remote from eip.json
     opts.append('--remote')
-    opts.append('testprovider.example.org')
+    gw = get_eip_gateway()
+    logger.debug('setting eip gateway to %s', gw)
+    opts.append(str(gw))
     opts.append('1194')
     opts.append('udp')
 
@@ -140,6 +164,7 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     #if daemon is True:
         #opts.append('--daemon')
 
+    logger.debug('vpn options: %s', opts)
     return opts
 
 
