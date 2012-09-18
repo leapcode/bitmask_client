@@ -18,6 +18,9 @@ from leap.base import exceptions
 from leap.base import constants
 from leap.util.fileutil import (mkdir_p)
 
+# move to base!
+from leap.eip import exceptions as eipexceptions
+
 
 class BaseLeapConfig(object):
     slug = None
@@ -145,9 +148,9 @@ class JSONLeapConfig(BaseLeapConfig):
                 config[k] = v()
         self._config.serialize(to)
 
-    def load(self, fromfile=None, from_uri=None, fetcher=None):
+    def load(self, fromfile=None, from_uri=None, fetcher=None, verify=False):
         if from_uri is not None:
-            fetched = self.fetch(from_uri, fetcher=fetcher)
+            fetched = self.fetch(from_uri, fetcher=fetcher, verify=verify)
             if fetched:
                 return
         if fromfile is None:
@@ -156,12 +159,21 @@ class JSONLeapConfig(BaseLeapConfig):
         # XXX check for no errors, etc
         self._config.config = newconfig
 
-    def fetch(self, uri, fetcher=None):
+    def fetch(self, uri, fetcher=None, verify=True):
         if not fetcher:
             fetcher = self.fetcher
-        request = fetcher.get(uri)
+        logger.debug('verify: %s', verify)
+        request = fetcher.get(uri, verify=verify)
+
+        # XXX get 404, ...
+        # and raise a UnableToFetch...
         request.raise_for_status()
         fd, fname = tempfile.mkstemp(suffix=".json")
+        if not request.json:
+            try:
+                json.loads(request.content)
+            except ValueError:
+                raise eipexceptions.LeapBadConfigFetchedError
         with open(fname, 'w') as tmp:
             tmp.write(json.dumps(request.json))
         self._loadtemp(fname)

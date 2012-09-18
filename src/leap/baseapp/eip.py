@@ -131,6 +131,8 @@ class EIPConductorAppMixin(object):
             ErrorDialog(errtype="critical",
                         msg=message,
                         label="critical error")
+        elif error.warning:
+            logger.warning(error.message)
 
         else:
             dialog = ErrorDialog()

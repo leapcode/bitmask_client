@@ -11,7 +11,7 @@ DEFAULT_PROVIDER = __branding.get(
     "provider_domain",
     "testprovider.example.org")
 
-DEFINITION_EXPECTED_PATH = "definition.json"
+DEFINITION_EXPECTED_PATH = "provider.json"
 
 DEFAULT_PROVIDER_DEFINITION = {
     u'api_uri': u'https://api.%s/' % DEFAULT_PROVIDER,

@@ -9,6 +9,8 @@ import netifaces
 import ping
 import requests
 
+from leap import __branding as BRANDING
+from leap import certs
 from leap.base import constants as baseconstants
 from leap.base import providers
 from leap.eip import config as eipconfig
@@ -20,6 +22,11 @@ from leap.util.fileutil import mkdir_p
 logger = logging.getLogger(name=__name__)
 
 """
+ProviderCertChecker
+-------------------
+Checks on certificates. To be moved to base.
+docs TBD
+
 EIPConfigChecker
 ----------
 It is used from the eip conductor (a instance of EIPConnection that is
@@ -36,12 +43,13 @@ LeapNetworkChecker
 ------------------
 Network checks. To be moved to base.
 docs TBD
-
-ProviderCertChecker
--------------------
-Checks on certificates.
-docs TBD
 """
+
+
+def get_ca_cert():
+    ca_file = BRANDING.get('provider_ca_file')
+    if ca_file:
+        return certs.where(ca_file)
 
 
 class LeapNetworkChecker(object):
@@ -67,6 +75,7 @@ class LeapNetworkChecker(object):
         # XXX we probably should raise an exception here?
         # unless we use this as smoke test
         try:
+            # XXX remove this hardcoded random ip
             requests.get('http://216.172.161.165')
         except (requests.HTTPError, requests.RequestException) as e:
             self.error = e.message
@@ -124,7 +133,7 @@ class ProviderCertChecker(object):
     """
     def __init__(self, fetcher=requests):
         self.fetcher = fetcher
-        self.cacert = None
+        self.cacert = get_ca_cert()
 
     def run_all(self, checker=None, skip_download=False):
         if not checker:
@@ -159,25 +168,34 @@ class ProviderCertChecker(object):
         raise NotImplementedError
 
     def is_there_provider_ca(self):
-        # XXX fake it till you make it! :P
+        from leap import certs
+        logger.debug('do we have provider_ca?')
+        cacert_path = BRANDING.get('provider_ca_file', None)
+        if not cacert_path:
+            logger.debug('False')
+            return False
+        self.cacert = certs.where(cacert_path)
+        logger.debug('True')
         return True
-
-        # enable this when we have
-        # a custom "branded" bundle
-        # certs package.
-        try:
-            from leap.custom import certs
-        except ImportError:
-            raise
-        self.cacert = certs.where('cacert.pem')
 
     def is_https_working(self, uri=None, verify=True):
+        if uri is None:
+            uri = self._get_root_uri()
         # XXX raise InsecureURI or something better
+        logger.debug('is https working?')
+        logger.debug('uri: %s', uri)
+        #import ipdb;ipdb.set_trace()
         assert uri.startswith('https')
         if verify is True and self.cacert is not None:
+            logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
-        self.fetcher.get(uri, verify=verify)
-        return True
+        try:
+            self.fetcher.get(uri, verify=verify)
+        except requests.exceptions.SSLError:
+            raise eipexceptions.EIPBadCertError
+        else:
+            logger.debug('True')
+            return True
 
     def check_new_cert_needed(self, skip_download=False):
         if not self.is_cert_valid(do_raise=False):
@@ -256,7 +274,11 @@ class ProviderCertChecker(object):
             raise
         return True
 
+    def _get_root_uri(self):
+        return u"https://%s/" % baseconstants.DEFAULT_PROVIDER
+
     def _get_client_cert_uri(self):
+        # XXX get the whole thing from constants
         return "https://%s/cert/get" % (baseconstants.DEFAULT_PROVIDER)
 
     def _get_client_cert_path(self):
@@ -370,7 +392,12 @@ class EIPConfigChecker(object):
             domain = config.get('provider', None)
             uri = self._get_provider_definition_uri(domain=domain)
 
-        self.defaultprovider.load(from_uri=uri, fetcher=self.fetcher)
+        # FIXME! Pass ca path verify!!!
+        self.defaultprovider.load(
+            from_uri=uri,
+            fetcher=self.fetcher,
+            verify=False)
+        #import ipdb;ipdb.set_trace()
         self.defaultprovider.save()
 
     def fetch_eip_service_config(self, skip_download=False,
