@@ -7,7 +7,6 @@ from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
 
 from leap import __version__ as VERSION
 from leap.baseapp.mainwindow import LeapWindow
-from leap.baseapp import unitychecks
 
 
 def main():
@@ -49,7 +48,6 @@ def main():
     logger.info('Running client version %s', VERSION)
 
     app = QApplication(sys.argv)
-    unitychecks.do_check()
 
     if not QSystemTrayIcon.isSystemTrayAvailable():
         QMessageBox.critical(None, "Systray",
