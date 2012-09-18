@@ -1,14 +1,20 @@
 from __future__ import (unicode_literals)
 import os
 
+from leap import __branding
 from leap.base import config as baseconfig
 
+PROVIDER_CA_CERT = __branding.get(
+    'provider_ca_file',
+    'testprovider-ca-cert.pem')
 
 provider_ca_path = lambda: unicode(os.path.join(
     baseconfig.get_default_provider_path(),
     'keys', 'ca',
-    'testprovider-ca-cert.pem'
+    PROVIDER_CA_CERT
 ))
+
+PROVIDER_DOMAIN = __branding.get('provider_domain', 'testprovider.example.org')
 
 
 client_cert_path = lambda: unicode(os.path.join(
@@ -20,7 +26,7 @@ client_cert_path = lambda: unicode(os.path.join(
 eipconfig_spec = {
     'provider': {
         'type': unicode,
-        'default': u"testprovider.example.org",
+        'default': u"%s" % PROVIDER_DOMAIN,
         'required': True,
     },
     'transport': {

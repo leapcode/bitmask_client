@@ -239,7 +239,7 @@ def get_config_file(filename, folder=None):
 
 def get_default_provider_path():
     default_subpath = os.path.join("providers",
-                                   constants.DEFAULT_TEST_PROVIDER)
+                                   constants.DEFAULT_PROVIDER)
     default_provider_path = get_config_file(
         '',
         folder=default_subpath)

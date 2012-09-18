@@ -16,4 +16,6 @@ man/
 share/
 src/leap.egg-info/
 src/leap_client.egg-info
+src/leap/_branding.py
+src/leap/certs/*.pem
 MANIFEST

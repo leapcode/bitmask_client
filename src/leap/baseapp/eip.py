@@ -1,5 +1,7 @@
+from __future__ import print_function
 import logging
 import time
+import sys
 
 from PyQt4 import QtCore
 
@@ -38,8 +40,9 @@ class EIPConductorAppMixin(object):
             debug=self.debugmode,
             ovpn_verbosity=opts.openvpn_verb)
 
-        # XXX remove skip download when sample service is ready
-        self.conductor.run_checks(skip_download=True)
+        # XXX get skip_download from cli flag
+        skip_download = False
+        self.conductor.run_checks(skip_download=skip_download)
         self.error_check()
 
         # XXX should receive "ready" signal
@@ -58,13 +61,11 @@ class EIPConductorAppMixin(object):
         """
         logger.debug('error check')
 
-        #####################################
-        # XXX refactor in progress (by #504)
-
         errq = self.conductor.error_queue
         while errq.qsize() != 0:
             logger.debug('%s errors left in conductor queue', errq.qsize())
-            error = errq.get()
+            # we get exception and original traceback from queue
+            error, tb = errq.get()
 
             # redundant log, debugging the loop.
             logger.error('%s: %s', error.__class__.__name__, error.message)
@@ -73,10 +74,8 @@ class EIPConductorAppMixin(object):
                 self.handle_eip_error(error)
 
             else:
-                # This is not quite working. FIXME
-                import traceback
-                traceback.print_exc()
-                raise error
+                # deprecated form of raising exception.
+                raise error, None, tb
 
             if error.failfirst is True:
                 break

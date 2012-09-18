@@ -4,6 +4,7 @@ EIP Connection Class
 from __future__ import (absolute_import,)
 import logging
 import Queue
+import sys
 
 from leap.eip.checks import EIPConfigChecker
 from leap.eip import config as eipconfig
@@ -48,7 +49,8 @@ class EIPConnection(OpenVPNConnection):
             self.config_checker.run_all(skip_download=skip_download)
             self.run_openvpn_checks()
         except Exception as exc:
-            self.error_queue.put(exc)
+            exc_traceback = sys.exc_info()[2]
+            self.error_queue.put((exc, exc_traceback))
 
     def connect(self):
         """

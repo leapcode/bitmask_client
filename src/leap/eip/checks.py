@@ -257,7 +257,7 @@ class ProviderCertChecker(object):
         return True
 
     def _get_client_cert_uri(self):
-        return "https://%s/cert/get" % (baseconstants.DEFAULT_TEST_PROVIDER)
+        return "https://%s/cert/get" % (baseconstants.DEFAULT_PROVIDER)
 
     def _get_client_cert_path(self):
         # MVS+ : get provider path
@@ -414,14 +414,18 @@ class EIPConfigChecker(object):
 
     def _get_provider_definition_uri(self, domain=None, path=None):
         if domain is None:
-            domain = baseconstants.DEFAULT_TEST_PROVIDER
+            domain = baseconstants.DEFAULT_PROVIDER
         if path is None:
             path = baseconstants.DEFINITION_EXPECTED_PATH
-        return "https://%s/%s" % (domain, path)
+        uri = u"https://%s/%s" % (domain, path)
+        logger.debug('getting provider definition from %s' % uri)
+        return uri
 
     def _get_eip_service_uri(self, domain=None, path=None):
         if domain is None:
-            domain = baseconstants.DEFAULT_TEST_PROVIDER
+            domain = baseconstants.DEFAULT_PROVIDER
         if path is None:
             path = eipconstants.EIP_SERVICE_EXPECTED_PATH
-        return "https://%s/%s" % (domain, path)
+        uri = "https://%s/%s" % (domain, path)
+        logger.debug('getting eip service file from %s', uri)
+        return uri

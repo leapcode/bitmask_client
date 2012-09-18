@@ -44,7 +44,7 @@ def main():
         fileh.setFormatter(formatter)
         logger.addHandler(fileh)
 
-    logger.debug('args: %s' % opts)
+    #logger.debug('args: %s' % opts)
     logger.info('Starting app')
     logger.info('Running client version %s', VERSION)
 

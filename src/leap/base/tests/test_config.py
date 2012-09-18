@@ -218,7 +218,7 @@ class ConfigHelperFunctions(BaseLeapTest):
             config.get_default_provider_path(),
             os.path.expanduser(
                 '~/.config/leap/providers/%s/' %
-                constants.DEFAULT_TEST_PROVIDER)
+                constants.DEFAULT_PROVIDER)
         )
 
     # validate ip
