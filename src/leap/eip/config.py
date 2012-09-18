@@ -3,7 +3,9 @@ import os
 import platform
 import tempfile
 
-from leap.util.fileutil import (which, check_and_fix_urw_only)
+from leap import __branding as BRANDING
+from leap import certs
+from leap.util.fileutil import (which, mkdir_p, check_and_fix_urw_only)
 
 from leap.base import config as baseconfig
 from leap.baseapp.permcheck import (is_pkexec_in_system,
@@ -12,6 +14,7 @@ from leap.eip import exceptions as eip_exceptions
 from leap.eip import specs as eipspecs
 
 logger = logging.getLogger(name=__name__)
+provider_ca_file = BRANDING.get('provider_ca_file', None)
 
 
 class EIPConfig(baseconfig.JSONLeapConfig):
@@ -211,15 +214,30 @@ def check_vpn_keys():
     logger.debug('client cert = %s', client_cert)
 
     # if no keys, raise error.
-    # should be catched by the ui and signal user.
+    # it's catched by the ui and signal user.
+
+    if not os.path.isfile(provider_ca):
+        # not there. let's try to copy.
+        folder, filename = os.path.split(provider_ca)
+        if not os.path.isdir(folder):
+            mkdir_p(folder)
+        if provider_ca_file:
+            cacert = certs.where(provider_ca_file)
+        with open(provider_ca, 'w') as pca:
+            with open(cacert, 'r') as cac:
+                pca.write(cac.read())
+
+    if not os.path.isfile(provider_ca):
+        logger.error('key file %s not found. aborting.',
+                     provider_ca)
+        raise eip_exceptions.EIPInitNoKeyFileError
+
+    if not os.path.isfile(client_cert):
+        logger.error('key file %s not found. aborting.',
+                     client_cert)
+        raise eip_exceptions.EIPInitNoKeyFileError
 
     for keyfile in (provider_ca, client_cert):
-        if not os.path.isfile(keyfile):
-            logger.error('key file %s not found. aborting.',
-                         keyfile)
-            raise eip_exceptions.EIPInitNoKeyFileError
-
-        # check proper permission on keys
         # bad perms? try to fix them
         try:
             check_and_fix_urw_only(keyfile)
