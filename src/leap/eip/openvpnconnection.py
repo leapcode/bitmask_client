@@ -114,11 +114,10 @@ to be triggered for each one of them.
         """
         try:
             eip_config.check_vpn_keys()
-        except eip_exceptions.EIPInitNoKeyFileError:
-            self.missing_vpn_keyfile = True
         except eip_exceptions.EIPInitBadKeyFilePermError:
-            logger.error('error while checking vpn keys')
-            self.bad_keyfile_perms = True
+            logger.error('Bad VPN Keys permission!')
+            # do nothing now
+        # and raise the rest ...
 
     def _launch_openvpn(self):
         """

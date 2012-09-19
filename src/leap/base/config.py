@@ -18,6 +18,9 @@ from leap.base import exceptions
 from leap.base import constants
 from leap.util.fileutil import (mkdir_p)
 
+# move to base!
+from leap.eip import exceptions as eipexceptions
+
 
 class BaseLeapConfig(object):
     slug = None
@@ -145,9 +148,9 @@ class JSONLeapConfig(BaseLeapConfig):
                 config[k] = v()
         self._config.serialize(to)
 
-    def load(self, fromfile=None, from_uri=None, fetcher=None):
+    def load(self, fromfile=None, from_uri=None, fetcher=None, verify=False):
         if from_uri is not None:
-            fetched = self.fetch(from_uri, fetcher=fetcher)
+            fetched = self.fetch(from_uri, fetcher=fetcher, verify=verify)
             if fetched:
                 return
         if fromfile is None:
@@ -156,12 +159,21 @@ class JSONLeapConfig(BaseLeapConfig):
         # XXX check for no errors, etc
         self._config.config = newconfig
 
-    def fetch(self, uri, fetcher=None):
+    def fetch(self, uri, fetcher=None, verify=True):
         if not fetcher:
             fetcher = self.fetcher
-        request = fetcher.get(uri)
+        logger.debug('verify: %s', verify)
+        request = fetcher.get(uri, verify=verify)
+
+        # XXX get 404, ...
+        # and raise a UnableToFetch...
         request.raise_for_status()
         fd, fname = tempfile.mkstemp(suffix=".json")
+        if not request.json:
+            try:
+                json.loads(request.content)
+            except ValueError:
+                raise eipexceptions.LeapBadConfigFetchedError
         with open(fname, 'w') as tmp:
             tmp.write(json.dumps(request.json))
         self._loadtemp(fname)
@@ -239,7 +251,7 @@ def get_config_file(filename, folder=None):
 
 def get_default_provider_path():
     default_subpath = os.path.join("providers",
-                                   constants.DEFAULT_TEST_PROVIDER)
+                                   constants.DEFAULT_PROVIDER)
     default_provider_path = get_config_file(
         '',
         folder=default_subpath)
@@ -266,55 +278,55 @@ def get_groupname():
 # json stuff
 
 # XXX merge with JSONConfig / EIPChecks as appropiate.
-def get_config_json(config_file=None):
-    """
-    will replace get_config function be developing them
-    in parralel for branch purposes.
-    @param: configuration file
-    @type: file
-    @rparam: configuration turples
-    @rtype: dictionary
-    """
-    if not config_file:
+#def get_config_json(config_file=None):
+    #"""
+    #will replace get_config function be developing them
+    #in parralel for branch purposes.
+    #@param: configuration file
+    #@type: file
+    #@rparam: configuration turples
+    #@rtype: dictionary
+    #"""
+    #if not config_file:
         #TODO: NOT SURE WHAT this default should be, if anything
-        fpath = get_config_file('eip.json')
-        if not os.path.isfile(fpath):
-            dpath, cfile = os.path.split(fpath)
-            if not os.path.isdir(dpath):
-                mkdir_p(dpath)
-            with open(fpath, 'wb') as configfile:
-                configfile.flush()
-        try:
-            return json.load(open(fpath))
-        except ValueError:
-            raise exceptions.MissingConfigFileError
-
-    else:
+        #fpath = get_config_file('eip.json')
+        #if not os.path.isfile(fpath):
+            #dpath, cfile = os.path.split(fpath)
+            #if not os.path.isdir(dpath):
+                #mkdir_p(dpath)
+            #with open(fpath, 'wb') as configfile:
+                #configfile.flush()
+        #try:
+            #return json.load(open(fpath))
+        #except ValueError:
+            #raise exceptions.MissingConfigFileError
+#
+    #else:
         #TODO: add validity checks of file
-        try:
-            return json.load(open(config_file))
-        except IOError:
-            raise exceptions.MissingConfigFileError
-
-
-def get_definition_file(url=None):
-    """
-    """
+        #try:
+            #return json.load(open(config_file))
+        #except IOError:
+            #raise exceptions.MissingConfigFileError
+#
+#
+#def get_definition_file(url=None):
+    #"""
+    #"""
     #TODO: determine good default location of definition file.
-    r = requests.get(url)
-    return r.json
-
-
-def is_internet_up():
-    """TODO: Build more robust network diagnosis capabilities
-    """
-    try:
-        requests.get('http://128.30.52.45', timeout=1)
-        return True
-    except requests.Timeout:  # as err:
-        pass
-    return False
-
+    #r = requests.get(url)
+    #return r.json
+#
+#
+#def is_internet_up():
+    #"""TODO: Build more robust network diagnosis capabilities
+    #"""
+    #try:
+        #requests.get('http://128.30.52.45', timeout=1)
+        #return True
+    #except requests.Timeout:  # as err:
+        #pass
+    #return False
+#
 # XXX DEPRECATE.
 # move to eip.checks
 #
@@ -323,49 +335,49 @@ def is_internet_up():
 # moving it here transiently until I clean merge commit.
 # -- kali 2012-08-24 00:32
 #
-
-
-class Configuration(object):
-    """
-    All configurations (providers et al) will be managed in this class.
-    """
-    def __init__(self, provider_url=None):
-        try:
+#
+#
+#class Configuration(object):
+    #"""
+    #All configurations (providers et al) will be managed in this class.
+    #"""
+    #def __init__(self, provider_url=None):
+        #try:
             #requests.get('foo')
-            self.providers = {}
-            self.error = False
-            provider_file = self.check_and_get_definition_file(provider_url)
-            self.providers['default'] = get_config_json(provider_file)
-        except (requests.HTTPError, requests.RequestException) as e:
-            self.error = e.message
-        except requests.ConnectionError as e:
-            if e.message == "[Errno 113] No route to host":
-                if not is_internet_up:
+            #self.providers = {}
+            #self.error = False
+            #provider_file = self.check_and_get_definition_file(provider_url)
+            #self.providers['default'] = get_config_json(provider_file)
+        #except (requests.HTTPError, requests.RequestException) as e:
+            #self.error = e.message
+        #except requests.ConnectionError as e:
+            #if e.message == "[Errno 113] No route to host":
+                #if not is_internet_up:
                     # this was meant to be a function invocation I guess...
-                    self.error = "No valid internet connection found"
-                else:
-                    self.error = "Provider server appears currently down."
-
-    def check_and_get_definition_file(self, provider_url):
-        """
-        checks if provider definition.json file is present.
-        if not downloads one from the web.
-        """
-        default_provider_path = get_default_provider_path()
-
-        if not os.path.isdir(default_provider_path):
-            mkdir_p(default_provider_path)
-
-        definition_file = get_config_file(
-            'definition.json',
-            folder=default_provider_path)
-
-        if os.path.isfile(definition_file):
-            return
-
-        else:
-            r = requests.get(provider_url)
-            r.raise_for_status()
-            with open(definition_file, 'wb') as f:
-                f.write(json.dumps(r.json, indent=4))
-            return definition_file
+                    #self.error = "No valid internet connection found"
+                #else:
+                    #self.error = "Provider server appears currently down."
+#
+    #def check_and_get_definition_file(self, provider_url):
+        #"""
+        #checks if provider definition.json file is present.
+        #if not downloads one from the web.
+        #"""
+        #default_provider_path = get_default_provider_path()
+#
+        #if not os.path.isdir(default_provider_path):
+            #mkdir_p(default_provider_path)
+#
+        #definition_file = get_config_file(
+            #'definition.json',
+            #folder=default_provider_path)
+#
+        #if os.path.isfile(definition_file):
+            #return
+#
+        #else:
+            #r = requests.get(provider_url)
+            #r.raise_for_status()
+            #with open(definition_file, 'wb') as f:
+                #f.write(json.dumps(r.json, indent=4))
+            #return definition_file

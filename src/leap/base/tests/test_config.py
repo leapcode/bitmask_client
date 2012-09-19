@@ -65,15 +65,15 @@ class ProviderTest(BaseLeapTest):
         pass
 
 
-class BareHomeTestCase(ProviderTest):
+# XXX depreacated. similar test in eip.checks
 
-    __name__ = "provider_config_tests_bare_home"
-
-    # XXX review. is it still needed?
-
-    def test_should_raise_if_missing_eip_json(self):
-        with self.assertRaises(exceptions.MissingConfigFileError):
-            config.get_config_json(os.path.join(self.home, 'eip.json'))
+#class BareHomeTestCase(ProviderTest):
+#
+    #__name__ = "provider_config_tests_bare_home"
+#
+    #def test_should_raise_if_missing_eip_json(self):
+        #with self.assertRaises(exceptions.MissingConfigFileError):
+            #config.get_config_json(os.path.join(self.home, 'eip.json'))
 
 
 class ProviderDefinitionTestCase(ProviderTest):
@@ -94,8 +94,10 @@ class ProviderDefinitionTestCase(ProviderTest):
             json.dump(eipconstants.EIP_SAMPLE_JSON, fp)
 
 
-# these tests below should move to wherever
-# we put the fetcher for provider files and related stuff.
+# these tests below should move to
+# eip.checks
+# config.Configuration has been deprecated
+
 # TODO:
 # - We're instantiating a ProviderTest because we're doing the home wipeoff
 # on setUpClass instead of the setUp (for speedup of the general cases).
@@ -112,26 +114,26 @@ class ProviderDefinitionTestCase(ProviderTest):
 # (so we can pass mock easily).
 
 
-class ProviderFetchConError(ProviderTest):
-    def test_connection_error(self):
-        with mock.patch.object(requests, "get") as mock_method:
-            mock_method.side_effect = requests.ConnectionError
-            cf = config.Configuration()
-            self.assertIsInstance(cf.error, str)
-
-
-class ProviderFetchHttpError(ProviderTest):
-    def test_file_not_found(self):
-        with mock.patch.object(requests, "get") as mock_method:
-            mock_method.side_effect = requests.HTTPError
-            cf = config.Configuration()
-            self.assertIsInstance(cf.error, str)
-
-
-class ProviderFetchInvalidUrl(ProviderTest):
-    def test_invalid_url(self):
-        cf = config.Configuration("ht")
-        self.assertTrue(cf.error)
+#class ProviderFetchConError(ProviderTest):
+    #def test_connection_error(self):
+        #with mock.patch.object(requests, "get") as mock_method:
+            #mock_method.side_effect = requests.ConnectionError
+            #cf = config.Configuration()
+            #self.assertIsInstance(cf.error, str)
+#
+#
+#class ProviderFetchHttpError(ProviderTest):
+    #def test_file_not_found(self):
+        #with mock.patch.object(requests, "get") as mock_method:
+            #mock_method.side_effect = requests.HTTPError
+            #cf = config.Configuration()
+            #self.assertIsInstance(cf.error, str)
+#
+#
+#class ProviderFetchInvalidUrl(ProviderTest):
+    #def test_invalid_url(self):
+        #cf = config.Configuration("ht")
+        #self.assertTrue(cf.error)
 
 
 # end provider fetch tests
@@ -218,7 +220,7 @@ class ConfigHelperFunctions(BaseLeapTest):
             config.get_default_provider_path(),
             os.path.expanduser(
                 '~/.config/leap/providers/%s/' %
-                constants.DEFAULT_TEST_PROVIDER)
+                constants.DEFAULT_PROVIDER)
         )
 
     # validate ip

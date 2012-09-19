@@ -1,21 +1,25 @@
 from __future__ import unicode_literals
 import os
 
+from leap import __branding
+
 # sample data used in tests
 
+PROVIDER = __branding.get('provider_domain')
+
 EIP_SAMPLE_JSON = {
-    "provider": "testprovider.example.org",
+    "provider": "%s" % PROVIDER,
     "transport": "openvpn",
     "openvpn_protocol": "tcp",
     "openvpn_port": 80,
     "openvpn_ca_certificate": os.path.expanduser(
         "~/.config/leap/providers/"
-        "testprovider.example.org/"
-        "keys/ca/testprovider-ca-cert.pem"),
+        "%s/"
+        "keys/ca/testprovider-ca-cert.pem" % PROVIDER),
     "openvpn_client_certificate": os.path.expanduser(
         "~/.config/leap/providers/"
-        "testprovider.example.org/"
-        "keys/client/openvpn.pem"),
+        "%s/"
+        "keys/client/openvpn.pem" % PROVIDER),
     "connect_on_login": True,
     "block_cleartext_traffic": True,
     "primary_gateway": "usa_west",

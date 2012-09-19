@@ -6,8 +6,10 @@ except ImportError:
 
 import os
 
+from leap import __branding as BRANDING
 from leap.testing.basetest import BaseLeapTest
 from leap.base import providers
+
 
 EXPECTED_DEFAULT_CONFIG = {
     "api_version": "0.1.0",
@@ -45,8 +47,8 @@ class TestLeapProviderDefinition(BaseLeapTest):
             os.path.join(
                 self.home,
                 '.config', 'leap', 'providers',
-                'testprovider.example.org',
-                'provider-definition.json'))
+                '%s' % BRANDING.get('provider_domain'),
+                'provider.json'))
         with self.assertRaises(AttributeError):
             self.definition.slug = 23
 

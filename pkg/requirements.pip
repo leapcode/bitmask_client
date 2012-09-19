@@ -3,4 +3,4 @@ configuration
 requests
 ping
 netifaces
-python-gnutls
+python-gnutls==1.1.9  # see https://bugs.launchpad.net/ubuntu/+source/python-gnutls/+bug/1027129

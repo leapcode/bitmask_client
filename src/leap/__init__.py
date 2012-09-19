@@ -28,3 +28,8 @@ except ImportError:
     pass
 
 __full_version__ = __appname__ + '/' + str(__version__)
+
+try:
+    from leap._branding import BRANDING as __branding
+except ImportError:
+    __branding = {}
