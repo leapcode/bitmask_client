@@ -216,12 +216,12 @@ class EIPConductorAppMixin(object):
                 if self.debugmode:
                     self.startStopButton.setText('&Disconnect')
                 self.eip_service_started = True
+                self.toggleEIPAct()
 
                 # XXX decouple! (timer is init by icons class).
                 # we could bring Timer Init to this Mixin
                 # or to its own Mixin.
                 self.timer.start(constants.TIMER_MILLISECONDS)
-
             return
 
         if self.eip_service_started is True:
@@ -229,5 +229,6 @@ class EIPConductorAppMixin(object):
             if self.debugmode:
                 self.startStopButton.setText('&Connect')
             self.eip_service_started = False
+            self.toggleEIPAct()
             self.timer.stop()
             return

@@ -5,14 +5,10 @@ from PyQt4 import QtGui
 
 from leap import __branding as BRANDING
 from leap import __version__ as VERSION
+
 from leap.gui import mainwindow_rc
 
 logger = logging.getLogger(__name__)
-
-
-class PseudoAction(QtGui.QAction):
-    def isSeparator(self):
-        return True
 
 
 class StatusAwareTrayIconMixin(object):
@@ -86,10 +82,7 @@ class StatusAwareTrayIconMixin(object):
         """
         self.trayIconMenu = QtGui.QMenu(self)
 
-        self.trayIconMenu.addAction(self.statusAct)
         self.trayIconMenu.addAction(self.connAct)
-        #self.trayIconMenu.addAction(self.dis_connectAction)
-        #self.trayIconMenu.addSeparator()
         #self.trayIconMenu.addAction(self.minimizeAction)
         #self.trayIconMenu.addAction(self.maximizeAction)
         #self.trayIconMenu.addAction(self.restoreAction)
@@ -113,13 +106,7 @@ class StatusAwareTrayIconMixin(object):
         creates actions to be binded to tray icon
         """
         # XXX change action name on (dis)connect
-        statusAct = PseudoAction(
-            "Encryption OFF", self)  # ,
-        statusAct.setSeparator(True)
-        self.statusAct = statusAct
-        self.statusAct.isSeparator = lambda: True
-            #triggered=self.bad)
-        self.connAct = QtGui.QAction("      turn &on", self,
+        self.connAct = QtGui.QAction("Encryption ON     turn &off", self,
                                      triggered=lambda: self.start_or_stopVPN())
 
         self.detailsAct = QtGui.QAction("&Details...",
@@ -137,6 +124,15 @@ class StatusAwareTrayIconMixin(object):
                                         triggered=QtGui.qApp.aboutQt)
         self.quitAction = QtGui.QAction("&Quit", self,
                                         triggered=self.cleanupAndQuit)
+
+    def toggleEIPAct(self):
+        # this is too simple by now.
+        # XXX We need to get the REAL info for Encryption state.
+        # (now is ON as soon as vpn launched)
+        if self.eip_service_started is True:
+            self.connAct.setText('Encryption ON    turn o&ff')
+        else:
+            self.connAct.setText('Encryption OFF   turn &on')
 
     def detailsWin(self):
         visible = self.isVisible()

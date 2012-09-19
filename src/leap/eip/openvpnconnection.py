@@ -163,8 +163,13 @@ to be triggered for each one of them.
         """
         terminates child subprocess
         """
+        # XXX we should send a quit process using management
+        # interface.
         if self.subp:
-            self.subp.terminate()
+            try:
+                self.subp.terminate()
+            except OSError:
+                logger.error('cannot terminate subprocess!')
 
     #
     # management methods
