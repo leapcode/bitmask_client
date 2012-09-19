@@ -169,7 +169,8 @@ to be triggered for each one of them.
             try:
                 self.subp.terminate()
             except OSError:
-                logger.error('cannot terminate subprocess!')
+                logger.error('cannot terminate subprocess!'
+                             '(maybe openvpn still running?)')
 
     #
     # management methods
