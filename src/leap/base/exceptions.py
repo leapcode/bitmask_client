@@ -4,5 +4,3 @@ class MissingConfigFileError(Exception):
 
 class ImproperlyConfigured(Exception):
     pass
-
-

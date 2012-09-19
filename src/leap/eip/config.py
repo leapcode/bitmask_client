@@ -112,6 +112,7 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     # remote
     opts.append('--remote')
     gw = get_eip_gateway()
+    #gw = "springbokvpn.org"
     logger.debug('setting eip gateway to %s', gw)
     opts.append(str(gw))
     opts.append('1194')
