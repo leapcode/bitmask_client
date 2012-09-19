@@ -4,5 +4,6 @@
    <file>../images/conn_connecting.png</file>
    <file>../images/conn_connected.png</file>
    <file>../images/leapfrog.jpg</file>
+   <file>../images/leap-color-small.png</file>
 </qresource>
 </RCC>

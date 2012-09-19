@@ -7,6 +7,9 @@ from leap.gui import mainwindow_rc
 logger = logging.getLogger(name=__name__)
 
 
+APP_LOGO = ':/images/leap-color-small.png'
+
+
 class MainWindowMixin(object):
     """
     create the main window
@@ -32,25 +35,30 @@ class MainWindowMixin(object):
         widget.setLayout(mainLayout)
 
         self.setWindowTitle("LEAP Client")
+        self.set_app_icon()
         self.resize(400, 300)
         self.set_statusbarMessage('ready')
+
+    def set_app_icon(self):
+        icon = QtGui.QIcon(APP_LOGO)
+        self.setWindowIcon(icon)
 
     def createWindowHeader(self):
         """
         description lines for main window
         """
         self.headerBox = QtGui.QGroupBox()
-        self.headerLabel = QtGui.QLabel("<font size=40><b>E</b>ncryption \
-<b>I</b>nternet <b>P</b>roxy</font>")
-        self.headerLabelSub = QtGui.QLabel("<i>trust your \
-technolust</i>")
+        self.headerLabel = QtGui.QLabel(
+            "<font size=40>LEAP Encryption Access Project</font>")
+        self.headerLabelSub = QtGui.QLabel(
+            "<br><i>your internet encryption toolkit</i>")
 
-        pixmap = QtGui.QPixmap(':/images/leapfrog.jpg')
-        frog_lbl = QtGui.QLabel()
-        frog_lbl.setPixmap(pixmap)
+        pixmap = QtGui.QPixmap(APP_LOGO)
+        leap_lbl = QtGui.QLabel()
+        leap_lbl.setPixmap(pixmap)
 
         headerLayout = QtGui.QHBoxLayout()
-        headerLayout.addWidget(frog_lbl)
+        headerLayout.addWidget(leap_lbl)
         headerLayout.addWidget(self.headerLabel)
         headerLayout.addWidget(self.headerLabelSub)
         headerLayout.addStretch()
@@ -85,5 +93,5 @@ technolust</i>")
         # XXX send signal instead?
         logger.info('Shutting down')
         self.conductor.cleanup()
-        logger.info('Exiting')
+        logger.info('Exiting. Bye.')
         QtGui.qApp.quit()

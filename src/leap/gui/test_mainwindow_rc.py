@@ -8,7 +8,7 @@ from leap.gui import mainwindow_rc
 
 # I have to admit that there's something
 # perverse in testing this.
-# But I thought that it could be a good idea
+# Even though, I still think that it _is_ a good idea
 # to put a check to avoid non-updated resources files.
 
 # so, if you came here because an updated resource
@@ -23,4 +23,4 @@ class MainWindowResourcesTest(unittest.TestCase):
     def test_mainwindow_resources_hash(self):
         self.assertEqual(
             hashlib.md5(mainwindow_rc.qt_resource_data).hexdigest(),
-            '5cc26322f96fabaa05c404f22774c716')
+            'd74eb99247b9d5cd2f00b2f695ca6b59')

@@ -1,8 +1,14 @@
+import logging
+
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+from leap import __branding as BRANDING
 from leap import __version__ as VERSION
+
 from leap.gui import mainwindow_rc
+
+logger = logging.getLogger(__name__)
 
 
 class StatusAwareTrayIconMixin(object):
@@ -61,7 +67,7 @@ class StatusAwareTrayIconMixin(object):
                 self.iconpath['connected'])),
         self.ConnectionWidgets = con_widgets
 
-        self.statusIconBox = QtGui.QGroupBox("Connection Status")
+        self.statusIconBox = QtGui.QGroupBox("EIP Connection Status")
         statusIconLayout = QtGui.QHBoxLayout()
         statusIconLayout.addWidget(self.ConnectionWidgets['disconnected'])
         statusIconLayout.addWidget(self.ConnectionWidgets['connecting'])
@@ -76,12 +82,12 @@ class StatusAwareTrayIconMixin(object):
         """
         self.trayIconMenu = QtGui.QMenu(self)
 
-        self.trayIconMenu.addAction(self.connectVPNAction)
-        self.trayIconMenu.addAction(self.dis_connectAction)
+        self.trayIconMenu.addAction(self.connAct)
+        #self.trayIconMenu.addAction(self.minimizeAction)
+        #self.trayIconMenu.addAction(self.maximizeAction)
+        #self.trayIconMenu.addAction(self.restoreAction)
         self.trayIconMenu.addSeparator()
-        self.trayIconMenu.addAction(self.minimizeAction)
-        self.trayIconMenu.addAction(self.maximizeAction)
-        self.trayIconMenu.addAction(self.restoreAction)
+        self.trayIconMenu.addAction(self.detailsAct)
         self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.aboutAct)
         self.trayIconMenu.addAction(self.aboutQtAct)
@@ -92,22 +98,26 @@ class StatusAwareTrayIconMixin(object):
         self.setIcon('disconnected')
         self.trayIcon.setContextMenu(self.trayIconMenu)
 
+    def bad(self):
+        logger.error('this should not be called')
+
     def createActions(self):
         """
         creates actions to be binded to tray icon
         """
-        self.connectVPNAction = QtGui.QAction("Connect to &VPN", self,
-                                              triggered=self.hide)
         # XXX change action name on (dis)connect
-        self.dis_connectAction = QtGui.QAction(
-            "&(Dis)connect", self,
-            triggered=lambda: self.start_or_stopVPN())
-        self.minimizeAction = QtGui.QAction("Mi&nimize", self,
-                                            triggered=self.hide)
-        self.maximizeAction = QtGui.QAction("Ma&ximize", self,
-                                            triggered=self.showMaximized)
-        self.restoreAction = QtGui.QAction("&Restore", self,
-                                           triggered=self.showNormal)
+        self.connAct = QtGui.QAction("Encryption ON     turn &off", self,
+                                     triggered=lambda: self.start_or_stopVPN())
+
+        self.detailsAct = QtGui.QAction("&Details...",
+                                        self,
+                                        triggered=self.detailsWin)
+        #self.minimizeAction = QtGui.QAction("Mi&nimize", self,
+                                            #triggered=self.hide)
+        #self.maximizeAction = QtGui.QAction("Ma&ximize", self,
+                                            #triggered=self.showMaximized)
+        #self.restoreAction = QtGui.QAction("&Restore", self,
+                                           #triggered=self.showNormal)
         self.aboutAct = QtGui.QAction("&About", self,
                                       triggered=self.about)
         self.aboutQtAct = QtGui.QAction("About Q&t", self,
@@ -115,11 +125,33 @@ class StatusAwareTrayIconMixin(object):
         self.quitAction = QtGui.QAction("&Quit", self,
                                         triggered=self.cleanupAndQuit)
 
+    def toggleEIPAct(self):
+        # this is too simple by now.
+        # XXX We need to get the REAL info for Encryption state.
+        # (now is ON as soon as vpn launched)
+        if self.eip_service_started is True:
+            self.connAct.setText('Encryption ON    turn o&ff')
+        else:
+            self.connAct.setText('Encryption OFF   turn &on')
+
+    def detailsWin(self):
+        visible = self.isVisible()
+        if visible:
+            self.hide()
+        else:
+            self.show()
+
     def about(self):
         # move to widget
-        QtGui.QMessageBox.about(self, "About",
-                                "Running LEAP client<br>"
-                                "version <b>%s</b>" % VERSION)
+        flavor = BRANDING.get('short_name', None)
+        content = ("LEAP client<br>"
+                   "(version <b>%s</b>)<br>" % VERSION)
+        if flavor:
+            content = content + ('<br>Flavor: <i>%s</i><br>' % flavor)
+        content = content + (
+            "<br><a href='https://leap.se/'>"
+            "https://leap.se</a>")
+        QtGui.QMessageBox.about(self, "About", content)
 
     def setConnWidget(self, icon_name):
         oldlayout = self.statusIconBox.layout()
@@ -132,7 +164,7 @@ class StatusAwareTrayIconMixin(object):
     def setIcon(self, name):
         icon = self.Icons.get(name)(self)
         self.trayIcon.setIcon(icon)
-        self.setWindowIcon(icon)
+        #self.setWindowIcon(icon)
 
     def getIcon(self, icon_name):
         return self.states.get(icon_name, None)

@@ -5,7 +5,6 @@ from __future__ import (division, unicode_literals, print_function)
 
 import logging
 
-#from leap.base.config import JSONLeapConfig
 from leap.base.authentication import Authentication
 
 logger = logging.getLogger(name=__name__)
@@ -55,22 +54,6 @@ class Connection(Authentication):
         returns the desired_connection state
         """
         return self.desired_connection_state
-
-    #def poll_connection_state(self):
-        #"""
-        #"""
-        #try:
-            #state = self.get_connection_state()
-        #except ConnectionRefusedError:
-            # connection refused. might be not ready yet.
-            #return
-        #if not state:
-            #return
-        #(ts, status_step,
-         #ok, ip, remote) = state
-        #self.status.set_vpn_state(status_step)
-        #status_step = self.status.get_readable_status()
-        #return (ts, status_step, ok, ip, remote)
 
     def get_icon_name(self):
         """
