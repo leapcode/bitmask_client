@@ -152,7 +152,7 @@ class EIPConductorAppMixin(object):
         # from openvpn manager)
 
         if not self.eip_service_started:
-            # there is a race condition 
+            # there is a race condition
             # going on here. Depending on how long we take
             # to init the qt app, the management socket
             # is not ready yet.

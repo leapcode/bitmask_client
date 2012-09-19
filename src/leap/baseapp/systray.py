@@ -3,6 +3,7 @@ import logging
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+from leap import __branding as BRANDING
 from leap import __version__ as VERSION
 from leap.gui import mainwindow_rc
 
@@ -138,18 +139,23 @@ class StatusAwareTrayIconMixin(object):
                                         triggered=self.cleanupAndQuit)
 
     def detailsWin(self):
-        logger.debug('details win toggle')
-        # XXX toggle main window visibility
-        # if visible: self.hide
-        # if hidden: self.show
+        visible = self.isVisible()
+        if visible:
+            self.hide()
+        else:
+            self.show()
 
     def about(self):
         # move to widget
-        QtGui.QMessageBox.about(self, "About",
-                                "LEAP client<br>"
-                                "(version <b>%s</b>)<br>"
-                                "<a href='https://leap.se/'>"
-                                "https://leap.se</a>" % VERSION)
+        flavor = BRANDING.get('short_name', None)
+        content = ("LEAP client<br>"
+                   "(version <b>%s</b>)<br>" % VERSION)
+        if flavor:
+            content = content + ('<br>Flavor: <i>%s</i><br>' % flavor)
+        content = content + (
+            "<br><a href='https://leap.se/'>"
+            "https://leap.se</a>")
+        QtGui.QMessageBox.about(self, "About", content)
 
     def setConnWidget(self, icon_name):
         oldlayout = self.statusIconBox.layout()

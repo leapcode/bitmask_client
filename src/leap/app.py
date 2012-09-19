@@ -60,7 +60,8 @@ def main():
         QApplication.setQuitOnLastWindowClosed(False)
 
     window = LeapWindow(opts)
-    window.show()
+    if debug:
+        window.show()
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
