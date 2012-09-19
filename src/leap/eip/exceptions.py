@@ -40,6 +40,8 @@ class EIPClientError(Exception):
     base EIPClient exception
     """
     critical = False
+    failfirst = False
+    warning = False
 
 
 class CriticalError(EIPClientError):
@@ -54,7 +56,7 @@ class Warning(EIPClientError):
     """
     just that, warnings
     """
-    pass
+    warning = True
 
 
 class EIPNoPolkitAuthAgentAvailable(CriticalError):
@@ -81,9 +83,20 @@ class EIPNoCommandError(EIPClientError):
                    "<br/>(Might be a permissions problem)")
 
 
+class EIPBadCertError(Warning):
+    # XXX this should be critical and fail close
+    message = "cert verification failed"
+    usermessage = "there is a problem with provider certificate"
+
+
+class LeapBadConfigFetchedError(Warning):
+    message = "provider sent a malformed json file"
+    usermessage = "an error occurred during configuratio of leap services"
+
 #
 # errors still needing some love
 #
+
 
 class EIPInitNoKeyFileError(CriticalError):
     message = "No vpn keys found in the expected path"

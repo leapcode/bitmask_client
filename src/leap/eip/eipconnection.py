@@ -4,7 +4,9 @@ EIP Connection Class
 from __future__ import (absolute_import,)
 import logging
 import Queue
+import sys
 
+from leap.eip.checks import ProviderCertChecker
 from leap.eip.checks import EIPConfigChecker
 from leap.eip import config as eipconfig
 from leap.eip import exceptions as eip_exceptions
@@ -21,7 +23,10 @@ class EIPConnection(OpenVPNConnection):
     Status updates (connected, bandwidth, etc) are signaled to the GUI.
     """
 
-    def __init__(self, config_checker=EIPConfigChecker, *args, **kwargs):
+    def __init__(self,
+                 provider_cert_checker=ProviderCertChecker,
+                 config_checker=EIPConfigChecker,
+                 *args, **kwargs):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
 
@@ -29,6 +34,8 @@ class EIPConnection(OpenVPNConnection):
 
         status_signals = kwargs.pop('status_signals', None)
         self.status = EIPConnectionStatus(callbacks=status_signals)
+
+        self.provider_cert_checker = provider_cert_checker()
         self.config_checker = config_checker()
 
         host = eipconfig.get_socket_path()
@@ -44,11 +51,25 @@ class EIPConnection(OpenVPNConnection):
         run all eip checks previous to attempting a connection
         """
         logger.debug('running conductor checks')
+
+        def push_err(exc):
+            # keep the original traceback!
+            exc_traceback = sys.exc_info()[2]
+            self.error_queue.put((exc, exc_traceback))
+
+        try:
+            # network (1)
+            self.provider_cert_checker.run_all()
+        except Exception as exc:
+            push_err(exc)
         try:
             self.config_checker.run_all(skip_download=skip_download)
+        except Exception as exc:
+            push_err(exc)
+        try:
             self.run_openvpn_checks()
         except Exception as exc:
-            self.error_queue.put(exc)
+            push_err(exc)
 
     def connect(self):
         """
@@ -82,6 +103,7 @@ class EIPConnection(OpenVPNConnection):
         # XXX this separation does not
         # make sense anymore after having
         # merged Connection and Manager classes.
+        # XXX GET RID OF THIS FUNCTION HERE!
         try:
             state = self.get_connection_state()
         except eip_exceptions.ConnectionRefusedError:

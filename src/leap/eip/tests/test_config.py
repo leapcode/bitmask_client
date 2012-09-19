@@ -1,3 +1,4 @@
+import json
 import os
 import platform
 import stat
@@ -9,10 +10,16 @@ except ImportError:
 
 #from leap.base import constants
 #from leap.eip import config as eip_config
+from leap import __branding as BRANDING
+from leap.eip import config as eipconfig
+from leap.eip.tests.data import EIP_SAMPLE_SERVICE
 from leap.testing.basetest import BaseLeapTest
 from leap.util.fileutil import mkdir_p
 
 _system = platform.system()
+
+PROVIDER = BRANDING.get('provider_domain')
+PROVIDER_SHORTNAME = BRANDING.get('short_name')
 
 
 class EIPConfigTest(BaseLeapTest):
@@ -39,6 +46,14 @@ class EIPConfigTest(BaseLeapTest):
         open(tfile, 'wb').close()
         os.chmod(tfile, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
+    def write_sample_eipservice(self):
+        conf = eipconfig.EIPConfig()
+        folder, f = os.path.split(conf.filename)
+        if not os.path.isdir(folder):
+            mkdir_p(folder)
+        with open(conf.filename, 'w') as fd:
+            fd.write(json.dumps(EIP_SAMPLE_SERVICE))
+
     def get_expected_openvpn_args(self):
         args = []
         username = self.get_username()
@@ -51,7 +66,7 @@ class EIPConfigTest(BaseLeapTest):
         args.append('--persist-tun')
         args.append('--persist-key')
         args.append('--remote')
-        args.append('testprovider.example.org')
+        args.append('%s' % eipconfig.get_eip_gateway())
         # XXX get port!?
         args.append('1194')
         # XXX get proto
@@ -80,23 +95,23 @@ class EIPConfigTest(BaseLeapTest):
         args.append(os.path.join(
             self.home,
             '.config', 'leap', 'providers',
-            'testprovider.example.org',
+            '%s' % PROVIDER,
             'keys', 'client',
             'openvpn.pem'))
         args.append('--key')
         args.append(os.path.join(
             self.home,
             '.config', 'leap', 'providers',
-            'testprovider.example.org',
+            '%s' % PROVIDER,
             'keys', 'client',
             'openvpn.pem'))
         args.append('--ca')
         args.append(os.path.join(
             self.home,
             '.config', 'leap', 'providers',
-            'testprovider.example.org',
+            '%s' % PROVIDER,
             'keys', 'ca',
-            'testprovider-ca-cert.pem'))
+            '%s-cacert.pem' % PROVIDER_SHORTNAME))
         return args
 
     # build command string
@@ -107,6 +122,7 @@ class EIPConfigTest(BaseLeapTest):
 
     def test_build_ovpn_command_empty_config(self):
         self.touch_exec()
+        self.write_sample_eipservice()
         from leap.eip import config as eipconfig
         from leap.util.fileutil import which
         path = os.environ['PATH']
