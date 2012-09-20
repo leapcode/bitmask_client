@@ -46,7 +46,7 @@ class EIPConnection(OpenVPNConnection):
     def has_errors(self):
         return True if self.error_queue.qsize() != 0 else False
 
-    def run_checks(self, skip_download=False):
+    def run_checks(self, skip_download=False, skip_verify=False):
         """
         run all eip checks previous to attempting a connection
         """
@@ -59,7 +59,7 @@ class EIPConnection(OpenVPNConnection):
 
         try:
             # network (1)
-            self.provider_cert_checker.run_all()
+            self.provider_cert_checker.run_all(skip_verify=skip_verify)
         except Exception as exc:
             push_err(exc)
         try:

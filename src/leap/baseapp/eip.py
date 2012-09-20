@@ -1,7 +1,7 @@
 from __future__ import print_function
 import logging
 import time
-import sys
+#import sys
 
 from PyQt4 import QtCore
 
@@ -40,9 +40,11 @@ class EIPConductorAppMixin(object):
             debug=self.debugmode,
             ovpn_verbosity=opts.openvpn_verb)
 
-        # XXX get skip_download from cli flag
-        skip_download = False
-        self.conductor.run_checks(skip_download=skip_download)
+        skip_download = opts.no_provider_checks
+        skip_verify = opts.no_ca_verify
+        self.conductor.run_checks(
+            skip_download=skip_download,
+            skip_verify=skip_verify)
         self.error_check()
 
         # XXX should receive "ready" signal

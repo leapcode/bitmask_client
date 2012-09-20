@@ -135,10 +135,12 @@ class ProviderCertChecker(object):
         self.fetcher = fetcher
         self.cacert = get_ca_cert()
 
-    def run_all(self, checker=None, skip_download=False):
+    def run_all(self, checker=None, skip_download=False, skip_verify=False):
         if not checker:
             checker = self
 
+        do_verify = not skip_verify
+        logger.debug('do_verify: %s', do_verify)
         # For MVS+
         # checker.download_ca_cert()
         # checker.download_ca_signature()
@@ -149,8 +151,8 @@ class ProviderCertChecker(object):
         checker.is_there_provider_ca()
 
         # XXX FAKE IT!!!
-        checker.is_https_working(verify=False)
-        checker.check_new_cert_needed(verify=False)
+        checker.is_https_working(verify=do_verify)
+        checker.check_new_cert_needed(verify=do_verify)
 
     def download_ca_cert(self):
         # MVS+
@@ -183,17 +185,21 @@ class ProviderCertChecker(object):
         if uri is None:
             uri = self._get_root_uri()
         # XXX raise InsecureURI or something better
-        logger.debug('is https working?')
-        logger.debug('uri: %s', uri)
         assert uri.startswith('https')
         if verify is True and self.cacert is not None:
             logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
+        logger.debug('is https working?')
+        logger.debug('uri: %s (verify:%s)', uri, verify)
         try:
             self.fetcher.get(uri, verify=verify)
-        except requests.exceptions.SSLError:
-            logger.debug('False!')
+        except requests.exceptions.SSLError as exc:
+            logger.warning('False! CERT VERIFICATION FAILED! '
+                           '(this should be CRITICAL)')
+            logger.warning('SSLError: %s', exc.message)
             raise eipexceptions.EIPBadCertError
+        # XXX get requests.exceptions.ConnectionError Errno 110
+        # Connection timed out, and raise ours.
         else:
             logger.debug('True')
             return True
