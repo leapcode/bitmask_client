@@ -14,9 +14,9 @@
     <message xml:lang="es">OpenVPN necesita autorizacion para comenzar</message>
     <icon_name>package-x-generic</icon_name> 
     <defaults>
-      <allow_any>auth_self_keep</allow_any>
-      <allow_inactive>auth_self_keep</allow_inactive>
-      <allow_active>auth_self_keep</allow_active>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
     </defaults>
     <annotate key="org.freedesktop.policykit.exec.path">/usr/sbin/openvpn</annotate>
   </action>
