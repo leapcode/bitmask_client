@@ -38,13 +38,9 @@ class BaseLeapConfig(object):
     def get_config(self, *kwargs):
         raise NotImplementedError("abstract base class")
 
-    #XXX todo: enable this property after
-    #fixing name clash with "config" in use at
-    #vpnconnection
-
-    #@property
-    #def config(self):
-        #return self.get_config()
+    @property
+    def config(self):
+        return self.get_config()
 
     def get_value(self, *kwargs):
         raise NotImplementedError("abstract base class")
