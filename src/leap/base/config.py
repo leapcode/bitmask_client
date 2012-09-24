@@ -12,6 +12,7 @@ logger = logging.getLogger(name=__name__)
 logger.setLevel('DEBUG')
 
 import configuration
+import jsonschema
 import requests
 
 from leap.base import exceptions
@@ -46,30 +47,58 @@ class BaseLeapConfig(object):
         raise NotImplementedError("abstract base class")
 
 
+class SchemaEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if obj is str:
+            return 'string'
+        if obj is unicode:
+            return 'string'
+        if obj is int:
+            return 'int'
+        if obj is list:
+            return 'array'
+        if obj is dict:
+            return object
+
+
 class MetaConfigWithSpec(type):
     """
     metaclass for JSONLeapConfig classes.
     It creates a configuration spec out of
-    the `spec` dictionary.
+    the `spec` dictionary. The `properties` attribute
+    of the spec dict is turn into the `schema` attribute
+    of the new class (which will be used to validate against).
     """
     # XXX in the near future, this is the
     # place where we want to enforce
-    # singletons, read-only and stuff.
+    # singletons, read-only and similar stuff.
 
     # TODO:
     # - add a error handler for missing options that
     #   we can act easily upon (sys.exit is ugly, for $deity's sake)
 
     def __new__(meta, classname, bases, classDict):
-        spec_options = classDict.get('spec', None)
+        schema_obj = classDict.get('spec', None)
+        if schema_obj:
+            spec_options = schema_obj.get('properties', None)
+            schema_json = SchemaEncoder().encode(schema_obj)
+            schema = json.loads(schema_json)
+        else:
+            spec_options = None
+            schema = None
         # not quite happy with this workaround.
         # I want to raise if missing spec dict, but only
         # for grand-children of this metaclass.
         # maybe should use abc module for this.
         abcderived = ("JSONLeapConfig",)
         if spec_options is None and classname not in abcderived:
-            raise exceptions.ImproperlyConfigured(
-                "missing spec dict on your derived class")
+            if not schema_obj:
+                raise exceptions.ImproperlyConfigured(
+                    "missing spec dict on your derived class (%s)" % classname)
+            if schema_obj and not spec_options:
+                raise exceptions.ImproperlyConfigured(
+                    "missing properties attr in spec dict "
+                    "on your derived class (%s)" % classname)
 
         # we create a configuration spec attribute from the spec dict
         config_class = type(
@@ -77,6 +106,8 @@ class MetaConfigWithSpec(type):
             (configuration.Configuration, object),
             {'options': spec_options})
         classDict['spec'] = config_class
+        # A shipped json-schema for validation
+        classDict['schema'] = schema
 
         return type.__new__(meta, classname, bases, classDict)
 
@@ -96,8 +127,8 @@ class MetaConfigWithSpec(type):
 # - get_config (returns a optparse.OptionParser object)
 
 # TODO:
+# [done] raise validation errors
 # - have a good type cast repertory (uris, version, hashes...)
-# - raise validation errors
 # - multilingual objects
 
 ##########################################################
@@ -151,9 +182,14 @@ class JSONLeapConfig(BaseLeapConfig):
                 return
         if fromfile is None:
             fromfile = self.filename
-        newconfig = self._config.deserialize(fromfile)
-        # XXX check for no errors, etc
-        self._config.config = newconfig
+        if os.path.isfile(fromfile):
+            newconfig = self._config.deserialize(fromfile)
+            # XXX check for no errors, etc
+            # XXX could validate here!
+            self._config.config = newconfig
+        else:
+            logger.error('tried to load config from non-existent path')
+            logger.error('Not Found: %s', fromfile)
 
     def fetch(self, uri, fetcher=None, verify=True):
         if not fetcher:
@@ -186,6 +222,10 @@ class JSONLeapConfig(BaseLeapConfig):
     @property
     def filename(self):
         return self.get_filename()
+
+    def jsonvalidate(self, data):
+        jsonschema.validate(data, self.schema)
+        return True
 
     # private
 
