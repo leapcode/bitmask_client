@@ -9,14 +9,12 @@ import tempfile
 import os
 
 logger = logging.getLogger(name=__name__)
-logger.setLevel('DEBUG')
 
-import configuration
-import jsonschema
 import requests
 
 from leap.base import exceptions
 from leap.base import constants
+from leap.base.pluggableconfig import PluggableConfig
 from leap.util.fileutil import (mkdir_p)
 
 # move to base!
@@ -47,20 +45,6 @@ class BaseLeapConfig(object):
         raise NotImplementedError("abstract base class")
 
 
-class SchemaEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if obj is str:
-            return 'string'
-        if obj is unicode:
-            return 'string'
-        if obj is int:
-            return 'int'
-        if obj is list:
-            return 'array'
-        if obj is dict:
-            return 'object'
-
-
 class MetaConfigWithSpec(type):
     """
     metaclass for JSONLeapConfig classes.
@@ -73,63 +57,43 @@ class MetaConfigWithSpec(type):
     # place where we want to enforce
     # singletons, read-only and similar stuff.
 
-    # TODO:
-    # - add a error handler for missing options that
-    #   we can act easily upon (sys.exit is ugly, for $deity's sake)
-
     def __new__(meta, classname, bases, classDict):
         schema_obj = classDict.get('spec', None)
-        if schema_obj:
-            spec_options = schema_obj.get('properties', None)
-            schema_json = SchemaEncoder().encode(schema_obj)
-            schema = json.loads(schema_json)
-        else:
-            spec_options = None
-            schema = None
+
         # not quite happy with this workaround.
         # I want to raise if missing spec dict, but only
         # for grand-children of this metaclass.
         # maybe should use abc module for this.
         abcderived = ("JSONLeapConfig",)
-        if spec_options is None and classname not in abcderived:
-            if not schema_obj:
-                raise exceptions.ImproperlyConfigured(
-                    "missing spec dict on your derived class (%s)" % classname)
-            if schema_obj and not spec_options:
-                raise exceptions.ImproperlyConfigured(
-                    "missing properties attr in spec dict "
-                    "on your derived class (%s)" % classname)
+        if schema_obj is None and classname not in abcderived:
+            raise exceptions.ImproperlyConfigured(
+                "missing spec dict on your derived class (%s)" % classname)
 
-        # we create a configuration spec attribute from the spec dict
+        # we create a configuration spec attribute
+        # from the spec dict
         config_class = type(
             classname + "Spec",
-            (configuration.Configuration, object),
-            {'options': spec_options})
+            (PluggableConfig, object),
+            {'options': schema_obj})
         classDict['spec'] = config_class
-        # A shipped json-schema for validation
-        classDict['schema'] = schema
 
         return type.__new__(meta, classname, bases, classDict)
 
 ##########################################################
-# hacking in progress:
+# some hacking still in progress:
 
 # Configs have:
+
 # - a slug (from where a filename/folder is derived)
 # - a spec (for validation and defaults).
-#   this spec is basically a dict that will be used
+#   this spec is conformant to the json-schema.
+#   basically a dict that will be used
 #   for type casting and validation, and defaults settings.
 
 # all config objects, since they are derived from  BaseConfig, implement basic
 # useful methods:
 # - save
 # - load
-# - get_config (returns a optparse.OptionParser object)
-
-# TODO:
-# [done] raise validation errors
-# - have a good type cast repertory (uris, version, hashes...)
-# - multilingual objects
 
 ##########################################################
 
@@ -152,10 +116,10 @@ class JSONLeapConfig(BaseLeapConfig):
             raise exceptions.ImproperlyConfigured(
                 "missing spec on JSONLeapConfig"
                 " derived class")
-        assert issubclass(self.spec, configuration.Configuration)
+        assert issubclass(self.spec, PluggableConfig)
 
-        self._config = self.spec()
-        self._config.parse_args(list(args))
+        self._config = self.spec(format="json")
+        self._config.load()
         self.fetcher = kwargs.pop('fetcher', requests)
 
     # mandatory baseconfig interface
@@ -166,13 +130,6 @@ class JSONLeapConfig(BaseLeapConfig):
         folder, filename = os.path.split(to)
         if folder and not os.path.isdir(folder):
             mkdir_p(folder)
-        # lazy evaluation until first level of nesting
-        # to allow lambdas with context-dependant info
-        # like os.path.expanduser
-        config = self.get_config()
-        for k, v in config.iteritems():
-            if callable(v):
-                config[k] = v()
         self._config.serialize(to)
 
     def load(self, fromfile=None, from_uri=None, fetcher=None, verify=False):
@@ -183,10 +140,7 @@ class JSONLeapConfig(BaseLeapConfig):
         if fromfile is None:
             fromfile = self.filename
         if os.path.isfile(fromfile):
-            newconfig = self._config.deserialize(fromfile)
-            # XXX check for no errors, etc
-            # XXX could validate here!
-            self._config.config = newconfig
+            self._config.load(fromfile=fromfile)
         else:
             logger.error('tried to load config from non-existent path')
             logger.error('Not Found: %s', fromfile)
@@ -196,19 +150,25 @@ class JSONLeapConfig(BaseLeapConfig):
             fetcher = self.fetcher
         logger.debug('verify: %s', verify)
         request = fetcher.get(uri, verify=verify)
+        # XXX should send a if-modified-since header
 
         # XXX get 404, ...
         # and raise a UnableToFetch...
         request.raise_for_status()
         fd, fname = tempfile.mkstemp(suffix=".json")
-        if not request.json:
+
+        if request.json:
+            self._config.load(json.dumps(request.json))
+
+        else:
+            # not request.json
+            # might be server did not announce content properly,
+            # let's try deserializing all the same.
             try:
-                json.loads(request.content)
+                self._config.load(request.content)
             except ValueError:
                 raise eipexceptions.LeapBadConfigFetchedError
-        with open(fname, 'w') as tmp:
-            tmp.write(json.dumps(request.json))
-        self._loadtemp(fname)
+
         return True
 
     def get_config(self):
@@ -223,20 +183,16 @@ class JSONLeapConfig(BaseLeapConfig):
     def filename(self):
         return self.get_filename()
 
-    def jsonvalidate(self, data):
-        jsonschema.validate(data, self.schema)
+    def validate(self, data):
+        logger.debug('validating schema')
+        self._config.validate(data)
         return True
 
     # private
 
-    def _loadtemp(self, filename):
-        self.load(fromfile=filename)
-        os.remove(filename)
-
     def _slug_to_filename(self):
         # is this going to work in winland if slug is "foo/bar" ?
         folder, filename = os.path.split(self.slug)
-        # XXX fix import
         config_file = get_config_file(filename, folder)
         return config_file
 

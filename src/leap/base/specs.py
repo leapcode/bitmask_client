@@ -44,11 +44,16 @@ leap_provider_spec = {
         'public_key': {
             'type': unicode  # fingerprint
         },
-        'ca_cert': {
-            'type': unicode
+        'ca_cert_fingerprint': {
+            'type': unicode,
         },
         'ca_cert_uri': {
-            'type': unicode
+            'type': unicode,
+            'format': 'https-uri'
+        },
+        'languages': {
+            'type': list,
+            'default': ['en']
         }
     }
 }

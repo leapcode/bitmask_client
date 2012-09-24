@@ -197,7 +197,8 @@ class ProviderCertChecker(object):
             logger.warning('False! CERT VERIFICATION FAILED! '
                            '(this should be CRITICAL)')
             logger.warning('SSLError: %s', exc.message)
-            raise eipexceptions.EIPBadCertError
+            # XXX RAISE! See #638
+            #raise eipexceptions.EIPBadCertError
         # XXX get requests.exceptions.ConnectionError Errno 110
         # Connection timed out, and raise ours.
         else:
@@ -227,7 +228,11 @@ class ProviderCertChecker(object):
         if verify is True and self.cacert is not None:
             verify = self.cacert
         try:
-            req = self.fetcher.get(uri, verify=verify)
+            # XXX FIXME!!!!
+            # verify=verify
+            # Workaround for #638. return to verification
+            # when That's done!!!
+            req = self.fetcher.get(uri, verify=False)
             req.raise_for_status()
         except requests.exceptions.SSLError:
             logger.warning('SSLError while fetching cert. '
@@ -452,6 +457,7 @@ class EIPConfigChecker(object):
         # XXX TODO:
         # We should WRITE eip config if missing or
         # incomplete at this point
+        #self.eipconfig.save()
 
     #
     # private helpers
