@@ -55,6 +55,18 @@ leap --debug --logfile /tmp/leap.log
 Development
 ==============
 
+Hack
+--------------
+
+(recommended)
+virtualenv .  # ensure your .gitignore knows about it
+source bin/activate
+git checkout develop
+pkg/postmkvenv.sh
+
+python setup.py branding
+python setup.py develop  
+
 Running tests
 -------------
 
@@ -81,16 +93,6 @@ Test-deps
 ---------
 
 have a look at setup/test-requires
-
-Hack
---------------
-
-(recommended)
-virtualenv .  # ensure your .gitignore knows about it
-source bin/activate
-git checkout develop
-pkg/postmkvenv.sh
-python setup.py develop  
 
 
 Compiling resource/ui files
