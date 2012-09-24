@@ -21,10 +21,8 @@ class EIPConfig(baseconfig.JSONLeapConfig):
     spec = eipspecs.eipconfig_spec
 
     def _get_slug(self):
-        dppath = baseconfig.get_default_provider_path()
         eipjsonpath = baseconfig.get_config_file(
-            'eip-service.json',
-            folder=dppath)
+            'eip.json')
         return eipjsonpath
 
     def _set_slug(self, *args, **kwargs):
