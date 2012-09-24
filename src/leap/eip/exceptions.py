@@ -136,6 +136,8 @@ class NoConnectionToGateway(EIPClientError):
     message = "no connection to gateway"
     usermessage = "Looks like there are problems with your internet connection"
 
+class NoInternetConnection(EIPClientError):
+    message = "No Internet connection found"
 
 #
 # Errors that probably we don't need anymore

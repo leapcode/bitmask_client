@@ -70,21 +70,20 @@ class LeapNetworkChecker(object):
         checker.is_internet_up()
         checker.ping_gateway()
 
-    def test_internet_connection(self):
-        # XXX we're not passing the error anywhere.
-        # XXX we probably should raise an exception here?
-        # unless we use this as smoke test
+    def check_internet_connection(self):
         try:
             # XXX remove this hardcoded random ip
             requests.get('http://216.172.161.165')
         except (requests.HTTPError, requests.RequestException) as e:
-            self.error = e.message
-        except requests.ConenctionError as e:
+            raise eipexceptions.NoInternetConnection(e.message)
+        except requests.ConnectionError as e:
+            error = "Unidentified Connection Error"
             if e.message == "[Errno 113] No route to host":
                 if not self.is_internet_up():
-                    self.error = "No valid internet connection found."
+                    error = "No valid internet connection found."
                 else:
-                    self.error = "Provider server appears to be down."
+                    error = "Provider server appears to be down."
+            raise eipexceptions.NoInternetConnection(error)
 
     def is_internet_up(self):
         iface, gateway = self.get_default_interface_gateway()

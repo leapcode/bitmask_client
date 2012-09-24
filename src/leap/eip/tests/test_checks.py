@@ -52,7 +52,7 @@ class LeapNetworkCheckTest(BaseLeapTest):
     def test_checker_should_implement_check_methods(self):
         checker = eipchecks.LeapNetworkChecker()
 
-        self.assertTrue(hasattr(checker, "test_internet_connection"),
+        self.assertTrue(hasattr(checker, "check_internet_connection"),
                         "missing meth")
         self.assertTrue(hasattr(checker, "is_internet_up"),
                         "missing meth")
@@ -64,7 +64,7 @@ class LeapNetworkCheckTest(BaseLeapTest):
 
         mc = Mock()
         checker.run_all(checker=mc)
-        self.assertTrue(mc.test_internet_connection.called, "not called")
+        self.assertTrue(mc.check_internet_connection.called, "not called")
         self.assertTrue(mc.ping_gateway.called, "not called")
         self.assertTrue(mc.is_internet_up.called,
                         "not called")
@@ -85,6 +85,24 @@ class LeapNetworkCheckTest(BaseLeapTest):
             with self.assertRaises(eipexceptions.NoConnectionToGateway):
                 mocked_ping.return_value = [11, "", ""]
                 checker.ping_gateway("4.2.2.2")
+
+    def test_check_internet_connection_failures(self):
+        checker = eipchecks.LeapNetworkChecker()
+        with patch.object(requests, "get") as mocked_get:
+            mocked_get.side_effect = requests.HTTPError
+            with self.assertRaises(eipexceptions.NoInternetConnection):
+                checker.check_internet_connection()
+
+        with patch.object(requests, "get") as mocked_get:
+            mocked_get.side_effect = requests.RequestException
+            with self.assertRaises(eipexceptions.NoInternetConnection):
+                checker.check_internet_connection()
+
+        #TODO: Mock possible errors that can be raised by is_internet_up
+        with patch.object(requests, "get") as mocked_get:
+            mocked_get.side_effect = requests.ConnectionError
+            with self.assertRaises(eipexceptions.NoInternetConnection):
+                checker.check_internet_connection()
 
     @unittest.skipUnless(_uid == 0, "root only")
     def test_ping_gateway(self):
