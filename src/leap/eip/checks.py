@@ -66,7 +66,7 @@ class LeapNetworkChecker(object):
         self.error = None  # ?
 
         # for MVS
-        checker.test_internet_connection()
+        checker.check_internet_connection()
         checker.is_internet_up()
         checker.ping_gateway()
 
