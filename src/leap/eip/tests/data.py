@@ -22,7 +22,7 @@ EIP_SAMPLE_JSON = {
         "keys/client/openvpn.pem" % PROVIDER),
     "connect_on_login": True,
     "block_cleartext_traffic": True,
-    "primary_gateway": "usa_west",
+    "primary_gateway": "turkey",
     "secondary_gateway": "france",
     #"management_password": "oph7Que1othahwiech6J"
 }

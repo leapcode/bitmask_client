@@ -59,7 +59,7 @@ eipconfig_spec = {
     },
     'primary_gateway': {
         'type': unicode,
-        'default': u"usa_west",
+        'default': u"turkey",
         'required': True
     },
     'secondary_gateway': {

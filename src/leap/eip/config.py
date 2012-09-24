@@ -55,21 +55,35 @@ def get_socket_path():
 
 def get_eip_gateway():
     """
-    return the first host in the list of hosts
-    under gateways list
+    return the first host in eip service config
+    that matches the name defined in the eip.json config
+    file.
     """
+    placeholder = "testprovider.example.org"
     eipconfig = EIPConfig()
     eipconfig.load()
     conf = eipconfig.get_config()
-    gateways = conf.get('gateways', None)
+    primary_gateway = conf.get('primary_gateway', None)
+    if not primary_gateway:
+        return placeholder
+
+    eipserviceconfig = EIPServiceConfig()
+    eipserviceconfig.load()
+    eipsconf = eipserviceconfig.get_config()
+    gateways = eipsconf.get('gateways', None)
+    if not gateways:
+        logger.error('missing gateways in eip service config')
+        return placeholder
     if len(gateways) > 0:
-        # we just pick first
-        gw = gateways[0]
-    hosts = gw['hosts']
-    if len(hosts) > 0:
-        return hosts[0]
-    else:
-        return "testprovider.example.org"
+        for gw in gateways:
+            if gw['name'] == primary_gateway:
+                hosts = gw['hosts']
+                if len(hosts) > 0:
+                    return hosts[0]
+                else:
+                    logger.error('no hosts')
+    logger.error('could not find primary gateway in provider'
+                 'gateway list')
 
 
 def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
