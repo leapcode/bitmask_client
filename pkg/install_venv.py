@@ -29,8 +29,8 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VENV = os.path.join(ROOT, '.venv')
-PIP_REQUIRES = os.path.join(ROOT, 'setup', 'requirements.pip')
-TEST_REQUIRES = os.path.join(ROOT, 'setup', 'test-requirements.pip')
+PIP_REQUIRES = os.path.join(ROOT, 'pkg', 'requirements.pip')
+TEST_REQUIRES = os.path.join(ROOT, 'pkg', 'test-requirements.pip')
 PY_VERSION = "python%s.%s" % (sys.version_info[0], sys.version_info[1])
 
 
@@ -108,6 +108,10 @@ class Debian(Distro):
     def apply_patch(self, originalfile, patchfile):
         run_command(['patch', originalfile, patchfile])
 
+    def post_process(self):
+        #symlink qt in virtualenv
+        run_command(['pkg/tools/with_venv.sh', 'pkg/postmkvenv.sh'])
+
     def install_virtualenv(self):
         if self.check_cmd('virtualenv'):
             return
@@ -163,19 +167,22 @@ def create_virtualenv(venv=VENV, no_site_packages=True):
     """
     print 'Creating venv...',
     if no_site_packages:
-        run_command(['virtualenv', '-q', '--no-site-packages', VENV])
+        #setuptools and virtualenv don't play nicely together, 
+        #so we create the virtualenv with the distribute package instead.
+        #See: view-source:http://pypi.python.org/pypi/distribute
+        run_command(['virtualenv', '-q', '--distribute', '--no-site-packages', VENV])
     else:
-        run_command(['virtualenv', '-q', VENV])
+        run_command(['virtualenv', '-q', '--distribute', VENV])
     print 'done.'
     print 'Installing pip in virtualenv...',
-    if not run_command(['setup/tools/with_venv.sh', 'easy_install',
+    if not run_command(['pkg/tools/with_venv.sh', 'easy_install',
                         'pip>1.0']).strip():
         die("Failed to install pip.")
     print 'done.'
 
 
 def pip_install(*args):
-    run_command(['setup/tools/with_venv.sh',
+    run_command(['pkg/tools/with_venv.sh',
                  'pip', 'install', '--upgrade'] + list(args),
                 redirect_output=False)
 
@@ -211,7 +218,7 @@ def print_help():
     Or, if you prefer, you can run commands in the virtualenv on a case by case
     basis by running:
 
-    $ setup/tools/with_venv.sh <your command>
+    $ pkg/tools/with_venv.sh <your command>
 
     Also, make test will automatically use the virtualenv.
     """
