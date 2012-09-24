@@ -58,7 +58,7 @@ class SchemaEncoder(json.JSONEncoder):
         if obj is list:
             return 'array'
         if obj is dict:
-            return object
+            return 'object'
 
 
 class MetaConfigWithSpec(type):

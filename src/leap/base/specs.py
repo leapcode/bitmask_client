@@ -18,12 +18,13 @@ leap_provider_spec = {
             #'required': True,
         },
         'display_name': {
-            'type': unicode,  # XXX multilingual object?
-            'default': 'test provider'
+            'type': dict,  # XXX multilingual object?
+            'default': {u'en': u'Test Provider'}
             #'required': True
         },
         'description': {
-            'default': 'test provider'
+            'type': dict,
+            'default': {u'en': u'Test provider'}
         },
         'enrollment_policy': {
             'type': unicode,  # oneof ??
