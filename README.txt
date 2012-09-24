@@ -48,7 +48,12 @@ You can:
 Running the App
 -----------------
 
-leap --debug --logfile /tmp/leap.log
+leap-client --debug --logfile /tmp/leap.log
+
+If you're running a branded build, the script name will have a suffix that
+depends on your build flavor:
+
+leap-client-springbok
 
 (or python app.py --debug if you run it from the src/leap folder).
 
