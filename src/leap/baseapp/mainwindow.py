@@ -8,6 +8,7 @@ from PyQt4 import QtGui
 from leap.baseapp.eip import EIPConductorAppMixin
 from leap.baseapp.log import LogPaneMixin
 from leap.baseapp.systray import StatusAwareTrayIconMixin
+from leap.baseapp.network import NetworkCheckerAppMixin
 from leap.baseapp.leap_app import MainWindowMixin
 
 logger = logging.getLogger(name=__name__)
@@ -16,6 +17,7 @@ logger = logging.getLogger(name=__name__)
 class LeapWindow(QtGui.QMainWindow,
                  MainWindowMixin, EIPConductorAppMixin,
                  StatusAwareTrayIconMixin,
+                 NetworkCheckerAppMixin,
                  LogPaneMixin):
     """
     main window for the leap app.
@@ -36,6 +38,7 @@ class LeapWindow(QtGui.QMainWindow,
             self.createLogBrowser()
         EIPConductorAppMixin.__init__(self, opts=opts)
         StatusAwareTrayIconMixin.__init__(self)
+        NetworkCheckerAppMixin.__init__(self)
         MainWindowMixin.__init__(self)
 
         # bind signals
