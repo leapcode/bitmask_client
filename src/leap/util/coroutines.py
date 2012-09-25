@@ -72,7 +72,7 @@ def watch_output(out, observers):
     :type out: fd
     :param observers: tuple of coroutines to send data\
 for each event
-    :type ovservers: tuple
+    :type observers: tuple
     """
     observer_dict = dict(((observer, process_events(observer))
                          for observer in observers))
