@@ -224,9 +224,11 @@ class EIPConductorAppMixin(object):
                 # we could bring Timer Init to this Mixin
                 # or to its own Mixin.
                 self.timer.start(constants.TIMER_MILLISECONDS)
+                self.network_checker.start()
             return
 
         if self.eip_service_started is True:
+            self.network_checker.stop()
             self.conductor.disconnect()
             if self.debugmode:
                 self.startStopButton.setText('&Connect')

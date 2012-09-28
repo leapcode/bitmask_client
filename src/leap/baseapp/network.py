@@ -36,7 +36,7 @@ class NetworkCheckerAppMixin(object):
 
         errq = self.conductor.error_queue
         while errq.qsize() != 0:
-            logger.debug('%s errors left in conductor queue', errq.qsize())
+            logger.debug('%s errors left in network queue', errq.qsize())
             # we get exception and original traceback from queue
             error, tb = errq.get()
 
@@ -44,7 +44,7 @@ class NetworkCheckerAppMixin(object):
             logger.error('%s: %s', error.__class__.__name__, error.message)
 
             if issubclass(error.__class__, eip_exceptions.EIPClientError):
-                self.handle_eip_error(error)
+                self.handle_network_error(error)
 
             else:
                 # deprecated form of raising exception.
@@ -53,4 +53,5 @@ class NetworkCheckerAppMixin(object):
             if error.failfirst is True:
                 break
 
-
+    def handle_network_error(self, error):
+        pass
