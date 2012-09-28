@@ -23,3 +23,7 @@ class NoConnectionToGateway(Exception):
 
 class NoInternetConnection(Exception):
     message = "No Internet connection found"
+
+
+class TunnelNotDefaultRouteError(Exception):
+    message = "VPN Maybe be down."

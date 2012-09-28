@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import logging
 import platform
 
 import ping
@@ -8,6 +9,7 @@ import requests
 from leap.base import constants
 from leap.base import exceptions
 
+logger = logging.getLogger(name=__name__)
 
 class LeapNetworkChecker(object):
     """
@@ -22,6 +24,7 @@ class LeapNetworkChecker(object):
         self.error = None  # ?
 
         # for MVS
+        checker.check_tunnel_default_interface()
         checker.check_internet_connection()
         checker.is_internet_up()
         checker.ping_gateway()
@@ -40,10 +43,34 @@ class LeapNetworkChecker(object):
                 else:
                     error = "Provider server appears to be down."
             raise exceptions.NoInternetConnection(error)
+        logger.debug('Network appears to be up.')
 
     def is_internet_up(self):
         iface, gateway = self.get_default_interface_gateway()
         self.ping_gateway(self)
+
+    def check_tunnel_default_interface(self):
+        """
+        Raises an TunnelNotDefaultRouteError 
+        (including when no routes are present)
+        """
+        if not platform.system() == "Linux":
+            raise NotImplementedError
+
+        f = open("/proc/net/route")
+        route_table = f.readlines()
+        f.close()
+        #toss out header
+        route_table.pop(0)
+
+        if not route_table:
+            raise exceptions.TunnelNotDefaultRouteError()
+
+        line = route_table.pop(0)
+        iface, destination = line.split('\t')[0:2]
+        if not destination == '00000000' or not iface == 'tun0':
+            raise exceptions.TunnelNotDefaultRouteError()
+
 
     def get_default_interface_gateway(self):
         """only impletemented for linux so far."""

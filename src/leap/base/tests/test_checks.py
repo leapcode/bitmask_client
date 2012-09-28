@@ -31,6 +31,8 @@ class LeapNetworkCheckTest(BaseLeapTest):
 
         self.assertTrue(hasattr(checker, "check_internet_connection"),
                         "missing meth")
+        self.assertTrue(hasattr(checker, "check_tunnel_default_interface"),
+                        "missing meth")
         self.assertTrue(hasattr(checker, "is_internet_up"),
                         "missing meth")
         self.assertTrue(hasattr(checker, "ping_gateway"),
@@ -42,6 +44,7 @@ class LeapNetworkCheckTest(BaseLeapTest):
         mc = Mock()
         checker.run_all(checker=mc)
         self.assertTrue(mc.check_internet_connection.called, "not called")
+        self.assertTrue(mc.check_tunnel_default_interface.called, "not called")
         self.assertTrue(mc.ping_gateway.called, "not called")
         self.assertTrue(mc.is_internet_up.called, "not called")
 
@@ -54,6 +57,33 @@ class LeapNetworkCheckTest(BaseLeapTest):
                     "Flags\tRefCntd\tUse\tMetric\t"
                     "Mask\tMTU\tWindow\tIRTT")
                 checker.get_default_interface_gateway()
+
+    def test_check_tunnel_default_interface(self):
+        checker = checks.LeapNetworkChecker()
+        with patch('leap.base.checks.open', create=True) as mock_open:
+            with self.assertRaises(exceptions.TunnelNotDefaultRouteError):
+                mock_open.return_value = StringIO(
+                    "Iface\tDestination Gateway\t"
+                    "Flags\tRefCntd\tUse\tMetric\t"
+                    "Mask\tMTU\tWindow\tIRTT")
+                checker.check_tunnel_default_interface()
+
+        with patch('leap.base.checks.open', create=True) as mock_open:
+            with self.assertRaises(exceptions.TunnelNotDefaultRouteError):
+                mock_open.return_value = StringIO(
+                    "Iface\tDestination Gateway\t"
+                    "Flags\tRefCntd\tUse\tMetric\t"
+                    "Mask\tMTU\tWindow\tIRTT\n"
+                    "wlan0\t00000000\t0102A8C0\t0003\t0\t0\t0\t00000000\t0\t0\t0")
+                checker.check_tunnel_default_interface()
+
+        with patch('leap.base.checks.open', create=True) as mock_open:
+            mock_open.return_value = StringIO(
+                "Iface\tDestination Gateway\t"
+                "Flags\tRefCntd\tUse\tMetric\t"
+                "Mask\tMTU\tWindow\tIRTT\n"
+                "tun0\t00000000\t01002A0A\t0003\t0\t0\t0\t00000080\t0\t0\t0")
+            checker.check_tunnel_default_interface()
 
     def test_ping_gateway_fail(self):
         checker = checks.LeapNetworkChecker()
