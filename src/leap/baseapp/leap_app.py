@@ -23,11 +23,11 @@ class MainWindowMixin(object):
         widget = QtGui.QWidget()
         self.setCentralWidget(widget)
 
-        self.createWindowHeader()
+        #self.createWindowHeader()
 
         # add widgets to layout
         mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(self.headerBox)
+        #mainLayout.addWidget(self.headerBox)
         mainLayout.addWidget(self.statusIconBox)
         if self.debugmode:
             mainLayout.addWidget(self.statusBox)
