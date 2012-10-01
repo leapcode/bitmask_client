@@ -7,7 +7,7 @@ from leap import __branding
 
 PROVIDER = __branding.get('provider_domain')
 
-EIP_SAMPLE_JSON = {
+EIP_SAMPLE_CONFIG = {
     "provider": "%s" % PROVIDER,
     "transport": "openvpn",
     "openvpn_protocol": "tcp",
@@ -38,9 +38,10 @@ EIP_SAMPLE_SERVICE = {
         "adblock": True
     },
     "gateways": [
-    {"country_code": "us",
-     "label": {"en":"west"},
+    {"country_code": "tr",
+     "name": "turkey",
+     "label": {"en":"Ankara, Turkey"},
      "capabilities": {},
-     "hosts": ["1.2.3.4", "1.2.3.5"]},
+     "hosts": ["94.103.43.4"]}
     ]
 }

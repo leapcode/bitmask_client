@@ -38,14 +38,14 @@ class JSONLeapConfigTest(BaseLeapTest):
 
         class DummyTestConfig(config.JSONLeapConfig):
             __metaclass__ = config.MetaConfigWithSpec
-            spec = {}
+            spec = {'properties': {}}
         with self.assertRaises(exceptions.ImproperlyConfigured) as exc:
             DummyTestConfig()
             exc.startswith("missing slug")
 
         class DummyTestConfig(config.JSONLeapConfig):
             __metaclass__ = config.MetaConfigWithSpec
-            spec = {}
+            spec = {'properties': {}}
             slug = "foo"
         DummyTestConfig()
 

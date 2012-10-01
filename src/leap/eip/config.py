@@ -61,8 +61,10 @@ def get_eip_gateway():
     """
     placeholder = "testprovider.example.org"
     eipconfig = EIPConfig()
+    #import ipdb;ipdb.set_trace()
     eipconfig.load()
-    conf = eipconfig.get_config()
+    conf = eipconfig.config
+
     primary_gateway = conf.get('primary_gateway', None)
     if not primary_gateway:
         return placeholder

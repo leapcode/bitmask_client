@@ -1,10 +1,12 @@
+import copy
 import json
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
-
 import os
+
+import jsonschema
 
 from leap import __branding as BRANDING
 from leap.testing.basetest import BaseLeapTest
@@ -12,24 +14,26 @@ from leap.base import providers
 
 
 EXPECTED_DEFAULT_CONFIG = {
-    "api_version": "0.1.0",
-    "description": "test provider",
-    "display_name": "test provider",
-    "domain": "testprovider.example.org",
-    "enrollment_policy": "open",
-    "serial": 1,
-    "services": [
-        "eip"
+    u"api_version": u"0.1.0",
+    u"description": {u'en': u"Test provider"},
+    u"display_name": {u'en': u"Test Provider"},
+    u"domain": u"testprovider.example.org",
+    u"enrollment_policy": u"open",
+    u"serial": 1,
+    u"services": [
+        u"eip"
     ],
-    "version": "0.1.0"
+    u"languages": [u"en"],
+    u"version": u"0.1.0"
 }
 
 
 class TestLeapProviderDefinition(BaseLeapTest):
     def setUp(self):
         self.definition = providers.LeapProviderDefinition()
-        #XXX change to self.definition.config when property is fixed
-        self.config = self.definition.get_config()
+        self.definition.save()
+        self.definition.load()
+        self.config = self.definition.config
 
     def tearDown(self):
         if hasattr(self, 'testfile') and os.path.isfile(self.testfile):
@@ -57,6 +61,7 @@ class TestLeapProviderDefinition(BaseLeapTest):
         self.testfile = self.get_tempfile('test.json')
         self.definition.save(to=self.testfile)
         deserialized = json.load(open(self.testfile, 'rb'))
+        self.maxDiff = None
         self.assertEqual(deserialized, EXPECTED_DEFAULT_CONFIG)
 
     def test_provider_dump_to_slug(self):
@@ -78,6 +83,13 @@ class TestLeapProviderDefinition(BaseLeapTest):
         self.assertDictEqual(self.config,
                              EXPECTED_DEFAULT_CONFIG)
 
+    def test_provider_validation(self):
+        self.definition.validate(self.config)
+        _config = copy.deepcopy(self.config)
+        _config['serial'] = 'aaa'
+        with self.assertRaises(jsonschema.ValidationError):
+            self.definition.validate(_config)
+
     @unittest.skip
     def test_load_malformed_json_definition(self):
         raise NotImplementedError
@@ -87,18 +99,6 @@ class TestLeapProviderDefinition(BaseLeapTest):
         # check various type validation
         # type cast
         raise NotImplementedError
-
-
-class TestLeapProvider(BaseLeapTest):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    ###
-
-    # XXX ??
 
 
 class TestLeapProviderSet(BaseLeapTest):

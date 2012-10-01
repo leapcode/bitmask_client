@@ -12,7 +12,7 @@ except ImportError:
 #from leap.eip import config as eip_config
 from leap import __branding as BRANDING
 from leap.eip import config as eipconfig
-from leap.eip.tests.data import EIP_SAMPLE_SERVICE
+from leap.eip.tests.data import EIP_SAMPLE_CONFIG, EIP_SAMPLE_SERVICE
 from leap.testing.basetest import BaseLeapTest
 from leap.util.fileutil import mkdir_p
 
@@ -47,12 +47,20 @@ class EIPConfigTest(BaseLeapTest):
         os.chmod(tfile, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     def write_sample_eipservice(self):
-        conf = eipconfig.EIPConfig()
+        conf = eipconfig.EIPServiceConfig()
         folder, f = os.path.split(conf.filename)
         if not os.path.isdir(folder):
             mkdir_p(folder)
         with open(conf.filename, 'w') as fd:
             fd.write(json.dumps(EIP_SAMPLE_SERVICE))
+
+    def write_sample_eipconfig(self):
+        conf = eipconfig.EIPConfig()
+        folder, f = os.path.split(conf.filename)
+        if not os.path.isdir(folder):
+            mkdir_p(folder)
+        with open(conf.filename, 'w') as fd:
+            fd.write(json.dumps(EIP_SAMPLE_CONFIG))
 
     def get_expected_openvpn_args(self):
         args = []
@@ -123,6 +131,8 @@ class EIPConfigTest(BaseLeapTest):
     def test_build_ovpn_command_empty_config(self):
         self.touch_exec()
         self.write_sample_eipservice()
+        self.write_sample_eipconfig()
+
         from leap.eip import config as eipconfig
         from leap.util.fileutil import which
         path = os.environ['PATH']

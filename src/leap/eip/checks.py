@@ -393,7 +393,7 @@ class EIPConfigChecker(object):
         This is catched by ui and runs FirstRunWizard (MVS+)
         """
         if config is None:
-            config = self.eipconfig.get_config()
+            config = self.eipconfig.config
         logger.debug('checking default provider')
         provider = config.get('provider', None)
         if provider is None:
@@ -417,7 +417,7 @@ class EIPConfigChecker(object):
             logger.debug('(fetching def skipped)')
             return True
         if config is None:
-            config = self.defaultprovider.get_config()
+            config = self.defaultprovider.config
         if uri is None:
             domain = config.get('provider', None)
             uri = self._get_provider_definition_uri(domain=domain)
@@ -434,7 +434,7 @@ class EIPConfigChecker(object):
         if skip_download:
             return True
         if config is None:
-            config = self.eipserviceconfig.get_config()
+            config = self.eipserviceconfig.config
         if uri is None:
             domain = config.get('provider', None)
             uri = self._get_eip_service_uri(domain=domain)
@@ -445,7 +445,7 @@ class EIPConfigChecker(object):
     def check_complete_eip_config(self, config=None):
         # TODO check for gateway
         if config is None:
-            config = self.eipconfig.get_config()
+            config = self.eipconfig.config
         try:
             'trying assertions'
             assert 'provider' in config
