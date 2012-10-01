@@ -14,7 +14,7 @@ Dependencies
 * python setuptools
 * qt4 libraries
 * python-qt4
-* python-gnutls
+* python-gnutls == 1.1.9
 * python-nose, python-mock, python-coverage (if you want to run tests)
 
 If you are on a debian-based system, you can run:
