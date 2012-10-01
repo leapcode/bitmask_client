@@ -21,15 +21,15 @@ class NetworkChecker(object):
     def __init__(self, *args, **kwargs):
         self.status_signals = kwargs.pop('status_signals', None)
         self.watcher_cb = kwargs.pop('status_signals', None)
-        self.excp_logger = lambda exc: logger.error("%s", exc.message)
+        self.error_cb = kwargs.pop('error_cb',
+                    lambda exc: logger.error("%s", exc.message))
         self.shutdown = threading.Event()
         self.checker = LeapNetworkChecker()
 
     def start(self):
-        self.process_handle = self._launch_recurrent_network_checks((self.excp_logger,))
+        self.process_handle = self._launch_recurrent_network_checks((self.error_cb,))
 
     def stop(self):
-        #TODO: Thread still not being stopped when openvpn is stopped.
         self.shutdown.set()
         logger.debug("network checked stopped.")
 
@@ -70,5 +70,3 @@ class NetworkChecker(object):
             self._network_checks_thread,
             (fail_callbacks,))
         return watcher
-
-

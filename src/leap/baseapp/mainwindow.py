@@ -28,6 +28,7 @@ class LeapWindow(QtGui.QMainWindow,
 
     newLogLine = QtCore.pyqtSignal([str])
     statusChange = QtCore.pyqtSignal([object])
+    networkError = QtCore.pyqtSignal([object])
 
     def __init__(self, opts):
         logger.debug('init leap window')
@@ -57,3 +58,16 @@ class LeapWindow(QtGui.QMainWindow,
         # eipapp should catch that
         if self.conductor.autostart:
             self.start_or_stopVPN()
+
+    #TODO: Put all Dialogs in one place
+    @QtCore.pyqtSlot()
+    def raise_Network_Error(self, exc):
+        message = exc.message
+
+        # XXX
+        # check headless = False before
+        # launching dialog.
+        # (so Qt tests can assert stuff)
+        
+        dialog = ErrorDialog()
+        dialog.warningMessage(message, 'error')
