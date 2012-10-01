@@ -23,9 +23,8 @@ class MainWindowMixin(object):
         widget = QtGui.QWidget()
         self.setCentralWidget(widget)
 
-        #self.createWindowHeader()
-
         # add widgets to layout
+        #self.createWindowHeader()
         mainLayout = QtGui.QVBoxLayout()
         #mainLayout.addWidget(self.headerBox)
         mainLayout.addWidget(self.statusIconBox)
@@ -38,6 +37,7 @@ class MainWindowMixin(object):
         self.set_app_icon()
         self.resize(400, 300)
         self.set_statusbarMessage('ready')
+        logger.debug('set ready.........')
 
     def set_app_icon(self):
         icon = QtGui.QIcon(APP_LOGO)

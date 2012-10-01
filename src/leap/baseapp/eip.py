@@ -40,21 +40,27 @@ class EIPConductorAppMixin(object):
             debug=self.debugmode,
             ovpn_verbosity=opts.openvpn_verb)
 
-        skip_download = opts.no_provider_checks
-        skip_verify = opts.no_ca_verify
-        self.conductor.run_checks(
-            skip_download=skip_download,
-            skip_verify=skip_verify)
-        self.error_check()
+        self.skip_download = opts.no_provider_checks
+        self.skip_verify = opts.no_ca_verify
 
-        # XXX should receive "ready" signal
-        # it is called from LeapWindow now.
-        #if self.conductor.autostart:
-            #self.start_or_stopVPN()
+    def run_eip_checks(self):
+        """
+        runs eip checks and
+        the error checking loop
+        """
+        logger.debug('running EIP CHECKS')
+        self.conductor.run_checks(
+            skip_download=self.skip_download,
+            skip_verify=self.skip_verify)
+        self.error_check()
 
         if self.debugmode:
             self.startStopButton.clicked.connect(
                 lambda: self.start_or_stopVPN())
+
+        # XXX should send ready signal instead
+        if self.conductor.autostart:
+            self.start_or_stopVPN()
 
     def error_check(self):
         """

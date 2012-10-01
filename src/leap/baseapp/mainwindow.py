@@ -38,8 +38,11 @@ class LeapWindow(QtGui.QMainWindow,
         StatusAwareTrayIconMixin.__init__(self)
         MainWindowMixin.__init__(self)
 
+        self.initchecks = InitChecksThread(self.run_eip_checks)
+
         # bind signals
-        # XXX move to parent classes init??
+        self.initchecks.finished.connect(
+            lambda: logger.debug('Initial checks finished'))
         self.trayIcon.activated.connect(self.iconActivated)
         self.newLogLine.connect(
             lambda line: self.onLoggerNewLine(line))
@@ -50,7 +53,17 @@ class LeapWindow(QtGui.QMainWindow,
 
         # ... all ready. go!
 
-        # could send "ready" signal instead
-        # eipapp should catch that
-        if self.conductor.autostart:
-            self.start_or_stopVPN()
+        self.initchecks.begin()
+
+
+class InitChecksThread(QtCore.QThread):
+
+    def __init__(self, fun, parent=None):
+        QtCore.QThread.__init__(self, parent)
+        self.fun = fun
+
+    def run(self):
+        self.fun()
+
+    def begin(self):
+        self.start()

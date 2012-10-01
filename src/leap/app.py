@@ -60,6 +60,10 @@ def main():
 
     window = LeapWindow(opts)
     if debug:
+        # we only show the main window
+        # if debug mode active.
+        # if not, it will be set visible
+        # from the systray menu.
         window.show()
     sys.exit(app.exec_())
 

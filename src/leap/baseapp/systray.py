@@ -41,6 +41,7 @@ class StatusAwareTrayIconMixin(object):
         self.createIconGroupBox()
         self.createActions()
         self.createTrayIcon()
+        logger.debug('showing tray icon................')
         self.trayIcon.show()
 
         # not sure if this really belongs here, but...
