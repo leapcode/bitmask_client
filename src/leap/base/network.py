@@ -6,7 +6,7 @@ import threading
 from leap.base.checks import LeapNetworkChecker
 from leap.base.constants import ROUTE_CHECK_INTERVAL
 from leap.base.exceptions import TunnelNotDefaultRouteError
-from leap.util.coroutines import (launch_thread_no_daemon, process_events)
+from leap.util.coroutines import (launch_thread, process_events)
 
 from time import sleep
 
@@ -22,6 +22,7 @@ class NetworkChecker(object):
         self.status_signals = kwargs.pop('status_signals', None)
         self.watcher_cb = kwargs.pop('status_signals', None)
         self.excp_logger = lambda exc: logger.error("%s", exc.message)
+        self.shutdown = threading.Event()
         self.checker = LeapNetworkChecker()
 
     def start(self):
@@ -29,8 +30,7 @@ class NetworkChecker(object):
 
     def stop(self):
         #TODO: Thread still not being stopped when openvpn is stopped.
-        logger.debug("stopping network checker...")
-        self.process_handle._Thread__stop()
+        self.shutdown.set()
         logger.debug("network checked stopped.")
 
     def run_checks(self):
@@ -52,7 +52,7 @@ class NetworkChecker(object):
 
         observer_dict = dict(((
             observer, process_events(observer)) for observer in fail_callbacks))
-        while True:
+        while not self.shutdown.is_set():
             try:
                 self.checker.check_tunnel_default_interface()
                 self.checker.check_internet_connection()
@@ -61,11 +61,12 @@ class NetworkChecker(object):
                 for obs in observer_dict:
                     observer_dict[obs].send(exc)
                 sleep(ROUTE_CHECK_INTERVAL)
-
+        #reset event
+        self.shutdown.clear()
 
     def _launch_recurrent_network_checks(self, fail_callbacks):
         #we need to wrap the fail callback in a turple
-        watcher = launch_thread_no_daemon(
+        watcher = launch_thread(
             self._network_checks_thread,
             (fail_callbacks,))
         return watcher
