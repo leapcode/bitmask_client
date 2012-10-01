@@ -1,5 +1,4 @@
 argparse
-configuration
 requests
 ping
 netifaces
