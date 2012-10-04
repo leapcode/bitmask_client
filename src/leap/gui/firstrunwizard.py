@@ -9,6 +9,78 @@ from PyQt4 import QtGui
 # XXX change and use some other stuff.
 import firstrunwizard_rc
 
+# registration ######################
+# move to base/
+
+import requests
+import srp
+
+
+class LeapSRPRegister(object):
+
+    def __init__(self,
+                 schema="https",
+                 provider=None,
+                 port=None,
+                 register_path="users.json",
+                 method="POST",
+                 fetcher=requests,
+                 srp=srp,
+                 hashfun=srp.SHA256,
+                 ng_constant=srp.NG_1024):
+
+        self.schema = schema
+        self.provider = provider
+        self.port = port
+        self.register_path = register_path
+        self.method = method
+        self.fetcher = fetcher
+        self.srp = srp
+        self.HASHFUN = hashfun
+        self.NG = ng_constant
+
+        self.init_session()
+
+    def init_session(self):
+        self.session = self.fetcher.session()
+
+    def get_registration_uri(self):
+        # XXX assert is https!
+        # use urlparse
+        uri = "%s://%s:%s/%s" % (
+            self.schema,
+            self.provider,
+            self.port,
+            self.register_path)
+        return uri
+
+    def register_user(self, username, password, keep=False):
+        salt, vkey = self.srp.create_salted_verification_key(
+            username,
+            password,
+            self.HASHFUN,
+            self.NG)
+
+        user_data = {
+            'login': username,
+            'password_verifier': vkey,
+            'password_salt': salt}
+
+        uri = self.get_registration_uri()
+        print 'post to uri: %s' % uri
+        # XXX get self.method
+        req = self.session.post(uri, data=user_data)
+        print req
+        req.raise_for_status()
+        return True
+
+######################################
+
+ErrorLabelStyleSheet = """
+QLabel { color: red;
+         font-weight: bold}
+"""
+
 
 class FirstRunWizard(QtGui.QWizard):
     def __init__(self, parent=None, providers=None):
@@ -34,10 +106,13 @@ class FirstRunWizard(QtGui.QWizard):
 
         self.setWindowTitle("First Run Wizard")
 
+        # TODO: set style for MAC / windows ...
+        #self.setWizardStyle()
+
     def accept(self):
         print 'chosen provider: ', self.get_provider()
         print 'username: ', self.field('userName')
-        print 'password: ', self.field('userPassword')
+        #print 'password: ', self.field('userPassword')
         print 'remember password: ', self.field('rememberPassword')
         super(FirstRunWizard, self).accept()
         # XXX we should emit a completed signal here...
@@ -109,6 +184,8 @@ class RegisterUserPage(QtGui.QWizardPage):
 
         # XXX check for no wizard pased
         # getting provider from previous step
+        # XXX save as self.provider,
+        # we will need it for validating page
         provider = wizard.get_provider()
 
         self.setTitle("User registration")
@@ -124,7 +201,10 @@ class RegisterUserPage(QtGui.QWizardPage):
         rememberPasswordCheckBox.setChecked(True)
 
         userNameLabel = QtGui.QLabel("User &name:")
-        self.userNameLineEdit = QtGui.QLineEdit()
+        userNameLineEdit = QtGui.QLineEdit()
+        userNameLineEdit.cursorPositionChanged.connect(
+            self.reset_validation_status)
+        self.userNameLineEdit = userNameLineEdit
         userNameLabel.setBuddy(self.userNameLineEdit)
 
         userPasswordLabel = QtGui.QLabel("&Password:")
@@ -141,19 +221,91 @@ class RegisterUserPage(QtGui.QWizardPage):
         layout = QtGui.QGridLayout()
         layout.setColumnMinimumWidth(0, 20)
 
-        layout.addWidget(userNameLabel, 0, 0)
-        layout.addWidget(self.userNameLineEdit, 0, 3)
+        validationMsg = QtGui.QLabel("")
+        validationMsg.setStyleSheet(ErrorLabelStyleSheet)
 
-        layout.addWidget(userPasswordLabel, 1, 0)
-        layout.addWidget(self.userPasswordLineEdit, 1, 3)
+        self.validationMsg = validationMsg
 
-        layout.addWidget(rememberPasswordCheckBox, 2, 3, 2, 4)
+        layout.addWidget(validationMsg, 0, 3)
+
+        layout.addWidget(userNameLabel, 1, 0)
+        layout.addWidget(self.userNameLineEdit, 1, 3)
+
+        layout.addWidget(userPasswordLabel, 2, 0)
+        layout.addWidget(self.userPasswordLineEdit, 2, 3)
+
+        layout.addWidget(rememberPasswordCheckBox, 3, 3, 3, 4)
         self.setLayout(layout)
 
-        # XXX how to validatioN ----
+    def reset_validation_status(self):
+        """
+        empty the validation msg
+        """
+        self.validationMsg.setText('')
+
+    def set_status_validating(self):
+        """
+        set validation msg to 'registering...'
+        """
+        # XXX  this is not shown,
+        # I guess it is because there is no delay...
+        self.validationMsg.setText('registering...')
+
+    def set_status_invalid_username(self):
+        """
+        set validation msg to
+        not available user
+        """
+        self.validationMsg.setText('Username not available.')
+
+    # overwritten methods
 
     def initializePage(self):
-        pass
+        """
+        inits wizard page
+        """
+        self.validationMsg.setText('')
+
+    def validatePage(self):
+        """
+        validation
+        we initialize the srp protocol register
+        and try to register user. if error
+        returned we write validation error msg
+        above the form.
+        """
+        print 'validating page...'
+        self.set_status_validating()
+        # could move to status box maybe...
+
+        username = self.userNameLineEdit.text()
+        password = self.userPasswordLineEdit.text()
+
+        # XXX TODO -- remove debug info
+        # XXX get from provider info
+
+        signup = LeapSRPRegister(
+            schema="http",
+            #provider="springbok"
+            provider="localhost",
+            port=8000
+        )
+        try:
+            valid = signup.register_user(username, password)
+        except requests.exceptions.HTTPError:
+            valid = False
+            # XXX use QString
+            # XXX line wrap
+            # XXX Raise Validation Labels...
+            # TODO catch 404, or other errors...
+            self.set_status_invalid_username()
+
+        return True if valid is True else False
+
+
+class GlobalEIPSettings(QtGui.QWizardPage):
+    def __init__(self, parent=None):
+        super(GlobalEIPSettings, self).__init__(parent)
 
 
 class LastPage(QtGui.QWizardPage):

@@ -50,14 +50,10 @@ class request_handler(BaseHTTPRequestHandler):
                 path.path, None))
 
         login = data.get('login', None)
-        password_salt = data.get('password_salt', None)
-        password_verifier = data.get('password_verifier', None)
+        #password_salt = data.get('password_salt', None)
+        #password_verifier = data.get('password_verifier', None)
 
-        ok = True if (
-            login == "python_test_user" and
-            password_salt == "54321" and
-            password_verifier == "12341234") else False
-
+        ok = True if (login == "python_test_user") else False
         if ok:
             self.send_response(200)
             self.end_headers()
