@@ -8,9 +8,7 @@ sip.setapi('QVariant', 2)
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-# XXX change and use some other stuff.
 from leap.gui import mainwindow_rc
-#import firstrunwizard_rc
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +72,11 @@ class LeapSRPRegister(object):
             'password_salt': salt}
 
         uri = self.get_registration_uri()
-        print 'post to uri: %s' % uri
+        logger.debug('post to uri: %s' % uri)
+
         # XXX get self.method
         req = self.session.post(uri, data=user_data)
-        print req
+        logger.debug(req)
         req.raise_for_status()
         return True
 
@@ -133,14 +132,15 @@ class FirstRunWizard(QtGui.QWizard):
         self.show()
 
     def accept(self):
-        print 'chosen provider: ', self.get_provider()
-        print 'username: ', self.field('userName')
-        #print 'password: ', self.field('userPassword')
-        print 'remember password: ', self.field('rememberPassword')
+        """
+        final step in the wizard.
+        gather the info, update settings
+        and call the success callback.
+        """
+        logger.debug('chosen provider: %s', self.get_provider())
+        logger.debug('username: %s', self.field('userName'))
+        logger.debug('remember password: %s', self.field('rememberPassword'))
         super(FirstRunWizard, self).accept()
-        # XXX we should emit a completed signal here...
-        # and pass a dict with options
-        # XXX unless one exists by default...
 
         settings = QtCore.QSettings()
         settings.setValue("FirstRunWizardDone", True)
@@ -160,6 +160,7 @@ class IntroPage(QtGui.QWizardPage):
         super(IntroPage, self).__init__(parent)
 
         self.setTitle("First run wizard.")
+
         #self.setPixmap(
             #QtGui.QWizard.WatermarkPixmap,
             #QtGui.QPixmap(':/images/watermark1.png'))
@@ -171,6 +172,7 @@ class IntroPage(QtGui.QWizardPage):
             "If you ever need to modify this options again, "
             "you can access from the '<i>Settings</i>' menu in the "
             "main window of the app.")
+
         label.setWordWrap(True)
 
         layout = QtGui.QVBoxLayout()
@@ -215,8 +217,6 @@ class RegisterUserPage(QtGui.QWizardPage):
 
         # XXX check for no wizard pased
         # getting provider from previous step
-        # XXX save as self.provider,
-        # we will need it for validating page
         provider = wizard.get_provider()
 
         self.setTitle("User registration")
@@ -310,7 +310,6 @@ class RegisterUserPage(QtGui.QWizardPage):
         returned we write validation error msg
         above the form.
         """
-        print 'validating page...'
         self.set_status_validating()
         # could move to status box maybe...
 
@@ -330,9 +329,6 @@ class RegisterUserPage(QtGui.QWizardPage):
             valid = signup.register_user(username, password)
         except requests.exceptions.HTTPError:
             valid = False
-            # XXX use QString
-            # XXX line wrap
-            # XXX Raise Validation Labels...
             # TODO catch 404, or other errors...
             self.set_status_invalid_username()
 
@@ -349,6 +345,7 @@ class LastPage(QtGui.QWizardPage):
         super(LastPage, self).__init__(parent)
 
         self.setTitle("Ready to go!")
+
         #self.setPixmap(
             #QtGui.QWizard.WatermarkPixmap,
             #QtGui.QPixmap(':/images/watermark2.png'))
