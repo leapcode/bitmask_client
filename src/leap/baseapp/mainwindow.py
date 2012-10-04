@@ -26,6 +26,7 @@ class LeapWindow(QtGui.QMainWindow,
 
     newLogLine = QtCore.pyqtSignal([str])
     statusChange = QtCore.pyqtSignal([object])
+    mainappReady = QtCore.pyqtSignal([])
     initReady = QtCore.pyqtSignal([])
 
     def __init__(self, opts):
@@ -57,13 +58,22 @@ class LeapWindow(QtGui.QMainWindow,
             lambda status: self.onStatusChange(status))
         self.timer.timeout.connect(
             lambda: self.onTimerTick())
+
+        # do frwizard and init signals
+        self.mainappReady.connect(self.do_first_run_wizard_check)
         self.initReady.connect(self.runchecks_and_eipconnect)
 
         # ... all ready. go!
+        # calls do_first_run_wizard_check
+        self.mainappReady.emit()
+
+    def do_first_run_wizard_check(self):
+        logger.debug('first run wizard check...')
         if self.wizard_done:
             self.initReady.emit()
         else:
             # need to run first-run-wizard
+            logger.debug('running first run wizard')
             from leap.gui.firstrunwizard import FirstRunWizard
             wizard = FirstRunWizard(
                 parent=self,

@@ -88,8 +88,11 @@ QLabel { color: red;
 
 class FirstRunWizard(QtGui.QWizard):
     def __init__(self, parent=None, providers=None, success_cb=None):
-        super(FirstRunWizard, self).__init__(parent)
+        super(FirstRunWizard, self).__init__(
+            parent,
+            QtCore.Qt.WindowStaysOnTopHint)
 
+        # XXX hardcoded for tests
         if not providers:
             providers = ('springbok',)
         self.providers = providers
@@ -115,6 +118,16 @@ class FirstRunWizard(QtGui.QWizard):
 
         # TODO: set style for MAC / windows ...
         #self.setWizardStyle()
+
+    def setWindowFlags(self, flags):
+        logger.debug('setting window flags')
+        QtGui.QWizard.setWindowFlags(self, flags)
+
+    def focusOutEvent(self, event):
+        self.setFocus(True)
+        self.activateWindow()
+        self.raise_()
+        self.show()
 
     def accept(self):
         print 'chosen provider: ', self.get_provider()
@@ -219,8 +232,13 @@ class RegisterUserPage(QtGui.QWizardPage):
         userNameLineEdit = QtGui.QLineEdit()
         userNameLineEdit.cursorPositionChanged.connect(
             self.reset_validation_status)
+        userNameLabel.setBuddy(userNameLineEdit)
+        # TODO
+        # add validator
+        # usernameRe = QRegexp(r"[]")
+        # userNameLineEdit.setValidator(
+        # QRegExpValidator(usernameRe, self))
         self.userNameLineEdit = userNameLineEdit
-        userNameLabel.setBuddy(self.userNameLineEdit)
 
         userPasswordLabel = QtGui.QLabel("&Password:")
         self.userPasswordLineEdit = QtGui.QLineEdit()
