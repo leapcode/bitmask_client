@@ -9,9 +9,12 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 # XXX change and use some other stuff.
-import firstrunwizard_rc
+from leap.gui import mainwindow_rc
+#import firstrunwizard_rc
 
 logger = logging.getLogger(__name__)
+
+APP_LOGO = ':/images/leap-color-small.png'
 
 # registration ######################
 # move to base/
@@ -157,9 +160,9 @@ class IntroPage(QtGui.QWizardPage):
         super(IntroPage, self).__init__(parent)
 
         self.setTitle("First run wizard.")
-        self.setPixmap(
-            QtGui.QWizard.WatermarkPixmap,
-            QtGui.QPixmap(':/images/watermark1.png'))
+        #self.setPixmap(
+            #QtGui.QWizard.WatermarkPixmap,
+            #QtGui.QPixmap(':/images/watermark1.png'))
 
         label = QtGui.QLabel(
             "Now we will guide you through "
@@ -186,7 +189,7 @@ class SelectProviderPage(QtGui.QWizardPage):
         )
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
-            QtGui.QPixmap(':/images/logo1.png'))
+            QtGui.QPixmap(APP_LOGO))
 
         providerNameLabel = QtGui.QLabel("&Provider:")
 
@@ -222,7 +225,7 @@ class RegisterUserPage(QtGui.QWizardPage):
             provider)
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
-            QtGui.QPixmap(':/images/logo2.png'))
+            QtGui.QPixmap(APP_LOGO))
 
         rememberPasswordCheckBox = QtGui.QCheckBox(
             "&Remember password.")
@@ -346,9 +349,9 @@ class LastPage(QtGui.QWizardPage):
         super(LastPage, self).__init__(parent)
 
         self.setTitle("Ready to go!")
-        self.setPixmap(
-            QtGui.QWizard.WatermarkPixmap,
-            QtGui.QPixmap(':/images/watermark2.png'))
+        #self.setPixmap(
+            #QtGui.QWizard.WatermarkPixmap,
+            #QtGui.QPixmap(':/images/watermark2.png'))
 
         self.label = QtGui.QLabel()
         self.label.setWordWrap(True)
