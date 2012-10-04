@@ -1,13 +1,17 @@
 #!/usr/bin/env python
-# This is only needed for Python v2 but is harmless for Python v3.
+import logging
+
 import sip
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
 
+from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 # XXX change and use some other stuff.
 import firstrunwizard_rc
+
+logger = logging.getLogger(__name__)
 
 # registration ######################
 # move to base/
@@ -83,12 +87,15 @@ QLabel { color: red;
 
 
 class FirstRunWizard(QtGui.QWizard):
-    def __init__(self, parent=None, providers=None):
+    def __init__(self, parent=None, providers=None, success_cb=None):
         super(FirstRunWizard, self).__init__(parent)
 
         if not providers:
             providers = ('springbok',)
         self.providers = providers
+
+        # success callback
+        self.success_cb = success_cb
 
         self.addPage(IntroPage())
         self.addPage(SelectProviderPage(providers=providers))
@@ -118,6 +125,14 @@ class FirstRunWizard(QtGui.QWizard):
         # XXX we should emit a completed signal here...
         # and pass a dict with options
         # XXX unless one exists by default...
+
+        settings = QtCore.QSettings()
+        settings.setValue("FirstRunWizardDone", True)
+
+        logger.debug('First Run Wizard Done.')
+        cb = self.success_cb
+        if cb and callable(cb):
+            self.success_cb()
 
     def get_provider(self):
         provider = self.field('provider_index')

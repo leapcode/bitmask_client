@@ -3,6 +3,7 @@ import logging
 # This is only needed for Python v2 but is harmless for Python v3.
 import sip
 sip.setapi('QVariant', 2)
+sip.setapi('QString', 2)
 from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
 
 from leap import __version__ as VERSION
