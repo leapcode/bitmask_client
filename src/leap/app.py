@@ -50,6 +50,14 @@ def main():
     logger.info('Starting app')
     app = QApplication(sys.argv)
 
+    # needed for initializing qsettings
+    # it will write .config/leap/leap.conf
+    # top level app settings
+    # in a platform independent way
+    app.setOrganizationName("leap")
+    app.setApplicationName("leap")
+    app.setOrganizationDomain("leap.se")
+
     if not QSystemTrayIcon.isSystemTrayAvailable():
         QMessageBox.critical(None, "Systray",
                              "I couldn't detect"

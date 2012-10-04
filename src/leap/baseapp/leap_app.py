@@ -1,5 +1,9 @@
 import logging
 
+import sip
+sip.setapi('QVariant', 2)
+
+from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 from leap.gui import mainwindow_rc
@@ -35,7 +39,7 @@ class MainWindowMixin(object):
 
         self.setWindowTitle("LEAP Client")
         self.set_app_icon()
-        self.resize(400, 300)
+        #self.resize(400, 300)
         self.set_statusbarMessage('ready')
         logger.debug('set ready.........')
 
@@ -88,6 +92,10 @@ class MainWindowMixin(object):
         """
         cleans state before shutting down app.
         """
+        # save geometry for restoring
+        settings = QtCore.QSettings()
+        settings.setValue("Geometry", self.saveGeometry())
+
         # TODO:make sure to shutdown all child process / threads
         # in conductor
         # XXX send signal instead?

@@ -30,13 +30,18 @@ class LeapWindow(QtGui.QMainWindow,
     def __init__(self, opts):
         logger.debug('init leap window')
         self.debugmode = getattr(opts, 'debug', False)
-
         super(LeapWindow, self).__init__()
         if self.debugmode:
             self.createLogBrowser()
+
         EIPConductorAppMixin.__init__(self, opts=opts)
         StatusAwareTrayIconMixin.__init__(self)
         MainWindowMixin.__init__(self)
+
+        settings = QtCore.QSettings()
+        geom = settings.value("Geometry")
+        if geom:
+            self.restoreGeometry(geom)
 
         self.initchecks = InitChecksThread(self.run_eip_checks)
 
