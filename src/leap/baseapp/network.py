@@ -3,7 +3,7 @@ from __future__ import print_function
 import logging
 logger = logging.getLogger(name=__name__)
 
-from leap.base.network import NetworkChecker
+from leap.base.network import NetworkCheckerThread
 #from leap.baseapp.dialogs import ErrorDialog
 
 
@@ -14,9 +14,12 @@ class NetworkCheckerAppMixin(object):
     """
 
     def __init__(self, *args, **kwargs):
-        self.network_checker = NetworkChecker(
+        self.network_checker = NetworkCheckerThread(
+            # XXX watcher? remove -----
             watcher_cb=self.newLogLine.emit,
-            error_cb=self.handle_network_error,
+            # XXX what callback? ------
+            error_cb=None,
             debug=self.debugmode)
 
+        # XXX move run_checks to slot
         self.network_checker.run_checks()

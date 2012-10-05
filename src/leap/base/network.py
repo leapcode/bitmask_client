@@ -13,18 +13,22 @@ from time import sleep
 logger = logging.getLogger(name=__name__)
 
 
-class NetworkChecker(object):
+class NetworkCheckerThread(object):
     """
     Manages network checking thread that makes sure we have a working network
     connection.
     """
     def __init__(self, *args, **kwargs):
         self.status_signals = kwargs.pop('status_signals', None)
-        self.watcher_cb = kwargs.pop('status_signals', None)
+        #self.watcher_cb = kwargs.pop('status_signals', None)
         self.error_cb = kwargs.pop(
             'error_cb',
             lambda exc: logger.error("%s", exc.message))
         self.shutdown = threading.Event()
+
+        # XXX get provider_gateway and pass it to checker
+        # see in eip.config for function
+        # #718
         self.checker = LeapNetworkChecker()
 
     def start(self):
@@ -50,9 +54,10 @@ class NetworkChecker(object):
                 self.checker.check_tunnel_default_interface()
                 break
             except TunnelNotDefaultRouteError:
+                # XXX ??? why do we sleep here???
                 sleep(1)
 
-        observer_dict = dict(((
+        fail_observer_dict = dict(((
             observer,
             process_events(observer)) for observer in fail_callbacks))
         while not self.shutdown.is_set():
@@ -61,8 +66,8 @@ class NetworkChecker(object):
                 self.checker.check_internet_connection()
                 sleep(ROUTE_CHECK_INTERVAL)
             except Exception as exc:
-                for obs in observer_dict:
-                    observer_dict[obs].send(exc)
+                for obs in fail_observer_dict:
+                    fail_observer_dict[obs].send(exc)
                 sleep(ROUTE_CHECK_INTERVAL)
         #reset event
         self.shutdown.clear()

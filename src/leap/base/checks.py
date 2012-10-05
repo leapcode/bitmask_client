@@ -17,8 +17,15 @@ class LeapNetworkChecker(object):
     """
     all network related checks
     """
-    # TODO eventually, use a more portable solution
-    # like psutil
+    # TODO refactor to use psutil ---
+
+    # #718
+    # XXX get provider gateway as a parameter
+    # for constructor.
+    # def __init__(self, *args, **kwargs):
+    # ...
+    #   provider_gw = kwargs.pop('provider_gw', None)
+    #   self.provider_gateway = provider_gw
 
     def run_all(self, checker=None):
         if not checker:
@@ -29,12 +36,23 @@ class LeapNetworkChecker(object):
         checker.check_tunnel_default_interface()
         checker.check_internet_connection()
         checker.is_internet_up()
+
+        # XXX We are pinging the default gateway for our connection right?
+        # kali: 2012-10-05 20:59 -- I think we should get
+        # also the default gateway and ping it instead.
         checker.ping_gateway()
+
+        # something like: ?
+        # see __init__ above
+        # if self.provider_gateway:
+        #     checker.ping_gateway(self.provider_gateway)
 
     def check_internet_connection(self):
         try:
             # XXX remove this hardcoded random ip
+            # ping leap.se or eip provider instead...?
             requests.get('http://216.172.161.165')
+
         except (requests.HTTPError, requests.RequestException) as e:
             raise exceptions.NoInternetConnection(e.message)
         except requests.ConnectionError as e:
@@ -44,6 +62,7 @@ class LeapNetworkChecker(object):
                     error = "No valid internet connection found."
                 else:
                     error = "Provider server appears to be down."
+            logger.error(error)
             raise exceptions.NoInternetConnection(error)
         logger.debug('Network appears to be up.')
 
@@ -78,6 +97,7 @@ class LeapNetworkChecker(object):
         if not platform.system() == "Linux":
             raise NotImplementedError
 
+        # XXX use psutil
         f = open("/proc/net/route")
         route_table = f.readlines()
         f.close()
@@ -102,7 +122,21 @@ class LeapNetworkChecker(object):
         return default_iface, gateway
 
     def ping_gateway(self, gateway):
-        #TODO: Discuss how much packet loss (%) is acceptable.
+        # TODO: Discuss how much packet loss (%) is acceptable.
+
+        # XXX -- validate gateway
+        # -- is it a valid ip? (there's something in util)
+        # -- is it a domain?
+        # -- can we resolve? -- raise NoDNSError if not.
         packet_loss = ping.quiet_ping(gateway)[0]
         if packet_loss > constants.MAX_ICMP_PACKET_LOSS:
             raise exceptions.NoConnectionToGateway
+
+     # XXX check for name resolution servers
+     # dunno what's the best way to do this...
+     # check for etc/resolv entries or similar?
+     # just try to resolve?
+     # is there something in psutil?
+
+     # def check_name_resolution(self):
+     #     pass
