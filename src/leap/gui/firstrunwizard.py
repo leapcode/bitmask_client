@@ -8,6 +8,7 @@ sip.setapi('QVariant', 2)
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+from leap.crypto import leapkeyring
 from leap.gui import mainwindow_rc
 
 logger = logging.getLogger(__name__)
@@ -89,7 +90,9 @@ QLabel { color: red;
 
 
 class FirstRunWizard(QtGui.QWizard):
-    def __init__(self, parent=None, providers=None, success_cb=None):
+    def __init__(
+            self, parent=None, providers=None,
+            success_cb=None):
         super(FirstRunWizard, self).__init__(
             parent,
             QtCore.Qt.WindowStaysOnTopHint)
@@ -126,6 +129,7 @@ class FirstRunWizard(QtGui.QWizard):
         QtGui.QWizard.setWindowFlags(self, flags)
 
     def focusOutEvent(self, event):
+        # needed ?
         self.setFocus(True)
         self.activateWindow()
         self.raise_()
@@ -137,13 +141,27 @@ class FirstRunWizard(QtGui.QWizard):
         gather the info, update settings
         and call the success callback.
         """
-        logger.debug('chosen provider: %s', self.get_provider())
-        logger.debug('username: %s', self.field('userName'))
-        logger.debug('remember password: %s', self.field('rememberPassword'))
+        provider = self.get_provider()
+        username = self.field('userName')
+        password = self.field('userPassword')
+        remember_pass = self.field('rememberPassword')
+
+        logger.debug('chosen provider: %s', provider)
+        logger.debug('username: %s', username)
+        logger.debug('remember password: %s', remember_pass)
         super(FirstRunWizard, self).accept()
 
         settings = QtCore.QSettings()
         settings.setValue("FirstRunWizardDone", True)
+        settings.setValue(
+            "eip_%s_username" % provider,
+            username)
+        settings.setValue("%s_remember_pass" % provider, remember_pass)
+
+        seed = self.get_random_str(10)
+        settings.setValue("%s_seed" % provider, seed)
+
+        leapkeyring.leap_set_password(username, password, seed=seed)
 
         logger.debug('First Run Wizard Done.')
         cb = self.success_cb
@@ -153,6 +171,14 @@ class FirstRunWizard(QtGui.QWizard):
     def get_provider(self):
         provider = self.field('provider_index')
         return self.providers[provider]
+
+    def get_random_str(self, n):
+        from string import (ascii_uppercase, ascii_lowercase, digits)
+        from random import choice
+        return ''.join(choice(
+            ascii_uppercase +
+            ascii_lowercase +
+            digits) for x in range(n))
 
 
 class IntroPage(QtGui.QWizardPage):
