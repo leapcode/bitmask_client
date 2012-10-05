@@ -28,7 +28,7 @@ class LeapSRPRegister(object):
                  schema="https",
                  provider=None,
                  port=None,
-                 register_path="users.json",
+                 register_path="1/users.json",
                  method="POST",
                  fetcher=requests,
                  srp=srp,
@@ -53,11 +53,18 @@ class LeapSRPRegister(object):
     def get_registration_uri(self):
         # XXX assert is https!
         # use urlparse
-        uri = "%s://%s:%s/%s" % (
-            self.schema,
-            self.provider,
-            self.port,
-            self.register_path)
+        if self.port:
+            uri = "%s://%s:%s/%s" % (
+                self.schema,
+                self.provider,
+                self.port,
+                self.register_path)
+        else:
+            uri = "%s://%s/%s" % (
+                self.schema,
+                self.provider,
+                self.register_path)
+
         return uri
 
     def register_user(self, username, password, keep=False):
@@ -68,9 +75,9 @@ class LeapSRPRegister(object):
             self.NG)
 
         user_data = {
-            'login': username,
-            'password_verifier': vkey,
-            'password_salt': salt}
+            'user[login]': username,
+            'user[password_verifier]': vkey,
+            'user[password_salt]': salt}
 
         uri = self.get_registration_uri()
         logger.debug('post to uri: %s' % uri)
@@ -78,6 +85,8 @@ class LeapSRPRegister(object):
         # XXX get self.method
         req = self.session.post(uri, data=user_data)
         logger.debug(req)
+        logger.debug('user_data: %s', user_data)
+        #logger.debug('response: %s', req.text)
         req.raise_for_status()
         return True
 
@@ -344,12 +353,14 @@ class RegisterUserPage(QtGui.QWizardPage):
 
         # XXX TODO -- remove debug info
         # XXX get from provider info
+        # XXX enforce https
+        # and pass a verify value
 
         signup = LeapSRPRegister(
             schema="http",
-            #provider="springbok"
-            provider="localhost",
-            port=8000
+            #provider="localhost",
+            provider="springbok",
+            #port=8000
         )
         try:
             valid = signup.register_user(username, password)
@@ -393,8 +404,12 @@ class LastPage(QtGui.QWizardPage):
 
 
 if __name__ == '__main__':
-
+    # standalone test
     import sys
+    import logging
+    logging.basicConfig()
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
 
     app = QtGui.QApplication(sys.argv)
     wizard = FirstRunWizard()
