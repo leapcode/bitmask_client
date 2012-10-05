@@ -1,6 +1,7 @@
 import logging
 import os
 import platform
+import psutil
 import shutil
 #import socket
 
@@ -16,6 +17,7 @@ from mock import Mock, patch  # MagicMock
 
 from leap.eip import config as eipconfig
 from leap.eip import openvpnconnection
+from leap.eip import exceptions as eipexceptions
 from leap.eip.udstelnet import UDSTelnet
 from leap.testing.basetest import BaseLeapTest
 
@@ -72,6 +74,16 @@ class OpenVPNConnectionTest(BaseLeapTest):
     #
     # tests
     #
+
+    def test_detect_vpn(self):
+        openvpn_connection = openvpnconnection.OpenVPNConnection()
+        with patch.object(psutil, "get_process_list") as mocked_psutil:
+            with self.assertRaises(eipexceptions.OpenVPNAlreadyRunning):
+                mocked_process = Mock()
+                mocked_process.name = "openvpn"
+                mocked_psutil.return_value = [mocked_process]
+                openvpn_connection._check_if_running_instance()
+        openvpn_connection._check_if_running_instance()
 
     @unittest.skipIf(_system == "Windows", "lin/mac only")
     def test_lin_mac_default_init(self):
