@@ -9,7 +9,8 @@ import keyring
 # No, seriously.
 # We're affected by this **bug**
 
-# https://bitbucket.org/kang/python-keyring-lib/issue/65/dbusexception-method-opensession-with
+# https://bitbucket.org/kang/python-keyring-lib/
+# issue/65/dbusexception-method-opensession-with
 
 # so using the gnome keyring does not seem feasible right now.
 # I thought this was the next best option to store secrets in plain sight.

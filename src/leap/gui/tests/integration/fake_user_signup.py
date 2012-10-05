@@ -68,5 +68,3 @@ class request_handler(BaseHTTPRequestHandler):
 if __name__ == "__main__":
     server = HTTPServer((HOST, PORT), request_handler)
     server.serve_forever()
-
-
