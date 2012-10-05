@@ -10,6 +10,7 @@ from leap.baseapp.log import LogPaneMixin
 from leap.baseapp.systray import StatusAwareTrayIconMixin
 from leap.baseapp.network import NetworkCheckerAppMixin
 from leap.baseapp.leap_app import MainWindowMixin
+from leap.baseapp import dialogs
 
 logger = logging.getLogger(name=__name__)
 
@@ -68,6 +69,6 @@ class LeapWindow(QtGui.QMainWindow,
         # check headless = False before
         # launching dialog.
         # (so Qt tests can assert stuff)
-        
-        dialog = ErrorDialog()
+
+        dialog = dialogs.ErrorDialog()
         dialog.warningMessage(message, 'error')

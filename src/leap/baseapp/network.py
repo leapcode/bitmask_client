@@ -1,10 +1,10 @@
 from __future__ import print_function
+
 import logging
-import time
 logger = logging.getLogger(name=__name__)
 
 from leap.base.network import NetworkChecker
-from leap.baseapp.dialogs import ErrorDialog
+#from leap.baseapp.dialogs import ErrorDialog
 
 
 class NetworkCheckerAppMixin(object):
@@ -20,4 +20,3 @@ class NetworkCheckerAppMixin(object):
             debug=self.debugmode)
 
         self.network_checker.run_checks()
-

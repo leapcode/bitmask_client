@@ -21,13 +21,15 @@ class NetworkChecker(object):
     def __init__(self, *args, **kwargs):
         self.status_signals = kwargs.pop('status_signals', None)
         self.watcher_cb = kwargs.pop('status_signals', None)
-        self.error_cb = kwargs.pop('error_cb',
-                    lambda exc: logger.error("%s", exc.message))
+        self.error_cb = kwargs.pop(
+            'error_cb',
+            lambda exc: logger.error("%s", exc.message))
         self.shutdown = threading.Event()
         self.checker = LeapNetworkChecker()
 
     def start(self):
-        self.process_handle = self._launch_recurrent_network_checks((self.error_cb,))
+        self.process_handle = self._launch_recurrent_network_checks(
+            (self.error_cb,))
 
     def stop(self):
         self.shutdown.set()
@@ -51,7 +53,8 @@ class NetworkChecker(object):
                 sleep(1)
 
         observer_dict = dict(((
-            observer, process_events(observer)) for observer in fail_callbacks))
+            observer,
+            process_events(observer)) for observer in fail_callbacks))
         while not self.shutdown.is_set():
             try:
                 self.checker.check_tunnel_default_interface()
@@ -65,7 +68,7 @@ class NetworkChecker(object):
         self.shutdown.clear()
 
     def _launch_recurrent_network_checks(self, fail_callbacks):
-        #we need to wrap the fail callback in a turple
+        #we need to wrap the fail callback in a tuple
         watcher = launch_thread(
             self._network_checks_thread,
             (fail_callbacks,))

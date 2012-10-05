@@ -74,7 +74,8 @@ class LeapNetworkCheckTest(BaseLeapTest):
                     "Iface\tDestination Gateway\t"
                     "Flags\tRefCntd\tUse\tMetric\t"
                     "Mask\tMTU\tWindow\tIRTT\n"
-                    "wlan0\t00000000\t0102A8C0\t0003\t0\t0\t0\t00000000\t0\t0\t0")
+                    "wlan0\t00000000\t0102A8C0\t"
+                    "0003\t0\t0\t0\t00000000\t0\t0\t0")
                 checker.check_tunnel_default_interface()
 
         with patch('leap.base.checks.open', create=True) as mock_open:

@@ -3,6 +3,7 @@
 import logging
 import platform
 
+import netifaces
 import ping
 import requests
 
@@ -10,6 +11,7 @@ from leap.base import constants
 from leap.base import exceptions
 
 logger = logging.getLogger(name=__name__)
+
 
 class LeapNetworkChecker(object):
     """
@@ -51,7 +53,7 @@ class LeapNetworkChecker(object):
 
     def check_tunnel_default_interface(self):
         """
-        Raises an TunnelNotDefaultRouteError 
+        Raises an TunnelNotDefaultRouteError
         (including when no routes are present)
         """
         if not platform.system() == "Linux":
@@ -70,7 +72,6 @@ class LeapNetworkChecker(object):
         iface, destination = line.split('\t')[0:2]
         if not destination == '00000000' or not iface == 'tun0':
             raise exceptions.TunnelNotDefaultRouteError()
-
 
     def get_default_interface_gateway(self):
         """only impletemented for linux so far."""
