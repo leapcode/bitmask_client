@@ -162,9 +162,10 @@ class StatusAwareTrayIconMixin(object):
         oldlayout.itemAt(new).widget().show()
 
     def setIcon(self, name):
-        icon = self.Icons.get(name)(self)
-        self.trayIcon.setIcon(icon)
-        #self.setWindowIcon(icon)
+        icon_fun = self.Icons.get(name)
+        if icon_fun and callable(icon_fun):
+            icon = icon_fun(self)
+            self.trayIcon.setIcon(icon)
 
     def getIcon(self, icon_name):
         return self.states.get(icon_name, None)
