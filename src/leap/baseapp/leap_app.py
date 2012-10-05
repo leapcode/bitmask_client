@@ -27,9 +27,9 @@ class MainWindowMixin(object):
         widget = QtGui.QWidget()
         self.setCentralWidget(widget)
 
+        mainLayout = QtGui.QVBoxLayout()
         # add widgets to layout
         #self.createWindowHeader()
-        mainLayout = QtGui.QVBoxLayout()
         #mainLayout.addWidget(self.headerBox)
         mainLayout.addWidget(self.statusIconBox)
         if self.debugmode:
@@ -37,11 +37,51 @@ class MainWindowMixin(object):
             mainLayout.addWidget(self.loggerBox)
         widget.setLayout(mainLayout)
 
+        self.createMainActions()
+        self.createMainMenus()
+
         self.setWindowTitle("LEAP Client")
         self.set_app_icon()
-        #self.resize(400, 300)
         self.set_statusbarMessage('ready')
-        logger.debug('set ready.........')
+
+    def createMainActions(self):
+        #self.openAct = QtGui.QAction("&Open...", self, shortcut="Ctrl+O",
+                #triggered=self.open)
+
+        self.firstRunWizardAct = QtGui.QAction(
+            "&First run wizard...", self,
+            triggered=self.launch_first_run_wizard)
+        self.aboutAct = QtGui.QAction("&About", self, triggered=self.about)
+
+        #self.aboutQtAct = QtGui.QAction("About &Qt", self,
+                #triggered=QtGui.qApp.aboutQt)
+
+    def createMainMenus(self):
+        self.connMenu = QtGui.QMenu("&Connections", self)
+        #self.viewMenu.addSeparator()
+        self.connMenu.addAction(self.quitAction)
+
+        self.settingsMenu = QtGui.QMenu("&Settings", self)
+        self.settingsMenu.addAction(self.firstRunWizardAct)
+
+        self.helpMenu = QtGui.QMenu("&Help", self)
+        self.helpMenu.addAction(self.aboutAct)
+        #self.helpMenu.addAction(self.aboutQtAct)
+
+        self.menuBar().addMenu(self.connMenu)
+        self.menuBar().addMenu(self.settingsMenu)
+        self.menuBar().addMenu(self.helpMenu)
+
+    def launch_first_run_wizard(self):
+        settings = QtCore.QSettings()
+        settings.setValue('FirstRunWizardDone', False)
+        logger.debug('should run first run wizard again...')
+
+        from leap.gui.firstrunwizard import FirstRunWizard
+        wizard = FirstRunWizard(
+            parent=self,
+            success_cb=self.initReady.emit)
+        wizard.show()
 
     def set_app_icon(self):
         icon = QtGui.QIcon(APP_LOGO)

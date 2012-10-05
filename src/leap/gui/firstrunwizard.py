@@ -194,10 +194,10 @@ class IntroPage(QtGui.QWizardPage):
         label = QtGui.QLabel(
             "Now we will guide you through "
             "some configuration that is needed before you "
-            "connect for the first time.<br><br>"
-            "If you ever need to modify this options again, "
-            "you can access from the '<i>Settings</i>' menu in the "
-            "main window of the app.")
+            "can connect for the first time.<br><br>"
+            "If you ever need to modify these options again, "
+            "you can find the wizard in the '<i>Settings</i>' menu from the "
+            "main window of the Leap App.")
 
         label.setWordWrap(True)
 
