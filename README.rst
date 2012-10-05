@@ -118,11 +118,20 @@ or
 
 nosetests leap.util.test_leap_argparse
 
+Colorized output
+----------------
+Install rednose locally and activate it.
+
+  (leap_client)% pip install rednose
+  (leap_client)% export NOSE_REDNOSE=1
+
+enjoy :)
+
 Tox
 ---
 For running testsuite against all the supported python versions (currently 2.6 and 2.7), run:
 
-tox -v
+  tox -v
 
 
 Compiling resource/ui files
