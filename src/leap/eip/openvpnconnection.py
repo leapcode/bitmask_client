@@ -3,6 +3,7 @@ OpenVPN Connection
 """
 from __future__ import (print_function)
 import logging
+import psutil
 import socket
 import time
 from functools import partial
@@ -87,6 +88,7 @@ to be triggered for each one of them.
 
     def run_openvpn_checks(self):
         logger.debug('running openvpn checks')
+        self._check_if_running_instance()
         self._set_ovpn_command()
         self._check_vpn_keys()
 
@@ -156,8 +158,19 @@ to be triggered for each one of them.
             raise eip_exceptions.EIPNoCommandError
         if self.subp is not None:
             logger.debug('cowardly refusing to launch subprocess again')
-            return
+
         self._launch_openvpn()
+
+    def _check_if_running_instance(self):
+        """
+        check if openvpn is already running
+        """
+        for process in psutil.get_process_list():
+            if process.name == "openvpn":
+                logger.debug('an openvpn instance is already running.')
+                raise eip_exceptions.OpenVPNAlreadyRunning
+
+        logger.debug('no openvpn instance found.')
 
     def cleanup(self):
         """

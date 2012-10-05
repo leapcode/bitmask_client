@@ -93,6 +93,13 @@ class LeapBadConfigFetchedError(Warning):
     message = "provider sent a malformed json file"
     usermessage = "an error occurred during configuratio of leap services"
 
+
+class OpenVPNAlreadyRunning(EIPClientError):
+    message = "Another OpenVPN Process is already running."
+    usermessage = ("Another OpenVPN Process has been detected."
+                   "Please close it before starting leap-client")
+
+
 #
 # errors still needing some love
 #
