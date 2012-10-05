@@ -257,7 +257,7 @@ class ProviderCertChecker(object):
         valid = exists() and valid_pemfile() and not_expired()
         if not valid:
             if do_raise:
-                raise Exception('missing cert')
+                raise Exception('missing valid cert')
             else:
                 return False
         return True
@@ -273,7 +273,9 @@ class ProviderCertChecker(object):
         with open(certfile) as cf:
             cert_s = cf.read()
         cert = crypto.X509Certificate(cert_s)
-        return cert.activation_time < now() < cert.expiration_time
+        from_ = time.gmtime(cert.activation_time)
+        to_ = time.gmtime(cert.expiration_time)
+        return from_ < now() < to_
 
     def is_valid_pemfile(self, cert_s=None):
         """
