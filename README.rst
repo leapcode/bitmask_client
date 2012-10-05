@@ -20,6 +20,13 @@ If you are on a debian-based system, you can run:
 
 apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools python-gnutls libgnutls-dev python-setuptools python-nose
 
+# **note**: I _think_ setuptools is needed for build process only.                     
+# we should separate what's needed as a global lib dependency, and what's a dependency that
+# still can be retrieved using pip.                                                  
+                                                        
+If you are installing in a virtualenv:                                               
+  pip install -r pkg/requirements.pip
+
 
 Install PyQt
 ------------
