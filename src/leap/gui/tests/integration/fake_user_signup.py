@@ -23,7 +23,8 @@ LOGIN_ERROR = """{"errors":{"login":["has already been taken"]}}"""
 class request_handler(BaseHTTPRequestHandler):
     responses = {
         '/': ['ok\n'],
-        '/users.json': ['ok\n']
+        '/users.json': ['ok\n'],
+        '/timeout': ['ok\n']
     }
 
     def do_GET(self):
@@ -47,11 +48,20 @@ class request_handler(BaseHTTPRequestHandler):
         path = urlparse.urlparse(self.path)
         message = '\n'.join(
             self.responses.get(
-                path.path, None))
+                path.path, ''))
 
         login = data.get('login', None)
         #password_salt = data.get('password_salt', None)
         #password_verifier = data.get('password_verifier', None)
+
+        if path.geturl() == "/timeout":
+            print 'timeout'
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(message)
+            import time
+            time.sleep(10)
+            return
 
         ok = True if (login == "python_test_user") else False
         if ok:

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import logging
+import json
+import socket
 
 import sip
 sip.setapi('QString', 2)
@@ -21,6 +23,10 @@ import binascii
 
 import requests
 import srp
+
+from leap.base import constants as baseconstants
+
+SIGNUP_TIMEOUT = getattr(baseconstants, 'SIGNUP_TIMEOUT', 5)
 
 
 class LeapSRPRegister(object):
@@ -69,6 +75,10 @@ class LeapSRPRegister(object):
         return uri
 
     def register_user(self, username, password, keep=False):
+        """
+        @rtype: tuple
+        @rvalue: (ok, request)
+        """
         salt, vkey = self.srp.create_salted_verification_key(
             username,
             password,
@@ -84,13 +94,15 @@ class LeapSRPRegister(object):
         logger.debug('post to uri: %s' % uri)
 
         # XXX get self.method
-        req = self.session.post(uri, data=user_data)
+        req = self.session.post(
+            uri, data=user_data,
+            timeout=SIGNUP_TIMEOUT)
         logger.debug(req)
         logger.debug('user_data: %s', user_data)
         #logger.debug('response: %s', req.text)
         # we catch it in the form
-        req.raise_for_status()
-        return True
+        #req.raise_for_status()
+        return (req.ok, req)
 
 ######################################
 
@@ -101,6 +113,7 @@ QLabel { color: red;
 
 
 class FirstRunWizard(QtGui.QWizard):
+
     def __init__(
             self, parent=None, providers=None,
             success_cb=None):
@@ -249,8 +262,14 @@ class SelectProviderPage(QtGui.QWizardPage):
 
 
 class RegisterUserPage(QtGui.QWizardPage):
+    setSigningUpStatus = QtCore.pyqtSignal([])
+
     def __init__(self, parent=None, wizard=None):
         super(RegisterUserPage, self).__init__(parent)
+
+        # bind wizard page signals
+        self.setSigningUpStatus.connect(
+            self.set_status_validating)
 
         # XXX check for no wizard pased
         # getting provider from previous step
@@ -320,9 +339,15 @@ class RegisterUserPage(QtGui.QWizardPage):
         """
         set validation msg to 'registering...'
         """
-        # XXX  this is not shown,
+        # XXX  this is NOT WORKING.
+        # My guess is that, even if we are using
+        # signals to trigger this, it does
+        # not show until the validate function
+        # returns.
         # I guess it is because there is no delay...
+        logger.debug('registering........')
         self.validationMsg.setText('registering...')
+        # need to call update somehow???
 
     def set_status_invalid_username(self):
         """
@@ -330,6 +355,27 @@ class RegisterUserPage(QtGui.QWizardPage):
         not available user
         """
         self.validationMsg.setText('Username not available.')
+
+    def set_status_server_500(self):
+        """
+        set validation msg to
+        internal server error
+        """
+        self.validationMsg.setText("Error during registration (500)")
+
+    def set_status_timeout(self):
+        """
+        set validation msg to
+        timeout
+        """
+        self.validationMsg.setText("Error connecting to provider (timeout)")
+
+    def set_status_unknown_error(self):
+        """
+        set validation msg to
+        unknown error
+        """
+        self.validationMsg.setText("Error during signup")
 
     # overwritten methods
 
@@ -347,8 +393,13 @@ class RegisterUserPage(QtGui.QWizardPage):
         returned we write validation error msg
         above the form.
         """
-        self.set_status_validating()
-        # could move to status box maybe...
+        # the slot for this signal is not doing
+        # what's expected. Investigate why,
+        # right now we're not giving any feedback
+        # to the user re. what's going on. The only
+        # thing I can see as a workaround is setting
+        # a low timeout.
+        self.setSigningUpStatus.emit()
 
         username = self.userNameLineEdit.text()
         password = self.userPasswordLineEdit.text()
@@ -360,18 +411,37 @@ class RegisterUserPage(QtGui.QWizardPage):
 
         signup = LeapSRPRegister(
             schema="http",
-            #provider="localhost",
             provider="springbok",
+
+            #provider="localhost",
+            #register_path="timeout",
             #port=8000
         )
         try:
-            valid = signup.register_user(username, password)
-        except requests.exceptions.HTTPError:
-            valid = False
-            # TODO catch 404, or other errors...
-            self.set_status_invalid_username()
+            ok, req = signup.register_user(username, password)
+        except socket.timeout:
+            self.set_status_timeout()
+            return False
 
-        return True if valid is True else False
+        if ok:
+            return True
+
+        # something went wrong.
+        # not registered, let's catch what.
+        # get timeout
+        # ...
+        if req.status_code == 500:
+            self.set_status_server_500()
+            return False
+
+        validation_msgs = json.loads(req.content)
+        logger.debug('validation errors: %s' % validation_msgs)
+        errors = validation_msgs.get('errors', None)
+        if errors and errors.get('login', None):
+            self.set_status_invalid_username()
+        else:
+            self.set_status_unknown_error()
+        return False
 
 
 class GlobalEIPSettings(QtGui.QWizardPage):
