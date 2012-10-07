@@ -17,6 +17,7 @@ APP_LOGO = ':/images/leap-color-small.png'
 
 # registration ######################
 # move to base/
+import binascii
 
 import requests
 import srp
@@ -76,8 +77,8 @@ class LeapSRPRegister(object):
 
         user_data = {
             'user[login]': username,
-            'user[password_verifier]': vkey,
-            'user[password_salt]': salt}
+            'user[password_verifier]': binascii.hexlify(vkey),
+            'user[password_salt]': binascii.hexlify(salt)}
 
         uri = self.get_registration_uri()
         logger.debug('post to uri: %s' % uri)
@@ -87,6 +88,7 @@ class LeapSRPRegister(object):
         logger.debug(req)
         logger.debug('user_data: %s', user_data)
         #logger.debug('response: %s', req.text)
+        # we catch it in the form
         req.raise_for_status()
         return True
 
@@ -271,11 +273,11 @@ class RegisterUserPage(QtGui.QWizardPage):
         userNameLineEdit.cursorPositionChanged.connect(
             self.reset_validation_status)
         userNameLabel.setBuddy(userNameLineEdit)
-        # TODO
-        # add validator
-        # usernameRe = QRegexp(r"[]")
-        # userNameLineEdit.setValidator(
-        # QRegExpValidator(usernameRe, self))
+
+        # add regex validator
+        usernameRe = QtCore.QRegExp(r"^[A-Za-z\d_]+$")
+        userNameLineEdit.setValidator(
+            QtGui.QRegExpValidator(usernameRe, self))
         self.userNameLineEdit = userNameLineEdit
 
         userPasswordLabel = QtGui.QLabel("&Password:")
