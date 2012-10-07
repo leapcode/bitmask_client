@@ -8,7 +8,9 @@ from PyQt4 import QtGui
 from leap.baseapp.eip import EIPConductorAppMixin
 from leap.baseapp.log import LogPaneMixin
 from leap.baseapp.systray import StatusAwareTrayIconMixin
+from leap.baseapp.network import NetworkCheckerAppMixin
 from leap.baseapp.leap_app import MainWindowMixin
+from leap.baseapp import dialogs
 
 logger = logging.getLogger(name=__name__)
 
@@ -16,6 +18,7 @@ logger = logging.getLogger(name=__name__)
 class LeapWindow(QtGui.QMainWindow,
                  MainWindowMixin, EIPConductorAppMixin,
                  StatusAwareTrayIconMixin,
+                 NetworkCheckerAppMixin,
                  LogPaneMixin):
     """
     main window for the leap app.
@@ -28,6 +31,7 @@ class LeapWindow(QtGui.QMainWindow,
     statusChange = QtCore.pyqtSignal([object])
     mainappReady = QtCore.pyqtSignal([])
     initReady = QtCore.pyqtSignal([])
+    networkError = QtCore.pyqtSignal([object])
 
     def __init__(self, opts):
         logger.debug('init leap window')
@@ -38,6 +42,7 @@ class LeapWindow(QtGui.QMainWindow,
 
         EIPConductorAppMixin.__init__(self, opts=opts)
         StatusAwareTrayIconMixin.__init__(self)
+        NetworkCheckerAppMixin.__init__(self)
         MainWindowMixin.__init__(self)
 
         settings = QtCore.QSettings()
@@ -58,6 +63,8 @@ class LeapWindow(QtGui.QMainWindow,
             lambda status: self.onStatusChange(status))
         self.timer.timeout.connect(
             lambda: self.onTimerTick())
+        self.networkError.connect(
+            lambda exc: self.onNetworkError(exc))
 
         # do frwizard and init signals
         self.mainappReady.connect(self.do_first_run_wizard_check)
@@ -93,5 +100,25 @@ class InitChecksThread(QtCore.QThread):
     def run(self):
         self.fun()
 
+#<<<<<<< HEAD
     def begin(self):
         self.start()
+#=======
+        # could send "ready" signal instead
+        # eipapp should catch that
+        #if self.conductor.autostart:
+            #self.start_or_stopVPN()
+#
+    #TODO: Put all Dialogs in one place
+    #@QtCore.pyqtSlot()
+    #def raise_Network_Error(self, exc):
+        #message = exc.message
+#
+        # XXX
+        # check headless = False before
+        # launching dialog.
+        # (so Qt tests can assert stuff)
+#
+        #dialog = dialogs.ErrorDialog()
+        #dialog.warningMessage(message, 'error')
+#>>>>>>> feature/network_check

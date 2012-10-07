@@ -28,7 +28,6 @@ TODO:
 
 * EIPClientError:
   Should inherit from LeapException
-  and move basic attrs there
 
 * gettext / i18n for user messages.
 
@@ -127,22 +126,6 @@ class EIPInitBadProviderError(EIPClientError):
 
 class EIPConfigurationError(EIPClientError):
     pass
-
-
-class NoDefaultInterfaceFoundError(EIPClientError):
-    message = "no default interface found"
-    usermessage = "Looks like your computer is not connected to the internet"
-
-
-class InterfaceNotFoundError(EIPClientError):
-    # XXX should take iface arg on init maybe?
-    message = "interface not found"
-
-
-class NoConnectionToGateway(EIPClientError):
-    message = "no connection to gateway"
-    usermessage = "Looks like there are problems with your internet connection"
-
 
 #
 # Errors that probably we don't need anymore
