@@ -26,17 +26,25 @@ class LeapWindow(QtGui.QMainWindow,
 
     newLogLine = QtCore.pyqtSignal([str])
     statusChange = QtCore.pyqtSignal([object])
+    mainappReady = QtCore.pyqtSignal([])
+    initReady = QtCore.pyqtSignal([])
 
     def __init__(self, opts):
         logger.debug('init leap window')
         self.debugmode = getattr(opts, 'debug', False)
-
         super(LeapWindow, self).__init__()
         if self.debugmode:
             self.createLogBrowser()
+
         EIPConductorAppMixin.__init__(self, opts=opts)
         StatusAwareTrayIconMixin.__init__(self)
         MainWindowMixin.__init__(self)
+
+        settings = QtCore.QSettings()
+        geom = settings.value("Geometry")
+        if geom:
+            self.restoreGeometry(geom)
+        self.wizard_done = settings.value("FirstRunWizardDone")
 
         self.initchecks = InitChecksThread(self.run_eip_checks)
 
@@ -51,8 +59,28 @@ class LeapWindow(QtGui.QMainWindow,
         self.timer.timeout.connect(
             lambda: self.onTimerTick())
 
-        # ... all ready. go!
+        # do frwizard and init signals
+        self.mainappReady.connect(self.do_first_run_wizard_check)
+        self.initReady.connect(self.runchecks_and_eipconnect)
 
+        # ... all ready. go!
+        # calls do_first_run_wizard_check
+        self.mainappReady.emit()
+
+    def do_first_run_wizard_check(self):
+        logger.debug('first run wizard check...')
+        if self.wizard_done:
+            self.initReady.emit()
+        else:
+            # need to run first-run-wizard
+            logger.debug('running first run wizard')
+            from leap.gui.firstrunwizard import FirstRunWizard
+            wizard = FirstRunWizard(
+                parent=self,
+                success_cb=self.initReady.emit)
+            wizard.show()
+
+    def runchecks_and_eipconnect(self):
         self.initchecks.begin()
 
 

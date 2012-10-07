@@ -14,11 +14,20 @@ Listed in pkg/requirements.pip and pkg/test-requirements.pip
 * qt4 libraries
 * python-qt4
 * python-gnutls == 1.1.9
+* python-keyring
 * python-nose, python-mock, python-coverage (if you want to run tests)
 
 If you are on a debian-based system, you can run:
 
-apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools python-gnutls libgnutls-dev python-setuptools python-nose
+  apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools python-gnutls libgnutls-dev python-setuptools python-nose
+
+# **note**: I think setuptools is needed for build process only.
+# we should separate what's needed as a lib dependency, and what's a dependency that has been debianized but
+# still can be retrieved using pip.
+
+If you are installing in a virtualenv:
+
+  pip install -r pkg/requirements.pip
 
 # **note**: I _think_ setuptools is needed for build process only.                     
 # we should separate what's needed as a global lib dependency, and what's a dependency that
@@ -62,7 +71,7 @@ python setup.py install # as root if installing globally.
 Running the App
 -----------------
 
-If you're running a branded build, the script name will have a suffix that
+If you're running a branded build, the script name will have a infix that
 depends on your build flavor. Look for it in /usr/local/bin
 
 % leap-springbok-client
@@ -81,6 +90,7 @@ Development
 
 Hack
 --------------
+
 Some steps to be run when setting a development environment for the first time.
 
 # recommended: enable a virtualenv to isolate your libraries.

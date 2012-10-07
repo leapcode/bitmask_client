@@ -232,6 +232,9 @@ class ProviderCertChecker(object):
             # verify=verify
             # Workaround for #638. return to verification
             # when That's done!!!
+
+            # XXX HOOK SRP here...
+            # will have to be more generic in the future.
             req = self.fetcher.get(uri, verify=False)
             req.raise_for_status()
         except requests.exceptions.SSLError:

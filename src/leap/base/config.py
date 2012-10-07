@@ -149,6 +149,7 @@ class JSONLeapConfig(BaseLeapConfig):
         if not fetcher:
             fetcher = self.fetcher
         logger.debug('verify: %s', verify)
+        logger.debug('uri: %s', uri)
         request = fetcher.get(uri, verify=verify)
         # XXX should send a if-modified-since header
 
