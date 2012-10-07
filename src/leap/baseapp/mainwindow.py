@@ -52,6 +52,8 @@ class LeapWindow(QtGui.QMainWindow,
             lambda status: self.onStatusChange(status))
         self.timer.timeout.connect(
             lambda: self.onTimerTick())
+        self.networkError.connect(
+            lambda exc: self.onNetworkError(exc))
 
         # ... all ready. go!
 

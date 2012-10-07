@@ -4,9 +4,12 @@
 
 from __future__ import division, print_function
 
+import logging
 from subprocess import PIPE, Popen
 import sys
 from threading import Thread
+
+logger = logging.getLogger(__name__)
 
 ON_POSIX = 'posix' in sys.builtin_module_names
 
@@ -38,8 +41,7 @@ for each event
             if callable(callback):
                 callback(m)
             else:
-                #XXX log instead
-                print('not a callable passed')
+                logger.debug('not a callable passed')
     except GeneratorExit:
         return
 

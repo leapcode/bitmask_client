@@ -1,10 +1,13 @@
 from __future__ import print_function
 
 import logging
+
 logger = logging.getLogger(name=__name__)
 
+from PyQt4 import QtCore
+
+from leap.baseapp.dialogs import ErrorDialog
 from leap.base.network import NetworkCheckerThread
-#from leap.baseapp.dialogs import ErrorDialog
 
 
 class NetworkCheckerAppMixin(object):
@@ -15,11 +18,23 @@ class NetworkCheckerAppMixin(object):
 
     def __init__(self, *args, **kwargs):
         self.network_checker = NetworkCheckerThread(
-            # XXX watcher? remove -----
-            watcher_cb=self.newLogLine.emit,
-            # XXX what callback? ------
-            error_cb=None,
+            error_cb=self.networkError.emit,
             debug=self.debugmode)
 
         # XXX move run_checks to slot
         self.network_checker.run_checks()
+
+    @QtCore.pyqtSlot(object)
+    def onNetworkError(self, exc):
+        """
+        slot that receives a network exceptions
+        and raises a user error message
+        """
+        logger.debug('handling network exception')
+        logger.error(exc.message)
+        dialog = ErrorDialog(parent=self)
+
+        if exc.critical:
+            dialog.criticalMessage(exc.usermessage, "network error")
+        else:
+            dialog.warningMessage(exc.usermessage, "network error")

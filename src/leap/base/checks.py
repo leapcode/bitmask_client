@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import logging
 import platform
 
@@ -17,8 +16,6 @@ class LeapNetworkChecker(object):
     """
     all network related checks
     """
-    # TODO refactor to use psutil ---
-
     # #718
     # XXX get provider gateway as a parameter
     # for constructor.

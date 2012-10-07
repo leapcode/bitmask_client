@@ -28,7 +28,6 @@ TODO:
 
 * EIPClientError:
   Should inherit from LeapException
-  and move basic attrs there
 
 * gettext / i18n for user messages.
 

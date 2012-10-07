@@ -1,12 +1,12 @@
 import logging
 import ssl
-import platform
+#import platform
 import time
 import os
 
 from gnutls import crypto
-import netifaces
-import ping
+#import netifaces
+#import ping
 import requests
 
 from leap import __branding as BRANDING
