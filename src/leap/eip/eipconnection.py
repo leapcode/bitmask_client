@@ -35,6 +35,9 @@ class EIPConnection(OpenVPNConnection):
         status_signals = kwargs.pop('status_signals', None)
         self.status = EIPConnectionStatus(callbacks=status_signals)
 
+        checker_signals = kwargs.pop('checker_signals', None)
+        self.checker_signals = checker_signals
+
         self.provider_cert_checker = provider_cert_checker()
         self.config_checker = config_checker()
 
@@ -59,10 +62,14 @@ class EIPConnection(OpenVPNConnection):
 
         try:
             # network (1)
+            for signal in self.checker_signals:
+                signal('checking encryption keys')
             self.provider_cert_checker.run_all(skip_verify=skip_verify)
         except Exception as exc:
             push_err(exc)
         try:
+            for signal in self.checker_signals:
+                signal('checking provider config')
             self.config_checker.run_all(skip_download=skip_download)
         except Exception as exc:
             push_err(exc)
@@ -124,6 +131,9 @@ class EIPConnection(OpenVPNConnection):
         get icon name from status object
         """
         return self.status.get_state_icon()
+
+    def get_leap_status(self):
+        return self.status.get_leap_status()
 
     #
     # private methods
@@ -230,6 +240,22 @@ class EIPConnectionStatus(object):
             11: 'unrecoverable error',
         }
         return human_status[self.current]
+
+    def get_leap_status(self):
+        # XXX improve nomenclature
+        leap_status = {
+            1: 'connecting to gateway',
+            2: 'connecting to gateway',
+            3: 'authenticating',
+            4: 'establishing network encryption',
+            5: 'establishing network encryption',
+            6: 'establishing network encryption',
+            7: 'connected',
+            8: 'reconnecting',
+            9: 'exiting',
+            11: 'unrecoverable error',
+        }
+        return leap_status[self.current]
 
     def get_state_icon(self):
         """

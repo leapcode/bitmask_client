@@ -31,6 +31,8 @@ class MainWindowMixin(object):
         # add widgets to layout
         #self.createWindowHeader()
         #mainLayout.addWidget(self.headerBox)
+
+        # created in systray
         mainLayout.addWidget(self.statusIconBox)
         if self.debugmode:
             mainLayout.addWidget(self.statusBox)
@@ -87,26 +89,26 @@ class MainWindowMixin(object):
         icon = QtGui.QIcon(APP_LOGO)
         self.setWindowIcon(icon)
 
-    def createWindowHeader(self):
-        """
-        description lines for main window
-        """
-        self.headerBox = QtGui.QGroupBox()
-        self.headerLabel = QtGui.QLabel(
-            "<font size=40>LEAP Encryption Access Project</font>")
-        self.headerLabelSub = QtGui.QLabel(
-            "<br><i>your internet encryption toolkit</i>")
-
-        pixmap = QtGui.QPixmap(APP_LOGO)
-        leap_lbl = QtGui.QLabel()
-        leap_lbl.setPixmap(pixmap)
-
-        headerLayout = QtGui.QHBoxLayout()
-        headerLayout.addWidget(leap_lbl)
-        headerLayout.addWidget(self.headerLabel)
-        headerLayout.addWidget(self.headerLabelSub)
-        headerLayout.addStretch()
-        self.headerBox.setLayout(headerLayout)
+    #def createWindowHeader(self):
+        #"""
+        #description lines for main window
+        #"""
+        #self.headerBox = QtGui.QGroupBox()
+        #self.headerLabel = QtGui.QLabel(
+            #"<font size=40>LEAP Encryption Access Project</font>")
+        #self.headerLabelSub = QtGui.QLabel(
+            #"<br><i>your internet encryption toolkit</i>")
+#
+        #pixmap = QtGui.QPixmap(APP_LOGO)
+        #leap_lbl = QtGui.QLabel()
+        #leap_lbl.setPixmap(pixmap)
+#
+        #headerLayout = QtGui.QHBoxLayout()
+        #headerLayout.addWidget(leap_lbl)
+        #headerLayout.addWidget(self.headerLabel)
+        #headerLayout.addWidget(self.headerLabelSub)
+        #headerLayout.addStretch()
+        #self.headerBox.setLayout(headerLayout)
 
     def set_statusbarMessage(self, msg):
         self.statusBar().showMessage(msg)

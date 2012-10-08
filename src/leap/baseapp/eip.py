@@ -36,6 +36,7 @@ class EIPConductorAppMixin(object):
         self.conductor = EIPConnection(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
+            checker_signals=(self.changeLeapStatus.emit, ),
             status_signals=(self.statusChange.emit, ),
             debug=self.debugmode,
             ovpn_verbosity=opts.openvpn_verb)

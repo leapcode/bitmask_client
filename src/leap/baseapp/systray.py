@@ -41,7 +41,7 @@ class StatusAwareTrayIconMixin(object):
         self.createIconGroupBox()
         self.createActions()
         self.createTrayIcon()
-        logger.debug('showing tray icon................')
+        #logger.debug('showing tray icon................')
         self.trayIcon.show()
 
         # not sure if this really belongs here, but...
@@ -75,6 +75,10 @@ class StatusAwareTrayIconMixin(object):
         statusIconLayout.addWidget(self.ConnectionWidgets['connected'])
         statusIconLayout.itemAt(1).widget().hide()
         statusIconLayout.itemAt(2).widget().hide()
+
+        self.leapConnStatus = QtGui.QLabel("<b>disconnected</b>")
+        statusIconLayout.addWidget(self.leapConnStatus)
+
         self.statusIconBox.setLayout(statusIconLayout)
 
     def createTrayIcon(self):
@@ -84,9 +88,6 @@ class StatusAwareTrayIconMixin(object):
         self.trayIconMenu = QtGui.QMenu(self)
 
         self.trayIconMenu.addAction(self.connAct)
-        #self.trayIconMenu.addAction(self.minimizeAction)
-        #self.trayIconMenu.addAction(self.maximizeAction)
-        #self.trayIconMenu.addAction(self.restoreAction)
         self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.detailsAct)
         self.trayIconMenu.addSeparator()
@@ -113,12 +114,6 @@ class StatusAwareTrayIconMixin(object):
         self.detailsAct = QtGui.QAction("&Details...",
                                         self,
                                         triggered=self.detailsWin)
-        #self.minimizeAction = QtGui.QAction("Mi&nimize", self,
-                                            #triggered=self.hide)
-        #self.maximizeAction = QtGui.QAction("Ma&ximize", self,
-                                            #triggered=self.showMaximized)
-        #self.restoreAction = QtGui.QAction("&Restore", self,
-                                           #triggered=self.showNormal)
         self.aboutAct = QtGui.QAction("&About", self,
                                       triggered=self.about)
         self.aboutQtAct = QtGui.QAction("About Q&t", self,
@@ -197,10 +192,32 @@ class StatusAwareTrayIconMixin(object):
     @QtCore.pyqtSlot(object)
     def onStatusChange(self, status):
         """
-        slot for status changes. triggers new signals for
-        updating icon, status bar, etc.
+        updates icon
         """
         icon_name = self.conductor.get_icon_name()
+
+        # XXX refactor. Use QStateMachine
+
+        if icon_name in ("disconnected", "connected"):
+            self.changeLeapStatus.emit(icon_name)
+
+        if icon_name in ("connecting"):
+            # let's see how it matches
+            leap_status_name = self.conductor.get_leap_status()
+            self.changeLeapStatus.emit(leap_status_name)
+
         self.setIcon(icon_name)
         # change connection pixmap widget
         self.setConnWidget(icon_name)
+
+    @QtCore.pyqtSlot(str)
+    def onChangeLeapConnStatus(self, newstatus):
+        """
+        slot for LEAP status changes
+        not to be confused with onStatusChange.
+        this only updates the non-debug LEAP Status line
+        next to the connection icon.
+        """
+        # XXX move bold to style sheet
+        self.leapConnStatus.setText(
+            "<b>%s</b>" % newstatus)
