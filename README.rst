@@ -29,11 +29,11 @@ Debian systems
 
 Under a debian-based system, you can run::
 
-  apt-get install python-qt4 python-gnutls python-keyring python-crypto
+  apt-get install openvpn python-qt4 python-gnutls python-keyring python-crypto
   
 For testing:
 
-  python-nose python-mock
+  python-nose python-mock python-coverage
 
 For building the package you will need also::
 
@@ -52,18 +52,17 @@ Use pip (preferrable inside a virtualenv) to install all the required python pac
 
 Install PyQt
 ------------
-If you are using pip as your python packaging tool, pip install PyQt will fail because PyQt4 does not use the standard setup.py mechanism.
+If you attempt to install PyQt using pip, it will fail because PyQt4 does not use the standard setup.py mechanism.
 
-Instead, they use configure.py which generates a Makefile::
+You can:
+* run pkg/postmkvenv.sh after creating your virtualenv. It will symlink to your global PyQt installation (recommended).
+* install PyQt globally and make a virtualenv with --site-packages
+* run pkg/install_pyqt.sh inside your virtualenv (with --no-site-packages)
+
+When installing from the tarball, it uses configure.py which generates a Makefile::
 
   python configure.py
   make && make install
-
-You can:
-
-* recommended run pkg/postmkvenv.sh after creating your virtualenv. It will symlink to your global PyQt installation.
-* install PyQt globally and make a virtualenv with --site-packages
-* run pkg/install_pyqt.sh inside your virtualenv (with --no-site-packages)
 
 
 Install leap-client
@@ -131,7 +130,7 @@ it's recommended to run the app like this during development cycle::
 Install testing dependencies
 ----------------------------
 
-have a look at ``setup/test-requires``
+have a look at ``pkg/test-requirements.pip``
 The ./run_tests.sh command should install all of them in your virtualenv for you.
 
 Running tests
@@ -143,7 +142,7 @@ If you want to run specific tests, pass the (sub)module to nose::
   nosetests leap.util
 
 or::
-  nosetests leap.util.test_leap_argparse
+  nosetests leap.util.tests.test_leap_argparse
 
 Hint: colorized output
 ----------------------
