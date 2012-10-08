@@ -107,6 +107,9 @@ Development
 Hack
 --------------
 
+The LEAP client git repository is available at:
+git://leap.se/leap_client 
+
 Some steps to be run when setting a development environment for the first time.
 
 # recommended: enable a **virtualenv** to isolate your libraries::
