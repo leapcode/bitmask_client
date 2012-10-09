@@ -54,7 +54,6 @@ class EIPConnection(OpenVPNConnection):
         run all eip checks previous to attempting a connection
         """
         logger.debug('running conductor checks')
-        print 'conductor checks!'
 
         def push_err(exc):
             # keep the original traceback!

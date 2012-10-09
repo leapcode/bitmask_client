@@ -136,7 +136,8 @@ class MainWindowMixin(object):
         """
         # save geometry for restoring
         settings = QtCore.QSettings()
-        settings.setValue("Geometry", self.saveGeometry())
+        geom_key = "DebugGeometry" if self.debugmode else "Geometry"
+        settings.setValue(geom_key, self.saveGeometry())
 
         # TODO:make sure to shutdown all child process / threads
         # in conductor

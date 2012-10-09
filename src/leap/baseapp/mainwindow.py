@@ -50,8 +50,9 @@ class LeapWindow(QtGui.QMainWindow,
         MainWindowMixin.__init__(self)
 
         settings = QtCore.QSettings()
-        # XXX geom_key = "DebugGeometry" if self.debugmode else "Geometry"
-        #geom = settings.value(geom_key)
+
+        geom_key = "DebugGeometry" if self.debugmode else "Geometry"
+        geom = settings.value(geom_key)
 
         geom = settings.value("Geometry")
         if geom:
