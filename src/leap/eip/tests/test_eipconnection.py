@@ -89,12 +89,19 @@ class EIPConductorTest(BaseLeapTest):
     # config checks
 
     def test_config_checked_called(self):
+        # XXX this single test is taking half of the time
+        # needed to run tests. (roughly 3 secs for this only)
+        # We should modularize and inject Mocks on more places.
+
         del(self.con)
         config_checker = Mock()
         self.con = MockedEIPConnection(config_checker=config_checker)
         self.assertTrue(config_checker.called)
         self.con.run_checks()
-        self.con.config_checker.run_all.assert_called_with(skip_download=False)
+        self.con.config_checker.run_all.assert_called_with(
+            skip_download=False)
+
+        # XXX test for cert_checker also
 
     # connect/disconnect calls
 

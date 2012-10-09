@@ -54,6 +54,7 @@ class EIPConnection(OpenVPNConnection):
         run all eip checks previous to attempting a connection
         """
         logger.debug('running conductor checks')
+        print 'conductor checks!'
 
         def push_err(exc):
             # keep the original traceback!
@@ -62,14 +63,16 @@ class EIPConnection(OpenVPNConnection):
 
         try:
             # network (1)
-            for signal in self.checker_signals:
-                signal('checking encryption keys')
+            if self.checker_signals:
+                for signal in self.checker_signals:
+                    signal('checking encryption keys')
             self.provider_cert_checker.run_all(skip_verify=skip_verify)
         except Exception as exc:
             push_err(exc)
         try:
-            for signal in self.checker_signals:
-                signal('checking provider config')
+            if self.checker_signals:
+                for signal in self.checker_signals:
+                    signal('checking provider config')
             self.config_checker.run_all(skip_download=skip_download)
         except Exception as exc:
             push_err(exc)
