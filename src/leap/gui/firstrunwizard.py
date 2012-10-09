@@ -370,6 +370,15 @@ class RegisterUserPage(QtGui.QWizardPage):
         """
         self.validationMsg.setText("Error connecting to provider (timeout)")
 
+    def set_status_connerror(self):
+        """
+        set validation msg to
+        connection refused
+        """
+        self.validationMsg.setText(
+            "Error connecting to provider "
+            "(connection error)")
+
     def set_status_unknown_error(self):
         """
         set validation msg to
@@ -413,6 +422,7 @@ class RegisterUserPage(QtGui.QWizardPage):
             schema="http",
             provider="springbok",
 
+            # debug -----
             #provider="localhost",
             #register_path="timeout",
             #port=8000
@@ -421,6 +431,11 @@ class RegisterUserPage(QtGui.QWizardPage):
             ok, req = signup.register_user(username, password)
         except socket.timeout:
             self.set_status_timeout()
+            return False
+
+        except requests.exceptions.ConnectionError as exc:
+            logger.error(exc)
+            self.set_status_connerror()
             return False
 
         if ok:
