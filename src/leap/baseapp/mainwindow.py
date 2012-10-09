@@ -26,10 +26,13 @@ class LeapWindow(QtGui.QMainWindow,
     that gets tricky otherwise.
     """
 
+    # signals
+
     newLogLine = QtCore.pyqtSignal([str])
     mainappReady = QtCore.pyqtSignal([])
     initReady = QtCore.pyqtSignal([])
     networkError = QtCore.pyqtSignal([object])
+    triggerEIPError = QtCore.pyqtSignal([object])
 
     # XXX fix nomenclature here
     # this is eip status change got from vpn management
@@ -71,6 +74,8 @@ class LeapWindow(QtGui.QMainWindow,
             lambda: self.onTimerTick())
         self.networkError.connect(
             lambda exc: self.onNetworkError(exc))
+        self.triggerEIPError.connect(
+            lambda exc: self.onEIPError(exc))
 
         if self.debugmode:
             self.startStopButton.clicked.connect(

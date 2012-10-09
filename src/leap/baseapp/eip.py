@@ -76,7 +76,7 @@ class EIPConductorAppMixin(object):
             logger.error('%s: %s', error.__class__.__name__, error.message)
 
             if issubclass(error.__class__, eip_exceptions.EIPClientError):
-                self.handle_eip_error(error)
+                self.triggerEIPError.emit(error)
 
             else:
                 # deprecated form of raising exception.
@@ -85,32 +85,8 @@ class EIPConductorAppMixin(object):
             if error.failfirst is True:
                 break
 
-        #############################################
-        # old errors to check
-        # write test for them and them remove
-        # their corpses from here.
-
-        #if self.conductor.missing_vpn_keyfile is True:
-            #dialog = ErrorDialog()
-            #dialog.criticalMessage(
-                #'Could not find the vpn keys file',
-                #'error')
-
-        #if self.conductor.bad_keyfile_perms is True:
-            #dialog = ErrorDialog()
-            #dialog.criticalMessage(
-                #'The vpn keys file has bad permissions',
-                #'error')
-
-        # deprecated. configchecker takes care of that.
-        #if self.conductor.missing_definition is True:
-            #dialog = ErrorDialog()
-            #dialog.criticalMessage(
-                #'The default '
-                #'definition.json file cannot be found',
-                #'error')
-
-    def handle_eip_error(self, error):
+    @QtCore.pyqtSlot(object)
+    def onEIPError(self, error):
         """
         check severity and launches
         dialogs informing user about the errors.
@@ -211,7 +187,7 @@ class EIPConductorAppMixin(object):
                 self.conductor.connect()
 
             except eip_exceptions.EIPNoCommandError as exc:
-                self.handle_eip_error(exc)
+                self.triggerEIPError.emit(exc)
 
             except Exception as err:
                 # raise generic exception (Bad Thing Happened?)
