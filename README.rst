@@ -14,6 +14,7 @@ Leap client depends on these libraries:
 * python 2.6 or 2.7
 * qt4 libraries (see installing Qt section below)
 * libgnutls
+* openvpn
 
 Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requirements.pip``
 
@@ -50,25 +51,10 @@ Use pip (preferrable inside a virtualenv) to install all the required python pac
   pip install -r pkg/requirements.pip
 
 
-Install PyQt
-------------
-If you attempt to install PyQt using pip, it will fail because PyQt4 does not use the standard setup.py mechanism.
-
-You can:
-* run pkg/postmkvenv.sh after creating your virtualenv. It will symlink to your global PyQt installation (recommended).
-* install PyQt globally and make a virtualenv with --site-packages
-* run pkg/install_pyqt.sh inside your virtualenv (with --no-site-packages)
-
-When installing from the tarball, it uses configure.py which generates a Makefile::
-
-  python configure.py
-  make && make install
-
-
 Install leap-client
 -------------------
 
-After getting the sources and installing all the dependencies, proceed to install leap-client package:
+After getting the source and installing all the dependencies, proceed to install ``leap-client`` package:
 
 # need to run this if you are installing from the git source tree
 # not needed if installing from a tarball::
@@ -104,13 +90,28 @@ To see all the available command line options::
 Development
 ==============
 
+Troubleshooting PyQt install inside a virtualenv
+------------------------------------------------
+If you attempt to install PyQt inside a virtualenv using pip, it will fail because PyQt4 does not use the standard setup.py mechanism.
+
+As a workaround, you can:
+
+  * run pkg/postmkvenv.sh after creating your virtualenv. It will symlink to your global PyQt installation _(recommended)_.
+  * install PyQt globally and make a virtualenv with --site-packages
+
+Or, if you prefer, you can download the official PyQt tarball and execute `configure.py` in the root folder of their distribution, which generates a Makefile::
+
+  python configure.py
+  make && make install
+
+
 Hack
 --------------
 
 The LEAP client git repository is available at:
 git://leap.se/leap_client 
 
-Some steps to be run when setting a development environment for the first time.
+Some steps need to be run when setting a development environment for the first time.
 
 # recommended: enable a **virtualenv** to isolate your libraries::
 
