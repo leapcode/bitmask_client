@@ -100,6 +100,10 @@ class StatusAwareTrayIconMixin(object):
         self.setIcon('disconnected')
         self.trayIcon.setContextMenu(self.trayIconMenu)
 
+        #self.trayIconMenu.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        #self.trayIconMenu.customContextMenuRequested.connect(
+            #self.on_context_menu)
+
     def bad(self):
         logger.error('this should not be called')
 
@@ -178,12 +182,14 @@ class StatusAwareTrayIconMixin(object):
         handles left click, left double click
         showing the trayicon menu
         """
-        #XXX there's a bug here!
-        #menu shows on (0,0) corner first time,
-        #until double clicked at least once.
         if reason in (QtGui.QSystemTrayIcon.Trigger,
                       QtGui.QSystemTrayIcon.DoubleClick):
-            self.trayIconMenu.show()
+            context_menu = self.trayIcon.contextMenu()
+            # for some reason, context_menu.show()
+            # is failing in a way beyond my understanding.
+            # (not working the first time it's clicked).
+            # this works however.
+            context_menu.exec_(self.trayIcon.geometry().center())
 
     @QtCore.pyqtSlot()
     def onTimerTick(self):

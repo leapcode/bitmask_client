@@ -36,7 +36,7 @@ def main():
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    logger.debug(opts)
+    #logger.debug(opts)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('LEAP client version %s', VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
