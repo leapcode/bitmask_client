@@ -55,10 +55,6 @@ class EIPConductorAppMixin(object):
             skip_verify=self.skip_verify)
         self.error_check()
 
-        if self.debugmode:
-            self.startStopButton.clicked.connect(
-                lambda: self.start_or_stopVPN())
-
         # XXX should send ready signal instead
         if self.conductor.autostart:
             self.start_or_stopVPN()

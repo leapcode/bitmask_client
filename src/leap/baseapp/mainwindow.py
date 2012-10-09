@@ -50,6 +50,9 @@ class LeapWindow(QtGui.QMainWindow,
         MainWindowMixin.__init__(self)
 
         settings = QtCore.QSettings()
+        # XXX geom_key = "DebugGeometry" if self.debugmode else "Geometry"
+        #geom = settings.value(geom_key)
+
         geom = settings.value("Geometry")
         if geom:
             self.restoreGeometry(geom)
@@ -67,6 +70,10 @@ class LeapWindow(QtGui.QMainWindow,
             lambda: self.onTimerTick())
         self.networkError.connect(
             lambda exc: self.onNetworkError(exc))
+
+        if self.debugmode:
+            self.startStopButton.clicked.connect(
+                lambda: self.start_or_stopVPN())
 
         # status change.
         # TODO unify
