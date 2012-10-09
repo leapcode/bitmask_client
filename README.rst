@@ -30,8 +30,8 @@ Debian systems
 
 Under a debian-based system, you can run::
 
-  apt-get install openvpn python-qt4 python-gnutls python-keyring python-crypto
-  
+  apt-get install openvpn python-qt4 python-keyring python-crypto
+
 For testing:
 
   python-nose python-mock python-coverage
@@ -47,7 +47,7 @@ Install python dependencies with pip
 -------------------------------------
 Use pip (preferrable inside a virtualenv) to install all the required python packages::
 
-  apt-get install python-pip
+  apt-get install python-pip python-dev libgnutls-dev
   pip install -r pkg/requirements.pip
 
 
