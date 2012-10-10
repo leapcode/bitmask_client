@@ -223,8 +223,8 @@ def get_config_dir():
 
     # XXX DEBUG for #744
     #logger.debug('expanduser? --- %s', os.path.expanduser('~'))
-    logger.debug('$HOME? --- %s', os.environ.get('HOME', None))
-    logger.debug('user? --- %s', os.getlogin())
+    #logger.debug('$HOME? --- %s', os.environ.get('HOME', None))
+    #logger.debug('user? --- %s', os.getlogin())
 
     try:
         return os.path.expanduser(
