@@ -220,10 +220,26 @@ def get_config_dir():
     # check for $XDG_CONFIG_HOME var?
     # get a more sensible path for win/mac
     # kclair: opinion? ^^
-    return os.path.expanduser(
-        os.path.join('~',
-                     '.config',
-                     'leap'))
+
+    # XXX DEBUG for #744
+    #logger.debug('expanduser? --- %s', os.path.expanduser('~'))
+    logger.debug('$HOME? --- %s', os.environ.get('HOME', None))
+    logger.debug('user? --- %s', os.getlogin())
+
+    try:
+        return os.path.expanduser(
+            os.path.join('~',
+                         '.config',
+                         'leap'))
+    except RuntimeError:
+        # We're getting a recursion error
+        # that I suspect is caused by some bug on
+        # expanduser...
+        return os.path.join(
+            'home',
+            '%s' % os.getlogin(),
+            '.config',
+            'leap')
 
 
 def get_config_file(filename, folder=None):
