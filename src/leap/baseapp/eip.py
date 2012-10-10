@@ -55,9 +55,7 @@ class EIPConductorAppMixin(object):
             skip_verify=self.skip_verify)
         self.error_check()
 
-        # XXX should send ready signal instead
-        if self.conductor.autostart:
-            self.start_or_stopVPN()
+        self.start_eipconnection.emit()
 
     def error_check(self):
         """

@@ -84,7 +84,7 @@ class EIPConnection(OpenVPNConnection):
         """
         entry point for connection process
         """
-        self.forget_errors()
+        #self.forget_errors()
         self._try_connection()
 
     def disconnect(self):
@@ -120,7 +120,7 @@ class EIPConnection(OpenVPNConnection):
             logger.warning('connection refused')
             return
         if not state:
-            logger.debug('no state')
+            #logger.debug('no state')
             return
         (ts, status_step,
          ok, ip, remote) = state

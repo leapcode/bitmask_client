@@ -194,10 +194,9 @@ to be triggered for each one of them.
     # base class to test independently?)
     #
 
-    def forget_errors(self):
-        #print('forgetting errors')
-        logger.debug('forgetting errors')
-        self.with_errors = False
+    #def forget_errors(self):
+        #logger.debug('forgetting errors')
+        #self.with_errors = False
 
     def connect_to_management(self):
         """Connect to openvpn management interface"""
@@ -216,7 +215,6 @@ to be triggered for each one of them.
         #self.tn.read_until('SUCCESS:', 2)
 
         self._seek_to_eof()
-        #self.forget_errors()
         return True
 
     def _seek_to_eof(self):
