@@ -167,7 +167,7 @@ class FirstRunWizard(QtGui.QWizard):
         """
         provider = self.get_provider()
         username = self.field('userName')
-        password = self.field('userPassword')
+        #password = self.field('userPassword')
         remember_pass = self.field('rememberPassword')
 
         logger.debug('chosen provider: %s', provider)
@@ -185,7 +185,10 @@ class FirstRunWizard(QtGui.QWizard):
         seed = self.get_random_str(10)
         settings.setValue("%s_seed" % provider, seed)
 
-        leapkeyring.leap_set_password(username, password, seed=seed)
+        # Commenting out for 0.2.0 release
+        # since we did not fix #744 on time.
+
+        #leapkeyring.leap_set_password(username, password, seed=seed)
 
         logger.debug('First Run Wizard Done.')
         cb = self.success_cb

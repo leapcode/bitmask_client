@@ -1,6 +1,6 @@
-import os
-
 import keyring
+
+from leap.base.config import get_config_file
 
 #############
 # Disclaimer
@@ -20,7 +20,11 @@ import keyring
 
 class LeapCryptedFileKeyring(keyring.backend.CryptedFileKeyring):
 
-    filename = os.path.expanduser("~/.config/leap/.secrets")
+    filename = ".secrets"
+
+    @property
+    def file_path(self):
+        return get_config_file(self.filename)
 
     def __init__(self, seed=None):
         self.seed = seed

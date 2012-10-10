@@ -220,6 +220,7 @@ def get_config_dir():
     # check for $XDG_CONFIG_HOME var?
     # get a more sensible path for win/mac
     # kclair: opinion? ^^
+
     return os.path.expanduser(
         os.path.join('~',
                      '.config',
