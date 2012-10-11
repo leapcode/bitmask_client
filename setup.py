@@ -171,19 +171,34 @@ class cmd_post_install(_install_data):
     # We could use a environmental flag.
     def run(self):
         _install_data.run(self)
-        # is this the real life?
-        # is this just fantasy?
+        # get environ flag to skip copy
+        skip_copy_val = os.environ.get('LEAP_SKIP_COPY_POLKIT', '0')
+        try:
+            skip_copy = bool(int(skip_copy_val))
+        except ValueError:
+            skip_copy = False
+            print("WARNING! LEAP_SKIP_COPY_POLKIT must be '0' or '1'")
+        if skip_copy is True:
+            print("Skipping install of policykit file per environ var.")
+            return
+
+        print('about to check for virtualenv')
+        # is this the real life? is this just fantasy?
         if not hasattr(sys, 'real_prefix'):
             # looks like we are NOT
             # running inside a virtualenv...
             # let's install data.
-            # XXX should add platform switch
             import shutil
             print("Now installing policykit file...")
-            shutil.copyfile(
-                "pkg/linux/polkit/net.openvpn.gui.leap.policy",
-                "/usr/share/polkit-1/actions"
-                "/net.openvpn.gui.leap.policy")
+            try:
+                shutil.copyfile(
+                    "pkg/linux/polkit/net.openvpn.gui.leap.policy",
+                    "/usr/share/polkit-1/actions"
+                    "/net.openvpn.gui.leap.policy")
+            except:
+                print("WARNING! Could not copy data.")
+        else:
+            print('inside virtualenv. skipping policykit file install')
 
 cmdclass = versioneer.get_cmdclass()
 cmdclass["branding"] = DoBranding
