@@ -30,25 +30,23 @@ Debian systems
 
 Under a debian-based system, you can run::
 
-  apt-get install openvpn python-qt4 python-keyring python-crypto
+  # apt-get install openvpn python-qt4 python-keyring python-crypto
 
 For testing:
 
   python-nose python-mock python-coverage
 
-For building the package you will need also::
+For _building_ the package you will need to install also::
 
   pyqt4-dev-tools libgnutls-dev python-setuptools python-all-dev
 
-# **note**: Some libs like setuptools are needed as build-deps only.                  
-# TODO we probably should separate what's needed as a global lib dependency, and what's a dependency that still can be retrieved using pip.
 
 Install python dependencies with pip
 -------------------------------------
 Use pip (preferrable inside a virtualenv) to install all the required python packages::
 
-  apt-get install python-pip python-dev libgnutls-dev
-  pip install -r pkg/requirements.pip
+  # apt-get install python-pip python-dev libgnutls-dev
+  % pip install -r pkg/requirements.pip
 
 
 Install leap-client
@@ -160,7 +158,7 @@ Tox
 ---
 For running testsuite against all the supported python versions (currently 2.6 and 2.7), run::
 
-  tox -v
+  % tox -v
 
 
 Compiling resource/ui files
@@ -168,7 +166,7 @@ Compiling resource/ui files
 
 You should refresh resource/ui files every time you change an image or a resource/ui (.ui / .qc). From the root folder::
 
-  make ui
-  make resources
+  % make ui
+  % make resources
 
 As there are some tests to guard against unwanted resource updates, you will have to update the resource hash in those failing tests.
