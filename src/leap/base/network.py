@@ -3,6 +3,7 @@ from __future__ import (print_function)
 import logging
 import threading
 
+from leap.eip.config import get_eip_gateway
 from leap.base.checks import LeapNetworkChecker
 from leap.base.constants import ROUTE_CHECK_INTERVAL
 from leap.base.exceptions import TunnelNotDefaultRouteError
@@ -29,7 +30,8 @@ class NetworkCheckerThread(object):
         # XXX get provider_gateway and pass it to checker
         # see in eip.config for function
         # #718
-        self.checker = LeapNetworkChecker()
+        self.checker = LeapNetworkChecker(
+                        provider_gw = get_eip_gateway())
 
     def start(self):
         self.process_handle = self._launch_recurrent_network_checks(
@@ -55,6 +57,8 @@ class NetworkCheckerThread(object):
                 break
             except TunnelNotDefaultRouteError:
                 # XXX ??? why do we sleep here???
+                # aa: If the openvpn isn't up and running yet,
+                # let's give it a moment to breath.
                 sleep(1)
 
         fail_observer_dict = dict(((
