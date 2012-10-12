@@ -174,16 +174,21 @@ to be triggered for each one of them.
 
     def cleanup(self):
         """
-        terminates child subprocess
+        terminates openvpn child subprocess
         """
-        # XXX we should send a quit process using management
-        # interface.
         if self.subp:
-            try:
-                self.subp.terminate()
-            except OSError:
-                logger.error('cannot terminate subprocess!'
+            self._stop()
+            RETCODE = self.subp.wait()
+            if RETCODE:
+                logger.error('cannot terminate subprocess! '
                              '(maybe openvpn still running?)')
+
+    def _stop(self):
+        """
+        stop openvpn process
+        """
+        logger.debug("disconnecting...")
+        self._send_command("signal SIGTERM\n")
 
     #
     # management methods
@@ -221,9 +226,16 @@ to be triggered for each one of them.
         """
         Read as much as available. Position seek pointer to end of stream
         """
-        b = self.tn.read_eager()
-        while b:
+        try:
             b = self.tn.read_eager()
+        except EOFError:
+            logger.debug("Could not read from socket. Assuming it died.")
+            return
+        while b:
+            try:
+                b = self.tn.read_eager()
+            except EOFError:
+                logger.debug("Could not read from socket. Assuming it died.")
 
     def connected(self):
         """
