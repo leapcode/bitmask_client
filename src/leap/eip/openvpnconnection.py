@@ -168,7 +168,9 @@ to be triggered for each one of them.
         for process in psutil.get_process_list():
             if process.name == "openvpn":
                 logger.debug('an openvpn instance is already running.')
-                raise eip_exceptions.OpenVPNAlreadyRunning
+                logger.debug('attempting to stop openvpn instance.')
+                if not self._stop():
+                    raise eip_exceptions.OpenVPNAlreadyRunning
 
         logger.debug('no openvpn instance found.')
 
@@ -190,7 +192,34 @@ to be triggered for each one of them.
         logger.debug("disconnecting...")
         self._send_command("signal SIGTERM\n")
 
-    #
+        if self.subp:
+            return True
+
+        #shutting openvpn failured
+        #try patching in old openvpn host and trying again
+        process = self._get_openvpn_process()
+        if process:
+            self.host = \
+                process.cmdline[process.cmdline.index("--management") + 1]
+            self._send_command("signal SIGTERM\n")
+
+            #make sure the process was terminated
+            process = self._get_openvpn_process()
+            if not process:
+                logger.debug("Exisiting OpenVPN Process Terminated")
+                return True
+            else:
+                logger.error("Unable to terminate exisiting OpenVPN Process.")
+                return False
+
+        return True
+
+    def _get_openvpn_process(self):
+        for process in psutil.get_process_list():
+            if process.name == "openvpn":
+                return process
+        return None
+
     # management methods
     #
     # XXX REVIEW-ME
