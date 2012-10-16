@@ -10,6 +10,7 @@ sip.setapi('QVariant', 2)
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+from leap.base.auth import LeapSRPRegister
 from leap.crypto import leapkeyring
 from leap.gui import mainwindow_rc
 
@@ -26,94 +27,6 @@ logger.setLevel(logging.DEBUG)
 
 APP_LOGO = ':/images/leap-color-small.png'
 
-# registration ######################
-# move to base/
-import binascii
-
-import requests
-import srp
-
-from leap.base import constants as baseconstants
-
-SIGNUP_TIMEOUT = getattr(baseconstants, 'SIGNUP_TIMEOUT', 5)
-
-
-class LeapSRPRegister(object):
-
-    def __init__(self,
-                 schema="https",
-                 provider=None,
-                 port=None,
-                 register_path="1/users.json",
-                 method="POST",
-                 fetcher=requests,
-                 srp=srp,
-                 hashfun=srp.SHA256,
-                 ng_constant=srp.NG_1024):
-
-        self.schema = schema
-        self.provider = provider
-        self.port = port
-        self.register_path = register_path
-        self.method = method
-        self.fetcher = fetcher
-        self.srp = srp
-        self.HASHFUN = hashfun
-        self.NG = ng_constant
-
-        self.init_session()
-
-    def init_session(self):
-        self.session = self.fetcher.session()
-
-    def get_registration_uri(self):
-        # XXX assert is https!
-        # use urlparse
-        if self.port:
-            uri = "%s://%s:%s/%s" % (
-                self.schema,
-                self.provider,
-                self.port,
-                self.register_path)
-        else:
-            uri = "%s://%s/%s" % (
-                self.schema,
-                self.provider,
-                self.register_path)
-
-        return uri
-
-    def register_user(self, username, password, keep=False):
-        """
-        @rtype: tuple
-        @rparam: (ok, request)
-        """
-        salt, vkey = self.srp.create_salted_verification_key(
-            username,
-            password,
-            self.HASHFUN,
-            self.NG)
-
-        user_data = {
-            'user[login]': username,
-            'user[password_verifier]': binascii.hexlify(vkey),
-            'user[password_salt]': binascii.hexlify(salt)}
-
-        uri = self.get_registration_uri()
-        logger.debug('post to uri: %s' % uri)
-
-        # XXX get self.method
-        req = self.session.post(
-            uri, data=user_data,
-            timeout=SIGNUP_TIMEOUT)
-        logger.debug(req)
-        logger.debug('user_data: %s', user_data)
-        #logger.debug('response: %s', req.text)
-        # we catch it in the form
-        #req.raise_for_status()
-        return (req.ok, req)
-
-######################################
 
 ErrorLabelStyleSheet = """
 QLabel { color: red;
@@ -125,14 +38,15 @@ class FirstRunWizard(QtGui.QWizard):
 
     def __init__(
             self, parent=None, providers=None,
-            success_cb=None, is_provider_setup=False):
+            success_cb=None, is_provider_setup=False,
+            is_previously_registered=False):
         super(FirstRunWizard, self).__init__(
             parent,
             QtCore.Qt.WindowStaysOnTopHint)
 
         # XXX hardcoded for tests
-        if not providers:
-            providers = ('springbok',)
+        #if not providers:
+            #providers = ('springbok',)
         self.providers = providers
 
         # success callback
@@ -140,6 +54,10 @@ class FirstRunWizard(QtGui.QWizard):
 
         # is provider setup?
         self.is_provider_setup = is_provider_setup
+
+        # previously registered
+        # if True, jumps to LogIn page.
+        self.is_previously_registered = is_previously_registered
 
         # FIXME remove kwargs, we can access
         # wizard as self.wizard()
@@ -182,6 +100,8 @@ class FirstRunWizard(QtGui.QWizard):
         @type pages_dict: dict
         """
         for name, (page, page_args) in pages_dict.items():
+            # XXX check for is_previously registered
+            # and skip adding the signup branch if so
             self.addPage(page(**page_args))
         self.pages_dict = pages_dict
 
@@ -194,21 +114,6 @@ class FirstRunWizard(QtGui.QWizard):
         @rtype: int
         """
         return self.pages_dict.keys().index(page_name)
-
-    #def get_page(self, page_name):
-        #"""
-        #returns a wizard page doing a lookup for
-        #the page_name in the pages dictionary
-        #@param page_name: the page name to lookup
-        #@type page_name: str
-        #"""
-        #logger.debug('getting page %s' % page_name)
-        #page_tuple = self.pages_dict.get(page_name, None)
-        #if not page_tuple:
-            #return None
-        #wizard_page, args = page_tuple
-        #logger.debug('wizard page %s', wizard_page)
-        #return wizard_page
 
     def setWindowFlags(self, flags):
         logger.debug('setting window flags')
@@ -257,7 +162,7 @@ class FirstRunWizard(QtGui.QWizard):
         if cb and callable(cb):
             self.success_cb()
 
-    def get_provider(self):
+    def get_provider_by_index(self):
         provider = self.field('provider_index')
         return self.providers[provider]
 
@@ -279,6 +184,10 @@ class IntroPage(QtGui.QWizardPage):
         #self.setPixmap(
             #QtGui.QWizard.WatermarkPixmap,
             #QtGui.QPixmap(':/images/watermark1.png'))
+
+        self.setPixmap(
+            QtGui.QWizard.LogoPixmap,
+            QtGui.QPixmap(APP_LOGO))
 
         label = QtGui.QLabel(
             "Now we will guide you through "
@@ -327,7 +236,7 @@ class SelectProviderPage(QtGui.QWizardPage):
 
         self.setTitle("Select Provider")
         self.setSubTitle(
-            "Please select which provider do you want "
+            "Please enter the domain of the provider you want "
             "to use for your connection."
         )
         self.setPixmap(
@@ -335,27 +244,47 @@ class SelectProviderPage(QtGui.QWizardPage):
             QtGui.QPixmap(APP_LOGO))
 
         providerNameLabel = QtGui.QLabel("&Provider:")
+        providerNameEdit = QtGui.QLineEdit()
+        providerNameEdit.cursorPositionChanged.connect(
+            self.reset_validation_status)
+        providerNameLabel.setBuddy(providerNameEdit)
 
-        providercombo = QtGui.QComboBox()
-        if providers:
-            for provider in providers:
-                providercombo.addItem(provider)
-        providerNameSelect = providercombo
+        # add regex validator
+        providerDomainRe = QtCore.QRegExp(r"^[a-z\d_-.]+$")
+        providerNameEdit.setValidator(
+            QtGui.QRegExpValidator(providerDomainRe, self))
+        self.providerNameEdit = providerNameEdit
 
-        providerNameLabel.setBuddy(providerNameSelect)
+        # Eventually we will seed a list of
+        # well known providers here.
 
-        self.registerField('provider_index', providerNameSelect)
+        #providercombo = QtGui.QComboBox()
+        #if providers:
+            #for provider in providers:
+                #providercombo.addItem(provider)
+        #providerNameSelect = providercombo
+
+        self.registerField('provider_domain*', self.providerNameEdit)
+        #self.registerField('provider_name_index', providerNameSelect)
+
+        validationMsg = QtGui.QLabel("")
+        validationMsg.setStyleSheet(ErrorLabelStyleSheet)
+
+        self.validationMsg = validationMsg
 
         layout = QtGui.QGridLayout()
-        layout.addWidget(providerNameLabel, 0, 0)
-        layout.addWidget(providerNameSelect, 0, 1)
+        layout.addWidget(validationMsg, 0, 0)
+        layout.addWidget(providerNameLabel, 0, 1)
+        layout.addWidget(providerNameEdit, 0, 2)
         self.setLayout(layout)
 
+    def reset_validation_status(self):
+        """
+        empty the validation msg
+        """
+        self.validationMsg.setText('')
+
     def validatePage(self):
-        # XXX just DEBUGGING ..>!
-        wizard = self.wizard()
-        if bool(wizard):
-            logger.debug('current: %s', wizard.currentPage())
         return True
 
     def nextId(self):
@@ -372,6 +301,10 @@ class ProviderInfoPage(QtGui.QWizardPage):
         self.setTitle("Provider Info")
         self.setSubTitle("Available information about chosen provider.")
 
+        self.setPixmap(
+            QtGui.QWizard.LogoPixmap,
+            QtGui.QPixmap(APP_LOGO))
+
     def nextId(self):
         wizard = self.wizard()
         if not wizard:
@@ -385,6 +318,10 @@ class ProviderSetupPage(QtGui.QWizardPage):
 
         self.setTitle("Provider Setup")
         self.setSubTitle("Setting up provider.")
+
+        self.setPixmap(
+            QtGui.QWizard.LogoPixmap,
+            QtGui.QPixmap(APP_LOGO))
 
     def nextId(self):
         wizard = self.wizard()
@@ -457,7 +394,7 @@ class UserFormMixIn(object):
         set validation msg to
         unknown error
         """
-        self.validationMsg.setText("Error during signup")
+        self.validationMsg.setText("Error during sign up")
 
 
 class LogInPage(QtGui.QWizardPage, UserFormMixIn):
@@ -466,6 +403,10 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
 
         self.setTitle("Log In")
         self.setSubTitle("Log in with your credentials.")
+
+        self.setPixmap(
+            QtGui.QWizard.LogoPixmap,
+            QtGui.QPixmap(APP_LOGO))
 
         userNameLabel = QtGui.QLabel("User &name:")
         userNameLineEdit = QtGui.QLineEdit()
@@ -527,13 +468,8 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         self.setSigningUpStatus.connect(
             self.set_status_validating)
 
-        wizard = self.wizard()
-        provider = wizard.get_provider() if wizard else None
+        self.setTitle("Sign Up")
 
-        self.setTitle("User registration")
-        self.setSubTitle(
-            "Register a new user with provider %s." %
-            provider)
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
@@ -589,6 +525,10 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         """
         inits wizard page
         """
+        provider = self.field('provider_domain')
+        self.setSubTitle(
+            "Register a new user with provider %s." %
+            provider)
         self.validationMsg.setText('')
 
     def validatePage(self):
@@ -679,12 +619,20 @@ class ConnectingPage(QtGui.QWizardPage):
         self.setTitle("Connecting")
         self.setSubTitle('Connecting to provider.')
 
+        self.setPixmap(
+            QtGui.QWizard.LogoPixmap,
+            QtGui.QPixmap(APP_LOGO))
+
 
 class LastPage(QtGui.QWizardPage):
     def __init__(self, parent=None):
         super(LastPage, self).__init__(parent)
 
         self.setTitle("Ready to go!")
+
+        self.setPixmap(
+            QtGui.QWizard.LogoPixmap,
+            QtGui.QPixmap(APP_LOGO))
 
         #self.setPixmap(
             #QtGui.QWizard.WatermarkPixmap,
@@ -715,6 +663,6 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     app = QtGui.QApplication(sys.argv)
-    wizard = FirstRunWizard()
+    wizard = FirstRunWizard(providers=('springbok',))
     wizard.show()
     sys.exit(app.exec_())
