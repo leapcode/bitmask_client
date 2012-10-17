@@ -16,13 +16,9 @@ class LeapNetworkChecker(object):
     """
     all network related checks
     """
-    # #718
-    # XXX get provider gateway as a parameter
-    # for constructor.
-    # def __init__(self, *args, **kwargs):
-    # ...
-    #   provider_gw = kwargs.pop('provider_gw', None)
-    #   self.provider_gateway = provider_gw
+    def __init__(self, *args, **kwargs):
+        provider_gw = kwargs.pop('provider_gw', None)
+        self.provider_gateway = provider_gw
 
     def run_all(self, checker=None):
         if not checker:
@@ -34,15 +30,8 @@ class LeapNetworkChecker(object):
         checker.check_internet_connection()
         checker.is_internet_up()
 
-        # XXX We are pinging the default gateway for our connection right?
-        # kali: 2012-10-05 20:59 -- I think we should get
-        # also the default gateway and ping it instead.
-        checker.ping_gateway()
-
-        # something like: ?
-        # see __init__ above
-        # if self.provider_gateway:
-        #     checker.ping_gateway(self.provider_gateway)
+        if self.provider_gateway:
+            checker.ping_gateway(self.provider_gateway)
 
     def check_internet_connection(self):
         try:
@@ -65,7 +54,7 @@ class LeapNetworkChecker(object):
 
     def is_internet_up(self):
         iface, gateway = self.get_default_interface_gateway()
-        self.ping_gateway(self)
+        self.ping_gateway(self.provider_gateway)
 
     def check_tunnel_default_interface(self):
         """

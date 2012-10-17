@@ -91,7 +91,8 @@ class EIPConnection(OpenVPNConnection):
         """
         disconnects client
         """
-        self._disconnect()
+        self.cleanup()
+        logger.debug("disconnect: clicked.")
         self.status.change_to(self.status.DISCONNECTED)
 
     def shutdown(self):
@@ -141,14 +142,14 @@ class EIPConnection(OpenVPNConnection):
     # private methods
     #
 
-    def _disconnect(self):
-        """
-        private method for disconnecting
-        """
-        if self.subp is not None:
-            logger.debug('disconnecting...')
-            self.subp.terminate()
-            self.subp = None
+    #def _disconnect(self):
+    #    """
+    #    private method for disconnecting
+    #    """
+    #    if self.subp is not None:
+    #        logger.debug('disconnecting...')
+    #        self.subp.terminate()
+    #        self.subp = None
 
     #def _is_alive(self):
         #"""
