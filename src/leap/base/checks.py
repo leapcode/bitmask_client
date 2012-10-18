@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import platform
+import socket
 
 import netifaces
 import ping
@@ -23,7 +24,7 @@ class LeapNetworkChecker(object):
     def run_all(self, checker=None):
         if not checker:
             checker = self
-        self.error = None  # ?
+        #self.error = None  # ?
 
         # for MVS
         checker.check_tunnel_default_interface()
@@ -118,11 +119,9 @@ class LeapNetworkChecker(object):
         if packet_loss > constants.MAX_ICMP_PACKET_LOSS:
             raise exceptions.NoConnectionToGateway
 
-     # XXX check for name resolution servers
-     # dunno what's the best way to do this...
-     # check for etc/resolv entries or similar?
-     # just try to resolve?
-     # is there something in psutil?
-
-     # def check_name_resolution(self):
-     #     pass
+    def check_name_resolution(self, domain_name):
+        try:
+            socket.gethostbyname(domain_name)
+            return True
+        except socket.gaierror:
+            raise exceptions.CannotResolveDomainError

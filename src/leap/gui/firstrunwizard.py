@@ -11,7 +11,12 @@ from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 from leap.base.auth import LeapSRPRegister
+from leap.base import checks as basechecks
+from leap.base import exceptions as baseexceptions
+from leap.crypto import certs
 from leap.crypto import leapkeyring
+from leap.eip import checks as eipchecks
+from leap.eip import exceptions as eipexceptions
 from leap.gui import mainwindow_rc
 
 try:
@@ -39,7 +44,10 @@ class FirstRunWizard(QtGui.QWizard):
     def __init__(
             self, parent=None, providers=None,
             success_cb=None, is_provider_setup=False,
-            is_previously_registered=False):
+            is_previously_registered=False,
+            netchecker=basechecks.LeapNetworkChecker,
+            providercertchecker=eipchecks.ProviderCertChecker,
+            eipconfigchecker=eipchecks.EIPConfigChecker):
         super(FirstRunWizard, self).__init__(
             parent,
             QtCore.Qt.WindowStaysOnTopHint)
@@ -59,25 +67,25 @@ class FirstRunWizard(QtGui.QWizard):
         # if True, jumps to LogIn page.
         self.is_previously_registered = is_previously_registered
 
-        # FIXME remove kwargs, we can access
-        # wizard as self.wizard()
+        # Checkers
+        self.netchecker = netchecker
+        self.providercertchecker = providercertchecker
+        self.eipconfigchecker = eipconfigchecker
 
         # FIXME add param for previously_registered
         # should start at login page.
 
         pages_dict = OrderedDict((
-            # (name, (WizardPage, **kwargs))
-            ('intro', (IntroPage, {})),
-            ('providerselection', (
-                SelectProviderPage,
-                {'providers': providers})),
-            ('login', (LogInPage, {})),
-            ('providerinfo', (ProviderInfoPage, {})),
-            ('providersetup', (ProviderSetupPage, {})),
-            ('signup', (
-                RegisterUserPage, {})),
-            ('connecting', (ConnectingPage, {})),
-            ('lastpage', (LastPage, {}))
+            # (name, WizardPage)
+            ('intro', IntroPage),
+            ('providerselection',
+                SelectProviderPage),
+            ('login', LogInPage),
+            ('providerinfo', ProviderInfoPage),
+            ('providersetup', ProviderSetupPage),
+            ('signup', RegisterUserPage),
+            ('connecting', ConnectingPage),
+            ('lastpage', LastPage)
         ))
         self.add_pages_from_dict(pages_dict)
 
@@ -99,10 +107,10 @@ class FirstRunWizard(QtGui.QWizard):
             values are a tuple of InstanceofWizardPage, kwargs.
         @type pages_dict: dict
         """
-        for name, (page, page_args) in pages_dict.items():
+        for name, page in pages_dict.items():
             # XXX check for is_previously registered
             # and skip adding the signup branch if so
-            self.addPage(page(**page_args))
+            self.addPage(page())
         self.pages_dict = pages_dict
 
     def get_page_index(self, page_name):
@@ -234,7 +242,7 @@ class SelectProviderPage(QtGui.QWizardPage):
     def __init__(self, parent=None, providers=None):
         super(SelectProviderPage, self).__init__(parent)
 
-        self.setTitle("Select Provider")
+        self.setTitle("Enter Provider")
         self.setSubTitle(
             "Please enter the domain of the provider you want "
             "to use for your connection."
@@ -243,7 +251,9 @@ class SelectProviderPage(QtGui.QWizardPage):
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
-        providerNameLabel = QtGui.QLabel("&Provider:")
+        providerNameLabel = QtGui.QLabel("h&ttps://")
+        # note that we expect the bare domain name
+        # we will add the scheme later
         providerNameEdit = QtGui.QLineEdit()
         providerNameEdit.cursorPositionChanged.connect(
             self.reset_validation_status)
@@ -269,13 +279,28 @@ class SelectProviderPage(QtGui.QWizardPage):
 
         validationMsg = QtGui.QLabel("")
         validationMsg.setStyleSheet(ErrorLabelStyleSheet)
-
         self.validationMsg = validationMsg
 
+        # XXX cert info
+        self.certInfo = QtGui.QLabel("")
+        self.certInfo.setWordWrap(True)
+        self.certWarning = QtGui.QLabel("")
+        self.trustProviderCertCheckBox = QtGui.QCheckBox(
+            "&Trust this provider certificate.")
+
         layout = QtGui.QGridLayout()
-        layout.addWidget(validationMsg, 0, 0)
-        layout.addWidget(providerNameLabel, 0, 1)
-        layout.addWidget(providerNameEdit, 0, 2)
+        layout.addWidget(validationMsg, 0, 2)
+        layout.addWidget(providerNameLabel, 1, 1)
+        layout.addWidget(providerNameEdit, 1, 2)
+
+        # XXX get a groupbox or something....
+        layout.addWidget(self.certInfo, 4, 1, 4, 2)
+        layout.addWidget(self.certWarning, 6, 1, 6, 2)
+        layout.addWidget(
+            self.trustProviderCertCheckBox,
+            8, 1, 8, 2)
+        self.trustProviderCertCheckBox.hide()
+
         self.setLayout(layout)
 
     def reset_validation_status(self):
@@ -284,7 +309,64 @@ class SelectProviderPage(QtGui.QWizardPage):
         """
         self.validationMsg.setText('')
 
+    def set_validation_status(self, status):
+        self.validationMsg.setText(status)
+
+    def add_cert_info(self, certinfo):
+        self.certWarning.setText(
+            "Do you want to trust this provider certificate?")
+        self.certInfo.setText(
+            'Certificate sha1: <i>%s</i><br>' % certinfo)
+        self.trustProviderCertCheckBox.show()
+        # XXX when checkbox is marked, remove
+        # the red warning.
+        # XXX also, disable the next button!
+
+    def initializePage(self):
+        self.certWarning.setText('')
+        self.certInfo.setText('')
+        self.trustProviderCertCheckBox.hide()
+
     def validatePage(self):
+        wizard = self.wizard()
+        netchecker = wizard.netchecker()
+        providercertchecker = wizard.providercertchecker()
+
+        domain = self.providerNameEdit.text()
+
+        # try name resolution
+        try:
+            netchecker.check_name_resolution(
+                domain)
+
+        except baseexceptions.LeapException as exc:
+            self.set_validation_status(exc.usermessage)
+            return False
+
+        # try https connection
+        try:
+            providercertchecker.is_https_working(
+                "https://%s" % domain,
+                verify=True)
+
+        except eipexceptions.HttpsBadCertError as exc:
+            if self.trustProviderCertCheckBox.isChecked():
+                pass
+            else:
+                self.set_validation_status(exc.usermessage)
+                fingerprint = certs.get_https_cert_fingerprint(
+                    domain)
+                self.add_cert_info(fingerprint)
+                return False
+
+        except baseexceptions.LeapException as exc:
+            self.set_validation_status(exc.usermessage)
+            return False
+
+        # try download provider info...
+        # TODO ...
+
+        # all ok, go on...
         return True
 
     def nextId(self):

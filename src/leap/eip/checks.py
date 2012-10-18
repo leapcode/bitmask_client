@@ -94,6 +94,7 @@ class ProviderCertChecker(object):
         raise NotImplementedError
 
     def is_there_provider_ca(self):
+        # XXX remove for generic build
         from leap import certs
         logger.debug('do we have provider_ca?')
         cacert_path = BRANDING.get('provider_ca_file', None)
@@ -104,29 +105,45 @@ class ProviderCertChecker(object):
         logger.debug('True')
         return True
 
-    def is_https_working(self, uri=None, verify=True):
+    def is_https_working(
+            self, uri=None, verify=True,
+            autocacert=False):
         if uri is None:
             uri = self._get_root_uri()
         # XXX raise InsecureURI or something better
-        assert uri.startswith('https')
-        if verify is True and self.cacert is not None:
+        try:
+            assert uri.startswith('https')
+        except AssertionError:
+            raise AssertionError(
+                "uri passed should start with https")
+        if autocacert and verify is True and self.cacert is not None:
             logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
         logger.debug('is https working?')
         logger.debug('uri: %s (verify:%s)', uri, verify)
         try:
             self.fetcher.get(uri, verify=verify)
+
+        except requests.exceptions.SSLError as exc:
+            logger.error("SSLError")
+            raise eipexceptions.HttpsBadCertError
+
+        except requests.exceptions.ConnectionError:
+            logger.error('ConnectionError')
+            raise eipexceptions.HttpsNotSupported
+
         except requests.exceptions.SSLError as exc:
             logger.warning('False! CERT VERIFICATION FAILED! '
                            '(this should be CRITICAL)')
             logger.warning('SSLError: %s', exc.message)
             # XXX RAISE! See #638
             #raise eipexceptions.EIPBadCertError
-        # XXX get requests.exceptions.ConnectionError Errno 110
-        # Connection timed out, and raise ours.
         else:
             logger.debug('True')
             return True
+
+    def get_certificate_fingerprint(self, domain):
+        pass
 
     def check_new_cert_needed(self, skip_download=False, verify=True):
         logger.debug('is new cert needed?')
