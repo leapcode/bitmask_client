@@ -142,9 +142,6 @@ class ProviderCertChecker(object):
             logger.debug('True')
             return True
 
-    def get_certificate_fingerprint(self, domain):
-        pass
-
     def check_new_cert_needed(self, skip_download=False, verify=True):
         logger.debug('is new cert needed?')
         if not self.is_cert_valid(do_raise=False):
@@ -347,7 +344,8 @@ class EIPConfigChecker(object):
         return True
 
     def fetch_definition(self, skip_download=False,
-                         config=None, uri=None):
+                         config=None, uri=None,
+                         domain=None):
         """
         fetches a definition file from server
         """
@@ -364,7 +362,8 @@ class EIPConfigChecker(object):
         if config is None:
             config = self.defaultprovider.config
         if uri is None:
-            domain = config.get('provider', None)
+            if not domain:
+                domain = config.get('provider', None)
             uri = self._get_provider_definition_uri(domain=domain)
 
         # FIXME! Pass ca path verify!!!

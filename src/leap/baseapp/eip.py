@@ -137,14 +137,14 @@ class EIPConductorAppMixin(object):
             # is not ready yet.
             return
 
-        if self.conductor.with_errors:
+        #if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
             #I removed the pkexec pass authentication at all.
             #time.sleep(5)
             #logger.debug('timeout')
-            logger.error('errors. disconnect')
-            self.start_or_stopVPN()  # is stop
+            #logger.error('errors. disconnect')
+            #self.start_or_stopVPN()  # is stop
 
         state = self.conductor.poll_connection_state()
         if not state:

@@ -72,6 +72,8 @@ class FirstRunWizard(QtGui.QWizard):
         self.providercertchecker = providercertchecker
         self.eipconfigchecker = eipconfigchecker
 
+        self.providerconfig = None
+
         # FIXME add param for previously_registered
         # should start at login page.
 
@@ -123,6 +125,9 @@ class FirstRunWizard(QtGui.QWizard):
         """
         return self.pages_dict.keys().index(page_name)
 
+    def set_providerconfig(self, providerconfig):
+        self.providerconfig = providerconfig
+
     def setWindowFlags(self, flags):
         logger.debug('setting window flags')
         QtGui.QWizard.setWindowFlags(self, flags)
@@ -140,7 +145,7 @@ class FirstRunWizard(QtGui.QWizard):
         gather the info, update settings
         and call the success callback.
         """
-        provider = self.get_provider()
+        provider = self.field('provider_domain')
         username = self.field('userName')
         #password = self.field('userPassword')
         remember_pass = self.field('rememberPassword')
@@ -208,16 +213,22 @@ class IntroPage(QtGui.QWizardPage):
             "in</b> with an already existing username?<br>")
         label.setWordWrap(True)
 
+        radiobuttonGroup = QtGui.QGroupBox()
+
         self.sign_up = QtGui.QRadioButton(
             "Sign up for a new account.")
         self.sign_up.setChecked(True)
         self.log_in = QtGui.QRadioButton(
             "Log In with my credentials.")
 
+        radiobLayout = QtGui.QVBoxLayout()
+        radiobLayout.addWidget(self.sign_up)
+        radiobLayout.addWidget(self.log_in)
+        radiobuttonGroup.setLayout(radiobLayout)
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(label)
-        layout.addWidget(self.sign_up)
-        layout.addWidget(self.log_in)
+        layout.addWidget(radiobuttonGroup)
         self.setLayout(layout)
 
         self.registerField('is_signup', self.sign_up)
@@ -251,6 +262,8 @@ class SelectProviderPage(QtGui.QWizardPage):
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
+        self.did_cert_check = False
+
         providerNameLabel = QtGui.QLabel("h&ttps://")
         # note that we expect the bare domain name
         # we will add the scheme later
@@ -281,12 +294,23 @@ class SelectProviderPage(QtGui.QWizardPage):
         validationMsg.setStyleSheet(ErrorLabelStyleSheet)
         self.validationMsg = validationMsg
 
-        # XXX cert info
+        # cert info
+
+        # this is used in the callback
+        # for the checkbox changes.
+        # tricky, since the first time came
+        # from the exception message.
+        # should get string from exception too!
+        self.bad_cert_status = "Server certificate could not be verified."
+
         self.certInfo = QtGui.QLabel("")
         self.certInfo.setWordWrap(True)
         self.certWarning = QtGui.QLabel("")
         self.trustProviderCertCheckBox = QtGui.QCheckBox(
             "&Trust this provider certificate.")
+
+        self.trustProviderCertCheckBox.stateChanged.connect(
+            self.onTrustCheckChanged)
 
         layout = QtGui.QGridLayout()
         layout.addWidget(validationMsg, 0, 2)
@@ -294,14 +318,41 @@ class SelectProviderPage(QtGui.QWizardPage):
         layout.addWidget(providerNameEdit, 1, 2)
 
         # XXX get a groupbox or something....
-        layout.addWidget(self.certInfo, 4, 1, 4, 2)
-        layout.addWidget(self.certWarning, 6, 1, 6, 2)
-        layout.addWidget(
-            self.trustProviderCertCheckBox,
-            8, 1, 8, 2)
-        self.trustProviderCertCheckBox.hide()
+        certinfoGroup = QtGui.QGroupBox("Certificate validation")
+        certinfoLayout = QtGui.QVBoxLayout()
+        certinfoLayout.addWidget(self.certInfo)
+        certinfoLayout.addWidget(self.certWarning)
+        certinfoLayout.addWidget(self.trustProviderCertCheckBox)
+        certinfoGroup.setLayout(certinfoLayout)
 
+        layout.addWidget(certinfoGroup, 4, 1, 4, 2)
+        self.certinfoGroup = certinfoGroup
+        self.certinfoGroup.hide()
+
+        #layout.addWidget(self.certInfo, 4, 1, 4, 2)
+        #layout.addWidget(self.certWarning, 6, 1, 6, 2)
+        #layout.addWidget(
+            #self.trustProviderCertCheckBox,
+            #8, 1, 8, 2)
+
+        #self.trustProviderCertCheckBox.hide()
         self.setLayout(layout)
+
+    def is_insecure_cert_trusted(self):
+        return self.trustProviderCertCheckBox.isChecked()
+
+    def onTrustCheckChanged(self, state):
+        checked = False
+        if state == 2:
+            checked = True
+
+        if checked:
+            self.reset_validation_status()
+        else:
+            self.set_validation_status(self.bad_cert_status)
+
+        # trigger signal to redraw next button
+        self.completeChanged.emit()
 
     def reset_validation_status(self):
         """
@@ -314,23 +365,34 @@ class SelectProviderPage(QtGui.QWizardPage):
 
     def add_cert_info(self, certinfo):
         self.certWarning.setText(
-            "Do you want to trust this provider certificate?")
+            "Do you want to <b>trust this provider certificate?</b>")
         self.certInfo.setText(
-            'Certificate sha1: <i>%s</i><br>' % certinfo)
-        self.trustProviderCertCheckBox.show()
+            'Sha1 fingerprint: <i>%s</i><br>' % certinfo)
+        #self.trustProviderCertCheckBox.show()
+        self.certinfoGroup.show()
         # XXX when checkbox is marked, remove
         # the red warning.
         # XXX also, disable the next button!
 
+    # pagewizard methods
+
+    def isComplete(self):
+        if not self.did_cert_check:
+            return True
+        if self.is_insecure_cert_trusted():
+            return True
+        return False
+
     def initializePage(self):
         self.certWarning.setText('')
         self.certInfo.setText('')
-        self.trustProviderCertCheckBox.hide()
+        #self.trustProviderCertCheckBox.hide()
 
     def validatePage(self):
         wizard = self.wizard()
         netchecker = wizard.netchecker()
         providercertchecker = wizard.providercertchecker()
+        eipconfigchecker = wizard.eipconfigchecker()
 
         domain = self.providerNameEdit.text()
 
@@ -357,6 +419,8 @@ class SelectProviderPage(QtGui.QWizardPage):
                 fingerprint = certs.get_https_cert_fingerprint(
                     domain)
                 self.add_cert_info(fingerprint)
+                self.did_cert_check = True
+                self.completeChanged.emit()
                 return False
 
         except baseexceptions.LeapException as exc:
@@ -364,7 +428,9 @@ class SelectProviderPage(QtGui.QWizardPage):
             return False
 
         # try download provider info...
-        # TODO ...
+        eipconfigchecker.fetch_definition(domain=domain)
+        wizard.set_providerconfig(
+            eipconfigchecker.defaultprovider.config)
 
         # all ok, go on...
         return True
@@ -387,6 +453,43 @@ class ProviderInfoPage(QtGui.QWizardPage):
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
+        displayName = QtGui.QLabel("")
+        description = QtGui.QLabel("")
+        enrollment_policy = QtGui.QLabel("")
+        # stylesheet...
+        self.displayName = displayName
+        self.description = description
+        self.enrollment_policy = enrollment_policy
+
+        layout = QtGui.QGridLayout()
+        layout.addWidget(displayName, 0, 1)
+        layout.addWidget(description, 1, 1)
+        layout.addWidget(enrollment_policy, 2, 1)
+
+        self.setLayout(layout)
+
+    def initializePage(self):
+        # XXX get multilingual objects
+        # directly from the config object
+
+        lang = "en"
+        pconfig = self.wizard().providerconfig
+
+        dn = pconfig.get('display_name')
+        display_name = dn[lang] if dn else ''
+        self.displayName.setText(
+            "<b>%s</b>" % display_name)
+
+        desc = pconfig.get('description')
+        description_text = desc[lang] if desc else ''
+        self.description.setText(
+            "<i>%s</i>" % description_text)
+
+        enroll = pconfig.get('enrollment_policy')
+        if enroll:
+            self.enrollment_policy.setText(
+                'enrollment policy: %s' % enroll)
+
     def nextId(self):
         wizard = self.wizard()
         if not wizard:
@@ -404,6 +507,48 @@ class ProviderSetupPage(QtGui.QWizardPage):
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
+
+        self.status = QtGui.QLabel("")
+        self.progress = QtGui.QProgressBar()
+        self.progress.setMaximum(100)
+        self.progress.hide()
+
+        layout = QtGui.QGridLayout()
+        layout.addWidget(self.status, 0, 1)
+        layout.addWidget(self.progress, 5, 1)
+
+        self.setLayout(layout)
+
+    def set_status(self, status):
+        self.status.setText(status)
+
+    def initializePage(self):
+        self.set_status('')
+        self.progress.setValue(0)
+        self.progress.hide()
+
+    def validatePage(self):
+        import time
+        self.progress.show()
+
+        self.set_status('fetching cert...')
+        self.progress.setValue(20)
+        time.sleep(2)
+
+        self.set_status('fetching cert another time...')
+        self.progress.setValue(40)
+        time.sleep(2)
+
+        self.set_status('validating cert')
+        self.progress.setValue(60)
+        time.sleep(2)
+
+        self.set_status('validating CA cert...')
+        self.progress.setValue(80)
+        time.sleep(2)
+
+        self.progress.setValue(100)
+        return True
 
     def nextId(self):
         wizard = self.wizard()
