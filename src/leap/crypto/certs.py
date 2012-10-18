@@ -5,7 +5,10 @@ import gnutls.connection
 import gnutls.library
 
 
-def get_https_cert_fingerprint(domain):
+def get_https_cert_from_domain(domain):
+    """
+    @param domain: a domain name to get a certificate from.
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cred = gnutls.connection.X509Credentials()
 
@@ -13,12 +16,36 @@ def get_https_cert_fingerprint(domain):
     session.connect((domain, 443))
     session.handshake()
     cert = session.peer_certificate
+    return cert
 
-    _buffer = ctypes.create_string_buffer(20)
-    buffer_length = ctypes.c_size_t(20)
+
+def get_https_cert_fingerprint(domain, hash_type="SHA256", sep=":"):
+    """
+    @param domain: a domain name to get a fingerprint from
+    @type domain: str
+    @param hash_type: the hash function to be used in the fingerprint.
+        must be one of SHA1, SHA224, SHA256, SHA384, SHA512
+    @type hash_type: str
+    @rparam: hex_fpr, a hexadecimal representation of a bytestring
+             containing the fingerprint.
+    @rtype: string
+    """
+    cert = get_https_cert_from_domain(domain)
+
+    _buffer = ctypes.create_string_buffer(64)
+    buffer_length = ctypes.c_size_t(64)
+
+    SUPPORTED_DIGEST_FUN = ("SHA1", "SHA224", "SHA256", "SHA384", "SHA512")
+    if hash_type in SUPPORTED_DIGEST_FUN:
+        digestfunction = getattr(
+            gnutls.library.constants,
+            "GNUTLS_DIG_%s" % hash_type)
+    else:
+        # XXX improperlyconfigured or something
+        raise Exception("digest function not supported")
 
     gnutls.library.functions.gnutls_x509_crt_get_fingerprint(
-        cert._c_object, gnutls.library.constants.GNUTLS_DIG_SHA1,  # 3
+        cert._c_object, digestfunction,
         ctypes.byref(_buffer), ctypes.byref(buffer_length))
 
     # deinit
@@ -26,6 +53,9 @@ def get_https_cert_fingerprint(domain):
     # needed? is segfaulting
 
     fpr = ctypes.string_at(_buffer, buffer_length.value)
-    hex_fpr = u":".join(u"%02X" % ord(char) for char in fpr)
+    hex_fpr = sep.join(u"%02X" % ord(char) for char in fpr)
 
     return hex_fpr
+
+#if __name__ == "__main__":
+    #print get_https_cert_fingerprint('springbok')
