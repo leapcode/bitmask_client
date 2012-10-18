@@ -4,13 +4,14 @@ import ssl
 import time
 import os
 
-from gnutls import crypto
+import gnutls.crypto
 #import netifaces
 #import ping
 import requests
 
 from leap import __branding as BRANDING
 from leap import certs
+from leap.base import config as baseconfig
 from leap.base import constants as baseconstants
 from leap.base import providers
 from leap.eip import config as eipconfig
@@ -54,18 +55,25 @@ class ProviderCertChecker(object):
     client certs and checking tls connection
     with provider.
     """
-    def __init__(self, fetcher=requests):
+    def __init__(self, fetcher=requests,
+                 domain=None):
+
         self.fetcher = fetcher
+        self.domain = domain
         self.cacert = get_ca_cert()
 
-    def run_all(self, checker=None, skip_download=False, skip_verify=False):
+    def run_all(
+            self, checker=None,
+            skip_download=False, skip_verify=False):
+
         if not checker:
             checker = self
 
         do_verify = not skip_verify
         logger.debug('do_verify: %s', do_verify)
-        # For MVS+
         # checker.download_ca_cert()
+
+        # For MVS+
         # checker.download_ca_signature()
         # checker.get_ca_signatures()
         # checker.is_there_trust_path()
@@ -77,9 +85,19 @@ class ProviderCertChecker(object):
         checker.is_https_working(verify=do_verify)
         checker.check_new_cert_needed(verify=do_verify)
 
-    def download_ca_cert(self):
-        # MVS+
-        raise NotImplementedError
+    def download_ca_cert(self, uri=None, verify=True):
+        req = self.fetcher.get(uri, verify=verify)
+        req.raise_for_status()
+
+        # should check domain exists
+        capath = self._get_ca_cert_path(self.domain)
+        with open(capath, 'w') as f:
+            f.write(req.content)
+
+    def check_ca_cert_fingerprint(
+            self, hash_type="SHA256",
+            fingerprint=None):
+        pass
 
     def download_ca_signature(self):
         # MVS+
@@ -94,11 +112,12 @@ class ProviderCertChecker(object):
         raise NotImplementedError
 
     def is_there_provider_ca(self):
-        # XXX remove for generic build
+        # XXX modify for generic build
         from leap import certs
         logger.debug('do we have provider_ca?')
         cacert_path = BRANDING.get('provider_ca_file', None)
         if not cacert_path:
+            # XXX look from the domain
             logger.debug('False')
             return False
         self.cacert = certs.where(cacert_path)
@@ -212,7 +231,7 @@ class ProviderCertChecker(object):
             certfile = self._get_client_cert_path()
         with open(certfile) as cf:
             cert_s = cf.read()
-        cert = crypto.X509Certificate(cert_s)
+        cert = gnutls.crypto.X509Certificate(cert_s)
         from_ = time.gmtime(cert.activation_time)
         to_ = time.gmtime(cert.expiration_time)
         return from_ < now() < to_
@@ -247,6 +266,10 @@ class ProviderCertChecker(object):
             raise
         return True
 
+    @property
+    def ca_cert_path(self):
+        return self._get_ca_cert_path()
+
     def _get_root_uri(self):
         return u"https://%s/" % baseconstants.DEFAULT_PROVIDER
 
@@ -257,6 +280,18 @@ class ProviderCertChecker(object):
     def _get_client_cert_path(self):
         # MVS+ : get provider path
         return eipspecs.client_cert_path()
+
+    def _get_ca_cert_path(self, domain):
+        # XXX this folder path will be broken for win
+        # and this should be moved to eipspecs.ca_path
+
+        capath = baseconfig.get_config_file(
+            'cacert.pem',
+            folder='providers/%s/certs/ca' % domain)
+        folder, fname = os.path.split(capath)
+        if not os.path.isdir(folder):
+            mkdir_p(folder)
+        return capath
 
     def write_cert(self, pemfile_content, to=None):
         folder, filename = os.path.split(to)

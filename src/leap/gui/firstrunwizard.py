@@ -367,12 +367,9 @@ class SelectProviderPage(QtGui.QWizardPage):
         self.certWarning.setText(
             "Do you want to <b>trust this provider certificate?</b>")
         self.certInfo.setText(
-            'Sha1 fingerprint: <i>%s</i><br>' % certinfo)
-        #self.trustProviderCertCheckBox.show()
+            'SHA-256 fingerprint: <i>%s</i><br>' % certinfo)
+        self.certInfo.setWordWrap(True)
         self.certinfoGroup.show()
-        # XXX when checkbox is marked, remove
-        # the red warning.
-        # XXX also, disable the next button!
 
     # pagewizard methods
 
@@ -384,9 +381,7 @@ class SelectProviderPage(QtGui.QWizardPage):
         return False
 
     def initializePage(self):
-        self.certWarning.setText('')
-        self.certInfo.setText('')
-        #self.trustProviderCertCheckBox.hide()
+        self.certinfoGroup.hide()
 
     def validatePage(self):
         wizard = self.wizard()
@@ -417,7 +412,7 @@ class SelectProviderPage(QtGui.QWizardPage):
             else:
                 self.set_validation_status(exc.usermessage)
                 fingerprint = certs.get_https_cert_fingerprint(
-                    domain)
+                    domain, sep=" ")
                 self.add_cert_info(fingerprint)
                 self.did_cert_check = True
                 self.completeChanged.emit()
@@ -456,7 +451,9 @@ class ProviderInfoPage(QtGui.QWizardPage):
         displayName = QtGui.QLabel("")
         description = QtGui.QLabel("")
         enrollment_policy = QtGui.QLabel("")
-        # stylesheet...
+        # XXX set stylesheet...
+        # prettify a little bit.
+        # bigger fonts and so on...
         self.displayName = displayName
         self.description = description
         self.enrollment_policy = enrollment_policy
@@ -521,33 +518,66 @@ class ProviderSetupPage(QtGui.QWizardPage):
 
     def set_status(self, status):
         self.status.setText(status)
+        self.status.setWordWrap(True)
+
+    def fetch_and_validate(self):
+        # Fake... till you make it...
+        import time
+        domain = self.field('provider_domain')
+        wizard = self.wizard()
+        pconfig = wizard.providerconfig
+        pCertChecker = wizard.providercertchecker
+        certchecker = pCertChecker(domain=domain)
+
+        self.set_status('Fetching CA certificate')
+        self.progress.setValue(30)
+        ca_cert_uri = pconfig.get('ca_cert_uri').geturl()
+
+        # XXX check scheme == "https"
+        # XXX passing verify == False because
+        # we have trusted right before.
+        # We should check it's the same domain!!!
+        # (Check with the trusted fingerprints dict
+        # or something smart)
+
+        certchecker.download_ca_cert(
+            uri=ca_cert_uri,
+            verify=False)
+
+        self.set_status('Checking CA fingerprint')
+        self.progress.setValue(40)
+        ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint')
+
+        # XXX get fingerprint dict (types)
+        certchecker.check_ca_cert_fingerprint(
+            fingerprint=ca_cert_fingerprint)
+        time.sleep(2)
+
+        self.set_status('Fetching api https certificate')
+        self.progress.setValue(60)
+        time.sleep(2)
+
+        self.set_status('Validating api certificate')
+        self.progress.setValue(80)
+        time.sleep(2)
+        #ca_cert_path = checker.ca_cert_path
+
+        self.progress.setValue(100)
+
+    # pagewizard methods
 
     def initializePage(self):
-        self.set_status('')
+        self.set_status(
+            'We are going to contact the provider to get '
+            'the certificates that will be used to stablish '
+            'a secure connection.<br><br>Click <i>next</i> to continue.')
         self.progress.setValue(0)
         self.progress.hide()
 
     def validatePage(self):
-        import time
         self.progress.show()
+        self.fetch_and_validate()
 
-        self.set_status('fetching cert...')
-        self.progress.setValue(20)
-        time.sleep(2)
-
-        self.set_status('fetching cert another time...')
-        self.progress.setValue(40)
-        time.sleep(2)
-
-        self.set_status('validating cert')
-        self.progress.setValue(60)
-        time.sleep(2)
-
-        self.set_status('validating CA cert...')
-        self.progress.setValue(80)
-        time.sleep(2)
-
-        self.progress.setValue(100)
         return True
 
     def nextId(self):
