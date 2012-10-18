@@ -64,7 +64,7 @@ to be triggered for each one of them.
         #XXX workaround for signaling
         #the ui that we don't know how to
         #manage a connection error
-        self.with_errors = False
+        #self.with_errors = False
 
         self.command = None
         self.args = None
@@ -180,41 +180,22 @@ to be triggered for each one of them.
         """
         if self.subp:
             self._stop()
+
+            # XXX kali --
+            # I think this will block if child process
+            # does not return.
+            # Maybe we can .poll() for a given
+            # interval and exit in any case.
+
             RETCODE = self.subp.wait()
             if RETCODE:
-                logger.error('cannot terminate subprocess! '
-                             '(maybe openvpn still running?)')
-
-    def _stop(self):
-        """
-        stop openvpn process
-        """
-        logger.debug("disconnecting...")
-        self._send_command("signal SIGTERM\n")
-
-        if self.subp:
-            return True
-
-        #shutting openvpn failured
-        #try patching in old openvpn host and trying again
-        process = self._get_openvpn_process()
-        if process:
-            self.host = \
-                process.cmdline[process.cmdline.index("--management") + 1]
-            self._send_command("signal SIGTERM\n")
-
-            #make sure the process was terminated
-            process = self._get_openvpn_process()
-            if not process:
-                logger.debug("Exisiting OpenVPN Process Terminated")
-                return True
-            else:
-                logger.error("Unable to terminate exisiting OpenVPN Process.")
-                return False
-
-        return True
+                logger.error(
+                    'cannot terminate subprocess! '
+                    '(We might have left openvpn running)')
 
     def _get_openvpn_process(self):
+        # plist = [p for p in psutil.get_process_list() if p.name == "openvpn"]
+        # return plist[0] if plist else None
         for process in psutil.get_process_list():
             if process.name == "openvpn":
                 return process
@@ -293,12 +274,7 @@ to be triggered for each one of them.
                 self.connect_to_management()
             except eip_exceptions.MissingSocketError:
                 logger.warning('missing management socket')
-                # This should only happen briefly during
-                # the first invocation. Race condition make
-                # the polling begin before management socket
-                # is ready
                 return []
-                #return self.make_error()
         try:
             if hasattr(self, 'tn'):
                 self.tn.write(cmd + "\n")
@@ -375,6 +351,37 @@ to be triggered for each one of them.
         OpenVPN command: last 2 statuses
         """
         return self._send_command("status 2")
+
+    def _stop(self):
+        """
+        stop openvpn process
+        by sending SIGTERM to the management
+        interface
+        """
+        logger.debug("disconnecting...")
+        self._send_command("signal SIGTERM\n")
+
+        if self.subp:
+            return True
+
+        #shutting openvpn failured
+        #try patching in old openvpn host and trying again
+        process = self._get_openvpn_process()
+        if process:
+            self.host = \
+                process.cmdline[process.cmdline.index("--management") + 1]
+            self._send_command("signal SIGTERM\n")
+
+            #make sure the process was terminated
+            process = self._get_openvpn_process()
+            if not process:
+                logger.debug("Existing OpenVPN Process Terminated")
+                return True
+            else:
+                logger.error("Unable to terminate existing OpenVPN Process.")
+                return False
+
+        return True
 
     #
     # parse  info
