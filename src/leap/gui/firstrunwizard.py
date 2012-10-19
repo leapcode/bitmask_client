@@ -584,7 +584,7 @@ class ProviderSetupPage(QtGui.QWizardPage):
         #ca_cert_path = checker.ca_cert_path
 
         self.progress.setValue(100)
-        time.sleep(0.2)
+        time.sleep(1)
 
     # pagewizard methods
 
@@ -634,7 +634,6 @@ class UserFormMixIn(object):
         # I guess it is because there is no delay...
         logger.debug('registering........')
         self.validationMsg.setText('registering...')
-        # need to call update somehow???
 
     # XXX refactor set_status_foo
 
@@ -774,6 +773,10 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
 
         self.registerField('userName*', self.userNameLineEdit)
         self.registerField('userPassword*', self.userPasswordLineEdit)
+
+        # XXX missing password confirmation
+        # XXX validator!
+
         self.registerField('rememberPassword', rememberPasswordCheckBox)
 
         layout = QtGui.QGridLayout()
@@ -897,6 +900,109 @@ class ConnectingPage(QtGui.QWizardPage):
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
+
+        self.status = QtGui.QLabel("")
+        self.status.setWordWrap(True)
+        self.progress = QtGui.QProgressBar()
+        self.progress.setMaximum(100)
+        self.progress.hide()
+
+        self.status_line_1 = QtGui.QLabel()
+        self.status_line_2 = QtGui.QLabel()
+        self.status_line_3 = QtGui.QLabel()
+        self.status_line_4 = QtGui.QLabel()
+
+        layout = QtGui.QGridLayout()
+        layout.addWidget(self.status, 0, 1)
+        layout.addWidget(self.progress, 5, 1)
+        layout.addWidget(self.status_line_1, 8, 1)
+        layout.addWidget(self.status_line_2, 9, 1)
+        layout.addWidget(self.status_line_3, 10, 1)
+        layout.addWidget(self.status_line_4, 11, 1)
+
+        self.setLayout(layout)
+
+    def set_status(self, status):
+        self.status.setText(status)
+        self.status.setWordWrap(True)
+
+    def get_donemsg(self, msg):
+        return "%s ... done" % msg
+
+    def fetch_and_validate(self):
+        # Fake... till you make it...
+        import time
+        domain = self.field('provider_domain')
+        wizard = self.wizard()
+        #pconfig = wizard.providerconfig
+        eipconfigchecker = wizard.eipconfigchecker()
+        pCertChecker = wizard.providercertchecker(
+            domain=domain)
+
+        # XXX get from log_in page if we came that way
+        # instead
+
+        username = self.field('userName')
+        password = self.field('userPassword')
+
+        credentials = username, password
+
+        self.progress.show()
+
+        fetching_eip_conf_msg = 'Fetching eip service configuration'
+        self.set_status(fetching_eip_conf_msg)
+        self.progress.setValue(30)
+
+        # Fetching eip service
+        eipconfigchecker.fetch_eip_service_config(
+            domain=domain)
+
+        self.status_line_1.setText(
+            self.get_donemsg(fetching_eip_conf_msg))
+
+        getting_client_cert_msg = 'Getting client certificate'
+        self.set_status(getting_client_cert_msg)
+        self.progress.setValue(66)
+
+        # Download cert
+        pCertChecker.download_new_client_cert(
+            credentials=credentials)
+
+        time.sleep(2)
+        self.status_line_2.setText(
+            self.get_donemsg(getting_client_cert_msg))
+
+        validating_clientcert_msg = 'Validating client certificate'
+        self.set_status(validating_clientcert_msg)
+        self.progress.setValue(90)
+        time.sleep(2)
+        self.status_line_3.setText(
+            self.get_donemsg(validating_clientcert_msg))
+
+        self.progress.setValue(100)
+        time.sleep(3)
+
+        return True
+
+    # pagewizard methods
+
+    def initializePage(self):
+        # XXX if we're coming from signup page
+        # we could say something like
+        # 'registration successful!'
+        self.status.setText(
+            "We have "
+            "all we need to connect with the provider.<br><br> "
+            "Click <i>next</i> to continue. ")
+        self.progress.setValue(0)
+        self.progress.hide()
+        self.status_line_1.setText('')
+        self.status_line_2.setText('')
+        self.status_line_3.setText('')
+
+    def validatePage(self):
+        validated = self.fetch_and_validate()
+        return validated
 
 
 class LastPage(QtGui.QWizardPage):

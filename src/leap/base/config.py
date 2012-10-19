@@ -252,6 +252,15 @@ def get_default_provider_path():
     return default_provider_path
 
 
+def get_provider_path(domain):
+    # XXX if not domain, return get_default_provider_path
+    default_subpath = os.path.join("providers", domain)
+    provider_path = get_config_file(
+        '',
+        folder=default_subpath)
+    return provider_path
+
+
 def validate_ip(ip_str):
     """
     raises exception if the ip_str is
