@@ -634,6 +634,14 @@ class UserFormMixIn(object):
         """
         self.validationMsg.setText('')
 
+    def set_validation_status(self, msg):
+        """
+        set generic validation status
+        """
+        self.validationMsg.setText(msg)
+
+    # XXX  Refactor all these validation msgs!!!
+
     def set_status_validating(self):
         """
         set validation msg to 'registering...'
@@ -644,10 +652,7 @@ class UserFormMixIn(object):
         # not show until the validate function
         # returns.
         # I guess it is because there is no delay...
-        logger.debug('registering........')
         self.validationMsg.setText('registering...')
-
-    # XXX refactor set_status_foo
 
     def set_status_invalid_username(self):
         """
@@ -779,6 +784,12 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
             QtGui.QLineEdit.Password)
         userPasswordLabel.setBuddy(self.userPasswordLineEdit)
 
+        userPassword2Label = QtGui.QLabel("Password (again):")
+        self.userPassword2LineEdit = QtGui.QLineEdit()
+        self.userPassword2LineEdit.setEchoMode(
+            QtGui.QLineEdit.Password)
+        userPassword2Label.setBuddy(self.userPassword2LineEdit)
+
         rememberPasswordCheckBox = QtGui.QCheckBox(
             "&Remember username and password.")
         rememberPasswordCheckBox.setChecked(True)
@@ -803,8 +814,10 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         layout.addWidget(userNameLabel, 1, 0)
         layout.addWidget(self.userNameLineEdit, 1, 3)
         layout.addWidget(userPasswordLabel, 2, 0)
+        layout.addWidget(userPassword2Label, 3, 0)
         layout.addWidget(self.userPasswordLineEdit, 2, 3)
-        layout.addWidget(rememberPasswordCheckBox, 3, 3, 3, 4)
+        layout.addWidget(self.userPassword2LineEdit, 3, 3)
+        layout.addWidget(rememberPasswordCheckBox, 4, 3, 4, 4)
         self.setLayout(layout)
 
     # overwritten methods
@@ -837,6 +850,22 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
 
         username = self.userNameLineEdit.text()
         password = self.userPasswordLineEdit.text()
+        password2 = self.userPassword2LineEdit.text()
+
+        # have some call to a password checker...
+
+        if password != password2:
+            self.set_validation_status('Password does not match.')
+            return False
+
+        if len(password) < 6:
+            self.set_validation_status('Password too short.')
+            return False
+
+        if password == "123456":
+            # XD
+            self.set_validation_status('Password too obvious.')
+            return False
 
         # XXX TODO -- remove debug info
         # XXX get from provider info
