@@ -164,7 +164,7 @@ class ProviderCertChecker(object):
             raise eipexceptions.HttpsNotSupported
 
         except requests.exceptions.SSLError as exc:
-            logger.warning('False! CERT VERIFICATION FAILED! '
+            logger.warning('BUG #638 CERT VERIFICATION FAILED! '
                            '(this should be CRITICAL)')
             logger.warning('SSLError: %s', exc.message)
             # XXX RAISE! See #638

@@ -713,14 +713,11 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
 
         validationMsg = QtGui.QLabel("")
         validationMsg.setStyleSheet(ErrorLabelStyleSheet)
-
         self.validationMsg = validationMsg
 
         layout.addWidget(validationMsg, 0, 3)
-
         layout.addWidget(userNameLabel, 1, 0)
         layout.addWidget(self.userNameLineEdit, 1, 3)
-
         layout.addWidget(userPasswordLabel, 2, 0)
         layout.addWidget(self.userPasswordLineEdit, 2, 3)
 
@@ -788,13 +785,10 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         self.validationMsg = validationMsg
 
         layout.addWidget(validationMsg, 0, 3)
-
         layout.addWidget(userNameLabel, 1, 0)
         layout.addWidget(self.userNameLineEdit, 1, 3)
-
         layout.addWidget(userPasswordLabel, 2, 0)
         layout.addWidget(self.userPasswordLineEdit, 2, 3)
-
         layout.addWidget(rememberPasswordCheckBox, 3, 3, 3, 4)
         self.setLayout(layout)
 
@@ -834,9 +828,11 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         # XXX enforce https
         # and pass a verify value
 
+        domain = self.field('provider_domain')
+
         signup = LeapSRPRegister(
             schema="http",
-            provider="springbok",
+            provider=domain,
 
             # debug -----
             #provider="localhost",
@@ -942,6 +938,6 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     app = QtGui.QApplication(sys.argv)
-    wizard = FirstRunWizard(providers=('springbok',))
+    wizard = FirstRunWizard()  # providers=('springbok',))
     wizard.show()
     sys.exit(app.exec_())
