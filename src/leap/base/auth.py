@@ -18,6 +18,18 @@ SIGNUP_TIMEOUT = getattr(baseconstants, 'SIGNUP_TIMEOUT', 5)
 SERVER = "http://springbok/1"
 
 
+"""
+Registration and authentication classes for the
+SRP auth mechanism used in the leap platform.
+
+We're currently using the (pure python?) srp library since
+it seemed the fastest way of getting something working.
+
+In the future we can switch to use python-gnutls, since
+libgnutls implements srp protocol.
+"""
+
+
 class LeapSRPRegister(object):
 
     def __init__(self,
@@ -206,6 +218,7 @@ def magic_srpauth(fn):
     the decorated request
     """
     # TODO --- finish this...
+    # currently broken.
     def wrapper(*args, **kwargs):
         uri = args[0]
         # XXX Ugh!
