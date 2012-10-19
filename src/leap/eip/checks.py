@@ -10,10 +10,11 @@ import gnutls.crypto
 import requests
 
 from leap import __branding as BRANDING
-from leap import certs
+from leap import certs as leapcerts
 from leap.base import config as baseconfig
 from leap.base import constants as baseconstants
 from leap.base import providers
+from leap.crypto import certs
 from leap.eip import config as eipconfig
 from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
@@ -46,7 +47,7 @@ reachable and testable as a whole.
 def get_ca_cert():
     ca_file = BRANDING.get('provider_ca_file')
     if ca_file:
-        return certs.where(ca_file)
+        return leapcerts.where(ca_file)
 
 
 class ProviderCertChecker(object):
@@ -97,7 +98,18 @@ class ProviderCertChecker(object):
     def check_ca_cert_fingerprint(
             self, hash_type="SHA256",
             fingerprint=None):
-        pass
+        ca_cert_path = self.ca_cert_path
+        ca_cert_fpr = certs.get_cert_fingerprint(
+            filepath=ca_cert_path)
+        return ca_cert_fpr == fingerprint
+
+    def verify_api_https(self, uri):
+        assert uri.startswith('https://')
+        cacert = self.ca_cert_path
+        verify = cacert and cacert or True
+        req = self.fetcher.get(uri, verify=verify)
+        req.raise_for_status()
+        return True
 
     def download_ca_signature(self):
         # MVS+
@@ -268,7 +280,7 @@ class ProviderCertChecker(object):
 
     @property
     def ca_cert_path(self):
-        return self._get_ca_cert_path()
+        return self._get_ca_cert_path(self.domain)
 
     def _get_root_uri(self):
         return u"https://%s/" % baseconstants.DEFAULT_PROVIDER

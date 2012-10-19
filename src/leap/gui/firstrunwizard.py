@@ -3,6 +3,8 @@ import logging
 import json
 import socket
 
+import requests
+
 import sip
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
@@ -411,8 +413,8 @@ class SelectProviderPage(QtGui.QWizardPage):
                 pass
             else:
                 self.set_validation_status(exc.usermessage)
-                fingerprint = certs.get_https_cert_fingerprint(
-                    domain, sep=" ")
+                fingerprint = certs.get_cert_fingerprint(
+                    domain=domain, sep=" ")
                 self.add_cert_info(fingerprint)
                 self.did_cert_check = True
                 self.completeChanged.emit()
@@ -545,24 +547,44 @@ class ProviderSetupPage(QtGui.QWizardPage):
             verify=False)
 
         self.set_status('Checking CA fingerprint')
-        self.progress.setValue(40)
-        ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint')
+        self.progress.setValue(66)
+        ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint', None)
 
         # XXX get fingerprint dict (types)
-        certchecker.check_ca_cert_fingerprint(
-            fingerprint=ca_cert_fingerprint)
-        time.sleep(2)
+        sha256_fpr = ca_cert_fingerprint.split('=')[1]
 
-        self.set_status('Fetching api https certificate')
-        self.progress.setValue(60)
-        time.sleep(2)
+        validate_fpr = certchecker.check_ca_cert_fingerprint(
+            fingerprint=sha256_fpr)
+        time.sleep(0.5)
+        if not validate_fpr:
+            # XXX update validationMsg
+            # should catch exception
+            return False
 
         self.set_status('Validating api certificate')
-        self.progress.setValue(80)
-        time.sleep(2)
+        self.progress.setValue(90)
+
+        api_uri = pconfig.get('api_uri', None)
+        try:
+            api_cert_verified = certchecker.verify_api_https(api_uri)
+        except requests.exceptions.SSLError as exc:
+            logger.error('BUG #638. %s' % exc.message)
+            # XXX RAISE! See #638
+            # bypassing until the hostname is fixed.
+            # We probably should raise yet-another-warning
+            # here saying user that the hostname "XX.XX.XX.XX' does not
+            # match 'foo.bar.baz'
+            api_cert_verified = True
+
+        if not api_cert_verified:
+            # XXX update validationMsg
+            # should catch exception
+            return False
+        time.sleep(0.5)
         #ca_cert_path = checker.ca_cert_path
 
         self.progress.setValue(100)
+        time.sleep(0.2)
 
     # pagewizard methods
 

@@ -2,6 +2,7 @@ import ctypes
 import socket
 
 import gnutls.connection
+import gnutls.crypto
 import gnutls.library
 
 
@@ -19,10 +20,19 @@ def get_https_cert_from_domain(domain):
     return cert
 
 
-def get_https_cert_fingerprint(domain, hash_type="SHA256", sep=":"):
+def get_cert_from_file(filepath):
+    with open(filepath) as f:
+        cert = gnutls.crypto.X509Certificate(f.read())
+    return cert
+
+
+def get_cert_fingerprint(domain=None, filepath=None,
+                         hash_type="SHA256", sep=":"):
     """
     @param domain: a domain name to get a fingerprint from
     @type domain: str
+    @param filepath: path to a file containing a PEM file
+    @type filepath: str
     @param hash_type: the hash function to be used in the fingerprint.
         must be one of SHA1, SHA224, SHA256, SHA384, SHA512
     @type hash_type: str
@@ -30,7 +40,10 @@ def get_https_cert_fingerprint(domain, hash_type="SHA256", sep=":"):
              containing the fingerprint.
     @rtype: string
     """
-    cert = get_https_cert_from_domain(domain)
+    if domain:
+        cert = get_https_cert_from_domain(domain)
+    if filepath:
+        cert = get_cert_from_file(filepath)
 
     _buffer = ctypes.create_string_buffer(64)
     buffer_length = ctypes.c_size_t(64)
@@ -56,6 +69,3 @@ def get_https_cert_fingerprint(domain, hash_type="SHA256", sep=":"):
     hex_fpr = sep.join(u"%02X" % ord(char) for char in fpr)
 
     return hex_fpr
-
-#if __name__ == "__main__":
-    #print get_https_cert_fingerprint('springbok')
