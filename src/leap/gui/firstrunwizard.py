@@ -47,6 +47,7 @@ class FirstRunWizard(QtGui.QWizard):
             self, parent=None, providers=None,
             success_cb=None, is_provider_setup=False,
             is_previously_registered=False,
+            trusted_certs=None,
             netchecker=basechecks.LeapNetworkChecker,
             providercertchecker=eipchecks.ProviderCertChecker,
             eipconfigchecker=eipchecks.EIPConfigChecker):
@@ -68,6 +69,10 @@ class FirstRunWizard(QtGui.QWizard):
         # previously registered
         # if True, jumps to LogIn page.
         self.is_previously_registered = is_previously_registered
+
+        # a dict with trusted fingerprints
+        # in the form {'nospacesfingerprint': ['host1', 'host2']}
+        self.trusted_certs = trusted_certs
 
         # Checkers
         self.netchecker = netchecker
@@ -415,10 +420,17 @@ class SelectProviderPage(QtGui.QWizardPage):
                 self.set_validation_status(exc.usermessage)
                 fingerprint = certs.get_cert_fingerprint(
                     domain=domain, sep=" ")
-                self.add_cert_info(fingerprint)
-                self.did_cert_check = True
-                self.completeChanged.emit()
-                return False
+
+                # it's ok if we've trusted this fgprt before
+                trustedcrts = self.wizard().trusted_certs
+                if trustedcrts and fingerprint.replace(' ', '') in trustedcrts:
+                    pass
+                else:
+                    # let your user face panick :P
+                    self.add_cert_info(fingerprint)
+                    self.did_cert_check = True
+                    self.completeChanged.emit()
+                    return False
 
         except baseexceptions.LeapException as exc:
             self.set_validation_status(exc.usermessage)
@@ -1044,6 +1056,13 @@ if __name__ == '__main__':
     logger.setLevel(logging.DEBUG)
 
     app = QtGui.QApplication(sys.argv)
-    wizard = FirstRunWizard()  # providers=('springbok',))
+
+    trusted_certs = {
+        "3DF83F316BFA0186"
+        "0A11A5C9C7FC24B9"
+        "18C62B941192CC1A"
+        "49AE62218B2A4B7C": ['springbok']}
+
+    wizard = FirstRunWizard(trusted_certs=trusted_certs)
     wizard.show()
     sys.exit(app.exec_())

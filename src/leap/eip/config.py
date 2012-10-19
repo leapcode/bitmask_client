@@ -78,8 +78,15 @@ def get_eip_gateway():
         return placeholder
     if len(gateways) > 0:
         for gw in gateways:
-            if gw['name'] == primary_gateway:
-                hosts = gw['hosts']
+            name = gw.get('name', None)
+            if not name:
+                return
+
+            if name == primary_gateway:
+                hosts = gw.get('hosts', None)
+                if not hosts:
+                    logger.error('no hosts')
+                    return
                 if len(hosts) > 0:
                     return hosts[0]
                 else:

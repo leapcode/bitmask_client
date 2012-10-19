@@ -319,7 +319,6 @@ class ProviderCertChecker(object):
         return "https://%s/1/cert" % self.domain
 
     def _get_client_cert_path(self):
-        # MVS+ : get provider path
         return eipspecs.client_cert_path(domain=self.domain)
 
     def _get_ca_cert_path(self, domain):
