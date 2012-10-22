@@ -246,13 +246,14 @@ def magic_srpauth(fn):
 
 
 if __name__ == "__main__":
+    import sys
+    user = sys.argv[1]
+    passwd = sys.argv[2]
 
-    TEST_USER = "test1"
-    TEST_PASS = "1234"
-
-    @srpauth_protected(user=TEST_USER, passwd=TEST_PASS)
+    @srpauth_protected(user=user, passwd=passwd)
     def test_srp_protected_get(*args, **kwargs):
         req = requests.get(*args, **kwargs)
-        print req.content
+        req.raise_for_status
+        #print req.content
 
     test_srp_protected_get('http://springbok/1/cert')
