@@ -119,12 +119,11 @@ safe_unhexlify = lambda x: binascii.unhexlify(x) \
 
 class SRPAuth(requests.auth.AuthBase):
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, server=SERVER, verify=True):
         self.username = username
         self.password = password
-
-        # XXX init something similar to
-        # SERVER...
+        self.server = server
+        self.verify = verify
 
         self.init_data = None
         self.session = requests.session()
@@ -153,8 +152,9 @@ class SRPAuth(requests.auth.AuthBase):
 
     def get_init_data(self):
         init_session = self.session.post(
-            SERVER + '/sessions',
-            data=self.get_auth_data())
+            self.server + '/sessions',
+            data=self.get_auth_data(),
+            verify=self.verify)
         self.init_data = self.get_data(init_session)
         return self.init_data
 
@@ -174,8 +174,9 @@ class SRPAuth(requests.auth.AuthBase):
         )
 
         auth_result = self.session.put(
-            SERVER + '/sessions/' + self.username,
-            data={'client_auth': binascii.hexlify(self.M)})
+            self.server + '/sessions/' + self.username,
+            data={'client_auth': binascii.hexlify(self.M)},
+            verify=self.verify)
 
         # XXX check for errors
         auth_data = self.get_data(auth_result)
