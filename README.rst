@@ -20,17 +20,21 @@ Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requiremen
 
 Debian systems
 --------------
+# XXX TODO: move to packaging doc.
 
 * python-qt4
-* python-gnutls == 1.1.9
-* python-keyring
 * python-crypto
 * python setuptools
 * python-nose, python-mock, python-coverage (if you want to run tests)
 
+Note: these two need a version that is not found in the current debian stable or in ubuntu 12.04. 
+
+* python-gnutls == 1.1.9
+* python-keyring
+
 Under a debian-based system, you can run::
 
-  # apt-get install openvpn python-qt4 python-keyring python-crypto
+  # apt-get install openvpn python-qt4 python-crypto
 
 For testing:
 
@@ -43,7 +47,9 @@ For _building_ the package you will need to install also::
 
 Install python dependencies with pip
 -------------------------------------
-Use pip (preferrable inside a virtualenv) to install all the required python packages::
+# XXX TODO: move to developers doc.
+
+Use pip (preferrable inside a virtualenv) to install the required python packages::
 
   # apt-get install python-pip python-dev libgnutls-dev
   % pip install -r pkg/requirements.pip
