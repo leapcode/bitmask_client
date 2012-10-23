@@ -29,6 +29,7 @@ class EIPConnection(OpenVPNConnection):
                  *args, **kwargs):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
+        self.provider = kwargs.pop('provider', None)
 
         self.error_queue = Queue.Queue()
 
@@ -38,8 +39,10 @@ class EIPConnection(OpenVPNConnection):
         checker_signals = kwargs.pop('checker_signals', None)
         self.checker_signals = checker_signals
 
-        self.provider_cert_checker = provider_cert_checker()
-        self.config_checker = config_checker()
+        # initialize checkers
+        self.provider_cert_checker = provider_cert_checker(
+            domain=self.provider)
+        self.config_checker = config_checker(domain=self.provider)
 
         host = eipconfig.get_socket_path()
         kwargs['host'] = host
@@ -48,6 +51,14 @@ class EIPConnection(OpenVPNConnection):
 
     def has_errors(self):
         return True if self.error_queue.qsize() != 0 else False
+
+    def set_provider_domain(self, domain):
+        """
+        sets the provider domain.
+        used from the first run wizard when we launch the run_checks
+        and connect process after having initialized the conductor.
+        """
+        self.provider = domain
 
     def run_checks(self, skip_download=False, skip_verify=False):
         """

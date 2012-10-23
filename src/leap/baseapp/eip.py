@@ -25,6 +25,7 @@ class EIPConductorAppMixin(object):
     def __init__(self, *args, **kwargs):
         opts = kwargs.pop('opts')
         config_file = getattr(opts, 'config_file', None)
+        provider = kwargs.pop('provider')
 
         self.eip_service_started = False
 
@@ -39,7 +40,8 @@ class EIPConductorAppMixin(object):
             checker_signals=(self.changeLeapStatus.emit, ),
             status_signals=(self.statusChange.emit, ),
             debug=self.debugmode,
-            ovpn_verbosity=opts.openvpn_verb)
+            ovpn_verbosity=opts.openvpn_verb,
+            provider=provider)
 
         self.skip_download = opts.no_provider_checks
         self.skip_verify = opts.no_ca_verify

@@ -110,6 +110,8 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     # since we will need to take some
     # things from there if present.
 
+    provider = kwargs.pop('provider', None)
+
     # get user/group name
     # also from config.
     user = baseconfig.get_username()
@@ -136,6 +138,7 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     logger.debug('setting eip gateway to %s', gw)
     opts.append(str(gw))
     opts.append('1194')
+    #opts.append('80')
     opts.append('udp')
 
     opts.append('--tls-client')
@@ -172,12 +175,15 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
         opts.append('7777')
 
     # certs
+    client_cert_path = eipspecs.client_cert_path(provider)
+    ca_cert_path = eipspecs.provider_ca_path(provider)
+
     opts.append('--cert')
-    opts.append(eipspecs.client_cert_path())
+    opts.append(client_cert_path)
     opts.append('--key')
-    opts.append(eipspecs.client_cert_path())
+    opts.append(client_cert_path)
     opts.append('--ca')
-    opts.append(eipspecs.provider_ca_path())
+    opts.append(ca_cert_path)
 
     # we cannot run in daemon mode
     # with the current subp setting.
@@ -245,7 +251,7 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
     return [command[0], command[1:]]
 
 
-def check_vpn_keys():
+def check_vpn_keys(provider=None):
     """
     performs an existance and permission check
     over the openvpn keys file.
@@ -253,8 +259,9 @@ def check_vpn_keys():
     per provider, containing the CA cert,
     the provider key, and our client certificate
     """
-    provider_ca = eipspecs.provider_ca_path()
-    client_cert = eipspecs.client_cert_path()
+    assert provider is not None
+    provider_ca = eipspecs.provider_ca_path(provider)
+    client_cert = eipspecs.client_cert_path(provider)
 
     logger.debug('provider ca = %s', provider_ca)
     logger.debug('client cert = %s', client_cert)

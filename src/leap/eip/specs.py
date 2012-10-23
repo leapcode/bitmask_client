@@ -4,6 +4,8 @@ import os
 from leap import __branding
 from leap.base import config as baseconfig
 
+# XXX move provider stuff to base config
+
 PROVIDER_CA_CERT = __branding.get(
     'provider_ca_file',
     'testprovider-ca-cert.pem')
@@ -13,7 +15,7 @@ provider_ca_path = lambda domain: str(os.path.join(
     baseconfig.get_provider_path(domain),
     'keys', 'ca',
     'cacert.pem'
-))
+)) if domain else None
 
 default_provider_ca_path = lambda: str(os.path.join(
     baseconfig.get_default_provider_path(),
@@ -28,7 +30,7 @@ client_cert_path = lambda domain: unicode(os.path.join(
     baseconfig.get_provider_path(domain),
     'keys', 'client',
     'openvpn.pem'
-))
+)) if domain else None
 
 default_client_cert_path = lambda: unicode(os.path.join(
     baseconfig.get_default_provider_path(),

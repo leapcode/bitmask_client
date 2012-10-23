@@ -44,20 +44,28 @@ QLabel { color: red;
 class FirstRunWizard(QtGui.QWizard):
 
     def __init__(
-            self, parent=None, providers=None,
+            self,
+            conductor_instance,
+            parent=None,
+            eip_username=None,
+            providers=None,
             success_cb=None, is_provider_setup=False,
             is_previously_registered=False,
             trusted_certs=None,
             netchecker=basechecks.LeapNetworkChecker,
             providercertchecker=eipchecks.ProviderCertChecker,
-            eipconfigchecker=eipchecks.EIPConfigChecker):
+            eipconfigchecker=eipchecks.EIPConfigChecker,
+            start_eipconnection_signal=None):
         super(FirstRunWizard, self).__init__(
             parent,
             QtCore.Qt.WindowStaysOnTopHint)
 
-        # XXX hardcoded for tests
-        #if not providers:
-            #providers = ('springbok',)
+        # we keep a reference to the conductor
+        # to be able to launch eip checks and connection
+        # in the connection page, before the wizard has ended.
+        self.conductor = conductor_instance
+
+        self.eip_username = eip_username
         self.providers = providers
 
         # success callback
@@ -79,10 +87,13 @@ class FirstRunWizard(QtGui.QWizard):
         self.providercertchecker = providercertchecker
         self.eipconfigchecker = eipconfigchecker
 
+        # signal for starting eip connection
+        # will be emitted in connecting page
+        self.start_eipconnection_signal = start_eipconnection_signal
+
         self.providerconfig = None
 
-        # FIXME add param for previously_registered
-        # should start at login page.
+        is_previously_registered = bool(self.eip_username)
 
         pages_dict = OrderedDict((
             # (name, WizardPage)
@@ -150,11 +161,11 @@ class FirstRunWizard(QtGui.QWizard):
         """
         final step in the wizard.
         gather the info, update settings
-        and call the success callback.
+        and call the success callback if any has been passed.
         """
         provider = self.field('provider_domain')
         username = self.field('userName')
-        #password = self.field('userPassword')
+        password = self.field('userPassword')
         remember_pass = self.field('rememberPassword')
 
         logger.debug('chosen provider: %s', provider)
@@ -163,19 +174,25 @@ class FirstRunWizard(QtGui.QWizard):
         super(FirstRunWizard, self).accept()
 
         settings = QtCore.QSettings()
+        # we are assuming here that we only remember one username
+        # in the form username@provider.domain
+        # We probably could extend this to support some form of
+        # profiles.
+
         settings.setValue("FirstRunWizardDone", True)
-        settings.setValue(
-            "eip_%s_username" % provider,
-            username)
-        settings.setValue("%s_remember_pass" % provider, remember_pass)
+        settings.setValue("provider_domain", provider)
+        full_username = "%s@%s" % (username, provider)
+
+        settings.setValue("eip_username", full_username)
+        settings.setValue("remember_user_and_pass", remember_pass)
 
         seed = self.get_random_str(10)
         settings.setValue("%s_seed" % provider, seed)
 
-        # Commenting out for 0.2.0 release
-        # since we did not fix #744 on time.
-
-        #leapkeyring.leap_set_password(username, password, seed=seed)
+        # XXX #744: comment out for 0.2.0 release
+        # if we need to have a version of python-keyring < 0.9
+        leapkeyring.leap_set_password(
+            full_username, password, seed=seed)
 
         logger.debug('First Run Wizard Done.')
         cb = self.success_cb
@@ -863,7 +880,7 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
             return False
 
         if password == "123456":
-            # XD
+            # joking
             self.set_validation_status('Password too obvious.')
             return False
 
@@ -970,6 +987,30 @@ class ConnectingPage(QtGui.QWizardPage):
     def get_donemsg(self, msg):
         return "%s ... done" % msg
 
+    def run_eip_checks_for_provider(self, domain):
+        wizard = self.wizard()
+        conductor = wizard.conductor
+        start_eip_signal = getattr(
+            wizard,
+            'start_eipconnection_signal', None)
+        conductor.set_provider_domain(domain)
+        conductor.run_checks()
+        self.conductor = conductor
+        errors = self.eip_error_check()
+        if not errors and start_eip_signal:
+            start_eip_signal.emit()
+
+    def eip_error_check(self):
+        """
+        a version of the main app error checker,
+        but integrated within the connecting page of the wizard.
+        consumes the conductor error queue.
+        pops errors, and add those to the wizard page
+        """
+        logger.debug('eip error check from connecting page')
+        errq = self.conductor.error_queue
+        # XXX missing!
+
     def fetch_and_validate(self):
         # Fake... till you make it...
         import time
@@ -1022,6 +1063,9 @@ class ConnectingPage(QtGui.QWizardPage):
 
         self.progress.setValue(100)
         time.sleep(3)
+
+        # here we go! :)
+        self.run_eip_checks_for_provider(domain)
 
         return True
 
@@ -1092,6 +1136,6 @@ if __name__ == '__main__':
         "18C62B941192CC1A"
         "49AE62218B2A4B7C": ['springbok']}
 
-    wizard = FirstRunWizard(trusted_certs=trusted_certs)
+    wizard = FirstRunWizard(None, trusted_certs=trusted_certs)
     wizard.show()
     sys.exit(app.exec_())

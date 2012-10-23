@@ -35,7 +35,8 @@ class LeapWindow(QtGui.QMainWindow,
     triggerEIPError = QtCore.pyqtSignal([object])
     start_eipconnection = QtCore.pyqtSignal([])
 
-    # XXX fix nomenclature here
+    # XXX fix nomenclature here:
+    # eipStatusChange vs. leapStatusChange
     # this is eip status change got from vpn management
     statusChange = QtCore.pyqtSignal([object])
     # this is global leap status
@@ -49,11 +50,14 @@ class LeapWindow(QtGui.QMainWindow,
             self.createLogBrowser()
 
         settings = QtCore.QSettings()
-        provider_domain = settings.value("provider_domain", None)
-        logger.debug('provider: %s', provider_domain)
+        self.provider_domain = settings.value("provider_domain", None)
+        self.eip_username = settings.value("eip_username", None)
+
+        logger.debug('provider: %s', self.provider_domain)
+        logger.debug('eip_username: %s', self.eip_username)
 
         EIPConductorAppMixin.__init__(
-            self, opts=opts, provider=provider_domain)
+            self, opts=opts, provider=self.provider_domain)
         StatusAwareTrayIconMixin.__init__(self)
         NetworkCheckerAppMixin.__init__(self)
         MainWindowMixin.__init__(self)
@@ -62,13 +66,15 @@ class LeapWindow(QtGui.QMainWindow,
         geom = settings.value(geom_key)
         if geom:
             self.restoreGeometry(geom)
+
+        # XXX check for wizard
         self.wizard_done = settings.value("FirstRunWizardDone")
 
         self.initchecks = InitChecksThread(self.run_eip_checks)
 
         # bind signals
         self.initchecks.finished.connect(
-            lambda: logger.debug('Initial checks finished'))
+            lambda: logger.debug('Initial checks thread finished'))
         self.trayIcon.activated.connect(self.iconActivated)
         self.newLogLine.connect(
             lambda line: self.onLoggerNewLine(line))
@@ -92,32 +98,52 @@ class LeapWindow(QtGui.QMainWindow,
         self.changeLeapStatus.connect(
             lambda newstatus: self.onChangeLeapConnStatus(newstatus))
 
-        # do frwizard and init signals
+        # do first run wizard and init signals
         self.mainappReady.connect(self.do_first_run_wizard_check)
         self.initReady.connect(self.runchecks_and_eipconnect)
 
         # ... all ready. go!
-        # calls do_first_run_wizard_check
+        # connected to do_first_run_wizard_check
         self.mainappReady.emit()
 
     def do_first_run_wizard_check(self):
+        """
+        checks whether first run wizard needs to be run
+        launches it if needed (with initReady signal as a success callback)
+        and emits initReady signal if not.
+        """
+        # XXX change DOC string after I remove the success callbac!!!
+
         logger.debug('first run wizard check...')
-        if self.wizard_done:
-            self.initReady.emit()
-        else:
-            # need to run first-run-wizard
-            logger.debug('running first run wizard')
+        need_wizard = False
+
+        # do checks (can overlap if wizard was interrupted)
+        if not self.wizard_done:
+            need_wizard = True
+        if not self.provider_domain:
+            need_wizard = True
+
+        # launch wizard if needed
+        if need_wizard:
             from leap.gui.firstrunwizard import FirstRunWizard
             wizard = FirstRunWizard(
+                self.conductor,
                 parent=self,
-                success_cb=self.initReady.emit)
+                eip_username=self.eip_username,
+                start_eipconnection_signal=self.start_eipconnection)
             wizard.show()
+        else:  # no wizard needed
+            logger.debug('running first run wizard')
+            self.initReady.emit()
+            return
 
     def runchecks_and_eipconnect(self):
         self.initchecks.begin()
 
 
 class InitChecksThread(QtCore.QThread):
+    # XXX rename as a generic QThread class,
+    # has nothing specific to initchecks
 
     def __init__(self, fun, parent=None):
         QtCore.QThread.__init__(self, parent)

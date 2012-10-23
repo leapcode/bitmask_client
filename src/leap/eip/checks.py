@@ -45,7 +45,8 @@ reachable and testable as a whole.
 """
 
 
-def get_ca_cert():
+def get_branding_ca_cert(domain):
+    # XXX deprecated
     ca_file = BRANDING.get('provider_ca_file')
     if ca_file:
         return leapcerts.where(ca_file)
@@ -62,7 +63,7 @@ class ProviderCertChecker(object):
 
         self.fetcher = fetcher
         self.domain = domain
-        self.cacert = get_ca_cert()
+        self.cacert = eipspecs.provider_ca_path(domain)
 
     def run_all(
             self, checker=None,
@@ -84,7 +85,7 @@ class ProviderCertChecker(object):
         checker.is_there_provider_ca()
 
         # XXX FAKE IT!!!
-        checker.is_https_working(verify=do_verify)
+        checker.is_https_working(verify=do_verify, autocacert=True)
         checker.check_new_cert_needed(verify=do_verify)
 
     def download_ca_cert(self, uri=None, verify=True):
@@ -136,17 +137,14 @@ class ProviderCertChecker(object):
         raise NotImplementedError
 
     def is_there_provider_ca(self):
-        # XXX modify for generic build
-        from leap import certs
-        logger.debug('do we have provider_ca?')
-        cacert_path = BRANDING.get('provider_ca_file', None)
-        if not cacert_path:
-            # XXX look from the domain
-            logger.debug('False')
+        if not self.cacert:
             return False
-        self.cacert = certs.where(cacert_path)
-        logger.debug('True')
-        return True
+        cacert_exists = os.path.isfile(self.cacert)
+        if cacert_exists:
+            logger.debug('True')
+            return True
+        logger.debug('False!')
+        return False
 
     def is_https_working(
             self, uri=None, verify=True,
@@ -162,6 +160,7 @@ class ProviderCertChecker(object):
         if autocacert and verify is True and self.cacert is not None:
             logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
+        #import pdb4qt; pdb4qt.set_trace()
         logger.debug('is https working?')
         logger.debug('uri: %s (verify:%s)', uri, verify)
         try:
@@ -169,18 +168,16 @@ class ProviderCertChecker(object):
 
         except requests.exceptions.SSLError as exc:
             logger.error("SSLError")
-            raise eipexceptions.HttpsBadCertError
+            # XXX RAISE! See #638
+            #raise eipexceptions.HttpsBadCertError
+            logger.warning('BUG #638 CERT VERIFICATION FAILED! '
+                           '(this should be CRITICAL)')
+            logger.warning('SSLError: %s', exc.message)
 
         except requests.exceptions.ConnectionError:
             logger.error('ConnectionError')
             raise eipexceptions.HttpsNotSupported
 
-        except requests.exceptions.SSLError as exc:
-            logger.warning('BUG #638 CERT VERIFICATION FAILED! '
-                           '(this should be CRITICAL)')
-            logger.warning('SSLError: %s', exc.message)
-            # XXX RAISE! See #638
-            #raise eipexceptions.EIPBadCertError
         else:
             logger.debug('True')
             return True

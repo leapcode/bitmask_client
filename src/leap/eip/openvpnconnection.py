@@ -25,7 +25,6 @@ class OpenVPNConnection(Connection):
     """
 
     def __init__(self,
-                 #config_file=None,
                  watcher_cb=None,
                  debug=False,
                  host=None,
@@ -96,6 +95,7 @@ to be triggered for each one of them.
         # XXX check also for command-line --command flag
         try:
             command, args = eip_config.build_ovpn_command(
+                provider=self.provider,
                 debug=self.debug,
                 socket_path=self.host,
                 ovpn_verbosity=self.ovpn_verbosity)
@@ -115,7 +115,7 @@ to be triggered for each one of them.
         checks for correct permissions on vpn keys
         """
         try:
-            eip_config.check_vpn_keys()
+            eip_config.check_vpn_keys(provider=self.provider)
         except eip_exceptions.EIPInitBadKeyFilePermError:
             logger.error('Bad VPN Keys permission!')
             # do nothing now
