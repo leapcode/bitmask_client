@@ -127,8 +127,8 @@ class MainWindowMixin(object):
                 "context menu of the system tray entry.")
             self.hide()
             event.ignore()
-        if self.debugmode:
-            self.cleanupAndQuit()
+            return
+        self.cleanupAndQuit()
 
     def cleanupAndQuit(self):
         """

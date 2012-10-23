@@ -48,17 +48,18 @@ class LeapWindow(QtGui.QMainWindow,
         if self.debugmode:
             self.createLogBrowser()
 
-        EIPConductorAppMixin.__init__(self, opts=opts)
+        settings = QtCore.QSettings()
+        provider_domain = settings.value("provider_domain", None)
+        logger.debug('provider: %s', provider_domain)
+
+        EIPConductorAppMixin.__init__(
+            self, opts=opts, provider=provider_domain)
         StatusAwareTrayIconMixin.__init__(self)
         NetworkCheckerAppMixin.__init__(self)
         MainWindowMixin.__init__(self)
 
-        settings = QtCore.QSettings()
-
         geom_key = "DebugGeometry" if self.debugmode else "Geometry"
         geom = settings.value(geom_key)
-
-        geom = settings.value("Geometry")
         if geom:
             self.restoreGeometry(geom)
         self.wizard_done = settings.value("FirstRunWizardDone")
