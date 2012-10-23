@@ -495,7 +495,7 @@ class EIPConfigChecker(object):
 
     def _get_provider_definition_uri(self, domain=None, path=None):
         if domain is None:
-            domain = baseconstants.DEFAULT_PROVIDER
+            domain = self.domain or baseconstants.DEFAULT_PROVIDER
         if path is None:
             path = baseconstants.DEFINITION_EXPECTED_PATH
         uri = u"https://%s/%s" % (domain, path)
@@ -504,7 +504,7 @@ class EIPConfigChecker(object):
 
     def _get_eip_service_uri(self, domain=None, path=None):
         if domain is None:
-            domain = baseconstants.DEFAULT_PROVIDER
+            domain = self.domain or baseconstants.DEFAULT_PROVIDER
         if path is None:
             path = eipconstants.EIP_SERVICE_EXPECTED_PATH
         uri = "https://%s/%s" % (domain, path)
