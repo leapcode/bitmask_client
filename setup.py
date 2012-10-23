@@ -187,8 +187,12 @@ class cmd_post_install(_install_data):
 
 cmdclass = versioneer.get_cmdclass()
 cmdclass["branding"] = DoBranding
-cmdclass["build"] = cmd_build
-cmdclass["sdist"] = cmd_sdist
+
+# Uncomment this to have the branding command run automatically
+# on the build and sdist commands.
+#cmdclass["build"] = cmd_build
+#cmdclass["sdist"] = cmd_sdist
+
 cmdclass["install_data"] = cmd_post_install
 
 
@@ -196,7 +200,7 @@ launcher_name = branding.get_shortname()
 if launcher_name:
     leap_launcher = 'leap-%s-client=leap.app:main' % launcher_name
 else:
-    leap_launcher = 'leap=leap.app:main'
+    leap_launcher = 'leap-client=leap.app:main'
 
 setup(
     name=branding.get_name(),
