@@ -35,12 +35,10 @@ class LeapWindow(QtGui.QMainWindow,
     triggerEIPError = QtCore.pyqtSignal([object])
     start_eipconnection = QtCore.pyqtSignal([])
 
-    # XXX fix nomenclature here:
-    # eipStatusChange vs. leapStatusChange
-    # this is eip status change got from vpn management
-    statusChange = QtCore.pyqtSignal([object])
-    # this is global leap status
-    changeLeapStatus = QtCore.pyqtSignal([str])
+    # this is status change got from openvpn management
+    openvpnStatusChange = QtCore.pyqtSignal([object])
+    # this is global eip status
+    eipStatusChange = QtCore.pyqtSignal([str])
 
     def __init__(self, opts):
         logger.debug('init leap window')
@@ -93,10 +91,10 @@ class LeapWindow(QtGui.QMainWindow,
 
         # status change.
         # TODO unify
-        self.statusChange.connect(
-            lambda status: self.onStatusChange(status))
-        self.changeLeapStatus.connect(
-            lambda newstatus: self.onChangeLeapConnStatus(newstatus))
+        self.openvpnStatusChange.connect(
+            lambda status: self.onOpenVPNStatusChange(status))
+        self.eipStatusChange.connect(
+            lambda newstatus: self.onEIPConnStatusChange(newstatus))
 
         # do first run wizard and init signals
         self.mainappReady.connect(self.do_first_run_wizard_check)
@@ -109,10 +107,9 @@ class LeapWindow(QtGui.QMainWindow,
     def do_first_run_wizard_check(self):
         """
         checks whether first run wizard needs to be run
-        launches it if needed (with initReady signal as a success callback)
+        launches it if needed
         and emits initReady signal if not.
         """
-        # XXX change DOC string after I remove the success callbac!!!
 
         logger.debug('first run wizard check...')
         need_wizard = False
@@ -130,7 +127,8 @@ class LeapWindow(QtGui.QMainWindow,
                 self.conductor,
                 parent=self,
                 eip_username=self.eip_username,
-                start_eipconnection_signal=self.start_eipconnection)
+                start_eipconnection_signal=self.start_eipconnection,
+                eip_statuschange_signal=self.eipStatusChange)
             wizard.show()
         else:  # no wizard needed
             logger.debug('running first run wizard')

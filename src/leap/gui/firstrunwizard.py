@@ -20,6 +20,7 @@ from leap.crypto import leapkeyring
 from leap.eip import checks as eipchecks
 from leap.eip import exceptions as eipexceptions
 from leap.gui import mainwindow_rc
+from leap.util.coroutines import coroutine
 
 try:
     from collections import OrderedDict
@@ -55,7 +56,8 @@ class FirstRunWizard(QtGui.QWizard):
             netchecker=basechecks.LeapNetworkChecker,
             providercertchecker=eipchecks.ProviderCertChecker,
             eipconfigchecker=eipchecks.EIPConfigChecker,
-            start_eipconnection_signal=None):
+            start_eipconnection_signal=None,
+            eip_statuschange_signal=None):
         super(FirstRunWizard, self).__init__(
             parent,
             QtCore.Qt.WindowStaysOnTopHint)
@@ -87,9 +89,11 @@ class FirstRunWizard(QtGui.QWizard):
         self.providercertchecker = providercertchecker
         self.eipconfigchecker = eipconfigchecker
 
-        # signal for starting eip connection
+        # Signals
         # will be emitted in connecting page
         self.start_eipconnection_signal = start_eipconnection_signal
+        self.eip_statuschange_signal = eip_statuschange_signal
+
 
         self.providerconfig = None
 
@@ -965,10 +969,14 @@ class ConnectingPage(QtGui.QWizardPage):
         self.progress.setMaximum(100)
         self.progress.hide()
 
+        # for pre-checks
         self.status_line_1 = QtGui.QLabel()
         self.status_line_2 = QtGui.QLabel()
         self.status_line_3 = QtGui.QLabel()
         self.status_line_4 = QtGui.QLabel()
+
+        # for connecting signals...
+        self.status_line_5 = QtGui.QLabel()
 
         layout = QtGui.QGridLayout()
         layout.addWidget(self.status, 0, 1)
@@ -984,15 +992,21 @@ class ConnectingPage(QtGui.QWizardPage):
         self.status.setText(status)
         self.status.setWordWrap(True)
 
+    def set_status_line(self, line, status):
+        line = getattr(self, 'status_line_%s' % line)
+        if line:
+            line.setText(status)
+
     def get_donemsg(self, msg):
         return "%s ... done" % msg
 
-    def run_eip_checks_for_provider(self, domain):
+    def run_eip_checks_for_provider_and_connect(self, domain):
         wizard = self.wizard()
         conductor = wizard.conductor
         start_eip_signal = getattr(
             wizard,
             'start_eipconnection_signal', None)
+
         conductor.set_provider_domain(domain)
         conductor.run_checks()
         self.conductor = conductor
@@ -1011,6 +1025,15 @@ class ConnectingPage(QtGui.QWizardPage):
         errq = self.conductor.error_queue
         # XXX missing!
 
+    #@coroutine
+    #def wait_for_validation_block(self):
+        #try:
+            #while True:
+                #(yield)
+                #break
+        #except GeneratorExit:
+            #pass
+#
     def fetch_and_validate(self):
         # Fake... till you make it...
         import time
@@ -1065,11 +1088,16 @@ class ConnectingPage(QtGui.QWizardPage):
         time.sleep(3)
 
         # here we go! :)
-        self.run_eip_checks_for_provider(domain)
+        self.run_eip_checks_for_provider_and_connect(domain)
 
+        #self.validation_block = self.wait_for_validation_block()
+
+        # XXX signal timeout!
         return True
 
+    #
     # pagewizard methods
+    #
 
     def initializePage(self):
         # XXX if we're coming from signup page
@@ -1094,7 +1122,7 @@ class LastPage(QtGui.QWizardPage):
     def __init__(self, parent=None):
         super(LastPage, self).__init__(parent)
 
-        self.setTitle("Ready to go!")
+        self.setTitle("Connecting...")
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
@@ -1107,17 +1135,62 @@ class LastPage(QtGui.QWizardPage):
         self.label = QtGui.QLabel()
         self.label.setWordWrap(True)
 
+        self.status_line_1 = QtGui.QLabel()
+        self.status_line_2 = QtGui.QLabel()
+        self.status_line_3 = QtGui.QLabel()
+        self.status_line_4 = QtGui.QLabel()
+
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.label)
+
+        # make loop
+        layout.addWidget(self.status_line_1)
+        layout.addWidget(self.status_line_2)
+        layout.addWidget(self.status_line_3)
+        layout.addWidget(self.status_line_4)
+
         self.setLayout(layout)
 
-    def initializePage(self):
+    def set_status_line(self, line, status):
+        statusline = getattr(self, 'status_line_%s' % line)
+        if statusline:
+            statusline.setText(status)
+
+    def set_finished_status(self):
+        self.setTitle('You are using an encrypted connection!')
         finishText = self.wizard().buttonText(
             QtGui.QWizard.FinishButton)
         finishText = finishText.replace('&', '')
         self.label.setText(
-            "Click '<i>%s</i>' to end the wizard and start "
-            "encrypting your connection." % finishText)
+            "Click '<i>%s</i>' to end the wizard and "
+            "save your settings." % finishText)
+
+    @coroutine
+    def eip_status_handler(self):
+        logger.debug('logging status in last page')
+        self.validation_done = False
+        status_count = 0
+        try:
+            while True:
+                status = (yield)
+                status_count += 1
+                # XXX add to line...
+                logger.debug('status --> %s', status)
+                self.set_status_line(status_count, status)
+                if status == "connected":
+                    self.set_finished_status()
+                    break
+        except GeneratorExit:
+            pass
+
+    def initializePage(self):
+        wizard = self.wizard()
+        if not wizard:
+            return
+        eip_status_handler = self.eip_status_handler()
+        eip_statuschange_signal = wizard.eip_statuschange_signal
+        eip_statuschange_signal.connect(
+            lambda status: eip_status_handler.send(status))
 
 
 if __name__ == '__main__':

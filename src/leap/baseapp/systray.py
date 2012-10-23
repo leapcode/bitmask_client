@@ -196,31 +196,31 @@ class StatusAwareTrayIconMixin(object):
         self.statusUpdate()
 
     @QtCore.pyqtSlot(object)
-    def onStatusChange(self, status):
+    def onOpenVPNStatusChange(self, status):
         """
-        updates icon
+        updates icon, according to the openvpn status change.
         """
         icon_name = self.conductor.get_icon_name()
 
         # XXX refactor. Use QStateMachine
 
         if icon_name in ("disconnected", "connected"):
-            self.changeLeapStatus.emit(icon_name)
+            self.eipStatusChange.emit(icon_name)
 
         if icon_name in ("connecting"):
             # let's see how it matches
             leap_status_name = self.conductor.get_leap_status()
-            self.changeLeapStatus.emit(leap_status_name)
+            self.eipStatusChange.emit(leap_status_name)
 
         self.setIcon(icon_name)
         # change connection pixmap widget
         self.setConnWidget(icon_name)
 
     @QtCore.pyqtSlot(str)
-    def onChangeLeapConnStatus(self, newstatus):
+    def onEIPConnStatusChange(self, newstatus):
         """
-        slot for LEAP status changes
-        not to be confused with onStatusChange.
+        slot for EIP status changes
+        not to be confused with onOpenVPNStatusChange.
         this only updates the non-debug LEAP Status line
         next to the connection icon.
         """
