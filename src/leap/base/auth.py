@@ -177,10 +177,16 @@ class SRPAuth(requests.auth.AuthBase):
             SERVER + '/sessions/' + self.username,
             data={'client_auth': binascii.hexlify(self.M)})
 
-        # XXX check for errors
         auth_data = self.get_data(auth_result)
+        M2 = auth_data.get("M2", None)
+        if not M2:
+            errors = auth_data.get('errors', None)
+            if errors:
+                logger.error(errors)
+            raise SRPAuthenticationError('Authentication Error')
+
         self.srp_usr.verify_session(
-            safe_unhexlify(auth_data["M2"]))
+            safe_unhexlify(M2))
 
         try:
             assert self.srp_usr.authenticated()

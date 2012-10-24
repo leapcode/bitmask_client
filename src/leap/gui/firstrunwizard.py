@@ -12,7 +12,7 @@ sip.setapi('QVariant', 2)
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-from leap.base.auth import LeapSRPRegister
+from leap.base import auth
 from leap.base import checks as basechecks
 from leap.base import exceptions as baseexceptions
 from leap.crypto import certs
@@ -35,6 +35,13 @@ logger.setLevel(logging.DEBUG)
 
 APP_LOGO = ':/images/leap-color-small.png'
 
+# bare is the username portion of a JID
+# full includes the "at" and some extra chars
+# that can be allowed for fqdn
+
+BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
+FULL_USERNAME_REGEX = r"^[A-Za-z\d_@.-]+$"
+
 
 ErrorLabelStyleSheet = """
 QLabel { color: red;
@@ -51,7 +58,6 @@ class FirstRunWizard(QtGui.QWizard):
             eip_username=None,
             providers=None,
             success_cb=None, is_provider_setup=False,
-            is_previously_registered=False,
             trusted_certs=None,
             netchecker=basechecks.LeapNetworkChecker,
             providercertchecker=eipchecks.ProviderCertChecker,
@@ -76,10 +82,6 @@ class FirstRunWizard(QtGui.QWizard):
         # is provider setup?
         self.is_provider_setup = is_provider_setup
 
-        # previously registered
-        # if True, jumps to LogIn page.
-        self.is_previously_registered = is_previously_registered
-
         # a dict with trusted fingerprints
         # in the form {'nospacesfingerprint': ['host1', 'host2']}
         self.trusted_certs = trusted_certs
@@ -94,10 +96,15 @@ class FirstRunWizard(QtGui.QWizard):
         self.start_eipconnection_signal = start_eipconnection_signal
         self.eip_statuschange_signal = eip_statuschange_signal
 
-
         self.providerconfig = None
-
-        is_previously_registered = bool(self.eip_username)
+        # previously registered
+        # if True, jumps to LogIn page.
+        # by setting 1st page??
+        #self.is_previously_registered = is_previously_registered
+        # XXX ??? ^v
+        self.is_previously_registered = bool(self.eip_username)
+        self.from_login = False
+        #self.allow_revisit = None
 
         pages_dict = OrderedDict((
             # (name, WizardPage)
@@ -146,6 +153,26 @@ class FirstRunWizard(QtGui.QWizard):
         @rtype: int
         """
         return self.pages_dict.keys().index(page_name)
+
+    # XXX was trying to allow temporary
+    # a revisit. this does not work cause visitedPages
+    # is not called internally.
+
+    #def allow_page_revisit(self, page_name):
+        #self.allow_revisit = self.get_page_index(page_name)
+#
+    #def visitedPages(self):
+        #"""
+        #reimplementation of visitedPages
+        #that temporary allows to revisit a page
+        #if allow_revisit is set
+        #"""
+        #visited = super(FirstRunWizard, self).visitedPages()
+        #allow = self.allow_revisit
+        #if allow:
+            #visited.remove(allow)
+        #self.allow_revisit = None
+        #return visited
 
     def set_providerconfig(self, providerconfig):
         self.providerconfig = providerconfig
@@ -561,12 +588,17 @@ class ProviderSetupPage(QtGui.QWizardPage):
         domain = self.field('provider_domain')
         wizard = self.wizard()
         pconfig = wizard.providerconfig
+
         pCertChecker = wizard.providercertchecker
         certchecker = pCertChecker(domain=domain)
 
         self.set_status('Fetching CA certificate')
         self.progress.setValue(30)
-        ca_cert_uri = pconfig.get('ca_cert_uri').geturl()
+
+        if pconfig:
+            ca_cert_uri = pconfig.get('ca_cert_uri').geturl()
+        else:
+            ca_cert_uri = None
 
         # XXX check scheme == "https"
         # XXX passing verify == False because
@@ -629,6 +661,9 @@ class ProviderSetupPage(QtGui.QWizardPage):
         self.progress.setValue(0)
         self.progress.hide()
 
+        # XXX use a call to "next" instead?
+        #self.wizard().next()
+
     def validatePage(self):
         self.progress.show()
         self.fetch_and_validate()
@@ -661,57 +696,6 @@ class UserFormMixIn(object):
         """
         self.validationMsg.setText(msg)
 
-    # XXX  Refactor all these validation msgs!!!
-
-    def set_status_validating(self):
-        """
-        set validation msg to 'registering...'
-        """
-        # XXX  this is NOT WORKING.
-        # My guess is that, even if we are using
-        # signals to trigger this, it does
-        # not show until the validate function
-        # returns.
-        # I guess it is because there is no delay...
-        self.validationMsg.setText('registering...')
-
-    def set_status_invalid_username(self):
-        """
-        set validation msg to
-        not available user
-        """
-        self.validationMsg.setText('Username not available.')
-
-    def set_status_server_500(self):
-        """
-        set validation msg to
-        internal server error
-        """
-        self.validationMsg.setText("Error during registration (500)")
-
-    def set_status_timeout(self):
-        """
-        set validation msg to
-        timeout
-        """
-        self.validationMsg.setText("Error connecting to provider (timeout)")
-
-    def set_status_connerror(self):
-        """
-        set validation msg to
-        connection refused
-        """
-        self.validationMsg.setText(
-            "Error connecting to provider "
-            "(connection error)")
-
-    def set_status_unknown_error(self):
-        """
-        set validation msg to
-        unknown error
-        """
-        self.validationMsg.setText("Error during sign up")
-
 
 class LogInPage(QtGui.QWizardPage, UserFormMixIn):
     def __init__(self, parent=None):
@@ -730,8 +714,8 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
             self.reset_validation_status)
         userNameLabel.setBuddy(userNameLineEdit)
 
-        # add regex validator
-        usernameRe = QtCore.QRegExp(r"^[A-Za-z\d_]+$")
+        # let's add regex validator
+        usernameRe = QtCore.QRegExp(FULL_USERNAME_REGEX)
         userNameLineEdit.setValidator(
             QtGui.QRegExpValidator(usernameRe, self))
         self.userNameLineEdit = userNameLineEdit
@@ -742,8 +726,8 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
             QtGui.QLineEdit.Password)
         userPasswordLabel.setBuddy(self.userPasswordLineEdit)
 
-        self.registerField('log_in_userName*', self.userNameLineEdit)
-        self.registerField('log_in_userPassword*', self.userPasswordLineEdit)
+        self.registerField('login_userName*', self.userNameLineEdit)
+        self.registerField('login_userPassword*', self.userPasswordLineEdit)
 
         layout = QtGui.QGridLayout()
         layout.setColumnMinimumWidth(0, 20)
@@ -760,6 +744,15 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
 
         self.setLayout(layout)
 
+        #self.registerField('is_login_wizard')
+
+    def onUserNameEdit(self, *args):
+        if self.initial_username_sample:
+            self.userNameLineEdit.setText('')
+            self.initial_username_sample = None
+
+    # pagewizard methods
+
     def nextId(self):
         wizard = self.wizard()
         if not wizard:
@@ -770,6 +763,59 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
             next_ = 'providersetup'
         return wizard.get_page_index(next_)
 
+    def initializePage(self):
+        self.userNameLineEdit.setText('username@provider.example.org')
+        self.userNameLineEdit.cursorPositionChanged.connect(
+            self.onUserNameEdit)
+        self.initial_username_sample = True
+
+    def validatePage(self):
+        wizard = self.wizard()
+        eipconfigchecker = wizard.eipconfigchecker()
+
+        full_username = self.userNameLineEdit.text()
+        password = self.userPasswordLineEdit.text()
+        if full_username.count('@') != 1:
+            self.set_validation_status(
+                "Username must be in the username@provider form.")
+            return False
+
+        username, domain = full_username.split('@')
+        self.setField('provider_domain', domain)
+        self.setField('login_userName', username)
+        self.setField('login_userPassword', password)
+
+        # Able to contact domain?
+        # can get definition?
+        # two-by-one
+        try:
+            eipconfigchecker.fetch_definition(domain=domain)
+
+        # we're using requests here for all
+        # the possible error cases that it catches.
+        except requests.exceptions.ConnectionError as exc:
+            self.set_validation_status(exc.message[1])
+            return False
+        except requests.exceptions.HTTPError as exc:
+            self.set_validation_status(exc.message)
+            return False
+        wizard.set_providerconfig(
+            eipconfigchecker.defaultprovider.config)
+
+        # XXX validate user? or we leave that for later?
+        # I think the best thing to do for that is
+        # continue to provider setup page, and if
+        # we catch authentication error there, redirect
+        # again to this page (by clicking "next" to
+        # come here).
+        # Rationale is that we need to verify server certs
+        # and so on.
+
+        # mark that we came from login page.
+        self.wizard().from_login = True
+
+        return True
+
 
 class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
     setSigningUpStatus = QtCore.pyqtSignal([])
@@ -779,7 +825,8 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
 
         # bind wizard page signals
         self.setSigningUpStatus.connect(
-            self.set_status_validating)
+            lambda: self.set_validation_status(
+                'validating'))
 
         self.setTitle("Sign Up")
 
@@ -793,8 +840,8 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
             self.reset_validation_status)
         userNameLabel.setBuddy(userNameLineEdit)
 
-        # add regex validator
-        usernameRe = QtCore.QRegExp(r"^[A-Za-z\d_]+$")
+        # let's add regex validator
+        usernameRe = QtCore.QRegExp(BARE_USERNAME_REGEX)
         userNameLineEdit.setValidator(
             QtGui.QRegExpValidator(usernameRe, self))
         self.userNameLineEdit = userNameLineEdit
@@ -888,14 +935,14 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
             self.set_validation_status('Password too obvious.')
             return False
 
+        domain = self.field('provider_domain')
+
         # XXX TODO -- remove debug info
         # XXX get from provider info
         # XXX enforce https
         # and pass a verify value
 
-        domain = self.field('provider_domain')
-
-        signup = LeapSRPRegister(
+        signup = auth.LeapSRPRegister(
             schema="http",
             provider=domain,
 
@@ -907,12 +954,15 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         try:
             ok, req = signup.register_user(username, password)
         except socket.timeout:
-            self.set_status_timeout()
+            self.set_validation_status(
+                "Error connecting to provider (timeout)")
             return False
 
         except requests.exceptions.ConnectionError as exc:
             logger.error(exc)
-            self.set_status_connerror()
+            self.set_validation_status(
+                "Error connecting to provider "
+                "(connection error)")
             return False
 
         if ok:
@@ -923,7 +973,8 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         # get timeout
         # ...
         if req.status_code == 500:
-            self.set_status_server_500()
+            self.set_validation_status(
+                "Error during registration (500)")
             return False
 
         validation_msgs = json.loads(req.content)
@@ -932,9 +983,11 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         if errors and errors.get('login', None):
             # XXX this sometimes catch the blank username
             # but we're not allowing that (soon)
-            self.set_status_invalid_username()
+            self.set_validation_status(
+                'Username not available.')
         else:
-            self.set_status_unknown_error()
+            self.set_validation_status(
+                "Error during sign up")
         return False
 
     def nextId(self):
@@ -986,7 +1039,15 @@ class ConnectingPage(QtGui.QWizardPage):
         layout.addWidget(self.status_line_3, 10, 1)
         layout.addWidget(self.status_line_4, 11, 1)
 
+        # XXX to be used?
+        #self.validation_status = QtGui.QLabel("")
+        #self.validation_status.setStyleSheet(
+            #ErrorLabelStyleSheet)
+        #self.validation_msg = QtGui.QLabel("")
+
         self.setLayout(layout)
+
+        self.goto_login_again = False
 
     def set_status(self, status):
         self.status.setText(status)
@@ -996,6 +1057,18 @@ class ConnectingPage(QtGui.QWizardPage):
         line = getattr(self, 'status_line_%s' % line)
         if line:
             line.setText(status)
+
+    def set_validation_status(self, status):
+        # Do not remember if we're using
+        # status lines > 3 now...
+        # if we are, move below
+        self.status_line_3.setStyleSheet(
+            ErrorLabelStyleSheet)
+        self.status_line_3.setText(status)
+
+    def set_validation_message(self, message):
+        self.status_line_4.setText(message)
+        self.status_line_4.setWordWrap(True)
 
     def get_donemsg(self, msg):
         return "%s ... done" % msg
@@ -1025,17 +1098,7 @@ class ConnectingPage(QtGui.QWizardPage):
         errq = self.conductor.error_queue
         # XXX missing!
 
-    #@coroutine
-    #def wait_for_validation_block(self):
-        #try:
-            #while True:
-                #(yield)
-                #break
-        #except GeneratorExit:
-            #pass
-#
     def fetch_and_validate(self):
-        # Fake... till you make it...
         import time
         domain = self.field('provider_domain')
         wizard = self.wizard()
@@ -1044,12 +1107,16 @@ class ConnectingPage(QtGui.QWizardPage):
         pCertChecker = wizard.providercertchecker(
             domain=domain)
 
-        # XXX get from log_in page if we came that way
-        # instead
+        # username and password are in different fields
+        # if they were stored in log_in or sign_up pages.
+        from_login = self.wizard().from_login
+        unamek_base = 'userName'
+        passwk_base = 'userPassword'
+        unamek = 'login_%s' % unamek_base if from_login else unamek_base
+        passwk = 'login_%s' % passwk_base if from_login else passwk_base
 
-        username = self.field('userName')
-        password = self.field('userPassword')
-
+        username = self.field(unamek)
+        password = self.field(passwk)
         credentials = username, password
 
         self.progress.show()
@@ -1070,8 +1137,18 @@ class ConnectingPage(QtGui.QWizardPage):
         self.progress.setValue(66)
 
         # Download cert
-        pCertChecker.download_new_client_cert(
-            credentials=credentials)
+        try:
+            pCertChecker.download_new_client_cert(
+                credentials=credentials)
+        except auth.SRPAuthenticationError:
+            self.set_validation_status("Authentication error")
+            #self.set_validation_message(
+                #"Click <i>next</i> to introduce your "
+                #"credentials again")
+            self.goto_login_again = True
+            # We should do something here
+            # but it's broken
+            return False
 
         time.sleep(2)
         self.status_line_2.setText(
@@ -1096,8 +1173,19 @@ class ConnectingPage(QtGui.QWizardPage):
         return True
 
     #
-    # pagewizard methods
+    # wizardpage methods
     #
+
+    def nextId(self):
+        wizard = self.wizard()
+        # XXX this does not work because
+        # page login has already been met
+        #if self.goto_login_again:
+            #next_ = "login"
+        #else:
+            #next_ = "lastpage"
+        next_ = "lastpage"
+        return wizard.get_page_index(next_)
 
     def initializePage(self):
         # XXX if we're coming from signup page
@@ -1189,8 +1277,9 @@ class LastPage(QtGui.QWizardPage):
             return
         eip_status_handler = self.eip_status_handler()
         eip_statuschange_signal = wizard.eip_statuschange_signal
-        eip_statuschange_signal.connect(
-            lambda status: eip_status_handler.send(status))
+        if eip_statuschange_signal:
+            eip_statuschange_signal.connect(
+                lambda status: eip_status_handler.send(status))
 
 
 if __name__ == '__main__':
