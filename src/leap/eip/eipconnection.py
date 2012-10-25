@@ -106,11 +106,11 @@ class EIPConnection(OpenVPNConnection):
         logger.debug("disconnect: clicked.")
         self.status.change_to(self.status.DISCONNECTED)
 
-    def shutdown(self):
-        """
-        shutdown and quit
-        """
-        self.desired_con_state = self.status.DISCONNECTED
+    #def shutdown(self):
+        #"""
+        #shutdown and quit
+        #"""
+        #self.desired_con_state = self.status.DISCONNECTED
 
     def connection_state(self):
         """
@@ -121,10 +121,6 @@ class EIPConnection(OpenVPNConnection):
     def poll_connection_state(self):
         """
         """
-        # XXX this separation does not
-        # make sense anymore after having
-        # merged Connection and Manager classes.
-        # XXX GET RID OF THIS FUNCTION HERE!
         try:
             state = self.get_connection_state()
         except eip_exceptions.ConnectionRefusedError:
@@ -132,7 +128,7 @@ class EIPConnection(OpenVPNConnection):
             logger.warning('connection refused')
             return
         if not state:
-            #logger.debug('no state')
+            logger.debug('no state')
             return
         (ts, status_step,
          ok, ip, remote) = state
@@ -258,6 +254,7 @@ class EIPConnectionStatus(object):
     def get_leap_status(self):
         # XXX improve nomenclature
         leap_status = {
+            0: 'disconnected',
             1: 'connecting to gateway',
             2: 'connecting to gateway',
             3: 'authenticating',

@@ -129,10 +129,22 @@ class StatusAwareTrayIconMixin(object):
         # this is too simple by now.
         # XXX We need to get the REAL info for Encryption state.
         # (now is ON as soon as vpn launched)
-        if self.eip_service_started is True:
+
+        # XXX get STATUS CONSTANTS INSTEAD
+
+        icon_status = self.conductor.status.get_state_icon()
+        if icon_status == "connected":
+            self.connAct.setEnabled(True)
             self.connAct.setText('Encryption ON    turn o&ff')
-        else:
+            return
+        if icon_status == "disconnected":
+            self.connAct.setEnabled(True)
             self.connAct.setText('Encryption OFF   turn &on')
+            return
+        if icon_status == "connecting":
+            self.connAct.setDisabled(True)
+            self.connAct.setText('connecting...')
+            return
 
     def detailsWin(self):
         visible = self.isVisible()

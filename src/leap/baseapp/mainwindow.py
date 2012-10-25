@@ -95,6 +95,9 @@ class LeapWindow(QtGui.QMainWindow,
             lambda status: self.onOpenVPNStatusChange(status))
         self.eipStatusChange.connect(
             lambda newstatus: self.onEIPConnStatusChange(newstatus))
+        # can I connect 2 signals?
+        self.eipStatusChange.connect(
+            lambda newstatus: self.toggleEIPAct())
 
         # do first run wizard and init signals
         self.mainappReady.connect(self.do_first_run_wizard_check)
