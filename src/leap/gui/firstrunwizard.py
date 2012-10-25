@@ -195,7 +195,7 @@ class FirstRunWizard(QtGui.QWizard):
 
         # username and password are in different fields
         # if they were stored in log_in or sign_up pages.
-        from_login = self.wizard().from_login
+        from_login = self.from_login
         unamek_base = 'userName'
         passwk_base = 'userPassword'
         unamek = 'login_%s' % unamek_base if from_login else unamek_base
@@ -221,16 +221,17 @@ class FirstRunWizard(QtGui.QWizard):
         settings.setValue("provider_domain", provider)
         full_username = "%s@%s" % (username, provider)
 
-        settings.setValue("eip_username", full_username)
         settings.setValue("remember_user_and_pass", remember_pass)
 
-        seed = self.get_random_str(10)
-        settings.setValue("%s_seed" % provider, seed)
+        if remember_pass:
+            settings.setValue("eip_username", full_username)
+            seed = self.get_random_str(10)
+            settings.setValue("%s_seed" % provider, seed)
 
-        # XXX #744: comment out for 0.2.0 release
-        # if we need to have a version of python-keyring < 0.9
-        leapkeyring.leap_set_password(
-            full_username, password, seed=seed)
+            # XXX #744: comment out for 0.2.0 release
+            # if we need to have a version of python-keyring < 0.9
+            leapkeyring.leap_set_password(
+                full_username, password, seed=seed)
 
         logger.debug('First Run Wizard Done.')
         cb = self.success_cb
