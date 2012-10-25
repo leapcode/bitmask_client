@@ -92,7 +92,9 @@ class StatusAwareTrayIconMixin(object):
         self.trayIconMenu.addAction(self.detailsAct)
         self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.aboutAct)
-        self.trayIconMenu.addAction(self.aboutQtAct)
+        # we should get this hidden inside the "about" dialog
+        # (as a little button maybe)
+        #self.trayIconMenu.addAction(self.aboutQtAct)
         self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(self.quitAction)
 
