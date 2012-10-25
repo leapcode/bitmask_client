@@ -1,7 +1,7 @@
 import binascii
 import json
 import logging
-import urlparse
+#import urlparse
 
 import requests
 import srp
@@ -9,6 +9,7 @@ import srp
 from PyQt4 import QtCore
 
 from leap.base import constants as baseconstants
+from leap.crypto import leapkeyring
 
 logger = logging.getLogger(__name__)
 
@@ -159,7 +160,7 @@ class SRPAuth(requests.auth.AuthBase):
         return self.init_data
 
     def authenticate(self):
-        print 'start authentication...'
+        logger.debug('start authentication...')
 
         init_data = self.get_init_data()
         salt = init_data.get('salt', None)
@@ -190,7 +191,7 @@ class SRPAuth(requests.auth.AuthBase):
 
         try:
             assert self.srp_usr.authenticated()
-            print 'user is authenticated!'
+            logger.debug('user is authenticated!')
         except (AssertionError):
             raise SRPAuthenticationError
 
@@ -217,34 +218,32 @@ def srpauth_protected(user=None, passwd=None):
     return srpauth
 
 
-def magic_srpauth(fn):
+def get_leap_credentials():
+    settings = QtCore.QSettings()
+    full_username = settings.value('eip_username')
+    username, domain = full_username.split('@')
+    seed = settings.value('%s_seed' % domain, None)
+    password = leapkeyring.leap_get_password(full_username, seed=seed)
+    return (username, password)
+
+
+def magick_srpauth(fn):
     """
     decorator that gets user and password
     from the config file and adds those to
     the decorated request
     """
-    # TODO --- finish this...
-    # currently broken.
+    logger.debug('magick srp auth decorator called')
+
     def wrapper(*args, **kwargs):
-        uri = args[0]
+        #uri = args[0]
         # XXX Ugh!
         # Problem with this approach.
         # This won't work when we're using
         # api.foo.bar
         # Unless we keep a table with the
         # equivalencies...
-
-        domain = urlparse.urlparse(uri).netloc
-
-        # XXX check this settings init...
-        settings = QtCore.QSettings()
-        user = settings.get('%s_username' % domain, None)
-
-        # uh... I forgot.
-        # get secret?
-        # leapkeyring.get_password(foo?)
-        passwd = settings.get('%s_password' % domain, None)
-
+        user, passwd = get_leap_credentials()
         auth = SRPAuth(user, passwd)
         kwargs['auth'] = auth
         return fn(*args, **kwargs)

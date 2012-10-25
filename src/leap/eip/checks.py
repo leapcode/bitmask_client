@@ -11,7 +11,7 @@ import requests
 
 from leap import __branding as BRANDING
 from leap import certs as leapcerts
-from leap.base.auth import srpauth_protected
+from leap.base.auth import srpauth_protected, magick_srpauth
 from leap.base import config as baseconfig
 from leap.base import constants as baseconstants
 from leap.base import providers
@@ -217,8 +217,7 @@ class ProviderCertChecker(object):
                 return fgetfn(*args, **kwargs)
 
         else:
-            # XXX use magic_srpauth decorator instead,
-            # merge with the branch above
+            @magick_srpauth
             def getfn(*args, **kwargs):
                 return fgetfn(*args, **kwargs)
         try:

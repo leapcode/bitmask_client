@@ -28,10 +28,7 @@ except ImportError:
     # We must be in 2.6
     from leap.util.dicts import OrderedDict
 
-# XXX DEBUG
-logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
 APP_LOGO = ':/images/leap-color-small.png'
 
@@ -194,21 +191,31 @@ class FirstRunWizard(QtGui.QWizard):
         gather the info, update settings
         and call the success callback if any has been passed.
         """
+        super(FirstRunWizard, self).accept()
+
+        # username and password are in different fields
+        # if they were stored in log_in or sign_up pages.
+        from_login = self.wizard().from_login
+        unamek_base = 'userName'
+        passwk_base = 'userPassword'
+        unamek = 'login_%s' % unamek_base if from_login else unamek_base
+        passwk = 'login_%s' % passwk_base if from_login else passwk_base
+
+        username = self.field(unamek)
+        password = self.field(passwk)
         provider = self.field('provider_domain')
-        username = self.field('userName')
-        password = self.field('userPassword')
         remember_pass = self.field('rememberPassword')
 
         logger.debug('chosen provider: %s', provider)
         logger.debug('username: %s', username)
         logger.debug('remember password: %s', remember_pass)
-        super(FirstRunWizard, self).accept()
 
-        settings = QtCore.QSettings()
         # we are assuming here that we only remember one username
         # in the form username@provider.domain
         # We probably could extend this to support some form of
         # profiles.
+
+        settings = QtCore.QSettings()
 
         settings.setValue("FirstRunWizardDone", True)
         settings.setValue("provider_domain", provider)
