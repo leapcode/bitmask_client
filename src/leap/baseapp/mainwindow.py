@@ -125,18 +125,23 @@ class LeapWindow(QtGui.QMainWindow,
 
         # launch wizard if needed
         if need_wizard:
-            from leap.gui.firstrunwizard import FirstRunWizard
-            wizard = FirstRunWizard(
-                self.conductor,
-                parent=self,
-                eip_username=self.eip_username,
-                start_eipconnection_signal=self.start_eipconnection,
-                eip_statuschange_signal=self.eipStatusChange)
-            wizard.show()
+            self.launch_first_run_wizard()
         else:  # no wizard needed
             logger.debug('running first run wizard')
             self.initReady.emit()
-            return
+
+    def launch_first_run_wizard(self):
+        """
+        launches wizard and blocks
+        """
+        from leap.gui.firstrunwizard import FirstRunWizard
+        wizard = FirstRunWizard(
+            self.conductor,
+            parent=self,
+            eip_username=self.eip_username,
+            start_eipconnection_signal=self.start_eipconnection,
+            eip_statuschange_signal=self.eipStatusChange)
+        wizard.show()
 
     def runchecks_and_eipconnect(self):
         self.initchecks.begin()
