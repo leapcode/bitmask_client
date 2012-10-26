@@ -17,7 +17,7 @@ from leap.testing.basetest import BaseLeapTest
 from BaseHTTPServer import BaseHTTPRequestHandler
 from leap.testing.https_server import BaseHTTPSServerTestCase
 
-from leap.base.auth import SRPAuth
+from leap.base.auth import SRPAuth, SRPAuthenticationError
 
 USERNAME = "0ACOJK"
 PASSWORD = "WG3HD06E7ZF3"
@@ -82,4 +82,55 @@ class SRP_SERVER_HTTPSTests(BaseHTTPSServerTestCase, BaseLeapTest):
         srp_auth = SRPAuth(USERNAME, PASSWORD,
                 "https://%s/1" % (self.get_server()), verify=False)
 
+        # XXX We might want to raise different errors for SRP failures
+        #This should fail at salt/B check time
+        with patch.object(SRPAuth, "get_data") as mocked_post:
+            with self.assertRaises(SRPAuthenticationError):
+                mocked_post.return_value = json.loads("{}")
+                srp_auth.authenticate()
+
+        #This should fail at verification time
+        with patch.object(SRPAuth, "get_data") as mocked_post:
+            with self.assertRaises(SRPAuthenticationError):
+                mocked_post.return_value = json.loads(
+                                '{"salt":"%s", "B":"%s", "M2":"%s"}' %
+                                (binascii.hexlify("fake"), binascii.hexlify("sofake"),
+                                binascii.hexlify("realfake")))
+                srp_auth.authenticate()
+
         srp_auth.authenticate()
+
+class SRP_Protected_URI_Sequence(BaseHTTPSServerTestCase, BaseLeapTest):
+    class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
+        # XXX get the real URIs and find the server side auth sequence
+        responses = {
+            '/1/get_cookie' : '',
+            '/1/get_protected' : '',
+            }
+
+        def do_GET(self):
+            path = urlparse.urlparse(self.path)
+            message = '\n'.join(self.responses.get(
+                path.path, None))
+            self.send_response(200)
+            if path.path == "/1/get_cookie":
+                self.send_header("set-cookie", "authorized=True")
+            if path.path == "/1/get_protected":
+                # XXX use a cookie library to do some abstraction
+                # and make this prettier
+                if self.headers.has_key("cookie") and \
+                   self.headers["cookie"].find("authorized=True") > -1:
+                    self.send_header("set-cookie", "damn=right")    
+            self.end_headers()
+            self.wfile.write(message)
+
+
+    def test_srp_protected_uri(self):
+         print self.get_server()
+         s = requests.session()
+         r1 = s.get("https://%s/1/get_cookie" % self.get_server(), verify=False)
+         self.assertEquals(r1.cookies["authorized"], 'True')
+         r2 = s.get("https://%s/1/get_protected" % self.get_server(), verify=False)
+         self.assertEquals(r2.cookies["damn"], 'right')
+       
+
