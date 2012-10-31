@@ -1,12 +1,13 @@
+import re
+import gnupg
 from zope.interface import implements
+from StringIO import StringIO
 from twisted.mail import smtp
 from twisted.internet.protocol import ServerFactory
 from twisted.internet import reactor
 from twisted.internet import defer
+from twisted.application import internet, service
 from email.Header import Header
-from StringIO import StringIO
-import gnupg
-import re
 
 
 class SMTPFactory(ServerFactory):
@@ -79,21 +80,19 @@ class EncryptedMessage():
     def connectionLost(self):
         print "Connection lost unexpectedly!"
         # unexpected loss of connection; don't save
-        del(self.lines)
+        self.lines = []
 
     def sendSuccess(self, r):
         print r
-        reactor.stop()
 
     def sendError(self, e):
         print e
-        reactor.stop()
 
     def sendMail(self):
-        lines = [self.received] + \
-                ["From: %s" % self.user.orig.addrstr] + \
-                ["To: %s" % self.user.dest.addrstr] + \
-                [self.cyphertext]
+        lines = [self.received,
+                "From: %s" % self.user.orig.addrstr,
+                "To: %s" % self.user.dest.addrstr,
+                self.cyphertext]
         msg = '\n'.join(lines)
         d = defer.Deferred()
         factory = smtp.ESMTPSenderFactory(self.smtp_username,
@@ -110,6 +109,7 @@ class EncryptedMessage():
 
     def encrypt(self):
         fp = self.gpg.get_fingerprint(self.user.dest.addrstr)
+        print "Encrypting to %s" % fp
         self.cyphertext = str(self.gpg.encrypt('\n'.join(self.lines), [fp]))
     
     # this will be replaced by some other mechanism of obtaining credentials
@@ -147,10 +147,13 @@ class GPGWrapper():
     def encrypt(self, data, recipient):
         return self.gpg.encrypt(data, recipient)
 
-    
 
-# run server
-if __name__ == "__main__":
-    import sys
-    reactor.listenTCP(2500, SMTPFactory())
-    reactor.run()
+# service configuration
+port = 25
+factory = SMTPFactory()
+
+# this enables the use of this application with twistd
+application = service.Application("LEAP SMTP Relay")  # create the Application
+service = internet.TCPServer(port, factory) # create the service
+# add the service to the application
+service.setServiceParent(application)
