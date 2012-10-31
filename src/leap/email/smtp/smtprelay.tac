@@ -72,10 +72,15 @@ class EncryptedMessage():
         """Encrypt and send message."""
         print "Message data complete."
         self.lines.append('') # add a trailing newline
-        self.received = self.lines[0]
-        self.lines = self.lines[1:]
+        self.parseMessage()
         self.encrypt()
-        return self.sendMail()
+        return self.sendMessage()
+
+    def parseMessage(self):
+        """Separate message headers from body."""
+        sep = self.lines.index('')
+        self.header = self.lines[:sep]
+        self.body = self.lines[sep+1:]
 
     def connectionLost(self):
         print "Connection lost unexpectedly!"
@@ -88,12 +93,14 @@ class EncryptedMessage():
     def sendError(self, e):
         print e
 
-    def sendMail(self):
-        lines = [self.received,
-                "From: %s" % self.user.orig.addrstr,
-                "To: %s" % self.user.dest.addrstr,
-                self.cyphertext]
-        msg = '\n'.join(lines)
+    def prepareHeader(self):
+        self.header.insert(1, "From: %s" % self.user.orig.addrstr)
+        self.header.insert(2, "To: %s" % self.user.dest.addrstr)
+        self.header.append('')
+
+    def sendMessage(self):
+        self.prepareHeader()
+        msg = '\n'.join(self.header+[self.cyphertext])
         d = defer.Deferred()
         factory = smtp.ESMTPSenderFactory(self.smtp_username,
                                           self.smtp_password,
@@ -110,7 +117,7 @@ class EncryptedMessage():
     def encrypt(self):
         fp = self.gpg.get_fingerprint(self.user.dest.addrstr)
         print "Encrypting to %s" % fp
-        self.cyphertext = str(self.gpg.encrypt('\n'.join(self.lines), [fp]))
+        self.cyphertext = str(self.gpg.encrypt('\n'.join(self.body), [fp]))
     
     # this will be replaced by some other mechanism of obtaining credentials
     # for SMTP server.
