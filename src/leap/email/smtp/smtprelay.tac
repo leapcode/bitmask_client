@@ -43,10 +43,13 @@ class SMTPDelivery(object):
         """Assert existence of and trust on recipient's GPG public key."""
         # try to find recipient's public key
         try:
-            fp = self.gpg.get_fingerprint(user.dest.addrstr)
+            # this will raise an exception if key is not found
+            trust = self.gpg.find_key(user.dest.addrstr)['trust']
+            # verify if key is (u)ltimatelly trusted
+            if trust != 'u':
+                raise smtp.SMTPBadRcpt(user)
             print "Accepting mail for %s..." % user.dest
             return lambda: EncryptedMessage(user)
-            # TODO: verify if key is trusted
         except LookupError:
             raise smtp.SMTPBadRcpt(user)
 
@@ -126,7 +129,7 @@ class EncryptedMessage():
         return d
 
     def encrypt(self):
-        fp = self.gpg.get_fingerprint(self.user.dest.addrstr)
+        fp = self.gpg.find_key(self.user.dest.addrstr)['fingerprint']
         print "Encrypting to %s" % fp
         self.cyphertext = str(self.gpg.encrypt('\n'.join(self.body), [fp]))
     
@@ -153,14 +156,14 @@ class GPGWrapper():
     def __init__(self, gpghome=GNUPG_HOME, gpgbinary=GNUPG_BINARY):
         self.gpg = gnupg.GPG(gnupghome=gpghome, gpgbinary=gpgbinary)
 
-    def get_fingerprint(self, email):
+    def find_key(self, email):
         """
-        Find user's fingerprint based on their email.
+        Find user's key based on their email.
         """
         for key in self.gpg.list_keys():
             for uid in key['uids']:
                 if re.search(email, uid):
-                    return key['fingerprint']
+                    return key
         raise LookupError("GnuPG public key for %s not found!" % email)
 
     def encrypt(self, data, recipient):
