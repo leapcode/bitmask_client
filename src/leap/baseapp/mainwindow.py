@@ -147,16 +147,15 @@ class LeapWindow(QtGui.QMainWindow,
         self.initchecks.begin()
 
 
-class InitChecksThread(QtCore.QThread):
-    # XXX rename as a generic QThread class,
-    # has nothing specific to initchecks
+class FunThread(QtCore.QThread):
 
     def __init__(self, fun, parent=None):
         QtCore.QThread.__init__(self, parent)
         self.fun = fun
 
     def run(self):
-        self.fun()
+        if self.fun:
+            self.fun()
 
     def begin(self):
         self.start()

@@ -19,8 +19,10 @@ from leap.crypto import certs
 from leap.crypto import leapkeyring
 from leap.eip import checks as eipchecks
 from leap.eip import exceptions as eipexceptions
-from leap.gui import mainwindow_rc
+from leap.gui.progress import ValidationPage
 from leap.util.coroutines import coroutine
+
+from leap.gui import mainwindow_rc
 
 try:
     from collections import OrderedDict
@@ -101,7 +103,6 @@ class FirstRunWizard(QtGui.QWizard):
         # XXX ??? ^v
         self.is_previously_registered = bool(self.eip_username)
         self.from_login = False
-        #self.allow_revisit = None
 
         pages_dict = OrderedDict((
             # (name, WizardPage)
@@ -110,12 +111,14 @@ class FirstRunWizard(QtGui.QWizard):
                 SelectProviderPage),
             ('login', LogInPage),
             ('providerinfo', ProviderInfoPage),
-            ('providersetup', ProviderSetupPage),
+            ('providersetupvalidation', ProviderSetupValidationPage),
             ('signup', RegisterUserPage),
             ('connecting', ConnectingPage),
             ('lastpage', LastPage)
         ))
         self.add_pages_from_dict(pages_dict)
+
+        self.validation_errors = {}
 
         self.setPixmap(
             QtGui.QWizard.BannerPixmap,
@@ -151,25 +154,11 @@ class FirstRunWizard(QtGui.QWizard):
         """
         return self.pages_dict.keys().index(page_name)
 
-    # XXX was trying to allow temporary
-    # a revisit. this does not work cause visitedPages
-    # is not called internally.
+    def set_validation_error(self, pagename, error):
+        self.validation_errors[pagename] = error
 
-    #def allow_page_revisit(self, page_name):
-        #self.allow_revisit = self.get_page_index(page_name)
-#
-    #def visitedPages(self):
-        #"""
-        #reimplementation of visitedPages
-        #that temporary allows to revisit a page
-        #if allow_revisit is set
-        #"""
-        #visited = super(FirstRunWizard, self).visitedPages()
-        #allow = self.allow_revisit
-        #if allow:
-            #visited.remove(allow)
-        #self.allow_revisit = None
-        #return visited
+    def get_validation_error(self, pagename):
+        return self.validation_errors.get(pagename, None)
 
     def set_providerconfig(self, providerconfig):
         self.providerconfig = providerconfig
@@ -447,6 +436,20 @@ class SelectProviderPage(QtGui.QWizardPage):
         self.certinfoGroup.hide()
 
     def validatePage(self):
+        ##################################
+        # XXX FIXME!
+        ##################################
+        ##################################
+        ##################################
+        ##################################
+        ##### validation skipped !!! #####
+        ##################################
+        ##################################
+        return True
+        ##################################
+        ##################################
+        ##################################
+
         wizard = self.wizard()
         netchecker = wizard.netchecker()
         providercertchecker = wizard.providercertchecker()
@@ -559,39 +562,25 @@ class ProviderInfoPage(QtGui.QWizardPage):
 
     def nextId(self):
         wizard = self.wizard()
-        if not wizard:
-            return
-        return wizard.get_page_index('providersetup')
+        next_ = "providersetupvalidation"
+        return wizard.get_page_index(next_)
 
 
-class ProviderSetupPage(QtGui.QWizardPage):
+class ProviderSetupValidationPage(ValidationPage):
     def __init__(self, parent=None):
-        super(ProviderSetupPage, self).__init__(parent)
-
-        self.setTitle("Provider Setup")
-        self.setSubTitle("Setting up provider.")
+        super(ProviderSetupValidationPage, self).__init__(parent)
+        self.setTitle("Setting up provider")
+        #self.setSubTitle(
+            #"auto configuring provider...")
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
-        self.status = QtGui.QLabel("")
-        self.progress = QtGui.QProgressBar()
-        self.progress.setMaximum(100)
-        self.progress.hide()
-
-        layout = QtGui.QGridLayout()
-        layout.addWidget(self.status, 0, 1)
-        layout.addWidget(self.progress, 5, 1)
-
-        self.setLayout(layout)
-
-    def set_status(self, status):
-        self.status.setText(status)
-        self.status.setWordWrap(True)
-
-    def fetch_and_validate(self):
-        # Fake... till you make it...
+    def _do_checks(self, signal=None):
+        """
+        executes actual checks in a separate thread
+        """
         import time
         domain = self.field('provider_domain')
         wizard = self.wizard()
@@ -600,7 +589,7 @@ class ProviderSetupPage(QtGui.QWizardPage):
         pCertChecker = wizard.providercertchecker
         certchecker = pCertChecker(domain=domain)
 
-        self.set_status('Fetching CA certificate')
+        signal.emit('Fetching CA certificate')
         self.progress.setValue(30)
 
         if pconfig:
@@ -615,68 +604,66 @@ class ProviderSetupPage(QtGui.QWizardPage):
         # (Check with the trusted fingerprints dict
         # or something smart)
 
-        certchecker.download_ca_cert(
-            uri=ca_cert_uri,
-            verify=False)
+        #certchecker.download_ca_cert(
+            #uri=ca_cert_uri,
+            #verify=False)
 
-        self.set_status('Checking CA fingerprint')
+        time.sleep(2)
+
+        signal.emit('Checking CA fingerprint')
         self.progress.setValue(66)
-        ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint', None)
+        #ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint', None)
 
         # XXX get fingerprint dict (types)
-        sha256_fpr = ca_cert_fingerprint.split('=')[1]
+        #sha256_fpr = ca_cert_fingerprint.split('=')[1]
 
-        validate_fpr = certchecker.check_ca_cert_fingerprint(
-            fingerprint=sha256_fpr)
+        #validate_fpr = certchecker.check_ca_cert_fingerprint(
+            #fingerprint=sha256_fpr)
         time.sleep(0.5)
-        if not validate_fpr:
+        #if not validate_fpr:
             # XXX update validationMsg
             # should catch exception
-            return False
+            #return False
 
-        self.set_status('Validating api certificate')
+        signal.emit('Validating api certificate')
         self.progress.setValue(90)
 
-        api_uri = pconfig.get('api_uri', None)
-        try:
-            api_cert_verified = certchecker.verify_api_https(api_uri)
-        except requests.exceptions.SSLError as exc:
-            logger.error('BUG #638. %s' % exc.message)
+        #api_uri = pconfig.get('api_uri', None)
+        #try:
+            #api_cert_verified = certchecker.verify_api_https(api_uri)
+        #except requests.exceptions.SSLError as exc:
+            #logger.error('BUG #638. %s' % exc.message)
             # XXX RAISE! See #638
             # bypassing until the hostname is fixed.
             # We probably should raise yet-another-warning
             # here saying user that the hostname "XX.XX.XX.XX' does not
             # match 'foo.bar.baz'
-            api_cert_verified = True
+            #api_cert_verified = True
 
-        if not api_cert_verified:
+        #if not api_cert_verified:
             # XXX update validationMsg
             # should catch exception
-            return False
+            #return False
         time.sleep(0.5)
         #ca_cert_path = checker.ca_cert_path
 
         self.progress.setValue(100)
+        signal.emit('end_sentinel')
         time.sleep(1)
 
-    # pagewizard methods
-
-    def initializePage(self):
-        self.set_status(
-            'We are going to contact the provider to get '
-            'the certificates that will be used to stablish '
-            'a secure connection.<br><br>Click <i>next</i> to continue.')
-        self.progress.setValue(0)
-        self.progress.hide()
-
-        # XXX use a call to "next" instead?
-        #self.wizard().next()
-
-    def validatePage(self):
-        self.progress.show()
-        self.fetch_and_validate()
-
-        return True
+    def _do_validation(self):
+        """
+        called after _do_checks has finished
+        (connected to checker thread finished signal)
+        """
+        if self.errors:
+            print 'going back with errors'
+            wizard.set_validation_error(
+                'signup', 'that name is taken')
+            self.go_back()
+        else:
+            print 'going next'
+            self.go_next()
 
     def nextId(self):
         wizard = self.wizard()
@@ -952,12 +939,15 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
 
         signup = auth.LeapSRPRegister(
             schema="http",
-            provider=domain,
+            #provider=domain,
 
+            ###########################
+            # FIXME! REMOVE DEBUG!
+            #
             # debug -----
-            #provider="localhost",
+            provider="localhost",
             #register_path="timeout",
-            #port=8000
+            port=8000
         )
         try:
             ok, req = signup.register_user(username, password)
