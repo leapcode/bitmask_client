@@ -28,6 +28,9 @@ class SMTPDelivery(object):
     """
 
     implements(smtp.IMessageDelivery)
+
+    def __init__(self):
+        self.gpg = GPGWrapper()
     
     def receivedHeader(self, helo, origin, recipients):
         myHostname, clientIP = helo
@@ -37,10 +40,15 @@ class SMTPDelivery(object):
         return "Received: %s" % Header(headerValue)
 
     def validateTo(self, user):
-        """Assert existence of GPG public key for a recipient."""
-        # for now just accept any receipient
-        print "Accepting mail for %s..." % user.dest
-        return lambda: EncryptedMessage(user)
+        """Assert existence of and trust on recipient's GPG public key."""
+        # try to find recipient's public key
+        try:
+            fp = self.gpg.get_fingerprint(user.dest.addrstr)
+            print "Accepting mail for %s..." % user.dest
+            return lambda: EncryptedMessage(user)
+            # TODO: verify if key is trusted
+        except LookupError:
+            raise smtp.SMTPBadRcpt(user)
 
     def validateFrom(self, helo, originAddress):
         # accept mail from anywhere. To reject an address, raise
@@ -73,8 +81,11 @@ class EncryptedMessage():
         print "Message data complete."
         self.lines.append('') # add a trailing newline
         self.parseMessage()
-        self.encrypt()
-        return self.sendMessage()
+        try:
+            self.encrypt()
+            return self.sendMessage()
+        except LookupError:
+            return None
 
     def parseMessage(self):
         """Separate message headers from body."""
@@ -150,6 +161,7 @@ class GPGWrapper():
             for uid in key['uids']:
                 if re.search(email, uid):
                     return key['fingerprint']
+        raise LookupError("GnuPG public key for %s not found!" % email)
 
     def encrypt(self, data, recipient):
         return self.gpg.encrypt(data, recipient)
