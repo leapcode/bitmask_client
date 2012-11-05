@@ -139,8 +139,8 @@ class GPGWrapper():
     GNUPG_HOME    = "~/.config/leap/gnupg"
     GNUPG_BINARY  = "/usr/bin/gpg" # this has to be changed based on OS
 
-    def __init__(self):
-        self.gpg = gnupg.GPG(gnupghome=self.GNUPG_HOME, gpgbinary=self.GNUPG_BINARY)
+    def __init__(self, gpghome=GNUPG_HOME, gpgbinary=GNUPG_BINARY):
+        self.gpg = gnupg.GPG(gnupghome=gpghome, gpgbinary=gpgbinary)
 
     def get_fingerprint(self, email):
         """
@@ -153,6 +153,9 @@ class GPGWrapper():
 
     def encrypt(self, data, recipient):
         return self.gpg.encrypt(data, recipient)
+
+    def import_keys(self, data):
+        return self.gpg.import_keys(data)
 
 
 # service configuration
