@@ -101,6 +101,7 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
             "Register a new user with provider %s." %
             provider)
         self.validationMsg.setText('')
+        self.userPassword2LineEdit.setText('')
 
     def validatePage(self):
         """
@@ -110,12 +111,6 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         returned we write validation error msg
         above the form.
         """
-        # the slot for this signal is not doing
-        # what's expected. Investigate why,
-        # right now we're not giving any feedback
-        # to the user re. what's going on. The only
-        # thing I can see as a workaround is setting
-        # a low timeout.
         wizard = self.wizard()
 
         self.setSigningUpStatus.emit()
@@ -124,7 +119,9 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         password = self.userPasswordLineEdit.text()
         password2 = self.userPassword2LineEdit.text()
 
-        # have some call to a password checker...
+        # we better have here
+        # some call to a password checker...
+        # to assess strenght and avoid silly stuff.
 
         if password != password2:
             self.set_validation_status('Password does not match.')
@@ -161,7 +158,9 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         else:
             # this is the real thing
             signup = auth.LeapSRPRegister(
-                # XXX FIXME 0 Force HTTPS
+                # XXX FIXME FIXME FIXME FIXME
+                # XXX FIXME 0 Force HTTPS !!!
+                # XXX FIXME FIXME FIXME FIXME
                 #schema="https",
                 schema="http",
                 provider=domain)
@@ -189,6 +188,11 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         if req.status_code == 500:
             self.set_validation_status(
                 "Error during registration (500)")
+            return False
+
+        if req.status_code == 404:
+            self.set_validation_status(
+                "Error during registration (404)")
             return False
 
         validation_msgs = json.loads(req.content)
