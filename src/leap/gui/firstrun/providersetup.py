@@ -21,7 +21,7 @@ class ProviderSetupValidationPage(ValidationPage):
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
-    def _do_checks(self, signal=None):
+    def _do_checks(self, update_signal=None):
         """
         executes actual checks in a separate thread
         """
@@ -33,8 +33,7 @@ class ProviderSetupValidationPage(ValidationPage):
         pCertChecker = wizard.providercertchecker
         certchecker = pCertChecker(domain=domain)
 
-        signal.emit('Fetching CA certificate')
-        self.progress.setValue(30)
+        update_signal.emit('Fetching CA certificate', 30)
 
         if pconfig:
             ca_cert_uri = pconfig.get('ca_cert_uri').geturl()
@@ -54,8 +53,7 @@ class ProviderSetupValidationPage(ValidationPage):
 
         time.sleep(2)
 
-        signal.emit('Checking CA fingerprint')
-        self.progress.setValue(66)
+        update_signal.emit('Checking CA fingerprint', 66)
         #ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint', None)
 
         # XXX get fingerprint dict (types)
@@ -69,8 +67,7 @@ class ProviderSetupValidationPage(ValidationPage):
             # should catch exception
             #return False
 
-        signal.emit('Validating api certificate')
-        self.progress.setValue(90)
+        update_signal.emit('Validating api certificate', 90)
 
         #api_uri = pconfig.get('api_uri', None)
         #try:
@@ -91,8 +88,7 @@ class ProviderSetupValidationPage(ValidationPage):
         time.sleep(0.5)
         #ca_cert_path = checker.ca_cert_path
 
-        self.progress.setValue(100)
-        signal.emit('end_sentinel')
+        update_signal.emit('end_sentinel', 100)
         time.sleep(1)
 
     def _do_validation(self):

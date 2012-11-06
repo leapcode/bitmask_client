@@ -7,7 +7,7 @@ try:
 except ImportError:
     # We must be in 2.6
     from leap.util.dicts import OrderedDict
-import time
+#import time
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -15,6 +15,8 @@ from PyQt4 import QtGui
 from leap.baseapp.mainwindow import FunThread
 
 from leap.gui import mainwindow_rc
+
+CHECKMARK_IMG = ":/images/checked.png"
 
 
 class ImgWidget(QtGui.QWidget):
@@ -154,13 +156,13 @@ class ValidationPage(QtGui.QWizardPage):
 
     # signals
 
-    stepChanged = QtCore.pyqtSignal([str])
+    stepChanged = QtCore.pyqtSignal([str, int])
 
     def __init__(self, parent=None):
         super(ValidationPage, self).__init__(parent)
 
         self.steps = ProgressStepContainer()
-        self.progress = QtGui.QProgressBar()
+        self.progress = QtGui.QProgressBar(self)
 
         # steps table widget
         self.stepsTableWidget = StepsTableWidget(self)
@@ -213,9 +215,12 @@ class ValidationPage(QtGui.QWizardPage):
         print 'populate table. width=%s' % width
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)
 
-    def onStepStatusChanged(self, status):
-        if status != "end_sentinel":
+    def onStepStatusChanged(self, status, progress=None):
+        if status not in ("head_sentinel", "end_sentinel"):
             self.add_status_line(status)
+        if progress:
+            self.progress.setValue(progress)
+            self.progress.update()
 
     def add_status_line(self, message):
         print 'adding status line...'
@@ -232,8 +237,8 @@ class ValidationPage(QtGui.QWizardPage):
         table.setCellWidget(
             index - 1,
             ProgressStep.DONE,
-            # XXX pass image in rc
-            ImgWidget(img=":/images/checked.png"))
+            ImgWidget(img=CHECKMARK_IMG))
+        table.update()
 
     def go_back(self):
         self.wizard().back()
@@ -253,7 +258,7 @@ class ValidationPage(QtGui.QWizardPage):
         """
         signal = self.stepChanged
         self.checks = FunThread(
-            self._do_checks(signal=signal))
+            self._do_checks(update_signal=signal))
         self.checks.finished.connect(self._do_validation)
         self.checks.begin()
         print 'check thread started!'
