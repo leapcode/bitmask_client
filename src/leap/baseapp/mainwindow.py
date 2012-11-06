@@ -68,7 +68,7 @@ class LeapWindow(QtGui.QMainWindow,
         # XXX check for wizard
         self.wizard_done = settings.value("FirstRunWizardDone")
 
-        self.initchecks = InitChecksThread(self.run_eip_checks)
+        self.initchecks = FunThread(self.run_eip_checks)
 
         # bind signals
         self.initchecks.finished.connect(
@@ -148,6 +148,8 @@ class LeapWindow(QtGui.QMainWindow,
 
 
 class FunThread(QtCore.QThread):
+    # XXX move to gui/threads
+    # for code consistence
 
     def __init__(self, fun, parent=None):
         QtCore.QThread.__init__(self, parent)
