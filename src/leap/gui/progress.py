@@ -7,7 +7,8 @@ try:
 except ImportError:
     # We must be in 2.6
     from leap.util.dicts import OrderedDict
-#import time
+
+import logging
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -17,6 +18,8 @@ from leap.baseapp.mainwindow import FunThread
 from leap.gui import mainwindow_rc
 
 CHECKMARK_IMG = ":/images/checked.png"
+
+logger = logging.getLogger(__name__)
 
 
 class ImgWidget(QtGui.QWidget):
@@ -116,7 +119,7 @@ class StepsTableWidget(QtGui.QTableWidget):
         # but on populating is 456... :(
 
         # XXX do we need this initial?
-        print 'init table. width=%s' % width
+        logger.debug('init table. width=%s' % width)
         self.horizontalHeader().resizeSection(0, width * 0.7)
 
         # this disables the table grid.
@@ -212,7 +215,7 @@ class ValidationPage(QtGui.QWizardPage):
         table = self.stepsTableWidget
         FIRST_COLUMN_PERCENT = 0.75
         width = table.width()
-        print 'populate table. width=%s' % width
+        logger.debug('populate table. width=%s' % width)
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)
 
     def onStepStatusChanged(self, status, progress=None):
@@ -223,7 +226,6 @@ class ValidationPage(QtGui.QWizardPage):
             self.progress.update()
 
     def add_status_line(self, message):
-        print 'adding status line...'
         index = len(self.steps)
         step = ProgressStep(message, False, index=index)
         self.steps.addStep(step)
@@ -261,6 +263,6 @@ class ValidationPage(QtGui.QWizardPage):
             self._do_checks(update_signal=signal))
         self.checks.finished.connect(self._do_validation)
         self.checks.begin()
-        print 'check thread started!'
-        print 'waiting for it to terminate...'
+        #logger.debug('check thread started!')
+        #logger.debug('waiting for it to terminate...')
         self.checks.wait()

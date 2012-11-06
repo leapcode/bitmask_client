@@ -1,13 +1,26 @@
 """
 Provider Info Page, used in First run Wizard
 """
+import logging
+import time
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
+import requests
+
+from leap.base import exceptions as baseexceptions
+from leap.crypto import certs
+from leap.eip import exceptions as eipexceptions
+
 from leap.gui.progress import ValidationPage
 
 from leap.gui.constants import APP_LOGO
+
+logger = logging.getLogger(__name__)
+
+GUI_PAUSE_FOR_USER_SECONDS = 1
+pause_for_user = lambda: time.sleep(GUI_PAUSE_FOR_USER_SECONDS)
 
 
 class ProviderInfoPage(ValidationPage):
@@ -70,15 +83,95 @@ class ProviderInfoPage(ValidationPage):
         """
         executes actual checks in a separate thread
         """
-        import time
+        def pause_and_finish():
+            update_signal.emit("end_sentinel", 100)
+            pause_for_user()
+
+        wizard = self.wizard()
+        prevpage = "providerselection"
+        netchecker = wizard.netchecker()
+        providercertchecker = wizard.providercertchecker()
+        eipconfigchecker = wizard.eipconfigchecker()
+
+        domain = self.field('provider_domain')
+
         update_signal.emit("head_sentinel", 0)
-        time.sleep(0.5)
-        update_signal.emit("something", 10)
-        time.sleep(0.5)
-        update_signal.emit("done", 90)
-        time.sleep(1)
-        update_signal.emit("end_sentinel", 100)
-        time.sleep(1)
+        pause_for_user()
+
+        # 1) try name resolution
+        update_signal.emit("Checking that server is reachable", 20)
+        logger.debug('checking name resolution')
+        try:
+            netchecker.check_name_resolution(
+                domain)
+
+        except baseexceptions.LeapException as exc:
+            logger.debug('exception')
+            wizard.set_validation_error(
+                prevpage, exc.usermessage)
+            pause_and_finish()
+            return False
+
+        # 2) try https connection
+        update_signal.emit("Checking secure connection to provider", 40)
+        logger.debug('checking https connection')
+        try:
+            providercertchecker.is_https_working(
+                "https://%s" % domain,
+                verify=True)
+
+        except eipexceptions.HttpsBadCertError as exc:
+            logger.debug('exception')
+            # XXX skipping for now...
+            ##############################################
+            # We had this validation logic
+            # in the provider selection page before
+            ##############################################
+            #if self.trustProviderCertCheckBox.isChecked():
+                #pass
+            #else:
+            wizard.set_validation_error(
+                prevpage, exc.usermessage)
+            #fingerprint = certs.get_cert_fingerprint(
+                #domain=domain, sep=" ")
+
+            # it's ok if we've trusted this fgprt before
+            #trustedcrts = wizard.trusted_certs
+            #if trustedcrts and fingerprint.replace(' ', '') in trustedcrts:
+                #pass
+            #else:
+                # let your user face panick :P
+                #self.add_cert_info(fingerprint)
+                #self.did_cert_check = True
+                #self.completeChanged.emit()
+                #return False
+            pause_and_finish()
+            return False
+
+        except baseexceptions.LeapException as exc:
+            wizard.set_validation_error(
+                prevpage, exc.usermessage)
+            pause_and_finish()
+            return False
+
+        # try download provider info...
+        update_signal.emit("Downloading provider info", 70)
+        try:
+            eipconfigchecker.fetch_definition(domain=domain)
+            wizard.set_providerconfig(
+                eipconfigchecker.defaultprovider.config)
+        # XXX catch errors...
+        except requests.exceptions.SSLError:
+            # XXX we should have catched this before.
+            # but cert checking is broken.
+            wizard.set_validation_error(
+                prevpage,
+                "Could not get info from provider.")
+            pause_and_finish()
+            return False
+
+        # We're done
+        pause_and_finish()
 
     def _do_validation(self):
         """
@@ -86,10 +179,19 @@ class ProviderInfoPage(ValidationPage):
         (connected to checker thread finished signal)
         """
         print 'validation...'
-        self.progress.hide()
-        self.stepsTableWidget.hide()
-        self.create_info_panel()
-        self.show_provider_info()
+        prevpage = "providerselection"
+        errors = self.wizard().get_validation_error(prevpage)
+
+        if not errors:
+            self.progress.hide()
+            self.stepsTableWidget.hide()
+            self.create_info_panel()
+            self.show_provider_info()
+
+        else:
+            logger.debug('going back with errors')
+            logger.debug('ERRORS: %s' % errors)
+            self.go_back()
 
     def nextId(self):
         wizard = self.wizard()

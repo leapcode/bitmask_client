@@ -1,6 +1,8 @@
 """
 Select Provider Page, used in First Run Wizard
 """
+import logging
+
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
@@ -10,6 +12,8 @@ from leap.eip import exceptions as eipexceptions
 
 from leap.gui.constants import APP_LOGO
 from leap.gui.styles import ErrorLabelStyleSheet
+
+logger = logging.getLogger(__name__)
 
 
 class SelectProviderPage(QtGui.QWizardPage):
@@ -136,77 +140,34 @@ class SelectProviderPage(QtGui.QWizardPage):
             return True
         return False
 
+    def populateErrors(self):
+        # XXX could move this to ValidationMixin
+
+        #logger.debug('getting errors')
+        errors = self.wizard().get_validation_error('providerselection')
+        if errors:
+            #logger.debug('errors! -> %s', errors)
+            self.validationMsg.setText(errors)
+
+    def paintEvent(self, event):
+        """
+        we hook our populate errors
+        on paintEvent because we need it to catch
+        when user enters the page coming from next,
+        and initializePage does not cover that case.
+        Maybe there's a better event to hook upon.
+        """
+        super(SelectProviderPage, self).paintEvent(event)
+        self.populateErrors()
+
     def initializePage(self):
+        self.validationMsg.setText('')
         self.certinfoGroup.hide()
 
     def validatePage(self):
-        ##################################
-        # XXX FIXME!
-        ##################################
-        ##################################
-        ##################################
-        ##################################
-        ##### validation skipped !!! #####
-        ##################################
-        ##################################
-        return True
-        ##################################
-        ##################################
-        ##################################
-
-        # XXX move to ProviderInfo...
-
-        wizard = self.wizard()
-        netchecker = wizard.netchecker()
-        providercertchecker = wizard.providercertchecker()
-        eipconfigchecker = wizard.eipconfigchecker()
-
-        domain = self.providerNameEdit.text()
-
-        # try name resolution
-        try:
-            netchecker.check_name_resolution(
-                domain)
-
-        except baseexceptions.LeapException as exc:
-            self.set_validation_status(exc.usermessage)
-            return False
-
-        # try https connection
-        try:
-            providercertchecker.is_https_working(
-                "https://%s" % domain,
-                verify=True)
-
-        except eipexceptions.HttpsBadCertError as exc:
-            if self.trustProviderCertCheckBox.isChecked():
-                pass
-            else:
-                self.set_validation_status(exc.usermessage)
-                fingerprint = certs.get_cert_fingerprint(
-                    domain=domain, sep=" ")
-
-                # it's ok if we've trusted this fgprt before
-                trustedcrts = self.wizard().trusted_certs
-                if trustedcrts and fingerprint.replace(' ', '') in trustedcrts:
-                    pass
-                else:
-                    # let your user face panick :P
-                    self.add_cert_info(fingerprint)
-                    self.did_cert_check = True
-                    self.completeChanged.emit()
-                    return False
-
-        except baseexceptions.LeapException as exc:
-            self.set_validation_status(exc.usermessage)
-            return False
-
-        # try download provider info...
-        eipconfigchecker.fetch_definition(domain=domain)
-        wizard.set_providerconfig(
-            eipconfigchecker.defaultprovider.config)
-
-        # all ok, go on...
+        """
+        we are doing validation in next page
+        """
         return True
 
     def nextId(self):
