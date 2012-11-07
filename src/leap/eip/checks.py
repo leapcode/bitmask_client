@@ -212,12 +212,12 @@ class ProviderCertChecker(object):
         if credentials:
             user, passwd = credentials
 
-            @srpauth_protected(user, passwd)
+            @srpauth_protected(user, passwd, verify)
             def getfn(*args, **kwargs):
                 return fgetfn(*args, **kwargs)
 
         else:
-            @magick_srpauth
+            @magick_srpauth(verify)
             def getfn(*args, **kwargs):
                 return fgetfn(*args, **kwargs)
         try:

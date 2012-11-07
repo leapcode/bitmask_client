@@ -100,7 +100,8 @@ class ProviderSetupValidationPage(ValidationPage):
         if self.errors:
             print 'going back with errors'
             wizard.set_validation_error(
-                'signup', 'that name is taken')
+                'providerselection',
+                'error on provider setup')
             self.go_back()
         else:
             print 'going next'

@@ -91,12 +91,19 @@ class ConnectingPage(QtGui.QWizardPage):
             wizard,
             'start_eipconnection_signal', None)
 
-        conductor.set_provider_domain(domain)
-        conductor.run_checks()
-        self.conductor = conductor
-        errors = self.eip_error_check()
-        if not errors and start_eip_signal:
-            start_eip_signal.emit()
+        if conductor:
+            conductor.set_provider_domain(domain)
+            conductor.run_checks()
+            self.conductor = conductor
+            errors = self.eip_error_check()
+            if not errors and start_eip_signal:
+                start_eip_signal.emit()
+
+        else:
+            logger.warning(
+                "No conductor found. This means that "
+                "probably the wizard has been launched "
+                "in an stand-alone way")
 
     def eip_error_check(self):
         """
@@ -110,6 +117,7 @@ class ConnectingPage(QtGui.QWizardPage):
         # XXX missing!
 
     def fetch_and_validate(self):
+        # XXX MOVE TO validate function in register-validation
         import time
         domain = self.field('provider_domain')
         wizard = self.wizard()
@@ -150,15 +158,15 @@ class ConnectingPage(QtGui.QWizardPage):
         # Download cert
         try:
             pCertChecker.download_new_client_cert(
-                credentials=credentials)
-        except auth.SRPAuthenticationError:
-            self.set_validation_status("Authentication error")
-            #self.set_validation_message(
-                #"Click <i>next</i> to introduce your "
-                #"credentials again")
-            self.goto_login_again = True
-            # We should do something here
-            # but it's broken
+                credentials=credentials,
+                # FIXME FIXME FIXME
+                # XXX FIX THIS!!!!!
+                # BUG #638. remove verify
+                # FIXME FIXME FIXME
+                verify=False)
+        except auth.SRPAuthenticationError as exc:
+            self.set_validation_status(
+                "Authentication error: %s" % exc.message)
             return False
 
         time.sleep(2)

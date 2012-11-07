@@ -39,14 +39,22 @@ class RegisterUserValidationPage(ValidationPage):
         we initialize the srp protocol register
         and try to register user.
         """
+        print 'register user checks'
+
         wizard = self.wizard()
         domain = self.field('provider_domain')
         username = self.field('userName')
         password = self.field('userPassword')
 
-        update_signal.emit("head_sentinel")
+        # XXX use pause_for_user from providerinfo
+        update_signal.emit("head_sentinel", 0)
         update_signal.emit("registering with provider", 40)
-        time.sleep(4)
+        time.sleep(0.5)
+        update_signal.emit("registering 2", 60)
+        time.sleep(1)
+        update_signal.emit("end_sentinel", 100)
+        time.sleep(0.5)
+        return
 
         if wizard and wizard.debug_server:
             # We're debugging
