@@ -177,13 +177,15 @@ class ProviderInfoPage(ValidationPage):
             pause_and_finish()
             return False
 
-        # try download provider info...
+        ##################################
+        # 3) try download provider info...
+        ##################################
+
         update_signal.emit("Downloading provider info", 70)
         try:
-            eipconfigchecker.fetch_definition(domain=domain)
+            eipconfigchecker.fetch_definition(domain=_domain)
             wizard.set_providerconfig(
                 eipconfigchecker.defaultprovider.config)
-        # XXX catch errors...
         except requests.exceptions.SSLError:
             # XXX we should have catched this before.
             # but cert checking is broken.
@@ -192,8 +194,16 @@ class ProviderInfoPage(ValidationPage):
                 "Could not get info from provider.")
             pause_and_finish()
             return False
+        except requests.exceptions.ConnectionError:
+            wizard.set_validation_error(
+                prevpage,
+                "Could not download provider info "
+                "(refused conn.).")
+            pause_and_finish()
+            return False
+        # XXX catch more errors...
 
-        # We're done
+        # We're done!
         pause_and_finish()
 
     def _do_validation(self):
