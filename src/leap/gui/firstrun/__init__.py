@@ -8,9 +8,10 @@ import last
 import login
 import mixins
 import providerinfo
+import providerselect
 import providersetup
 import register
-import selectprovider
+import regvalidation
 
 __all__ = [
     'connect',
@@ -19,6 +20,7 @@ __all__ = [
     'login',
     'mixins',
     'providerinfo',
+    'providerselect',
     'providersetup',
     'register',
-    'selectprovider']
+    'regvalidation']

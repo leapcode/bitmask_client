@@ -109,12 +109,14 @@ class FirstRunWizard(QtGui.QWizard):
         pages_dict = OrderedDict((
             ('intro', firstrun.intro.IntroPage),
             ('providerselection',
-                firstrun.selectprovider.SelectProviderPage),
+                firstrun.providerselect.SelectProviderPage),
             ('login', firstrun.login.LogInPage),
             ('providerinfo', firstrun.providerinfo.ProviderInfoPage),
             ('providersetupvalidation',
                 firstrun.providersetup.ProviderSetupValidationPage),
             ('signup', firstrun.register.RegisterUserPage),
+            ('signupvalidation',
+                firstrun.regvalidation.RegisterUserValidationPage),
             ('connecting', firstrun.connect.ConnectingPage),
             ('lastpage', firstrun.last.LastPage)
         ))

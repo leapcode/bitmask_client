@@ -54,7 +54,7 @@ class SelectProviderPage(QtGui.QWizardPage):
                 #providercombo.addItem(provider)
         #providerNameSelect = providercombo
 
-        self.registerField('provider_domain*', self.providerNameEdit)
+        self.registerField("provider_domain*", self.providerNameEdit)
         #self.registerField('provider_name_index', providerNameSelect)
 
         validationMsg = QtGui.QLabel("")
@@ -78,6 +78,8 @@ class SelectProviderPage(QtGui.QWizardPage):
 
         self.trustProviderCertCheckBox.stateChanged.connect(
             self.onTrustCheckChanged)
+        self.providerNameEdit.textChanged.connect(
+            self.onProviderChanged)
 
         layout = QtGui.QGridLayout()
         layout.addWidget(validationMsg, 0, 2)
@@ -114,14 +116,17 @@ class SelectProviderPage(QtGui.QWizardPage):
         # trigger signal to redraw next button
         self.completeChanged.emit()
 
+    def onProviderChanged(self, text):
+        self.completeChanged.emit()
+
     def reset_validation_status(self):
         """
         empty the validation msg
         """
         self.validationMsg.setText('')
 
-    def set_validation_status(self, status):
-        self.validationMsg.setText(status)
+    #def set_validation_status(selF, STATUS):
+        #self.validationMsg.setText(status)
 
     def add_cert_info(self, certinfo):
         self.certWarning.setText(
@@ -134,11 +139,16 @@ class SelectProviderPage(QtGui.QWizardPage):
     # pagewizard methods
 
     def isComplete(self):
-        if not self.did_cert_check:
-            return True
-        if self.is_insecure_cert_trusted():
-            return True
-        return False
+        provider = self.providerNameEdit.text()
+
+        if not provider:
+            return False
+        else:
+            if self.is_insecure_cert_trusted():
+                return True
+            if not self.did_cert_check:
+                return True
+            return False
 
     def populateErrors(self):
         # XXX could move this to ValidationMixin
@@ -163,12 +173,6 @@ class SelectProviderPage(QtGui.QWizardPage):
     def initializePage(self):
         self.validationMsg.setText('')
         self.certinfoGroup.hide()
-
-    def validatePage(self):
-        """
-        we are doing validation in next page
-        """
-        return True
 
     def nextId(self):
         wizard = self.wizard()
