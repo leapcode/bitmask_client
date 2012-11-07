@@ -23,6 +23,21 @@ GUI_PAUSE_FOR_USER_SECONDS = 1
 pause_for_user = lambda: time.sleep(GUI_PAUSE_FOR_USER_SECONDS)
 
 
+def get_https_domain_and_port(full_domain):
+    """
+    returns a tuple with domain and port
+    from a full_domain string that can
+    contain a colon
+    """
+    domain_split = full_domain.split(':')
+    _len = len(domain_split)
+    if _len == 1:
+        domain, port = full_domain, 443
+    if _len == 2:
+        domain, port = domain_split
+    return domain, port
+
+
 class ProviderInfoPage(ValidationPage):
     def __init__(self, parent=None):
         super(ProviderInfoPage, self).__init__(parent)
@@ -93,12 +108,18 @@ class ProviderInfoPage(ValidationPage):
         providercertchecker = wizard.providercertchecker()
         eipconfigchecker = wizard.eipconfigchecker()
 
-        domain = self.field('provider_domain')
+        full_domain = self.field('provider_domain')
+
+        # we check if we have a port in the domain string.
+        domain, port = get_https_domain_and_port(full_domain)
+        _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
 
         update_signal.emit("head_sentinel", 0)
         pause_for_user()
 
+        ########################
         # 1) try name resolution
+        ########################
         update_signal.emit("Checking that server is reachable", 20)
         logger.debug('checking name resolution')
         try:
@@ -112,12 +133,14 @@ class ProviderInfoPage(ValidationPage):
             pause_and_finish()
             return False
 
+        #########################
         # 2) try https connection
+        #########################
         update_signal.emit("Checking secure connection to provider", 40)
         logger.debug('checking https connection')
         try:
             providercertchecker.is_https_working(
-                "https://%s" % domain,
+                "https://%s" % _domain,
                 verify=True)
 
         except eipexceptions.HttpsBadCertError as exc:
