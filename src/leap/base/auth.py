@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 SIGNUP_TIMEOUT = getattr(baseconstants, 'SIGNUP_TIMEOUT', 5)
 
 # XXX remove me!!
-SERVER = "http://springbok/1"
+SERVER = "https://localhost:8443/1"
 
 
 """
@@ -120,9 +120,10 @@ safe_unhexlify = lambda x: binascii.unhexlify(x) \
 
 class SRPAuth(requests.auth.AuthBase):
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, verify=None):
         self.username = username
         self.password = password
+        self.verify = verify
 
         # XXX init something similar to
         # SERVER...
@@ -132,7 +133,7 @@ class SRPAuth(requests.auth.AuthBase):
 
         self.init_srp()
 
-    def get_data(self, response):
+    def get_json_data(self, response):
         return json.loads(response.content)
 
     def init_srp(self):
@@ -153,11 +154,44 @@ class SRPAuth(requests.auth.AuthBase):
         }
 
     def get_init_data(self):
-        init_session = self.session.post(
-            SERVER + '/sessions',
-            data=self.get_auth_data())
-        self.init_data = self.get_data(init_session)
+        try:
+            init_session = self.session.post(
+                SERVER + '/sessions.json/',
+                data=self.get_auth_data(),
+                verify=self.verify)
+        except requests.exceptions.ConnectionError:
+            raise SRPAuthenticationError(
+                "No connection made (salt).")
+        if init_session.status_code not in (200, ):
+            raise SRPAuthenticationError(
+                "No valid response (salt).")
+
+        # XXX should  get auth_result.json instead
+        self.init_data = self.get_json_data(init_session)
         return self.init_data
+
+    def get_server_proof_data(self):
+        try:
+            auth_result = self.session.put(
+                SERVER + '/sessions.json/' + self.username,
+                data={'client_auth': binascii.hexlify(self.M)},
+                verify=self.verify)
+        except requests.exceptions.ConnectionError:
+            raise SRPAuthenticationError(
+                "No connection made (HAMK).")
+
+        if auth_result.status_code not in (200, ):
+            raise SRPAuthenticationError(
+                "No valid response (HAMK).")
+
+        # XXX should  get auth_result.json instead
+        try:
+            self.auth_data = self.get_json_data(auth_result)
+        except ValueError:
+            raise SRPAuthenticationError(
+                "No valid data sent (HAMK)")
+
+        return self.auth_data
 
     def authenticate(self):
         logger.debug('start authentication...')
@@ -166,34 +200,54 @@ class SRPAuth(requests.auth.AuthBase):
         salt = init_data.get('salt', None)
         B = init_data.get('B', None)
 
+        # XXX refactor this function
+        # move checks and un-hex
+        # to routines
+
         if not salt or not B:
-            raise SRPAuthenticationError
+            raise SRPAuthenticationError(
+                "Server did not send initial data.")
+
+        try:
+            unhex_salt = safe_unhexlify(salt)
+        except TypeError:
+            raise SRPAuthenticationError(
+                "Bad data from server (salt)")
+        try:
+            unhex_B = safe_unhexlify(B)
+        except TypeError:
+            raise SRPAuthenticationError(
+                "Bad data from server (B)")
 
         self.M = self.srp_usr.process_challenge(
-            safe_unhexlify(salt),
-            safe_unhexlify(B)
+            unhex_salt,
+            unhex_B
         )
 
-        auth_result = self.session.put(
-            SERVER + '/sessions/' + self.username,
-            data={'client_auth': binascii.hexlify(self.M)})
+        proof_data = self.get_server_proof_data()
 
-        auth_data = self.get_data(auth_result)
-        M2 = auth_data.get("M2", None)
-        if not M2:
-            errors = auth_data.get('errors', None)
+        HAMK = proof_data.get("M2", None)
+        if not HAMK:
+            errors = proof_data.get('errors', None)
             if errors:
                 logger.error(errors)
-            raise SRPAuthenticationError('Authentication Error')
+            raise SRPAuthenticationError("Server did not send HAMK.")
+
+        try:
+            unhex_HAMK = safe_unhexlify(HAMK)
+        except TypeError:
+            raise SRPAuthenticationError(
+                "Bad data from server (HAMK)")
 
         self.srp_usr.verify_session(
-            safe_unhexlify(M2))
+            unhex_HAMK)
 
         try:
             assert self.srp_usr.authenticated()
             logger.debug('user is authenticated!')
         except (AssertionError):
-            raise SRPAuthenticationError
+            raise SRPAuthenticationError(
+                "Auth verification failed.")
 
     def __call__(self, req):
         self.authenticate()
@@ -201,7 +255,7 @@ class SRPAuth(requests.auth.AuthBase):
         return req
 
 
-def srpauth_protected(user=None, passwd=None):
+def srpauth_protected(user=None, passwd=None, verify=True):
     """
     decorator factory that accepts
     user and password keyword arguments
@@ -211,7 +265,7 @@ def srpauth_protected(user=None, passwd=None):
         def wrapper(*args, **kwargs):
             print 'uri is ', args[0]
             if user and passwd:
-                auth = SRPAuth(user, passwd)
+                auth = SRPAuth(user, passwd, verify)
                 kwargs['auth'] = auth
             return fn(*args, **kwargs)
         return wrapper
@@ -226,6 +280,10 @@ def get_leap_credentials():
     password = leapkeyring.leap_get_password(full_username, seed=seed)
     return (username, password)
 
+
+# XXX TODO
+# Pass verify as single argument,
+# in srpauth_protected style
 
 def magick_srpauth(fn):
     """
@@ -261,4 +319,4 @@ if __name__ == "__main__":
         req.raise_for_status
         #print req.content
 
-    test_srp_protected_get('http://springbok/1/cert')
+    test_srp_protected_get('http://localhost:8443/1/cert')
