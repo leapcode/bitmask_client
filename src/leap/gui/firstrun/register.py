@@ -17,22 +17,17 @@ from leap.gui.styles import ErrorLabelStyleSheet
 
 class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
 
-    setSigningUpStatus = QtCore.pyqtSignal([])
-
     def __init__(self, parent=None):
 
         super(RegisterUserPage, self).__init__(parent)
-
-        # bind wizard page signals
-        self.setSigningUpStatus.connect(
-            lambda: self.set_validation_status(
-                'validating'))
 
         self.setTitle("Sign Up")
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
+
+        self.current_page = "signup"
 
         userNameLabel = QtGui.QLabel("User &name:")
         userNameLineEdit = QtGui.QLineEdit()
@@ -88,18 +83,28 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         layout.addWidget(rememberPasswordCheckBox, 4, 3, 4, 4)
         self.setLayout(layout)
 
-    # overwritten methods
+    # pagewizard methods
 
-    def initializePage(self):
+    def populateErrors(self):
+        # XXX could move this to ValidationMixin
+
+        #logger.debug('getting errors')
+        errors = self.wizard().get_validation_error(
+            self.current_page)
+        if errors:
+            #logger.debug('errors! -> %s', errors)
+            self.validationMsg.setText(errors)
+
+    def paintEvent(self, event):
         """
-        inits wizard page
+        we hook our populate errors
+        on paintEvent because we need it to catch
+        when user enters the page coming from next,
+        and initializePage does not cover that case.
+        Maybe there's a better event to hook upon.
         """
-        provider = self.field('provider_domain')
-        self.setSubTitle(
-            "Register a new user with provider %s." %
-            provider)
-        self.validationMsg.setText('')
-        self.userPassword2LineEdit.setText('')
+        super(RegisterUserPage, self).paintEvent(event)
+        self.populateErrors()
 
     def validatePage(self):
         """
@@ -110,7 +115,6 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         and if any errors are thrown there we come back
         and re-display the validation label.
         """
-        self.setSigningUpStatus.emit()
 
         #username = self.userNameLineEdit.text()
         password = self.userPasswordLineEdit.text()
@@ -134,6 +138,17 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
             return False
 
         return True
+
+    def initializePage(self):
+        """
+        inits wizard page
+        """
+        provider = self.field('provider_domain')
+        self.setSubTitle(
+            "Register a new user with provider %s." %
+            provider)
+        self.validationMsg.setText('')
+        self.userPassword2LineEdit.setText('')
 
     def nextId(self):
         wizard = self.wizard()

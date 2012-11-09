@@ -6,9 +6,9 @@ import logging
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-from leap.base import exceptions as baseexceptions
-from leap.crypto import certs
-from leap.eip import exceptions as eipexceptions
+#from leap.base import exceptions as baseexceptions
+#from leap.crypto import certs
+#from leap.eip import exceptions as eipexceptions
 
 from leap.gui.constants import APP_LOGO
 from leap.gui.styles import ErrorLabelStyleSheet
@@ -30,6 +30,7 @@ class SelectProviderPage(QtGui.QWizardPage):
             QtGui.QPixmap(APP_LOGO))
 
         self.did_cert_check = False
+        self.current_page = 'providerselection'
 
         providerNameLabel = QtGui.QLabel("h&ttps://")
         # note that we expect the bare domain name
@@ -154,7 +155,8 @@ class SelectProviderPage(QtGui.QWizardPage):
         # XXX could move this to ValidationMixin
 
         #logger.debug('getting errors')
-        errors = self.wizard().get_validation_error('providerselection')
+        errors = self.wizard().get_validation_error(
+            self.current_page)
         if errors:
             #logger.debug('errors! -> %s', errors)
             self.validationMsg.setText(errors)

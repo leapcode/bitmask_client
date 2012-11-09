@@ -1,3 +1,5 @@
+import time
+
 APP_LOGO = ':/images/leap-color-small.png'
 
 # bare is the username portion of a JID
@@ -6,3 +8,6 @@ APP_LOGO = ':/images/leap-color-small.png'
 
 BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 FULL_USERNAME_REGEX = r"^[A-Za-z\d_@.-]+$"
+
+GUI_PAUSE_FOR_USER_SECONDS = 1
+pause_for_user = lambda: time.sleep(GUI_PAUSE_FOR_USER_SECONDS)

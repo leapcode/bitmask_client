@@ -2,7 +2,6 @@
 Provider Info Page, used in First run Wizard
 """
 import logging
-import time
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -14,28 +13,11 @@ from leap.crypto import certs
 from leap.eip import exceptions as eipexceptions
 
 from leap.gui.progress import ValidationPage
+from leap.util.web import get_https_domain_and_port
 
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, pause_for_user
 
 logger = logging.getLogger(__name__)
-
-GUI_PAUSE_FOR_USER_SECONDS = 1
-pause_for_user = lambda: time.sleep(GUI_PAUSE_FOR_USER_SECONDS)
-
-
-def get_https_domain_and_port(full_domain):
-    """
-    returns a tuple with domain and port
-    from a full_domain string that can
-    contain a colon
-    """
-    domain_split = full_domain.split(':')
-    _len = len(domain_split)
-    if _len == 1:
-        domain, port = full_domain, 443
-    if _len == 2:
-        domain, port = domain_split
-    return domain, port
 
 
 class ProviderInfoPage(ValidationPage):
@@ -127,7 +109,7 @@ class ProviderInfoPage(ValidationPage):
                 domain)
 
         except baseexceptions.LeapException as exc:
-            logger.debug('exception')
+            logger.error(exc.message)
             wizard.set_validation_error(
                 prevpage, exc.usermessage)
             pause_and_finish()

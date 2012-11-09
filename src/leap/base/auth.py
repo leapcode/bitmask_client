@@ -37,6 +37,7 @@ class LeapSRPRegister(object):
                  schema="https",
                  provider=None,
                  port=None,
+                 verify=True,
                  register_path="1/users.json",
                  method="POST",
                  fetcher=requests,
@@ -47,6 +48,7 @@ class LeapSRPRegister(object):
         self.schema = schema
         self.provider = provider
         self.port = port
+        self.verify = verify
         self.register_path = register_path
         self.method = method
         self.fetcher = fetcher
@@ -98,7 +100,8 @@ class LeapSRPRegister(object):
         # XXX get self.method
         req = self.session.post(
             uri, data=user_data,
-            timeout=SIGNUP_TIMEOUT)
+            timeout=SIGNUP_TIMEOUT,
+            verify=self.verify)
         logger.debug(req)
         logger.debug('user_data: %s', user_data)
         #logger.debug('response: %s', req.text)

@@ -186,6 +186,12 @@ class ValidationPage(QtGui.QWizardPage):
 
         self.errors = OrderedDict()
 
+    def set_error(self, name, error):
+        self.errors[name] = error
+
+    def pop_first_error(self):
+        return list(reversed(self.errors.items())).pop()
+
     def populateStepsTable(self):
         # from examples,
         # but I guess it's not needed to re-populate
