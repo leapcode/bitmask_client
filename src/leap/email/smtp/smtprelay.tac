@@ -45,7 +45,8 @@ class SMTPDelivery(object):
         try:
             # this will raise an exception if key is not found
             trust = self.gpg.find_key(user.dest.addrstr)['trust']
-            # verify if key is (u)ltimatelly trusted
+            # if key is not ultimatelly trusted, then the message will not
+            # be encrypted. So, we check for this below
             if trust != 'u':
                 raise smtp.SMTPBadRcpt(user)
             print "Accepting mail for %s..." % user.dest
@@ -93,7 +94,7 @@ class EncryptedMessage():
     def parseMessage(self):
         """Separate message headers from body."""
         sep = self.lines.index('')
-        self.header = self.lines[:sep]
+        self.headers = self.lines[:sep]
         self.body = self.lines[sep+1:]
 
     def connectionLost(self):
@@ -108,13 +109,13 @@ class EncryptedMessage():
         print e
 
     def prepareHeader(self):
-        self.header.insert(1, "From: %s" % self.user.orig.addrstr)
-        self.header.insert(2, "To: %s" % self.user.dest.addrstr)
-        self.header.append('')
+        self.headers.insert(1, "From: %s" % self.user.orig.addrstr)
+        self.headers.insert(2, "To: %s" % self.user.dest.addrstr)
+        self.headers.append('')
 
     def sendMessage(self):
         self.prepareHeader()
-        msg = '\n'.join(self.header+[self.cyphertext])
+        msg = '\n'.join(self.headers+[self.cyphertext])
         d = defer.Deferred()
         factory = smtp.ESMTPSenderFactory(self.smtp_username,
                                           self.smtp_password,
@@ -177,8 +178,7 @@ class GPGWrapper():
 port = 25
 factory = SMTPFactory()
 
-# this enables the use of this application with twistd
-application = service.Application("LEAP SMTP Relay")  # create the Application
-service = internet.TCPServer(port, factory) # create the service
-# add the service to the application
+# these enable the use of this service with twistd
+application = service.Application("LEAP SMTP Relay")
+service = internet.TCPServer(port, factory)
 service.setServiceParent(application)
