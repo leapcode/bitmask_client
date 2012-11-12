@@ -2,17 +2,24 @@
 Provider Setup Validation Page,
 used if First Run Wizard
 """
+import logging
 
 from PyQt4 import QtGui
 
+from leap.base import auth
 from leap.gui.progress import ValidationPage
 
 from leap.gui.constants import APP_LOGO, pause_for_user
+
+logger = logging.getLogger(__name__)
 
 
 class ProviderSetupValidationPage(ValidationPage):
     def __init__(self, parent=None):
         super(ProviderSetupValidationPage, self).__init__(parent)
+        is_signup = self.field("is_signup")
+        self.is_signup = is_signup
+
         self.setTitle("Setting up provider")
         #self.setSubTitle(
             #"auto configuring provider...")
@@ -25,14 +32,56 @@ class ProviderSetupValidationPage(ValidationPage):
         """
         executes actual checks in a separate thread
         """
-        domain = self.field('provider_domain')
+        full_domain = self.field('provider_domain')
         wizard = self.wizard()
         pconfig = wizard.providerconfig
 
-        pCertChecker = wizard.providercertchecker
-        certchecker = pCertChecker(domain=domain)
+        #pCertChecker = wizard.providercertchecker
+        #certchecker = pCertChecker(domain=full_domain)
+        pCertChecker = wizard.providercertchecker(
+            domain=full_domain)
 
         update_signal.emit('head_sentinel', 0)
+
+        ######################################
+        if not self.is_signup:
+            # We come from login page.
+            # We try a call to an authenticated
+            # page here as a mean to catch
+            # srp authentication errors while
+            # we are still at one page's reach
+            # of the login credentials input page.
+            # (so we're able to go back an correct)
+
+            step = "fetch_eipcert"
+            update_signal.emit('validating credentials', 20)
+
+            unamek = 'login_userName'
+            passwk = 'login_userPassword'
+
+            username = self.field(unamek)
+            password = self.field(passwk)
+            credentials = username, password
+
+            #################
+            # FIXME #BUG #638
+            verify = False
+
+            try:
+                pCertChecker.download_new_client_cert(
+                    credentials=credentials,
+                    verify=verify)
+
+            except auth.SRPAuthenticationError as exc:
+                self.set_error(
+                    step,
+                    "Authentication error: %s" % exc.message)
+                return False
+
+            pause_for_user()
+
+        #######################################
+
         update_signal.emit('Fetching CA certificate', 30)
         pause_for_user()
 
@@ -48,7 +97,7 @@ class ProviderSetupValidationPage(ValidationPage):
         # (Check with the trusted fingerprints dict
         # or something smart)
 
-        certchecker.download_ca_cert(
+        pCertChecker.download_ca_cert(
             uri=ca_cert_uri,
             verify=False)
         pause_for_user()
@@ -59,7 +108,7 @@ class ProviderSetupValidationPage(ValidationPage):
         # XXX get fingerprint dict (types)
         #sha256_fpr = ca_cert_fingerprint.split('=')[1]
 
-        #validate_fpr = certchecker.check_ca_cert_fingerprint(
+        #validate_fpr = pCertChecker.check_ca_cert_fingerprint(
             #fingerprint=sha256_fpr)
         #if not validate_fpr:
             # XXX update validationMsg
@@ -70,7 +119,7 @@ class ProviderSetupValidationPage(ValidationPage):
 
         #api_uri = pconfig.get('api_uri', None)
         #try:
-            #api_cert_verified = certchecker.verify_api_https(api_uri)
+            #api_cert_verified = pCertChecker.verify_api_https(api_uri)
         #except requests.exceptions.SSLError as exc:
             #logger.error('BUG #638. %s' % exc.message)
             # XXX RAISE! See #638
@@ -95,15 +144,18 @@ class ProviderSetupValidationPage(ValidationPage):
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
+        prevpage = "providerselection" if self.is_signup else "login"
         wizard = self.wizard()
+
         if self.errors:
-            print 'going back with errors'
+            logger.debug('going back with errors')
+            name, first_error = self.pop_first_error()
             wizard.set_validation_error(
-                'providerselection',
-                'error on provider setup')
+                prevpage,
+                first_error)
             self.go_back()
         else:
-            print 'going next'
+            logger.debug('going next')
             self.go_next()
 
     def nextId(self):
@@ -114,5 +166,6 @@ class ProviderSetupValidationPage(ValidationPage):
         if is_signup is True:
             next_ = 'signup'
         if is_signup is False:
-            next_ = 'connecting'
+            # XXX bad name. change to connect again.
+            next_ = 'signupvalidation'
         return wizard.get_page_index(next_)

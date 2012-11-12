@@ -28,15 +28,20 @@ logger = logging.getLogger(__name__)
 class RegisterUserValidationPage(ValidationPage):
 
     def __init__(self, parent=None):
-        # XXX TODO:
-        # We should check if we come from signup
-        # or login, and change title / first step
-        # accordingly.
-
         super(RegisterUserValidationPage, self).__init__(parent)
-        self.setTitle("User Creation")
-        self.setSubTitle(
-            "Registering account with provider.")
+        is_signup = self.field("is_signup")
+        self.is_signup = is_signup
+
+        if is_signup:
+            title = "User Creation"
+            subtitle = "Registering account with provider."
+        else:
+            title = "Connecting..."
+            # XXX uh... really?
+            subtitle = "Checking connection with provider."
+
+        self.setTitle(title)
+        self.setSubTitle(subtitle)
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
@@ -61,12 +66,12 @@ class RegisterUserValidationPage(ValidationPage):
         # Set Credentials.
         # username and password are in different fields
         # if they were stored in log_in or sign_up pages.
+        is_signup = self.is_signup
 
-        from_login = self.wizard().from_login
         unamek_base = 'userName'
         passwk_base = 'userPassword'
-        unamek = 'login_%s' % unamek_base if from_login else unamek_base
-        passwk = 'login_%s' % passwk_base if from_login else passwk_base
+        unamek = 'login_%s' % unamek_base if not is_signup else unamek_base
+        passwk = 'login_%s' % passwk_base if not is_signup else passwk_base
 
         username = self.field(unamek)
         password = self.field(passwk)
@@ -77,73 +82,73 @@ class RegisterUserValidationPage(ValidationPage):
             domain=full_domain)
 
         ###########################################
-        # XXX this only should be setup
-        # if not from_login.
-
-        signup = auth.LeapSRPRegister(
-            schema="https",
-            provider=full_domain,
-            verify=verify)
+        # only if from signup
+        if is_signup:
+            signup = auth.LeapSRPRegister(
+                schema="https",
+                provider=full_domain,
+                verify=verify)
 
         update_signal.emit("head_sentinel", 0)
 
         ##################################################
         # 1) register user
         ##################################################
-        # XXX this only should be DONE
-        # if NOT from_login.
+        # only if from signup.
 
-        step = "register"
-        update_signal.emit("checking availability", 20)
-        update_signal.emit("registering with provider", 40)
-        logger.debug('registering user')
+        if is_signup:
 
-        try:
-            ok, req = signup.register_user(
-                username, password)
+            step = "register"
+            update_signal.emit("checking availability", 20)
+            update_signal.emit("registering with provider", 40)
+            logger.debug('registering user')
 
-        except socket.timeout:
-            self.set_error(
-                step,
-                "Error connecting to provider (timeout)")
+            try:
+                ok, req = signup.register_user(
+                    username, password)
+
+            except socket.timeout:
+                self.set_error(
+                    step,
+                    "Error connecting to provider (timeout)")
+                pause_for_user()
+                return False
+
+            except requests.exceptions.ConnectionError as exc:
+                logger.error(exc.message)
+                self.set_error(
+                    step,
+                    "Error connecting to provider "
+                    "(connection error)")
+                # XXX we should signal a BAD step
+                pause_for_user()
+                update_signal.emit("connection error!", 50)
+                pause_for_user()
+                return False
+
+            # XXX check for != OK instead???
+
+            if req.status_code in (404, 500):
+                self.set_error(
+                    step,
+                    "Error during registration (%s)" % req.status_code)
+                pause_for_user()
+                return False
+
+            validation_msgs = json.loads(req.content)
+            errors = validation_msgs.get('errors', None)
+            logger.debug('validation errors: %s' % validation_msgs)
+
+            if errors and errors.get('login', None):
+                # XXX this sometimes catch the blank username
+                # but we're not allowing that (soon)
+                self.set_error(
+                    step,
+                    'Username not available.')
+                pause_for_user()
+                return False
+
             pause_for_user()
-            return False
-
-        except requests.exceptions.ConnectionError as exc:
-            logger.error(exc.message)
-            self.set_error(
-                step,
-                "Error connecting to provider "
-                "(connection error)")
-            # XXX we should signal a BAD step
-            pause_for_user()
-            update_signal.emit("connection error!", 50)
-            pause_for_user()
-            return False
-
-        # XXX check for != OK instead???
-
-        if req.status_code in (404, 500):
-            self.set_error(
-                step,
-                "Error during registration (%s)" % req.status_code)
-            pause_for_user()
-            return False
-
-        validation_msgs = json.loads(req.content)
-        errors = validation_msgs.get('errors', None)
-        logger.debug('validation errors: %s' % validation_msgs)
-
-        if errors and errors.get('login', None):
-            # XXX this sometimes catch the blank username
-            # but we're not allowing that (soon)
-            self.set_error(
-                step,
-                'Username not available.')
-            pause_for_user()
-            return False
-
-        pause_for_user()
 
         ##################################################
         # 2) fetching eip service config
@@ -168,7 +173,7 @@ class RegisterUserValidationPage(ValidationPage):
         ##################################################
         # 3) getting client certificate
         ##################################################
-
+        # XXX maybe only do this if we come from signup
         step = "fetch_eipcert"
         fetching_clientcert_msg = "Fetching eip certificate"
         update_signal.emit(fetching_clientcert_msg, 80)
@@ -233,8 +238,7 @@ class RegisterUserValidationPage(ValidationPage):
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
-        is_signup = self.field("is_signup")
-        prevpage = "signup" if is_signup else "login"
+        prevpage = "signup" if self.is_signup else "login"
 
         wizard = self.wizard()
         if self.errors:
