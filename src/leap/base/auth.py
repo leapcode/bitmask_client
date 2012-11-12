@@ -194,7 +194,8 @@ class SRPAuth(requests.auth.AuthBase):
     def get_server_proof_data(self):
         try:
             auth_result = self.session.put(
-                self.server + '/1/sessions.json/' + self.username,
+                #self.server + '/1/sessions.json/' + self.username,
+                self.server + '/1/sessions/' + self.username,
                 data={'client_auth': binascii.hexlify(self.M)},
                 verify=self.verify)
         except requests.exceptions.ConnectionError:
