@@ -9,7 +9,7 @@ from PyQt4 import QtGui
 import requests
 
 from leap.base import exceptions as baseexceptions
-from leap.crypto import certs
+#from leap.crypto import certs
 from leap.eip import exceptions as eipexceptions
 
 from leap.gui.progress import ValidationPage
@@ -32,26 +32,36 @@ class ProviderInfoPage(ValidationPage):
             QtGui.QPixmap(APP_LOGO))
 
     def create_info_panel(self):
+        # Use stacked widget instead
+        # of reparenting the layout.
+
+        self.infoWidget = QtGui.QStackedWidget()
+
+        info = QtGui.QWidget()
+        layout = QtGui.QVBoxLayout()
+
         displayName = QtGui.QLabel("")
         description = QtGui.QLabel("")
         enrollment_policy = QtGui.QLabel("")
         # XXX set stylesheet...
         # prettify a little bit.
         # bigger fonts and so on...
+
+        layout.addWidget(displayName)
+        layout.addWidget(description)
+        layout.addWidget(enrollment_policy)
+        layout.addStretch(1)
+
+        info.setLayout(layout)
+        self.infoWidget.addWidget(info)
+
+        self.layout.addWidget(self.infoWidget)
+
+        # add refs to self to allow for
+        # updates.
         self.displayName = displayName
         self.description = description
         self.enrollment_policy = enrollment_policy
-
-        # this trick allows us to reparent
-        QtCore.QObjectCleanupHandler().add(self.layout)
-        layout = QtGui.QGridLayout()
-
-        layout.addWidget(displayName, 0, 1)
-        layout.addWidget(description, 1, 1)
-        layout.addWidget(enrollment_policy, 2, 1)
-
-        self.setLayout(layout)
-        self.update()
 
     def show_provider_info(self):
 
