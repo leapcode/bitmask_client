@@ -1,7 +1,13 @@
 """
 Provider Setup Validation Page,
-used if First Run Wizard
+used in First Run Wizard
 """
+# XXX This page is called regvalidation
+# but it's implementing functionality in the former
+# connect page.
+# We should remame it to connect again, when we integrate
+# the login branch of the wizard.
+
 import logging
 import json
 import socket
@@ -186,6 +192,41 @@ class RegisterUserValidationPage(ValidationPage):
         update_signal.emit("end_sentinel", 100)
         pause_for_user()
 
+        # here we go! :)
+        self.run_eip_checks_for_provider_and_connect(domain)
+
+    def run_eip_checks_for_provider_and_connect(self, domain):
+        wizard = self.wizard()
+        conductor = wizard.conductor
+        start_eip_signal = getattr(
+            wizard,
+            'start_eipconnection_signal', None)
+
+        if conductor:
+            conductor.set_provider_domain(domain)
+            conductor.run_checks()
+            self.conductor = conductor
+            errors = self.eip_error_check()
+            if not errors and start_eip_signal:
+                start_eip_signal.emit()
+
+        else:
+            logger.warning(
+                "No conductor found. This means that "
+                "probably the wizard has been launched "
+                "in an stand-alone way.")
+
+    def eip_error_check(self):
+        """
+        a version of the main app error checker,
+        but integrated within the connecting page of the wizard.
+        consumes the conductor error queue.
+        pops errors, and add those to the wizard page
+        """
+        logger.debug('eip error check from connecting page')
+        errq = self.conductor.error_queue
+        # XXX missing!
+
     def _do_validation(self):
         """
         called after _do_checks has finished
@@ -196,7 +237,7 @@ class RegisterUserValidationPage(ValidationPage):
 
         wizard = self.wizard()
         if self.errors:
-            print 'going back with errors'
+            logger.debug('going back with errors')
             logger.error(self.errors)
             name, first_error = self.pop_first_error()
             wizard.set_validation_error(
@@ -204,7 +245,9 @@ class RegisterUserValidationPage(ValidationPage):
                 first_error)
             self.go_back()
         else:
-            print 'going next'
+            logger.debug('going next')
+            # check if this "next" interferes
+            # with the eip signal.
             self.go_next()
 
     def nextId(self):

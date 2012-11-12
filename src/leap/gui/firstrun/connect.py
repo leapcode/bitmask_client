@@ -1,6 +1,11 @@
 """
 Connecting Page, used in First Run Wizard
 """
+# XXX FIXME
+# DEPRECATED. All functionality moved to regvalidation
+# This file should be removed after checking that one is ok.
+# XXX
+
 import logging
 
 from PyQt4 import QtGui
