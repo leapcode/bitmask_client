@@ -13,7 +13,7 @@ import logging
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-from leap.baseapp.mainwindow import FunThread
+from leap.gui.threads import FunThread
 
 from leap.gui import mainwindow_rc
 

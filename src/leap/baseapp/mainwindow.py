@@ -2,6 +2,10 @@
 #!/usr/bin/env python
 import logging
 
+import sip
+sip.setapi('QString', 2)
+sip.setapi('QVariant', 2)
+
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
@@ -10,6 +14,7 @@ from leap.baseapp.log import LogPaneMixin
 from leap.baseapp.systray import StatusAwareTrayIconMixin
 from leap.baseapp.network import NetworkCheckerAppMixin
 from leap.baseapp.leap_app import MainWindowMixin
+from leap.gui.threads import FunThread
 
 logger = logging.getLogger(name=__name__)
 
@@ -145,19 +150,3 @@ class LeapWindow(QtGui.QMainWindow,
 
     def runchecks_and_eipconnect(self):
         self.initchecks.begin()
-
-
-class FunThread(QtCore.QThread):
-    # XXX move to gui/threads
-    # for code consistence
-
-    def __init__(self, fun, parent=None):
-        QtCore.QThread.__init__(self, parent)
-        self.fun = fun
-
-    def run(self):
-        if self.fun:
-            self.fun()
-
-    def begin(self):
-        self.start()
