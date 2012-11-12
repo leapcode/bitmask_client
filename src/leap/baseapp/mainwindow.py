@@ -145,8 +145,16 @@ class LeapWindow(QtGui.QMainWindow,
             parent=self,
             eip_username=self.eip_username,
             start_eipconnection_signal=self.start_eipconnection,
-            eip_statuschange_signal=self.eipStatusChange)
+            eip_statuschange_signal=self.eipStatusChange,
+            quitcallback=self.onWizardCancel)
         wizard.show()
+
+    def onWizardCancel(self):
+        if not self.wizard_done:
+            logger.debug(
+                'clicked on Cancel during first '
+                'run wizard. shutting down')
+            self.cleanupAndQuit()
 
     def runchecks_and_eipconnect(self):
         self.initchecks.begin()

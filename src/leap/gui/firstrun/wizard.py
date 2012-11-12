@@ -61,7 +61,8 @@ class FirstRunWizard(QtGui.QWizard):
             eipconfigchecker=eipchecks.EIPConfigChecker,
             start_eipconnection_signal=None,
             eip_statuschange_signal=None,
-            debug_server=None):
+            debug_server=None,
+            quitcallback=None):
         super(FirstRunWizard, self).__init__(
             parent,
             QtCore.Qt.WindowStaysOnTopHint)
@@ -96,6 +97,11 @@ class FirstRunWizard(QtGui.QWizard):
         # will be emitted in connecting page
         self.start_eipconnection_signal = start_eipconnection_signal
         self.eip_statuschange_signal = eip_statuschange_signal
+
+        if quitcallback is not None:
+            self.button(
+                QtGui.QWizard.CancelButton).clicked.connect(
+                    quitcallback)
 
         self.providerconfig = None
         # previously registered
