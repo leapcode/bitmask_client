@@ -7,7 +7,7 @@ from PyQt4 import QtGui
 
 from leap.gui.progress import ValidationPage
 
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, pause_for_user
 
 
 class ProviderSetupValidationPage(ValidationPage):
@@ -25,7 +25,6 @@ class ProviderSetupValidationPage(ValidationPage):
         """
         executes actual checks in a separate thread
         """
-        import time
         domain = self.field('provider_domain')
         wizard = self.wizard()
         pconfig = wizard.providerconfig
@@ -33,7 +32,9 @@ class ProviderSetupValidationPage(ValidationPage):
         pCertChecker = wizard.providercertchecker
         certchecker = pCertChecker(domain=domain)
 
+        update_signal.emit('head_sentinel', 0)
         update_signal.emit('Fetching CA certificate', 30)
+        pause_for_user()
 
         if pconfig:
             ca_cert_uri = pconfig.get('ca_cert_uri').geturl()
@@ -47,11 +48,10 @@ class ProviderSetupValidationPage(ValidationPage):
         # (Check with the trusted fingerprints dict
         # or something smart)
 
-        #certchecker.download_ca_cert(
-            #uri=ca_cert_uri,
-            #verify=False)
-
-        time.sleep(2)
+        certchecker.download_ca_cert(
+            uri=ca_cert_uri,
+            verify=False)
+        pause_for_user()
 
         update_signal.emit('Checking CA fingerprint', 66)
         #ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint', None)
@@ -61,7 +61,6 @@ class ProviderSetupValidationPage(ValidationPage):
 
         #validate_fpr = certchecker.check_ca_cert_fingerprint(
             #fingerprint=sha256_fpr)
-        time.sleep(0.5)
         #if not validate_fpr:
             # XXX update validationMsg
             # should catch exception
@@ -85,11 +84,11 @@ class ProviderSetupValidationPage(ValidationPage):
             # XXX update validationMsg
             # should catch exception
             #return False
-        time.sleep(0.5)
+        pause_for_user()
         #ca_cert_path = checker.ca_cert_path
 
         update_signal.emit('end_sentinel', 100)
-        time.sleep(1)
+        pause_for_user()
 
     def _do_validation(self):
         """
