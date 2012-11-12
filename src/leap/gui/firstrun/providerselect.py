@@ -153,13 +153,27 @@ class SelectProviderPage(QtGui.QWizardPage):
 
     def populateErrors(self):
         # XXX could move this to ValidationMixin
+        # with some defaults for the validating fields
+        # (now it only allows one field, manually specified)
 
         #logger.debug('getting errors')
         errors = self.wizard().get_validation_error(
             self.current_page)
         if errors:
-            #logger.debug('errors! -> %s', errors)
-            self.validationMsg.setText(errors)
+            bad_str = getattr(self, 'bad_string', None)
+            cur_str = self.providerNameEdit.text()
+            showerr = self.validationMsg.setText
+            if bad_str is None:
+                # first time we fall here.
+                # save the current bad_string value
+                self.bad_string = cur_str
+                showerr(errors)
+            else:
+                # not the first time
+                if cur_str == bad_str:
+                    showerr(errors)
+                else:
+                    showerr('')
 
     def paintEvent(self, event):
         """

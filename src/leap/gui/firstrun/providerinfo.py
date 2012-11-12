@@ -31,6 +31,9 @@ class ProviderInfoPage(ValidationPage):
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
+        self.prev_page = "providerselection"
+        #self.current_page = "providerinfo"
+
     def create_info_panel(self):
         # Use stacked widget instead
         # of reparenting the layout.

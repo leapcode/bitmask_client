@@ -192,6 +192,17 @@ class ValidationPage(QtGui.QWizardPage):
     def pop_first_error(self):
         return list(reversed(self.errors.items())).pop()
 
+    def clean_errors(self):
+        self.errors = OrderedDict()
+
+    def clean_wizard_errors(self, pagename=None):
+        if pagename is None:
+            pagename = getattr(self, 'prev_page', None)
+        if pagename is None:
+            return
+        logger.debug('cleaning wizard errors for %s' % pagename)
+        self.wizard().set_validation_error(pagename, None)
+
     def populateStepsTable(self):
         # from examples,
         # but I guess it's not needed to re-populate
@@ -255,6 +266,8 @@ class ValidationPage(QtGui.QWizardPage):
         self.wizard().next()
 
     def initializePage(self):
+        self.clean_errors()
+        self.clean_wizard_errors()
         self.steps.removeAllSteps()
         self.clearTable()
         self.resizeTable()
