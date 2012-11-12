@@ -179,7 +179,12 @@ to be triggered for each one of them.
         terminates openvpn child subprocess
         """
         if self.subp:
-            self._stop()
+            try:
+                self._stop()
+            except eip_exceptions.ConnectionRefusedError:
+                logger.warning(
+                    'unable to send sigterm signal to openvpn: '
+                    'connection refused.')
 
             # XXX kali --
             # I think this will block if child process
@@ -190,8 +195,8 @@ to be triggered for each one of them.
             RETCODE = self.subp.wait()
             if RETCODE:
                 logger.error(
-                    'cannot terminate subprocess! '
-                    '(We might have left openvpn running)')
+                    'cannot terminate subprocess! Retcode %s'
+                    '(We might have left openvpn running)' % RETCODE)
 
     def _get_openvpn_process(self):
         # plist = [p for p in psutil.get_process_list() if p.name == "openvpn"]
