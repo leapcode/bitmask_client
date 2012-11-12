@@ -68,38 +68,16 @@ class RegisterUserValidationPage(ValidationPage):
 
         eipconfigchecker = wizard.eipconfigchecker()
         pCertChecker = wizard.providercertchecker(
-            domain=domain)
+            domain=full_domain)
 
         ###########################################
         # XXX this only should be setup
         # if not from_login.
 
-        if wizard and wizard.debug_server:
-            # We're debugging
-            # XXX remove this branch?
-            dbgsrv = wizard.debug_server
-            schema = dbgsrv.scheme
-            netloc = dbgsrv.netloc
-            port = None
-            netloc_split = netloc.split(':')
-            if len(netloc_split) > 1:
-                provider, port = netloc_split
-            else:
-                provider = netloc
-
-            signup = auth.LeapSRPRegister(
-                scheme=schema,
-                provider=provider,
-                port=port,
-                verify=verify)
-
-        else:
-            # this is the real thing
-            signup = auth.LeapSRPRegister(
-                schema="https",
-                port=port,
-                provider=domain,
-                verify=verify)
+        signup = auth.LeapSRPRegister(
+            schema="https",
+            provider=full_domain,
+            verify=verify)
 
         update_signal.emit("head_sentinel", 0)
 

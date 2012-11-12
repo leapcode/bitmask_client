@@ -212,11 +212,16 @@ class ProviderCertChecker(object):
         if credentials:
             user, passwd = credentials
 
-            @srpauth_protected(user, passwd, verify)
+            logger.debug('domain = %s', self.domain)
+
+            @srpauth_protected(user, passwd,
+                               server="https://%s" % self.domain,
+                               verify=verify)
             def getfn(*args, **kwargs):
                 return fgetfn(*args, **kwargs)
 
         else:
+            # XXX FIXME fix decorated args
             @magick_srpauth(verify)
             def getfn(*args, **kwargs):
                 return fgetfn(*args, **kwargs)
