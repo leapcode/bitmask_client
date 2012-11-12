@@ -95,17 +95,29 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
             bad_str = getattr(self, 'bad_string', None)
             cur_str = self.userNameLineEdit.text()
             showerr = self.validationMsg.setText
+            prev_er = getattr(self, 'prevalidation_error', None)
+
             if bad_str is None:
                 # first time we fall here.
                 # save the current bad_string value
                 self.bad_string = cur_str
                 showerr(errors)
             else:
+                if prev_er:
+                    showerr(prev_er)
+                    return
                 # not the first time
                 if cur_str == bad_str:
                     showerr(errors)
                 else:
                     showerr('')
+
+    def cleanup_errormsg(self):
+        """
+        we reset bad_string to None
+        should be called before leaving the page
+        """
+        self.bad_string = None
 
     def paintEvent(self, event):
         """
@@ -117,6 +129,9 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         """
         super(RegisterUserPage, self).paintEvent(event)
         self.populateErrors()
+
+    def set_prevalidation_error(self, error):
+        self.prevalidation_error = error
 
     def validatePage(self):
         """
@@ -137,18 +152,22 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         # to assess strenght and avoid silly stuff.
 
         if password != password2:
-            self.set_validation_status('Password does not match.')
+            self.set_prevalidation_error('Password does not match.')
             return False
 
         if len(password) < 6:
-            self.set_validation_status('Password too short.')
+            self.set_prevalidation_error('Password too short.')
             return False
 
         if password == "123456":
-            # joking
-            self.set_validation_status('Password too obvious.')
+            # joking, but not too much.
+            self.set_prevalidation_error('Password too obvious.')
             return False
 
+        # some cleanup before we leave the page
+        self.cleanup_errormsg()
+
+        # go
         return True
 
     def initializePage(self):

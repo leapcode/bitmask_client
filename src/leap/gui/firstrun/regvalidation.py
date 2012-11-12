@@ -94,6 +94,7 @@ class RegisterUserValidationPage(ValidationPage):
         # if NOT from_login.
 
         step = "register"
+        update_signal.emit("checking availability", 20)
         update_signal.emit("registering with provider", 40)
         logger.debug('registering user')
 

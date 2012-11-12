@@ -175,6 +175,13 @@ class SelectProviderPage(QtGui.QWizardPage):
                 else:
                     showerr('')
 
+    def cleanup_errormsg(self):
+        """
+        we reset bad_string to None
+        should be called before leaving the page
+        """
+        self.bad_string = None
+
     def paintEvent(self, event):
         """
         we hook our populate errors
@@ -189,6 +196,13 @@ class SelectProviderPage(QtGui.QWizardPage):
     def initializePage(self):
         self.validationMsg.setText('')
         self.certinfoGroup.hide()
+
+    def validatePage(self):
+        # some cleanup before we leave the page
+        self.cleanup_errormsg()
+
+        # go
+        return True
 
     def nextId(self):
         wizard = self.wizard()
