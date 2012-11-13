@@ -3,7 +3,9 @@ OpenVPN Connection
 """
 from __future__ import (print_function)
 import logging
+import os
 import psutil
+import shutil
 import socket
 import time
 from functools import partial
@@ -187,6 +189,7 @@ to be triggered for each one of them.
                     'connection refused.')
 
             # XXX kali --
+            # XXX review-me
             # I think this will block if child process
             # does not return.
             # Maybe we can .poll() for a given
@@ -197,6 +200,26 @@ to be triggered for each one of them.
                 logger.error(
                     'cannot terminate subprocess! Retcode %s'
                     '(We might have left openvpn running)' % RETCODE)
+
+        self.cleanup_tempfiles()
+
+    def cleanup_tempfiles(self):
+        """
+        remove all temporal files
+        we might have left behind
+        """
+        # if self.port is 'unix', we have
+        # created a temporal socket path that, under
+        # normal circumstances, we should be able to
+        # delete
+
+        if self.port == "unix":
+            # I'm tempted to catch a generic exception here,
+            # but I prefer to let it crash so we can catch
+            # specific errors that right now I'm not able
+            # to think of.
+            logger.debug('cleaning socket file temp folder')
+            shutil.rmtree(os.path.split(self.host)[0])
 
     def _get_openvpn_process(self):
         # plist = [p for p in psutil.get_process_list() if p.name == "openvpn"]
