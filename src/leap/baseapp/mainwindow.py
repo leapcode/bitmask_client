@@ -164,4 +164,5 @@ class LeapWindow(QtGui.QMainWindow,
             self.cleanupAndQuit()
 
     def runchecks_and_eipconnect(self):
+        self.show_systray_icon()
         self.initchecks.begin()
