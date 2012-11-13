@@ -42,6 +42,6 @@ EIP_SAMPLE_SERVICE = {
      "name": "turkey",
      "label": {"en":"Ankara, Turkey"},
      "capabilities": {},
-     "hosts": ["94.103.43.4"]}
+     "hosts": ["192.0.43.10"]}
     ]
 }
