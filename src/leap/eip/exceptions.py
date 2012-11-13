@@ -32,8 +32,10 @@ TODO:
 * gettext / i18n for user messages.
 
 """
+from leap.base.exceptions import LeapException
 
 
+# This should inherit from LeapException
 class EIPClientError(Exception):
     """
     base EIPClient exception
@@ -98,6 +100,15 @@ class OpenVPNAlreadyRunning(EIPClientError):
     usermessage = ("Another OpenVPN Process has been detected."
                    "Please close it before starting leap-client")
 
+
+class HttpsNotSupported(LeapException):
+    message = "connection refused while accessing via https"
+    usermessage = "Server does not allow secure connections."
+
+
+class HttpsBadCertError(LeapException):
+    message = "verification error on cert"
+    usermessage = "Server certificate could not be verified."
 
 #
 # errors still needing some love

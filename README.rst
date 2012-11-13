@@ -20,17 +20,21 @@ Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requiremen
 
 Debian systems
 --------------
+# XXX TODO: move to packaging doc.
 
 * python-qt4
-* python-gnutls == 1.1.9
-* python-keyring
 * python-crypto
 * python setuptools
 * python-nose, python-mock, python-coverage (if you want to run tests)
 
+Note: these two need a version that is not found in the current debian stable or in ubuntu 12.04. 
+
+* python-gnutls == 1.1.9
+* python-keyring
+
 Under a debian-based system, you can run::
 
-  # apt-get install openvpn python-qt4 python-keyring python-crypto
+  # apt-get install openvpn python-qt4 python-crypto
 
 For testing:
 
@@ -43,7 +47,9 @@ For _building_ the package you will need to install also::
 
 Install python dependencies with pip
 -------------------------------------
-Use pip (preferrable inside a virtualenv) to install all the required python packages::
+# XXX TODO: move to developers doc.
+
+Use pip (preferrable inside a virtualenv) to install the required python packages::
 
   # apt-get install python-pip python-dev libgnutls-dev
   % pip install -r pkg/requirements.pip
@@ -53,11 +59,6 @@ Install leap-client
 -------------------
 
 After getting the source and installing all the dependencies, proceed to install ``leap-client`` package:
-
-# need to run this if you are installing from the git source tree
-# not needed if installing from a tarball::
-
-  python setup.py branding
 
 # run this if you have installed previous versions before::
 
@@ -71,18 +72,17 @@ And finally, build and install leap-client::
 Running the App
 -----------------
 
-If you're running a branded build, the script name will have a infix that
-depends on your build flavor. Look for it in ``/usr/local/bin``::
+After a successful installation, there should be a launcher called leap-client somewhere in your path::
 
-  % leap-springbok-client
+  % leap-client
 
 In order to run the client in debug mode::
 
-  % leap-springbok-client --debug --logfile /tmp/leap.log
+  % leap-client --debug --logfile /tmp/leap.log
 
 To see all the available command line options::
 
-  % leap-springbok-client --help
+  % leap-client --help
 
 
 Development
@@ -120,7 +120,6 @@ Some steps need to be run when setting a development environment for the first t
 
   (leap_client)% git checkout develop
   (leap_client)% pkg/postmkvenv.sh
-  (leap_client)% python setup.py branding
   (leap_client)% python setup.py develop  
 
 to avoid messing with the entry point and global versions installed,

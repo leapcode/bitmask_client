@@ -1,11 +1,12 @@
 from __future__ import unicode_literals
 import os
 
-from leap import __branding
+#from leap import __branding
 
 # sample data used in tests
 
-PROVIDER = __branding.get('provider_domain')
+#PROVIDER = __branding.get('provider_domain')
+PROVIDER = "testprovider.example.org"
 
 EIP_SAMPLE_CONFIG = {
     "provider": "%s" % PROVIDER,
@@ -15,7 +16,7 @@ EIP_SAMPLE_CONFIG = {
     "openvpn_ca_certificate": os.path.expanduser(
         "~/.config/leap/providers/"
         "%s/"
-        "keys/ca/testprovider-ca-cert.pem" % PROVIDER),
+        "keys/ca/cacert.pem" % PROVIDER),
     "openvpn_client_certificate": os.path.expanduser(
         "~/.config/leap/providers/"
         "%s/"
@@ -42,6 +43,6 @@ EIP_SAMPLE_SERVICE = {
      "name": "turkey",
      "label": {"en":"Ankara, Turkey"},
      "capabilities": {},
-     "hosts": ["94.103.43.4"]}
+     "hosts": ["192.0.43.10"]}
     ]
 }

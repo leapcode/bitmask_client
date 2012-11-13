@@ -25,6 +25,7 @@ class EIPConductorAppMixin(object):
     def __init__(self, *args, **kwargs):
         opts = kwargs.pop('opts')
         config_file = getattr(opts, 'config_file', None)
+        provider = kwargs.pop('provider')
 
         self.eip_service_started = False
 
@@ -36,10 +37,11 @@ class EIPConductorAppMixin(object):
         self.conductor = EIPConnection(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
-            checker_signals=(self.changeLeapStatus.emit, ),
-            status_signals=(self.statusChange.emit, ),
+            checker_signals=(self.eipStatusChange.emit, ),
+            status_signals=(self.openvpnStatusChange.emit, ),
             debug=self.debugmode,
-            ovpn_verbosity=opts.openvpn_verb)
+            ovpn_verbosity=opts.openvpn_verb,
+            provider=provider)
 
         self.skip_download = opts.no_provider_checks
         self.skip_verify = opts.no_ca_verify
@@ -137,14 +139,14 @@ class EIPConductorAppMixin(object):
             # is not ready yet.
             return
 
-        if self.conductor.with_errors:
+        #if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
             #I removed the pkexec pass authentication at all.
             #time.sleep(5)
             #logger.debug('timeout')
-            logger.error('errors. disconnect')
-            self.start_or_stopVPN()  # is stop
+            #logger.error('errors. disconnect')
+            #self.start_or_stopVPN()  # is stop
 
         state = self.conductor.poll_connection_state()
         if not state:

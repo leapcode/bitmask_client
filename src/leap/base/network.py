@@ -31,7 +31,7 @@ class NetworkCheckerThread(object):
         # see in eip.config for function
         # #718
         self.checker = LeapNetworkChecker(
-                        provider_gw = get_eip_gateway())
+            provider_gw=get_eip_gateway())
 
     def start(self):
         self.process_handle = self._launch_recurrent_network_checks(

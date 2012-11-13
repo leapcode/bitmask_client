@@ -1,8 +1,11 @@
 import unittest
 import hashlib
 
-import sip
-sip.setapi('QVariant', 2)
+try:
+    import sip
+    sip.setapi('QVariant', 2)
+except ValueError:
+    pass
 
 from leap.gui import mainwindow_rc
 
@@ -23,4 +26,4 @@ class MainWindowResourcesTest(unittest.TestCase):
     def test_mainwindow_resources_hash(self):
         self.assertEqual(
             hashlib.md5(mainwindow_rc.qt_resource_data).hexdigest(),
-            'd74eb99247b9d5cd2f00b2f695ca6b59')
+            'cc7f55e551df55e39c7dbedc1f7de4c2')

@@ -59,6 +59,7 @@ def leap_set_password(key, value, seed="xxx"):
 
 def leap_get_password(key, seed="xxx"):
     keyring.set_keyring(LeapCryptedFileKeyring(seed=seed))
+    #import ipdb;ipdb.set_trace()
     return keyring.get_password('leap', key)
 
 

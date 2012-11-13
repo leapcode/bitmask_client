@@ -1,5 +1,6 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 import logging
+
 # This is only needed for Python v2 but is harmless for Python v3.
 import sip
 sip.setapi('QVariant', 2)
@@ -74,6 +75,8 @@ def main():
         # if not, it will be set visible
         # from the systray menu.
         window.show()
+
+    # run main loop
     sys.exit(app.exec_())
 
 if __name__ == "__main__":

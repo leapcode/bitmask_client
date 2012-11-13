@@ -4,11 +4,20 @@ import os
 from leap import __branding
 from leap.base import config as baseconfig
 
+# XXX move provider stuff to base config
+
 PROVIDER_CA_CERT = __branding.get(
     'provider_ca_file',
-    'testprovider-ca-cert.pem')
+    'cacert.pem')
 
-provider_ca_path = lambda: str(os.path.join(
+provider_ca_path = lambda domain: str(os.path.join(
+    #baseconfig.get_default_provider_path(),
+    baseconfig.get_provider_path(domain),
+    'keys', 'ca',
+    'cacert.pem'
+)) if domain else None
+
+default_provider_ca_path = lambda: str(os.path.join(
     baseconfig.get_default_provider_path(),
     'keys', 'ca',
     PROVIDER_CA_CERT
@@ -17,7 +26,13 @@ provider_ca_path = lambda: str(os.path.join(
 PROVIDER_DOMAIN = __branding.get('provider_domain', 'testprovider.example.org')
 
 
-client_cert_path = lambda: unicode(os.path.join(
+client_cert_path = lambda domain: unicode(os.path.join(
+    baseconfig.get_provider_path(domain),
+    'keys', 'client',
+    'openvpn.pem'
+)) if domain else None
+
+default_client_cert_path = lambda: unicode(os.path.join(
     baseconfig.get_default_provider_path(),
     'keys', 'client',
     'openvpn.pem'
@@ -46,11 +61,11 @@ eipconfig_spec = {
         },
         'openvpn_ca_certificate': {
             'type': unicode,  # path
-            'default': provider_ca_path
+            'default': default_provider_ca_path
         },
         'openvpn_client_certificate': {
             'type': unicode,  # path
-            'default': client_cert_path
+            'default': default_client_cert_path
         },
         'connect_on_login': {
             'type': bool,

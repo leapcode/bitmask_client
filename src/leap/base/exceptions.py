@@ -67,6 +67,11 @@ class NoInternetConnection(CriticalError):
     # and now we try to connect to our web to troubleshoot LOL :P
 
 
+class CannotResolveDomainError(LeapException):
+    message = "Cannot resolve domain"
+    usermessage = "Domain cannot be found"
+
+
 class TunnelNotDefaultRouteError(CriticalError):
     message = "Tunnel connection dissapeared. VPN down?"
     usermessage = "The Encrypted Connection was lost. Shutting down..."

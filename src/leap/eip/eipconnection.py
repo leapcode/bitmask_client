@@ -29,6 +29,9 @@ class EIPConnection(OpenVPNConnection):
                  *args, **kwargs):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
+        self.provider = kwargs.pop('provider', None)
+        self._providercertchecker = provider_cert_checker
+        self._configchecker = config_checker
 
         self.error_queue = Queue.Queue()
 
@@ -38,8 +41,7 @@ class EIPConnection(OpenVPNConnection):
         checker_signals = kwargs.pop('checker_signals', None)
         self.checker_signals = checker_signals
 
-        self.provider_cert_checker = provider_cert_checker()
-        self.config_checker = config_checker()
+        self.init_checkers()
 
         host = eipconfig.get_socket_path()
         kwargs['host'] = host
@@ -48,6 +50,25 @@ class EIPConnection(OpenVPNConnection):
 
     def has_errors(self):
         return True if self.error_queue.qsize() != 0 else False
+
+    def init_checkers(self):
+        # initialize checkers
+        self.provider_cert_checker = self._providercertchecker(
+            domain=self.provider)
+        self.config_checker = self._configchecker(domain=self.provider)
+
+    def set_provider_domain(self, domain):
+        """
+        sets the provider domain.
+        used from the first run wizard when we launch the run_checks
+        and connect process after having initialized the conductor.
+        """
+        # This looks convoluted, right.
+        # We have to reinstantiate checkers cause we're passing
+        # the domain param that we did not know at the beginning
+        # (only for the firstrunwizard case)
+        self.provider = domain
+        self.init_checkers()
 
     def run_checks(self, skip_download=False, skip_verify=False):
         """
@@ -95,11 +116,11 @@ class EIPConnection(OpenVPNConnection):
         logger.debug("disconnect: clicked.")
         self.status.change_to(self.status.DISCONNECTED)
 
-    def shutdown(self):
-        """
-        shutdown and quit
-        """
-        self.desired_con_state = self.status.DISCONNECTED
+    #def shutdown(self):
+        #"""
+        #shutdown and quit
+        #"""
+        #self.desired_con_state = self.status.DISCONNECTED
 
     def connection_state(self):
         """
@@ -110,10 +131,6 @@ class EIPConnection(OpenVPNConnection):
     def poll_connection_state(self):
         """
         """
-        # XXX this separation does not
-        # make sense anymore after having
-        # merged Connection and Manager classes.
-        # XXX GET RID OF THIS FUNCTION HERE!
         try:
             state = self.get_connection_state()
         except eip_exceptions.ConnectionRefusedError:
@@ -121,7 +138,7 @@ class EIPConnection(OpenVPNConnection):
             logger.warning('connection refused')
             return
         if not state:
-            #logger.debug('no state')
+            logger.debug('no state')
             return
         (ts, status_step,
          ok, ip, remote) = state
@@ -247,6 +264,7 @@ class EIPConnectionStatus(object):
     def get_leap_status(self):
         # XXX improve nomenclature
         leap_status = {
+            0: 'disconnected',
             1: 'connecting to gateway',
             2: 'connecting to gateway',
             3: 'authenticating',

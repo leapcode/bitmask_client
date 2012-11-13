@@ -37,11 +37,11 @@ class Connection(Authentication):
         """
         pass
 
-    def shutdown(self):
-        """
-        shutdown and quit
-        """
-        self.desired_con_state = self.status.DISCONNECTED
+    #def shutdown(self):
+        #"""
+        #shutdown and quit
+        #"""
+        #self.desired_con_state = self.status.DISCONNECTED
 
     def connection_state(self):
         """

@@ -35,9 +35,13 @@ class EIPServiceConfig(baseconfig.JSONLeapConfig):
     spec = eipspecs.eipservice_config_spec
 
     def _get_slug(self):
+        domain = getattr(self, 'domain', None)
+        if domain:
+            path = baseconfig.get_provider_path(domain)
+        else:
+            path = baseconfig.get_default_provider_path()
         return baseconfig.get_config_file(
-            'eip-service.json',
-            folder=baseconfig.get_default_provider_path())
+            'eip-service.json', folder=path)
 
     def _set_slug(self):
         raise AttributeError("you cannot set slug")
@@ -53,15 +57,16 @@ def get_socket_path():
     return socket_path
 
 
-def get_eip_gateway():
+def get_eip_gateway(provider=None):
     """
     return the first host in eip service config
     that matches the name defined in the eip.json config
     file.
     """
     placeholder = "testprovider.example.org"
-    eipconfig = EIPConfig()
-    #import ipdb;ipdb.set_trace()
+    # XXX check for null on provider??
+
+    eipconfig = EIPConfig(domain=provider)
     eipconfig.load()
     conf = eipconfig.config
 
@@ -69,7 +74,7 @@ def get_eip_gateway():
     if not primary_gateway:
         return placeholder
 
-    eipserviceconfig = EIPServiceConfig()
+    eipserviceconfig = EIPServiceConfig(domain=provider)
     eipserviceconfig.load()
     eipsconf = eipserviceconfig.get_config()
     gateways = eipsconf.get('gateways', None)
@@ -78,8 +83,15 @@ def get_eip_gateway():
         return placeholder
     if len(gateways) > 0:
         for gw in gateways:
-            if gw['name'] == primary_gateway:
-                hosts = gw['hosts']
+            name = gw.get('name', None)
+            if not name:
+                return
+
+            if name == primary_gateway:
+                hosts = gw.get('hosts', None)
+                if not hosts:
+                    logger.error('no hosts')
+                    return
                 if len(hosts) > 0:
                     return hosts[0]
                 else:
@@ -103,6 +115,8 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     # since we will need to take some
     # things from there if present.
 
+    provider = kwargs.pop('provider', None)
+
     # get user/group name
     # also from config.
     user = baseconfig.get_username()
@@ -125,10 +139,11 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
 
     # remote
     opts.append('--remote')
-    gw = get_eip_gateway()
+    gw = get_eip_gateway(provider=provider)
     logger.debug('setting eip gateway to %s', gw)
     opts.append(str(gw))
     opts.append('1194')
+    #opts.append('80')
     opts.append('udp')
 
     opts.append('--tls-client')
@@ -165,12 +180,15 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
         opts.append('7777')
 
     # certs
+    client_cert_path = eipspecs.client_cert_path(provider)
+    ca_cert_path = eipspecs.provider_ca_path(provider)
+
     opts.append('--cert')
-    opts.append(eipspecs.client_cert_path())
+    opts.append(client_cert_path)
     opts.append('--key')
-    opts.append(eipspecs.client_cert_path())
+    opts.append(client_cert_path)
     opts.append('--ca')
-    opts.append(eipspecs.provider_ca_path())
+    opts.append(ca_cert_path)
 
     # we cannot run in daemon mode
     # with the current subp setting.
@@ -238,7 +256,7 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
     return [command[0], command[1:]]
 
 
-def check_vpn_keys():
+def check_vpn_keys(provider=None):
     """
     performs an existance and permission check
     over the openvpn keys file.
@@ -246,8 +264,9 @@ def check_vpn_keys():
     per provider, containing the CA cert,
     the provider key, and our client certificate
     """
-    provider_ca = eipspecs.provider_ca_path()
-    client_cert = eipspecs.client_cert_path()
+    assert provider is not None
+    provider_ca = eipspecs.provider_ca_path(provider)
+    client_cert = eipspecs.client_cert_path(provider)
 
     logger.debug('provider ca = %s', provider_ca)
     logger.debug('client cert = %s', client_cert)
