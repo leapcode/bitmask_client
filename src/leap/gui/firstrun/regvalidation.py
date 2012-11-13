@@ -211,8 +211,6 @@ class RegisterUserValidationPage(ValidationPage):
             wizard,
             'start_eipconnection_signal', None)
 
-        import pdb4qt; pdb4qt.set_trace()
-
         if conductor:
             conductor.set_provider_domain(domain)
             conductor.run_checks()

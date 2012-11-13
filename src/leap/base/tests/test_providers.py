@@ -30,7 +30,9 @@ EXPECTED_DEFAULT_CONFIG = {
 
 class TestLeapProviderDefinition(BaseLeapTest):
     def setUp(self):
-        self.definition = providers.LeapProviderDefinition()
+        self.domain = "testprovider.example.org"
+        self.definition = providers.LeapProviderDefinition(
+            domain=self.domain)
         self.definition.save()
         self.definition.load()
         self.config = self.definition.config
@@ -51,7 +53,7 @@ class TestLeapProviderDefinition(BaseLeapTest):
             os.path.join(
                 self.home,
                 '.config', 'leap', 'providers',
-                '%s' % BRANDING.get('provider_domain'),
+                '%s' % self.domain,
                 'provider.json'))
         with self.assertRaises(AttributeError):
             self.definition.slug = 23

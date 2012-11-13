@@ -12,8 +12,10 @@ and that you place the following files:
 
 [ ] provider.json
 [ ] eip-service.json
-
 """
+# XXX NOTE: intended for manual debug.
+# I intend to include this as a regular test after 0.2.0 release
+# (so we can add twisted as a dep there)
 import binascii
 import json
 import os
@@ -47,11 +49,13 @@ Testing the FAKE_API:
 #####################
 
  1) register an user
- >> curl -d "user[login]=me" -d "user[password_salt]=foo" -d "user[password_verifier]=beef" http://localhost:8000/1/users.json
+ >> curl -d "user[login]=me" -d "user[password_salt]=foo" \
+         -d "user[password_verifier]=beef" http://localhost:8000/1/users.json
  << {"errors": null}
 
  2) check that if you try to register again, it will fail:
- >> curl -d "user[login]=me" -d "user[password_salt]=foo" -d "user[password_verifier]=beef" http://localhost:8000/1/users.json
+ >> curl -d "user[login]=me" -d "user[password_salt]=foo" \
+         -d "user[password_verifier]=beef" http://localhost:8000/1/users.json
  << {"errors": {"login": "already taken!"}}
 
 """

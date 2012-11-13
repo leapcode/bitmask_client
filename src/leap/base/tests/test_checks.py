@@ -40,7 +40,14 @@ class LeapNetworkCheckTest(BaseLeapTest):
 
     def test_checker_should_actually_call_all_tests(self):
         checker = checks.LeapNetworkChecker()
+        mc = Mock()
+        checker.run_all(checker=mc)
+        self.assertTrue(mc.check_internet_connection.called, "not called")
+        self.assertTrue(mc.check_tunnel_default_interface.called, "not called")
+        self.assertTrue(mc.is_internet_up.called, "not called")
 
+        # ping gateway only called if we pass provider_gw
+        checker = checks.LeapNetworkChecker(provider_gw="0.0.0.0")
         mc = Mock()
         checker.run_all(checker=mc)
         self.assertTrue(mc.check_internet_connection.called, "not called")

@@ -18,13 +18,14 @@ from leap.util.fileutil import mkdir_p
 
 _system = platform.system()
 
-PROVIDER = BRANDING.get('provider_domain')
-PROVIDER_SHORTNAME = BRANDING.get('short_name')
+#PROVIDER = BRANDING.get('provider_domain')
+#PROVIDER_SHORTNAME = BRANDING.get('short_name')
 
 
 class EIPConfigTest(BaseLeapTest):
 
     __name__ = "eip_config_tests"
+    provider = "testprovider.example.org"
 
     def setUp(self):
         pass
@@ -74,7 +75,8 @@ class EIPConfigTest(BaseLeapTest):
         args.append('--persist-tun')
         args.append('--persist-key')
         args.append('--remote')
-        args.append('%s' % eipconfig.get_eip_gateway())
+        args.append('%s' % eipconfig.get_eip_gateway(
+            provider=self.provider))
         # XXX get port!?
         args.append('1194')
         # XXX get proto
@@ -103,23 +105,23 @@ class EIPConfigTest(BaseLeapTest):
         args.append(os.path.join(
             self.home,
             '.config', 'leap', 'providers',
-            '%s' % PROVIDER,
+            '%s' % self.provider,
             'keys', 'client',
             'openvpn.pem'))
         args.append('--key')
         args.append(os.path.join(
             self.home,
             '.config', 'leap', 'providers',
-            '%s' % PROVIDER,
+            '%s' % self.provider,
             'keys', 'client',
             'openvpn.pem'))
         args.append('--ca')
         args.append(os.path.join(
             self.home,
             '.config', 'leap', 'providers',
-            '%s' % PROVIDER,
+            '%s' % self.provider,
             'keys', 'ca',
-            '%s-cacert.pem' % PROVIDER_SHORTNAME))
+            'cacert.pem'))
         return args
 
     # build command string
@@ -141,7 +143,8 @@ class EIPConfigTest(BaseLeapTest):
         print 'vpnbin = ', vpnbin
         command, args = eipconfig.build_ovpn_command(
             do_pkexec_check=False, vpnbin=vpnbin,
-            socket_path="/tmp/test.socket")
+            socket_path="/tmp/test.socket",
+            provider=self.provider)
         self.assertEqual(command, self.home + '/bin/openvpn')
         self.assertEqual(args, self.get_expected_openvpn_args())
 

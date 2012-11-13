@@ -233,8 +233,8 @@ to be triggered for each one of them.
         #self.tn.read_until('ENTER PASSWORD:', 2)
         #self.tn.write(self.password + '\n')
         #self.tn.read_until('SUCCESS:', 2)
-
-        self._seek_to_eof()
+        if self.tn:
+            self._seek_to_eof()
         return True
 
     def _seek_to_eof(self):
@@ -364,7 +364,8 @@ to be triggered for each one of them.
         interface
         """
         logger.debug("disconnecting...")
-        self._send_command("signal SIGTERM\n")
+        if self.connected():
+            self._send_command("signal SIGTERM\n")
 
         if self.subp:
             return True
@@ -373,9 +374,13 @@ to be triggered for each one of them.
         #try patching in old openvpn host and trying again
         process = self._get_openvpn_process()
         if process:
-            self.host = \
-                process.cmdline[process.cmdline.index("--management") + 1]
-            self._send_command("signal SIGTERM\n")
+            logger.debug('process :%s' % process)
+            cmdline = process.cmdline
+
+            if isinstance(cmdline, list):
+                _index = cmdline.index("--management")
+                self.host = cmdline[_index + 1]
+                self._send_command("signal SIGTERM\n")
 
             #make sure the process was terminated
             process = self._get_openvpn_process()

@@ -19,6 +19,8 @@ from leap.testing.basetest import BaseLeapTest
 
 _system = platform.system()
 
+PROVIDER = "testprovider.example.org"
+
 
 class NotImplementedError(Exception):
     pass
@@ -27,6 +29,7 @@ class NotImplementedError(Exception):
 @patch('OpenVPNConnection._get_or_create_config')
 @patch('OpenVPNConnection._set_ovpn_command')
 class MockedEIPConnection(EIPConnection):
+
     def _set_ovpn_command(self):
         self.command = "mock_command"
         self.args = [1, 2, 3]
@@ -35,6 +38,7 @@ class MockedEIPConnection(EIPConnection):
 class EIPConductorTest(BaseLeapTest):
 
     __name__ = "eip_conductor_tests"
+    provider = PROVIDER
 
     def setUp(self):
         # XXX there's a conceptual/design
@@ -51,8 +55,8 @@ class EIPConductorTest(BaseLeapTest):
         # XXX change to keys_checker invocation
         # (see config_checker)
 
-        keyfiles = (eipspecs.provider_ca_path(),
-                    eipspecs.client_cert_path())
+        keyfiles = (eipspecs.provider_ca_path(domain=self.provider),
+                    eipspecs.client_cert_path(domain=self.provider))
         for filepath in keyfiles:
             self.touch(filepath)
             self.chmod600(filepath)
@@ -61,6 +65,7 @@ class EIPConductorTest(BaseLeapTest):
         # some methods mocked
         self.manager = Mock(name="openvpnmanager_mock")
         self.con = MockedEIPConnection()
+        self.con.provider = self.provider
         self.con.run_openvpn_checks()
 
     def tearDown(self):
@@ -118,8 +123,9 @@ class EIPConductorTest(BaseLeapTest):
                          self.con.status.CONNECTED)
 
         # disconnect
+        self.con.cleanup = Mock()
         self.con.disconnect()
-        self.con._disconnect.assert_called_once_with()
+        self.con.cleanup.assert_called_once_with()
 
         # new status should be disconnected
         # XXX this should evolve and check no errors

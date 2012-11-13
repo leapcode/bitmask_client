@@ -1,6 +1,9 @@
-import sip
-sip.setapi('QString', 2)
-sip.setapi('QVariant', 2)
+try:
+    import sip
+    sip.setapi('QString', 2)
+    sip.setapi('QVariant', 2)
+except ValueError:
+    pass
 
 import connect
 import intro

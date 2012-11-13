@@ -8,7 +8,7 @@ from leap.base import config as baseconfig
 
 PROVIDER_CA_CERT = __branding.get(
     'provider_ca_file',
-    'testprovider-ca-cert.pem')
+    'cacert.pem')
 
 provider_ca_path = lambda domain: str(os.path.join(
     #baseconfig.get_default_provider_path(),
