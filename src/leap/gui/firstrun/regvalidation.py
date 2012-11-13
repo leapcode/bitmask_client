@@ -57,6 +57,7 @@ class RegisterUserValidationPage(ValidationPage):
         wizard = self.wizard()
         full_domain = self.field('provider_domain')
         domain, port = get_https_domain_and_port(full_domain)
+        _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
 
         # FIXME #BUG 638 FIXME FIXME FIXME
         verify = False  # !!!!!!!!!!!!!!!!
@@ -77,7 +78,8 @@ class RegisterUserValidationPage(ValidationPage):
         password = self.field(passwk)
         credentials = username, password
 
-        eipconfigchecker = wizard.eipconfigchecker()
+        eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
+        #XXX change for _domain (sanitized)
         pCertChecker = wizard.providercertchecker(
             domain=full_domain)
 
@@ -174,6 +176,7 @@ class RegisterUserValidationPage(ValidationPage):
         # 3) getting client certificate
         ##################################################
         # XXX maybe only do this if we come from signup
+
         step = "fetch_eipcert"
         fetching_clientcert_msg = "Fetching eip certificate"
         update_signal.emit(fetching_clientcert_msg, 80)
@@ -199,7 +202,7 @@ class RegisterUserValidationPage(ValidationPage):
         pause_for_user()
 
         # here we go! :)
-        self.run_eip_checks_for_provider_and_connect(domain)
+        self.run_eip_checks_for_provider_and_connect(_domain)
 
     def run_eip_checks_for_provider_and_connect(self, domain):
         wizard = self.wizard()
@@ -207,6 +210,8 @@ class RegisterUserValidationPage(ValidationPage):
         start_eip_signal = getattr(
             wizard,
             'start_eipconnection_signal', None)
+
+        import pdb4qt; pdb4qt.set_trace()
 
         if conductor:
             conductor.set_provider_domain(domain)

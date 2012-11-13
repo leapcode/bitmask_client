@@ -35,9 +35,13 @@ class EIPServiceConfig(baseconfig.JSONLeapConfig):
     spec = eipspecs.eipservice_config_spec
 
     def _get_slug(self):
+        domain = getattr(self, 'domain', None)
+        if domain:
+            path = baseconfig.get_provider_path(domain)
+        else:
+            path = baseconfig.get_default_provider_path()
         return baseconfig.get_config_file(
-            'eip-service.json',
-            folder=baseconfig.get_default_provider_path())
+            'eip-service.json', folder=path)
 
     def _set_slug(self):
         raise AttributeError("you cannot set slug")
@@ -53,15 +57,16 @@ def get_socket_path():
     return socket_path
 
 
-def get_eip_gateway():
+def get_eip_gateway(provider=None):
     """
     return the first host in eip service config
     that matches the name defined in the eip.json config
     file.
     """
     placeholder = "testprovider.example.org"
-    eipconfig = EIPConfig()
-    #import ipdb;ipdb.set_trace()
+    # XXX check for null on provider??
+
+    eipconfig = EIPConfig(domain=provider)
     eipconfig.load()
     conf = eipconfig.config
 
@@ -69,7 +74,7 @@ def get_eip_gateway():
     if not primary_gateway:
         return placeholder
 
-    eipserviceconfig = EIPServiceConfig()
+    eipserviceconfig = EIPServiceConfig(domain=provider)
     eipserviceconfig.load()
     eipsconf = eipserviceconfig.get_config()
     gateways = eipsconf.get('gateways', None)
@@ -134,7 +139,7 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
 
     # remote
     opts.append('--remote')
-    gw = get_eip_gateway()
+    gw = get_eip_gateway(provider=provider)
     logger.debug('setting eip gateway to %s', gw)
     opts.append(str(gw))
     opts.append('1194')

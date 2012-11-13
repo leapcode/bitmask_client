@@ -30,6 +30,8 @@ class EIPConnection(OpenVPNConnection):
         self.settingsfile = kwargs.get('settingsfile', None)
         self.logfile = kwargs.get('logfile', None)
         self.provider = kwargs.pop('provider', None)
+        self._providercertchecker = provider_cert_checker
+        self._configchecker = config_checker
 
         self.error_queue = Queue.Queue()
 
@@ -39,10 +41,7 @@ class EIPConnection(OpenVPNConnection):
         checker_signals = kwargs.pop('checker_signals', None)
         self.checker_signals = checker_signals
 
-        # initialize checkers
-        self.provider_cert_checker = provider_cert_checker(
-            domain=self.provider)
-        self.config_checker = config_checker(domain=self.provider)
+        self.init_checkers()
 
         host = eipconfig.get_socket_path()
         kwargs['host'] = host
@@ -52,13 +51,24 @@ class EIPConnection(OpenVPNConnection):
     def has_errors(self):
         return True if self.error_queue.qsize() != 0 else False
 
+    def init_checkers(self):
+        # initialize checkers
+        self.provider_cert_checker = self._providercertchecker(
+            domain=self.provider)
+        self.config_checker = self._configchecker(domain=self.provider)
+
     def set_provider_domain(self, domain):
         """
         sets the provider domain.
         used from the first run wizard when we launch the run_checks
         and connect process after having initialized the conductor.
         """
+        # This looks convoluted, right.
+        # We have to reinstantiate checkers cause we're passing
+        # the domain param that we did not know at the beginning
+        # (only for the firstrunwizard case)
         self.provider = domain
+        self.init_checkers()
 
     def run_checks(self, skip_download=False, skip_verify=False):
         """

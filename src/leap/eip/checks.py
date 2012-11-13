@@ -450,6 +450,8 @@ class EIPConfigChecker(object):
             uri = self._get_provider_definition_uri(domain=domain)
 
         # FIXME! Pass ca path verify!!!
+        # BUG #638
+        # FIXME FIXME FIXME
         self.defaultprovider.load(
             from_uri=uri,
             fetcher=self.fetcher,
@@ -464,7 +466,7 @@ class EIPConfigChecker(object):
             config = self.eipserviceconfig.config
         if uri is None:
             if not domain:
-                domain = config.get('provider', None)
+                domain = self.domain or config.get('provider', None)
             uri = self._get_eip_service_uri(domain=domain)
 
         self.eipserviceconfig.load(from_uri=uri, fetcher=self.fetcher)

@@ -99,15 +99,16 @@ class ProviderInfoPage(ValidationPage):
 
         wizard = self.wizard()
         prevpage = "providerselection"
-        netchecker = wizard.netchecker()
-        providercertchecker = wizard.providercertchecker()
-        eipconfigchecker = wizard.eipconfigchecker()
 
         full_domain = self.field('provider_domain')
 
         # we check if we have a port in the domain string.
         domain, port = get_https_domain_and_port(full_domain)
         _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
+
+        netchecker = wizard.netchecker()
+        providercertchecker = wizard.providercertchecker()
+        eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
 
         update_signal.emit("head_sentinel", 0)
         pause_for_user()
@@ -178,6 +179,8 @@ class ProviderInfoPage(ValidationPage):
 
         update_signal.emit("Downloading provider info", 70)
         try:
+            # XXX we already set _domain in the initialization
+            # so it should not be needed here.
             eipconfigchecker.fetch_definition(domain=_domain)
             wizard.set_providerconfig(
                 eipconfigchecker.defaultprovider.config)

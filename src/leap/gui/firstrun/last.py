@@ -28,6 +28,7 @@ class LastPage(QtGui.QWizardPage):
         self.label = QtGui.QLabel()
         self.label.setWordWrap(True)
 
+        # XXX REFACTOR to a Validating Page...
         self.status_line_1 = QtGui.QLabel()
         self.status_line_2 = QtGui.QLabel()
         self.status_line_3 = QtGui.QLabel()

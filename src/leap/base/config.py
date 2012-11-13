@@ -118,6 +118,7 @@ class JSONLeapConfig(BaseLeapConfig):
                 " derived class")
         assert issubclass(self.spec, PluggableConfig)
 
+        self.domain = kwargs.pop('domain', None)
         self._config = self.spec(format="json")
         self._config.load()
         self.fetcher = kwargs.pop('fetcher', requests)
