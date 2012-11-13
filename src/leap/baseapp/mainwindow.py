@@ -14,6 +14,7 @@ from leap.baseapp.log import LogPaneMixin
 from leap.baseapp.systray import StatusAwareTrayIconMixin
 from leap.baseapp.network import NetworkCheckerAppMixin
 from leap.baseapp.leap_app import MainWindowMixin
+from leap.eip.checks import ProviderCertChecker
 from leap.gui.threads import FunThread
 
 logger = logging.getLogger(name=__name__)
@@ -125,8 +126,14 @@ class LeapWindow(QtGui.QMainWindow,
         # do checks (can overlap if wizard was interrupted)
         if not self.wizard_done:
             need_wizard = True
+
         if not self.provider_domain:
             need_wizard = True
+        else:
+            pcertchecker = ProviderCertChecker(domain=self.provider_domain)
+            if not pcertchecker.is_cert_valid(do_raise=False):
+                logger.warning('missing valid client cert. need wizard')
+                need_wizard = True
 
         # launch wizard if needed
         if need_wizard:
