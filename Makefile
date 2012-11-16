@@ -16,7 +16,7 @@ COMPILED_DIR = src/leap/gui
 UI_FILES = 
 #Qt resource files to compile
 #images.qrc
-RESOURCES = mainwindow.qrc 
+RESOURCES = mainwindow.qrc locale.qrc
  
 #pyuic4 and pyrcc4 binaries
 PYUIC = pyuic4
