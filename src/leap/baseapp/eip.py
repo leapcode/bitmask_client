@@ -174,6 +174,10 @@ class EIPConductorAppMixin(object):
             self.tun_read_bytes.setText(tun_read)
             self.tun_write_bytes.setText(tun_write)
 
+        # connection information via management interface
+        log = self.conductor.get_log()
+        self.network_checker.parse_log(log)
+
     @QtCore.pyqtSlot()
     def start_or_stopVPN(self):
         """

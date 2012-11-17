@@ -400,3 +400,7 @@ to be triggered for each one of them.
             if process.name == "openvpn":
                 return process
         return None
+
+    def get_log(self, lines=1):
+        log = self._send_command("log %s" % lines)
+        return log
