@@ -144,67 +144,28 @@ class StepsTableWidget(QtGui.QTableWidget):
         # some failing tests if they are not critical.
 
 
-class ValidationPage(QtGui.QWizardPage):
-    """
-    class to be used as an intermediate
-    between two pages in a wizard.
-    shows feedback to the user and goes back if errors,
-    goes forward if ok.
-    initializePage triggers a one shot timer
-    that calls do_checks.
-    Derived classes should implement
-    _do_checks and
-    _do_validation
-    """
+class WithStepsMixIn(object):
 
-    # signals
-
-    stepChanged = QtCore.pyqtSignal([str, int])
-
-    def __init__(self, parent=None):
-        super(ValidationPage, self).__init__(parent)
-
-        self.steps = ProgressStepContainer()
-        self.progress = QtGui.QProgressBar(self)
-
-        # steps table widget
-        self.stepsTableWidget = StepsTableWidget(self)
-
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(self.progress)
-        layout.addWidget(self.stepsTableWidget)
-
-        self.setLayout(layout)
-        self.layout = layout
-
-        self.timer = QtCore.QTimer()
-
-        # connect the new step status
-        # signal to status handler
+    def connect_step_status(self):
+        print 'connect method called'
         self.stepChanged.connect(
             self.onStepStatusChanged)
 
+    # slot
+    #@QtCore.pyqtSlot(QtCore.QString, int)
+    def onStepStatusChanged(self, status, progress=None):
+        import pdb4qt; pdb4qt.set_trace()
+        if status not in ("head_sentinel", "end_sentinel"):
+            self.add_status_line(status)
+        if progress and hasattr(self, 'progress'):
+            self.progress.setValue(progress)
+            self.progress.update()
+
+    def setupSteps(self):
+        self.steps = ProgressStepContainer()
+        # steps table widget
+        self.stepsTableWidget = StepsTableWidget(self)
         self.errors = OrderedDict()
-        self.done = False
-
-    # Sets/unsets done flag
-    # for isComplete checks
-
-    def set_done(self):
-        self.done = True
-        self.completeChanged.emit()
-
-    def set_undone(self):
-        self.done = False
-        self.completeChanged.emit()
-
-    def is_done(self):
-        return self.done
-
-    def isComplete(self):
-        return self.is_done()
-
-    ########################
 
     def set_error(self, name, error):
         self.errors[name] = error
@@ -255,13 +216,6 @@ class ValidationPage(QtGui.QWizardPage):
         logger.debug('populate table. width=%s' % width)
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)
 
-    def onStepStatusChanged(self, status, progress=None):
-        if status not in ("head_sentinel", "end_sentinel"):
-            self.add_status_line(status)
-        if progress:
-            self.progress.setValue(progress)
-            self.progress.update()
-
     def add_status_line(self, message):
         index = len(self.steps)
         step = ProgressStep(message, False, index=index)
@@ -279,19 +233,85 @@ class ValidationPage(QtGui.QWizardPage):
             ImgWidget(img=CHECKMARK_IMG))
         table.update()
 
+
+"""
+Resist the temptation to refactor the declaration of the signal
+to the mixin.
+PyQt and multiple inheritance do not mix well together.
+You can only have one QObject base.
+Therefore, we will use one base class for the intermediate pages
+and another one for the in-page validations, both sharing the creation
+of the tablewidgets.
+"""
+
+
+class InlineValidationPage(QtGui.QWizardPage, WithStepsMixIn):
+
+    # signals
+    stepChanged = QtCore.pyqtSignal([str, int])
+
+    def __init__(self, parent=None):
+        super(InlineValidationPage, self).__init__(parent)
+        self.connect_step_status()
+
+
+class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):
+    """
+    class to be used as an intermediate
+    between two pages in a wizard.
+    shows feedback to the user and goes back if errors,
+    goes forward if ok.
+    initializePage triggers a one shot timer
+    that calls do_checks.
+    Derived classes should implement
+    _do_checks and
+    _do_validation
+    """
+
+    # signals
+    stepChanged = QtCore.pyqtSignal([str, int])
+
+    def __init__(self, parent=None):
+        super(ValidationPage, self).__init__(parent)
+        self.setupSteps()
+        self.connect_step_status()
+
+        layout = QtGui.QVBoxLayout()
+        self.progress = QtGui.QProgressBar(self)
+        layout.addWidget(self.progress)
+        layout.addWidget(self.stepsTableWidget)
+
+        self.setLayout(layout)
+        self.layout = layout
+
+        self.timer = QtCore.QTimer()
+
+        self.done = False
+
+    # Sets/unsets done flag
+    # for isComplete checks
+
+    def set_done(self):
+        self.done = True
+        self.completeChanged.emit()
+
+    def set_undone(self):
+        self.done = False
+        self.completeChanged.emit()
+
+    def is_done(self):
+        return self.done
+
+    def isComplete(self):
+        return self.is_done()
+
+    ########################
+
     def go_back(self):
         self.wizard().back()
 
     def go_next(self):
         self.wizard().next()
-
-    def initializePage(self):
-        self.clean_errors()
-        self.clean_wizard_errors()
-        self.steps.removeAllSteps()
-        self.clearTable()
-        self.resizeTable()
-        self.timer.singleShot(0, self.do_checks)
 
     def do_checks(self):
         """
@@ -313,3 +333,14 @@ class ValidationPage(QtGui.QWizardPage):
     def hide_progress(self):
         self.progress.hide()
         self.stepsTableWidget.hide()
+
+    # pagewizard methods.
+    # if overriden, child classes should call super.
+
+    def initializePage(self):
+        self.clean_errors()
+        self.clean_wizard_errors()
+        self.steps.removeAllSteps()
+        self.clearTable()
+        self.resizeTable()
+        self.timer.singleShot(0, self.do_checks)

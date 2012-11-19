@@ -11,12 +11,13 @@ from PyQt4 import QtGui
 #from leap.eip import exceptions as eipexceptions
 
 from leap.gui.constants import APP_LOGO
+from leap.gui.progress import InlineValidationPage
 from leap.gui.styles import ErrorLabelStyleSheet
 
 logger = logging.getLogger(__name__)
 
 
-class SelectProviderPage(QtGui.QWizardPage):
+class SelectProviderPage(InlineValidationPage):
     def __init__(self, parent=None, providers=None):
         super(SelectProviderPage, self).__init__(parent)
 
@@ -32,6 +33,18 @@ class SelectProviderPage(QtGui.QWizardPage):
         self.did_cert_check = False
         self.current_page = 'providerselection'
 
+        self.is_done = False
+
+        self.setupSteps()
+        self.setupUI()
+
+        self.stepChanged.connect(
+            self.onStepStatusChanged)
+
+    def setupUI(self):
+        """
+        initializes the UI
+        """
         providerNameLabel = QtGui.QLabel("h&ttps://")
         # note that we expect the bare domain name
         # we will add the scheme later
@@ -61,6 +74,8 @@ class SelectProviderPage(QtGui.QWizardPage):
         validationMsg = QtGui.QLabel("")
         validationMsg.setStyleSheet(ErrorLabelStyleSheet)
         self.validationMsg = validationMsg
+        providerCheckButton = QtGui.QPushButton("check")
+        self.providerCheckButton = providerCheckButton
 
         # cert info
 
@@ -81,25 +96,66 @@ class SelectProviderPage(QtGui.QWizardPage):
             self.onTrustCheckChanged)
         self.providerNameEdit.textChanged.connect(
             self.onProviderChanged)
+        self.providerCheckButton.clicked.connect(
+            self.onCheckButtonClicked)
 
         layout = QtGui.QGridLayout()
         layout.addWidget(validationMsg, 0, 2)
         layout.addWidget(providerNameLabel, 1, 1)
         layout.addWidget(providerNameEdit, 1, 2)
+        layout.addWidget(providerCheckButton, 1, 3)
 
-        # XXX get a groupbox or something....
+        # add certinfo group
+        # XXX not shown now. should move to validation box.
+        #layout.addWidget(certinfoGroup, 4, 1, 4, 2)
+        #self.certinfoGroup = certinfoGroup
+        #self.certinfoGroup.hide()
+
+        # add validation frame
+        self.setupValidationFrame()
+        layout.addWidget(self.valFrame, 4, 1, 4, 2)
+        self.valFrame.hide()
+
+        self.setLayout(layout)
+
+    # certinfo
+
+    def setupCertInfoGroup(self):
+        # XXX not used now.
         certinfoGroup = QtGui.QGroupBox("Certificate validation")
         certinfoLayout = QtGui.QVBoxLayout()
         certinfoLayout.addWidget(self.certInfo)
         certinfoLayout.addWidget(self.certWarning)
         certinfoLayout.addWidget(self.trustProviderCertCheckBox)
         certinfoGroup.setLayout(certinfoLayout)
+        self.certinfoGroup = self.certinfoGroup
 
-        layout.addWidget(certinfoGroup, 4, 1, 4, 2)
-        self.certinfoGroup = certinfoGroup
-        self.certinfoGroup.hide()
+    # progress frame
 
-        self.setLayout(layout)
+    def setupValidationFrame(self):
+        qframe = QtGui.QFrame
+        valFrame = qframe()
+        valFrame.setFrameStyle(qframe.StyledPanel)  # | qframe.Sunken)
+        valframeLayout = QtGui.QVBoxLayout()
+
+        #dummylabel = QtGui.QLabel('test foo')
+        #valframeLayout.addWidget(dummylabel)
+        valframeLayout.addWidget(self.stepsTableWidget)
+        valFrame.setLayout(valframeLayout)
+        self.valFrame = valFrame
+
+    # check domain
+
+    def onCheckButtonClicked(self):
+        import time
+        time.sleep(1)
+        self.is_done = True
+        self.providerCheckButton.setDisabled(True)
+        self.stepChanged.emit('foo check', 0)
+        self.valFrame.show()
+        self.completeChanged.emit()
+
+    # cert trust verification
 
     def is_insecure_cert_trusted(self):
         return self.trustProviderCertCheckBox.isChecked()
@@ -117,18 +173,6 @@ class SelectProviderPage(QtGui.QWizardPage):
         # trigger signal to redraw next button
         self.completeChanged.emit()
 
-    def onProviderChanged(self, text):
-        self.completeChanged.emit()
-
-    def reset_validation_status(self):
-        """
-        empty the validation msg
-        """
-        self.validationMsg.setText('')
-
-    #def set_validation_status(selF, STATUS):
-        #self.validationMsg.setText(status)
-
     def add_cert_info(self, certinfo):
         self.certWarning.setText(
             "Do you want to <b>trust this provider certificate?</b>")
@@ -137,10 +181,27 @@ class SelectProviderPage(QtGui.QWizardPage):
         self.certInfo.setWordWrap(True)
         self.certinfoGroup.show()
 
+    def onProviderChanged(self, text):
+        provider = self.providerNameEdit.text()
+        if provider:
+            self.providerCheckButton.setDisabled(False)
+        else:
+            self.providerCheckButton.setDisabled(True)
+        self.completeChanged.emit()
+
+    def reset_validation_status(self):
+        """
+        empty the validation msg
+        """
+        self.validationMsg.setText('')
+
     # pagewizard methods
 
     def isComplete(self):
         provider = self.providerNameEdit.text()
+
+        if not self.is_done:
+            return False
 
         if not provider:
             return False
@@ -148,7 +209,9 @@ class SelectProviderPage(QtGui.QWizardPage):
             if self.is_insecure_cert_trusted():
                 return True
             if not self.did_cert_check:
-                return True
+                if self.is_done:
+                    # XXX sure?
+                    return True
             return False
 
     def populateErrors(self):
@@ -195,7 +258,11 @@ class SelectProviderPage(QtGui.QWizardPage):
 
     def initializePage(self):
         self.validationMsg.setText('')
-        self.certinfoGroup.hide()
+        if hasattr(self, 'certinfoGroup'):
+            # XXX remove ?
+            self.certinfoGroup.hide()
+        self.is_done = False
+        self.providerCheckButton.setDisabled(True)
 
     def validatePage(self):
         # some cleanup before we leave the page
