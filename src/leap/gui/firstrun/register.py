@@ -29,6 +29,13 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
 
         self.current_page = "signup"
 
+        # commit page means there's no way back after this...
+        # XXX should change the text on the "commit" button...
+        self.setCommitPage(True)
+
+        self.initUI()
+
+    def initUI(self):
         userNameLabel = QtGui.QLabel("User &name:")
         userNameLineEdit = QtGui.QLineEdit()
         userNameLineEdit.cursorPositionChanged.connect(
