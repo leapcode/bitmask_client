@@ -214,12 +214,14 @@ to be triggered for each one of them.
         # delete
 
         if self.port == "unix":
-            # I'm tempted to catch a generic exception here,
-            # but I prefer to let it crash so we can catch
-            # specific errors that right now I'm not able
-            # to think of.
             logger.debug('cleaning socket file temp folder')
-            shutil.rmtree(os.path.split(self.host)[0])
+
+            tempfolder = os.path.split(self.host)[0]
+            if os.path.isdir(tempfolder):
+                try:
+                    shutil.rmtree(tempfolder)
+                except OSError:
+                    logger.error('could not delete tmpfolder %s' % tempfolder)
 
     def _get_openvpn_process(self):
         # plist = [p for p in psutil.get_process_list() if p.name == "openvpn"]
