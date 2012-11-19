@@ -172,3 +172,8 @@ class ProviderSetupValidationPage(ValidationPage):
             # XXX bad name. change to connect again.
             next_ = 'signupvalidation'
         return wizard.get_page_index(next_)
+
+    def initializePage(self):
+        super(ProviderSetupValidationPage, self).initializePage()
+        self.set_undone()
+        self.completeChanged.emit()

@@ -79,8 +79,10 @@ class ProviderInfoPage(ValidationPage):
 
         dn = pconfig.get('display_name')
         display_name = dn[lang] if dn else ''
+        domain_name = self.field('provider_domain')
+
         self.displayName.setText(
-            "<b>%s</b>" % display_name)
+            "<b>%s</b> https://%s" % (display_name, domain_name))
 
         desc = pconfig.get('description')
         description_text = desc[lang] if desc else ''
@@ -239,17 +241,12 @@ class ProviderInfoPage(ValidationPage):
         #return self.is_done()
 
     def initializePage(self):
-        logger.error('INITIALIZE PAGE --------------')
-        logger.error('**')
-        logger.error('**')
         super(ProviderInfoPage, self).initializePage()
         self.show_progress()
         self.set_undone()
         self.completeChanged.emit()
 
     def cleanupPage(self):
-        logger.error('CLEANUP PAGE --------------')
-
         del self.wizard().providerconfig
 
         if self.infoWidget:
