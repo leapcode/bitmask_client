@@ -59,6 +59,7 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
 
         self.registerField('userName*', self.userNameLineEdit)
         self.registerField('userPassword*', self.userPasswordLineEdit)
+        self.registerField('userPassword2*', self.userPassword2LineEdit)
 
         # XXX missing password confirmation
         # XXX validator!

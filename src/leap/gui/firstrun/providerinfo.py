@@ -32,6 +32,7 @@ class ProviderInfoPage(ValidationPage):
             QtGui.QPixmap(APP_LOGO))
 
         self.prev_page = "providerselection"
+        self.infoWidget = None
         #self.current_page = "providerinfo"
 
     def create_info_panel(self):
@@ -62,6 +63,8 @@ class ProviderInfoPage(ValidationPage):
 
         # add refs to self to allow for
         # updates.
+        # Watch out! Have to get rid of these references!
+        # this should be better handled with signals !!
         self.displayName = displayName
         self.description = description
         self.enrollment_policy = enrollment_policy
@@ -93,8 +96,11 @@ class ProviderInfoPage(ValidationPage):
         """
         executes actual checks in a separate thread
         """
+        finish = lambda: update_signal.emit("end_sentinel", 100)
+
         def pause_and_finish():
-            update_signal.emit("end_sentinel", 100)
+            # only for local debug
+            finish()
             pause_for_user()
 
         wizard = self.wizard()
@@ -164,13 +170,13 @@ class ProviderInfoPage(ValidationPage):
                 #self.did_cert_check = True
                 #self.completeChanged.emit()
                 #return False
-            pause_and_finish()
+            finish()
             return False
 
         except baseexceptions.LeapException as exc:
             wizard.set_validation_error(
                 prevpage, exc.usermessage)
-            pause_and_finish()
+            finish()
             return False
 
         ##################################
@@ -190,19 +196,20 @@ class ProviderInfoPage(ValidationPage):
             wizard.set_validation_error(
                 prevpage,
                 "Could not get info from provider.")
-            pause_and_finish()
+            finish()
             return False
         except requests.exceptions.ConnectionError:
             wizard.set_validation_error(
                 prevpage,
                 "Could not download provider info "
                 "(refused conn.).")
-            pause_and_finish()
+            finish()
             return False
         # XXX catch more errors...
 
         # We're done!
-        pause_and_finish()
+        self.set_done()
+        finish()
 
     def _do_validation(self):
         """
@@ -214,8 +221,7 @@ class ProviderInfoPage(ValidationPage):
         errors = self.wizard().get_validation_error(prevpage)
 
         if not errors:
-            self.progress.hide()
-            self.stepsTableWidget.hide()
+            self.hide_progress()
             self.create_info_panel()
             self.show_provider_info()
 
@@ -228,3 +234,29 @@ class ProviderInfoPage(ValidationPage):
         wizard = self.wizard()
         next_ = "providersetupvalidation"
         return wizard.get_page_index(next_)
+
+    #def isComplete(self):
+        #return self.is_done()
+
+    def initializePage(self):
+        logger.error('INITIALIZE PAGE --------------')
+        logger.error('**')
+        logger.error('**')
+        super(ProviderInfoPage, self).initializePage()
+        self.show_progress()
+        self.set_undone()
+        self.completeChanged.emit()
+
+    def cleanupPage(self):
+        logger.error('CLEANUP PAGE --------------')
+
+        del self.wizard().providerconfig
+
+        if self.infoWidget:
+            QtCore.QObjectCleanupHandler().add(
+                self.infoWidget)
+
+        # refactor this into some kind of destructor
+        del self.displayName
+        del self.description
+        del self.enrollment_policy

@@ -78,12 +78,12 @@ class ProviderSetupValidationPage(ValidationPage):
                     "Authentication error: %s" % exc.message)
                 return False
 
-            pause_for_user()
+            #pause_for_user()
 
         #######################################
 
         update_signal.emit('Fetching CA certificate', 30)
-        pause_for_user()
+        #pause_for_user()
 
         if pconfig:
             ca_cert_uri = pconfig.get('ca_cert_uri').geturl()
@@ -100,7 +100,7 @@ class ProviderSetupValidationPage(ValidationPage):
         pCertChecker.download_ca_cert(
             uri=ca_cert_uri,
             verify=False)
-        pause_for_user()
+        #pause_for_user()
 
         update_signal.emit('Checking CA fingerprint', 66)
         #ca_cert_fingerprint = pconfig.get('ca_cert_fingerprint', None)
@@ -133,11 +133,13 @@ class ProviderSetupValidationPage(ValidationPage):
             # XXX update validationMsg
             # should catch exception
             #return False
-        pause_for_user()
+
+        #pause_for_user()
         #ca_cert_path = checker.ca_cert_path
 
+        self.set_done()
         update_signal.emit('end_sentinel', 100)
-        pause_for_user()
+        #pause_for_user()
 
     def _do_validation(self):
         """
@@ -153,10 +155,11 @@ class ProviderSetupValidationPage(ValidationPage):
             wizard.set_validation_error(
                 prevpage,
                 first_error)
-            self.go_back()
+            # XXX don't go back, signal error
+            #self.go_back()
         else:
-            logger.debug('going next')
-            self.go_next()
+            logger.debug('should be going next, wait on user')
+            #self.go_next()
 
     def nextId(self):
         wizard = self.wizard()

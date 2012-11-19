@@ -29,16 +29,10 @@ class RegisterUserValidationPage(ValidationPage):
 
     def __init__(self, parent=None):
         super(RegisterUserValidationPage, self).__init__(parent)
-        is_signup = self.field("is_signup")
-        self.is_signup = is_signup
 
-        if is_signup:
-            title = "User Creation"
-            subtitle = "Registering account with provider."
-        else:
-            title = "Connecting..."
-            # XXX uh... really?
-            subtitle = "Checking connection with provider."
+        title = "Connecting..."
+        # XXX uh... really?
+        subtitle = "Checking connection with provider."
 
         self.setTitle(title)
         self.setSubTitle(subtitle)
@@ -67,7 +61,7 @@ class RegisterUserValidationPage(ValidationPage):
         # Set Credentials.
         # username and password are in different fields
         # if they were stored in log_in or sign_up pages.
-        is_signup = self.is_signup
+        is_signup = self.field("is_signup")
 
         unamek_base = 'userName'
         passwk_base = 'userPassword'
@@ -85,6 +79,7 @@ class RegisterUserValidationPage(ValidationPage):
 
         ###########################################
         # only if from signup
+        # MOVE TO SIGNUP PAGE...
         if is_signup:
             signup = auth.LeapSRPRegister(
                 schema="https",
@@ -97,6 +92,8 @@ class RegisterUserValidationPage(ValidationPage):
         # 1) register user
         ##################################################
         # only if from signup.
+        # XXX MOVE THIS STEP TO SIGNUP-IN-PLACE VALIDATION
+        # WIDGET..........................................
 
         if is_signup:
 
@@ -113,7 +110,7 @@ class RegisterUserValidationPage(ValidationPage):
                 self.set_error(
                     step,
                     "Error connecting to provider (timeout)")
-                pause_for_user()
+                #pause_for_user()
                 return False
 
             except requests.exceptions.ConnectionError as exc:
@@ -123,9 +120,9 @@ class RegisterUserValidationPage(ValidationPage):
                     "Error connecting to provider "
                     "(connection error)")
                 # XXX we should signal a BAD step
-                pause_for_user()
+                #pause_for_user()
                 update_signal.emit("connection error!", 50)
-                pause_for_user()
+                #pause_for_user()
                 return False
 
             # XXX check for != OK instead???
@@ -147,10 +144,10 @@ class RegisterUserValidationPage(ValidationPage):
                 self.set_error(
                     step,
                     'Username not available.')
-                pause_for_user()
+                #pause_for_user()
                 return False
 
-            pause_for_user()
+            #pause_for_user()
 
         ##################################################
         # 2) fetching eip service config
@@ -168,9 +165,9 @@ class RegisterUserValidationPage(ValidationPage):
             self.set_error(
                 step,
                 'Could not download eip config.')
-            pause_for_user()
+            #pause_for_user()
             return False
-        pause_for_user()
+        #pause_for_user()
 
         ##################################################
         # 3) getting client certificate
@@ -192,16 +189,17 @@ class RegisterUserValidationPage(ValidationPage):
                 "Authentication error: %s" % exc.message)
             return False
 
-        pause_for_user()
+        #pause_for_user()
 
         ################
         # end !
         ################
 
         update_signal.emit("end_sentinel", 100)
-        pause_for_user()
+        #pause_for_user()
 
         # here we go! :)
+        # this should be called CONNECT PAGE AGAIN.
         self.run_eip_checks_for_provider_and_connect(_domain)
 
     def run_eip_checks_for_provider_and_connect(self, domain):
@@ -225,6 +223,14 @@ class RegisterUserValidationPage(ValidationPage):
                 "probably the wizard has been launched "
                 "in an stand-alone way.")
 
+        # XXX look for a better place to signal
+        # we are done.
+        # We could probably have a fake validatePage
+        # that checks if the domain transfer has been
+        # done to conductor object, triggers the start_signal
+        # and does the go_next()
+        self.set_done()
+
     def eip_error_check(self):
         """
         a version of the main app error checker,
@@ -241,7 +247,8 @@ class RegisterUserValidationPage(ValidationPage):
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
-        prevpage = "signup" if self.is_signup else "login"
+        is_signup = self.field("is_signup")
+        prevpage = "signup" if is_signup else "login"
 
         wizard = self.wizard()
         if self.errors:
@@ -253,13 +260,16 @@ class RegisterUserValidationPage(ValidationPage):
                 first_error)
             self.go_back()
         else:
-            logger.debug('going next')
-            # check if this "next" interferes
-            # with the eip signal.
-            self.go_next()
+            logger.debug('should go next, wait for user to click next')
+            #self.go_next()
 
     def nextId(self):
         wizard = self.wizard()
         if not wizard:
             return
         return wizard.get_page_index('lastpage')
+
+    def initializePage(self):
+        super(RegisterUserValidationPage, self).initializePage()
+        self.set_undone()
+        self.completeChanged.emit()

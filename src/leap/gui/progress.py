@@ -185,6 +185,26 @@ class ValidationPage(QtGui.QWizardPage):
             self.onStepStatusChanged)
 
         self.errors = OrderedDict()
+        self.done = False
+
+    # Sets/unsets done flag
+    # for isComplete checks
+
+    def set_done(self):
+        self.done = True
+        self.completeChanged.emit()
+
+    def set_undone(self):
+        self.done = False
+        self.completeChanged.emit()
+
+    def is_done(self):
+        return self.done
+
+    def isComplete(self):
+        return self.is_done()
+
+    ########################
 
     def set_error(self, name, error):
         self.errors[name] = error
@@ -285,3 +305,11 @@ class ValidationPage(QtGui.QWizardPage):
         #logger.debug('check thread started!')
         #logger.debug('waiting for it to terminate...')
         self.checks.wait()
+
+    def show_progress(self):
+        self.progress.show()
+        self.stepsTableWidget.show()
+
+    def hide_progress(self):
+        self.progress.hide()
+        self.stepsTableWidget.hide()

@@ -137,6 +137,9 @@ class FirstRunWizard(QtGui.QWizard):
             QtGui.QWizard.BackgroundPixmap,
             QtGui.QPixmap(':/images/background.png'))
 
+        # set options
+        self.setOption(QtGui.QWizard.IndependentPages, on=False)
+
         self.setWindowTitle("First Run Wizard")
 
         # TODO: set style for MAC / windows ...
