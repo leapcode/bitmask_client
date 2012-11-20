@@ -74,7 +74,7 @@ class SelectProviderPage(InlineValidationPage):
         validationMsg = QtGui.QLabel("")
         validationMsg.setStyleSheet(ErrorLabelStyleSheet)
         self.validationMsg = validationMsg
-        providerCheckButton = QtGui.QPushButton("check")
+        providerCheckButton = QtGui.QPushButton("chec&k")
         self.providerCheckButton = providerCheckButton
 
         # cert info
@@ -113,7 +113,7 @@ class SelectProviderPage(InlineValidationPage):
 
         # add validation frame
         self.setupValidationFrame()
-        layout.addWidget(self.valFrame, 4, 1, 4, 2)
+        layout.addWidget(self.valFrame, 4, 2, 4, 2)
         self.valFrame.hide()
 
         self.setLayout(layout)
@@ -135,8 +135,13 @@ class SelectProviderPage(InlineValidationPage):
     def setupValidationFrame(self):
         qframe = QtGui.QFrame
         valFrame = qframe()
-        valFrame.setFrameStyle(qframe.StyledPanel)  # | qframe.Sunken)
+        valFrame.setFrameStyle(qframe.NoFrame)
+        # Box | qframe.Plain)
+        # NoFrame, StyledPanel)  | qframe.Sunken)
+        #valFrame.setContentsMargins(0, 0, 0, 0)
         valframeLayout = QtGui.QVBoxLayout()
+        zeros = (0, 0, 0, 0)
+        valframeLayout.setContentsMargins(*zeros)
 
         #dummylabel = QtGui.QLabel('test foo')
         #valframeLayout.addWidget(dummylabel)
@@ -147,12 +152,16 @@ class SelectProviderPage(InlineValidationPage):
     # check domain
 
     def onCheckButtonClicked(self):
+        print 'check button called....'
+        self.providerCheckButton.setDisabled(True)
+        self.valFrame.show()
         import time
         time.sleep(1)
-        self.is_done = True
-        self.providerCheckButton.setDisabled(True)
-        self.stepChanged.emit('foo check', 0)
+        # XXX bug here!... Y U DUPLICATE?!!
+        self.stepChanged.emit('xxx', 10)
+        self.stepChanged.emit('end_sentinel', 0)
         self.valFrame.show()
+        self.is_done = True
         self.completeChanged.emit()
 
     # cert trust verification

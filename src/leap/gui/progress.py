@@ -152,11 +152,12 @@ class WithStepsMixIn(object):
             self.onStepStatusChanged)
 
     # slot
-    #@QtCore.pyqtSlot(QtCore.QString, int)
+    #@QtCore.pyqtSlot(str, int)
     def onStepStatusChanged(self, status, progress=None):
-        import pdb4qt; pdb4qt.set_trace()
         if status not in ("head_sentinel", "end_sentinel"):
             self.add_status_line(status)
+        if status in ("end_sentinel"):
+            self.check_last_item()
         if progress and hasattr(self, 'progress'):
             self.progress.setValue(progress)
             self.progress.update()
@@ -165,6 +166,8 @@ class WithStepsMixIn(object):
         self.steps = ProgressStepContainer()
         # steps table widget
         self.stepsTableWidget = StepsTableWidget(self)
+        zeros = (0, 0, 0, 0)
+        self.stepsTableWidget.setContentsMargins(*zeros)
         self.errors = OrderedDict()
 
     def set_error(self, name, error):
@@ -215,6 +218,19 @@ class WithStepsMixIn(object):
         width = table.width()
         logger.debug('populate table. width=%s' % width)
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)
+
+    def check_last_item(self):
+        """
+        mark the last item
+        as done
+        """
+        index = len(self.steps)
+        table = self.stepsTableWidget
+        table.setCellWidget(
+            index - 1,
+            ProgressStep.DONE,
+            ImgWidget(img=CHECKMARK_IMG))
+        table.update()
 
     def add_status_line(self, message):
         index = len(self.steps)
