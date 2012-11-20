@@ -369,6 +369,7 @@ class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):
         self.checks.begin()
         #logger.debug('check thread started!')
         #logger.debug('waiting for it to terminate...')
+        # XXX needed for it to join?
         self.checks.wait()
 
     def show_progress(self):

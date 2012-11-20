@@ -12,7 +12,7 @@ from leap.base import exceptions as baseexceptions
 
 from leap.gui.constants import APP_LOGO
 from leap.gui.progress import InlineValidationPage
-from leap.gui.styles import ErrorLabelStyleSheet
+from leap.gui import styles
 from leap.util.web import get_https_domain_and_port
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ class SelectProviderPage(InlineValidationPage):
         #self.registerField('provider_name_index', providerNameSelect)
 
         validationMsg = QtGui.QLabel("")
-        validationMsg.setStyleSheet(ErrorLabelStyleSheet)
+        validationMsg.setStyleSheet(styles.ErrorLabelStyleSheet)
         self.validationMsg = validationMsg
         providerCheckButton = QtGui.QPushButton(self.tr("chec&k"))
         self.providerCheckButton = providerCheckButton
@@ -284,11 +284,16 @@ class SelectProviderPage(InlineValidationPage):
             bad_str = getattr(self, 'bad_string', None)
             cur_str = self.providerNameEdit.text()
             showerr = self.validationMsg.setText
+            markred = lambda: self.providerNameEdit.setStyleSheet(
+                styles.ErrorLineEdit)
+            umarkrd = lambda: self.providerNameEdit.setStyleSheet(
+                styles.RegularLineEdit)
             if bad_str is None:
                 # first time we fall here.
                 # save the current bad_string value
                 self.bad_string = cur_str
                 showerr(errors)
+                markred()
             else:
                 # not the first time
                 # XXX hey, this is getting convoluted.
@@ -298,9 +303,11 @@ class SelectProviderPage(InlineValidationPage):
                 # enter a domain.
                 if cur_str == bad_str:
                     showerr(errors)
+                    markred()
                 else:
                     if not getattr(self, 'domain_checked', None):
                         showerr('')
+                        umarkrd()
                     else:
                         self.bad_string = cur_str
                         showerr(errors)
