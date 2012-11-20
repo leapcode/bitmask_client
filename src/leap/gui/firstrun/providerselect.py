@@ -22,10 +22,10 @@ class SelectProviderPage(InlineValidationPage):
     def __init__(self, parent=None, providers=None):
         super(SelectProviderPage, self).__init__(parent)
 
-        self.setTitle("Enter Provider")
-        self.setSubTitle(
+        self.setTitle(self.tr("Enter Provider"))
+        self.setSubTitle(self.tr(
             "Please enter the domain of the provider you want "
-            "to use for your connection."
+            "to use for your connection.")
         )
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
@@ -72,7 +72,7 @@ class SelectProviderPage(InlineValidationPage):
         validationMsg = QtGui.QLabel("")
         validationMsg.setStyleSheet(ErrorLabelStyleSheet)
         self.validationMsg = validationMsg
-        providerCheckButton = QtGui.QPushButton("chec&k")
+        providerCheckButton = QtGui.QPushButton(self.tr("chec&k"))
         self.providerCheckButton = providerCheckButton
 
         # cert info
@@ -82,7 +82,8 @@ class SelectProviderPage(InlineValidationPage):
         # tricky, since the first time came
         # from the exception message.
         # should get string from exception too!
-        self.bad_cert_status = "Server certificate could not be verified."
+        self.bad_cert_status = self.tr(
+            "Server certificate could not be verified.")
 
         self.certInfo = QtGui.QLabel("")
         self.certInfo.setWordWrap(True)
@@ -120,7 +121,8 @@ class SelectProviderPage(InlineValidationPage):
 
     def setupCertInfoGroup(self):
         # XXX not used now.
-        certinfoGroup = QtGui.QGroupBox("Certificate validation")
+        certinfoGroup = QtGui.QGroupBox(
+            self.tr("Certificate validation"))
         certinfoLayout = QtGui.QVBoxLayout()
         certinfoLayout.addWidget(self.certInfo)
         certinfoLayout.addWidget(self.certWarning)
@@ -150,7 +152,6 @@ class SelectProviderPage(InlineValidationPage):
     # check domain
 
     def onCheckButtonClicked(self):
-        print 'check button called....'
         self.providerCheckButton.setDisabled(True)
         self.valFrame.show()
         self.do_checks()
@@ -180,7 +181,7 @@ class SelectProviderPage(InlineValidationPage):
         ########################
         # 1) try name resolution
         ########################
-        update_signal.emit("Checking that server is reachable", 20)
+        update_signal.emit(self.tr("Can reach provider"), 20)
         logger.debug('checking name resolution')
         try:
             netchecker.check_name_resolution(
@@ -191,6 +192,7 @@ class SelectProviderPage(InlineValidationPage):
             wizard.set_validation_error(
                 prevpage, exc.usermessage)
             failed_signal.emit()
+            self.is_done = False
             return False
 
         self.is_done = True
@@ -200,8 +202,9 @@ class SelectProviderPage(InlineValidationPage):
         """
         called after _do_checks has finished.
         """
-        # XXX check if it's really done (catch signal for completed)
-        #self.done = True
+        self.domain_checked = True
+        if self.is_done:
+            self.wizard().clean_validation_error(self.current_page)
         self.completeChanged.emit()
 
     # cert trust verification
@@ -232,6 +235,7 @@ class SelectProviderPage(InlineValidationPage):
         self.certinfoGroup.show()
 
     def onProviderChanged(self, text):
+        self.is_done = False
         provider = self.providerNameEdit.text()
         if provider:
             self.providerCheckButton.setDisabled(False)
@@ -242,8 +246,12 @@ class SelectProviderPage(InlineValidationPage):
     def reset_validation_status(self):
         """
         empty the validation msg
+        and clean the inline validation widget.
         """
         self.validationMsg.setText('')
+        self.steps.removeAllSteps()
+        self.clearTable()
+        self.domain_checked = False
 
     # pagewizard methods
 
@@ -283,10 +291,19 @@ class SelectProviderPage(InlineValidationPage):
                 showerr(errors)
             else:
                 # not the first time
+                # XXX hey, this is getting convoluted.
+                # roll out this.
+                # but be careful about all the possibilities
+                # with going back and forth once you
+                # enter a domain.
                 if cur_str == bad_str:
                     showerr(errors)
                 else:
-                    showerr('')
+                    if not getattr(self, 'domain_checked', None):
+                        showerr('')
+                    else:
+                        self.bad_string = cur_str
+                        showerr(errors)
 
     def cleanup_errormsg(self):
         """
@@ -294,6 +311,7 @@ class SelectProviderPage(InlineValidationPage):
         should be called before leaving the page
         """
         self.bad_string = None
+        self.domain_checked = False
 
     def paintEvent(self, event):
         """

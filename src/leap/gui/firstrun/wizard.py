@@ -170,6 +170,11 @@ class FirstRunWizard(QtGui.QWizard):
     def set_validation_error(self, pagename, error):
         self.validation_errors[pagename] = error
 
+    def clean_validation_error(self, pagename):
+        vald = self.validation_errors
+        if pagename in vald:
+            del vald[pagename]
+
     def get_validation_error(self, pagename):
         return self.validation_errors.get(pagename, None)
 
