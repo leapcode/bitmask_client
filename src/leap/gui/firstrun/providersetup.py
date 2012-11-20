@@ -54,7 +54,7 @@ class ProviderSetupValidationPage(ValidationPage):
             # (so we're able to go back an correct)
 
             step = "fetch_eipcert"
-            update_signal.emit('validating credentials', 20)
+            update_signal.emit('Validating credentials', 20)
 
             unamek = 'login_userName'
             passwk = 'login_userPassword'

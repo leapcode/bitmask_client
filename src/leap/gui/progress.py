@@ -17,7 +17,9 @@ from leap.gui.threads import FunThread
 
 from leap.gui import mainwindow_rc
 
-CHECKMARK_IMG = ":/images/checked.png"
+ICON_CHECKMARK = ":/images/Dialog-accept.png"
+ICON_FAILED = ":/images/Dialog-error.png"
+ICON_WAITING = ":/images/Emblem-question.png"
 
 logger = logging.getLogger(__name__)
 
@@ -147,9 +149,12 @@ class StepsTableWidget(QtGui.QTableWidget):
 class WithStepsMixIn(object):
 
     def connect_step_status(self):
-        print 'connect method called'
         self.stepChanged.connect(
             self.onStepStatusChanged)
+
+    def connect_failstep_status(self):
+        self.stepFailed.connect(
+            self.set_failed_icon)
 
     # slot
     #@QtCore.pyqtSlot(str, int)
@@ -157,7 +162,8 @@ class WithStepsMixIn(object):
         if status not in ("head_sentinel", "end_sentinel"):
             self.add_status_line(status)
         if status in ("end_sentinel"):
-            self.check_last_item()
+            self.checks_finished = True
+            self.set_checked_icon()
         if progress and hasattr(self, 'progress'):
             self.progress.setValue(progress)
             self.progress.update()
@@ -219,35 +225,44 @@ class WithStepsMixIn(object):
         logger.debug('populate table. width=%s' % width)
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)
 
-    def check_last_item(self):
+    def set_item_icon(self, img=ICON_CHECKMARK, current=True):
         """
         mark the last item
         as done
         """
+        # setting cell widget.
+        # see note on StepsTableWidget about plans to
+        # change this for a better solution.
         index = len(self.steps)
         table = self.stepsTableWidget
+        _index = index - 1 if current else index - 2
         table.setCellWidget(
-            index - 1,
+            _index,
             ProgressStep.DONE,
-            ImgWidget(img=CHECKMARK_IMG))
+            ImgWidget(img=img))
         table.update()
 
+    def set_failed_icon(self):
+        self.set_item_icon(img=ICON_FAILED, current=True)
+
+    def set_checking_icon(self):
+        self.set_item_icon(img=ICON_WAITING, current=True)
+
+    def set_checked_icon(self, current=True):
+        self.set_item_icon(current=current)
+
     def add_status_line(self, message):
+        """
+        adds a new status line
+        and mark the next-to-last item
+        as done
+        """
         index = len(self.steps)
         step = ProgressStep(message, False, index=index)
         self.steps.addStep(step)
         self.populateStepsTable()
-        table = self.stepsTableWidget
-
-        # setting cell widget.
-        # see note on StepsTableWidget about plans to
-        # change this for a better solution.
-
-        table.setCellWidget(
-            index - 1,
-            ProgressStep.DONE,
-            ImgWidget(img=CHECKMARK_IMG))
-        table.update()
+        self.set_checking_icon()
+        self.set_checked_icon(current=False)
 
 
 """
@@ -265,10 +280,24 @@ class InlineValidationPage(QtGui.QWizardPage, WithStepsMixIn):
 
     # signals
     stepChanged = QtCore.pyqtSignal([str, int])
+    stepFailed = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         super(InlineValidationPage, self).__init__(parent)
         self.connect_step_status()
+        self.connect_failstep_status()
+
+    def do_checks(self):
+        """
+        launches a thread to do the checks
+        """
+        beupdate = self.stepChanged
+        befailed = self.stepFailed
+        self.checks = FunThread(
+            self._do_checks(update_signal=beupdate, failed_signal=befailed))
+        self.checks.finished.connect(self._inline_validation_ready)
+        self.checks.begin()
+        #self.checks.wait()
 
 
 class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):

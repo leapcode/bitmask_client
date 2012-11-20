@@ -5,6 +5,8 @@
    <file>../images/conn_connected.png</file>
    <file>../images/leapfrog.jpg</file>
    <file>../images/leap-color-small.png</file>
-   <file>../images/checked.png</file>
+   <file>../images/Dialog-accept.png</file>
+   <file>../images/Dialog-error.png</file>
+   <file>../images/Emblem-question.png</file>
 </qresource>
 </RCC>

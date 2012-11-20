@@ -6,13 +6,14 @@ import logging
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-#from leap.base import exceptions as baseexceptions
+from leap.base import exceptions as baseexceptions
 #from leap.crypto import certs
 #from leap.eip import exceptions as eipexceptions
 
 from leap.gui.constants import APP_LOGO
 from leap.gui.progress import InlineValidationPage
 from leap.gui.styles import ErrorLabelStyleSheet
+from leap.util.web import get_https_domain_and_port
 
 logger = logging.getLogger(__name__)
 
@@ -37,9 +38,6 @@ class SelectProviderPage(InlineValidationPage):
 
         self.setupSteps()
         self.setupUI()
-
-        self.stepChanged.connect(
-            self.onStepStatusChanged)
 
     def setupUI(self):
         """
@@ -155,16 +153,59 @@ class SelectProviderPage(InlineValidationPage):
         print 'check button called....'
         self.providerCheckButton.setDisabled(True)
         self.valFrame.show()
-        import time
-        time.sleep(1)
-        # XXX bug here!... Y U DUPLICATE?!!
-        self.stepChanged.emit('xxx', 10)
-        self.stepChanged.emit('end_sentinel', 0)
-        self.valFrame.show()
+        self.do_checks()
+
+    def _do_checks(self, update_signal=None, failed_signal=None):
+        """
+        executes actual checks in a separate thread
+        """
+        finish = lambda: update_signal.emit("end_sentinel", 100)
+
+        wizard = self.wizard()
+        prevpage = "providerselection"
+
+        full_domain = self.providerNameEdit.text()
+
+        # we check if we have a port in the domain string.
+        domain, port = get_https_domain_and_port(full_domain)
+        _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
+
+        netchecker = wizard.netchecker()
+
+        #providercertchecker = wizard.providercertchecker()
+        #eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
+
+        update_signal.emit("head_sentinel", 0)
+
+        ########################
+        # 1) try name resolution
+        ########################
+        update_signal.emit("Checking that server is reachable", 20)
+        logger.debug('checking name resolution')
+        try:
+            netchecker.check_name_resolution(
+                domain)
+
+        except baseexceptions.LeapException as exc:
+            logger.error(exc.message)
+            wizard.set_validation_error(
+                prevpage, exc.usermessage)
+            failed_signal.emit()
+            return False
+
         self.is_done = True
+        finish()
+
+    def _inline_validation_ready(self):
+        """
+        called after _do_checks has finished.
+        """
+        # XXX check if it's really done (catch signal for completed)
+        #self.done = True
         self.completeChanged.emit()
 
     # cert trust verification
+    # (disabled for now)
 
     def is_insecure_cert_trusted(self):
         return self.trustProviderCertCheckBox.isChecked()
@@ -272,6 +313,9 @@ class SelectProviderPage(InlineValidationPage):
             self.certinfoGroup.hide()
         self.is_done = False
         self.providerCheckButton.setDisabled(True)
+        self.valFrame.hide()
+        self.steps.removeAllSteps()
+        self.clearTable()
 
     def validatePage(self):
         # some cleanup before we leave the page
