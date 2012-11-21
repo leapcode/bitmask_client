@@ -98,120 +98,8 @@ class ProviderInfoPage(ValidationPage):
         """
         executes actual checks in a separate thread
         """
-        finish = lambda: update_signal.emit("end_sentinel", 100)
-
-        def pause_and_finish():
-            # only for local debug
-            finish()
-            pause_for_user()
-
-        wizard = self.wizard()
-        prevpage = "providerselection"
-
-        full_domain = self.field('provider_domain')
-
-        # we check if we have a port in the domain string.
-        domain, port = get_https_domain_and_port(full_domain)
-        _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
-
-        netchecker = wizard.netchecker()
-        providercertchecker = wizard.providercertchecker()
-        eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
-
-        update_signal.emit("head_sentinel", 0)
-        pause_for_user()
-
-        ########################
-        # 1) try name resolution
-        ########################
-        update_signal.emit("Checking that server is reachable", 20)
-        logger.debug('checking name resolution')
-        try:
-            netchecker.check_name_resolution(
-                domain)
-
-        except baseexceptions.LeapException as exc:
-            logger.error(exc.message)
-            wizard.set_validation_error(
-                prevpage, exc.usermessage)
-            pause_and_finish()
-            return False
-
-        #########################
-        # 2) try https connection
-        #########################
-        update_signal.emit("Checking secure connection to provider", 40)
-        logger.debug('checking https connection')
-        try:
-            providercertchecker.is_https_working(
-                "https://%s" % _domain,
-                verify=True)
-
-        except eipexceptions.HttpsBadCertError as exc:
-            logger.debug('exception')
-            # XXX skipping for now...
-            ##############################################
-            # We had this validation logic
-            # in the provider selection page before
-            ##############################################
-            #if self.trustProviderCertCheckBox.isChecked():
-                #pass
-            #else:
-            wizard.set_validation_error(
-                prevpage, exc.usermessage)
-            #fingerprint = certs.get_cert_fingerprint(
-                #domain=domain, sep=" ")
-
-            # it's ok if we've trusted this fgprt before
-            #trustedcrts = wizard.trusted_certs
-            #if trustedcrts and fingerprint.replace(' ', '') in trustedcrts:
-                #pass
-            #else:
-                # let your user face panick :P
-                #self.add_cert_info(fingerprint)
-                #self.did_cert_check = True
-                #self.completeChanged.emit()
-                #return False
-            finish()
-            return False
-
-        except baseexceptions.LeapException as exc:
-            wizard.set_validation_error(
-                prevpage, exc.usermessage)
-            finish()
-            return False
-
-        ##################################
-        # 3) try download provider info...
-        ##################################
-
-        update_signal.emit("Downloading provider info", 70)
-        try:
-            # XXX we already set _domain in the initialization
-            # so it should not be needed here.
-            eipconfigchecker.fetch_definition(domain=_domain)
-            wizard.set_providerconfig(
-                eipconfigchecker.defaultprovider.config)
-        except requests.exceptions.SSLError:
-            # XXX we should have catched this before.
-            # but cert checking is broken.
-            wizard.set_validation_error(
-                prevpage,
-                "Could not get info from provider.")
-            finish()
-            return False
-        except requests.exceptions.ConnectionError:
-            wizard.set_validation_error(
-                prevpage,
-                "Could not download provider info "
-                "(refused conn.).")
-            finish()
-            return False
-        # XXX catch more errors...
-
         # We're done!
         self.set_done()
-        finish()
 
     def _do_validation(self):
         """
@@ -247,7 +135,12 @@ class ProviderInfoPage(ValidationPage):
         self.completeChanged.emit()
 
     def cleanupPage(self):
-        del self.wizard().providerconfig
+        wizard = self.wizard()
+
+        # XXX makes sense now?
+        # this was created on previous...
+        if hasattr(wizard, 'providerconfig'):
+            del self.wizard().providerconfig
 
         if self.infoWidget:
             QtCore.QObjectCleanupHandler().add(

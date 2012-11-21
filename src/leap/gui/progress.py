@@ -24,6 +24,24 @@ ICON_WAITING = ":/images/Emblem-question.png"
 logger = logging.getLogger(__name__)
 
 
+# XXX import this from threads
+def delay(obj, method_str=None, call_args=None):
+    """
+    this is a hack to get responsiveness in the ui
+    """
+    if callable(obj) and not method_str:
+        QtCore.QTimer().singleShot(
+            50,
+            lambda: obj())
+        return
+
+    if method_str:
+        QtCore.QTimer().singleShot(
+            50,
+            lambda: QtCore.QMetaObject.invokeMethod(
+                obj, method_str))
+
+
 class ImgWidget(QtGui.QWidget):
 
     # XXX move to widgets
@@ -168,6 +186,22 @@ class WithStepsMixIn(object):
             self.progress.setValue(progress)
             self.progress.update()
 
+    def processStepsQueue(self):
+        """
+        consume steps queue
+        and pass messages
+        to the ui updater functions
+        """
+        while self.queue.qsize():
+            try:
+                status = self.queue.get(0)
+                if status == "failed":
+                    self.set_failed_icon()
+                else:
+                    self.onStepStatusChanged(*status)
+            except Queue.Empty:
+                pass
+
     def setupSteps(self):
         self.steps = ProgressStepContainer()
         # steps table widget
@@ -266,38 +300,59 @@ class WithStepsMixIn(object):
 
 
 """
-Resist the temptation to refactor the declaration of the signal
-to the mixin.
-PyQt and multiple inheritance do not mix well together.
-You can only have one QObject base.
-Therefore, we will use one base class for the intermediate pages
+We will use one base class for the intermediate pages
 and another one for the in-page validations, both sharing the creation
 of the tablewidgets.
+The logic of this split comes from where I was trying to solve
+the ui update using signals, but now that it's working well with
+queues I could join them again.
 """
+
+import Queue
+from functools import partial
 
 
 class InlineValidationPage(QtGui.QWizardPage, WithStepsMixIn):
 
-    # signals
-    stepChanged = QtCore.pyqtSignal([str, int])
-    stepFailed = QtCore.pyqtSignal()
-
     def __init__(self, parent=None):
         super(InlineValidationPage, self).__init__(parent)
-        self.connect_step_status()
-        self.connect_failstep_status()
+
+        self.queue = Queue.Queue()
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.processStepsQueue)
+        self.timer.start(100)
+        self.threads = []
 
     def do_checks(self):
-        """
-        launches a thread to do the checks
-        """
-        beupdate = self.stepChanged
-        befailed = self.stepFailed
-        self.checks = FunThread(
-            self._do_checks(update_signal=beupdate, failed_signal=befailed))
-        self.checks.finished.connect(self._inline_validation_ready)
-        self.checks.begin()
-        #self.checks.wait()
+
+        # yo dawg, I heard you like checks
+        # so I put a __do_checks in your do_checks
+        # for calling others' _do_checks
+
+        def __do_checks(fun=None, queue=None):
+
+            for checkcase in fun():
+                checkmsg, checkfun = checkcase
+
+                queue.put(checkmsg)
+                if checkfun() is False:
+                    queue.put("failed")
+                    break
+
+        t = FunThread(fun=partial(
+            __do_checks,
+            fun=self._do_checks,
+            queue=self.queue))
+        t.finished.connect(self._inline_validation_ready)
+        t.begin()
+        self.threads.append(t)
+
+    # slot
+
+    @QtCore.pyqtSlot()
+    def showStepsFrame(self):
+        self.valFrame.show()
+        self.update()
 
 
 class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):

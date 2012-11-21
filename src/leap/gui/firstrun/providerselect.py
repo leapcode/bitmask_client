@@ -1,14 +1,17 @@
 """
 Select Provider Page, used in First Run Wizard
 """
+from functools import partial
 import logging
+
+import requests
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
 from leap.base import exceptions as baseexceptions
 #from leap.crypto import certs
-#from leap.eip import exceptions as eipexceptions
+from leap.eip import exceptions as eipexceptions
 
 from leap.gui.constants import APP_LOGO
 from leap.gui.progress import InlineValidationPage
@@ -17,8 +20,24 @@ from leap.util.web import get_https_domain_and_port
 
 logger = logging.getLogger(__name__)
 
+# XXX check newer version in progress...
+
+
+def delay(obj, method_str):
+    """
+    this is a hack to get responsiveness in the ui
+    """
+    QtCore.QTimer().singleShot(
+        10,
+        lambda: QtCore.QMetaObject.invokeMethod(
+            obj, method_str))
+
 
 class SelectProviderPage(InlineValidationPage):
+
+    #disableCheckButton = QtCore.pyqtSignal()
+    launchChecks = QtCore.pyqtSignal()
+
     def __init__(self, parent=None, providers=None):
         super(SelectProviderPage, self).__init__(parent)
 
@@ -38,6 +57,11 @@ class SelectProviderPage(InlineValidationPage):
 
         self.setupSteps()
         self.setupUI()
+
+        #self.disableCheckButton.connect(
+            #self.onDisableCheckButton)
+        self.launchChecks.connect(
+            self.launch_checks)
 
     def setupUI(self):
         """
@@ -149,21 +173,41 @@ class SelectProviderPage(InlineValidationPage):
         valFrame.setLayout(valframeLayout)
         self.valFrame = valFrame
 
-    # check domain
-
-    def onCheckButtonClicked(self):
+    @QtCore.pyqtSlot()
+    def onDisableCheckButton(self):
+        print 'CHECK BUTTON DISABLED!!!'
         self.providerCheckButton.setDisabled(True)
-        self.valFrame.show()
+
+    @QtCore.pyqtSlot()
+    def launch_checks(self):
+        # trying to delay this...
+        #timer = QtCore.QTimer()
+        #timer.singleShot(0, self.do_checks)
         self.do_checks()
 
-    def _do_checks(self, update_signal=None, failed_signal=None):
+    def onCheckButtonClicked(self):
+        #self.disableCheckButton.emit()
+        # XXX trying to get responsiveness.
+        # UI here is blocking, although I'm using
+        # threads and signals :(
+        QtCore.QMetaObject.invokeMethod(
+            self, "onDisableCheckButton")
+
+        QtCore.QMetaObject.invokeMethod(
+            self, "showStepsFrame")
+
+        delay(self, "launch_checks")
+
+        print 'ON CHECK BUTTON --- DONE!'
+        print 'timer.....'
+
+    def _do_checks(self):
         """
         executes actual checks in a separate thread
         """
-        finish = lambda: update_signal.emit("end_sentinel", 100)
 
         wizard = self.wizard()
-        prevpage = "providerselection"
+        curpage = "providerselection"
 
         full_domain = self.providerNameEdit.text()
 
@@ -173,35 +217,143 @@ class SelectProviderPage(InlineValidationPage):
 
         netchecker = wizard.netchecker()
 
-        #providercertchecker = wizard.providercertchecker()
-        #eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
+        providercertchecker = wizard.providercertchecker()
+        eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
 
-        update_signal.emit("head_sentinel", 0)
+        def fail():
+            self.is_done = False
+            return False
+
+        yield(("head_sentinel", 0), lambda: None)
 
         ########################
         # 1) try name resolution
         ########################
-        update_signal.emit(self.tr("Can reach provider"), 20)
         logger.debug('checking name resolution')
-        try:
-            netchecker.check_name_resolution(
-                domain)
 
-        except baseexceptions.LeapException as exc:
-            logger.error(exc.message)
-            wizard.set_validation_error(
-                prevpage, exc.usermessage)
-            failed_signal.emit()
-            self.is_done = False
-            return False
+        def namecheck():
+            try:
+                netchecker.check_name_resolution(
+                    domain)
 
+            except baseexceptions.LeapException as exc:
+                logger.error(exc.message)
+                wizard.set_validation_error(
+                    curpage, exc.usermessage)
+                return fail()
+
+            except Exception as exc:
+                wizard.set_validation_error(
+                    curpage, exc.message)
+                return fail()
+
+            else:
+                return True
+
+            # XXX catch more exceptions
+
+        yield(("check name", 20), namecheck)
+
+        #########################
+        # 2) try https connection
+        #########################
+
+        logger.debug('checking https connection')
+
+        def httpscheck():
+            try:
+                providercertchecker.is_https_working(
+                    "https://%s" % _domain,
+                    verify=True)
+
+            except eipexceptions.HttpsBadCertError as exc:
+                logger.debug('exception')
+                # XXX skipping for now...
+                ##############################################
+                # We had this validation logic
+                # in the provider selection page before
+                ##############################################
+                #if self.trustProviderCertCheckBox.isChecked():
+                    #pass
+                #else:
+                wizard.set_validation_error(
+                    curpage, exc.usermessage)
+                #fingerprint = certs.get_cert_fingerprint(
+                    #domain=domain, sep=" ")
+
+                # it's ok if we've trusted this fgprt before
+                #trustedcrts = wizard.trusted_certs
+                #if trustedcrts and \
+                # fingerprint.replace(' ', '') in trustedcrts:
+                    #pass
+                #else:
+                    # let your user face panick :P
+                    #self.add_cert_info(fingerprint)
+                    #self.did_cert_check = True
+                    #self.completeChanged.emit()
+                    #return False
+                return fail()
+
+            except baseexceptions.LeapException as exc:
+                wizard.set_validation_error(
+                    curpage, exc.usermessage)
+                return fail()
+
+            except Exception as exc:
+                wizard.set_validation_error(
+                    curpage, exc.message)
+                return fail()
+
+            else:
+                return True
+
+        yield(("https check", 40), httpscheck)
+
+        ##################################
+        # 3) try download provider info...
+        ##################################
+
+        def fetchinfo():
+            try:
+                # XXX we already set _domain in the initialization
+                # so it should not be needed here.
+                eipconfigchecker.fetch_definition(domain=_domain)
+                wizard.set_providerconfig(
+                    eipconfigchecker.defaultprovider.config)
+            except requests.exceptions.SSLError:
+                # XXX we should have catched this before.
+                # but cert checking is broken.
+                wizard.set_validation_error(
+                    curpage,
+                    self.tr(
+                        "Could not get info from provider."))
+                return fail()
+            except requests.exceptions.ConnectionError:
+                wizard.set_validation_error(
+                    curpage,
+                    self.tr(
+                        "Could not download provider info "
+                        "(refused conn.)."))
+                return fail()
+
+            except Exception as exc:
+                wizard.set_validation_error(
+                    curpage, exc.message)
+                return fail()
+
+            else:
+                return True
+        yield(("fetch info", 80), fetchinfo)
+
+        # done!
         self.is_done = True
-        finish()
+        yield(("end_sentinel", 100), lambda: None)
 
     def _inline_validation_ready(self):
         """
         called after _do_checks has finished.
         """
+        print 'VALIDATION READY ---------------'
         self.domain_checked = True
         if self.is_done:
             self.wizard().clean_validation_error(self.current_page)
