@@ -1,15 +1,23 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+from functools import partial
 import logging
+import signal
 
 # This is only needed for Python v2 but is harmless for Python v3.
 import sip
 sip.setapi('QVariant', 2)
 sip.setapi('QString', 2)
 from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
+from PyQt4.QtCore import QTimer
+from PyQt4 import QtCore
 
 from leap import __version__ as VERSION
 from leap.baseapp.mainwindow import LeapWindow
 
+def sigint_handler(*args):
+    #import pdb4qt as pdb; pdb.set_trace()
+    app = args[0]
+    app.cleanupAndQuit()
 
 def main():
     """
@@ -52,6 +60,10 @@ def main():
     logger.info('Starting app')
     app = QApplication(sys.argv)
 
+    timer = QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None) 
+
     # needed for initializing qsettings
     # it will write .config/leap/leap.conf
     # top level app settings
@@ -69,6 +81,13 @@ def main():
         QApplication.setQuitOnLastWindowClosed(False)
 
     window = LeapWindow(opts)
+
+    sigint_window = partial(sigint_handler, window)
+    signal.signal(signal.SIGINT, sigint_window)
+    #signal.signal(signal.SIGINT, lambda: QtCore.QMetaObject.invokeMethod(window, 'cleanupAndQuit'))
+    #window.shutdownSignal.connect(window.cleanupAndQuit)
+    #signal.signal(signal.SIGINT, window.shutdownSignal.emit))
+
     if debug:
         # we only show the main window
         # if debug mode active.

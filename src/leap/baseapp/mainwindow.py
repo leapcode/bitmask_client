@@ -40,6 +40,7 @@ class LeapWindow(QtGui.QMainWindow,
     networkError = QtCore.pyqtSignal([object])
     triggerEIPError = QtCore.pyqtSignal([object])
     start_eipconnection = QtCore.pyqtSignal([])
+    shutdownSignal = QtCore.pyqtSignal([])
 
     # this is status change got from openvpn management
     openvpnStatusChange = QtCore.pyqtSignal([object])
