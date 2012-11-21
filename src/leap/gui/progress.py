@@ -145,6 +145,8 @@ class StepsTableWidget(QtGui.QTableWidget):
         # this disables the table grid.
         # we should add alignment to the ImgWidget (it's top-left now)
         self.setShowGrid(False)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        #self.setStyleSheet("QTableView{outline: 0;}")
 
         # XXX change image for done to rc
 
@@ -254,7 +256,7 @@ class WithStepsMixIn(object):
     def resizeTable(self):
         # resize first column to ~80%
         table = self.stepsTableWidget
-        FIRST_COLUMN_PERCENT = 0.75
+        FIRST_COLUMN_PERCENT = 0.70
         width = table.width()
         logger.debug('populate table. width=%s' % width)
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)

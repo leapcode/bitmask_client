@@ -61,6 +61,9 @@ class SelectProviderPage(InlineValidationPage):
         self.launchChecks.connect(
             self.launch_checks)
 
+        self.providerNameEdit.editingFinished.connect(
+            lambda: self.providerCheckButton.setFocus(True))
+
     def setupUI(self):
         """
         initializes the UI
@@ -94,7 +97,7 @@ class SelectProviderPage(InlineValidationPage):
         validationMsg = QtGui.QLabel("")
         validationMsg.setStyleSheet(styles.ErrorLabelStyleSheet)
         self.validationMsg = validationMsg
-        providerCheckButton = QtGui.QPushButton(self.tr("chec&k"))
+        providerCheckButton = QtGui.QPushButton(self.tr("chec&k!"))
         self.providerCheckButton = providerCheckButton
 
         # cert info
@@ -238,7 +241,6 @@ class SelectProviderPage(InlineValidationPage):
             else:
                 return True
 
-
         logger.debug('checking name resolution')
         yield(("check name", 20), namecheck)
 
@@ -349,9 +351,14 @@ class SelectProviderPage(InlineValidationPage):
         called after _do_checks has finished.
         """
         self.domain_checked = True
+        self.completeChanged.emit()
+        # let's set focus...
         if self.is_done:
             self.wizard().clean_validation_error(self.current_page)
-        self.completeChanged.emit()
+            nextbutton = self.wizard().button(QtGui.QWizard.NextButton)
+            nextbutton.setFocus()
+        else:
+            self.providerNameEdit.setFocus()
 
     # cert trust verification
     # (disabled for now)

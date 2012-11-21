@@ -139,6 +139,7 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
 
     def initializePage(self):
         super(LogInPage, self).initializePage()
+        # XXX setPlaceholderText instead?!
         self.userNameLineEdit.setText('username@provider.example.org')
         self.userNameLineEdit.cursorPositionChanged.connect(
             self.onUserNameEdit)
