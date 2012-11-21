@@ -152,8 +152,10 @@ class LeapNetworkChecker(object):
         @type error_matrix: tuples strings and call backs
         """
         for line in log:
+            # we could compile a regex here to save some cycles up -- kali
             for each in error_matrix:
                 error, callbacks = each
                 if error in line:
                     for cb in callbacks:
-                        cb()
+                        if callable(cb):
+                            cb()
