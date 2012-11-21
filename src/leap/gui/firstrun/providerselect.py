@@ -58,8 +58,6 @@ class SelectProviderPage(InlineValidationPage):
         self.setupSteps()
         self.setupUI()
 
-        #self.disableCheckButton.connect(
-            #self.onDisableCheckButton)
         self.launchChecks.connect(
             self.launch_checks)
 
@@ -160,15 +158,10 @@ class SelectProviderPage(InlineValidationPage):
         qframe = QtGui.QFrame
         valFrame = qframe()
         valFrame.setFrameStyle(qframe.NoFrame)
-        # Box | qframe.Plain)
-        # NoFrame, StyledPanel)  | qframe.Sunken)
-        #valFrame.setContentsMargins(0, 0, 0, 0)
         valframeLayout = QtGui.QVBoxLayout()
         zeros = (0, 0, 0, 0)
         valframeLayout.setContentsMargins(*zeros)
 
-        #dummylabel = QtGui.QLabel('test foo')
-        #valframeLayout.addWidget(dummylabel)
         valframeLayout.addWidget(self.stepsTableWidget)
         valFrame.setLayout(valframeLayout)
         self.valFrame = valFrame
@@ -180,16 +173,9 @@ class SelectProviderPage(InlineValidationPage):
 
     @QtCore.pyqtSlot()
     def launch_checks(self):
-        # trying to delay this...
-        #timer = QtCore.QTimer()
-        #timer.singleShot(0, self.do_checks)
         self.do_checks()
 
     def onCheckButtonClicked(self):
-        #self.disableCheckButton.emit()
-        # XXX trying to get responsiveness.
-        # UI here is blocking, although I'm using
-        # threads and signals :(
         QtCore.QMetaObject.invokeMethod(
             self, "onDisableCheckButton")
 
@@ -198,12 +184,10 @@ class SelectProviderPage(InlineValidationPage):
 
         delay(self, "launch_checks")
 
-        print 'ON CHECK BUTTON --- DONE!'
-        print 'timer.....'
-
     def _do_checks(self):
         """
-        executes actual checks in a separate thread
+        generator that yields actual checks
+        that are executed in a separate thread
         """
 
         wizard = self.wizard()
@@ -229,9 +213,13 @@ class SelectProviderPage(InlineValidationPage):
         ########################
         # 1) try name resolution
         ########################
-        logger.debug('checking name resolution')
 
         def namecheck():
+            """
+            in which we check if
+            we are able to name resolve
+            this domain
+            """
             try:
                 netchecker.check_name_resolution(
                     domain)
@@ -250,17 +238,21 @@ class SelectProviderPage(InlineValidationPage):
             else:
                 return True
 
-            # XXX catch more exceptions
 
+        logger.debug('checking name resolution')
         yield(("check name", 20), namecheck)
 
         #########################
         # 2) try https connection
         #########################
 
-        logger.debug('checking https connection')
-
         def httpscheck():
+            """
+            in which we check
+            if the provider
+            is offering service over
+            https
+            """
             try:
                 providercertchecker.is_https_working(
                     "https://%s" % _domain,
@@ -307,6 +299,7 @@ class SelectProviderPage(InlineValidationPage):
             else:
                 return True
 
+        logger.debug('checking https connection')
         yield(("https check", 40), httpscheck)
 
         ##################################
@@ -343,9 +336,11 @@ class SelectProviderPage(InlineValidationPage):
 
             else:
                 return True
+
         yield(("fetch info", 80), fetchinfo)
 
         # done!
+
         self.is_done = True
         yield(("end_sentinel", 100), lambda: None)
 
@@ -353,7 +348,6 @@ class SelectProviderPage(InlineValidationPage):
         """
         called after _do_checks has finished.
         """
-        print 'VALIDATION READY ---------------'
         self.domain_checked = True
         if self.is_done:
             self.wizard().clean_validation_error(self.current_page)

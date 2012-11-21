@@ -20,9 +20,9 @@ class ProviderSetupValidationPage(ValidationPage):
         is_signup = self.field("is_signup")
         self.is_signup = is_signup
 
-        self.setTitle("Setting up provider")
-        #self.setSubTitle(
-            #"auto configuring provider...")
+        self.setTitle("Provider setup")
+        self.setSubTitle(
+            "Doing autoconfig.")
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,

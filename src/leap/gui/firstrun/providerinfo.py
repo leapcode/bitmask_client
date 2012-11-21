@@ -3,43 +3,33 @@ Provider Info Page, used in First run Wizard
 """
 import logging
 
-from PyQt4 import QtCore
 from PyQt4 import QtGui
 
-import requests
-
-from leap.base import exceptions as baseexceptions
-#from leap.crypto import certs
-from leap.eip import exceptions as eipexceptions
-
-from leap.gui.progress import ValidationPage
-from leap.util.web import get_https_domain_and_port
-
-from leap.gui.constants import APP_LOGO, pause_for_user
+from leap.gui.constants import APP_LOGO
 
 logger = logging.getLogger(__name__)
 
 
-class ProviderInfoPage(ValidationPage):
+class ProviderInfoPage(QtGui.QWizardPage):
+
     def __init__(self, parent=None):
         super(ProviderInfoPage, self).__init__(parent)
 
-        self.setTitle("Provider Info")
-        #self.setSubTitle("Available information about chosen provider.")
+        self.setTitle(self.tr("Provider Info"))
+        self.setSubTitle(self.tr(
+            "This is what provider says."))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
-        self.prev_page = "providerselection"
-        self.infoWidget = None
-        #self.current_page = "providerinfo"
+        self.create_info_panel()
 
     def create_info_panel(self):
         # Use stacked widget instead
         # of reparenting the layout.
 
-        self.infoWidget = QtGui.QStackedWidget()
+        infoWidget = QtGui.QStackedWidget()
 
         info = QtGui.QWidget()
         layout = QtGui.QVBoxLayout()
@@ -47,9 +37,12 @@ class ProviderInfoPage(ValidationPage):
         displayName = QtGui.QLabel("")
         description = QtGui.QLabel("")
         enrollment_policy = QtGui.QLabel("")
+
         # XXX set stylesheet...
         # prettify a little bit.
         # bigger fonts and so on...
+
+        # We could use a QFrame here
 
         layout.addWidget(displayName)
         layout.addWidget(description)
@@ -57,9 +50,11 @@ class ProviderInfoPage(ValidationPage):
         layout.addStretch(1)
 
         info.setLayout(layout)
-        self.infoWidget.addWidget(info)
+        infoWidget.addWidget(info)
 
-        self.layout.addWidget(self.infoWidget)
+        pageLayout = QtGui.QVBoxLayout()
+        pageLayout.addWidget(infoWidget)
+        self.setLayout(pageLayout)
 
         # add refs to self to allow for
         # updates.
@@ -94,59 +89,10 @@ class ProviderInfoPage(ValidationPage):
             self.enrollment_policy.setText(
                 'enrollment policy: %s' % enroll)
 
-    def _do_checks(self, update_signal=None):
-        """
-        executes actual checks in a separate thread
-        """
-        # We're done!
-        self.set_done()
-
-    def _do_validation(self):
-        """
-        called after _do_checks has finished
-        (connected to checker thread finished signal)
-        """
-        print 'validation...'
-        prevpage = "providerselection"
-        errors = self.wizard().get_validation_error(prevpage)
-
-        if not errors:
-            self.hide_progress()
-            self.create_info_panel()
-            self.show_provider_info()
-
-        else:
-            logger.debug('going back with errors')
-            logger.debug('ERRORS: %s' % errors)
-            self.go_back()
-
     def nextId(self):
         wizard = self.wizard()
         next_ = "providersetupvalidation"
         return wizard.get_page_index(next_)
 
-    #def isComplete(self):
-        #return self.is_done()
-
     def initializePage(self):
-        super(ProviderInfoPage, self).initializePage()
-        self.show_progress()
-        self.set_undone()
-        self.completeChanged.emit()
-
-    def cleanupPage(self):
-        wizard = self.wizard()
-
-        # XXX makes sense now?
-        # this was created on previous...
-        if hasattr(wizard, 'providerconfig'):
-            del self.wizard().providerconfig
-
-        if self.infoWidget:
-            QtCore.QObjectCleanupHandler().add(
-                self.infoWidget)
-
-        # refactor this into some kind of destructor
-        del self.displayName
-        del self.description
-        del self.enrollment_policy
+        self.show_provider_info()
