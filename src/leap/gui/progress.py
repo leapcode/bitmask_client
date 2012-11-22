@@ -168,13 +168,43 @@ class StepsTableWidget(QtGui.QTableWidget):
 
 class WithStepsMixIn(object):
 
-    def connect_step_status(self):
-        self.stepChanged.connect(
-            self.onStepStatusChanged)
+    # worker threads for checks
 
-    def connect_failstep_status(self):
-        self.stepFailed.connect(
-            self.set_failed_icon)
+    def setupStepsProcessingQueue(self):
+        self.steps_queue = Queue.Queue()
+        self.stepscheck_timer = QtCore.QTimer()
+        self.stepscheck_timer.timeout.connect(self.processStepsQueue)
+        self.stepscheck_timer.start(100)
+        # we need to keep a reference to child threads
+        self.threads = []
+
+    def do_checks(self):
+
+        # yo dawg, I heard you like checks
+        # so I put a __do_checks in your do_checks
+        # for calling others' _do_checks
+
+        def __do_checks(fun=None, queue=None):
+
+            for checkcase in fun():
+                checkmsg, checkfun = checkcase
+
+                queue.put(checkmsg)
+                if checkfun() is False:
+                    queue.put("failed")
+                    break
+
+        t = FunThread(fun=partial(
+            __do_checks,
+            fun=self._do_checks,
+            queue=self.steps_queue))
+        t.finished.connect(self.on_checks_validation_ready)
+        t.begin()
+        self.threads.append(t)
+
+    @QtCore.pyqtSlot()
+    def launch_checks(self):
+        self.do_checks()
 
     # slot
     #@QtCore.pyqtSlot(str, int)
@@ -194,9 +224,9 @@ class WithStepsMixIn(object):
         and pass messages
         to the ui updater functions
         """
-        while self.queue.qsize():
+        while self.steps_queue.qsize():
             try:
-                status = self.queue.get(0)
+                status = self.steps_queue.get(0)
                 if status == "failed":
                     self.set_failed_icon()
                 else:
@@ -300,6 +330,26 @@ class WithStepsMixIn(object):
         self.set_checking_icon()
         self.set_checked_icon(current=False)
 
+    # Sets/unsets done flag
+    # for isComplete checks
+
+    def set_done(self):
+        self.done = True
+        self.completeChanged.emit()
+
+    def set_undone(self):
+        self.done = False
+        self.completeChanged.emit()
+
+    def is_done(self):
+        return self.done
+
+    def go_back(self):
+        self.wizard().back()
+
+    def go_next(self):
+        self.wizard().next()
+
 
 """
 We will use one base class for the intermediate pages
@@ -318,36 +368,8 @@ class InlineValidationPage(QtGui.QWizardPage, WithStepsMixIn):
 
     def __init__(self, parent=None):
         super(InlineValidationPage, self).__init__(parent)
-
-        self.queue = Queue.Queue()
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.processStepsQueue)
-        self.timer.start(100)
-        self.threads = []
-
-    def do_checks(self):
-
-        # yo dawg, I heard you like checks
-        # so I put a __do_checks in your do_checks
-        # for calling others' _do_checks
-
-        def __do_checks(fun=None, queue=None):
-
-            for checkcase in fun():
-                checkmsg, checkfun = checkcase
-
-                queue.put(checkmsg)
-                if checkfun() is False:
-                    queue.put("failed")
-                    break
-
-        t = FunThread(fun=partial(
-            __do_checks,
-            fun=self._do_checks,
-            queue=self.queue))
-        t.finished.connect(self._inline_validation_ready)
-        t.begin()
-        self.threads.append(t)
+        self.setupStepsProcessingQueue()
+        self.done = False
 
     # slot
 
@@ -355,6 +377,20 @@ class InlineValidationPage(QtGui.QWizardPage, WithStepsMixIn):
     def showStepsFrame(self):
         self.valFrame.show()
         self.update()
+
+    # progress frame
+
+    def setupValidationFrame(self):
+        qframe = QtGui.QFrame
+        valFrame = qframe()
+        valFrame.setFrameStyle(qframe.NoFrame)
+        valframeLayout = QtGui.QVBoxLayout()
+        zeros = (0, 0, 0, 0)
+        valframeLayout.setContentsMargins(*zeros)
+
+        valframeLayout.addWidget(self.stepsTableWidget)
+        valFrame.setLayout(valframeLayout)
+        self.valFrame = valFrame
 
 
 class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):
@@ -376,7 +412,7 @@ class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):
     def __init__(self, parent=None):
         super(ValidationPage, self).__init__(parent)
         self.setupSteps()
-        self.connect_step_status()
+        #self.connect_step_status()
 
         layout = QtGui.QVBoxLayout()
         self.progress = QtGui.QProgressBar(self)
@@ -387,47 +423,14 @@ class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):
         self.layout = layout
 
         self.timer = QtCore.QTimer()
-
         self.done = False
 
-    # Sets/unsets done flag
-    # for isComplete checks
-
-    def set_done(self):
-        self.done = True
-        self.completeChanged.emit()
-
-    def set_undone(self):
-        self.done = False
-        self.completeChanged.emit()
-
-    def is_done(self):
-        return self.done
+        self.setupStepsProcessingQueue()
 
     def isComplete(self):
         return self.is_done()
 
     ########################
-
-    def go_back(self):
-        self.wizard().back()
-
-    def go_next(self):
-        self.wizard().next()
-
-    def do_checks(self):
-        """
-        launches a thread to do the checks
-        """
-        signal = self.stepChanged
-        self.checks = FunThread(
-            self._do_checks(update_signal=signal))
-        self.checks.finished.connect(self._do_validation)
-        self.checks.begin()
-        #logger.debug('check thread started!')
-        #logger.debug('waiting for it to terminate...')
-        # XXX needed for it to join?
-        self.checks.wait()
 
     def show_progress(self):
         self.progress.show()

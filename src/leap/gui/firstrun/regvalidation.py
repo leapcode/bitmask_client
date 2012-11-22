@@ -20,7 +20,7 @@ from leap.gui.progress import ValidationPage
 from leap.util.web import get_https_domain_and_port
 
 from leap.base import auth
-from leap.gui.constants import APP_LOGO, pause_for_user
+from leap.gui.constants import APP_LOGO
 
 logger = logging.getLogger(__name__)
 
@@ -77,77 +77,7 @@ class RegisterUserValidationPage(ValidationPage):
         pCertChecker = wizard.providercertchecker(
             domain=full_domain)
 
-        ###########################################
-        # only if from signup
-        # MOVE TO SIGNUP PAGE...
-        if is_signup:
-            signup = auth.LeapSRPRegister(
-                schema="https",
-                provider=full_domain,
-                verify=verify)
-
         update_signal.emit("head_sentinel", 0)
-
-        ##################################################
-        # 1) register user
-        ##################################################
-        # only if from signup.
-        # XXX MOVE THIS STEP TO SIGNUP-IN-PLACE VALIDATION
-        # WIDGET..........................................
-
-        if is_signup:
-
-            step = "register"
-            update_signal.emit("checking availability", 20)
-            update_signal.emit("registering with provider", 40)
-            logger.debug('registering user')
-
-            try:
-                ok, req = signup.register_user(
-                    username, password)
-
-            except socket.timeout:
-                self.set_error(
-                    step,
-                    "Error connecting to provider (timeout)")
-                #pause_for_user()
-                return False
-
-            except requests.exceptions.ConnectionError as exc:
-                logger.error(exc.message)
-                self.set_error(
-                    step,
-                    "Error connecting to provider "
-                    "(connection error)")
-                # XXX we should signal a BAD step
-                #pause_for_user()
-                update_signal.emit("connection error!", 50)
-                #pause_for_user()
-                return False
-
-            # XXX check for != OK instead???
-
-            if req.status_code in (404, 500):
-                self.set_error(
-                    step,
-                    "Error during registration (%s)" % req.status_code)
-                pause_for_user()
-                return False
-
-            validation_msgs = json.loads(req.content)
-            errors = validation_msgs.get('errors', None)
-            logger.debug('validation errors: %s' % validation_msgs)
-
-            if errors and errors.get('login', None):
-                # XXX this sometimes catch the blank username
-                # but we're not allowing that (soon)
-                self.set_error(
-                    step,
-                    'Username not available.')
-                #pause_for_user()
-                return False
-
-            #pause_for_user()
 
         ##################################################
         # 2) fetching eip service config
@@ -201,6 +131,13 @@ class RegisterUserValidationPage(ValidationPage):
         # here we go! :)
         # this should be called CONNECT PAGE AGAIN.
         self.run_eip_checks_for_provider_and_connect(_domain)
+
+    def on_checks_validation_ready(self):
+        """
+        called after _do_checks has finished
+        (connected to checker thread finished signal)
+        """
+        pass
 
     def run_eip_checks_for_provider_and_connect(self, domain):
         wizard = self.wizard()

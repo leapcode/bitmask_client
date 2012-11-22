@@ -1,7 +1,6 @@
 """
 Select Provider Page, used in First Run Wizard
 """
-from functools import partial
 import logging
 
 import requests
@@ -20,10 +19,9 @@ from leap.util.web import get_https_domain_and_port
 
 logger = logging.getLogger(__name__)
 
-# XXX check newer version in progress...
-
 
 def delay(obj, method_str):
+    # XXX check newer version in progress.py...
     """
     this is a hack to get responsiveness in the ui
     """
@@ -40,6 +38,7 @@ class SelectProviderPage(InlineValidationPage):
 
     def __init__(self, parent=None, providers=None):
         super(SelectProviderPage, self).__init__(parent)
+        self.current_page = 'providerselection'
 
         self.setTitle(self.tr("Enter Provider"))
         self.setSubTitle(self.tr(
@@ -51,7 +50,6 @@ class SelectProviderPage(InlineValidationPage):
             QtGui.QPixmap(APP_LOGO))
 
         self.did_cert_check = False
-        self.current_page = 'providerselection'
 
         self.is_done = False
 
@@ -346,7 +344,7 @@ class SelectProviderPage(InlineValidationPage):
         self.is_done = True
         yield(("end_sentinel", 100), lambda: None)
 
-    def _inline_validation_ready(self):
+    def on_checks_validation_ready(self):
         """
         called after _do_checks has finished.
         """

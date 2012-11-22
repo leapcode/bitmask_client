@@ -139,6 +139,7 @@ class FirstRunWizard(QtGui.QWizard):
 
         # set options
         self.setOption(QtGui.QWizard.IndependentPages, on=False)
+        self.setOption(QtGui.QWizard.NoBackButtonOnStartPage, on=True)
 
         self.setWindowTitle("First Run Wizard")
 

@@ -6,14 +6,17 @@ from PyQt4 import QtGui
 
 #import requests
 
+from leap.base import auth
 from leap.gui.firstrun.mixins import UserFormMixIn
 
 from leap.gui.constants import APP_LOGO, FULL_USERNAME_REGEX
 from leap.gui.styles import ErrorLabelStyleSheet
 
 
-class LogInPage(QtGui.QWizardPage, UserFormMixIn):
+class LogInPage(QtGui.QWizardPage, UserFormMixIn):  # InlineValidationPage
+
     def __init__(self, parent=None):
+
         super(LogInPage, self).__init__(parent)
 
         self.setTitle("Log In")
@@ -24,6 +27,9 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
+        self.setupUI()
+
+    def setupUI(self):
         userNameLabel = QtGui.QLabel("User &name:")
         userNameLineEdit = QtGui.QLineEdit()
         userNameLineEdit.cursorPositionChanged.connect(
@@ -149,6 +155,7 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
         #wizard = self.wizard()
         #eipconfigchecker = wizard.eipconfigchecker()
 
+        # XXX should move to _do_checks
         full_username = self.userNameLineEdit.text()
         password = self.userPasswordLineEdit.text()
         if full_username.count('@') != 1:
@@ -191,3 +198,61 @@ class LogInPage(QtGui.QWizardPage, UserFormMixIn):
         self.cleanup_errormsg()
 
         return True
+
+    def _do_checks(self):
+        # XXX convert this to inline
+
+        full_username = self.userNameLineEdit.text()
+        password = self.userPasswordLineEdit.text()
+        username, domain = full_username.split('@')
+        # We try a call to an authenticated
+        # page here as a mean to catch
+        # srp authentication errors while
+        wizard = self.wizard()
+        pCertChecker = wizard.providercertchecker(
+            domain=domain)
+
+        curpage = "login"
+
+        def fail():
+            self.is_done = False
+            return False
+
+        ########################
+        # 1) try name resolution
+        ########################
+        # XXX
+        # bring here from validation above...
+
+        ########################
+        # 2) do authentication
+        ########################
+
+        unamek = 'login_userName'
+        passwk = 'login_userPassword'
+
+        username = self.field(unamek)
+        password = self.field(passwk)
+        credentials = username, password
+
+        def validate_credentials():
+            #################
+            # FIXME #BUG #638
+            verify = False
+
+            try:
+                pCertChecker.download_new_client_cert(
+                    credentials=credentials,
+                    verify=verify)
+
+            except auth.SRPAuthenticationError as exc:
+                wizard.set_validation_error(
+                    curpage, "Authentication error: %s" % exc.usermessage)
+                return fail()
+
+            except Exception as exc:
+                wizard.set_validation_error(
+                    curpage, "%s" % exc.message)
+                return fail()
+
+        yield(('Validating credentials', 20), lambda: None)

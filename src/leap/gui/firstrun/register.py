@@ -2,7 +2,9 @@
 Register User Page, used in First Run Wizard
 """
 import logging
+import socket
 
+import requests
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -11,31 +13,34 @@ from leap.gui.firstrun.mixins import UserFormMixIn
 
 logger = logging.getLogger(__name__)
 
+from leap.base import auth
 from leap.gui.constants import APP_LOGO, BARE_USERNAME_REGEX
+from leap.gui.progress import InlineValidationPage
 from leap.gui.styles import ErrorLabelStyleSheet
 
 
-class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
+class RegisterUserPage(InlineValidationPage, UserFormMixIn):
 
     def __init__(self, parent=None):
 
         super(RegisterUserPage, self).__init__(parent)
+        self.current_page = "signup"
 
-        self.setTitle("Sign Up")
+        self.setTitle(self.tr("Sign Up"))
+        # subtitle is set in the initializePage
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
-        self.current_page = "signup"
-
         # commit page means there's no way back after this...
         # XXX should change the text on the "commit" button...
         self.setCommitPage(True)
 
-        self.initUI()
+        self.setupSteps()
+        self.setupUI()
 
-    def initUI(self):
+    def setupUI(self):
         userNameLabel = QtGui.QLabel("User &name:")
         userNameLineEdit = QtGui.QLineEdit()
         userNameLineEdit.cursorPositionChanged.connect(
@@ -89,7 +94,17 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         layout.addWidget(self.userPasswordLineEdit, 2, 3)
         layout.addWidget(self.userPassword2LineEdit, 3, 3)
         layout.addWidget(rememberPasswordCheckBox, 4, 3, 4, 4)
+
+        # add validation frame
+        self.setupValidationFrame()
+        layout.addWidget(self.valFrame, 5, 2, 5, 2)
+        self.valFrame.hide()
+
         self.setLayout(layout)
+
+        # change "commit" button text
+        self.setButtonText(
+            QtGui.QWizard.CommitButton, "Sign up!")
 
     # pagewizard methods
 
@@ -138,9 +153,6 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         super(RegisterUserPage, self).paintEvent(event)
         self.populateErrors()
 
-    def set_prevalidation_error(self, error):
-        self.prevalidation_error = error
-
     def validatePage(self):
         """
         we only pre-validate here password weakness
@@ -150,33 +162,117 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         and if any errors are thrown there we come back
         and re-display the validation label.
         """
+        # calls checks, which after successful
+        # execution will call on_checks_validation_ready
+        self.do_checks()
+        return self.is_done()
 
-        #username = self.userNameLineEdit.text()
+    def _do_checks(self):
+        """
+        generator that yields actual checks
+        that are executed in a separate thread
+        """
+        wizard = self.wizard()
+        curpage = self.current_page
+        senderr = lambda err: wizard.set_validation_error(curpage, err)
+
+        provider = self.field('provider_domain')
+        username = self.userNameLineEdit.text()
         password = self.userPasswordLineEdit.text()
         password2 = self.userPassword2LineEdit.text()
 
-        # we better have here
-        # some call to a password checker...
-        # to assess strenght and avoid silly stuff.
-
-        if password != password2:
-            self.set_prevalidation_error('Password does not match.')
+        def fail():
+            self.set_undone()
             return False
 
-        if len(password) < 6:
-            self.set_prevalidation_error('Password too short.')
-            return False
+        def checkpass():
+            # we better have here
+            # some call to a password checker...
+            # to assess strenght and avoid silly stuff.
 
-        if password == "123456":
-            # joking, but not too much.
-            self.set_prevalidation_error('Password too obvious.')
-            return False
+            if password != password2:
+                msg = self.tr('Password does not match..')
+                senderr(msg)
+                return fail()
 
-        # some cleanup before we leave the page
-        self.cleanup_errormsg()
+            if len(password) < 6:
+                #self.set_prevalidation_error('Password too short.')
+                msg = self.tr('Password too short.')
+                senderr(msg)
+                return fail()
 
-        # go
-        return True
+            if password == "123456":
+                # joking, but not too much.
+                #self.set_prevalidation_error('Password too obvious.')
+                msg = self.tr('Password too obvious.')
+                senderr(msg)
+                return fail()
+
+            # go
+            return True
+
+        yield(("head_sentinel", 0), checkpass)
+
+        # XXX should emit signal for .show the frame!
+        # XXX HERE!
+
+        ##################################################
+        # 1) register user
+        ##################################################
+
+        def register():
+            # XXX FIXME!
+            verify = False
+
+            signup = auth.LeapSRPRegister(
+                schema="https",
+                provider=provider,
+                verify=verify)
+            try:
+                ok, req = signup.register_user(
+                    username, password)
+
+            except socket.timeout:
+                msg = self.tr("Error connecting to provider (timeout)")
+                senderr(msg)
+                return fail()
+
+            except requests.exceptions.ConnectionError as exc:
+                logger.error(exc.message)
+                msg = self.tr('Error Connecting to provider (connerr).')
+                senderr(msg)
+                return fail()
+
+            # XXX check for != OK instead???
+
+            if req.status_code in (404, 500):
+                msg = self.tr(
+                    "Error during registration (%s)") % req.status_code
+                return fail()
+
+            validation_msgs = json.loads(req.content)
+            errors = validation_msgs.get('errors', None)
+            logger.debug('validation errors: %s' % validation_msgs)
+
+            if errors and errors.get('login', None):
+                # XXX this sometimes catch the blank username
+                # but we're not allowing that (soon)
+                msg = self.tr('Username not available.')
+                senderr(msg)
+                return fail()
+
+        logger.debug('registering user')
+        yield(("registering with provider", 40), register)
+
+        # set_done??
+        self.set_done()
+        yield(("end_sentinel", 0), lambda: None)
+
+    def on_checks_validation_ready(self):
+
+        if self.is_done():
+            self.cleanup_errormsg()
+            self.go_next()
 
     def initializePage(self):
         """
@@ -184,7 +280,7 @@ class RegisterUserPage(QtGui.QWizardPage, UserFormMixIn):
         """
         provider = self.field('provider_domain')
         self.setSubTitle(
-            "Register a new user with provider %s." %
+            self.tr("Register a new user with provider %s.") %
             provider)
         self.validationMsg.setText('')
         self.userPassword2LineEdit.setText('')
