@@ -202,6 +202,20 @@ class WithStepsMixIn(object):
         t.begin()
         self.threads.append(t)
 
+    def fail(self, err=None):
+        """
+        return failed state
+        and send error notification as
+        a nice side effect
+        """
+        wizard = self.wizard()
+        senderr = lambda err: wizard.set_validation_error(
+            self.current_page, err)
+        self.set_undone()
+        if err:
+            senderr(err)
+        return False
+
     @QtCore.pyqtSlot()
     def launch_checks(self):
         self.do_checks()

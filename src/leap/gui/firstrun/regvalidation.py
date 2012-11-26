@@ -9,12 +9,12 @@ used in First Run Wizard
 # the login branch of the wizard.
 
 import logging
-import json
-import socket
+#import json
+#import socket
 
 from PyQt4 import QtGui
 
-import requests
+#import requests
 
 from leap.gui.progress import ValidationPage
 from leap.util.web import get_https_domain_and_port
@@ -77,67 +77,59 @@ class RegisterUserValidationPage(ValidationPage):
         pCertChecker = wizard.providercertchecker(
             domain=full_domain)
 
-        update_signal.emit("head_sentinel", 0)
+        yield(("head_sentinel", 0), lambda: None)
 
         ##################################################
-        # 2) fetching eip service config
+        # 1) fetching eip service config
         ##################################################
+        def fetcheipconf():
+            try:
+                eipconfigchecker.fetch_eip_service_config(
+                    domain=full_domain)
 
-        step = "fetch_eipconf"
-        fetching_eipconf_msg = "Fetching eip service configuration"
-        update_signal.emit(fetching_eipconf_msg, 60)
-        try:
-            eipconfigchecker.fetch_eip_service_config(
-                domain=full_domain)
+            # XXX get specific exception
+            except Exception as exc:
+                return self.fail(exc.message)
 
-        # XXX get specific exception
-        except:
-            self.set_error(
-                step,
-                'Could not download eip config.')
-            #pause_for_user()
-            return False
-        #pause_for_user()
+        yield((self.tr("Fetching provider config..."), 40),
+              fetcheipconf)
 
         ##################################################
-        # 3) getting client certificate
+        # 2) getting client certificate
         ##################################################
-        # XXX maybe only do this if we come from signup
 
-        step = "fetch_eipcert"
-        fetching_clientcert_msg = "Fetching eip certificate"
-        update_signal.emit(fetching_clientcert_msg, 80)
+        def fetcheipcert():
+            try:
+                pCertChecker.download_new_client_cert(
+                    credentials=credentials,
+                    verify=verify)
 
-        try:
-            pCertChecker.download_new_client_cert(
-                credentials=credentials,
-                verify=verify)
+            except auth.SRPAuthenticationError as exc:
+                return self.fail(self.tr(
+                    "Authentication error: %s" % exc.message))
+            else:
+                return True
 
-        except auth.SRPAuthenticationError as exc:
-            self.set_error(
-                step,
-                "Authentication error: %s" % exc.message)
-            return False
-
-        #pause_for_user()
+        yield((self.tr("Fetching eip certificate"), 80),
+              fetcheipcert)
 
         ################
         # end !
         ################
-
-        update_signal.emit("end_sentinel", 100)
-        #pause_for_user()
-
-        # here we go! :)
-        # this should be called CONNECT PAGE AGAIN.
-        self.run_eip_checks_for_provider_and_connect(_domain)
+        self.set_done()
+        yield(("end_sentinel", 100), lambda: None)
 
     def on_checks_validation_ready(self):
         """
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
-        pass
+        # this should be called CONNECT PAGE AGAIN.
+        # here we go! :)
+        full_domain = self.field('provider_domain')
+        domain, port = get_https_domain_and_port(full_domain)
+        _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
+        self.run_eip_checks_for_provider_and_connect(_domain)
 
     def run_eip_checks_for_provider_and_connect(self, domain):
         wizard = self.wizard()

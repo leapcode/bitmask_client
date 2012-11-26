@@ -17,6 +17,9 @@ logger = logging.getLogger(__name__)
 class ProviderSetupValidationPage(ValidationPage):
     def __init__(self, parent=None):
         super(ProviderSetupValidationPage, self).__init__(parent)
+        self.current_page = "providersetupvalidation"
+
+        # XXX needed anymore?
         is_signup = self.field("is_signup")
         self.is_signup = is_signup
 
@@ -33,7 +36,6 @@ class ProviderSetupValidationPage(ValidationPage):
         generator that yields actual checks
         that are executed in a separate thread
         """
-        curpage = "providersetupvalidation"
 
         full_domain = self.field('provider_domain')
         wizard = self.wizard()
@@ -43,10 +45,6 @@ class ProviderSetupValidationPage(ValidationPage):
         #certchecker = pCertChecker(domain=full_domain)
         pCertChecker = wizard.providercertchecker(
             domain=full_domain)
-
-        def fail():
-            self.is_done = False
-            return False
 
         yield(("head_sentinel", 0), lambda: None)
 
@@ -73,19 +71,17 @@ class ProviderSetupValidationPage(ValidationPage):
 
             except baseexceptions.LeapException as exc:
                 logger.error(exc.message)
-                wizard.set_validation_error(
-                    curpage, exc.usermessage)
-                return fail()
+                # XXX this should be _ method
+                return self.fail(self.tr(exc.usermessage))
 
             except Exception as exc:
-                wizard.set_validation_error(
-                    curpage, exc.message)
-                return fail()
+                return self.fail(exc.message)
 
             else:
                 return True
 
-        yield(('Fetching CA certificate', 30), fetchcacert)
+        yield((self.tr('Fetching CA certificate'), 30),
+              fetchcacert)
 
         #########################
         # 2) check CA fingerprint
@@ -106,7 +102,8 @@ class ProviderSetupValidationPage(ValidationPage):
             # should catch exception
             #return False
 
-        yield((self.tr("Checking CA fingerprint"), 60), checkcafingerprint)
+        yield((self.tr("Checking CA fingerprint"), 60),
+              checkcafingerprint)
 
         #########################
         # 2) check CA fingerprint

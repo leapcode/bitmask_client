@@ -39,7 +39,7 @@ TODO-ish:
 [ ] Document signals used / expected.
 [ ] Separate style from widgets.
 [ ] Fix TOFU Widget for provider cert.
-[ ] Refactor widgets out.
+[X] Refactor widgets out.
 [ ] Follow more MVC style.
 [ ] Maybe separate "first run wizard" into different wizards
     that share some of the pages?

@@ -169,7 +169,7 @@ class SelectProviderPage(InlineValidationPage):
 
     @QtCore.pyqtSlot()
     def onDisableCheckButton(self):
-        print 'CHECK BUTTON DISABLED!!!'
+        #print 'CHECK BUTTON DISABLED!!!'
         self.providerCheckButton.setDisabled(True)
 
     @QtCore.pyqtSlot()
@@ -183,6 +183,8 @@ class SelectProviderPage(InlineValidationPage):
         QtCore.QMetaObject.invokeMethod(
             self, "showStepsFrame")
 
+        # is this still needed?
+        # XXX can I doo delay(self, "do_checks") ?
         delay(self, "launch_checks")
 
     def _do_checks(self):
@@ -192,8 +194,6 @@ class SelectProviderPage(InlineValidationPage):
         """
 
         wizard = self.wizard()
-        curpage = "providerselection"
-
         full_domain = self.providerNameEdit.text()
 
         # we check if we have a port in the domain string.
@@ -204,10 +204,6 @@ class SelectProviderPage(InlineValidationPage):
 
         providercertchecker = wizard.providercertchecker()
         eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
-
-        def fail():
-            self.is_done = False
-            return False
 
         yield(("head_sentinel", 0), lambda: None)
 
@@ -227,20 +223,16 @@ class SelectProviderPage(InlineValidationPage):
 
             except baseexceptions.LeapException as exc:
                 logger.error(exc.message)
-                wizard.set_validation_error(
-                    curpage, exc.usermessage)
-                return fail()
+                return self.fail(exc.usermessage)
 
             except Exception as exc:
-                wizard.set_validation_error(
-                    curpage, exc.message)
-                return fail()
+                return self.fail(exc.message)
 
             else:
                 return True
 
         logger.debug('checking name resolution')
-        yield(("check name", 20), namecheck)
+        yield((self.tr("checking domain name"), 20), namecheck)
 
         #########################
         # 2) try https connection
@@ -260,6 +252,7 @@ class SelectProviderPage(InlineValidationPage):
 
             except eipexceptions.HttpsBadCertError as exc:
                 logger.debug('exception')
+                return self.fail(exc.usermessage)
                 # XXX skipping for now...
                 ##############################################
                 # We had this validation logic
@@ -268,8 +261,6 @@ class SelectProviderPage(InlineValidationPage):
                 #if self.trustProviderCertCheckBox.isChecked():
                     #pass
                 #else:
-                wizard.set_validation_error(
-                    curpage, exc.usermessage)
                 #fingerprint = certs.get_cert_fingerprint(
                     #domain=domain, sep=" ")
 
@@ -284,23 +275,18 @@ class SelectProviderPage(InlineValidationPage):
                     #self.did_cert_check = True
                     #self.completeChanged.emit()
                     #return False
-                return fail()
 
             except baseexceptions.LeapException as exc:
-                wizard.set_validation_error(
-                    curpage, exc.usermessage)
-                return fail()
+                return self.fail(exc.usermessage)
 
             except Exception as exc:
-                wizard.set_validation_error(
-                    curpage, exc.message)
-                return fail()
+                return self.fail(exc.message)
 
             else:
                 return True
 
         logger.debug('checking https connection')
-        yield(("https check", 40), httpscheck)
+        yield((self.tr("checking https connection"), 40), httpscheck)
 
         ##################################
         # 3) try download provider info...
@@ -316,28 +302,20 @@ class SelectProviderPage(InlineValidationPage):
             except requests.exceptions.SSLError:
                 # XXX we should have catched this before.
                 # but cert checking is broken.
-                wizard.set_validation_error(
-                    curpage,
-                    self.tr(
-                        "Could not get info from provider."))
-                return fail()
+                return self.fail(self.tr(
+                    "Could not get info from provider."))
             except requests.exceptions.ConnectionError:
-                wizard.set_validation_error(
-                    curpage,
-                    self.tr(
-                        "Could not download provider info "
-                        "(refused conn.)."))
-                return fail()
+                return self.fail(self.tr(
+                    "Could not download provider info "
+                    "(refused conn.)."))
 
             except Exception as exc:
-                wizard.set_validation_error(
-                    curpage, exc.message)
-                return fail()
-
+                return self.fail(
+                    self.tr(exc.message))
             else:
                 return True
 
-        yield(("fetch info", 80), fetchinfo)
+        yield((self.tr("fetching provider info"), 80), fetchinfo)
 
         # done!
 

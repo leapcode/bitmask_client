@@ -1,6 +1,7 @@
 """
 Register User Page, used in First Run Wizard
 """
+import json
 import logging
 import socket
 
@@ -14,6 +15,7 @@ from leap.gui.firstrun.mixins import UserFormMixIn
 logger = logging.getLogger(__name__)
 
 from leap.base import auth
+from leap.gui import styles
 from leap.gui.constants import APP_LOGO, BARE_USERNAME_REGEX
 from leap.gui.progress import InlineValidationPage
 from leap.gui.styles import ErrorLabelStyleSheet
@@ -39,6 +41,8 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
 
         self.setupSteps()
         self.setupUI()
+        self.do_confirm_next = False
+        self.focused_field = False
 
     def setupUI(self):
         userNameLabel = QtGui.QLabel("User &name:")
@@ -101,23 +105,64 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         self.valFrame.hide()
 
         self.setLayout(layout)
+        self.commitText("Sign up!")
 
+    # commit button
+
+    def commitText(self, text):
         # change "commit" button text
         self.setButtonText(
-            QtGui.QWizard.CommitButton, "Sign up!")
+            QtGui.QWizard.CommitButton, text)
 
-    # pagewizard methods
+    @property
+    def commitButton(self):
+        return self.wizard().button(QtGui.QWizard.CommitButton)
+
+    def commitFocus(self):
+        self.commitButton.setFocus()
+
+    def disableCommitButton(self):
+        self.commitButton.setDisabled(True)
+
+    def disableFields(self):
+        for field in (self.userNameLineEdit,
+                      self.userPasswordLineEdit,
+                      self.userPassword2LineEdit):
+            field.setDisabled(True)
+
+    # error painting
+
+    def markRedAndGetFocus(self, field):
+        field.setStyleSheet(styles.ErrorLineEdit)
+        if not self.focused_field:
+            self.focused_field = True
+            field.setFocus(QtCore.Qt.OtherFocusReason)
+
+    def markRegular(self, field):
+        field.setStyleSheet(styles.RegularLineEdit)
 
     def populateErrors(self):
-        # XXX could move this to ValidationMixin
-        # used in providerselect too
+        def showerr(text):
+            self.validationMsg.setText(text)
+            err_lower = text.lower()
+            if "username" in err_lower:
+                self.markRedAndGetFocus(
+                    self.userNameLineEdit)
+            if "password" in err_lower:
+                self.markRedAndGetFocus(
+                    self.userPasswordLineEdit)
+
+        def unmarkred():
+            for field in (self.userNameLineEdit,
+                          self.userPasswordLineEdit,
+                          self.userPassword2LineEdit):
+                self.markRegular(field)
 
         errors = self.wizard().get_validation_error(
             self.current_page)
         if errors:
             bad_str = getattr(self, 'bad_string', None)
             cur_str = self.userNameLineEdit.text()
-            showerr = self.validationMsg.setText
             prev_er = getattr(self, 'prevalidation_error', None)
 
             if bad_str is None:
@@ -133,7 +178,13 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
                 if cur_str == bad_str:
                     showerr(errors)
                 else:
+                    self.focused_field = False
                     showerr('')
+                    unmarkred()
+        else:
+            # no errors
+            self.focused_field = False
+            unmarkred()
 
     def cleanup_errormsg(self):
         """
@@ -153,37 +204,15 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         super(RegisterUserPage, self).paintEvent(event)
         self.populateErrors()
 
-    def validatePage(self):
-        """
-        we only pre-validate here password weakness
-        stuff, or any other client side validation
-        that we think of.
-        real server validation is made on next page,
-        and if any errors are thrown there we come back
-        and re-display the validation label.
-        """
-        # calls checks, which after successful
-        # execution will call on_checks_validation_ready
-        self.do_checks()
-        return self.is_done()
-
     def _do_checks(self):
         """
         generator that yields actual checks
         that are executed in a separate thread
         """
-        wizard = self.wizard()
-        curpage = self.current_page
-        senderr = lambda err: wizard.set_validation_error(curpage, err)
-
         provider = self.field('provider_domain')
         username = self.userNameLineEdit.text()
         password = self.userPasswordLineEdit.text()
         password2 = self.userPassword2LineEdit.text()
-
-        def fail():
-            self.set_undone()
-            return False
 
         def checkpass():
             # we better have here
@@ -191,22 +220,16 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             # to assess strenght and avoid silly stuff.
 
             if password != password2:
-                msg = self.tr('Password does not match..')
-                senderr(msg)
-                return fail()
+                return self.fail(self.tr('Password does not match..'))
 
             if len(password) < 6:
                 #self.set_prevalidation_error('Password too short.')
-                msg = self.tr('Password too short.')
-                senderr(msg)
-                return fail()
+                return self.fail(self.tr('Password too short.'))
 
             if password == "123456":
                 # joking, but not too much.
                 #self.set_prevalidation_error('Password too obvious.')
-                msg = self.tr('Password too obvious.')
-                senderr(msg)
-                return fail()
+                return self.fail(self.tr('Password too obvious.'))
 
             # go
             return True
@@ -219,6 +242,10 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         ##################################################
         # 1) register user
         ##################################################
+
+        # show the frame before going on...
+        QtCore.QMetaObject.invokeMethod(
+            self, "showStepsFrame")
 
         def register():
             # XXX FIXME!
@@ -233,22 +260,22 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
                     username, password)
 
             except socket.timeout:
-                msg = self.tr("Error connecting to provider (timeout)")
-                senderr(msg)
-                return fail()
+                return self.fail(
+                    self.tr("Error connecting to provider (timeout)"))
 
             except requests.exceptions.ConnectionError as exc:
                 logger.error(exc.message)
-                msg = self.tr('Error Connecting to provider (connerr).')
-                senderr(msg)
-                return fail()
+                return self.fail(
+                    self.tr('Error Connecting to provider (connerr).'))
+            except Exception as exc:
+                return self.fail(exc.message)
 
             # XXX check for != OK instead???
 
             if req.status_code in (404, 500):
-                msg = self.tr(
-                    "Error during registration (%s)") % req.status_code
-                return fail()
+                return self.fail(
+                    self.tr(
+                        "Error during registration (%s)") % req.status_code)
 
             validation_msgs = json.loads(req.content)
             errors = validation_msgs.get('errors', None)
@@ -257,9 +284,8 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             if errors and errors.get('login', None):
                 # XXX this sometimes catch the blank username
                 # but we're not allowing that (soon)
-                msg = self.tr('Username not available.')
-                senderr(msg)
-                return fail()
+                return self.fail(
+                    self.tr('Username not available.'))
 
         logger.debug('registering user')
         yield(("registering with provider", 40), register)
@@ -269,10 +295,61 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         yield(("end_sentinel", 0), lambda: None)
 
     def on_checks_validation_ready(self):
-
+        """
+        after checks
+        """
         if self.is_done():
+            # XXX should disable
+            # all entry forms
+            self.disableFields()
             self.cleanup_errormsg()
-            self.go_next()
+            self.clean_wizard_errors(self.current_page)
+            # make the user confirm the transition
+            # to next page.
+            self.commitText('Connect!')
+            self.commitFocus()
+            self.green_validation_status()
+            self.do_confirm_next = True
+
+    def green_validation_status(self):
+        val = self.validationMsg
+        val.setText(self.tr('Registration succeeded!'))
+        val.setStyleSheet(styles.GreenLineEdit)
+
+    def reset_validation_status(self):
+        """
+        empty the validation msg
+        and clean the inline validation widget.
+        """
+        self.validationMsg.setText('')
+        self.steps.removeAllSteps()
+        self.clearTable()
+
+    # pagewizard methods
+
+    def validatePage(self):
+        """
+        if not register done, do checks.
+        if done, wait for click.
+        """
+        self.disableCommitButton()
+        self.cleanup_errormsg()
+        self.clean_wizard_errors(self.current_page)
+
+        # After a successful validation
+        # (ie, success register with server)
+        # we change the commit button text
+        # and set this flag to True.
+        if self.do_confirm_next:
+            return True
+
+        if not self.is_done():
+            # calls checks, which after successful
+            # execution will call on_checks_validation_ready
+            self.reset_validation_status()
+            self.do_checks()
+
+        return self.is_done()
 
     def initializePage(self):
         """
@@ -284,9 +361,11 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             provider)
         self.validationMsg.setText('')
         self.userPassword2LineEdit.setText('')
+        self.valFrame.hide()
 
     def nextId(self):
         wizard = self.wizard()
         if not wizard:
             return
+        # XXX this should be called connect
         return wizard.get_page_index('signupvalidation')
