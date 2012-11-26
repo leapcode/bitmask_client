@@ -78,6 +78,8 @@ class LastPage(QtGui.QWizardPage):
                     break
         except GeneratorExit:
             pass
+        except StopIteration:
+            pass
 
     def initializePage(self):
         wizard = self.wizard()

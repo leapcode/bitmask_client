@@ -11,11 +11,11 @@ from PyQt4 import QtGui
 from leap.base import exceptions as baseexceptions
 #from leap.crypto import certs
 from leap.eip import exceptions as eipexceptions
-
-from leap.gui.constants import APP_LOGO
 from leap.gui.progress import InlineValidationPage
 from leap.gui import styles
 from leap.util.web import get_https_domain_and_port
+
+from leap.gui.constants import APP_LOGO
 
 logger = logging.getLogger(__name__)
 

@@ -163,7 +163,7 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         if errors:
             bad_str = getattr(self, 'bad_string', None)
             cur_str = self.userNameLineEdit.text()
-            prev_er = getattr(self, 'prevalidation_error', None)
+            #prev_er = getattr(self, 'prevalidation_error', None)
 
             if bad_str is None:
                 # first time we fall here.
@@ -171,9 +171,9 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
                 self.bad_string = cur_str
                 showerr(errors)
             else:
-                if prev_er:
-                    showerr(prev_er)
-                    return
+                #if prev_er:
+                    #showerr(prev_er)
+                    #return
                 # not the first time
                 if cur_str == bad_str:
                     showerr(errors)
@@ -290,7 +290,6 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         logger.debug('registering user')
         yield(("registering with provider", 40), register)
 
-        # set_done??
         self.set_done()
         yield(("end_sentinel", 0), lambda: None)
 
@@ -299,8 +298,6 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         after checks
         """
         if self.is_done():
-            # XXX should disable
-            # all entry forms
             self.disableFields()
             self.cleanup_errormsg()
             self.clean_wizard_errors(self.current_page)
