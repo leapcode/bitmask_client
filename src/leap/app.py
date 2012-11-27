@@ -9,15 +9,17 @@ sip.setapi('QVariant', 2)
 sip.setapi('QString', 2)
 from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
 from PyQt4.QtCore import QTimer
-from PyQt4 import QtCore
 
 from leap import __version__ as VERSION
 from leap.baseapp.mainwindow import LeapWindow
 
-def sigint_handler(*args):
-    #import pdb4qt as pdb; pdb.set_trace()
-    app = args[0]
-    app.cleanupAndQuit()
+
+def sigint_handler(*args, **kwargs):
+    logger = kwargs.get('logger', None)
+    logger.debug('SIGINT catched. shutting down...')
+    mainwindow = args[0]
+    mainwindow.shutdownSignal.emit()
+
 
 def main():
     """
@@ -60,10 +62,6 @@ def main():
     logger.info('Starting app')
     app = QApplication(sys.argv)
 
-    timer = QTimer()
-    timer.start(500)
-    timer.timeout.connect(lambda: None) 
-
     # needed for initializing qsettings
     # it will write .config/leap/leap.conf
     # top level app settings
@@ -82,11 +80,15 @@ def main():
 
     window = LeapWindow(opts)
 
-    sigint_window = partial(sigint_handler, window)
+    # this dummy timer ensures that
+    # control is given to the outside loop, so we
+    # can hook our sigint handler.
+    timer = QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None)
+
+    sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
-    #signal.signal(signal.SIGINT, lambda: QtCore.QMetaObject.invokeMethod(window, 'cleanupAndQuit'))
-    #window.shutdownSignal.connect(window.cleanupAndQuit)
-    #signal.signal(signal.SIGINT, window.shutdownSignal.emit))
 
     if debug:
         # we only show the main window

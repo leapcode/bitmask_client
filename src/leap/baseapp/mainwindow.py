@@ -95,6 +95,8 @@ class LeapWindow(QtGui.QMainWindow,
                 lambda: self.start_or_stopVPN())
         self.start_eipconnection.connect(
             lambda: self.start_or_stopVPN())
+        self.shutdownSignal.connect(
+            self.cleanupAndQuit)
 
         # status change.
         # TODO unify
@@ -102,7 +104,6 @@ class LeapWindow(QtGui.QMainWindow,
             lambda status: self.onOpenVPNStatusChange(status))
         self.eipStatusChange.connect(
             lambda newstatus: self.onEIPConnStatusChange(newstatus))
-        # can I connect 2 signals?
         self.eipStatusChange.connect(
             lambda newstatus: self.toggleEIPAct())
 
