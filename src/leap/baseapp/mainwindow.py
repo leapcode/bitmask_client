@@ -40,6 +40,7 @@ class LeapWindow(QtGui.QMainWindow,
     networkError = QtCore.pyqtSignal([object])
     triggerEIPError = QtCore.pyqtSignal([object])
     start_eipconnection = QtCore.pyqtSignal([])
+    shutdownSignal = QtCore.pyqtSignal([])
 
     # this is status change got from openvpn management
     openvpnStatusChange = QtCore.pyqtSignal([object])
@@ -94,6 +95,8 @@ class LeapWindow(QtGui.QMainWindow,
                 lambda: self.start_or_stopVPN())
         self.start_eipconnection.connect(
             lambda: self.start_or_stopVPN())
+        self.shutdownSignal.connect(
+            self.cleanupAndQuit)
 
         # status change.
         # TODO unify
@@ -101,7 +104,6 @@ class LeapWindow(QtGui.QMainWindow,
             lambda status: self.onOpenVPNStatusChange(status))
         self.eipStatusChange.connect(
             lambda newstatus: self.onEIPConnStatusChange(newstatus))
-        # can I connect 2 signals?
         self.eipStatusChange.connect(
             lambda newstatus: self.toggleEIPAct())
 

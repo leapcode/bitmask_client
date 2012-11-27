@@ -1,14 +1,24 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
+from functools import partial
 import logging
+import signal
 
 # This is only needed for Python v2 but is harmless for Python v3.
 import sip
 sip.setapi('QVariant', 2)
 sip.setapi('QString', 2)
 from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
+from PyQt4.QtCore import QTimer
 
 from leap import __version__ as VERSION
 from leap.baseapp.mainwindow import LeapWindow
+
+
+def sigint_handler(*args, **kwargs):
+    logger = kwargs.get('logger', None)
+    logger.debug('SIGINT catched. shutting down...')
+    mainwindow = args[0]
+    mainwindow.shutdownSignal.emit()
 
 
 def main():
@@ -69,6 +79,17 @@ def main():
         QApplication.setQuitOnLastWindowClosed(False)
 
     window = LeapWindow(opts)
+
+    # this dummy timer ensures that
+    # control is given to the outside loop, so we
+    # can hook our sigint handler.
+    timer = QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None)
+
+    sigint_window = partial(sigint_handler, window, logger=logger)
+    signal.signal(signal.SIGINT, sigint_window)
+
     if debug:
         # we only show the main window
         # if debug mode active.

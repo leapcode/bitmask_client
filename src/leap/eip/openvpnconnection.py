@@ -390,9 +390,14 @@ to be triggered for each one of them.
         """
         logger.debug("disconnecting...")
         if self.connected():
-            self._send_command("signal SIGTERM\n")
+            try:
+                self._send_command("signal SIGTERM\n")
+            except socket.error:
+                logger.warning('management socket died')
+                return
 
         if self.subp:
+            # ???
             return True
 
         #shutting openvpn failured
