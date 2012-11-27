@@ -24,24 +24,6 @@ ICON_WAITING = ":/images/Emblem-question.png"
 logger = logging.getLogger(__name__)
 
 
-# XXX import this from threads
-def delay(obj, method_str=None, call_args=None):
-    """
-    this is a hack to get responsiveness in the ui
-    """
-    if callable(obj) and not method_str:
-        QtCore.QTimer().singleShot(
-            50,
-            lambda: obj())
-        return
-
-    if method_str:
-        QtCore.QTimer().singleShot(
-            50,
-            lambda: QtCore.QMetaObject.invokeMethod(
-                obj, method_str))
-
-
 class ImgWidget(QtGui.QWidget):
 
     # XXX move to widgets

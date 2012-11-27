@@ -13,6 +13,7 @@ from leap.base import exceptions as baseexceptions
 from leap.eip import exceptions as eipexceptions
 from leap.gui.progress import InlineValidationPage
 from leap.gui import styles
+from leap.gui.utils import delay
 from leap.util.web import get_https_domain_and_port
 
 from leap.gui.constants import APP_LOGO
@@ -20,20 +21,8 @@ from leap.gui.constants import APP_LOGO
 logger = logging.getLogger(__name__)
 
 
-def delay(obj, method_str):
-    # XXX check newer version in progress.py...
-    """
-    this is a hack to get responsiveness in the ui
-    """
-    QtCore.QTimer().singleShot(
-        10,
-        lambda: QtCore.QMetaObject.invokeMethod(
-            obj, method_str))
-
-
 class SelectProviderPage(InlineValidationPage):
 
-    #disableCheckButton = QtCore.pyqtSignal()
     launchChecks = QtCore.pyqtSignal()
 
     def __init__(self, parent=None, providers=None):
@@ -183,8 +172,6 @@ class SelectProviderPage(InlineValidationPage):
         QtCore.QMetaObject.invokeMethod(
             self, "showStepsFrame")
 
-        # is this still needed?
-        # XXX can I doo delay(self, "do_checks") ?
         delay(self, "launch_checks")
 
     def _do_checks(self):
