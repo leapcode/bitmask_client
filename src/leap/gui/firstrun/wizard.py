@@ -39,7 +39,7 @@ TODO-ish:
 [ ] Document signals used / expected.
 [ ] Separate style from widgets.
 [ ] Fix TOFU Widget for provider cert.
-[ ] Refactor widgets out.
+[X] Refactor widgets out.
 [ ] Follow more MVC style.
 [ ] Maybe separate "first run wizard" into different wizards
     that share some of the pages?
@@ -137,6 +137,10 @@ class FirstRunWizard(QtGui.QWizard):
             QtGui.QWizard.BackgroundPixmap,
             QtGui.QPixmap(':/images/background.png'))
 
+        # set options
+        self.setOption(QtGui.QWizard.IndependentPages, on=False)
+        self.setOption(QtGui.QWizard.NoBackButtonOnStartPage, on=True)
+
         self.setWindowTitle("First Run Wizard")
 
         # TODO: set style for MAC / windows ...
@@ -166,6 +170,11 @@ class FirstRunWizard(QtGui.QWizard):
 
     def set_validation_error(self, pagename, error):
         self.validation_errors[pagename] = error
+
+    def clean_validation_error(self, pagename):
+        vald = self.validation_errors
+        if pagename in vald:
+            del vald[pagename]
 
     def get_validation_error(self, pagename):
         return self.validation_errors.get(pagename, None)

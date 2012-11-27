@@ -17,9 +17,29 @@ from leap.gui.threads import FunThread
 
 from leap.gui import mainwindow_rc
 
-CHECKMARK_IMG = ":/images/checked.png"
+ICON_CHECKMARK = ":/images/Dialog-accept.png"
+ICON_FAILED = ":/images/Dialog-error.png"
+ICON_WAITING = ":/images/Emblem-question.png"
 
 logger = logging.getLogger(__name__)
+
+
+# XXX import this from threads
+def delay(obj, method_str=None, call_args=None):
+    """
+    this is a hack to get responsiveness in the ui
+    """
+    if callable(obj) and not method_str:
+        QtCore.QTimer().singleShot(
+            50,
+            lambda: obj())
+        return
+
+    if method_str:
+        QtCore.QTimer().singleShot(
+            50,
+            lambda: QtCore.QMetaObject.invokeMethod(
+                obj, method_str))
 
 
 class ImgWidget(QtGui.QWidget):
@@ -125,6 +145,8 @@ class StepsTableWidget(QtGui.QTableWidget):
         # this disables the table grid.
         # we should add alignment to the ImgWidget (it's top-left now)
         self.setShowGrid(False)
+        self.setFocusPolicy(QtCore.Qt.NoFocus)
+        #self.setStyleSheet("QTableView{outline: 0;}")
 
         # XXX change image for done to rc
 
@@ -144,46 +166,94 @@ class StepsTableWidget(QtGui.QTableWidget):
         # some failing tests if they are not critical.
 
 
-class ValidationPage(QtGui.QWizardPage):
-    """
-    class to be used as an intermediate
-    between two pages in a wizard.
-    shows feedback to the user and goes back if errors,
-    goes forward if ok.
-    initializePage triggers a one shot timer
-    that calls do_checks.
-    Derived classes should implement
-    _do_checks and
-    _do_validation
-    """
+class WithStepsMixIn(object):
 
-    # signals
+    # worker threads for checks
 
-    stepChanged = QtCore.pyqtSignal([str, int])
+    def setupStepsProcessingQueue(self):
+        self.steps_queue = Queue.Queue()
+        self.stepscheck_timer = QtCore.QTimer()
+        self.stepscheck_timer.timeout.connect(self.processStepsQueue)
+        self.stepscheck_timer.start(100)
+        # we need to keep a reference to child threads
+        self.threads = []
 
-    def __init__(self, parent=None):
-        super(ValidationPage, self).__init__(parent)
+    def do_checks(self):
 
+        # yo dawg, I heard you like checks
+        # so I put a __do_checks in your do_checks
+        # for calling others' _do_checks
+
+        def __do_checks(fun=None, queue=None):
+
+            for checkcase in fun():
+                checkmsg, checkfun = checkcase
+
+                queue.put(checkmsg)
+                if checkfun() is False:
+                    queue.put("failed")
+                    break
+
+        t = FunThread(fun=partial(
+            __do_checks,
+            fun=self._do_checks,
+            queue=self.steps_queue))
+        t.finished.connect(self.on_checks_validation_ready)
+        t.begin()
+        self.threads.append(t)
+
+    def fail(self, err=None):
+        """
+        return failed state
+        and send error notification as
+        a nice side effect
+        """
+        wizard = self.wizard()
+        senderr = lambda err: wizard.set_validation_error(
+            self.current_page, err)
+        self.set_undone()
+        if err:
+            senderr(err)
+        return False
+
+    @QtCore.pyqtSlot()
+    def launch_checks(self):
+        self.do_checks()
+
+    # slot
+    #@QtCore.pyqtSlot(str, int)
+    def onStepStatusChanged(self, status, progress=None):
+        if status not in ("head_sentinel", "end_sentinel"):
+            self.add_status_line(status)
+        if status in ("end_sentinel"):
+            self.checks_finished = True
+            self.set_checked_icon()
+        if progress and hasattr(self, 'progress'):
+            self.progress.setValue(progress)
+            self.progress.update()
+
+    def processStepsQueue(self):
+        """
+        consume steps queue
+        and pass messages
+        to the ui updater functions
+        """
+        while self.steps_queue.qsize():
+            try:
+                status = self.steps_queue.get(0)
+                if status == "failed":
+                    self.set_failed_icon()
+                else:
+                    self.onStepStatusChanged(*status)
+            except Queue.Empty:
+                pass
+
+    def setupSteps(self):
         self.steps = ProgressStepContainer()
-        self.progress = QtGui.QProgressBar(self)
-
         # steps table widget
         self.stepsTableWidget = StepsTableWidget(self)
-
-        layout = QtGui.QVBoxLayout()
-        layout.addWidget(self.progress)
-        layout.addWidget(self.stepsTableWidget)
-
-        self.setLayout(layout)
-        self.layout = layout
-
-        self.timer = QtCore.QTimer()
-
-        # connect the new step status
-        # signal to status handler
-        self.stepChanged.connect(
-            self.onStepStatusChanged)
-
+        zeros = (0, 0, 0, 0)
+        self.stepsTableWidget.setContentsMargins(*zeros)
         self.errors = OrderedDict()
 
     def set_error(self, name, error):
@@ -230,40 +300,162 @@ class ValidationPage(QtGui.QWizardPage):
     def resizeTable(self):
         # resize first column to ~80%
         table = self.stepsTableWidget
-        FIRST_COLUMN_PERCENT = 0.75
+        FIRST_COLUMN_PERCENT = 0.70
         width = table.width()
         logger.debug('populate table. width=%s' % width)
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)
 
-    def onStepStatusChanged(self, status, progress=None):
-        if status not in ("head_sentinel", "end_sentinel"):
-            self.add_status_line(status)
-        if progress:
-            self.progress.setValue(progress)
-            self.progress.update()
+    def set_item_icon(self, img=ICON_CHECKMARK, current=True):
+        """
+        mark the last item
+        as done
+        """
+        # setting cell widget.
+        # see note on StepsTableWidget about plans to
+        # change this for a better solution.
+        index = len(self.steps)
+        table = self.stepsTableWidget
+        _index = index - 1 if current else index - 2
+        table.setCellWidget(
+            _index,
+            ProgressStep.DONE,
+            ImgWidget(img=img))
+        table.update()
+
+    def set_failed_icon(self):
+        self.set_item_icon(img=ICON_FAILED, current=True)
+
+    def set_checking_icon(self):
+        self.set_item_icon(img=ICON_WAITING, current=True)
+
+    def set_checked_icon(self, current=True):
+        self.set_item_icon(current=current)
 
     def add_status_line(self, message):
+        """
+        adds a new status line
+        and mark the next-to-last item
+        as done
+        """
         index = len(self.steps)
         step = ProgressStep(message, False, index=index)
         self.steps.addStep(step)
         self.populateStepsTable()
-        table = self.stepsTableWidget
+        self.set_checking_icon()
+        self.set_checked_icon(current=False)
 
-        # setting cell widget.
-        # see note on StepsTableWidget about plans to
-        # change this for a better solution.
+    # Sets/unsets done flag
+    # for isComplete checks
 
-        table.setCellWidget(
-            index - 1,
-            ProgressStep.DONE,
-            ImgWidget(img=CHECKMARK_IMG))
-        table.update()
+    def set_done(self):
+        self.done = True
+        self.completeChanged.emit()
+
+    def set_undone(self):
+        self.done = False
+        self.completeChanged.emit()
+
+    def is_done(self):
+        return self.done
 
     def go_back(self):
         self.wizard().back()
 
     def go_next(self):
         self.wizard().next()
+
+
+"""
+We will use one base class for the intermediate pages
+and another one for the in-page validations, both sharing the creation
+of the tablewidgets.
+The logic of this split comes from where I was trying to solve
+the ui update using signals, but now that it's working well with
+queues I could join them again.
+"""
+
+import Queue
+from functools import partial
+
+
+class InlineValidationPage(QtGui.QWizardPage, WithStepsMixIn):
+
+    def __init__(self, parent=None):
+        super(InlineValidationPage, self).__init__(parent)
+        self.setupStepsProcessingQueue()
+        self.done = False
+
+    # slot
+
+    @QtCore.pyqtSlot()
+    def showStepsFrame(self):
+        self.valFrame.show()
+        self.update()
+
+    # progress frame
+
+    def setupValidationFrame(self):
+        qframe = QtGui.QFrame
+        valFrame = qframe()
+        valFrame.setFrameStyle(qframe.NoFrame)
+        valframeLayout = QtGui.QVBoxLayout()
+        zeros = (0, 0, 0, 0)
+        valframeLayout.setContentsMargins(*zeros)
+
+        valframeLayout.addWidget(self.stepsTableWidget)
+        valFrame.setLayout(valframeLayout)
+        self.valFrame = valFrame
+
+
+class ValidationPage(QtGui.QWizardPage, WithStepsMixIn):
+    """
+    class to be used as an intermediate
+    between two pages in a wizard.
+    shows feedback to the user and goes back if errors,
+    goes forward if ok.
+    initializePage triggers a one shot timer
+    that calls do_checks.
+    Derived classes should implement
+    _do_checks and
+    _do_validation
+    """
+
+    # signals
+    stepChanged = QtCore.pyqtSignal([str, int])
+
+    def __init__(self, parent=None):
+        super(ValidationPage, self).__init__(parent)
+        self.setupSteps()
+        #self.connect_step_status()
+
+        layout = QtGui.QVBoxLayout()
+        self.progress = QtGui.QProgressBar(self)
+        layout.addWidget(self.progress)
+        layout.addWidget(self.stepsTableWidget)
+
+        self.setLayout(layout)
+        self.layout = layout
+
+        self.timer = QtCore.QTimer()
+        self.done = False
+
+        self.setupStepsProcessingQueue()
+
+    def isComplete(self):
+        return self.is_done()
+
+    ########################
+
+    def show_progress(self):
+        self.progress.show()
+        self.stepsTableWidget.show()
+
+    def hide_progress(self):
+        self.progress.hide()
+        self.stepsTableWidget.hide()
+
+    # pagewizard methods.
+    # if overriden, child classes should call super.
 
     def initializePage(self):
         self.clean_errors()
@@ -272,16 +464,3 @@ class ValidationPage(QtGui.QWizardPage):
         self.clearTable()
         self.resizeTable()
         self.timer.singleShot(0, self.do_checks)
-
-    def do_checks(self):
-        """
-        launches a thread to do the checks
-        """
-        signal = self.stepChanged
-        self.checks = FunThread(
-            self._do_checks(update_signal=signal))
-        self.checks.finished.connect(self._do_validation)
-        self.checks.begin()
-        #logger.debug('check thread started!')
-        #logger.debug('waiting for it to terminate...')
-        self.checks.wait()
