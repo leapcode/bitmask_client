@@ -1,0 +1,10 @@
+HELO drebs@riseup.net
+MAIL FROM: drebs@riseup.net
+RCPT TO: drebs@riseup.net
+RCPT TO: drebs@leap.se
+DATA
+Subject: leap test
+
+Hello world!
+.
+QUIT
