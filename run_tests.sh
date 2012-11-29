@@ -132,9 +132,10 @@ if [ -z "$noseargs" ]; then
 fi
 
 function run_coverage {
-    # XXX not working? getting 3rd party modules
-    coverage_opts="--include `pwd`/src/leap/*,`pwd`/src/leap/eip/*"
-    ${wrapper} coverage html -d docs/covhtml -i $coverage_opts
+    cov_opts="--omit=`pwd`/src/leap/base/tests/*,`pwd`/src/leap/eip/tests/*,`pwd`/src/leap/gui/tests/*"
+    cov_opts="$cov_opts,`pwd`/src/leap/util/tests/* "
+    cov_opts="$cov_opts --include=`pwd`/src/leap/*" #,`pwd`/src/leap/eip/*"
+    ${wrapper} coverage html -d docs/covhtml -i $cov_opts
     echo "now point your browser at docs/covhtml/index.html"
 }
 
