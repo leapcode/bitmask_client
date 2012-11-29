@@ -4,7 +4,7 @@ from first run wizard
 """
 try:
     from collections import OrderedDict
-except ImportError:
+except ImportError:  # pragma: no cover
     # We must be in 2.6
     from leap.util.dicts import OrderedDict
 
@@ -73,15 +73,16 @@ class ProgressStepContainer(object):
         self.steps = {}
 
     def step(self, identity):
-        return self.step.get(identity)
+        return self.steps.get(identity, None)
 
     def addStep(self, step):
         self.steps[step.index] = step
 
     def removeStep(self, step):
-        del self.steps[step.index]
-        del step
-        self.dirty = True
+        if step and self.steps.get(step.index, None):
+            del self.steps[step.index]
+            del step
+            self.dirty = True
 
     def removeAllSteps(self):
         for item in iter(self):
@@ -107,7 +108,7 @@ class StepsTableWidget(QtGui.QTableWidget):
     """
 
     def __init__(self, parent=None):
-        super(StepsTableWidget, self).__init__(parent)
+        super(StepsTableWidget, self).__init__(parent=parent)
 
         # remove headers and all edit/select behavior
         self.horizontalHeader().hide()
@@ -149,18 +150,39 @@ class StepsTableWidget(QtGui.QTableWidget):
 
 
 class WithStepsMixIn(object):
+    """
+    This Class is a mixin that can be inherited
+    by InlineValidation pages (which will display
+    a progress steps widget in the same page as the form)
+    or by Validation Pages (which will only display
+    the progress steps in the page, below a progress bar widget)
+    """
+    STEPS_TIMER_MS = 100
 
-    # worker threads for checks
+    #
+    # methods related to worker threads
+    # launched for individual checks
+    #
 
     def setupStepsProcessingQueue(self):
+        """
+        should be called from the init method
+        of the derived classes
+        """
         self.steps_queue = Queue.Queue()
         self.stepscheck_timer = QtCore.QTimer()
         self.stepscheck_timer.timeout.connect(self.processStepsQueue)
-        self.stepscheck_timer.start(100)
+        self.stepscheck_timer.start(self.STEPS_TIMER_MS)
         # we need to keep a reference to child threads
         self.threads = []
 
     def do_checks(self):
+        """
+        main entry point for checks.
+        it calls _do_checks in derived classes,
+        and it expects it to be a generator
+        yielding a tuple in the form (("message", progress_int), checkfunction)
+        """
 
         # yo dawg, I heard you like checks
         # so I put a __do_checks in your do_checks
@@ -168,7 +190,7 @@ class WithStepsMixIn(object):
 
         def __do_checks(fun=None, queue=None):
 
-            for checkcase in fun():
+            for checkcase in fun():  # pragma: no cover
                 checkmsg, checkfun = checkcase
 
                 queue.put(checkmsg)
@@ -180,39 +202,10 @@ class WithStepsMixIn(object):
             __do_checks,
             fun=self._do_checks,
             queue=self.steps_queue))
-        t.finished.connect(self.on_checks_validation_ready)
+        if hasattr(self, 'on_checks_validation_ready'):
+            t.finished.connect(self.on_checks_validation_ready)
         t.begin()
         self.threads.append(t)
-
-    def fail(self, err=None):
-        """
-        return failed state
-        and send error notification as
-        a nice side effect
-        """
-        wizard = self.wizard()
-        senderr = lambda err: wizard.set_validation_error(
-            self.current_page, err)
-        self.set_undone()
-        if err:
-            senderr(err)
-        return False
-
-    @QtCore.pyqtSlot()
-    def launch_checks(self):
-        self.do_checks()
-
-    # slot
-    #@QtCore.pyqtSlot(str, int)
-    def onStepStatusChanged(self, status, progress=None):
-        if status not in ("head_sentinel", "end_sentinel"):
-            self.add_status_line(status)
-        if status in ("end_sentinel"):
-            self.checks_finished = True
-            self.set_checked_icon()
-        if progress and hasattr(self, 'progress'):
-            self.progress.setValue(progress)
-            self.progress.update()
 
     def processStepsQueue(self):
         """
@@ -227,13 +220,52 @@ class WithStepsMixIn(object):
                     self.set_failed_icon()
                 else:
                     self.onStepStatusChanged(*status)
-            except Queue.Empty:
+            except Queue.Empty:  # pragma: no cover
                 pass
+
+    def fail(self, err=None):
+        """
+        return failed state
+        and send error notification as
+        a nice side effect. this function is called from
+        the _do_checks check functions returned in the
+        generator.
+        """
+        wizard = self.wizard()
+        senderr = lambda err: wizard.set_validation_error(
+            self.current_page, err)
+        self.set_undone()
+        if err:
+            senderr(err)
+        return False
+
+    @QtCore.pyqtSlot()
+    def launch_checks(self):
+        self.do_checks()
+
+    # (gui) presentation stuff begins #####################
+
+    # slot
+    #@QtCore.pyqtSlot(str, int)
+    def onStepStatusChanged(self, status, progress=None):
+        if status not in ("head_sentinel", "end_sentinel"):
+            self.add_status_line(status)
+        if status in ("end_sentinel"):
+            #self.checks_finished = True
+            self.set_checked_icon()
+        if progress and hasattr(self, 'progress'):
+            self.progress.setValue(progress)
+            self.progress.update()
 
     def setupSteps(self):
         self.steps = ProgressStepContainer()
         # steps table widget
-        self.stepsTableWidget = StepsTableWidget(self)
+        if isinstance(self, QtCore.QObject):
+            parent = self
+        else:
+            parent = None
+        import ipdb;ipdb.set_trace()
+        self.stepsTableWidget = StepsTableWidget(parent=parent)
         zeros = (0, 0, 0, 0)
         self.stepsTableWidget.setContentsMargins(*zeros)
         self.errors = OrderedDict()
@@ -295,6 +327,8 @@ class WithStepsMixIn(object):
         # setting cell widget.
         # see note on StepsTableWidget about plans to
         # change this for a better solution.
+        if not hasattr(self, 'steps'):
+            return
         index = len(self.steps)
         table = self.stepsTableWidget
         _index = index - 1 if current else index - 2
@@ -339,6 +373,9 @@ class WithStepsMixIn(object):
 
     def is_done(self):
         return self.done
+
+    # convenience for going back and forth
+    # in the wizard pages.
 
     def go_back(self):
         self.wizard().back()
