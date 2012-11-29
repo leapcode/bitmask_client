@@ -2,15 +2,10 @@
 
 """A U1DB implementation that uses OpenStack Swift as its persistence layer."""
 
-import errno
-import os
 try:
     import simplejson as json
 except ImportError:
     import json  # noqa
-import sys
-import time
-import uuid
 
 from u1db.backends import CommonBackend, CommonSyncTarget
 from u1db import (
@@ -20,73 +15,33 @@ from u1db import (
     vectorclock,
     )
 
+from swiftclient import client
+
 
 class OpenStackDatabase(CommonBackend):
     """A U1DB implementation that uses OpenStack as its persistence layer."""
 
-    def __init__(self, sqlite_file, document_factory=None):
+    def __init__(self, auth_url, user, auth_key):
         """Create a new OpenStack data container."""
-        raise NotImplementedError(self.__init__)
+        self._auth_url = auth_url
+        self._user = user
+        self._auth_key = auth_key
+        self.set_document_factory(LeapDocument)
+        self._connection = swiftclient.Connection(self._auth_url, self._user,
+                                                  self._auth_key)
+
+    #-------------------------------------------------------------------------
+    # implemented methods from Database
+    #-------------------------------------------------------------------------
 
     def set_document_factory(self, factory):
         self._factory = factory
 
-    def get_sync_target(self):
-        return OpenStackSyncTarget(self)
+    def set_document_size_limit(self, limit):
+        raise NotImplementedError(self.set_document_size_limit)
 
-    @classmethod
-    def open_database(cls, sqlite_file, create, backend_cls=None,
-                      document_factory=None):
-        raise NotImplementedError(open_database)
-
-    @staticmethod
-    def delete_database(sqlite_file):
-        raise NotImplementedError(delete_database)
-
-
-    def close(self):
-        raise NotImplementedError(self.close)
-
-    def _is_initialized(self, c):
-        raise NotImplementedError(self._is_initialized)
-
-    def _initialize(self, c):
-        raise NotImplementedError(self._initialize)
-
-    def _ensure_schema(self):
-        raise NotImplementedError(self._ensure_schema)
-
-    def _set_replica_uid(self, replica_uid):
-        """Force the replica_uid to be set."""
-        raise NotImplementedError(self._set_replica_uid)
-
-    def _set_replica_uid_in_transaction(self, replica_uid):
-        """Set the replica_uid. A transaction should already be held."""
-        raise NotImplementedError(self._set_replica_uid_in_transaction)
-
-    def _get_replica_uid(self):
-        raise NotImplementedError(self._get_replica_uid)
-
-    _replica_uid = property(_get_replica_uid)
-
-    def _get_generation(self):
-        raise NotImplementedError(self._get_generation)
-
-    def _get_generation_info(self):
-        raise NotImplementedError(self._get_generation_info)
-
-    def _get_trans_id_for_gen(self, generation):
-        raise NotImplementedError(self._get_trans_id_for_gen)
-
-    def _get_transaction_log(self):
-        raise NotImplementedError(self._get_transaction_log)
-
-    def _get_doc(self, doc_id, check_for_conflicts=False):
-        """Get just the document content, without fancy handling."""
-        raise NotImplementedError(self._get_doc)
-
-    def _has_conflicts(self, doc_id):
-        raise NotImplementedError(self._has_conflicts)
+    def whats_changed(self, old_generation=0):
+        raise NotImplementedError(self.whats_changed)
 
     def get_doc(self, doc_id, include_deleted=False):
         raise NotImplementedError(self.get_doc)
@@ -98,36 +53,16 @@ class OpenStackDatabase(CommonBackend):
     def put_doc(self, doc):
         raise NotImplementedError(self.put_doc)
 
-    def whats_changed(self, old_generation=0):
-        raise NotImplementedError(self.whats_changed)
-
     def delete_doc(self, doc):
         raise NotImplementedError(self.delete_doc)
 
-    def _get_conflicts(self, doc_id):
-        return []
+    # start of index-related methods: these are not supported by this backend.
 
-    def get_doc_conflicts(self, doc_id):
-        return []
+    def create_index(self, index_name, *index_expressions):
+        return False
 
-    def _get_replica_gen_and_trans_id(self, other_replica_uid):
-        raise NotImplementedError(self._get_replica_gen_and_trans_id)
-
-    def _set_replica_gen_and_trans_id(self, other_replica_uid,
-                                      other_generation, other_transaction_id):
-        raise NotImplementedError(self._set_replica_gen_and_trans_id)
-
-    def _do_set_replica_gen_and_trans_id(self, other_replica_uid,
-                                         other_generation,
-                                         other_transaction_id):
-        raise NotImplementedError(self._do_set_replica_gen_and_trans_id)
-
-    def _put_doc_if_newer(self, doc, save_conflict, replica_uid=None,
-                          replica_gen=None, replica_trans_id=None):
-        raise NotImplementedError(self._put_doc_if_newer)
-
-    def resolve_doc(self, doc, conflicted_doc_revs):
-        raise NotImplementedError(self.resolve_doc)
+    def delete_index(self, index_name):
+        return False
 
     def list_indexes(self):
         return []
@@ -142,8 +77,73 @@ class OpenStackDatabase(CommonBackend):
     def get_index_keys(self, index_name):
         return []
 
-    def delete_index(self, index_name):
-        return False
+    # end of index-related methods: these are not supported by this backend.
+
+    def get_doc_conflicts(self, doc_id):
+        return []
+
+    def resolve_doc(self, doc, conflicted_doc_revs):
+        raise NotImplementedError(self.resolve_doc)
+
+    def get_sync_target(self):
+        return OpenStackSyncTarget(self)
+
+    def close(self):
+        raise NotImplementedError(self.close)
+
+    def sync(self, url, creds=None, autocreate=True):
+        raise NotImplementedError(self.close)
+
+    def _get_replica_gen_and_trans_id(self, other_replica_uid):
+        raise NotImplementedError(self._get_replica_gen_and_trans_id)
+
+    def _set_replica_gen_and_trans_id(self, other_replica_uid,
+                                      other_generation, other_transaction_id):
+        raise NotImplementedError(self._set_replica_gen_and_trans_id)
+
+    #-------------------------------------------------------------------------
+    # implemented methods from CommonBackend
+    #-------------------------------------------------------------------------
+
+    def _get_generation(self):
+        raise NotImplementedError(self._get_generation)
+
+    def _get_generation_info(self):
+        raise NotImplementedError(self._get_generation_info)
+
+    def _get_doc(self, doc_id, check_for_conflicts=False):
+        """Get just the document content, without fancy handling."""
+        raise NotImplementedError(self._get_doc)
+
+    def _has_conflicts(self, doc_id):
+        raise NotImplementedError(self._has_conflicts)
+
+    def _get_transaction_log(self):
+        raise NotImplementedError(self._get_transaction_log)
+
+    def _put_and_update_indexes(self, doc_id, old_doc, new_rev, content):
+        raise NotImplementedError(self._put_and_update_indexes)
+
+
+    def _get_trans_id_for_gen(self, generation):
+        raise NotImplementedError(self._get_trans_id_for_gen)
+
+    #-------------------------------------------------------------------------
+    # OpenStack specific methods
+    #-------------------------------------------------------------------------
+
+    def _is_initialized(self, c):
+        raise NotImplementedError(self._is_initialized)
+
+    def _initialize(self, c):
+        raise NotImplementedError(self._initialize)
+
+    def _get_auth(self):
+        self._url, self._auth_token = self._connection.get_auth(self._auth_url,
+                                                                self._user,
+                                                                self._auth_key)
+        return self._url, self.auth_token
+
 
 class LeapDocument(Document):
 
