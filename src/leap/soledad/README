@@ -1,6 +1,13 @@
 Soledad -- Synchronization Of Locally Encrypted Data Among Devices
 ==================================================================
 
-This code is based on:
+Dependencies
+------------
 
-* u1db 0.14
+Soledad uses the following python libraries:
+
+  * u1db 0.1.4 [1]
+  * python-swiftclient 1.1.1 [2]
+
+[1] http://pypi.python.org/pypi/u1db/0.1.4
+[2] https://launchpad.net/python-swiftclient
