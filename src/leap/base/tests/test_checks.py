@@ -118,6 +118,22 @@ class LeapNetworkCheckTest(BaseLeapTest):
             with self.assertRaises(exceptions.NoInternetConnection):
                 checker.check_internet_connection()
 
+        with patch.object(requests, "get") as mocked_get:
+            mocked_get.side_effect = \
+                    requests.ConnectionError("[Errno 113] No route to host")
+            with self.assertRaises(exceptions.NoInternetConnection):
+                with patch.object(checker, "ping_gateway") as mock_ping:
+                    mock_ping.return_value = True
+                    checker.check_internet_connection()
+
+        with patch.object(requests, "get") as mocked_get:
+            mocked_get.side_effect = \
+                    requests.ConnectionError("[Errno 113] No route to host")
+            with self.assertRaises(exceptions.NoInternetConnection):
+                with patch.object(checker, "ping_gateway") as mock_ping:
+                    mock_ping.side_effect = exceptions.NoConnectionToGateway
+                    checker.check_internet_connection()
+
     @unittest.skipUnless(_uid == 0, "root only")
     def test_ping_gateway(self):
         checker = checks.LeapNetworkChecker()
