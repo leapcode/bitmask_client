@@ -45,6 +45,18 @@ class LeapDocument(Document):
 class LeapDatabase(HTTPDatabase):
     """Implement the HTTP remote database API to a Leap server."""
 
+    @staticmethod
+    def open_database(url, create):
+        db = LeapDatabase(url)
+        db.open(create)
+        return db
+
+    @staticmethod
+    def delete_database(url):
+        db = LeapDatabase(url)
+        db._delete()
+        db.close()
+
     def get_sync_target(self):
         st = LeapSyncTarget(self._url.geturl())
         st._creds = self._creds
