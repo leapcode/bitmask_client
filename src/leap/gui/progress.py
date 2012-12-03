@@ -264,7 +264,6 @@ class WithStepsMixIn(object):
             parent = self
         else:
             parent = None
-        import ipdb;ipdb.set_trace()
         self.stepsTableWidget = StepsTableWidget(parent=parent)
         zeros = (0, 0, 0, 0)
         self.stepsTableWidget.setContentsMargins(*zeros)
@@ -274,15 +273,17 @@ class WithStepsMixIn(object):
         self.errors[name] = error
 
     def pop_first_error(self):
-        return list(reversed(self.errors.items())).pop()
+        errkey, errval = list(reversed(self.errors.items())).pop()
+        del self.errors[errkey]
+        return errkey, errval
 
     def clean_errors(self):
         self.errors = OrderedDict()
 
     def clean_wizard_errors(self, pagename=None):
-        if pagename is None:
+        if pagename is None:  # pragma: no cover
             pagename = getattr(self, 'prev_page', None)
-        if pagename is None:
+        if pagename is None:  # pragma: no cover
             return
         logger.debug('cleaning wizard errors for %s' % pagename)
         self.wizard().set_validation_error(pagename, None)

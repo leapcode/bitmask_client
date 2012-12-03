@@ -1,3 +1,4 @@
+from collections import namedtuple
 import sys
 import unittest
 import Queue
@@ -98,7 +99,8 @@ class StepsTableWidgetTestCase(unittest.TestCase):
 
 class TestWithStepsClass(QtGui.QWidget, progress.WithStepsMixIn):
 
-    def __init__(self):
+    def __init__(self, parent=None):
+        super(TestWithStepsClass, self).__init__(parent=parent)
         self.setupStepsProcessingQueue()
         self.statuses = []
         self.current_page = "testpage"
@@ -269,15 +271,178 @@ class WithStepsMixInTestCase(qunittest.TestCase):
         s.setupSteps()
         self.assertTrue(isinstance(s.steps, progress.ProgressStepContainer))
         self.assertEqual(s.errors, {})
+        s.set_error('fooerror', 'barerror')
+        self.assertEqual(s.errors, {'fooerror': 'barerror'})
+        s.set_error('2', 42)
+        self.assertEqual(s.errors, {'fooerror': 'barerror', '2': 42})
+        fe = s.pop_first_error()
+        self.assertEqual(fe, ('fooerror', 'barerror'))
+        self.assertEqual(s.errors, {'2': 42})
+        s.clean_errors()
+        self.assertEqual(s.errors, {})
 
+    def test_launch_chechs_slot(self):
+        s = self.stepy
+        s.do_checks = mock.Mock()
+        s.launch_checks()
+        s.do_checks.assert_called_with()
+
+    def test_clean_wizard_errors(self):
+        s = self.stepy
+        s.wizard = mock.Mock()
+        wizard = s.wizard.return_value
+        wizard.set_validation_error.return_value = True
+        s.clean_wizard_errors(pagename="foopage")
+        wizard.set_validation_error.assert_called_with("foopage", None)
+
+    def test_clear_table(self):
+        s = self.stepy
+        s.stepsTableWidget = mock.Mock()
+        s.stepsTableWidget.clearContents.return_value = True
+        s.clearTable()
+        s.stepsTableWidget.clearContents.assert_called_with()
+
+    def test_populate_steps_table(self):
+        s = self.stepy
+        Step = namedtuple('Step', ['name', 'done'])
+
+        class Steps(object):
+            columns = ("name", "done")
+            _items = (Step('step1', False), Step('step2', False))
+
+            def __len__(self):
+                return 2
+
+            def __iter__(self):
+                for i in self._items:
+                    yield i
+
+        s.steps = Steps()
+
+        s.stepsTableWidget = mock.Mock()
+        s.stepsTableWidget.setItem.return_value = True
+        s.resizeTable = mock.Mock()
+        s.update = mock.Mock()
+        s.populateStepsTable()
+        s.update.assert_called_with()
+        s.resizeTable.assert_called_with()
+
+        # assert stepsTableWidget.setItem called ...
+        # we do not want to get into the actual
+        # <QTableWidgetItem object at 0x92a565c>
+        call_list = s.stepsTableWidget.setItem.call_args_list
+        indexes = [(y, z) for y, z, xx in [x[0] for x in call_list]]
+        self.assertEqual(indexes,
+                         [(0, 0), (0, 1), (1, 0), (1, 1)])
+
+    def test_add_status_line(self):
+        s = self.stepy
+        s.steps = progress.ProgressStepContainer()
+        s.stepsTableWidget = mock.Mock()
+        s.stepsTableWidget.width.return_value = 100
+        s.set_item = mock.Mock()
+        s.set_item_icon = mock.Mock()
+        s.add_status_line("new status")
+        s.set_item_icon.assert_called_with(current=False)
+
+    def test_set_item_icon(self):
+        s = self.stepy
+        s.steps = progress.ProgressStepContainer()
+        s.stepsTableWidget = mock.Mock()
+        s.stepsTableWidget.setCellWidget.return_value = True
+        s.stepsTableWidget.width.return_value = 100
+        #s.set_item = mock.Mock()
+        #s.set_item_icon = mock.Mock()
+        s.add_status_line("new status")
+        s.add_status_line("new 2 status")
+        s.add_status_line("new 3 status")
+        call_list = s.stepsTableWidget.setCellWidget.call_args_list
+        indexes = [(y, z) for y, z, xx in [x[0] for x in call_list]]
+        self.assertEqual(
+            indexes,
+            [(0, 1), (-1, 1), (1, 1), (0, 1), (2, 1), (1, 1)])
+
+
+class TestInlineValidationPage(progress.InlineValidationPage):
+    pass
 
 
 class InlineValidationPageTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.app = QtGui.QApplication(sys.argv)
+        QtGui.qApp = self.app
+        self.page = TestInlineValidationPage()
+
+    def tearDown(self):
+        QtGui.qApp = None
+        self.app = None
+
+    def test_defaults(self):
+        self.assertFalse(self.page.done)
+        # if setupProcessingQueue was  called
+        self.assertTrue(isinstance(self.page.stepscheck_timer, QtCore.QTimer))
+        self.assertTrue(isinstance(self.page.steps_queue, Queue.Queue))
+
+    def test_validation_frame(self):
+        # test frame creation
+        self.page.stepsTableWidget = progress.StepsTableWidget(
+            parent=self.page)
+        self.page.setupValidationFrame()
+        self.assertTrue(isinstance(self.page.valFrame, QtGui.QFrame))
+
+        # test show steps calls frame.show
+        self.page.valFrame = mock.Mock()
+        self.page.valFrame.show.return_value = True
+        self.page.showStepsFrame()
+        self.page.valFrame.show.assert_called_with()
+
+
+class TestValidationPage(progress.ValidationPage):
     pass
 
 
-class ValidationPage(unittest.TestCase):
-    pass
+class ValidationPageTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.app = QtGui.QApplication(sys.argv)
+        QtGui.qApp = self.app
+        self.page = TestValidationPage()
+
+    def tearDown(self):
+        QtGui.qApp = None
+        self.app = None
+
+    def test_defaults(self):
+        self.assertFalse(self.page.done)
+        # if setupProcessingQueue was  called
+        self.assertTrue(isinstance(self.page.timer, QtCore.QTimer))
+        self.assertTrue(isinstance(self.page.stepscheck_timer, QtCore.QTimer))
+        self.assertTrue(isinstance(self.page.steps_queue, Queue.Queue))
+
+    def test_is_complete(self):
+        self.assertFalse(self.page.isComplete())
+        self.page.done = True
+        self.assertTrue(self.page.isComplete())
+        self.page.done = False
+        self.assertFalse(self.page.isComplete())
+
+    def test_show_hide_progress(self):
+        p = self.page
+        p.progress = mock.Mock()
+        p.progress.show.return_code = True
+        p.show_progress()
+        p.progress.show.assert_called_with()
+        p.progress.hide.return_code = True
+        p.hide_progress()
+        p.progress.hide.assert_called_with()
+
+    def test_initialize_page(self):
+        p = self.page
+        p.timer = mock.Mock()
+        p.timer.singleShot.return_code = True
+        p.initializePage()
+        p.timer.singleShot.assert_called_with(0, p.do_checks)
 
 
 if __name__ == "__main__":
