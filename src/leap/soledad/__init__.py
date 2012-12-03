@@ -16,6 +16,7 @@ from u1db import (
     )
 
 from swiftclient import client
+import base64
 
 
 class OpenStackDatabase(CommonBackend):
@@ -148,10 +149,20 @@ class OpenStackDatabase(CommonBackend):
 class LeapDocument(Document):
 
     def get_content_encrypted(self):
-        raise NotImplementedError(self.get_content_encrypted)
+        """
+        Returns document's json serialization encrypted with user's public key.
+        """
+        # TODO: replace for openpgp encryption with users's pub key.
+        return base64.b64encode(self.get_json())
 
     def set_content_encrypted(self):
-        raise NotImplementedError(self.set_content_encrypted)
+        """
+        Set document's content based on encrypted version of json string.
+        """
+        # TODO:
+        #   - replace for openpgp decryption using user's priv key.
+        #   - raise error if unsuccessful.
+        return self.set_json(base64.b64decode(self.get_json()))
 
 
 class OpenStackSyncTarget(CommonSyncTarget):
