@@ -5,6 +5,7 @@ except ImportError:
 
 from u1db import Document
 from u1db.remote.http_target import HTTPSyncTarget
+from u1db.remote.http_database import HTTPDatabase
 import base64
 
 
@@ -16,10 +17,11 @@ class LeapDocument(Document):
     """
 
     def __init__(self, doc_id=None, rev=None, json='{}', has_conflicts=False,
-                 encrypted_json=None):
+                 encrypted_json=None, default_key=None):
         super(Document, self).__init__(doc_id, rev, json, has_conflicts)
         if encrypted_json:
             self.set_encrypted_json(encrypted_json)
+        self._default_key = default_key
 
     def get_encrypted_json(self):
         """
