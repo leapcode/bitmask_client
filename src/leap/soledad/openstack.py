@@ -7,11 +7,12 @@ from swiftclient import client
 class OpenStackDatabase(CommonBackend):
     """A U1DB implementation that uses OpenStack as its persistence layer."""
 
-    def __init__(self, auth_url, user, auth_key):
+    def __init__(self, auth_url, user, auth_key, container):
         """Create a new OpenStack data container."""
         self._auth_url = auth_url
         self._user = user
         self._auth_key = auth_key
+        self._container = container
         self.set_document_factory(LeapDocument)
         self._connection = swiftclient.Connection(self._auth_url, self._user,
                                                   self._auth_key)
@@ -31,7 +32,11 @@ class OpenStackDatabase(CommonBackend):
         raise NotImplementedError(self.whats_changed)
 
     def get_doc(self, doc_id, include_deleted=False):
-        raise NotImplementedError(self.get_doc)
+        # TODO: support deleted docs?
+        headers = self._connection.head_object(self._container, doc_id)
+        rev = headers['x-object-meta-rev']
+        response, contents = self._connection.get_object(self._container, doc_id)
+        return self._factory(doc_id, rev, contents)
 
     def get_all_docs(self, include_deleted=False):
         """Get all documents from the database."""
