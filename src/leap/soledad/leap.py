@@ -26,21 +26,27 @@ class LeapDocument(Document):
         Returns document's json serialization encrypted with user's public key.
         """
         # TODO: replace for openpgp encryption with users's pub key.
-        return base64.b64encode(self.get_json())
+        return json.dumps({'cyphertext':base64.b64encode(self.get_json())})
 
-    def set_encrypted_json(self):
+    def set_encrypted_json(self, encrypted_json):
         """
         Set document's content based on encrypted version of json string.
         """
         # TODO:
         #   - replace for openpgp decryption using user's priv key.
         #   - raise error if unsuccessful.
-        return self.set_json(base64.b64decode(self.get_json()))
+        cyphertext = json.loads(encrypted_json)['cyphertext']
+        plaintext = base64.b64decode(cyphertext)
+        return self.set_json(plaintext)
 
 
 class LeapSyncTarget(HTTPSyncTarget):
 
     def _parse_sync_stream(self, data, return_doc_cb, ensure_callback=None):
+        """
+        Does the same as parent's method but ensures incoming content will be
+        decrypted.
+        """
         parts = data.splitlines()  # one at a time
         if not parts or parts[0] != '[':
             raise BrokenSyncStream
@@ -75,6 +81,9 @@ class LeapSyncTarget(HTTPSyncTarget):
     def sync_exchange(self, docs_by_generations, source_replica_uid,
                       last_known_generation, last_known_trans_id,
                       return_doc_cb, ensure_callback=None):
+        """
+        Does the same as parent's method but encrypts content before syncing.
+        """
         self._ensure_connection()
         if self._trace_hook:  # for tests
             self._trace_hook('sync_exchange')
