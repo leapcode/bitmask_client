@@ -43,7 +43,16 @@ class OpenStackDatabase(CommonBackend):
         raise NotImplementedError(self.get_all_docs)
 
     def put_doc(self, doc):
-        raise NotImplementedError(self.put_doc)
+        if doc.doc_id is None:
+            raise errors.InvalidDocId()
+        self._check_doc_id(doc.doc_id)
+        self._check_doc_size(doc)
+        # TODO: check for conflicts?
+        new_rev = self._allocate_doc_rev(doc.rev)
+        headers = { 'X-Object-Meta-Rev' : new_rev }
+        self._connection.put_object(self._container, doc_id, doc.get_json(),
+                                    headers=headers)
+        return new_rev
 
     def delete_doc(self, doc):
         raise NotImplementedError(self.delete_doc)
