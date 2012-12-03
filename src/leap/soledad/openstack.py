@@ -15,6 +15,7 @@ class OpenStackDatabase(CommonBackend):
         self.set_document_factory(LeapDocument)
         self._connection = swiftclient.Connection(self._auth_url, self._user,
                                                   self._auth_key)
+        self._get_auth()
 
     #-------------------------------------------------------------------------
     # implemented methods from Database
@@ -125,9 +126,7 @@ class OpenStackDatabase(CommonBackend):
         raise NotImplementedError(self._initialize)
 
     def _get_auth(self):
-        self._url, self._auth_token = self._connection.get_auth(self._auth_url,
-                                                                self._user,
-                                                                self._auth_key)
+        self._url, self._auth_token = self._connection.get_auth()
         return self._url, self.auth_token
 
 
