@@ -42,6 +42,15 @@ class LeapDocument(Document):
         return self.set_json(plaintext)
 
 
+class LeapDatabase(HTTPDatabase):
+    """Implement the HTTP remote database API to a Leap server."""
+
+    def get_sync_target(self):
+        st = LeapSyncTarget(self._url.geturl())
+        st._creds = self._creds
+        return st
+
+
 class LeapSyncTarget(HTTPSyncTarget):
 
     def _parse_sync_stream(self, data, return_doc_cb, ensure_callback=None):
