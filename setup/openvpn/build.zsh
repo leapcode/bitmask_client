@@ -39,6 +39,17 @@ act()    {
     fi
 }
 
+{ test "$1" = "clean" } && {
+	notice "Cleaning up all build in ${TOPSRC}"
+	for src in `cat Sources | awk '
+/^#/ {next}
+/^./ { print $1 }'`; do
+		{ test "$src" != "" } && { rm -rf "${src}" }
+	done
+	act "Done."
+	return 0
+}
+
 notice "OpenVPN build in ${TOPSRC}"
 
 prepare_sources() {
@@ -81,19 +92,29 @@ prepare_sources
 # tap windows
 { test -r tap-windows } || { git clone https://github.com/OpenVPN/tap-windows.git }
 
+notice "Sources ready, now compiling..."
+LOG="`pwd`/build.log"; touch ${LOG}
+act "logs saved in build.log"
+
 { test -r lzo/src/liblzo2.la } || { pushd lzo
-	./configure --host=i586-mingw32msvc
-	make; popd }
+	act "building LZO lib"
+	./configure --host=i586-mingw32msvc >> ${LOG}
+	make >> ${LOG}; popd }
 # openssl
 { test -r openssl/libssl.a } || {
+	act "building OpenSSL lib"
     pushd openssl
-    ./Configure --cross-compile-prefix=i586-mingw32msvc- mingw
-    make; popd }
+    ./Configure --cross-compile-prefix=i586-mingw32msvc- mingw >> ${LOG}
+    make ${LOG}; popd }
 
 # openvpn
 { test -r openvpn } || { git clone https://github.com/OpenVPN/openvpn.git } 
 pushd openvpn
-{ test -r configure } || { autoreconf -i }
+act "building latest OpenVPN"
+{ test -r configure } || {
+ sed -i -e 's/-municode//' src/openvpn/Makefile.am
+ autoreconf -i >> ${LOG}
+}
 CFLAGS="-I/usr/i586-mingw32msvc/include/ddk -D_WIN32_WINNT=0x0501" \
 LZO_LIBS="${TOPSRC}/lzo/src/liblzo2.la" \
 LZO_CFLAGS="-I${TOPSRC}/lzo/include" \
@@ -102,7 +123,12 @@ OPENSSL_SSL_CFLAGS="-I${TOPSRC}/openssl/include" \
 OPENSSL_CRYPTO_CFLAGS="-I${TOPSRC}/openssl/crypto" \
 OPENSSL_SSL_LIBS="${TOPSRC}/openssl/libssl.a" \
 OPENSSL_CRYPTO_LIBS="${TOPSRC}/openssl/libcrypto.a" \
-./configure --host=i586-mingw32msvc
-make
+./configure --host=i586-mingw32msvc >> ${LOG}
+make >> ${LOG}
 popd
-
+notice "Done."
+act "If OpenVPN build reports a final error on linkage, it might be due to a libtool bug"
+act "(something like undefined reference to `_WinMain@16')"
+act "You need to go inside openvpn/src/openvpn and issue the last compile line manually"
+act "adding an flat '-shared' at the end of it, then do 'cp .libs/openvpn.exe .'"
+act "Happy hacking."
