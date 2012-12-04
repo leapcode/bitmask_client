@@ -9,6 +9,10 @@ from u1db.remote.http_database import HTTPDatabase
 import base64
 
 
+class NoDefaultKey(Exception):
+    pass
+
+
 class LeapDocument(Document):
     """
     LEAP Documents are standard u1db documents with cabability of returning an
@@ -17,28 +21,31 @@ class LeapDocument(Document):
     """
 
     def __init__(self, doc_id=None, rev=None, json='{}', has_conflicts=False,
-                 encrypted_json=None, default_key=None):
+                 encrypted_json=None, default_key=None, gpg_wrapper=None):
         super(LeapDocument, self).__init__(doc_id, rev, json, has_conflicts)
         if encrypted_json:
             self.set_encrypted_json(encrypted_json)
+        if gpg_wrapper:
+            self._gpg = gpg_wrapper
+        else:
+            self._gpg = GPGWrapper()
         self._default_key = default_key
 
     def get_encrypted_json(self):
         """
         Returns document's json serialization encrypted with user's public key.
         """
-        # TODO: replace for openpgp encryption with users's pub key.
-        return json.dumps({'cyphertext':base64.b64encode(self.get_json())})
+        if self._default_key is None:
+            raise NoDefaultKey()
+        cyphertext = self._gpg.encrypt(self.get_json(), self._default_key)
+        return json.dumps({'cyphertext' : cyphetext})
 
     def set_encrypted_json(self, encrypted_json):
         """
         Set document's content based on encrypted version of json string.
         """
-        # TODO:
-        #   - replace for openpgp decryption using user's priv key.
-        #   - raise error if unsuccessful.
         cyphertext = json.loads(encrypted_json)['cyphertext']
-        plaintext = base64.b64decode(cyphertext)
+        plaintext = self._gpg.decrypt(cyphertext)
         return self.set_json(plaintext)
 
 
