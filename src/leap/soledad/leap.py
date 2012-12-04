@@ -23,12 +23,12 @@ class LeapDocument(Document):
     def __init__(self, doc_id=None, rev=None, json='{}', has_conflicts=False,
                  encrypted_json=None, default_key=None, gpg_wrapper=None):
         super(LeapDocument, self).__init__(doc_id, rev, json, has_conflicts)
-        if encrypted_json:
-            self.set_encrypted_json(encrypted_json)
         if gpg_wrapper:
             self._gpg = gpg_wrapper
         else:
             self._gpg = GPGWrapper()
+        if encrypted_json:
+            self.set_encrypted_json(encrypted_json)
         self._default_key = default_key
 
     def get_encrypted_json(self):
@@ -37,15 +37,18 @@ class LeapDocument(Document):
         """
         if self._default_key is None:
             raise NoDefaultKey()
-        cyphertext = self._gpg.encrypt(self.get_json(), self._default_key)
-        return json.dumps({'cyphertext' : cyphetext})
+        cyphertext = self._gpg.encrypt(self.get_json(),
+                                       self._default_key,
+                                       always_trust = True)
+                                       # TODO: always trust?
+        return json.dumps({'cyphertext' : str(cyphertext)})
 
     def set_encrypted_json(self, encrypted_json):
         """
         Set document's content based on encrypted version of json string.
         """
         cyphertext = json.loads(encrypted_json)['cyphertext']
-        plaintext = self._gpg.decrypt(cyphertext)
+        plaintext = str(self._gpg.decrypt(cyphertext))
         return self.set_json(plaintext)
 
 
