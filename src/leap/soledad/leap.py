@@ -23,10 +23,11 @@ class LeapDocument(Document):
     def __init__(self, doc_id=None, rev=None, json='{}', has_conflicts=False,
                  encrypted_json=None, default_key=None, gpg_wrapper=None):
         super(LeapDocument, self).__init__(doc_id, rev, json, has_conflicts)
-        if gpg_wrapper:
-            self._gpg = gpg_wrapper
-        else:
+        # we might want to get already initialized wrappers for testing.
+        if gpg_wrapper is None:
             self._gpg = GPGWrapper()
+        else:
+            self._gpg = gpg_wrapper
         if encrypted_json:
             self.set_encrypted_json(encrypted_json)
         self._default_key = default_key
