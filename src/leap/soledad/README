@@ -4,10 +4,12 @@ Soledad -- Synchronization Of Locally Encrypted Data Among Devices
 Dependencies
 ------------
 
-Soledad uses the following python libraries:
+Soledad depends on the following python libraries:
 
   * u1db 0.1.4 [1]
   * python-swiftclient 1.1.1 [2]
+  * python-gnupg 0.3.1 [3]
 
 [1] http://pypi.python.org/pypi/u1db/0.1.4
 [2] https://launchpad.net/python-swiftclient
+[3] http://packages.python.org/python-gnupg/index.html
