@@ -40,7 +40,8 @@ class EncryptedSyncTestCase(unittest.TestCase):
                                  default_key = KEY_FINGERPRINT)
         res1 = doc1.get_json()
         res2 = doc2.get_json()
-        self.assertEqual(res1, res2, 'incorrect document encoding')
+        self.assertEqual(res1, res2, 'incorrect document encryption')
+
 
 # Key material for testing
 KEY_FINGERPRINT = "E36E738D69173C13D709E44F2F455E2824D18DDF"
