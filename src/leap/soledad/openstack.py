@@ -18,6 +18,7 @@ class OpenStackDatabase(CommonBackend):
         self._connection = swiftclient.Connection(self._auth_url, self._user,
                                                   self._auth_key)
         self._get_auth()
+        self._ensure_u1db_data()
 
     #-------------------------------------------------------------------------
     # implemented methods from Database
@@ -185,11 +186,29 @@ class OpenStackDatabase(CommonBackend):
     # OpenStack specific methods
     #-------------------------------------------------------------------------
 
-    def _is_initialized(self, c):
-        raise NotImplementedError(self._is_initialized)
+    def _ensure_u1db_data(self):
+        """
+        Guarantee that u1db data exists in store.
+        """
+        if self._is_initialized():
+            return
+        self._initialize()
 
-    def _initialize(self, c):
-        raise NotImplementedError(self._initialize)
+    def _is_initialized(self):
+        """
+        Verify if u1db data exists in store.
+        """
+        if not self._get_doc('u1db_data'):
+            return False
+        return True
+
+    def _initialize(self):
+        """
+        Create u1db data object in store.
+        """
+        content = { 'transaction_log' = [],
+                    'sync_log' = [] }
+        doc = self.create_doc('u1db_data', content)
 
     def _get_auth(self):
         self._url, self._auth_token = self._connection.get_auth()
