@@ -30,6 +30,7 @@ class OpenStackDatabase(CommonBackend):
         raise NotImplementedError(self.set_document_size_limit)
 
     def whats_changed(self, old_generation=0):
+        self._get_u1db_data()
         # This method is implemented in TransactionLog because testing is
         # easier like this for now, but it can be moved to here afterwards.
         return self._transaction_log.whats_changed(old_generation)
