@@ -137,7 +137,10 @@ class OpenStackDatabase(CommonBackend):
         raise NotImplementedError(self.close)
 
     def sync(self, url, creds=None, autocreate=True):
-        raise NotImplementedError(self.close)
+        from u1db.sync import Synchronizer
+        from u1db.remote.http_target import OpenStackSyncTarget
+        return Synchronizer(self, OpenStackSyncTarget(url, creds=creds)).sync(
+            autocreate=autocreate)
 
     def _get_replica_gen_and_trans_id(self, other_replica_uid):
         self._get_u1db_data()
@@ -164,7 +167,8 @@ class OpenStackDatabase(CommonBackend):
         return self._transaction_log.get_generation_info()
 
     def _has_conflicts(self, doc_id):
-        raise NotImplementedError(self._has_conflicts)
+        # Documents never have conflicts on server.
+        return False
 
     def _put_and_update_indexes(self, doc_id, old_doc, new_rev, content):
         raise NotImplementedError(self._put_and_update_indexes)
