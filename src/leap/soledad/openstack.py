@@ -34,12 +34,23 @@ class OpenStackDatabase(CommonBackend):
         # easier like this for now, but it can be moved to here afterwards.
         return self._transaction_log.whats_changed(old_generation)
 
-    def get_doc(self, doc_id, include_deleted=False):
-        # TODO: support deleted docs?
-        headers = self._connection.head_object(self._container, doc_id)
-        rev = headers['x-object-meta-rev']
+    def _get_doc(self, doc_id, check_for_conflicts=False):
+        """Get just the document content, without fancy handling.
+        
+        Conflicts do not happen on server side, so there's no need to check
+        for them.
+        """
         response, contents = self._connection.get_object(self._container, doc_id)
+        rev = response['x-object-meta-rev']
         return self._factory(doc_id, rev, contents)
+
+    def get_doc(self, doc_id, include_deleted=False):
+        doc = self._get_doc(doc_id, check_for_conflicts=True)
+        if doc is None:
+            return None
+        if doc.is_tombstone() and not include_deleted:
+            return None
+        return doc
 
     def get_all_docs(self, include_deleted=False):
         """Get all documents from the database."""
@@ -125,10 +136,6 @@ class OpenStackDatabase(CommonBackend):
     def _get_generation_info(self):
         self._get_u1db_data()
         return self._transaction_log.get_generation_info()
-
-    def _get_doc(self, doc_id, check_for_conflicts=False):
-        """Get just the document content, without fancy handling."""
-        raise NotImplementedError(self._get_doc)
 
     def _has_conflicts(self, doc_id):
         raise NotImplementedError(self._has_conflicts)
