@@ -46,7 +46,7 @@ class OpenStackDatabase(CommonBackend):
             response, contents = self._connection.get_object(self._container, doc_id)
             rev = response['x-object-meta-rev']
             return self._factory(doc_id, rev, contents)
-        except: swiftclient.ClientException
+        except swiftclient.ClientException:
             return None
 
     def get_doc(self, doc_id, include_deleted=False):
@@ -229,11 +229,20 @@ class OpenStackDatabase(CommonBackend):
 class OpenStackSyncTarget(HTTPSyncTarget):
 
     def get_sync_info(self, source_replica_uid):
-        raise NotImplementedError(self.get_sync_info)
+        source_gen, source_trans_id = self._db._get_replica_gen_and_trans_id(
+            source_replica_uid)
+        my_gen, my_trans_id = self._db._get_generation_info()
+        return (
+            self._db._replica_uid, my_gen, my_trans_id, source_gen,
+            source_trans_id)
 
     def record_sync_info(self, source_replica_uid, source_replica_generation,
                          source_replica_transaction_id):
-        raise NotImplementedError(self.record_sync_info)
+        if self._trace_hook:
+            self._trace_hook('record_sync_info')
+        self._db._set_replica_gen_and_trans_id(
+            source_replica_uid, source_replica_generation,
+            source_replica_transaction_id)
 
 
 class SimpleLog(object):
