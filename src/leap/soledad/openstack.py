@@ -41,9 +41,12 @@ class OpenStackDatabase(CommonBackend):
         Conflicts do not happen on server side, so there's no need to check
         for them.
         """
-        response, contents = self._connection.get_object(self._container, doc_id)
-        rev = response['x-object-meta-rev']
-        return self._factory(doc_id, rev, contents)
+        try:
+            response, contents = self._connection.get_object(self._container, doc_id)
+            rev = response['x-object-meta-rev']
+            return self._factory(doc_id, rev, contents)
+        except: swiftclient.ClientException
+            return None
 
     def get_doc(self, doc_id, include_deleted=False):
         doc = self._get_doc(doc_id, check_for_conflicts=True)
@@ -83,7 +86,20 @@ class OpenStackDatabase(CommonBackend):
         return new_rev
 
     def delete_doc(self, doc):
-        raise NotImplementedError(self.delete_doc)
+        old_doc = self._get_doc(doc.doc_id, check_for_conflicts=True)
+        if old_doc is None:
+            raise errors.DocumentDoesNotExist
+        if old_doc.rev != doc.rev:
+            raise errors.RevisionConflict()
+        if old_doc.is_tombstone():
+            raise errors.DocumentAlreadyDeleted
+        if old_doc.has_conflicts:
+            raise errors.ConflictedDoc()
+        new_rev = self._allocate_doc_rev(doc.rev)
+        doc.rev = new_rev
+        doc.make_tombstone()
+        self._put_doc(olddoc)
+        return new_rev
 
     # start of index-related methods: these are not supported by this backend.
 
