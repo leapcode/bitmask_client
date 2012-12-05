@@ -30,7 +30,9 @@ class OpenStackDatabase(CommonBackend):
         raise NotImplementedError(self.set_document_size_limit)
 
     def whats_changed(self, old_generation=0):
-        raise NotImplementedError(self.whats_changed)
+        # This method is implemented in TransactionLog because testing is
+        # easier like this for now, but it can be moved to here afterwards.
+        return self._transaction_log.whats_changed(old_generation)
 
     def get_doc(self, doc_id, include_deleted=False):
         # TODO: support deleted docs?
@@ -179,28 +181,44 @@ class OpenStackSyncTarget(HTTPSyncTarget):
 
 
 class SimpleLog(object):
-    def __init__(self, log=None):
+    def __init__(self):
         self._log = []
-        if log:
-            self._log = log
+
+    def _set_log(self, log):
+        self._log = log
+
+    def _get_log(self):
+        return self._log
+
+    log = property(
+        _get_log, _set_log, doc="Log contents.")
 
     def append(self, msg):
         self._log.append(msg)
 
     def reduce(self, func, initializer=None):
-        return reduce(func, self._log, initializer)
+        return reduce(func, self.log, initializer)
 
     def map(self, func):
-        return map(func, self._log)
+        return map(func, self.log)
 
     def filter(self, func):
-        return filter(func, self._log)
+        return filter(func, self.log)
 
 
 class TransactionLog(SimpleLog):
     """
     A list of (generation, doc_id, transaction_id) tuples.
     """
+
+    def _set_log(self, log):
+        self._log = log
+
+    def _get_log(self):
+        return sorted(self._log, reverse=True)
+
+    log = property(
+        _get_log, _set_log, doc="Log contents.")
 
     def get_generation(self):
         """
@@ -229,6 +247,30 @@ class TransactionLog(SimpleLog):
             return None
         return log[2]
 
+    def whats_changed(self, old_generation):
+        results = self.filter(lambda x: x[0] > old_generation)
+        seen = set()
+        changes = []
+        newest_trans_id = ''
+        for generation, doc_id, trans_id in results:
+            if doc_id not in seen:
+                changes.append((doc_id, generation, trans_id))
+                seen.add(doc_id)
+        if changes:
+            cur_gen = changes[0][1]  # max generation
+            newest_trans_id = changes[0][2]
+            changes.reverse()
+        else:
+            results = self.log
+            if not results:
+                cur_gen = 0
+                newest_trans_id = ''
+            else:
+                cur_gen, _, newest_trans_id = results[0]
+
+        return cur_gen, newest_trans_id, changes
+        
+
 
 class SyncLog(SimpleLog):
     """
@@ -236,7 +278,7 @@ class SyncLog(SimpleLog):
     """
 
     def find_by_replica_uid(self, replica_uid):
-        if not self._log:
+        if not self.log:
             return ()
         return self.reduce(lambda x, y: y if y[0] == replica_uid else x)
 
@@ -256,7 +298,7 @@ class SyncLog(SimpleLog):
         Set the last-known generation and transaction id for the other
         database replica.
         """
-        self._log = self.filter(lambda x: x[0] != other_replica_uid)
+        self.log = self.filter(lambda x: x[0] != other_replica_uid)
         self.append((other_replica_uid, other_generation,
                      other_transaction_id))
 

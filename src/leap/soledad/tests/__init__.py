@@ -8,7 +8,11 @@ import os
 
 import u1db
 from soledad import leap, GPGWrapper
-from soledad.openstack import SimpleLog, TransactionLog, SyncLog
+from soledad.openstack import (
+    SimpleLog,
+    TransactionLog,
+    SyncLog,
+  )
 
 
 class EncryptedSyncTestCase(unittest.TestCase):
@@ -53,7 +57,8 @@ class LogTestCase(unittest.TestCase):
           (3, "doc_2", "tran_2"),
           (1, "doc_1", "tran_1")
         ]
-        log = TransactionLog(data)
+        log = TransactionLog()
+        log.log = data
         self.assertEqual(log.get_generation(), 3, 'error getting generation')
         self.assertEqual(log.get_generation_info(), (3, 'tran_2'),
                          'error getting generation info')
@@ -70,7 +75,8 @@ class LogTestCase(unittest.TestCase):
           ("replica_2", 2, "tran_2"),
           ("replica_1", 1, "tran_1")
         ]
-        log = SyncLog(data)
+        log = SyncLog()
+        log.log = data
         # test getting
         self.assertEqual(log.get_replica_gen_and_trans_id('replica_3'),
             (3, 'tran_3'), 'error getting replica gen and trans id')
@@ -87,6 +93,27 @@ class LogTestCase(unittest.TestCase):
             (2, 'tran_2'), 'error setting replica gen and trans id')
         self.assertEqual(log.get_replica_gen_and_trans_id('replica_3'),
             (3, 'tran_3'), 'error setting replica gen and trans id')
+
+    def test_whats_changed(self):
+        data = [
+          (2, "doc_3", "tran_3"),
+          (3, "doc_2", "tran_2"),
+          (1, "doc_1", "tran_1")
+        ]
+        log = TransactionLog()
+        log.log = data
+        self.assertEqual(
+          log.whats_changed(3),
+          (3, "tran_2", []),
+          'error getting whats changed.')
+        self.assertEqual(
+          log.whats_changed(2),
+          (3, "tran_2", [("doc_2",3,"tran_2")]),
+          'error getting whats changed.')
+        self.assertEqual(
+          log.whats_changed(1),
+          (3, "tran_2", [("doc_3",2,"tran_3"),("doc_2",3,"tran_2")]),
+          'error getting whats changed.')
 
 
 # Key material for testing
