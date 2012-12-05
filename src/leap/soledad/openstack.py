@@ -55,7 +55,16 @@ class OpenStackDatabase(CommonBackend):
 
     def get_all_docs(self, include_deleted=False):
         """Get all documents from the database."""
-        raise NotImplementedError(self.get_all_docs)
+        generation = self._get_generation()
+        results = []
+        _, doc_ids = self._connection.get_container(self._container,
+                                                    full_listing=True)
+        for doc_id in doc_ids:
+            doc = self._get_doc(doc_id)
+            if doc.content is None and not include_deleted:
+                continue
+            results.append(doc)
+        return (generation, results)
 
     def put_doc(self, doc):
         if doc.doc_id is None:
