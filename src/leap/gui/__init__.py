@@ -6,5 +6,6 @@ except ValueError:
     pass
 
 import firstrun
+import firstrun.wizard
 
-__all__ = ['firstrun']
+__all__ = ['firstrun', 'firstrun.wizard']

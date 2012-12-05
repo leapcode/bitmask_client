@@ -2,8 +2,11 @@
 import logging
 
 import sip
-sip.setapi('QString', 2)
-sip.setapi('QVariant', 2)
+try:
+    sip.setapi('QString', 2)
+    sip.setapi('QVariant', 2)
+except ValueError:
+    pass
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -146,6 +149,10 @@ class FirstRunWizard(QtGui.QWizard):
         # TODO: set style for MAC / windows ...
         #self.setWizardStyle()
 
+    #
+    # setup pages in wizard
+    #
+
     def add_pages_from_dict(self, pages_dict):
         """
         @param pages_dict: the dictionary with pages, where
@@ -168,6 +175,10 @@ class FirstRunWizard(QtGui.QWizard):
         """
         return self.pages_dict.keys().index(page_name)
 
+    #
+    # validation errors
+    #
+
     def set_validation_error(self, pagename, error):
         self.validation_errors[pagename] = error
 
@@ -178,20 +189,6 @@ class FirstRunWizard(QtGui.QWizard):
 
     def get_validation_error(self, pagename):
         return self.validation_errors.get(pagename, None)
-
-    def set_providerconfig(self, providerconfig):
-        self.providerconfig = providerconfig
-
-    def setWindowFlags(self, flags):
-        logger.debug('setting window flags')
-        QtGui.QWizard.setWindowFlags(self, flags)
-
-    def focusOutEvent(self, event):
-        # needed ?
-        self.setFocus(True)
-        self.activateWindow()
-        self.raise_()
-        self.show()
 
     def accept(self):
         """
@@ -246,17 +243,38 @@ class FirstRunWizard(QtGui.QWizard):
         if cb and callable(cb):
             self.success_cb()
 
-    def get_provider_by_index(self):
-        provider = self.field('provider_index')
-        return self.providers[provider]
+    # misc helpers
 
     def get_random_str(self, n):
+        """
+        returns a random string
+        :param n: the length of the desired string
+        :rvalue: str
+        """
         from string import (ascii_uppercase, ascii_lowercase, digits)
         from random import choice
         return ''.join(choice(
             ascii_uppercase +
             ascii_lowercase +
             digits) for x in range(n))
+
+    def set_providerconfig(self, providerconfig):
+        """
+        sets a providerconfig attribute
+        used when we fetch and parse a json configuration
+        """
+        self.providerconfig = providerconfig
+
+    def get_provider_by_index(self):  # pragma: no cover
+        """
+        returns the value of a provider given its index.
+        this was used in the select provider page,
+        in the case where we were preseeding providers in a combobox
+        """
+        # Leaving it here for the moment when we go back at the
+        # option of preseeding with known provider values.
+        provider = self.field('provider_index')
+        return self.providers[provider]
 
 
 if __name__ == '__main__':

@@ -26,4 +26,4 @@ __all__ = [
     'providerselect',
     'providersetup',
     'register',
-    'regvalidation']
+    'regvalidation']  # ,'wizard']

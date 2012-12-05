@@ -66,6 +66,11 @@ class EIPConductorTest(BaseLeapTest):
         self.manager = Mock(name="openvpnmanager_mock")
         self.con = MockedEIPConnection()
         self.con.provider = self.provider
+
+        # XXX watch out. This sometimes is throwing the following error:
+        # NoSuchProcess: process no longer exists (pid=6571)
+        # because of a bad implementation of _check_if_running_instance
+
         self.con.run_openvpn_checks()
 
     def tearDown(self):
