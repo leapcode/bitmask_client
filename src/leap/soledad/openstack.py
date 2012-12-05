@@ -53,6 +53,10 @@ class OpenStackDatabase(CommonBackend):
         headers = { 'X-Object-Meta-Rev' : new_rev }
         self._connection.put_object(self._container, doc_id, doc.get_json(),
                                     headers=headers)
+        new_gen = self._get_generation() + 1
+        trans_id = self._allocate_transaction_id()
+        self._transaction_log.append((new_gen, doc.doc_id, trans_id))
+        self._set_u1db_data()
         return new_rev
 
     def delete_doc(self, doc):
@@ -97,25 +101,27 @@ class OpenStackDatabase(CommonBackend):
         raise NotImplementedError(self.close)
 
     def _get_replica_gen_and_trans_id(self, other_replica_uid):
-        self._update_u1db_data()
+        self._get_u1db_data()
         return self._sync_log.get_replica_gen_and_trans_id(other_replica_uid)
 
     def _set_replica_gen_and_trans_id(self, other_replica_uid,
                                       other_generation, other_transaction_id):
-        self._update_u1db_data()
-        return self._sync_log.set_replica_gen_and_trans_id(other_replica_uid,
-                                other_generation, other_transaction_id)
+        self._get_u1db_data()
+        self._sync_log.set_replica_gen_and_trans_id(other_replica_uid,
+                                                    other_generation,
+                                                    other_transaction_id)
+        self._set_u1db_data()
 
     #-------------------------------------------------------------------------
     # implemented methods from CommonBackend
     #-------------------------------------------------------------------------
 
     def _get_generation(self):
-        self._update_u1db_data()
+        self._get_u1db_data()
         return self._transaction_log.get_generation()
 
     def _get_generation_info(self):
-        self._update_u1db_data()
+        self._get_u1db_data()
         return self._transaction_log.get_generation_info()
 
     def _get_doc(self, doc_id, check_for_conflicts=False):
@@ -130,7 +136,7 @@ class OpenStackDatabase(CommonBackend):
 
 
     def _get_trans_id_for_gen(self, generation):
-        self._update_u1db_data()
+        self._get_u1db_data()
         trans_id = self._transaction_log.get_trans_id_for_gen(generation)
         if trans_id is None:
             raise errors.InvalidGeneration
@@ -150,10 +156,16 @@ class OpenStackDatabase(CommonBackend):
         self._url, self._auth_token = self._connection.get_auth()
         return self._url, self.auth_token
 
-    def _update_u1db_data(self):
+    def _get_u1db_data(self):
         data = self.get_doc('u1db_data').content
         self._transaction_log = data['transaction_log']
         self._sync_log = data['sync_log']
+
+    def _set_u1db_data(self):
+        doc = self._factory('u1db_data')
+        doc.content = { 'transaction_log' : self._transaction_log,
+                        'sync_log'        : self._sync_log }
+        self.put_doc(doc)
 
 
 class OpenStackSyncTarget(HTTPSyncTarget):
@@ -180,6 +192,9 @@ class SimpleLog(object):
 
     def map(self, func):
         return map(func, self._log)
+
+    def filter(self, func):
+        return filter(func, self._log)
 
 
 class TransactionLog(SimpleLog):
@@ -214,6 +229,7 @@ class TransactionLog(SimpleLog):
             return None
         return log[2]
 
+
 class SyncLog(SimpleLog):
     """
     A list of (replica_id, generation, transaction_id) tuples.
@@ -240,11 +256,7 @@ class SyncLog(SimpleLog):
         Set the last-known generation and transaction id for the other
         database replica.
         """
-        old_log = self._log
-        self._log = []
-        for log in old_log:
-            if log[0] != other_replica_uid:
-                self.append(log)
+        self._log = self.filter(lambda x: x[0] != other_replica_uid)
         self.append((other_replica_uid, other_generation,
                      other_transaction_id))
-                
+
