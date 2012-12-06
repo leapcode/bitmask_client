@@ -39,9 +39,6 @@ class LeapNetworkChecker(object):
             # XXX remove this hardcoded random ip
             # ping leap.se or eip provider instead...?
             requests.get('http://216.172.161.165')
-
-        except (requests.HTTPError, requests.RequestException) as e:
-            raise exceptions.NoInternetConnection(e.message)
         except requests.ConnectionError as e:
             error = "Unidentified Connection Error"
             if e.message == "[Errno 113] No route to host":
@@ -51,11 +48,17 @@ class LeapNetworkChecker(object):
                     error = "Provider server appears to be down."
             logger.error(error)
             raise exceptions.NoInternetConnection(error)
+        except (requests.HTTPError, requests.RequestException) as e:
+            raise exceptions.NoInternetConnection(e.message)
         logger.debug('Network appears to be up.')
 
     def is_internet_up(self):
         iface, gateway = self.get_default_interface_gateway()
-        self.ping_gateway(self.provider_gateway)
+        try:
+            self.ping_gateway(self.provider_gateway)
+        except exceptions.NoConnectionToGateway:
+            return False
+        return True
 
     def check_tunnel_default_interface(self):
         """
