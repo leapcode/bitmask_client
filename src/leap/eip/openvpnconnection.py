@@ -176,7 +176,7 @@ to be triggered for each one of them.
 
         logger.debug('no openvpn instance found.')
 
-    def cleanup(self):
+    def cleanup(self, shutdown=False):
         """
         terminates openvpn child subprocess
         """
@@ -201,7 +201,8 @@ to be triggered for each one of them.
                     'cannot terminate subprocess! Retcode %s'
                     '(We might have left openvpn running)' % RETCODE)
 
-        self.cleanup_tempfiles()
+        if shutdown:
+            self.cleanup_tempfiles()
 
     def cleanup_tempfiles(self):
         """
