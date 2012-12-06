@@ -1,6 +1,8 @@
 Soledad -- Synchronization Of Locally Encrypted Data Among Devices
 ==================================================================
 
+This software is under development, many parts of the code are still untested.
+
 Dependencies
 ------------
 
@@ -13,3 +15,5 @@ Soledad depends on the following python libraries:
 [1] http://pypi.python.org/pypi/u1db/0.1.4
 [2] https://launchpad.net/python-swiftclient
 [3] http://packages.python.org/python-gnupg/index.html
+
+Right now, all these libs

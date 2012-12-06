@@ -2,8 +2,8 @@
 
 """A U1DB implementation that uses OpenStack Swift as its persistence layer."""
 
-from leap import *
-from openstack import *
+from backends.leap import *
+from backends.openstack import *
 
 import gnupg
 

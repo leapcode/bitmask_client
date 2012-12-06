@@ -206,8 +206,8 @@ class OpenStackDatabase(CommonBackend):
         """
         Create u1db data object in store.
         """
-        content = { 'transaction_log' = [],
-                    'sync_log' = [] }
+        content = { 'transaction_log' : [],
+                    'sync_log' : [] }
         doc = self.create_doc('u1db_data', content)
 
     def _get_auth(self):
