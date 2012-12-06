@@ -1,14 +1,15 @@
 from BaseHTTPServer import BaseHTTPRequestHandler
+import urlparse
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 
 import requests
-from mock import Mock
+#from mock import Mock
 
 from leap.base import auth
-from leap.base import exceptions
+#from leap.base import exceptions
 from leap.eip.tests.test_checks import NoLogRequestHandler
 from leap.testing.basetest import BaseLeapTest
 from leap.testing.https_server import BaseHTTPSServerTestCase
@@ -20,8 +21,7 @@ class LeapSRPRegisterTests(BaseHTTPSServerTestCase, BaseLeapTest):
 
     class request_handler(NoLogRequestHandler, BaseHTTPRequestHandler):
         responses = {
-            '/': ['OK', ''],
-                }
+            '/': ['OK', '']}
 
         def do_GET(self):
             path = urlparse.urlparse(self.path)
@@ -53,5 +53,6 @@ class LeapSRPRegisterTests(BaseHTTPSServerTestCase, BaseLeapTest):
         srp_auth = auth.LeapSRPRegister(provider=SERVER, verify=False)
 
         self.assertIsInstance(srp_auth.session, requests.sessions.Session)
-        self.assertEqual(srp_auth.get_registration_uri(),
-                "https://localhost:8443/1/users.json")
+        self.assertEqual(
+            srp_auth.get_registration_uri(),
+            "https://localhost:8443/1/users.json")
