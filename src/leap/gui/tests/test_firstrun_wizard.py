@@ -31,7 +31,6 @@ PAGES_DICT = dict((
     ('signup', firstrun.register.RegisterUserPage),
     ('signupvalidation',
         firstrun.regvalidation.RegisterUserValidationPage),
-    ('connecting', firstrun.connect.ConnectingPage),
     ('lastpage', firstrun.last.LastPage)
 ))
 
@@ -115,7 +114,7 @@ class FirstRunWizardTestCase(qunittest.TestCase):
 
         pagenames = ('intro', 'providerselection', 'login', 'providerinfo',
                      'providersetupvalidation', 'signup', 'signupvalidation',
-                     'connecting', 'lastpage')
+                     'lastpage')
         eq = self.assertEqual
         w = self.wizard
         for index, name in enumerate(pagenames):

@@ -248,6 +248,7 @@ class WithStepsMixIn(object):
     # slot
     #@QtCore.pyqtSlot(str, int)
     def onStepStatusChanged(self, status, progress=None):
+        status = unicode(status)
         if status not in ("head_sentinel", "end_sentinel"):
             self.add_status_line(status)
         if status in ("end_sentinel"):

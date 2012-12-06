@@ -49,12 +49,29 @@ TODO-ish:
 """
 
 
+def get_pages_dict():
+    return OrderedDict((
+        ('intro', firstrun.intro.IntroPage),
+        ('providerselection',
+            firstrun.providerselect.SelectProviderPage),
+        ('login', firstrun.login.LogInPage),
+        ('providerinfo', firstrun.providerinfo.ProviderInfoPage),
+        ('providersetupvalidation',
+            firstrun.providersetup.ProviderSetupValidationPage),
+        ('signup', firstrun.register.RegisterUserPage),
+        ('signupvalidation',
+            firstrun.regvalidation.RegisterUserValidationPage),
+        ('lastpage', firstrun.last.LastPage)
+    ))
+
+
 class FirstRunWizard(QtGui.QWizard):
 
     def __init__(
             self,
             conductor_instance,
             parent=None,
+            pages_dict=None,
             eip_username=None,
             providers=None,
             success_cb=None, is_provider_setup=False,
@@ -115,20 +132,7 @@ class FirstRunWizard(QtGui.QWizard):
         self.is_previously_registered = bool(self.eip_username)
         self.from_login = False
 
-        pages_dict = OrderedDict((
-            ('intro', firstrun.intro.IntroPage),
-            ('providerselection',
-                firstrun.providerselect.SelectProviderPage),
-            ('login', firstrun.login.LogInPage),
-            ('providerinfo', firstrun.providerinfo.ProviderInfoPage),
-            ('providersetupvalidation',
-                firstrun.providersetup.ProviderSetupValidationPage),
-            ('signup', firstrun.register.RegisterUserPage),
-            ('signupvalidation',
-                firstrun.regvalidation.RegisterUserValidationPage),
-            ('connecting', firstrun.connect.ConnectingPage),
-            ('lastpage', firstrun.last.LastPage)
-        ))
+        pages_dict = pages_dict or get_pages_dict()
         self.add_pages_from_dict(pages_dict)
 
         self.validation_errors = {}

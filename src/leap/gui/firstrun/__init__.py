@@ -5,7 +5,6 @@ try:
 except ValueError:
     pass
 
-import connect
 import intro
 import last
 import login
@@ -17,7 +16,6 @@ import register
 import regvalidation
 
 __all__ = [
-    'connect',
     'intro',
     'last',
     'login',

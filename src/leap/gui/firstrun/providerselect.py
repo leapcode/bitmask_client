@@ -40,7 +40,7 @@ class SelectProviderPage(InlineValidationPage):
 
         self.did_cert_check = False
 
-        self.is_done = False
+        self.done = False
 
         self.setupSteps()
         self.setupUI()
@@ -131,7 +131,7 @@ class SelectProviderPage(InlineValidationPage):
 
     # certinfo
 
-    def setupCertInfoGroup(self):
+    def setupCertInfoGroup(self):  # pragma: no cover
         # XXX not used now.
         certinfoGroup = QtGui.QGroupBox(
             self.tr("Certificate validation"))
@@ -188,7 +188,6 @@ class SelectProviderPage(InlineValidationPage):
         _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
 
         netchecker = wizard.netchecker()
-
         providercertchecker = wizard.providercertchecker()
         eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
 
@@ -205,6 +204,7 @@ class SelectProviderPage(InlineValidationPage):
             this domain
             """
             try:
+                #import ipdb;ipdb.set_trace()
                 netchecker.check_name_resolution(
                     domain)
 
@@ -306,7 +306,7 @@ class SelectProviderPage(InlineValidationPage):
 
         # done!
 
-        self.is_done = True
+        self.done = True
         yield(("end_sentinel", 100), lambda: None)
 
     def on_checks_validation_ready(self):
@@ -316,7 +316,7 @@ class SelectProviderPage(InlineValidationPage):
         self.domain_checked = True
         self.completeChanged.emit()
         # let's set focus...
-        if self.is_done:
+        if self.is_done():
             self.wizard().clean_validation_error(self.current_page)
             nextbutton = self.wizard().button(QtGui.QWizard.NextButton)
             nextbutton.setFocus()
@@ -329,7 +329,7 @@ class SelectProviderPage(InlineValidationPage):
     def is_insecure_cert_trusted(self):
         return self.trustProviderCertCheckBox.isChecked()
 
-    def onTrustCheckChanged(self, state):
+    def onTrustCheckChanged(self, state):  # pragma: no cover XXX
         checked = False
         if state == 2:
             checked = True
@@ -342,7 +342,7 @@ class SelectProviderPage(InlineValidationPage):
         # trigger signal to redraw next button
         self.completeChanged.emit()
 
-    def add_cert_info(self, certinfo):
+    def add_cert_info(self, certinfo):  # pragma: no cover XXX
         self.certWarning.setText(
             "Do you want to <b>trust this provider certificate?</b>")
         self.certInfo.setText(
@@ -351,7 +351,7 @@ class SelectProviderPage(InlineValidationPage):
         self.certinfoGroup.show()
 
     def onProviderChanged(self, text):
-        self.is_done = False
+        self.done = False
         provider = self.providerNameEdit.text()
         if provider:
             self.providerCheckButton.setDisabled(False)
@@ -374,7 +374,7 @@ class SelectProviderPage(InlineValidationPage):
     def isComplete(self):
         provider = self.providerNameEdit.text()
 
-        if not self.is_done:
+        if not self.is_done():
             return False
 
         if not provider:
@@ -383,7 +383,7 @@ class SelectProviderPage(InlineValidationPage):
             if self.is_insecure_cert_trusted():
                 return True
             if not self.did_cert_check:
-                if self.is_done:
+                if self.is_done():
                     # XXX sure?
                     return True
             return False
@@ -452,7 +452,7 @@ class SelectProviderPage(InlineValidationPage):
         if hasattr(self, 'certinfoGroup'):
             # XXX remove ?
             self.certinfoGroup.hide()
-        self.is_done = False
+        self.done = False
         self.providerCheckButton.setDisabled(True)
         self.valFrame.hide()
         self.steps.removeAllSteps()
