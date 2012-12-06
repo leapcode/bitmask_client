@@ -7,13 +7,13 @@ import unittest
 import os
 
 import u1db
-from soledad import GPGWrapper
-from soledad.backends import leap
-from soledad.backends.openstack import (
+from soledad import (
+    GPGWrapper,
     SimpleLog,
     TransactionLog,
     SyncLog,
   )
+from soledad.backends import leap
 
 
 class EncryptedSyncTestCase(unittest.TestCase):
