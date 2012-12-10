@@ -7,6 +7,7 @@ from u1db import Document
 from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
 import base64
+from soledad import GPGWrapper
 
 
 class NoDefaultKey(Exception):

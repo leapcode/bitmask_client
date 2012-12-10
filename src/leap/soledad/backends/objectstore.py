@@ -1,5 +1,7 @@
+import uuid
 from u1db.backends import CommonBackend
 from soledad import SyncLog, TransactionLog
+from soledad.backends.leap import LeapDocument
 
 
 class ObjectStore(CommonBackend):
@@ -45,15 +47,14 @@ class ObjectStore(CommonBackend):
         self._check_doc_id(doc.doc_id)
         self._check_doc_size(doc)
         # put the document
-        new_rev = self._allocate_doc_rev(doc.rev)
-        self._put_doc(doc, new_rev)
-        doc.rev = new_rev
+        doc.rev = self._allocate_doc_rev(doc.rev)
+        self._put_doc(doc)
         # update u1db generation and logs
         new_gen = self._get_generation() + 1
         trans_id = self._allocate_transaction_id()
         self._transaction_log.append((new_gen, doc.doc_id, trans_id))
         self._set_u1db_data()
-        return new_rev
+        return doc.rev
 
     def delete_doc(self, doc):
         old_doc = self._get_doc(doc.doc_id, check_for_conflicts=True)
@@ -145,15 +146,16 @@ class ObjectStore(CommonBackend):
         """
         if not self._is_initialized():
             self._initialize()
-        u1db_data = self._get_doc('u1db_data')
-        self._sync_log.log = u1db_data.content['sync_log']
-        self._transaction_log.log = u1db_data.content['transaction_log']
+        self._get_u1db_data()
+
+    U1DB_DATA_DOC_ID = 'u1db_data'
 
     def _is_initialized(self):
         """
         Verify if u1db data exists in store.
         """
-        if not self._get_doc('u1db_data'):
+        doc = self._get_doc(self.U1DB_DATA_DOC_ID)
+        if not self._get_doc(self.U1DB_DATA_DOC_ID):
             return False
         return True
 
@@ -161,19 +163,22 @@ class ObjectStore(CommonBackend):
         """
         Create u1db data object in store.
         """
-        content = { 'transaction_log' : [],
-                    'sync_log' : [] }
-        doc = self.create_doc('u1db_data', content)
+        self._replica_uid = uuid.uuid4().hex
+        doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
+        doc.content = { 'transaction_log' : [],
+                        'sync_log' : [],
+                        'replica_uid' : self._replica_uid }
+        self._put_doc(doc)
 
-    def _get_u1db_data(self):
-        data = self.get_doc('u1db_data').content
-        self._transaction_log = data['transaction_log']
-        self._sync_log = data['sync_log']
+    def _get_u1db_data(self, u1db_data_doc_id):
+        NotImplementedError(self._get_u1db_data)
 
     def _set_u1db_data(self):
-        doc = self._factory('u1db_data')
-        doc.content = { 'transaction_log' : self._transaction_log,
-                        'sync_log'        : self._sync_log }
-        self.put_doc(doc)
+        doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
+        doc.content = { 'transaction_log' : self._transaction_log.log,
+                        'sync_log'        : self._sync_log.log,
+                        'replica_uid'     : self._replica_uid,
+                        '_rev'            : self._couch_rev}
+        self._put_doc(doc)
 
 

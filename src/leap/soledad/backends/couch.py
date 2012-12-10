@@ -1,7 +1,9 @@
 from u1db import errors
 from u1db.remote.http_target import HTTPSyncTarget
-from couchdb import *
+from couchdb.client import Server, Document
+from couchdb.http import ResourceNotFound
 from soledad.backends.objectstore import ObjectStore
+from soledad.backends.leap import LeapDocument
 
 
 class CouchDatabase(ObjectStore):
@@ -12,13 +14,18 @@ class CouchDatabase(ObjectStore):
         self._url = url
         self._full_commit = full_commit
         self._session = session
-        self._server = couchdb.Server(url=self._url,
-                                      full_commit=self._full_commit,
-                                      session=self._session)
+        self._server = Server(url=self._url,
+                              full_commit=self._full_commit,
+                              session=self._session)
         # this will ensure that transaction and sync logs exist and are
         # up-to-date.
-        super(CouchDatabase, self)
-        self._database = self._server[database]
+        self.set_document_factory(LeapDocument)
+        try:
+            self._database = self._server[database]
+        except ResourceNotFound:
+            self._server.create(database)
+            self._database = self._server[database]
+        super(CouchDatabase, self).__init__()
 
     #-------------------------------------------------------------------------
     # implemented methods from Database
@@ -31,13 +38,14 @@ class CouchDatabase(ObjectStore):
         for them.
         """
         cdoc = self._database.get(doc_id)
-        if cdoc is not None:
-            content = {}
-            for key, value in content:
-                if not key in ['_id', '_rev', '_u1db_rev']:
-                    content[key] = value
-            doc = self._factory(doc_id=doc_id, rev=cdoc['_u1db_rev'])
-            doc.content = content
+        if cdoc is None:
+            return None
+        content = {}
+        for (key, value) in cdoc.items():
+            if key not in ['_id', '_rev', 'u1db_rev']:
+                content[key] = value
+        doc = self._factory(doc_id=doc_id, rev=cdoc['u1db_rev'])
+        doc.content = content
         return doc
 
     def get_all_docs(self, include_deleted=False):
@@ -51,12 +59,15 @@ class CouchDatabase(ObjectStore):
             results.append(doc)
         return (generation, results)
 
-    def _put_doc(self, doc, new_rev):
+    def _put_doc(self, doc):
         # map u1db metadata to couch
         content = doc.content
-        content['_id'] = doc.doc_id
-        content['_u1db_rev'] = new_rev
-        self._database.save(doc.content)
+        cdoc = Document()
+        cdoc['_id'] = doc.doc_id
+        cdoc['u1db_rev'] = doc.rev
+        for (key, value) in content.items():
+            cdoc[key] = value
+        self._database.save(cdoc)
 
     def get_sync_target(self):
         return CouchSyncTarget(self)
@@ -69,6 +80,13 @@ class CouchDatabase(ObjectStore):
         from u1db.remote.http_target import CouchSyncTarget
         return Synchronizer(self, CouchSyncTarget(url, creds=creds)).sync(
             autocreate=autocreate)
+
+    def _get_u1db_data(self):
+        cdoc = self._database.get(self.U1DB_DATA_DOC_ID)
+        self._sync_log.log = cdoc['sync_log']
+        self._transaction_log.log = cdoc['transaction_log']
+        self._replica_uid = cdoc['replica_uid']
+        self._couch_rev = cdoc['_rev']
 
     #-------------------------------------------------------------------------
     # Couch specific methods

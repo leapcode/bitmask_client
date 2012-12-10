@@ -17,7 +17,7 @@ class OpenStackDatabase(ObjectStore):
                                                   self._auth_key)
         self._get_auth()
         # this will ensure transaction and sync logs exist and are up-to-date.
-        super(OpenStackDatabase, self)
+        super(OpenStackDatabase, self).__init__()
 
     #-------------------------------------------------------------------------
     # implemented methods from Database
