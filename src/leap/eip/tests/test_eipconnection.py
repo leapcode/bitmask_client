@@ -123,9 +123,14 @@ class EIPConductorTest(BaseLeapTest):
                          self.con.status.CONNECTED)
 
         # disconnect
-        self.con.cleanup = Mock()
+        self.con.terminate_openvpn_connection = Mock()
         self.con.disconnect()
-        self.con.cleanup.assert_called_once_with()
+        self.con.terminate_openvpn_connection.assert_called_once_with(
+            shutdown=False)
+        self.con.terminate_openvpn_connection = Mock()
+        self.con.disconnect(shutdown=True)
+        self.con.terminate_openvpn_connection.assert_called_once_with(
+            shutdown=True)
 
         # new status should be disconnected
         # XXX this should evolve and check no errors

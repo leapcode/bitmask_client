@@ -53,7 +53,7 @@ def get_socket_path():
     socket_path = os.path.join(
         tempfile.mkdtemp(prefix="leap-tmp"),
         'openvpn.socket')
-    logger.debug('socket path: %s', socket_path)
+    #logger.debug('socket path: %s', socket_path)
     return socket_path
 
 
