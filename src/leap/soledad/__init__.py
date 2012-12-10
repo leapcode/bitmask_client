@@ -44,7 +44,7 @@ class GPGWrapper():
 
 
 #----------------------------------------------------------------------------
-# u1db Transaction and Sync logs as JSON structures.
+# u1db Transaction and Sync logs.
 #----------------------------------------------------------------------------
 
 class SimpleLog(object):
