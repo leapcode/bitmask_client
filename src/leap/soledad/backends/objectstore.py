@@ -35,10 +35,10 @@ class ObjectStore(CommonBackend):
             return None
         return doc
 
-    def _put_doc(self, doc)
+    def _put_doc(self, doc):
         raise NotImplementedError(self._put_doc)
 
-    def put_doc(self, doc)
+    def put_doc(self, doc):
         # consistency check
         if doc.doc_id is None:
             raise errors.InvalidDocId()
