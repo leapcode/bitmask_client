@@ -5,6 +5,7 @@ import tempfile
 
 from leap import __branding as BRANDING
 from leap import certs
+from leap.util.misc import null_check
 from leap.util.fileutil import (which, mkdir_p, check_and_fix_urw_only)
 
 from leap.base import config as baseconfig
@@ -57,30 +58,30 @@ def get_socket_path():
     return socket_path
 
 
-def get_eip_gateway(provider=None):
+def get_eip_gateway(eipconfig=None, eipserviceconfig=None):
     """
     return the first host in eip service config
     that matches the name defined in the eip.json config
     file.
     """
-    placeholder = "testprovider.example.org"
-    # XXX check for null on provider??
+    null_check(eipconfig, "eipconfig")
+    null_check(eipserviceconfig, "eipserviceconfig")
 
-    eipconfig = EIPConfig(domain=provider)
-    eipconfig.load()
+    PLACEHOLDER = "testprovider.example.org"
+
     conf = eipconfig.config
+    eipsconf = eipserviceconfig.config
 
     primary_gateway = conf.get('primary_gateway', None)
     if not primary_gateway:
-        return placeholder
+        return PLACEHOLDER
 
-    eipserviceconfig = EIPServiceConfig(domain=provider)
-    eipserviceconfig.load()
-    eipsconf = eipserviceconfig.get_config()
     gateways = eipsconf.get('gateways', None)
+
     if not gateways:
         logger.error('missing gateways in eip service config')
-        return placeholder
+        return PLACEHOLDER
+
     if len(gateways) > 0:
         for gw in gateways:
             name = gw.get('name', None)
@@ -100,6 +101,26 @@ def get_eip_gateway(provider=None):
                  'gateway list')
 
 
+def get_cipher_options(eipserviceconfig=None):
+    """
+    gathers optional cipher options from eip-service config.
+    :param eipserviceconfig: EIPServiceConfig instance
+    """
+    null_check(eipserviceconfig, 'eipserviceconfig')
+    eipsconf = eipserviceconfig.get_config()
+
+    ALLOWED_KEYS = ("auth", "cipher", "tls-cipher")
+    opts = []
+    if 'openvpn_configuration' in eipsconf:
+        config = eipserviceconfig.openvpn_configuration
+        for key, value in config.items():
+            if key in ALLOWED_KEYS and value is not None:
+                # I humbly think we should sanitize this
+                # input against `valid` openvpn settings. -- kali.
+                opts.append(['--%s' % key, value])
+    return opts
+
+
 def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     """
     build a list of options
@@ -116,6 +137,10 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     # things from there if present.
 
     provider = kwargs.pop('provider', None)
+    eipconfig = EIPConfig(domain=provider)
+    eipconfig.load()
+    eipserviceconfig = EIPServiceConfig(domain=provider)
+    eipserviceconfig.load()
 
     # get user/group name
     # also from config.
@@ -139,9 +164,19 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
 
     # remote
     opts.append('--remote')
-    gw = get_eip_gateway(provider=provider)
+
+    gw = get_eip_gateway(eipconfig=eipconfig,
+                         eipserviceconfig=eipserviceconfig)
     logger.debug('setting eip gateway to %s', gw)
     opts.append(str(gw))
+
+    # get ciphers
+    ciphers = get_cipher_options(
+        eipserviceconfig=eipserviceconfig)
+    for cipheropt in ciphers:
+        opts.append(str(cipheropt))
+
+    # get port/protocol from eipservice too
     opts.append('1194')
     #opts.append('80')
     opts.append('udp')

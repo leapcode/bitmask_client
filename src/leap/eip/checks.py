@@ -427,6 +427,7 @@ class EIPConfigChecker(object):
         return True
 
     def fetch_definition(self, skip_download=False,
+                         force_download=False,
                          config=None, uri=None,
                          domain=None):
         """
@@ -459,6 +460,7 @@ class EIPConfigChecker(object):
         self.defaultprovider.save()
 
     def fetch_eip_service_config(self, skip_download=False,
+                                 force_download=False,
                                  config=None, uri=None, domain=None):
         if skip_download:
             return True
@@ -469,7 +471,10 @@ class EIPConfigChecker(object):
                 domain = self.domain or config.get('provider', None)
             uri = self._get_eip_service_uri(domain=domain)
 
-        self.eipserviceconfig.load(from_uri=uri, fetcher=self.fetcher)
+        self.eipserviceconfig.load(
+            from_uri=uri,
+            fetcher=self.fetcher,
+            force_download=force_download)
         self.eipserviceconfig.save()
 
     def check_complete_eip_config(self, config=None):

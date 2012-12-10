@@ -17,11 +17,14 @@ class NetworkCheckerAppMixin(object):
     """
 
     def __init__(self, *args, **kwargs):
+        provider = kwargs.pop('provider', None)
         self.network_checker = NetworkCheckerThread(
             error_cb=self.networkError.emit,
-            debug=self.debugmode)
+            debug=self.debugmode,
+            provider=provider)
 
-        # XXX move run_checks to slot
+        # XXX move run_checks to slot -- this definitely
+        # cannot start on init!!!
         self.network_checker.run_checks()
 
     @QtCore.pyqtSlot(object)
