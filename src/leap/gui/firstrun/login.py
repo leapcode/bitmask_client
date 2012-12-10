@@ -82,6 +82,120 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
 
         #self.registerField('is_login_wizard')
 
+    # actual checks
+
+    def _do_checks(self):
+
+        full_username = self.userNameLineEdit.text()
+        ###########################
+        # 0) check user@domain form
+        ###########################
+
+        def checkusername():
+            if full_username.count('@') != 1:
+                return self.fail(
+                    self.tr(
+                        "Username must be in the username@provider form."))
+            else:
+                return True
+
+        yield(("head_sentinel", 0), checkusername)
+
+        username, domain = full_username.split('@')
+        password = self.userPasswordLineEdit.text()
+
+        # We try a call to an authenticated
+        # page here as a mean to catch
+        # srp authentication errors while
+        wizard = self.wizard()
+        eipconfigchecker = wizard.eipconfigchecker()
+
+        ########################
+        # 1) try name resolution
+        ########################
+        # show the frame before going on...
+        QtCore.QMetaObject.invokeMethod(
+            self, "showStepsFrame")
+
+        # Able to contact domain?
+        # can get definition?
+        # two-by-one
+        def resolvedomain():
+            try:
+                eipconfigchecker.fetch_definition(domain=domain)
+
+            # we're using requests here for all
+            # the possible error cases that it catches.
+            except requests.exceptions.ConnectionError as exc:
+                return self.fail(exc.message[1])
+            except requests.exceptions.HTTPError as exc:
+                return self.fail(exc.message)
+            except Exception as exc:
+                # XXX get catchall error msg
+                return self.fail(
+                    exc.message)
+            else:
+                return True
+
+        yield((self.tr("Resolving domain name"), 20), resolvedomain)
+
+        wizard.set_providerconfig(
+            eipconfigchecker.defaultprovider.config)
+
+        ########################
+        # 2) do authentication
+        ########################
+        credentials = username, password
+        pCertChecker = wizard.providercertchecker(
+            domain=domain)
+
+        def validate_credentials():
+            #################
+            # FIXME #BUG #638
+            verify = False
+
+            try:
+                pCertChecker.download_new_client_cert(
+                    credentials=credentials,
+                    verify=verify)
+
+            except auth.SRPAuthenticationError as exc:
+                return self.fail(
+                    self.tr("Authentication error: %s" % exc.message))
+
+            except Exception as exc:
+                return self.fail(exc.message)
+
+            else:
+                return True
+
+        yield(('Validating credentials', 60), validate_credentials)
+
+        self.set_done()
+        yield(("end_sentinel", 100), lambda: None)
+
+    def green_validation_status(self):
+        val = self.validationMsg
+        val.setText(self.tr('Credentials validated.'))
+        val.setStyleSheet(styles.GreenLineEdit)
+
+    def on_checks_validation_ready(self):
+        """
+        after checks
+        """
+        if self.is_done():
+            self.disableFields()
+            self.cleanup_errormsg()
+            self.clean_wizard_errors(self.current_page)
+            # make the user confirm the transition
+            # to next page.
+            self.nextText('&Next')
+            self.nextFocus()
+            self.green_validation_status()
+            self.do_confirm_next = True
+
+    # ui update
+
     def nextText(self, text):
         self.setButtonText(
             QtGui.QWizard.NextButton, text)
@@ -94,11 +208,17 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         self.wizard().button(
             QtGui.QWizard.NextButton).setDisabled(True)
 
-    def onUserNameEdit(self, *args):
+    def onUserNamePositionChanged(self, *args):
         if self.initial_username_sample:
             self.userNameLineEdit.setText('')
             # XXX set regular color
             self.initial_username_sample = None
+
+    def onUserNameTextChanged(self, *args):
+        if self.initial_username_sample:
+            k = args[0][-1]
+            self.initial_username_sample = None
+            self.userNameLineEdit.setText(k)
 
     def disableFields(self):
         for field in (self.userNameLineEdit,
@@ -111,13 +231,8 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
 
         errors = self.wizard().get_validation_error(
             self.current_page)
-        #prev_er = getattr(self, 'prevalidation_error', None)
         showerr = self.validationMsg.setText
 
-        #if not errors and prev_er:
-            #showerr(prev_er)
-            #return
-#
         if errors:
             bad_str = getattr(self, 'bad_string', None)
             cur_str = self.userNameLineEdit.text()
@@ -128,9 +243,6 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
                 self.bad_string = cur_str
                 showerr(errors)
             else:
-                #if prev_er:
-                    #showerr(prev_er)
-                    #return
                 # not the first time
                 if cur_str == bad_str:
                     showerr(errors)
@@ -177,7 +289,9 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         username = self.userNameLineEdit
         username.setText('username@provider.example.org')
         username.cursorPositionChanged.connect(
-            self.onUserNameEdit)
+            self.onUserNamePositionChanged)
+        username.textChanged.connect(
+            self.onUserNameTextChanged)
         self.initial_username_sample = True
         self.validationMsg.setText('')
         self.valFrame.hide()
@@ -215,116 +329,3 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
             self.do_checks()
 
         return self.is_done()
-
-    def _do_checks(self):
-        # XXX convert this to inline
-
-        full_username = self.userNameLineEdit.text()
-        ###########################
-        # 0) check user@domain form
-        ###########################
-
-        def checkusername():
-            if full_username.count('@') != 1:
-                return self.fail(
-                    self.tr(
-                        "Username must be in the username@provider form."))
-            else:
-                return True
-
-        yield(("head_sentinel", 0), checkusername)
-
-        # XXX I think this is not needed
-        # since we're also checking for the is_signup field.
-        #self.wizard().from_login = True
-
-        username, domain = full_username.split('@')
-        password = self.userPasswordLineEdit.text()
-
-        # We try a call to an authenticated
-        # page here as a mean to catch
-        # srp authentication errors while
-        wizard = self.wizard()
-        eipconfigchecker = wizard.eipconfigchecker()
-
-        ########################
-        # 1) try name resolution
-        ########################
-        # show the frame before going on...
-        QtCore.QMetaObject.invokeMethod(
-            self, "showStepsFrame")
-
-        # Able to contact domain?
-        # can get definition?
-        # two-by-one
-        def resolvedomain():
-            try:
-                eipconfigchecker.fetch_definition(domain=domain)
-
-            # we're using requests here for all
-            # the possible error cases that it catches.
-            except requests.exceptions.ConnectionError as exc:
-                return self.fail(exc.message[1])
-            except requests.exceptions.HTTPError as exc:
-                return self.fail(exc.message)
-            except Exception as exc:
-                # XXX get catchall error msg
-                return self.fail(
-                    exc.message)
-
-        yield((self.tr("resolving domain name"), 20), resolvedomain)
-
-        wizard.set_providerconfig(
-            eipconfigchecker.defaultprovider.config)
-
-        ########################
-        # 2) do authentication
-        ########################
-        credentials = username, password
-        pCertChecker = wizard.providercertchecker(
-            domain=domain)
-
-        def validate_credentials():
-            #################
-            # FIXME #BUG #638
-            verify = False
-
-            try:
-                pCertChecker.download_new_client_cert(
-                    credentials=credentials,
-                    verify=verify)
-
-            except auth.SRPAuthenticationError as exc:
-                return self.fail(
-                    self.tr("Authentication error: %s" % exc.message))
-
-            except Exception as exc:
-                return self.fail(exc.message)
-
-            else:
-                return True
-
-        yield(('Validating credentials', 20), validate_credentials)
-
-        self.set_done()
-        yield(("end_sentinel", 0), lambda: None)
-
-    def green_validation_status(self):
-        val = self.validationMsg
-        val.setText(self.tr('Credentials validated.'))
-        val.setStyleSheet(styles.GreenLineEdit)
-
-    def on_checks_validation_ready(self):
-        """
-        after checks
-        """
-        if self.is_done():
-            self.disableFields()
-            self.cleanup_errormsg()
-            self.clean_wizard_errors(self.current_page)
-            # make the user confirm the transition
-            # to next page.
-            self.nextText('&Next')
-            self.nextFocus()
-            self.green_validation_status()
-            self.do_confirm_next = True

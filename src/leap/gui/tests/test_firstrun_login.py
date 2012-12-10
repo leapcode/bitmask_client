@@ -22,14 +22,11 @@ except ImportError:
     from leap.util.dicts import OrderedDict
 
 
-class TestPage(firstrun.register.RegisterUserPage):
-
-    def field(self, field):
-        if field == "provider_domain":
-            return "testprovider"
+class TestPage(firstrun.login.LogInPage):
+    pass
 
 
-class RegisterUserPageLogicTestCase(qunittest.TestCase):
+class LogInPageLogicTestCase(qunittest.TestCase):
 
     # XXX can spy on signal connections
     __name__ = "register user page logic tests"
@@ -40,18 +37,6 @@ class RegisterUserPageLogicTestCase(qunittest.TestCase):
         self.page = TestPage(None)
         self.page.wizard = mock.MagicMock()
 
-        #mocknetchecker = mock.Mock()
-        #self.page.wizard().netchecker.return_value = mocknetchecker
-        #self.mocknetchecker = mocknetchecker
-#
-        #mockpcertchecker = mock.Mock()
-        #self.page.wizard().providercertchecker.return_value = mockpcertchecker
-        #self.mockpcertchecker = mockpcertchecker
-#
-        #mockeipconfchecker = mock.Mock()
-        #self.page.wizard().eipconfigchecker.return_value = mockeipconfchecker
-        #self.mockeipconfchecker = mockeipconfchecker
-
     def tearDown(self):
         QtGui.qApp = None
         self.app = None
@@ -60,9 +45,8 @@ class RegisterUserPageLogicTestCase(qunittest.TestCase):
     def test__do_checks(self):
         eq = self.assertEqual
 
-        self.page.userNameLineEdit.setText('testuser')
+        self.page.userNameLineEdit.setText('testuser@domain')
         self.page.userPasswordLineEdit.setText('testpassword')
-        self.page.userPassword2LineEdit.setText('testpassword')
 
         # fake register process
         with mock.patch('leap.base.auth.LeapSRPRegister') as mockAuth:
@@ -75,26 +59,29 @@ class RegisterUserPageLogicTestCase(qunittest.TestCase):
             mockAuth.return_value = mockSignup
             checks = [x for x in self.page._do_checks()]
 
-            eq(len(checks), 3)
+            eq(len(checks), 4)
             labels = [str(x) for (x, y), z in checks]
             eq(labels, ['head_sentinel',
-                        'registering with provider',
+                        'Resolving domain name',
+                        'Validating credentials',
                         'end_sentinel'])
             progress = [y for (x, y), z in checks]
-            eq(progress, [0, 40, 100])
+            eq(progress, [0, 20, 60, 100])
 
             # normal run, ie, no exceptions
 
             checkfuns = [z for (x, y), z in checks]
-            passcheck, register = checkfuns[:-1]
+            checkusername, resolvedomain, valcreds = checkfuns[:-1]
 
-            self.assertTrue(passcheck())
+            self.assertTrue(checkusername())
             #self.mocknetchecker.check_name_resolution.assert_called_with(
                 #'test_provider1')
 
-            self.assertTrue(register())
+            self.assertTrue(resolvedomain())
             #self.mockpcertchecker.is_https_working.assert_called_with(
                 #"https://test_provider1", verify=True)
+
+            self.assertTrue(valcreds())
 
         # XXX missing: inject failing exceptions
         # XXX TODO make it break
@@ -112,7 +99,7 @@ class RegisterUserPageUITestCase(qunittest.TestCase):
         self.pagename = "signup"
         pages = OrderedDict((
             (self.pagename, TestPage),
-            ('signupvalidation',
+            ('providersetupvalidation',
              firstrun.regvalidation.RegisterUserValidationPage)))
         self.wizard = firstrun.wizard.FirstRunWizard(None, pages_dict=pages)
         self.page = self.wizard.page(self.wizard.get_page_index(self.pagename))
@@ -127,6 +114,7 @@ class RegisterUserPageUITestCase(qunittest.TestCase):
         self.app = None
         self.wizard = None
 
+    # XXX refactor out
     def fill_field(self, field, text):
         """
         fills a field (line edit) that is passed along
@@ -161,11 +149,9 @@ class RegisterUserPageUITestCase(qunittest.TestCase):
 
         f_username = self.page.userNameLineEdit
         f_password = self.page.userPasswordLineEdit
-        f_passwor2 = self.page.userPassword2LineEdit
 
         self.fill_field(f_username, "testuser")
         self.fill_field(f_password, "testpassword")
-        self.fill_field(f_passwor2, "testpassword")
 
         # commit should be enabled
         # XXX Need a workaround here
@@ -177,31 +163,11 @@ class RegisterUserPageUITestCase(qunittest.TestCase):
 
         self.del_field(f_username)
         self.del_field(f_password)
-        self.del_field(f_passwor2)
 
         # after rm fields commit button
         # should be disabled again
         #self.assertFalse(nextbutton.isEnabled())
         self.assertFalse(self.page.isComplete())
-
-    @unittest.skip
-    def test_check_button_triggers_tests(self):
-        checkbutton = self.page.providerCheckButton
-        self.assertFalse(checkbutton.isEnabled())
-        self.assertFalse(self.page.do_checks.called)
-
-        self.fill_provider()
-
-        self.assertTrue(checkbutton.isEnabled())
-        mclick = QTest.mouseClick
-        # click!
-        mclick(checkbutton, Qt.LeftButton)
-        self.waitFor(seconds=0.1)
-        self.assertTrue(self.page.do_checks.called)
-
-        # XXX
-        # can play with different side_effects for do_checks mock...
-        # so we can see what happens with errors and so on
 
     def test_validate_page(self):
         self.assertFalse(self.page.validatePage())
@@ -223,21 +189,23 @@ class RegisterUserPageUITestCase(qunittest.TestCase):
     def test_validation_ready(self):
         f_username = self.page.userNameLineEdit
         f_password = self.page.userPasswordLineEdit
-        f_passwor2 = self.page.userPassword2LineEdit
 
         self.fill_field(f_username, "testuser")
         self.fill_field(f_password, "testpassword")
-        self.fill_field(f_passwor2, "testpassword")
 
         self.page.done = True
         self.page.on_checks_validation_ready()
         self.assertFalse(f_username.isEnabled())
         self.assertFalse(f_password.isEnabled())
-        self.assertFalse(f_passwor2.isEnabled())
 
         self.assertEqual(self.page.validationMsg.text(),
-                         "Registration succeeded!")
+                         "Credentials validated.")
         self.assertEqual(self.page.do_confirm_next, True)
+
+    def test_regex(self):
+        # XXX enter invalid username with key presses
+        # check text is not updated
+        pass
 
 
 if __name__ == "__main__":

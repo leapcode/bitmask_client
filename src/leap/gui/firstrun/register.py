@@ -363,9 +363,6 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         inits wizard page
         """
         provider = unicode(self.field('provider_domain'))
-        # hack. don't get why I'm  getting a QVariant there,
-        # making segfault in tests.
-        provider = QtCore.QString(provider)
         if provider:
             # here we should have provider
             # but in tests we might not.
@@ -384,7 +381,7 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
 
     def nextId(self):
         wizard = self.wizard()
-        if not wizard:
-            return
+        #if not wizard:
+            #return
         # XXX this should be called connect
         return wizard.get_page_index('signupvalidation')
