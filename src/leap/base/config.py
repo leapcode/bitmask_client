@@ -5,11 +5,12 @@ import grp
 import json
 import logging
 import socket
-import tempfile
+import time
 import os
 
 logger = logging.getLogger(name=__name__)
 
+from dateutil import parser as dateparser
 import requests
 
 from leap.base import exceptions
@@ -126,16 +127,23 @@ class JSONLeapConfig(BaseLeapConfig):
     # mandatory baseconfig interface
 
     def save(self, to=None):
-        if to is None:
-            to = self.filename
-        folder, filename = os.path.split(to)
-        if folder and not os.path.isdir(folder):
-            mkdir_p(folder)
-        self._config.serialize(to)
+        if self._config.is_dirty():
+            if to is None:
+                to = self.filename
+            folder, filename = os.path.split(to)
+            if folder and not os.path.isdir(folder):
+                mkdir_p(folder)
+            self._config.serialize(to)
 
-    def load(self, fromfile=None, from_uri=None, fetcher=None, verify=False):
+    def load(self, fromfile=None, from_uri=None, fetcher=None,
+             force_download=False, verify=False):
+
         if from_uri is not None:
-            fetched = self.fetch(from_uri, fetcher=fetcher, verify=verify)
+            fetched = self.fetch(
+                from_uri,
+                fetcher=fetcher,
+                verify=verify,
+                force_dl=force_download)
             if fetched:
                 return
         if fromfile is None:
@@ -146,32 +154,63 @@ class JSONLeapConfig(BaseLeapConfig):
             logger.error('tried to load config from non-existent path')
             logger.error('Not Found: %s', fromfile)
 
-    def fetch(self, uri, fetcher=None, verify=True):
+    def fetch(self, uri, fetcher=None, verify=True, force_dl=False):
         if not fetcher:
             fetcher = self.fetcher
+
         logger.debug('verify: %s', verify)
         logger.debug('uri: %s', uri)
-        request = fetcher.get(uri, verify=verify)
-        # XXX should send a if-modified-since header
 
-        # XXX get 404, ...
-        # and raise a UnableToFetch...
+        rargs = (uri, )
+        rkwargs = {'verify': verify}
+        headers = {}
+
+        curmtime = self.get_mtime() if not force_dl else None
+        if curmtime:
+            logger.debug('requesting with if-modified-since %s' % curmtime)
+            headers['if-modified-since'] = curmtime
+            rkwargs['headers'] = headers
+
+        #request = fetcher.get(uri, verify=verify)
+        request = fetcher.get(*rargs, **rkwargs)
         request.raise_for_status()
-        fd, fname = tempfile.mkstemp(suffix=".json")
+
+        if request.status_code == 304:
+            logger.debug('...304 Not Changed')
+            # On this point, we have to assume that
+            # we HAD the filename. If that filename is corruct,
+            # we should enforce a force_download in the load
+            # method above.
+            self._config.load(fromfile=self.filename)
+            return True
 
         if request.json:
-            self._config.load(json.dumps(request.json))
-
+            mtime = None
+            last_modified = request.headers.get('last-modified', None)
+            if last_modified:
+                _mtime = dateparser.parse(last_modified)
+                mtime = int(_mtime.strftime("%s"))
+            self._config.load(json.dumps(request.json), mtime=mtime)
+            self._config.set_dirty()
         else:
             # not request.json
             # might be server did not announce content properly,
             # let's try deserializing all the same.
             try:
                 self._config.load(request.content)
+                self._config.set_dirty()
             except ValueError:
                 raise eipexceptions.LeapBadConfigFetchedError
 
         return True
+
+    def get_mtime(self):
+        try:
+            _mtime = os.stat(self.filename)[8]
+            mtime = time.strftime("%c GMT", time.gmtime(_mtime))
+            return mtime
+        except OSError:
+            return None
 
     def get_config(self):
         return self._config.config
