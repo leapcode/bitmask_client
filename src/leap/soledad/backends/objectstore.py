@@ -1,11 +1,17 @@
 from u1db.backends import CommonBackend
+from soledad import SyncLog, TransactionLog
 
 
 class ObjectStore(CommonBackend):
 
     def __init__(self):
+        # This initialization method should be called after the connection
+        # with the database is established, so it can ensure that u1db data is
+        # configured and up-to-date.
+        self.set_document_factory(LeapDocument)
         self._sync_log = SyncLog()
         self._transaction_log = TransactionLog()
+        self._ensure_u1db_data()
 
     #-------------------------------------------------------------------------
     # implemented methods from Database
@@ -28,6 +34,26 @@ class ObjectStore(CommonBackend):
         if doc.is_tombstone() and not include_deleted:
             return None
         return doc
+
+    def _put_doc(self, doc)
+        raise NotImplementedError(self._put_doc)
+
+    def put_doc(self, doc)
+        # consistency check
+        if doc.doc_id is None:
+            raise errors.InvalidDocId()
+        self._check_doc_id(doc.doc_id)
+        self._check_doc_size(doc)
+        # put the document
+        new_rev = self._allocate_doc_rev(doc.rev)
+        self._put_doc(doc, new_rev)
+        doc.rev = new_rev
+        # update u1db generation and logs
+        new_gen = self._get_generation() + 1
+        trans_id = self._allocate_transaction_id()
+        self._transaction_log.append((new_gen, doc.doc_id, trans_id))
+        self._set_u1db_data()
+        return new_rev
 
     def delete_doc(self, doc):
         old_doc = self._get_doc(doc.doc_id, check_for_conflicts=True)

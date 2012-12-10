@@ -1,23 +1,24 @@
 from u1db import errors
 from u1db.remote.http_target import HTTPSyncTarget
-from swiftclient import client
+from couchdb import *
 from soledad.backends.objectstore import ObjectStore
 
 
-class OpenStackDatabase(ObjectStore):
-    """A U1DB implementation that uses OpenStack as its persistence layer."""
+class CouchDatabase(ObjectStore):
+    """A U1DB implementation that uses Couch as its persistence layer."""
 
-    def __init__(self, auth_url, user, auth_key, container):
-        """Create a new OpenStack data container."""
-        self._auth_url = auth_url
-        self._user = user
-        self._auth_key = auth_key
-        self._container = container
-        self._connection = swiftclient.Connection(self._auth_url, self._user,
-                                                  self._auth_key)
-        self._get_auth()
-        # this will ensure transaction and sync logs exist and are up-to-date.
-        super(OpenStackDatabase, self)
+    def __init__(self, url, database, full_commit=True, session=None): 
+        """Create a new Couch data container."""
+        self._url = url
+        self._full_commit = full_commit
+        self._session = session
+        self._server = couchdb.Server(url=self._url,
+                                      full_commit=self._full_commit,
+                                      session=self._session)
+        # this will ensure that transaction and sync logs exist and are
+        # up-to-date.
+        super(CouchDatabase, self)
+        self._database = self._server[database]
 
     #-------------------------------------------------------------------------
     # implemented methods from Database
@@ -29,21 +30,21 @@ class OpenStackDatabase(ObjectStore):
         Conflicts do not happen on server side, so there's no need to check
         for them.
         """
-        try:
-            response, contents = self._connection.get_object(self._container, doc_id)
-            # TODO: change revision to be a dictionary element?
-            rev = response['x-object-meta-rev']
-            return self._factory(doc_id, rev, contents)
-        except swiftclient.ClientException:
-            return None
+        cdoc = self._database.get(doc_id)
+        if cdoc is not None:
+            content = {}
+            for key, value in content:
+                if not key in ['_id', '_rev', '_u1db_rev']:
+                    content[key] = value
+            doc = self._factory(doc_id=doc_id, rev=cdoc['_u1db_rev'])
+            doc.content = content
+        return doc
 
     def get_all_docs(self, include_deleted=False):
         """Get all documents from the database."""
         generation = self._get_generation()
         results = []
-        _, doc_ids = self._connection.get_container(self._container,
-                                                    full_listing=True)
-        for doc_id in doc_ids:
+        for doc_id in self._database:
             doc = self._get_doc(doc_id)
             if doc.content is None and not include_deleted:
                 continue
@@ -51,33 +52,31 @@ class OpenStackDatabase(ObjectStore):
         return (generation, results)
 
     def _put_doc(self, doc, new_rev):
-        new_rev = self._allocate_doc_rev(doc.rev)
-        # TODO: change revision to be a dictionary element?
-        headers = { 'X-Object-Meta-Rev' : new_rev }
-        self._connection.put_object(self._container, doc_id, doc.get_json(),
-                                    headers=headers)
+        # map u1db metadata to couch
+        content = doc.content
+        content['_id'] = doc.doc_id
+        content['_u1db_rev'] = new_rev
+        self._database.save(doc.content)
 
     def get_sync_target(self):
-        return OpenStackSyncTarget(self)
+        return CouchSyncTarget(self)
 
     def close(self):
         raise NotImplementedError(self.close)
 
     def sync(self, url, creds=None, autocreate=True):
         from u1db.sync import Synchronizer
-        from u1db.remote.http_target import OpenStackSyncTarget
-        return Synchronizer(self, OpenStackSyncTarget(url, creds=creds)).sync(
+        from u1db.remote.http_target import CouchSyncTarget
+        return Synchronizer(self, CouchSyncTarget(url, creds=creds)).sync(
             autocreate=autocreate)
 
     #-------------------------------------------------------------------------
-    # OpenStack specific methods
+    # Couch specific methods
     #-------------------------------------------------------------------------
 
-    def _get_auth(self):
-        self._url, self._auth_token = self._connection.get_auth()
-        return self._url, self.auth_token
+    # no specific methods so far.
 
-class OpenStackSyncTarget(HTTPSyncTarget):
+class CouchSyncTarget(HTTPSyncTarget):
 
     def get_sync_info(self, source_replica_uid):
         source_gen, source_trans_id = self._db._get_replica_gen_and_trans_id(

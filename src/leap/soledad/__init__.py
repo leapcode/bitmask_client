@@ -1,9 +1,6 @@
 # License?
 
-"""A U1DB implementation that uses OpenStack Swift as its persistence layer."""
-
-from backends.leap import *
-from backends.openstack import *
+"""A U1DB implementation for using Object Stores as its persistence layer."""
 
 import gnupg
 
