@@ -2,6 +2,7 @@
 
 """A U1DB implementation for using Object Stores as its persistence layer."""
 
+import os
 import gnupg
 
 class GPGWrapper():
@@ -10,7 +11,7 @@ class GPGWrapper():
     replaced by a more general class used throughout the project.
     """
 
-    GNUPG_HOME    = "~/.config/leap/gnupg"
+    GNUPG_HOME    = os.environ['HOME'] + "/.config/leap/gnupg"
     GNUPG_BINARY  = "/usr/bin/gpg" # this has to be changed based on OS
 
     def __init__(self, gpghome=GNUPG_HOME, gpgbinary=GNUPG_BINARY):
