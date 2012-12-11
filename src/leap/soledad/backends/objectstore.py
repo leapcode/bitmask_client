@@ -1,5 +1,6 @@
 import uuid
 from u1db.backends import CommonBackend
+from u1db import errors
 from soledad import SyncLog, TransactionLog
 from soledad.backends.leap import LeapDocument
 
@@ -46,8 +47,21 @@ class ObjectStore(CommonBackend):
             raise errors.InvalidDocId()
         self._check_doc_id(doc.doc_id)
         self._check_doc_size(doc)
-        # put the document
-        doc.rev = self._allocate_doc_rev(doc.rev)
+        # check if document exists
+        old_doc = self._get_doc(doc.doc_id, check_for_conflicts=True)
+        if old_doc and old_doc.has_conflicts:
+            raise errors.ConflictedDoc()
+        if old_doc and doc.rev is None and old_doc.is_tombstone():
+            new_rev = self._allocate_doc_rev(old_doc.rev)
+        else:
+            if old_doc is not None:
+                if old_doc.rev != doc.rev:
+                    raise errors.RevisionConflict()
+            else:
+                if doc.rev is not None:
+                    raise errors.RevisionConflict()
+            new_rev = self._allocate_doc_rev(doc.rev)
+        doc.rev = new_rev
         self._put_doc(doc)
         # update u1db generation and logs
         new_gen = self._get_generation() + 1
@@ -69,7 +83,7 @@ class ObjectStore(CommonBackend):
         new_rev = self._allocate_doc_rev(doc.rev)
         doc.rev = new_rev
         doc.make_tombstone()
-        self._put_doc(olddoc)
+        self._put_doc(doc)
         return new_rev
 
     # start of index-related methods: these are not supported by this backend.
@@ -171,9 +185,15 @@ class ObjectStore(CommonBackend):
         self._put_doc(doc)
 
     def _get_u1db_data(self, u1db_data_doc_id):
+        """
+        Fetch u1db configuration data from backend storage.
+        """
         NotImplementedError(self._get_u1db_data)
 
     def _set_u1db_data(self):
+        """
+        Save u1db configuration data on backend storage.
+        """
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
         doc.content = { 'transaction_log' : self._transaction_log.log,
                         'sync_log'        : self._sync_log.log,
