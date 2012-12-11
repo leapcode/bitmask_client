@@ -5,6 +5,11 @@ from couchdb.http import ResourceNotFound
 from soledad.backends.objectstore import ObjectStore
 from soledad.backends.leap import LeapDocument
 
+try:
+    import simplejson as json
+except ImportError:
+    import json  # noqa
+
 
 class CouchDatabase(ObjectStore):
     """A U1DB implementation that uses Couch as its persistence layer."""
@@ -40,12 +45,11 @@ class CouchDatabase(ObjectStore):
         cdoc = self._database.get(doc_id)
         if cdoc is None:
             return None
-        content = {}
-        for (key, value) in cdoc.items():
-            if key not in ['_id', '_rev', 'u1db_rev']:
-                content[key] = value
         doc = self._factory(doc_id=doc_id, rev=cdoc['u1db_rev'])
-        doc.content = content
+        if cdoc['u1db_json'] is not None:
+            doc.content = json.loads(cdoc['u1db_json'])
+        else:
+            doc.make_tombstone()
         return doc
 
     def get_all_docs(self, include_deleted=False):
@@ -60,13 +64,20 @@ class CouchDatabase(ObjectStore):
         return (generation, results)
 
     def _put_doc(self, doc):
-        # map u1db metadata to couch
-        content = doc.content
+        # prepare couch's Document
         cdoc = Document()
         cdoc['_id'] = doc.doc_id
+        # we have to guarantee that couch's _rev is cosistent
+        old_cdoc = self._database.get(doc.doc_id)
+        if old_cdoc is not None:
+            cdoc['_rev'] = old_cdoc['_rev']
+        # store u1db's rev
         cdoc['u1db_rev'] = doc.rev
-        for (key, value) in content.items():
-            cdoc[key] = value
+        # store u1db's content as json string
+        if not doc.is_tombstone():
+            cdoc['u1db_json'] = doc.get_json()
+        else:
+            cdoc['u1db_json'] = None
         self._database.save(cdoc)
 
     def get_sync_target(self):
@@ -83,9 +94,10 @@ class CouchDatabase(ObjectStore):
 
     def _get_u1db_data(self):
         cdoc = self._database.get(self.U1DB_DATA_DOC_ID)
-        self._sync_log.log = cdoc['sync_log']
-        self._transaction_log.log = cdoc['transaction_log']
-        self._replica_uid = cdoc['replica_uid']
+        content = json.loads(cdoc['u1db_json'])
+        self._sync_log.log = content['sync_log']
+        self._transaction_log.log = content['transaction_log']
+        self._replica_uid = content['replica_uid']
         self._couch_rev = cdoc['_rev']
 
     #-------------------------------------------------------------------------
