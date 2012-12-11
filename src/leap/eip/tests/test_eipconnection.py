@@ -1,6 +1,8 @@
+import glob
 import logging
 import platform
-import os
+#import os
+import shutil
 
 logging.basicConfig()
 logger = logging.getLogger(name=__name__)
@@ -66,10 +68,25 @@ class EIPConductorTest(BaseLeapTest):
         self.manager = Mock(name="openvpnmanager_mock")
         self.con = MockedEIPConnection()
         self.con.provider = self.provider
+
+        # XXX watch out. This sometimes is throwing the following error:
+        # NoSuchProcess: process no longer exists (pid=6571)
+        # because of a bad implementation of _check_if_running_instance
+
         self.con.run_openvpn_checks()
 
     def tearDown(self):
+        pass
+
+    def doCleanups(self):
+        super(BaseLeapTest, self).doCleanups()
+        self.cleanupSocketDir()
         del self.con
+
+    def cleanupSocketDir(self):
+        ptt = ('/tmp/leap-tmp*')
+        for tmpdir in glob.glob(ptt):
+            shutil.rmtree(tmpdir)
 
     #
     # tests
@@ -81,6 +98,7 @@ class EIPConductorTest(BaseLeapTest):
         """
         con = self.con
         self.assertEqual(con.autostart, True)
+        # XXX moar!
 
     def test_ovpn_command(self):
         """
@@ -98,6 +116,7 @@ class EIPConductorTest(BaseLeapTest):
         # needed to run tests. (roughly 3 secs for this only)
         # We should modularize and inject Mocks on more places.
 
+        oldcon = self.con
         del(self.con)
         config_checker = Mock()
         self.con = MockedEIPConnection(config_checker=config_checker)
@@ -107,6 +126,7 @@ class EIPConductorTest(BaseLeapTest):
             skip_download=False)
 
         # XXX test for cert_checker also
+        self.con = oldcon
 
     # connect/disconnect calls
 

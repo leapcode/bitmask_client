@@ -131,6 +131,16 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             field.setDisabled(True)
 
     # error painting
+    def paintEvent(self, event):
+        """
+        we hook our populate errors
+        on paintEvent because we need it to catch
+        when user enters the page coming from next,
+        and initializePage does not cover that case.
+        Maybe there's a better event to hook upon.
+        """
+        super(RegisterUserPage, self).paintEvent(event)
+        self.populateErrors()
 
     def markRedAndGetFocus(self, field):
         field.setStyleSheet(styles.ErrorLineEdit)
@@ -193,16 +203,21 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         """
         self.bad_string = None
 
-    def paintEvent(self, event):
+    def green_validation_status(self):
+        val = self.validationMsg
+        val.setText(self.tr('Registration succeeded!'))
+        val.setStyleSheet(styles.GreenLineEdit)
+
+    def reset_validation_status(self):
         """
-        we hook our populate errors
-        on paintEvent because we need it to catch
-        when user enters the page coming from next,
-        and initializePage does not cover that case.
-        Maybe there's a better event to hook upon.
+        empty the validation msg
+        and clean the inline validation widget.
         """
-        super(RegisterUserPage, self).paintEvent(event)
-        self.populateErrors()
+        self.validationMsg.setText('')
+        self.steps.removeAllSteps()
+        self.clearTable()
+
+    # actual checks
 
     def _do_checks(self):
         """
@@ -255,6 +270,7 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
                 schema="https",
                 provider=provider,
                 verify=verify)
+            #import ipdb;ipdb.set_trace()
             try:
                 ok, req = signup.register_user(
                     username, password)
@@ -277,9 +293,15 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
                     self.tr(
                         "Error during registration (%s)") % req.status_code)
 
-            validation_msgs = json.loads(req.content)
-            errors = validation_msgs.get('errors', None)
-            logger.debug('validation errors: %s' % validation_msgs)
+            try:
+                validation_msgs = json.loads(req.content)
+                errors = validation_msgs.get('errors', None)
+                logger.debug('validation errors: %s' % validation_msgs)
+            except ValueError:
+                # probably bad json returned
+                return self.fail(
+                    self.tr(
+                        "Could not register (bad response)"))
 
             if errors and errors.get('login', None):
                 # XXX this sometimes catch the blank username
@@ -287,11 +309,13 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
                 return self.fail(
                     self.tr('Username not available.'))
 
+            return True
+
         logger.debug('registering user')
         yield(("registering with provider", 40), register)
 
         self.set_done()
-        yield(("end_sentinel", 0), lambda: None)
+        yield(("end_sentinel", 100), lambda: None)
 
     def on_checks_validation_ready(self):
         """
@@ -307,20 +331,6 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             self.commitFocus()
             self.green_validation_status()
             self.do_confirm_next = True
-
-    def green_validation_status(self):
-        val = self.validationMsg
-        val.setText(self.tr('Registration succeeded!'))
-        val.setStyleSheet(styles.GreenLineEdit)
-
-    def reset_validation_status(self):
-        """
-        empty the validation msg
-        and clean the inline validation widget.
-        """
-        self.validationMsg.setText('')
-        self.steps.removeAllSteps()
-        self.clearTable()
 
     # pagewizard methods
 
@@ -352,17 +362,26 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         """
         inits wizard page
         """
-        provider = self.field('provider_domain')
-        self.setSubTitle(
-            self.tr("Register a new user with provider %s.") %
-            provider)
+        provider = unicode(self.field('provider_domain'))
+        if provider:
+            # here we should have provider
+            # but in tests we might not.
+
+            # XXX this error causes a segfault on free()
+            # that we might want to get fixed ...
+            #self.setSubTitle(
+                #self.tr("Register a new user with provider %s.") %
+                        #provider)
+            self.setSubTitle(
+                self.tr("Register a new user with provider %s." %
+                        provider))
         self.validationMsg.setText('')
         self.userPassword2LineEdit.setText('')
         self.valFrame.hide()
 
     def nextId(self):
         wizard = self.wizard()
-        if not wizard:
-            return
+        #if not wizard:
+            #return
         # XXX this should be called connect
         return wizard.get_page_index('signupvalidation')

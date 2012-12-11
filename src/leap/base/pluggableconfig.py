@@ -419,7 +419,8 @@ class PluggableConfig(object):
         return True
 
 
-def testmain():
+def testmain():  # pragma: no cover
+
     from tests import test_validation as t
     import pprint
 

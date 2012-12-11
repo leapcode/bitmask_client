@@ -58,16 +58,27 @@ class OpenVPNConnectionTest(BaseLeapTest):
     def setUp(self):
         # XXX this will have to change for win, host=localhost
         host = eipconfig.get_socket_path()
+        self.host = host
         self.manager = MockedOpenVPNConnection(host=host)
 
     def tearDown(self):
+        pass
+
+    def doCleanups(self):
+        super(BaseLeapTest, self).doCleanups()
+        self.cleanupSocketDir()
+
+    def cleanupSocketDir(self):
         # remove the socket folder.
         # XXX only if posix. in win, host is localhost, so nothing
         # has to be done.
-        if self.manager.host:
-            folder, fpath = os.path.split(self.manager.host)
-            assert folder.startswith('/tmp/leap-tmp')  # safety check
-            shutil.rmtree(folder)
+        if self.host:
+            folder, fpath = os.path.split(self.host)
+            try:
+                assert folder.startswith('/tmp/leap-tmp')  # safety check
+                shutil.rmtree(folder)
+            except:
+                self.fail("could not remove temp file")
 
         del self.manager
 
@@ -108,12 +119,14 @@ class OpenVPNConnectionTest(BaseLeapTest):
         self.assertEqual(self.manager.port, 7777)
 
     def test_port_types_init(self):
+        oldmanager = self.manager
         self.manager = MockedOpenVPNConnection(port="42")
         self.assertEqual(self.manager.port, 42)
         self.manager = MockedOpenVPNConnection()
         self.assertEqual(self.manager.port, "unix")
         self.manager = MockedOpenVPNConnection(port="bad")
         self.assertEqual(self.manager.port, None)
+        self.manager = oldmanager
 
     def test_uds_telnet_called_on_connect(self):
         self.manager.connect_to_management()
