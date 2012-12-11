@@ -15,7 +15,7 @@ except ImportError:
 from leap.eip import config as eipconfig
 from leap.eip.tests.data import EIP_SAMPLE_CONFIG, EIP_SAMPLE_SERVICE
 from leap.testing.basetest import BaseLeapTest
-from leap.util.fileutil import mkdir_p
+from leap.util.fileutil import mkdir_p, mkdir_f
 
 _system = platform.system()
 
@@ -48,11 +48,12 @@ class EIPConfigTest(BaseLeapTest):
         open(tfile, 'wb').close()
         os.chmod(tfile, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
-    def write_sample_eipservice(self, vpnciphers=False, extra_vpnopts=None):
+    def write_sample_eipservice(self, vpnciphers=False, extra_vpnopts=None,
+                                gateways=None):
         conf = eipconfig.EIPServiceConfig()
-        folder, f = os.path.split(conf.filename)
-        if not os.path.isdir(folder):
-            mkdir_p(folder)
+        mkdir_f(conf.filename)
+        if gateways:
+            EIP_SAMPLE_SERVICE['gateways'] = gateways
         if vpnciphers:
             openvpnconfig = OrderedDict({
                 "auth": "SHA1",
@@ -75,6 +76,10 @@ class EIPConfigTest(BaseLeapTest):
             fd.write(json.dumps(EIP_SAMPLE_CONFIG))
 
     def get_expected_openvpn_args(self, with_openvpn_ciphers=False):
+        """
+        yeah, this is almost as duplicating the
+        code for building the command
+        """
         args = []
         eipconf = eipconfig.EIPConfig(domain=self.provider)
         eipconf.load()
@@ -155,6 +160,55 @@ class EIPConfigTest(BaseLeapTest):
     # many combinations. we should inject some
     # params in the function call, to disable
     # some checks.
+
+    def test_get_eip_gateway(self):
+        self.write_sample_eipconfig()
+        eipconf = eipconfig.EIPConfig(domain=self.provider)
+
+        # default eipservice
+        self.write_sample_eipservice()
+        eipsconf = eipconfig.EIPServiceConfig(domain=self.provider)
+
+        gateway = eipconfig.get_eip_gateway(
+            eipconfig=eipconf,
+            eipserviceconfig=eipsconf)
+
+        # in spec is local gateway by default
+        self.assertEqual(gateway, '127.0.0.1')
+
+        # change eipservice
+        # right now we only check that cluster == selected primary gw in
+        # eip.json, and pick first matching ip
+        eipconf._config.config['primary_gateway'] = "foo_provider"
+        newgateways = [{"cluster": "foo_provider",
+                        "ip_address": "127.0.0.99"}]
+        self.write_sample_eipservice(gateways=newgateways)
+        eipsconf = eipconfig.EIPServiceConfig(domain=self.provider)
+        # load from disk file
+        eipsconf.load()
+
+        gateway = eipconfig.get_eip_gateway(
+            eipconfig=eipconf,
+            eipserviceconfig=eipsconf)
+        self.assertEqual(gateway, '127.0.0.99')
+
+        # change eipservice, several gateways
+        # right now we only check that cluster == selected primary gw in
+        # eip.json, and pick first matching ip
+        eipconf._config.config['primary_gateway'] = "bar_provider"
+        newgateways = [{"cluster": "foo_provider",
+                        "ip_address": "127.0.0.99"},
+                       {'cluster': "bar_provider",
+                        "ip_address": "127.0.0.88"}]
+        self.write_sample_eipservice(gateways=newgateways)
+        eipsconf = eipconfig.EIPServiceConfig(domain=self.provider)
+        # load from disk file
+        eipsconf.load()
+
+        gateway = eipconfig.get_eip_gateway(
+            eipconfig=eipconf,
+            eipserviceconfig=eipsconf)
+        self.assertEqual(gateway, '127.0.0.88')
 
     def test_build_ovpn_command_empty_config(self):
         self.touch_exec()

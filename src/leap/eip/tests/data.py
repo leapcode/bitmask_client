@@ -23,26 +23,29 @@ EIP_SAMPLE_CONFIG = {
         "keys/client/openvpn.pem" % PROVIDER),
     "connect_on_login": True,
     "block_cleartext_traffic": True,
-    "primary_gateway": "turkey",
-    "secondary_gateway": "france",
+    "primary_gateway": "location_unknown",
+    "secondary_gateway": "location_unknown2",
     #"management_password": "oph7Que1othahwiech6J"
 }
 
 EIP_SAMPLE_SERVICE = {
     "serial": 1,
-    "version": "0.1.0",
-    "capabilities": {
-        "transport": ["openvpn"],
-        "ports": ["80", "53"],
-        "protocols": ["udp", "tcp"],
-        "static_ips": True,
-        "adblock": True
-    },
+    "version": 1,
+    "clusters": [
+        {"label": {
+            "en": "Location Unknown"},
+            "name": "location_unknown"}
+    ],
     "gateways": [
-    {"country_code": "tr",
-     "name": "turkey",
-     "label": {"en":"Ankara, Turkey"},
-     "capabilities": {},
-     "hosts": ["192.0.43.10"]}
+        {"capabilities": {
+            "adblock": True,
+            "filter_dns": True,
+            "ports": ["80", "53", "443", "1194"],
+            "protocols": ["udp", "tcp"],
+            "transport": ["openvpn"],
+            "user_ips": False},
+         "cluster": "location_unknown",
+         "host": "location.example.org",
+         "ip_address": "192.0.43.10"}
     ]
 }
