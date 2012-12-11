@@ -126,14 +126,33 @@ class JSONLeapConfig(BaseLeapConfig):
 
     # mandatory baseconfig interface
 
-    def save(self, to=None):
-        if self._config.is_dirty():
+    def save(self, to=None, force=False):
+        """
+        force param will skip the dirty check.
+        :type force: bool
+        """
+        # XXX this force=True does not feel to right
+        # but still have to look for a better way
+        # of dealing with dirtiness and the
+        # trick of loading remote config only
+        # when newer.
+
+        if force:
+            do_save = True
+        else:
+            do_save = self._config.is_dirty()
+
+        if do_save:
             if to is None:
                 to = self.filename
             folder, filename = os.path.split(to)
             if folder and not os.path.isdir(folder):
                 mkdir_p(folder)
             self._config.serialize(to)
+            return True
+
+        else:
+            return False
 
     def load(self, fromfile=None, from_uri=None, fetcher=None,
              force_download=False, verify=False):

@@ -502,7 +502,7 @@ class EIPConfigChecker(object):
         return self.eipconfig.exists()
 
     def _dump_default_eipconfig(self):
-        self.eipconfig.save()
+        self.eipconfig.save(force=True)
 
     def _get_provider_definition_uri(self, domain=None, path=None):
         if domain is None:

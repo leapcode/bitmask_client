@@ -119,6 +119,13 @@ eipservice_config_spec = {
                         "label": {"en":"west"},
                         "capabilities": {},
                         "hosts": ["1.2.3.4", "1.2.3.5"]}]
+        },
+        'openvpn_configuration': {
+            'type': dict,
+            'default': {
+                "auth": None,
+                "cipher": None,
+                "tls-cipher": None}
         }
     }
 }

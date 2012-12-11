@@ -1,6 +1,7 @@
 import logging
 import os
 import platform
+import re
 import tempfile
 
 from leap import __branding as BRANDING
@@ -110,14 +111,18 @@ def get_cipher_options(eipserviceconfig=None):
     eipsconf = eipserviceconfig.get_config()
 
     ALLOWED_KEYS = ("auth", "cipher", "tls-cipher")
+    CIPHERS_REGEX = re.compile("[A-Z0-9\-]+")
     opts = []
     if 'openvpn_configuration' in eipsconf:
-        config = eipserviceconfig.openvpn_configuration
+        config = eipserviceconfig.config.get(
+            "openvpn_configuration", {})
         for key, value in config.items():
             if key in ALLOWED_KEYS and value is not None:
-                # I humbly think we should sanitize this
-                # input against `valid` openvpn settings. -- kali.
-                opts.append(['--%s' % key, value])
+                sanitized_val = CIPHERS_REGEX.findall(value)
+                if len(sanitized_val) != 0:
+                    _val = sanitized_val[0]
+                    opts.append('--%s' % key)
+                    opts.append('%s' % _val)
     return opts
 
 
@@ -162,19 +167,15 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
         opts.append('--verb')
         opts.append("%s" % verbosity)
 
-    # remote
+    # remote ##############################
+    # (server, port, protocol)
+
     opts.append('--remote')
 
     gw = get_eip_gateway(eipconfig=eipconfig,
                          eipserviceconfig=eipserviceconfig)
     logger.debug('setting eip gateway to %s', gw)
     opts.append(str(gw))
-
-    # get ciphers
-    ciphers = get_cipher_options(
-        eipserviceconfig=eipserviceconfig)
-    for cipheropt in ciphers:
-        opts.append(str(cipheropt))
 
     # get port/protocol from eipservice too
     opts.append('1194')
@@ -184,6 +185,13 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     opts.append('--tls-client')
     opts.append('--remote-cert-tls')
     opts.append('server')
+
+    # get ciphers #######################
+
+    ciphers = get_cipher_options(
+        eipserviceconfig=eipserviceconfig)
+    for cipheropt in ciphers:
+        opts.append(str(cipheropt))
 
     # set user and group
     opts.append('--user')

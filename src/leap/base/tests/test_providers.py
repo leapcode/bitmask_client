@@ -8,7 +8,7 @@ import os
 
 import jsonschema
 
-from leap import __branding as BRANDING
+#from leap import __branding as BRANDING
 from leap.testing.basetest import BaseLeapTest
 from leap.base import providers
 
@@ -33,8 +33,8 @@ class TestLeapProviderDefinition(BaseLeapTest):
         self.domain = "testprovider.example.org"
         self.definition = providers.LeapProviderDefinition(
             domain=self.domain)
-        self.definition.save()
-        self.definition.load()
+        self.definition.save(force=True)
+        self.definition.load()  # why have to load after save??
         self.config = self.definition.config
 
     def tearDown(self):
@@ -61,7 +61,7 @@ class TestLeapProviderDefinition(BaseLeapTest):
     def test_provider_dump(self):
         # check a good provider definition is dumped to disk
         self.testfile = self.get_tempfile('test.json')
-        self.definition.save(to=self.testfile)
+        self.definition.save(to=self.testfile, force=True)
         deserialized = json.load(open(self.testfile, 'rb'))
         self.maxDiff = None
         self.assertEqual(deserialized, EXPECTED_DEFAULT_CONFIG)
