@@ -5,6 +5,7 @@ from __future__ import (absolute_import,)
 import logging
 import Queue
 import sys
+import time
 
 from leap.eip.checks import ProviderCertChecker
 from leap.eip.checks import EIPConfigChecker
@@ -15,20 +16,143 @@ from leap.eip.openvpnconnection import OpenVPNConnection
 logger = logging.getLogger(name=__name__)
 
 
-class EIPConnection(OpenVPNConnection):
+class StatusMixIn(object):
+
+    # a bunch of methods related with querying the connection
+    # state/status and displaying useful info.
+    # Needs to get clear on what is what, and
+    # separate functions.
+    # Should separate EIPConnectionStatus (self.status)
+    # from the OpenVPN state/status command and parsing.
+
+    def connection_state(self):
+        """
+        returns the current connection state
+        """
+        return self.status.current
+
+    def get_icon_name(self):
+        """
+        get icon name from status object
+        """
+        return self.status.get_state_icon()
+
+    def get_leap_status(self):
+        return self.status.get_leap_status()
+
+    def poll_connection_state(self):
+        """
+        """
+        try:
+            state = self.get_connection_state()
+        except eip_exceptions.ConnectionRefusedError:
+            # connection refused. might be not ready yet.
+            logger.warning('connection refused')
+            return
+        if not state:
+            logger.debug('no state')
+            return
+        (ts, status_step,
+         ok, ip, remote) = state
+        self.status.set_vpn_state(status_step)
+        status_step = self.status.get_readable_status()
+        return (ts, status_step, ok, ip, remote)
+
+    def make_error(self):
+        """
+        capture error and wrap it in an
+        understandable format
+        """
+        # mostly a hack to display errors in the debug UI
+        # w/o breaking the polling.
+        #XXX get helpful error codes
+        self.with_errors = True
+        now = int(time.time())
+        return '%s,LAUNCHER ERROR,ERROR,-,-' % now
+
+    def state(self):
+        """
+        Sends OpenVPN command: state
+        """
+        state = self._send_command("state")
+        if not state:
+            return None
+        if isinstance(state, str):
+            return state
+        if isinstance(state, list):
+            if len(state) == 1:
+                return state[0]
+            else:
+                return state[-1]
+
+    def vpn_status(self):
+        """
+        OpenVPN command: status
+        """
+        status = self._send_command("status")
+        return status
+
+    def vpn_status2(self):
+        """
+        OpenVPN command: last 2 statuses
+        """
+        return self._send_command("status 2")
+
+    #
+    # parse  info as the UI expects
+    #
+
+    def get_status_io(self):
+        status = self.vpn_status()
+        if isinstance(status, str):
+            lines = status.split('\n')
+        if isinstance(status, list):
+            lines = status
+        try:
+            (header, when, tun_read, tun_write,
+             tcp_read, tcp_write, auth_read) = tuple(lines)
+        except ValueError:
+            return None
+
+        # XXX this will break with different locales I assume...
+        when_ts = time.strptime(when.split(',')[1], "%a %b %d %H:%M:%S %Y")
+        sep = ','
+        # XXX clean up this!
+        tun_read = tun_read.split(sep)[1]
+        tun_write = tun_write.split(sep)[1]
+        tcp_read = tcp_read.split(sep)[1]
+        tcp_write = tcp_write.split(sep)[1]
+        auth_read = auth_read.split(sep)[1]
+
+        # XXX this could be a named tuple. prettier.
+        return when_ts, (tun_read, tun_write, tcp_read, tcp_write, auth_read)
+
+    def get_connection_state(self):
+        state = self.state()
+        if state is not None:
+            ts, status_step, ok, ip, remote = state.split(',')
+            ts = time.gmtime(float(ts))
+            # XXX this could be a named tuple. prettier.
+            return ts, status_step, ok, ip, remote
+
+
+class EIPConnection(OpenVPNConnection, StatusMixIn):
     """
+    Aka conductor.
     Manages the execution of the OpenVPN process, auto starts, monitors the
     network connection, handles configuration, fixes leaky hosts, handles
     errors, etc.
     Status updates (connected, bandwidth, etc) are signaled to the GUI.
     """
 
+    # XXX change name to EIPConductor ??
+
     def __init__(self,
                  provider_cert_checker=ProviderCertChecker,
                  config_checker=EIPConfigChecker,
                  *args, **kwargs):
-        self.settingsfile = kwargs.get('settingsfile', None)
-        self.logfile = kwargs.get('logfile', None)
+        #self.settingsfile = kwargs.get('settingsfile', None)
+        #self.logfile = kwargs.get('logfile', None)
         self.provider = kwargs.pop('provider', None)
         self._providercertchecker = provider_cert_checker
         self._configchecker = config_checker
@@ -48,11 +172,27 @@ class EIPConnection(OpenVPNConnection):
 
         super(EIPConnection, self).__init__(*args, **kwargs)
 
+    def connect(self):
+        """
+        entry point for connection process
+        """
+        # in OpenVPNConnection
+        self.try_openvpn_connection()
+
+    def disconnect(self, shutdown=False):
+        """
+        disconnects client
+        """
+        self.terminate_openvpn_connection(shutdown=shutdown)
+        self.status.change_to(self.status.DISCONNECTED)
+
     def has_errors(self):
         return True if self.error_queue.qsize() != 0 else False
 
     def init_checkers(self):
-        # initialize checkers
+        """
+        initialize checkers
+        """
         self.provider_cert_checker = self._providercertchecker(
             domain=self.provider)
         self.config_checker = self._configchecker(domain=self.provider)
@@ -100,96 +240,6 @@ class EIPConnection(OpenVPNConnection):
             self.run_openvpn_checks()
         except Exception as exc:
             push_err(exc)
-
-    def connect(self):
-        """
-        entry point for connection process
-        """
-        #self.forget_errors()
-        self._try_connection()
-
-    def disconnect(self):
-        """
-        disconnects client
-        """
-        self.cleanup()
-        logger.debug("disconnect: clicked.")
-        self.status.change_to(self.status.DISCONNECTED)
-
-    #def shutdown(self):
-        #"""
-        #shutdown and quit
-        #"""
-        #self.desired_con_state = self.status.DISCONNECTED
-
-    def connection_state(self):
-        """
-        returns the current connection state
-        """
-        return self.status.current
-
-    def poll_connection_state(self):
-        """
-        """
-        try:
-            state = self.get_connection_state()
-        except eip_exceptions.ConnectionRefusedError:
-            # connection refused. might be not ready yet.
-            logger.warning('connection refused')
-            return
-        if not state:
-            logger.debug('no state')
-            return
-        (ts, status_step,
-         ok, ip, remote) = state
-        self.status.set_vpn_state(status_step)
-        status_step = self.status.get_readable_status()
-        return (ts, status_step, ok, ip, remote)
-
-    def get_icon_name(self):
-        """
-        get icon name from status object
-        """
-        return self.status.get_state_icon()
-
-    def get_leap_status(self):
-        return self.status.get_leap_status()
-
-    #
-    # private methods
-    #
-
-    #def _disconnect(self):
-    #    """
-    #    private method for disconnecting
-    #    """
-    #    if self.subp is not None:
-    #        logger.debug('disconnecting...')
-    #        self.subp.terminate()
-    #        self.subp = None
-
-    #def _is_alive(self):
-        #"""
-        #don't know yet
-        #"""
-        #pass
-
-    def _connect(self):
-        """
-        entry point for connection cascade methods.
-        """
-        try:
-            conn_result = self._try_connection()
-        except eip_exceptions.UnrecoverableError as except_msg:
-            logger.error("FATAL: %s" % unicode(except_msg))
-            conn_result = self.status.UNRECOVERABLE
-
-        # XXX enqueue exceptions themselves instead?
-        except Exception as except_msg:
-            self.error_queue.append(except_msg)
-            logger.error("Failed Connection: %s" %
-                         unicode(except_msg))
-        return conn_result
 
 
 class EIPConnectionStatus(object):

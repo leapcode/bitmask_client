@@ -10,6 +10,7 @@ from PyQt4 import QtCore
 
 from leap.base import constants as baseconstants
 from leap.crypto import leapkeyring
+from leap.util.misc import null_check
 from leap.util.web import get_https_domain_and_port
 
 logger = logging.getLogger(__name__)
@@ -26,24 +27,11 @@ one if not.
 """
 
 
-class ImproperlyConfigured(Exception):
-    """
-    """
-
-
 class SRPAuthenticationError(Exception):
     """
     exception raised
     for authentication errors
     """
-
-
-def null_check(value, value_name):
-    try:
-        assert value is not None
-    except AssertionError:
-        raise ImproperlyConfigured(
-            "%s parameter cannot be None" % value_name)
 
 
 safe_unhexlify = lambda x: binascii.unhexlify(x) \
@@ -64,7 +52,7 @@ class LeapSRPRegister(object):
                  hashfun=srp.SHA256,
                  ng_constant=srp.NG_1024):
 
-        null_check(provider, provider)
+        null_check(provider, "provider")
 
         self.schema = schema
 

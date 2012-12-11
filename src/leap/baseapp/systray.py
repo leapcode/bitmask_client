@@ -217,6 +217,8 @@ class StatusAwareTrayIconMixin(object):
         updates icon, according to the openvpn status change.
         """
         icon_name = self.conductor.get_icon_name()
+        if not icon_name:
+            return
 
         # XXX refactor. Use QStateMachine
 
