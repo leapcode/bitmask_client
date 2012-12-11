@@ -60,7 +60,8 @@ def open(path, create, document_factory=None, password=None):
 class SQLCipherDatabase(SQLitePartialExpandDatabase):
     """A U1DB implementation that uses SQLCipher as its persistence layer."""
 
-    _sqlite_registry = {}
+    _index_storage_value = 'expand referenced encrypted'
+
 
     @classmethod
     def set_pragma_key(cls, db_handle, key):
@@ -113,7 +114,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
                 raise
             if backend_cls is None:
                 # default is SQLCipherPartialExpandDatabase
-                backend_cls = SQLCipherPartialExpandDatabase
+                backend_cls = SQLCipherDatabase
             return backend_cls(sqlite_file, document_factory=document_factory,
                                password=password)
 
