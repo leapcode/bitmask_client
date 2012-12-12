@@ -100,9 +100,12 @@ class RegisterUserValidationPage(ValidationPage):
 
         def fetcheipcert():
             try:
-                pCertChecker.download_new_client_cert(
+                downloaded = pCertChecker.download_new_client_cert(
                     credentials=credentials,
                     verify=verify)
+                if not downloaded:
+                    logger.error('Could not download client cert.')
+                    return False
 
             except auth.SRPAuthenticationError as exc:
                 return self.fail(self.tr(
@@ -126,10 +129,11 @@ class RegisterUserValidationPage(ValidationPage):
         """
         # this should be called CONNECT PAGE AGAIN.
         # here we go! :)
-        full_domain = self.field('provider_domain')
-        domain, port = get_https_domain_and_port(full_domain)
-        _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
-        self.run_eip_checks_for_provider_and_connect(_domain)
+        if self.is_done():
+            full_domain = self.field('provider_domain')
+            domain, port = get_https_domain_and_port(full_domain)
+            _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
+            self.run_eip_checks_for_provider_and_connect(_domain)
 
     def run_eip_checks_for_provider_and_connect(self, domain):
         wizard = self.wizard()
