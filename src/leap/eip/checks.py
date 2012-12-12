@@ -242,7 +242,9 @@ class ProviderCertChecker(object):
             raise
         try:
             pemfile_content = req.content
-            self.is_valid_pemfile(pemfile_content)
+            valid = self.is_valid_pemfile(pemfile_content)
+            if not valid:
+                return False
             cert_path = self._get_client_cert_path()
             self.write_cert(pemfile_content, to=cert_path)
         except:
@@ -303,6 +305,10 @@ class ProviderCertChecker(object):
             if len(certparts) > 1:
                 cert_s = sep + certparts[1]
             ssl.PEM_cert_to_DER_cert(cert_s)
+        except ValueError:
+            # valid_pemfile raises a value error if not BEGIN_CERTIFICATE in
+            # there...
+            return False
         except:
             # XXX raise proper exception
             raise

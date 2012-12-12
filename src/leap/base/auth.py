@@ -43,7 +43,7 @@ class LeapSRPRegister(object):
     def __init__(self,
                  schema="https",
                  provider=None,
-                 port=None,
+                 #port=None,
                  verify=True,
                  register_path="1/users.json",
                  method="POST",
@@ -57,8 +57,8 @@ class LeapSRPRegister(object):
         self.schema = schema
 
         # XXX FIXME
-        self.provider = provider
-        self.port = port
+        #self.provider = provider
+        #self.port = port
         # XXX splitting server,port
         # deprecate port call.
         domain, port = get_https_domain_and_port(provider)
