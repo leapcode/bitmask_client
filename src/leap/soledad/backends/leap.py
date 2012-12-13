@@ -43,13 +43,13 @@ class LeapDocument(Document):
                                        self._default_key,
                                        always_trust = True)
                                        # TODO: always trust?
-        return json.dumps({'cyphertext' : str(cyphertext)})
+        return json.dumps({'_encrypted_json' : str(cyphertext)})
 
     def set_encrypted_json(self, encrypted_json):
         """
         Set document's content based on encrypted version of json string.
         """
-        cyphertext = json.loads(encrypted_json)['cyphertext']
+        cyphertext = json.loads(encrypted_json)['_encrypted_json']
         plaintext = str(self._gpg.decrypt(cyphertext))
         return self.set_json(plaintext)
 
@@ -97,6 +97,7 @@ class LeapSyncTarget(HTTPSyncTarget):
                     raise BrokenSyncStream
                 line, comma = utils.check_and_strip_comma(entry)
                 entry = json.loads(line)
+                # decrypt after receiving from server.
                 doc = LeapDocument(entry['id'], entry['rev'],
                                    encrypted_json=entry['content'])
                 return_doc_cb(doc, entry['gen'], entry['trans_id'])
@@ -142,6 +143,7 @@ class LeapSyncTarget(HTTPSyncTarget):
             ensure=ensure_callback is not None)
         comma = ','
         for doc, gen, trans_id in docs_by_generations:
+            # encrypt before sending to server.
             size += prepare(id=doc.doc_id, rev=doc.rev,
                             content=doc.get_encrypted_json(),
                             gen=gen, trans_id=trans_id)
