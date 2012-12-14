@@ -16,10 +16,12 @@ from leap.base import providers
 EXPECTED_DEFAULT_CONFIG = {
     u"api_version": u"0.1.0",
     u"description": {u'en': u"Test provider"},
-    u"display_name": {u'en': u"Test Provider"},
+    u"default_language": u"en",
+    #u"display_name": {u'en': u"Test Provider"},
     u"domain": u"testprovider.example.org",
+    u'name': {u'en': u'Test Provider'},
     u"enrollment_policy": u"open",
-    u"serial": 1,
+    #u"serial": 1,
     u"services": [
         u"eip"
     ],
