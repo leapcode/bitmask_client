@@ -65,9 +65,12 @@ def get_eip_gateway(eipconfig=None, eipserviceconfig=None):
     that matches the name defined in the eip.json config
     file.
     """
+    # XXX eventually we should move to a more clever
+    # gateway selection. maybe we could return
+    # all gateways that match our cluster.
+
     null_check(eipconfig, "eipconfig")
     null_check(eipserviceconfig, "eipserviceconfig")
-
     PLACEHOLDER = "testprovider.example.org"
 
     conf = eipconfig.config
@@ -78,26 +81,26 @@ def get_eip_gateway(eipconfig=None, eipserviceconfig=None):
         return PLACEHOLDER
 
     gateways = eipsconf.get('gateways', None)
-
     if not gateways:
         logger.error('missing gateways in eip service config')
         return PLACEHOLDER
 
     if len(gateways) > 0:
         for gw in gateways:
-            name = gw.get('name', None)
-            if not name:
+            clustername = gw.get('cluster', None)
+            if not clustername:
+                logger.error('no cluster name')
                 return
 
-            if name == primary_gateway:
-                hosts = gw.get('hosts', None)
-                if not hosts:
-                    logger.error('no hosts')
+            if clustername == primary_gateway:
+                # XXX at some moment, we must
+                # make this a more generic function,
+                # and return ports, protocols...
+                ipaddress = gw.get('ip_address', None)
+                if not ipaddress:
+                    logger.error('no ip_address')
                     return
-                if len(hosts) > 0:
-                    return hosts[0]
-                else:
-                    logger.error('no hosts')
+                return ipaddress
     logger.error('could not find primary gateway in provider'
                  'gateway list')
 

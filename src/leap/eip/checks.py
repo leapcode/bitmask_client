@@ -160,7 +160,6 @@ class ProviderCertChecker(object):
         if autocacert and verify is True and self.cacert is not None:
             logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
-        #import pdb4qt; pdb4qt.set_trace()
         logger.debug('is https working?')
         logger.debug('uri: %s (verify:%s)', uri, verify)
         try:
@@ -242,7 +241,9 @@ class ProviderCertChecker(object):
             raise
         try:
             pemfile_content = req.content
-            self.is_valid_pemfile(pemfile_content)
+            valid = self.is_valid_pemfile(pemfile_content)
+            if not valid:
+                return False
             cert_path = self._get_client_cert_path()
             self.write_cert(pemfile_content, to=cert_path)
         except:
@@ -276,7 +277,10 @@ class ProviderCertChecker(object):
         cert = gnutls.crypto.X509Certificate(cert_s)
         from_ = time.gmtime(cert.activation_time)
         to_ = time.gmtime(cert.expiration_time)
-        return from_ < now() < to_
+        # FIXME BUG ON LEAP_CLI, certs are not valid on gmtime
+        # See #1153
+        #return from_ < now() < to_
+        return now() < to_
 
     def is_valid_pemfile(self, cert_s=None):
         """
@@ -290,23 +294,8 @@ class ProviderCertChecker(object):
             certfile = self._get_client_cert_path()
             with open(certfile) as cf:
                 cert_s = cf.read()
-        try:
-            # XXX get a real cert validation
-            # so far this is only checking begin/end
-            # delimiters :)
-            # XXX use gnutls for get proper
-            # validation.
-            # crypto.X509Certificate(cert_s)
-            sep = "-" * 5 + "BEGIN CERTIFICATE" + "-" * 5
-            # we might have private key and cert in the same file
-            certparts = cert_s.split(sep)
-            if len(certparts) > 1:
-                cert_s = sep + certparts[1]
-            ssl.PEM_cert_to_DER_cert(cert_s)
-        except:
-            # XXX raise proper exception
-            raise
-        return True
+        valid = certs.can_load_cert_and_pkey(cert_s)
+        return valid
 
     @property
     def ca_cert_path(self):

@@ -43,7 +43,7 @@ class LeapSRPRegister(object):
     def __init__(self,
                  schema="https",
                  provider=None,
-                 port=None,
+                 #port=None,
                  verify=True,
                  register_path="1/users.json",
                  method="POST",
@@ -57,8 +57,8 @@ class LeapSRPRegister(object):
         self.schema = schema
 
         # XXX FIXME
-        self.provider = provider
-        self.port = port
+        #self.provider = provider
+        #self.port = port
         # XXX splitting server,port
         # deprecate port call.
         domain, port = get_https_domain_and_port(provider)
@@ -255,6 +255,7 @@ class SRPAuth(requests.auth.AuthBase):
         try:
             assert self.srp_usr.authenticated()
             logger.debug('user is authenticated!')
+            print 'user is authenticated!'
         except (AssertionError):
             raise SRPAuthenticationError(
                 "Auth verification failed.")
@@ -355,8 +356,11 @@ if __name__ == "__main__":
             req.raise_for_status
             return req
 
-        req = test_srp_protected_get('https://localhost:8443/1/cert')
-        print 'cert :', req.content[:200] + "..."
+        #req = test_srp_protected_get('https://localhost:8443/1/cert')
+        req = test_srp_protected_get('%s/1/cert' % SERVER)
+        import ipdb;ipdb.set_trace()
+        #print 'cert :', req.content[:200] + "..."
+        print 'cert :', req.content
         sys.exit(0)
 
     if action == "add":

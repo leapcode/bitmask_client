@@ -1,9 +1,13 @@
 import ctypes
+from StringIO import StringIO
+import re
 import socket
 
 import gnutls.connection
 import gnutls.crypto
 import gnutls.library
+
+from leap.util.misc import null_check
 
 
 def get_https_cert_from_domain(domain):
@@ -20,10 +24,42 @@ def get_https_cert_from_domain(domain):
     return cert
 
 
-def get_cert_from_file(filepath):
-    with open(filepath) as f:
-        cert = gnutls.crypto.X509Certificate(f.read())
+def get_cert_from_file(_file):
+    getcert = lambda f: gnutls.crypto.X509Certificate(f.read())
+    if isinstance(_file, str):
+        with open(_file) as f:
+            cert = getcert(f)
+    else:
+        cert = getcert(_file)
     return cert
+
+
+def get_pkey_from_file(_file):
+    getkey = lambda f: gnutls.crypto.X509PrivateKey(f.read())
+    if isinstance(_file, str):
+        with open(_file) as f:
+            key = getkey(f)
+    else:
+        key = getkey(_file)
+    return key
+
+
+def can_load_cert_and_pkey(string):
+    try:
+        f = StringIO(string)
+        cert = get_cert_from_file(f)
+
+        f = StringIO(string)
+        key = get_pkey_from_file(f)
+
+        null_check(cert, 'certificate')
+        null_check(key, 'private key')
+    except:
+        # XXX catch GNUTLSError
+        raise
+        return False
+    else:
+        return True
 
 
 def get_cert_fingerprint(domain=None, filepath=None,
