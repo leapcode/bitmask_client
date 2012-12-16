@@ -58,6 +58,8 @@ class LastPage(QtGui.QWizardPage):
         self.label.setText(
             "Click '<i>%s</i>' to end the wizard and "
             "save your settings." % finishText)
+        # XXX init network checker
+        # trigger signal
 
     @coroutine
     def eip_status_handler(self):

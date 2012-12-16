@@ -203,9 +203,6 @@ class EIPConductorAppMixin(object):
                 # we could bring Timer Init to this Mixin
                 # or to its own Mixin.
                 self.timer.start(constants.TIMER_MILLISECONDS)
-                # XXX EMIT SIGNAL INSTEAD (when first run,
-                # network checker does not exist...)
-                self.network_checker.start()
             return
 
         if self.eip_service_started is True:
