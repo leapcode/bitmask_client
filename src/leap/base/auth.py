@@ -262,7 +262,7 @@ class SRPAuth(requests.auth.AuthBase):
 
     def __call__(self, req):
         self.authenticate()
-        req.session = self.session
+        req.cookies = self.session.cookies
         return req
 
 
@@ -358,9 +358,8 @@ if __name__ == "__main__":
 
         #req = test_srp_protected_get('https://localhost:8443/1/cert')
         req = test_srp_protected_get('%s/1/cert' % SERVER)
-        import ipdb;ipdb.set_trace()
         #print 'cert :', req.content[:200] + "..."
-        print 'cert :', req.content
+        print req.content
         sys.exit(0)
 
     if action == "add":
