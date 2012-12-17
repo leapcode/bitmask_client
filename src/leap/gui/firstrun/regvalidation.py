@@ -29,6 +29,7 @@ class RegisterUserValidationPage(ValidationPage):
 
     def __init__(self, parent=None):
         super(RegisterUserValidationPage, self).__init__(parent)
+        self.current_page = "signupvalidation"
 
         title = "Connecting..."
         # XXX uh... really?
@@ -132,7 +133,8 @@ class RegisterUserValidationPage(ValidationPage):
         if self.is_done():
             full_domain = self.field('provider_domain')
             domain, port = get_https_domain_and_port(full_domain)
-            _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
+            _domain = u"%s:%s" % (
+                domain, port) if port != 443 else unicode(domain)
             self.run_eip_checks_for_provider_and_connect(_domain)
 
     def run_eip_checks_for_provider_and_connect(self, domain):
