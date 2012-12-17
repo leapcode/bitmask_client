@@ -8,7 +8,7 @@ psutil
 netifaces
 python-gnutls==1.1.9  # see https://bugs.launchpad.net/ubuntu/+source/python-gnutls/+bug/1027129
 jsonschema
-srp>=1.0.1
+srp  # >=1.0.1 MUST HAVE 1.0.1 BUGFIX, but upstream DID NOT UPDATE setup.py so it conflicts
 pycrypto
 keyring
 python-dateutil
