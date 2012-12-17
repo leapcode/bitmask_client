@@ -84,8 +84,7 @@ class ProviderCertChecker(object):
         # For MVS
         checker.is_there_provider_ca()
 
-        # XXX FAKE IT!!!
-        checker.is_https_working(verify=do_verify, autocacert=True)
+        checker.is_https_working(verify=do_verify, autocacert=False)
         checker.check_new_cert_needed(verify=do_verify)
 
     def download_ca_cert(self, uri=None, verify=True):

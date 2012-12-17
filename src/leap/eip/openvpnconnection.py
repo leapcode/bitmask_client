@@ -275,12 +275,16 @@ to be triggered for each one of them.
         """
         check if openvpn is already running
         """
-        for process in psutil.get_process_list():
-            if process.name == "openvpn":
-                logger.debug('an openvpn instance is already running.')
-                logger.debug('attempting to stop openvpn instance.')
-                if not self._stop_openvpn():
-                    raise eip_exceptions.OpenVPNAlreadyRunning
+        try:
+            for process in psutil.get_process_list():
+                if process.name == "openvpn":
+                    logger.debug('an openvpn instance is already running.')
+                    logger.debug('attempting to stop openvpn instance.')
+                    if not self._stop_openvpn():
+                        raise eip_exceptions.OpenVPNAlreadyRunning
+
+        except psutil.error.NoSuchProcess:
+            logger.debug('detected a process which died. passing.')
 
         logger.debug('no openvpn instance found.')
 
