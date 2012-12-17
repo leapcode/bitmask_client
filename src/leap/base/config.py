@@ -209,7 +209,12 @@ class JSONLeapConfig(BaseLeapConfig):
             if last_modified:
                 _mtime = dateparser.parse(last_modified)
                 mtime = int(_mtime.strftime("%s"))
-            self._config.load(json.dumps(request.json), mtime=mtime)
+            if callable(request.json):
+                _json = request.json()
+            else:
+                # back-compat
+                _json = request.json
+            self._config.load(json.dumps(_json), mtime=mtime)
             self._config.set_dirty()
         else:
             # not request.json
