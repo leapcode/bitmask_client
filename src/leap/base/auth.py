@@ -142,9 +142,6 @@ class SRPAuth(requests.auth.AuthBase):
 
         self.init_srp()
 
-    def get_json_data(self, response):
-        return json.loads(response.content)
-
     def init_srp(self):
         usr = srp.User(
             self.username,
@@ -175,8 +172,7 @@ class SRPAuth(requests.auth.AuthBase):
             raise SRPAuthenticationError(
                 "No valid response (salt).")
 
-        # XXX should  get auth_result.json instead
-        self.init_data = self.get_json_data(init_session)
+        self.init_data = init_session.json
         return self.init_data
 
     def get_server_proof_data(self):
@@ -194,13 +190,7 @@ class SRPAuth(requests.auth.AuthBase):
             raise SRPAuthenticationError(
                 "No valid response (HAMK).")
 
-        # XXX should  get auth_result.json instead
-        try:
-            self.auth_data = self.get_json_data(auth_result)
-        except ValueError:
-            raise SRPAuthenticationError(
-                "No valid data sent (HAMK)")
-
+        self.auth_data = auth_result.json
         return self.auth_data
 
     def authenticate(self):
