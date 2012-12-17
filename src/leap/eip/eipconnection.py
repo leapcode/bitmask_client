@@ -7,6 +7,8 @@ import Queue
 import sys
 import time
 
+from dateutil.parser import parse as dateparse
+
 from leap.eip.checks import ProviderCertChecker
 from leap.eip.checks import EIPConfigChecker
 from leap.eip import config as eipconfig
@@ -114,8 +116,7 @@ class StatusMixIn(object):
         except ValueError:
             return None
 
-        # XXX this will break with different locales I assume...
-        when_ts = time.strptime(when.split(',')[1], "%a %b %d %H:%M:%S %Y")
+        when_ts = dateparse(when.split(',')[1]).timetuple()
         sep = ','
         # XXX clean up this!
         tun_read = tun_read.split(sep)[1]
