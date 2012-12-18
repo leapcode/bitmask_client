@@ -54,7 +54,7 @@ def open(path, create, document_factory=None, password=None):
     """
     from u1db.backends import sqlite_backend
     return sqlite_backend.SQLCipherDatabase.open_database(
-        path, create=create, document_factory=document_factory, password=password)
+        path, password, create=create, document_factory=document_factory)
 
 
 class SQLCipherDatabase(SQLitePartialExpandDatabase):
@@ -67,17 +67,16 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
     def set_pragma_key(cls, db_handle, key):
        db_handle.cursor().execute("PRAGMA key = '%s'" % key)
 
-    def __init__(self, sqlite_file, document_factory=None, password=None):
+    def __init__(self, sqlite_file, password, document_factory=None):
         """Create a new sqlite file."""
         self._db_handle = dbapi2.connect(sqlite_file)
-        if password:
-            SQLiteDatabase.set_pragma_key(self._db_handle, password)
+        SQLCipherDatabase.set_pragma_key(self._db_handle, password)
         self._real_replica_uid = None
         self._ensure_schema()
         self._factory = document_factory or Document
 
     @classmethod
-    def _open_database(cls, sqlite_file, document_factory=None, password=None):
+    def _open_database(cls, sqlite_file, password, document_factory=None):
         if not os.path.isfile(sqlite_file):
             raise errors.DatabaseDoesNotExist()
         tries = 2
@@ -86,8 +85,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
             #       where without re-opening the database on Windows, it
             #       doesn't see the transaction that was just committed
             db_handle = dbapi2.connect(sqlite_file)
-            if password:
-                SQLiteDatabase.set_pragma_key(db_handle, password)
+            SQLCipherDatabase.set_pragma_key(db_handle, password)
             c = db_handle.cursor()
             v, err = cls._which_index_storage(c)
             db_handle.close()
@@ -100,23 +98,22 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
             tries -= 1
             time.sleep(cls.WAIT_FOR_PARALLEL_INIT_HALF_INTERVAL)
         return SQLCipherDatabase._sqlite_registry[v](
-            sqlite_file, document_factory=document_factory)
+            sqlite_file, password, document_factory=document_factory)
 
     @classmethod
-    def open_database(cls, sqlite_file, create, backend_cls=None,
-                      document_factory=None, password=None):
+    def open_database(cls, sqlite_file, password, create, backend_cls=None,
+                      document_factory=None):
         try:
-            return cls._open_database(sqlite_file,
-                                      document_factory=document_factory,
-                                      password=password)
+            return cls._open_database(sqlite_file, password,
+                                      document_factory=document_factory)
         except errors.DatabaseDoesNotExist:
             if not create:
                 raise
             if backend_cls is None:
                 # default is SQLCipherPartialExpandDatabase
                 backend_cls = SQLCipherDatabase
-            return backend_cls(sqlite_file, document_factory=document_factory,
-                               password=password)
+            return backend_cls(sqlite_file, password,
+                               document_factory=document_factory)
 
     @staticmethod
     def register_implementation(klass):
