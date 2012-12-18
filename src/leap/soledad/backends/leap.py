@@ -7,10 +7,13 @@ from u1db import Document
 from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
 import base64
-from soledad import GPGWrapper
+from soledad.util import GPGWrapper
 
 
 class NoDefaultKey(Exception):
+    pass
+
+class NoSoledadInstance(Exception):
     pass
 
 
@@ -22,40 +25,39 @@ class LeapDocument(Document):
     """
 
     def __init__(self, doc_id=None, rev=None, json='{}', has_conflicts=False,
-                 encrypted_json=None, default_key=None, gpg_wrapper=None):
+                 encrypted_json=None, soledad=None):
         super(LeapDocument, self).__init__(doc_id, rev, json, has_conflicts)
-        # we might want to get already initialized wrappers for testing.
-        if gpg_wrapper is None:
-            self._gpg = GPGWrapper()
-        else:
-            self._gpg = gpg_wrapper
+        self._soledad = soledad
         if encrypted_json:
             self.set_encrypted_json(encrypted_json)
-        self._default_key = default_key
 
     def get_encrypted_json(self):
         """
         Returns document's json serialization encrypted with user's public key.
         """
-        if self._default_key is None:
-            raise NoDefaultKey()
-        cyphertext = self._gpg.encrypt(self.get_json(),
-                                       self._default_key,
-                                       always_trust = True)
-                                       # TODO: always trust?
-        return json.dumps({'cyphertext' : str(cyphertext)})
+        if not self._soledad:
+            raise NoSoledadInstance()
+        cyphertext = self._soledad.encrypt_symmetric(self.get_json())
+        return json.dumps({'_encrypted_json' : cyphertext})
 
     def set_encrypted_json(self, encrypted_json):
         """
         Set document's content based on encrypted version of json string.
         """
-        cyphertext = json.loads(encrypted_json)['cyphertext']
-        plaintext = str(self._gpg.decrypt(cyphertext))
+        if not self._soledad:
+            raise NoSoledadInstance()
+        cyphertext = json.loads(encrypted_json)['_encrypted_json']
+        plaintext = self._soledad.decrypt_symmetric(cyphertext)
         return self.set_json(plaintext)
 
 
 class LeapDatabase(HTTPDatabase):
     """Implement the HTTP remote database API to a Leap server."""
+
+    def __init__(self, url, document_factory=None, creds=None, soledad=None):
+        super(LeapDatabase, self).__init__(url, creds=creds)
+        self._soledad = soledad
+        self._factory = LeapDocument
 
     @staticmethod
     def open_database(url, create):
@@ -74,8 +76,20 @@ class LeapDatabase(HTTPDatabase):
         st._creds = self._creds
         return st
 
+    def create_doc_from_json(self, content, doc_id=None):
+        if doc_id is None:
+            doc_id = self._allocate_doc_id()
+        res, headers = self._request_json('PUT', ['doc', doc_id], {},
+                                          content, 'application/json')
+        new_doc = self._factory(doc_id, res['rev'], content, soledad=self._soledad)
+        return new_doc
+
 
 class LeapSyncTarget(HTTPSyncTarget):
+
+    def __init__(self, url, creds=None, soledad=None):
+        super(LeapSyncTarget, self).__init__(url, creds)
+        self._soledad = soledad
 
     def _parse_sync_stream(self, data, return_doc_cb, ensure_callback=None):
         """
@@ -97,8 +111,10 @@ class LeapSyncTarget(HTTPSyncTarget):
                     raise BrokenSyncStream
                 line, comma = utils.check_and_strip_comma(entry)
                 entry = json.loads(line)
+                # decrypt after receiving from server.
                 doc = LeapDocument(entry['id'], entry['rev'],
-                                   encrypted_json=entry['content'])
+                                   encrypted_json=entry['content'],
+                                   soledad=self._soledad)
                 return_doc_cb(doc, entry['gen'], entry['trans_id'])
         if parts[-1] != ']':
             try:
@@ -142,6 +158,7 @@ class LeapSyncTarget(HTTPSyncTarget):
             ensure=ensure_callback is not None)
         comma = ','
         for doc, gen, trans_id in docs_by_generations:
+            # encrypt before sending to server.
             size += prepare(id=doc.doc_id, rev=doc.rev,
                             content=doc.get_encrypted_json(),
                             gen=gen, trans_id=trans_id)

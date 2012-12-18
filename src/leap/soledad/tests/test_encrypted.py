@@ -7,7 +7,7 @@ import unittest2 as unittest
 import os
 
 import u1db
-from soledad import GPGWrapper
+from soledad import Soledad
 from soledad.backends.leap import LeapDocument
 
 
@@ -17,28 +17,27 @@ class EncryptedSyncTestCase(unittest.TestCase):
     GNUPG_HOME = "%s/gnupg" % PREFIX
     DB1_FILE   = "%s/db1.u1db" % PREFIX
     DB2_FILE   = "%s/db2.u1db" % PREFIX
+    EMAIL      = 'leap@leap.se'
 
     def setUp(self):
         self.db1 = u1db.open(self.DB1_FILE, create=True,
                              document_factory=LeapDocument)
         self.db2 = u1db.open(self.DB2_FILE, create=True,
                              document_factory=LeapDocument)
-        self.gpg = GPGWrapper(gpghome=self.GNUPG_HOME)
-        self.gpg.import_keys(PUBLIC_KEY)
-        self.gpg.import_keys(PRIVATE_KEY)
+        self.soledad = Soledad(self.EMAIL, gpghome=self.GNUPG_HOME)
+        self.soledad._gpg.import_keys(PUBLIC_KEY)
+        self.soledad._gpg.import_keys(PRIVATE_KEY)
 
     def tearDown(self):
         os.unlink(self.DB1_FILE)
         os.unlink(self.DB2_FILE)
 
     def test_get_set_encrypted(self):
-        doc1 = LeapDocument(gpg_wrapper = self.gpg,
-                                 default_key = KEY_FINGERPRINT)
+        doc1 = LeapDocument(soledad=self.soledad)
         doc1.content = { 'key' : 'val' }
         doc2 = LeapDocument(doc_id=doc1.doc_id,
                                  encrypted_json=doc1.get_encrypted_json(),
-                                 gpg_wrapper=self.gpg,
-                                 default_key = KEY_FINGERPRINT)
+                                 soledad=self.soledad)
         res1 = doc1.get_json()
         res2 = doc2.get_json()
         self.assertEqual(res1, res2, 'incorrect document encryption')

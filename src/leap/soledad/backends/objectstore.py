@@ -1,8 +1,7 @@
 import uuid
 from u1db.backends import CommonBackend
-from u1db import errors
-from soledad import SyncLog, TransactionLog
-from soledad.backends.leap import LeapDocument
+from u1db import errors, Document
+from soledad.util import SyncLog, TransactionLog
 
 
 class ObjectStore(CommonBackend):
@@ -11,7 +10,7 @@ class ObjectStore(CommonBackend):
         # This initialization method should be called after the connection
         # with the database is established, so it can ensure that u1db data is
         # configured and up-to-date.
-        self.set_document_factory(LeapDocument)
+        self.set_document_factory(Document)
         self._sync_log = SyncLog()
         self._transaction_log = TransactionLog()
         self._ensure_u1db_data()

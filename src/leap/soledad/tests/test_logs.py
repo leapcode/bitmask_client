@@ -1,5 +1,5 @@
 import unittest2 as unittest
-from soledad import TransactionLog, SyncLog
+from soledad.util import TransactionLog, SyncLog
 
 
 class LogTestCase(unittest.TestCase):
