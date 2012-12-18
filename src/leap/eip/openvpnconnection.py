@@ -374,8 +374,9 @@ to be triggered for each one of them.
             logger.debug('process :%s' % process)
             cmdline = process.cmdline
 
-            if isinstance(cmdline, list):
-                _index = cmdline.index("--management")
+            manag_flag = "--management"
+            if isinstance(cmdline, list) and manag_flag in cmdline:
+                _index = cmdline.index(manag_flag)
                 self.host = cmdline[_index + 1]
                 self._send_command("signal SIGTERM\n")
 
