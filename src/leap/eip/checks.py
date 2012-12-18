@@ -293,7 +293,11 @@ class ProviderCertChecker(object):
             certfile = self._get_client_cert_path()
             with open(certfile) as cf:
                 cert_s = cf.read()
-        valid = certs.can_load_cert_and_pkey(cert_s)
+        try:
+            valid = certs.can_load_cert_and_pkey(cert_s)
+        except certs.BadCertError:
+            logger.warning("Not valid pemfile")
+            valid = False
         return valid
 
     @property

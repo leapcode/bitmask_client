@@ -1,6 +1,5 @@
 import ctypes
 from StringIO import StringIO
-import re
 import socket
 
 import gnutls.connection
@@ -8,6 +7,10 @@ import gnutls.crypto
 import gnutls.library
 
 from leap.util.misc import null_check
+
+
+class BadCertError(Exception):
+    """raised for malformed certs"""
 
 
 def get_https_cert_from_domain(domain):
@@ -55,9 +58,8 @@ def can_load_cert_and_pkey(string):
         null_check(cert, 'certificate')
         null_check(key, 'private key')
     except:
-        # XXX catch GNUTLSError
-        raise
-        return False
+        # XXX catch GNUTLSError?
+        raise BadCertError
     else:
         return True
 
