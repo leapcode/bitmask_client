@@ -37,8 +37,8 @@ class LeapDocument(Document):
         """
         if not self._soledad:
             raise NoSoledadInstance()
-        cyphertext = self._soledad.encrypt_symmetric(self.get_json())
-        return json.dumps({'_encrypted_json' : cyphertext})
+        ciphertext = self._soledad.encrypt_symmetric(self.get_json())
+        return json.dumps({'_encrypted_json' : ciphertext})
 
     def set_encrypted_json(self, encrypted_json):
         """
@@ -46,8 +46,8 @@ class LeapDocument(Document):
         """
         if not self._soledad:
             raise NoSoledadInstance()
-        cyphertext = json.loads(encrypted_json)['_encrypted_json']
-        plaintext = self._soledad.decrypt_symmetric(cyphertext)
+        ciphertext = json.loads(encrypted_json)['_encrypted_json']
+        plaintext = self._soledad.decrypt_symmetric(ciphertext)
         return self.set_json(plaintext)
 
 

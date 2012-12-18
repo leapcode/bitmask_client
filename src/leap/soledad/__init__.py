@@ -45,9 +45,9 @@ class Soledad(object):
 
     def _gen_secret(self):
         self._secret = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(self.SECRET_LENGTH))
-        cyphertext = self._gpg.encrypt(self._secret, self._fingerprint, self._fingerprint)
+        ciphertext = self._gpg.encrypt(self._secret, self._fingerprint, self._fingerprint)
         f = open(self.SECRET_PATH, 'w')
-        f.write(str(cyphertext))
+        f.write(str(ciphertext))
         f.close()
 
 
