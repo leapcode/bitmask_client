@@ -74,7 +74,7 @@ All contributions should have these three points in mind.
 .. _`gpl3`:
 
 GPLv3 License
-------------
+--------------
 
 .. image:: gpl.*
 
