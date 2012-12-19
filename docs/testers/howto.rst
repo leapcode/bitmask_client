@@ -27,10 +27,14 @@ First, install all the base dependencies plus git, virtualenv and development fi
 Bootstrap script
 ^^^^^^^^^^^^^^^^
 .. note:: getting latest version of this script.
+
    At some moment we will publish an url  from where you can download this script. For now, you can copy and paste this.
 
 .. note::
    This will fetch the *develop* branch. If you want to test another branch, just change it in the line starting with *pip install...*. Alternatively, bug kali so she add an option branch to a decent script.
+
+.. note::
+   This script could make use of the after_install hook. Read http://pypi.python.org/pypi/virtualenv/ 
 
 Then copy and paste this script somewhere in your path, in the parent folder where you want your testing build to be downloaded. For instance, to `/tmp/leap_client_bootstrap`:
 
@@ -109,7 +113,12 @@ Thus, if you forget to *activate your virtualenv*, the client will not run from 
 
 from the directory where you *sourced* the bootstrap script.
 
-Refer to :ref:`Using virtualenv <virtualenv>` to learn more about virtualenv.
+Refer to :ref:`Working with virtualenv <virtualenv>` to learn more about virtualenv.
+
+Policy files
+^^^^^^^^^^^^
+
+If you have never installed the ``leap-client`` globally, **you need to copy a policykit file to its proper path before running it for the first time** (you only need to do this once). This, unless the virtualenv-based operations, will need root permissions. See :ref:`running openvpn without root privileges <policykit>` section for more info on this.
 
 Config files
 ^^^^^^^^^^^^

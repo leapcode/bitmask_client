@@ -3,6 +3,7 @@
 *.pyc
 .*
 !.coveragerc
+!.tx
 bin/
 build/
 core

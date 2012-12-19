@@ -3,12 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-LEAP Encryption Access Project Client
+LEAP Client
 =====================================
 
 Release v\ |version|. (`Impatient? jump to the` :ref:`Installation <install>` `section!`)
 
-The **LEAP Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PyQt4, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
+.. if you change this paragraph, change it in user/intro too
+The **LEAP Encryption Access Project Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PyQt4, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
 
 User Guide
 ----------
