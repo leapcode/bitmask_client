@@ -90,7 +90,8 @@ class TestLeapProviderDefinition(BaseLeapTest):
     def test_provider_validation(self):
         self.definition.validate(self.config)
         _config = copy.deepcopy(self.config)
-        _config['serial'] = 'aaa'
+        # bad type, raise validation error
+        _config['domain'] = 111
         with self.assertRaises(jsonschema.ValidationError):
             self.definition.validate(_config)
 
