@@ -1,7 +1,7 @@
 .. _environment:
 
-Setting up a Work Environment
-==============================
+Setting up a development environment
+====================================
 
 This document covers how to get an enviroment ready to contribute code to the LEAP Client.
 
@@ -24,6 +24,8 @@ Leap client depends on these libraries:
 * `libgnutls`
 * `openvpn`
 
+Debian
+^^^^^^
 In debian-based systems::
 
   $ apt-get install openvpn python-qt4 python-crypto python-gnutls
@@ -79,7 +81,8 @@ A second option if that does not work for you would be to install PyQt globally 
     $ apt-get install python-qt4
     $ virtualenv --site-packages .
 
-Or, if you prefer, you can also download the official PyQt tarball and execute `configure.py` in the root folder of their distribution, which generates a `Makefile`::
+.. TODO add link to PyQt tar.gz
+Or, if you prefer, you can also download the official PyQt tarball and execute `configure.py` in the root folder of their distribution, which generates a ``Makefile``::
 
     $ python configure.py
     $ make && make install
@@ -99,7 +102,7 @@ The setup script tries to install the policy file when installing the client sys
 
 If you *only* are running the client from inside a virtualenv, you will need to copy this file by hand::
 
-    $ sudo cp pkg/linux/polkit/net.openvpn.gui.leap.policy /usr/share/polkit-1/actions/net.openvpn.gui.leap.policy
+    $ sudo cp pkg/linux/polkit/net.openvpn.gui.leap.policy /usr/share/polkit-1/actions/
 
 Missing Authentication agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

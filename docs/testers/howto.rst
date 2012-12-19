@@ -149,4 +149,6 @@ Reporting bugs
 
    There is a great text on the art of bug reporting, that can be found `online <http://www.chiark.greenend.org.uk/~sgtatham/bugs.html>`_.
 
+.. TODO add a line with ref. to running the client in debug mode...
+
 We use the `LEAP Client Bug Tracker <https://leap.se/code/projects/eip-client>`_, although you can also use `Github issues <https://github.com/leapcode/leap_client/issues>`_.

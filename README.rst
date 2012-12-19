@@ -7,13 +7,15 @@ The LEAP Encryption Access Project Client
 Read the docs!
 ==============
 
-You can read the documentation online at `http://leap-client.readthedocs.org <http://http://leap-client.readthedocs.org/en/latest/>`_. If you prefer to build it locally, run::
+You can read the documentation online at `http://leap-client.readthedocs.org <http://leap-client.readthedocs.org/en/latest/>`_. If you prefer to build it locally, run::
 
     $ cd docs
     $ make html
 
 Quick Start
-=============
+==============
+
+At the current development stage we still do not have any versioned release. Instead, you might want to have a look at the `testers guide<http://leap-client.readthedocs.org/en/latest/testers/howto.html>`_ for a quick howto on fetching and testing latest development code.
 
 Dependencies
 ------------------
@@ -21,7 +23,7 @@ Dependencies
 Leap client depends on these libraries:
 
 * ``python 2.6`` or ``2.7``
-* ``qt4 libraries`` (see installing Qt section below)
+* ``qt4 libraries``
 * ``libgnutls``
 * ``openvpn``
 
@@ -55,15 +57,9 @@ Use pip to install the required python packages::
 Installing
 -----------
 
-After getting the source and installing all the dependencies, proceed to install ``leap-client`` package:
+After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
 
-.. note::
-   if you have installed previous versions before::
-   python setup.py clean
-
-And finally, build and install leap-client::
-
-  python setup.py install
+  $ python setup.py install
 
 
 Running
@@ -71,14 +67,13 @@ Running
 
 After a successful installation, there should be a launcher called ``leap-client`` somewhere in your path::
 
-  % leap-client
+  $ leap-client
 
 
 Hacking
 =======
 
-.. note::
-   link to Hackers Guide in documentation.
+See the `hackers guide<http://leap-client.readthedocs.org/en/latest/dev/environment.html>`_
 
 The LEAP client git repository is available at::
 
@@ -118,7 +113,7 @@ which the first time should also install all of them in your virtualenv for you.
 License
 =======
 
-.. image:: docs/user/intro/gpl.*
+.. image:: https://raw.github.com/leapcode/leap_client/develop/docs/user/gpl.png
 
 The LEAP Client is released under the terms of the `GNU GPL version 3`_ or later.
 
