@@ -22,7 +22,7 @@ Leap client depends on these libraries:
 * `python 2.6 or 2.7`
 * `qt4` libraries (see also :ref:`Troubleshooting PyQt install <pyqtvirtualenv>` about how to install inside your virtualenv)
 * `libgnutls`
-* `openvpn`
+* `openvpn<http://openvpn.net/index.php/open-source/345-openvpn-project.html>`_
 
 Debian
 ^^^^^^
@@ -76,13 +76,12 @@ As a workaround, you can run the following script after creating your virtualenv
 
     $ pkg/postmkvenv.sh
 
-A second option if that does not work for you would be to install PyQt globally and pass the `--site-packages` option when you are creating your virtualenv::
+A second option if that does not work for you would be to install PyQt globally and pass the ``--site-packages`` option when you are creating your virtualenv::
 
     $ apt-get install python-qt4
     $ virtualenv --site-packages .
 
-.. TODO add link to PyQt tar.gz
-Or, if you prefer, you can also download the official PyQt tarball and execute `configure.py` in the root folder of their distribution, which generates a ``Makefile``::
+Or, if you prefer, you can also `download the official PyQt tarball<http://www.riverbankcomputing.com/software/pyqt/download>`_ and execute ``configure.py`` in the root folder of their distribution, which generates a ``Makefile``::
 
     $ python configure.py
     $ make && make install

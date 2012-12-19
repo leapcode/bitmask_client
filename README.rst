@@ -81,9 +81,9 @@ The LEAP client git repository is available at::
 
 Some steps need to be run when setting a development environment for the first time.
 
-Enable a **virtualenv** to isolate your libraries::
+Enable a **virtualenv** to isolate your libraries. (Current *.gitignore* knows about a virtualenv in the root tree. If you do not like that place, just change ``.`` for *<path.to.environment>*)::
 
-  $ virtualenv .  # ensure your .gitignore knows about it
+  $ virtualenv .
   $ source bin/activate
 
 Make sure you are in the development branch::
@@ -108,7 +108,7 @@ To run the test suite::
 
     $ ./run_tests.sh
     
-which the first time should also install all of them in your virtualenv for you.
+which the first time should automagically install all the needed dependencies in your virtualenv for you.
 
 License
 =======
