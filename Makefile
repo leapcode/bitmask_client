@@ -4,12 +4,19 @@
 # TODO move to setup scripts
 # and implement it in python
 # http://die-offenbachs.homelinux.org:48888/hg/eric5/file/5072605ad4dd/compileUiFiles.py
-###### EDIT ###################### 
+###### EDIT ######################
+
 #Directory with ui and resource files
 RESOURCE_DIR = data/resources
  
 #Directory for compiled resources
 COMPILED_DIR = src/leap/gui
+
+#Directory for (finished) translations
+TRANSLAT_DIR = data/translations
+
+#Project file, used for translations
+PROJFILE = data/leap_client.pro
  
 #UI files to compile
 # UI_FILES = foo.ui
@@ -21,6 +28,9 @@ RESOURCES = mainwindow.qrc locale.qrc
 #pyuic4 and pyrcc4 binaries
 PYUIC = pyuic4
 PYRCC = pyrcc4
+PYLUP = pylupdate4
+LRELE = lrelease
+
  
 #################################
 # DO NOT EDIT FOLLOWING
@@ -37,6 +47,10 @@ all : resources ui
 resources : $(COMPILED_RESOURCES) 
  
 ui : $(COMPILED_UI)
+
+translations:
+	$(PYLUP) $(PROJFILE)
+	$(LRELE) $(TRANSLAT_DIR)/*.ts
  
 $(COMPILED_DIR)/ui_%.py : $(RESOURCE_DIR)/%.ui
 	$(PYUIC) $< -o $@

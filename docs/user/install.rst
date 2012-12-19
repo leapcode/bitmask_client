@@ -32,7 +32,7 @@ Get the code
 
 .. warning::
 
-   This... won't work either, as-is. This should be the third optional way to install stable releases from master branch. Right now that does not work because there is *nothing* updated in the master branch. Leaving this here since this is what we will be doing, but if you really intend to have a working tree, refer to the sections :ref:`setting up a working environment <environment>` or :ref:`fetching latest code <fetchinglatest>`.
+   This... won't work either, as-is. This should be the third optional way to install stable releases from master branch. Right now that does not work because there is *nothing* updated in the master branch. Leaving this here since this is what we will be doing, but if you really intend to have a working tree, refer to the sections :ref:`setting up a working environment <environment>` or :ref:`fetching latest code for testing <fetchinglatest>`.
 
 You can get the code from LEAP public git repository ::
 

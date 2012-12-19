@@ -141,6 +141,16 @@ Testing the packages
 ^^^^^^^^^^^^^^^^^^^^
 When we have a release candidate for the supported platforms (Debian stable, Ubuntu 12.04 by now), we will announce also the URI where you can download the rc for testing in your system. Stay tuned!
 
+Testing the status of translations
+----------------------------------
+
+We need translators! You can go to `transifex <https://www.transifex.com/projects/p/leap-client/>`_, get an account and start contributing.
+
+If you want to check the current status of the client localization in a language other than the one set in your machine, you can do it with a simple trick (under linux). For instance, do::
+
+    $ lang=es_ES leap-client
+
+for running  LEAP Client with the spanish locales.
 
 Reporting bugs
 --------------
