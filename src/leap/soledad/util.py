@@ -38,6 +38,12 @@ class GPGWrapper():
     def import_keys(self, data):
         return self.gpg.import_keys(data)
 
+    def gen_key_input(self, **kwargs):
+        return self.gpg.gen_key_input(**kwargs)
+
+    def gen_key(self, input):
+        return self.gpg.gen_key(input)
+
 
 #----------------------------------------------------------------------------
 # u1db Transaction and Sync logs.

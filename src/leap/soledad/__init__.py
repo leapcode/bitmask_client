@@ -53,9 +53,11 @@ class Soledad(object):
 
 
     def _has_openpgp_keypair(self):
-        if self._gpg.find_key(self._user_email):
+        try:
+            self._gpg.find_key(self._user_email)
             return True
-        return False
+        except LookupError:
+            return False
 
     def _gen_openpgp_keypair(self):
         params = self._gpg.gen_key_input(
