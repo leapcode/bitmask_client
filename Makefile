@@ -1,3 +1,4 @@
+SHELL := /bin/zsh
 # ################################
 # Makefile for compiling resources
 # files.
@@ -61,6 +62,9 @@ $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 deb:
 	@git tag -a debian/$(DEBVER) -m "..."
 	@debuild -us -uc -i.git
+
+apidocs:
+	@sphinx-apidoc -o docs/api src/leap
 
 clean : 
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)  

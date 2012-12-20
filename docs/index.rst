@@ -78,10 +78,14 @@ API Documentation
 
 If you are looking for a reference to specific classes or functions, you are likely to find it here
 
+.. I should investigate a bit more how to skip some things, and how to give nice format
+   to the docstrings.
+   Maybe we should not have sphinx-apidocs building everything, but a minimal index of our own.
+
 .. note::
-   when it's finished, that's it :)
+   when it's a bit more polished, that's it :)
 
 .. toctree::
    :maxdepth: 2
 
-   api
+   api/leap
