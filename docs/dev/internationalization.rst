@@ -38,21 +38,30 @@ tl;dr;::
 
      self.tr('your string')
 
-for any string that you want to be translated.
+for any string that you want to be translated, as long as the instance derives from ``QObject``.
+
+If you have to translate something that it is not a ``QObject``, use the magic leap ``translate`` method:
+
+
+.. code-block:: python
+
+   from leap.util.translations import translate
+
+   class Foo(object):
+        bar = translate(<Context>, <string>, <comment>)
+
 
 .. Note about this: there seems to be some problems with the .tr method
-   on QObjects. Investigate this.
-   I still believe we can use a generic _ method which is smart enough to
-   fallback to QObject.tr methods or lookup our own tr implementation (for our
-   multilungual objects, like in exceptions or provider labels that came from json objects).
+   so the translate method could actually be the preferred thing in all the cases.
+   Still missing what to do for language labels (json-based).
    --kali
 
 For i18n maintainers
 ^^^^^^^^^^^^^^^^^^^^
 
-You need ``pylupdate4`` for these steps. To get it, in debian::
+You need ``pylupdate4`` and ``lrelease`` for these steps. To get it, in debian::
 
-   $ apt-get install python-qt4-utils
+   $ apt-get install pyqt4-dev-tools qt4-linguist-tools
 
 If you do not already have it, install the ``transifex-client`` from the cheese shop::
 

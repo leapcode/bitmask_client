@@ -14,6 +14,7 @@ Exception attributes and their meaning/uses
 * usermessage: the message that will be passed to user in ErrorDialogs
                in Qt-land.
 """
+from leap.util.translations import translate
 
 
 class LeapException(Exception):
@@ -22,6 +23,7 @@ class LeapException(Exception):
     sets some parameters that we will check
     during error checking routines
     """
+
     critical = False
     failfirst = False
     warning = False
@@ -46,32 +48,50 @@ class ImproperlyConfigured(Exception):
     pass
 
 
-class NoDefaultInterfaceFoundError(LeapException):
-    message = "no default interface found"
-    usermessage = "Looks like your computer is not connected to the internet"
+# NOTE: "Errors" (context) has to be a explicit string!
 
 
 class InterfaceNotFoundError(LeapException):
     # XXX should take iface arg on init maybe?
     message = "interface not found"
+    usermessage = translate(
+        "Errors",
+        "Interface not found")
+
+
+class NoDefaultInterfaceFoundError(LeapException):
+    message = "no default interface found"
+    usermessage = translate(
+        "Errors",
+        "Looks like your computer "
+        "is not connected to the internet")
 
 
 class NoConnectionToGateway(CriticalError):
     message = "no connection to gateway"
-    usermessage = "Looks like there are problems with your internet connection"
+    usermessage = translate(
+        "Errors",
+        "Looks like there are problems "
+        "with your internet connection")
 
 
 class NoInternetConnection(CriticalError):
     message = "No Internet connection found"
-    usermessage = "It looks like there is no internet connection."
+    usermessage = translate(
+        "Errors",
+        "It looks like there is no internet connection.")
     # and now we try to connect to our web to troubleshoot LOL :P
 
 
 class CannotResolveDomainError(LeapException):
     message = "Cannot resolve domain"
-    usermessage = "Domain cannot be found"
+    usermessage = translate(
+        "Errors",
+        "Domain cannot be found")
 
 
 class TunnelNotDefaultRouteError(CriticalError):
     message = "Tunnel connection dissapeared. VPN down?"
-    usermessage = "The Encrypted Connection was lost. Shutting down..."
+    usermessage = translate(
+        "Errors",
+        "The Encrypted Connection was lost. Shutting down...")

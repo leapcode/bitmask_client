@@ -1,6 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS><TS version="2.0">
 <context>
+    <name>Errors</name>
+    <message>
+        <location filename="../src/leap/base/exceptions.py" line="57"/>
+        <source>Interface not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/base/exceptions.py" line="64"/>
+        <source>Looks like your computer is not connected to the internet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/base/exceptions.py" line="72"/>
+        <source>Looks like there are problems with your internet connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/base/exceptions.py" line="80"/>
+        <source>It looks like there is no internet connection.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/base/exceptions.py" line="88"/>
+        <source>Domain cannot be found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/base/exceptions.py" line="95"/>
+        <source>The Encrypted Connection was lost. Shutting down...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>IntroPage</name>
     <message>
         <location filename="../src/leap/gui/firstrun/intro.py" line="14"/>
@@ -215,5 +248,11 @@
         <source>fetching provider info</source>
         <translation type="unfinished"></translation>
     </message>
+</context>
+<context>
+    <name>TestyClass</name>
+</context>
+<context>
+    <name>this is a cat</name>
 </context>
 </TS>
