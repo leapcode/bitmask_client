@@ -15,12 +15,12 @@ You can read the documentation online at `http://leap-client.readthedocs.org <ht
 Quick Start
 ==============
 
-At the current development stage we still do not have any versioned release. Instead, you might want to have a look at the `testers guide<http://leap-client.readthedocs.org/en/latest/testers/howto.html>`_ for a quick howto on fetching and testing latest development code.
+At the current development stage we still do not have any versioned release. Instead, you might want to have a look at the `testers guide <http://leap-client.readthedocs.org/en/latest/testers/howto.html>`_ for a quick howto on fetching and testing latest development code.
 
 Dependencies
 ------------------
 
-Leap client depends on these libraries:
+LEAP Client depends on these libraries:
 
 * ``python 2.6`` or ``2.7``
 * ``qt4 libraries``
@@ -73,7 +73,7 @@ After a successful installation, there should be a launcher called ``leap-client
 Hacking
 =======
 
-See the `hackers guide<http://leap-client.readthedocs.org/en/latest/dev/environment.html>`_
+See the `hackers guide <http://leap-client.readthedocs.org/en/latest/dev/environment.html>`_.
 
 The LEAP client git repository is available at::
 
