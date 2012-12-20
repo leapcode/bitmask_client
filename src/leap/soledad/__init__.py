@@ -6,6 +6,7 @@ import os
 import string
 import random
 import cStringIO
+import hmac
 from soledad.util import GPGWrapper
 
 class Soledad(object):
@@ -39,7 +40,7 @@ class Soledad(object):
     def _load_secret(self):
         try:
             with open(self.SECRET_PATH) as f:
-               self._secret = self._gpg.decrypt(f.read())
+               self._secret = str(self._gpg.decrypt(f.read()))
         except IOError as e:
            raise IOError('Failed to open secret file %s.' % self.SECRET_PATH)
 
@@ -72,12 +73,13 @@ class Soledad(object):
         return str(self._gpg.encrypt(data, self._fingerprint, sign=sign,
                                      passphrase=passphrase, symmetric=symmetric))
 
-    def encrypt_symmetric(self, data, sign=None):
-        return self.encrypt(data, sign=sign, passphrase=self._secret,
-                            symmetric=True)
+    def encrypt_symmetric(self, doc_id, data, sign=None):
+        h = hmac.new(self._secret, doc_id).hexdigest()
+        return self.encrypt(data, sign=sign, passphrase=h, symmetric=True)
 
     def decrypt(self, data, passphrase=None, symmetric=False):
         return str(self._gpg.decrypt(data, passphrase=passphrase))
 
-    def decrypt_symmetric(self, data):
-        return self.decrypt(data, passphrase=self._secret)
+    def decrypt_symmetric(self, doc_id, data):
+        h = hmac.new(self._secret, doc_id).hexdigest()
+        return self.decrypt(data, passphrase=h)
