@@ -22,12 +22,16 @@ leap_provider_spec = {
             #'required': True,
         },
         'name': {
-            'type': dict,  # XXX multilingual object?
+            #'type': LEAPTranslatable,
+            'type': dict,
+            'format': 'translatable',
             'default': {u'en': u'Test Provider'}
             #'required': True
         },
         'description': {
+            #'type': LEAPTranslatable,
             'type': dict,
+            'format': 'translatable',
             'default': {u'en': u'Test provider'}
         },
         'enrollment_policy': {

@@ -15,10 +15,12 @@ from leap.base import providers
 
 EXPECTED_DEFAULT_CONFIG = {
     u"api_version": u"0.1.0",
-    u"description": {u'en': u"Test provider"},
+    #u"description": "LEAPTranslatable<{u'en': u'Test provider'}>",
+    u"description": {u'en': u'Test provider'},
     u"default_language": u"en",
     #u"display_name": {u'en': u"Test Provider"},
     u"domain": u"testprovider.example.org",
+    #u'name': "LEAPTranslatable<{u'en': u'Test Provider'}>",
     u'name': {u'en': u'Test Provider'},
     u"enrollment_policy": u"open",
     #u"serial": 1,
@@ -66,6 +68,7 @@ class TestLeapProviderDefinition(BaseLeapTest):
         self.definition.save(to=self.testfile, force=True)
         deserialized = json.load(open(self.testfile, 'rb'))
         self.maxDiff = None
+        #import ipdb;ipdb.set_trace()
         self.assertEqual(deserialized, EXPECTED_DEFAULT_CONFIG)
 
     def test_provider_dump_to_slug(self):
@@ -84,8 +87,9 @@ class TestLeapProviderDefinition(BaseLeapTest):
         with open(self.testfile, 'w') as wf:
             wf.write(json.dumps(EXPECTED_DEFAULT_CONFIG))
         self.definition.load(fromfile=self.testfile)
-        self.assertDictEqual(self.config,
-                             EXPECTED_DEFAULT_CONFIG)
+        #self.assertDictEqual(self.config,
+                             #EXPECTED_DEFAULT_CONFIG)
+        self.assertItemsEqual(self.config, EXPECTED_DEFAULT_CONFIG)
 
     def test_provider_validation(self):
         self.definition.validate(self.config)

@@ -10,6 +10,8 @@ import urlparse
 
 import jsonschema
 
+from leap.util.translations import LEAPTranslatable
+
 logger = logging.getLogger(__name__)
 
 
@@ -118,7 +120,6 @@ adaptors['json'] = JSONAdaptor()
 # to proper python types.
 
 # TODO:
-# - multilingual object.
 # - HTTPS uri
 
 
@@ -130,6 +131,20 @@ class DateType(object):
 
     def get_prep_value(self, data):
         return time.strftime(self.fmt, data)
+
+
+class TranslatableType(object):
+    """
+    a type that casts to LEAPTranslatable objects.
+    Used for labels we get from providers and stuff.
+    """
+
+    def to_python(self, data):
+        return LEAPTranslatable(data)
+
+    # needed? we already have an extended dict...
+    #def get_prep_value(self, data):
+        #return dict(data)
 
 
 class URIType(object):
@@ -164,6 +179,7 @@ types = {
     'date': DateType(),
     'uri': URIType(),
     'https-uri': HTTPSURIType(),
+    'translatable': TranslatableType(),
 }
 
 
