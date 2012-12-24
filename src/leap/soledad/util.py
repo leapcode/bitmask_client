@@ -40,12 +40,19 @@ class GPGWrapper(gnupg.GPG):
                                                always_trust=always_trust,
                                                passphrase=passphrase)
 
-    def send_keys(self, keys, keyserver):
+    def send_keys(self, keyserver, *keyids):
         """
         Send keys to a keyserver.
         """
-        pass
-        
+        result = self.result_map['list'](self)
+        logger.debug('send_keys: %r', keyids)
+        data = _make_binary_stream("", self.encoding)
+        args = ['--keyserver', keyserver, '--send-keys']
+        args.extend(keyids)
+        self._handle_io(args, data, result, binary=True)
+        logger.debug('send_keys result: %r', result.__dict__)
+        data.close()
+        return result
 
 
 #----------------------------------------------------------------------------
