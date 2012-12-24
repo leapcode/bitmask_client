@@ -3,10 +3,11 @@ from __future__ import (print_function)
 import logging
 import threading
 
-from leap.eip.config import get_eip_gateway
+from leap.eip import config as eipconfig
 from leap.base.checks import LeapNetworkChecker
 from leap.base.constants import ROUTE_CHECK_INTERVAL
 from leap.base.exceptions import TunnelNotDefaultRouteError
+from leap.util.misc import null_check
 from leap.util.coroutines import (launch_thread, process_events)
 
 from time import sleep
@@ -27,11 +28,20 @@ class NetworkCheckerThread(object):
             lambda exc: logger.error("%s", exc.message))
         self.shutdown = threading.Event()
 
-        # XXX get provider_gateway and pass it to checker
-        # see in eip.config for function
-        # #718
+        # XXX get provider passed here
+        provider = kwargs.pop('provider', None)
+        null_check(provider, 'provider')
+
+        eipconf = eipconfig.EIPConfig(domain=provider)
+        eipconf.load()
+        eipserviceconf = eipconfig.EIPServiceConfig(domain=provider)
+        eipserviceconf.load()
+
+        gw = eipconfig.get_eip_gateway(
+            eipconfig=eipconf,
+            eipserviceconfig=eipserviceconf)
         self.checker = LeapNetworkChecker(
-            provider_gw=get_eip_gateway())
+            provider_gw=gw)
 
     def start(self):
         self.process_handle = self._launch_recurrent_network_checks(

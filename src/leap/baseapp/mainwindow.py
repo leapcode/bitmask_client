@@ -41,6 +41,7 @@ class LeapWindow(QtGui.QMainWindow,
     triggerEIPError = QtCore.pyqtSignal([object])
     start_eipconnection = QtCore.pyqtSignal([])
     shutdownSignal = QtCore.pyqtSignal([])
+    initNetworkChecker = QtCore.pyqtSignal([])
 
     # this is status change got from openvpn management
     openvpnStatusChange = QtCore.pyqtSignal([object])
@@ -61,10 +62,15 @@ class LeapWindow(QtGui.QMainWindow,
         logger.debug('provider: %s', self.provider_domain)
         logger.debug('eip_username: %s', self.eip_username)
 
+        provider = self.provider_domain
         EIPConductorAppMixin.__init__(
-            self, opts=opts, provider=self.provider_domain)
+            self, opts=opts, provider=provider)
         StatusAwareTrayIconMixin.__init__(self)
-        NetworkCheckerAppMixin.__init__(self)
+
+        # XXX network checker should probably not
+        # trigger run_checks on init... but wait
+        # for ready signal instead...
+        NetworkCheckerAppMixin.__init__(self, provider=provider)
         MainWindowMixin.__init__(self)
 
         geom_key = "DebugGeometry" if self.debugmode else "Geometry"
@@ -97,6 +103,8 @@ class LeapWindow(QtGui.QMainWindow,
             lambda: self.start_or_stopVPN())
         self.shutdownSignal.connect(
             self.cleanupAndQuit)
+        self.initNetworkChecker.connect(
+            lambda: self.init_network_checker(self.provider_domain))
 
         # status change.
         # TODO unify

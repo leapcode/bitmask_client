@@ -4,168 +4,117 @@ The LEAP Encryption Access Project Client
 
 *your internet encryption toolkit*
 
-Installation
-=============
+Read the docs!
+==============
 
-Base Dependencies
+You can read the documentation online at `http://leap-client.readthedocs.org <http://leap-client.readthedocs.org/en/latest/>`_. If you prefer to build it locally, run::
+
+    $ cd docs
+    $ make html
+
+Quick Start
+==============
+
+At the current development stage we still do not have any versioned release. Instead, you might want to have a look at the `testers guide<http://leap-client.readthedocs.org/en/latest/testers/howto.html>`_ for a quick howto on fetching and testing latest development code.
+
+Dependencies
 ------------------
+
 Leap client depends on these libraries:
 
-* python 2.6 or 2.7
-* qt4 libraries (see installing Qt section below)
-* libgnutls
-* openvpn
+* ``python 2.6`` or ``2.7``
+* ``qt4 libraries``
+* ``libgnutls``
+* ``openvpn``
 
 Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requirements.pip``
 
-Debian systems
---------------
-# XXX TODO: move to packaging doc.
-
-* python-qt4
-* python-crypto
-* python setuptools
-* python-nose, python-mock, python-coverage (if you want to run tests)
-
-Note: these two need a version that is not found in the current debian stable or in ubuntu 12.04. 
-
-* python-gnutls == 1.1.9
-* python-keyring
+Debian
+^^^^^^
 
 Under a debian-based system, you can run::
 
-  # apt-get install openvpn python-qt4 python-crypto
+  $ apt-get install openvpn python-qt4 python-crypto python-requests python-gnutls
 
-For testing:
+For *testing*::
 
-  python-nose python-mock python-coverage
+  $ apt-get install python-nose python-mock python-coverage
 
-For _building_ the package you will need to install also::
+For *building* the package you will need to install also::
 
-  pyqt4-dev-tools libgnutls-dev python-setuptools python-all-dev
-
-
-Install python dependencies with pip
--------------------------------------
-# XXX TODO: move to developers doc.
-
-Use pip (preferrable inside a virtualenv) to install the required python packages::
-
-  # apt-get install python-pip python-dev libgnutls-dev
-  % pip install -r pkg/requirements.pip
+  $ apt-get install pyqt4-dev-tools libgnutls-dev python-setuptools python-all-dev
 
 
-Install leap-client
--------------------
+pip
+^^^
 
-After getting the source and installing all the dependencies, proceed to install ``leap-client`` package:
+Use pip to install the required python packages::
 
-# run this if you have installed previous versions before::
-
-  python setup.py clean
-
-And finally, build and install leap-client::
-
-  python setup.py install # as root if installing globally.
+  $ apt-get install python-pip python-dev libgnutls-dev
+  $ pip install -r pkg/requirements.pip
 
 
-Running the App
------------------
+Installing
+-----------
 
-After a successful installation, there should be a launcher called leap-client somewhere in your path::
+After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
 
-  % leap-client
-
-In order to run the client in debug mode::
-
-  % leap-client --debug --logfile /tmp/leap.log
-
-To see all the available command line options::
-
-  % leap-client --help
+  $ python setup.py install
 
 
-Development
-==============
+Running
+-------
 
-Troubleshooting PyQt install inside a virtualenv
-------------------------------------------------
-If you attempt to install PyQt inside a virtualenv using pip, it will fail because PyQt4 does not use the standard setup.py mechanism.
+After a successful installation, there should be a launcher called ``leap-client`` somewhere in your path::
 
-As a workaround, you can:
-
-  * run pkg/postmkvenv.sh after creating your virtualenv. It will symlink to your global PyQt installation _(recommended)_.
-  * install PyQt globally and make a virtualenv with --site-packages
-
-Or, if you prefer, you can download the official PyQt tarball and execute `configure.py` in the root folder of their distribution, which generates a Makefile::
-
-  python configure.py
-  make && make install
+  $ leap-client
 
 
-Hack
---------------
+Hacking
+=======
 
-The LEAP client git repository is available at:
-git://leap.se/leap_client 
+See the `hackers guide<http://leap-client.readthedocs.org/en/latest/dev/environment.html>`_
+
+The LEAP client git repository is available at::
+
+  git://leap.se/leap_client 
 
 Some steps need to be run when setting a development environment for the first time.
 
-# recommended: enable a **virtualenv** to isolate your libraries::
+Enable a **virtualenv** to isolate your libraries. (Current *.gitignore* knows about a virtualenv in the root tree. If you do not like that place, just change ``.`` for *<path.to.environment>*)::
 
-  % virtualenv .  # ensure your .gitignore knows about it
-  % source bin/activate
+  $ virtualenv .
+  $ source bin/activate
 
-# make sure you are in the development branch::
+Make sure you are in the development branch::
 
-  (leap_client)% git checkout develop
-  (leap_client)% pkg/postmkvenv.sh
-  (leap_client)% python setup.py develop  
+  (leap_client)$ git checkout develop
 
-to avoid messing with the entry point and global versions installed,
-it's recommended to run the app like this during development cycle::
+Symlink your global pyqt libraries::
 
-  (leap_client)% cd src/leap 
-  (leap_client)% python app.py --debug
+  (leap_client)$ pkg/postmkvenv.sh
 
-Install testing dependencies
-----------------------------
+And make your working tree available to your pythonpath::
 
-have a look at ``pkg/test-requirements.pip``
-The ./run_tests.sh command should install all of them in your virtualenv for you.
-
-Running tests
--------------
-
-There is a convenience script at ``./run_tests.sh``
-
-If you want to run specific tests, pass the (sub)module to nose::
-  nosetests leap.util
-
-or::
-  nosetests leap.util.tests.test_leap_argparse
-
-Hint: colorized output
-----------------------
-Install ``rednose`` locally and activate it, and give your eyes a rest :)::
-
-  (leap_client)% pip install rednose
-  (leap_client)% export NOSE_REDNOSE=1
+  (leap_client)$ python setup.py develop  
 
 
-Tox
----
-For running testsuite against all the supported python versions (currently 2.6 and 2.7), run::
+Testing 
+=======
 
-  % tox -v
+Have a look at ``pkg/test-requirements.pip`` for the tests dependencies.
 
+To run the test suite::
 
-Compiling resource/ui files
------------------------------
+    $ ./run_tests.sh
+    
+which the first time should automagically install all the needed dependencies in your virtualenv for you.
 
-You should refresh resource/ui files every time you change an image or a resource/ui (.ui / .qc). From the root folder::
+License
+=======
 
-  % make ui
-  % make resources
+.. image:: https://raw.github.com/leapcode/leap_client/develop/docs/user/gpl.png
 
-As there are some tests to guard against unwanted resource updates, you will have to update the resource hash in those failing tests.
+The LEAP Client is released under the terms of the `GNU GPL version 3`_ or later.
+
+.. _`GNU GPL version 3`: http://www.gnu.org/licenses/gpl.txt

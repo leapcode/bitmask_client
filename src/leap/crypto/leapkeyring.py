@@ -53,6 +53,7 @@ class LeapCryptedFileKeyring(keyring.backend.CryptedFileKeyring):
 
 
 def leap_set_password(key, value, seed="xxx"):
+    key, value = map(unicode, (key, value))
     keyring.set_keyring(LeapCryptedFileKeyring(seed=seed))
     keyring.set_password('leap', key, value)
 

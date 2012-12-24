@@ -7,7 +7,6 @@ import os
 import psutil
 import shutil
 import socket
-import time
 from functools import partial
 
 logger = logging.getLogger(name=__name__)
@@ -20,11 +19,122 @@ from leap.eip import config as eip_config
 from leap.eip import exceptions as eip_exceptions
 
 
-class OpenVPNConnection(Connection):
+class OpenVPNManagement(object):
+
+    # TODO explain a little bit how management interface works
+    # and our telnet interface with support for unix sockets.
+
+    """
+    for more information, read openvpn management notes.
+    zcat `dpkg -L openvpn | grep management`
+    """
+
+    def _connect_to_management(self):
+        """
+        Connect to openvpn management interface
+        """
+        if hasattr(self, 'tn'):
+            self._close_management_socket()
+        self.tn = UDSTelnet(self.host, self.port)
+
+        # XXX make password optional
+        # specially for win. we should generate
+        # the pass on the fly when invoking manager
+        # from conductor
+
+        #self.tn.read_until('ENTER PASSWORD:', 2)
+        #self.tn.write(self.password + '\n')
+        #self.tn.read_until('SUCCESS:', 2)
+        if self.tn:
+            self._seek_to_eof()
+        return True
+
+    def _close_management_socket(self, announce=True):
+        """
+        Close connection to openvpn management interface
+        """
+        logger.debug('closing socket')
+        if announce:
+            self.tn.write("quit\n")
+            self.tn.read_all()
+        self.tn.get_socket().close()
+        del self.tn
+
+    def _seek_to_eof(self):
+        """
+        Read as much as available. Position seek pointer to end of stream
+        """
+        try:
+            b = self.tn.read_eager()
+        except EOFError:
+            logger.debug("Could not read from socket. Assuming it died.")
+            return
+        while b:
+            try:
+                b = self.tn.read_eager()
+            except EOFError:
+                logger.debug("Could not read from socket. Assuming it died.")
+
+    def _send_command(self, cmd):
+        """
+        Send a command to openvpn and return response as list
+        """
+        if not self.connected():
+            try:
+                self._connect_to_management()
+            except eip_exceptions.MissingSocketError:
+                logger.warning('missing management socket')
+                return []
+        try:
+            if hasattr(self, 'tn'):
+                self.tn.write(cmd + "\n")
+        except socket.error:
+            logger.error('socket error')
+            self._close_management_socket(announce=False)
+            return []
+        buf = self.tn.read_until(b"END", 2)
+        self._seek_to_eof()
+        blist = buf.split('\r\n')
+        if blist[-1].startswith('END'):
+            del blist[-1]
+            return blist
+        else:
+            return []
+
+    def _send_short_command(self, cmd):
+        """
+        parse output from commands that are
+        delimited by "success" instead
+        """
+        if not self.connected():
+            self.connect()
+        self.tn.write(cmd + "\n")
+        # XXX not working?
+        buf = self.tn.read_until(b"SUCCESS", 2)
+        self._seek_to_eof()
+        blist = buf.split('\r\n')
+        return blist
+
+    #
+    # random maybe useful vpn commands
+    #
+
+    def pid(self):
+        #XXX broken
+        return self._send_short_command("pid")
+
+
+class OpenVPNConnection(Connection, OpenVPNManagement):
     """
     All related to invocation
-    of the openvpn binary
+    of the openvpn binary.
+    It's extended by EIPConnection.
     """
+
+    # XXX Inheriting from Connection was an early design idea
+    # but currently that's an empty class.
+    # We can get rid of that if we don't use it for sharing
+    # state with other leap modules.
 
     def __init__(self,
                  watcher_cb=None,
@@ -34,24 +144,21 @@ class OpenVPNConnection(Connection):
                  password=None,
                  *args, **kwargs):
         """
-        :param config_file: configuration file to read from
         :param watcher_cb: callback to be \
 called for each line in watched stdout
         :param signal_map: dictionary of signal names and callables \
 to be triggered for each one of them.
-        :type config_file: str
         :type watcher_cb: function
         :type signal_map: dict
         """
         #XXX FIXME
         #change watcher_cb to line_observer
+        # XXX if not host: raise ImproperlyConfigured
 
         logger.debug('init openvpn connection')
         self.debug = debug
-        # XXX if not host: raise ImproperlyConfigured
         self.ovpn_verbosity = kwargs.get('ovpn_verbosity', None)
 
-        #self.config_file = config_file
         self.watcher_cb = watcher_cb
         #self.signal_maps = signal_maps
 
@@ -62,21 +169,13 @@ to be triggered for each one of them.
         self.port = None
         self.proto = None
 
-        #XXX workaround for signaling
-        #the ui that we don't know how to
-        #manage a connection error
-        #self.with_errors = False
-
         self.command = None
         self.args = None
 
         # XXX get autostart from config
         self.autostart = True
 
-        #
-        # management init methods
-        #
-
+        # management interface init
         self.host = host
         if isinstance(port, str) and port.isdigit():
             port = int(port)
@@ -88,13 +187,108 @@ to be triggered for each one of them.
         self.password = password
 
     def run_openvpn_checks(self):
+        """
+        runs check needed before launching
+        openvpn subprocess. will raise if errors found.
+        """
         logger.debug('running openvpn checks')
+        # XXX I think that "check_if_running" should be called
+        # from try openvpn connection instead. -- kali.
+        # let's prepare tests for that before changing it...
         self._check_if_running_instance()
         self._set_ovpn_command()
         self._check_vpn_keys()
 
+    def try_openvpn_connection(self):
+        """
+        attempts to connect
+        """
+        # XXX should make public method
+        if self.command is None:
+            raise eip_exceptions.EIPNoCommandError
+        if self.subp is not None:
+            logger.debug('cowardly refusing to launch subprocess again')
+            # XXX this is not returning ???!!
+            # FIXME -- so it's calling it all the same!!
+
+        self._launch_openvpn()
+
+    def connected(self):
+        """
+        Returns True if connected
+        rtype: bool
+        """
+        # XXX make a property
+        return hasattr(self, 'tn')
+
+    def terminate_openvpn_connection(self, shutdown=False):
+        """
+        terminates openvpn child subprocess
+        """
+        if self.subp:
+            try:
+                self._stop_openvpn()
+            except eip_exceptions.ConnectionRefusedError:
+                logger.warning(
+                    'unable to send sigterm signal to openvpn: '
+                    'connection refused.')
+
+            # XXX kali --
+            # XXX review-me
+            # I think this will block if child process
+            # does not return.
+            # Maybe we can .poll() for a given
+            # interval and exit in any case.
+
+            RETCODE = self.subp.wait()
+            if RETCODE:
+                logger.error(
+                    'cannot terminate subprocess! Retcode %s'
+                    '(We might have left openvpn running)' % RETCODE)
+
+        if shutdown:
+            self._cleanup_tempfiles()
+
+    def _cleanup_tempfiles(self):
+        """
+        remove all temporal files
+        we might have left behind
+        """
+        # if self.port is 'unix', we have
+        # created a temporal socket path that, under
+        # normal circumstances, we should be able to
+        # delete
+
+        if self.port == "unix":
+            logger.debug('cleaning socket file temp folder')
+
+            tempfolder = os.path.split(self.host)[0]
+            if os.path.isdir(tempfolder):
+                try:
+                    shutil.rmtree(tempfolder)
+                except OSError:
+                    logger.error('could not delete tmpfolder %s' % tempfolder)
+
+    # checks
+
+    def _check_if_running_instance(self):
+        """
+        check if openvpn is already running
+        """
+        try:
+            for process in psutil.get_process_list():
+                if process.name == "openvpn":
+                    logger.debug('an openvpn instance is already running.')
+                    logger.debug('attempting to stop openvpn instance.')
+                    if not self._stop_openvpn():
+                        raise eip_exceptions.OpenVPNAlreadyRunning
+
+        except psutil.error.NoSuchProcess:
+            logger.debug('detected a process which died. passing.')
+
+        logger.debug('no openvpn instance found.')
+
     def _set_ovpn_command(self):
-        # XXX check also for command-line --command flag
         try:
             command, args = eip_config.build_ovpn_command(
                 provider=self.provider,
@@ -122,6 +316,8 @@ to be triggered for each one of them.
             logger.error('Bad VPN Keys permission!')
             # do nothing now
         # and raise the rest ...
+
+    # starting and stopping openvpn subprocess
 
     def _launch_openvpn(self):
         """
@@ -152,243 +348,14 @@ to be triggered for each one of them.
         self.subp = subp
         self.watcher = watcher
 
-    def _try_connection(self):
-        """
-        attempts to connect
-        """
-        if self.command is None:
-            raise eip_exceptions.EIPNoCommandError
-        if self.subp is not None:
-            logger.debug('cowardly refusing to launch subprocess again')
-
-        self._launch_openvpn()
-
-    def _check_if_running_instance(self):
-        """
-        check if openvpn is already running
-        """
-        for process in psutil.get_process_list():
-            if process.name == "openvpn":
-                logger.debug('an openvpn instance is already running.')
-                logger.debug('attempting to stop openvpn instance.')
-                if not self._stop():
-                    raise eip_exceptions.OpenVPNAlreadyRunning
-
-        logger.debug('no openvpn instance found.')
-
-    def cleanup(self):
-        """
-        terminates openvpn child subprocess
-        """
-        if self.subp:
-            try:
-                self._stop()
-            except eip_exceptions.ConnectionRefusedError:
-                logger.warning(
-                    'unable to send sigterm signal to openvpn: '
-                    'connection refused.')
-
-            # XXX kali --
-            # XXX review-me
-            # I think this will block if child process
-            # does not return.
-            # Maybe we can .poll() for a given
-            # interval and exit in any case.
-
-            RETCODE = self.subp.wait()
-            if RETCODE:
-                logger.error(
-                    'cannot terminate subprocess! Retcode %s'
-                    '(We might have left openvpn running)' % RETCODE)
-
-        self.cleanup_tempfiles()
-
-    def cleanup_tempfiles(self):
-        """
-        remove all temporal files
-        we might have left behind
-        """
-        # if self.port is 'unix', we have
-        # created a temporal socket path that, under
-        # normal circumstances, we should be able to
-        # delete
-
-        if self.port == "unix":
-            logger.debug('cleaning socket file temp folder')
-
-            tempfolder = os.path.split(self.host)[0]
-            if os.path.isdir(tempfolder):
-                try:
-                    shutil.rmtree(tempfolder)
-                except OSError:
-                    logger.error('could not delete tmpfolder %s' % tempfolder)
-
-    def _get_openvpn_process(self):
-        # plist = [p for p in psutil.get_process_list() if p.name == "openvpn"]
-        # return plist[0] if plist else None
-        for process in psutil.get_process_list():
-            if process.name == "openvpn":
-                return process
-        return None
-
-    # management methods
-    #
-    # XXX REVIEW-ME
-    # REFACTOR INFO: (former "manager".
-    # Can we move to another
-    # base class to test independently?)
-    #
-
-    #def forget_errors(self):
-        #logger.debug('forgetting errors')
-        #self.with_errors = False
-
-    def connect_to_management(self):
-        """Connect to openvpn management interface"""
-        #logger.debug('connecting socket')
-        if hasattr(self, 'tn'):
-            self.close()
-        self.tn = UDSTelnet(self.host, self.port)
-
-        # XXX make password optional
-        # specially for win. we should generate
-        # the pass on the fly when invoking manager
-        # from conductor
-
-        #self.tn.read_until('ENTER PASSWORD:', 2)
-        #self.tn.write(self.password + '\n')
-        #self.tn.read_until('SUCCESS:', 2)
-        if self.tn:
-            self._seek_to_eof()
-        return True
-
-    def _seek_to_eof(self):
-        """
-        Read as much as available. Position seek pointer to end of stream
-        """
-        try:
-            b = self.tn.read_eager()
-        except EOFError:
-            logger.debug("Could not read from socket. Assuming it died.")
-            return
-        while b:
-            try:
-                b = self.tn.read_eager()
-            except EOFError:
-                logger.debug("Could not read from socket. Assuming it died.")
-
-    def connected(self):
-        """
-        Returns True if connected
-        rtype: bool
-        """
-        return hasattr(self, 'tn')
-
-    def close(self, announce=True):
-        """
-        Close connection to openvpn management interface
-        """
-        logger.debug('closing socket')
-        if announce:
-            self.tn.write("quit\n")
-            self.tn.read_all()
-        self.tn.get_socket().close()
-        del self.tn
-
-    def _send_command(self, cmd):
-        """
-        Send a command to openvpn and return response as list
-        """
-        if not self.connected():
-            try:
-                self.connect_to_management()
-            except eip_exceptions.MissingSocketError:
-                logger.warning('missing management socket')
-                return []
-        try:
-            if hasattr(self, 'tn'):
-                self.tn.write(cmd + "\n")
-        except socket.error:
-            logger.error('socket error')
-            self.close(announce=False)
-            return []
-        buf = self.tn.read_until(b"END", 2)
-        self._seek_to_eof()
-        blist = buf.split('\r\n')
-        if blist[-1].startswith('END'):
-            del blist[-1]
-            return blist
-        else:
-            return []
-
-    def _send_short_command(self, cmd):
-        """
-        parse output from commands that are
-        delimited by "success" instead
-        """
-        if not self.connected():
-            self.connect()
-        self.tn.write(cmd + "\n")
-        # XXX not working?
-        buf = self.tn.read_until(b"SUCCESS", 2)
-        self._seek_to_eof()
-        blist = buf.split('\r\n')
-        return blist
-
-    #
-    # useful vpn commands
-    #
-
-    def pid(self):
-        #XXX broken
-        return self._send_short_command("pid")
-
-    def make_error(self):
-        """
-        capture error and wrap it in an
-        understandable format
-        """
-        #XXX get helpful error codes
-        self.with_errors = True
-        now = int(time.time())
-        return '%s,LAUNCHER ERROR,ERROR,-,-' % now
-
-    def state(self):
-        """
-        OpenVPN command: state
-        """
-        state = self._send_command("state")
-        if not state:
-            return None
-        if isinstance(state, str):
-            return state
-        if isinstance(state, list):
-            if len(state) == 1:
-                return state[0]
-            else:
-                return state[-1]
-
-    def vpn_status(self):
-        """
-        OpenVPN command: status
-        """
-        #logger.debug('status called')
-        status = self._send_command("status")
-        return status
-
-    def vpn_status2(self):
-        """
-        OpenVPN command: last 2 statuses
-        """
-        return self._send_command("status 2")
-
-    def _stop(self):
+    def _stop_openvpn(self):
         """
         stop openvpn process
         by sending SIGTERM to the management
         interface
         """
-        logger.debug("disconnecting...")
+        # XXX method a bit too long, split
+        logger.debug("terminating openvpn process...")
         if self.connected():
             try:
                 self._send_command("signal SIGTERM\n")
@@ -407,8 +374,9 @@ to be triggered for each one of them.
             logger.debug('process :%s' % process)
             cmdline = process.cmdline
 
-            if isinstance(cmdline, list):
-                _index = cmdline.index("--management")
+            manag_flag = "--management"
+            if isinstance(cmdline, list) and manag_flag in cmdline:
+                _index = cmdline.index(manag_flag)
                 self.host = cmdline[_index + 1]
                 self._send_command("signal SIGTERM\n")
 
@@ -423,38 +391,10 @@ to be triggered for each one of them.
 
         return True
 
-    #
-    # parse  info
-    #
-
-    def get_status_io(self):
-        status = self.vpn_status()
-        if isinstance(status, str):
-            lines = status.split('\n')
-        if isinstance(status, list):
-            lines = status
-        try:
-            (header, when, tun_read, tun_write,
-             tcp_read, tcp_write, auth_read) = tuple(lines)
-        except ValueError:
-            return None
-
-        when_ts = time.strptime(when.split(',')[1], "%a %b %d %H:%M:%S %Y")
-        sep = ','
-        # XXX cleanup!
-        tun_read = tun_read.split(sep)[1]
-        tun_write = tun_write.split(sep)[1]
-        tcp_read = tcp_read.split(sep)[1]
-        tcp_write = tcp_write.split(sep)[1]
-        auth_read = auth_read.split(sep)[1]
-
-        # XXX this could be a named tuple. prettier.
-        return when_ts, (tun_read, tun_write, tcp_read, tcp_write, auth_read)
-
-    def get_connection_state(self):
-        state = self.state()
-        if state is not None:
-            ts, status_step, ok, ip, remote = state.split(',')
-            ts = time.gmtime(float(ts))
-            # XXX this could be a named tuple. prettier.
-            return ts, status_step, ok, ip, remote
+    def _get_openvpn_process(self):
+        # plist = [p for p in psutil.get_process_list() if p.name == "openvpn"]
+        # return plist[0] if plist else None
+        for process in psutil.get_process_list():
+            if process.name == "openvpn":
+                return process
+        return None

@@ -84,8 +84,7 @@ class ProviderCertChecker(object):
         # For MVS
         checker.is_there_provider_ca()
 
-        # XXX FAKE IT!!!
-        checker.is_https_working(verify=do_verify, autocacert=True)
+        checker.is_https_working(verify=do_verify, autocacert=False)
         checker.check_new_cert_needed(verify=do_verify)
 
     def download_ca_cert(self, uri=None, verify=True):
@@ -160,7 +159,6 @@ class ProviderCertChecker(object):
         if autocacert and verify is True and self.cacert is not None:
             logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
-        #import pdb4qt; pdb4qt.set_trace()
         logger.debug('is https working?')
         logger.debug('uri: %s (verify:%s)', uri, verify)
         try:
@@ -242,7 +240,9 @@ class ProviderCertChecker(object):
             raise
         try:
             pemfile_content = req.content
-            self.is_valid_pemfile(pemfile_content)
+            valid = self.is_valid_pemfile(pemfile_content)
+            if not valid:
+                return False
             cert_path = self._get_client_cert_path()
             self.write_cert(pemfile_content, to=cert_path)
         except:
@@ -276,7 +276,10 @@ class ProviderCertChecker(object):
         cert = gnutls.crypto.X509Certificate(cert_s)
         from_ = time.gmtime(cert.activation_time)
         to_ = time.gmtime(cert.expiration_time)
+        # FIXME BUG ON LEAP_CLI, certs are not valid on gmtime
+        # See #1153
         return from_ < now() < to_
+        #return now() < to_
 
     def is_valid_pemfile(self, cert_s=None):
         """
@@ -291,22 +294,11 @@ class ProviderCertChecker(object):
             with open(certfile) as cf:
                 cert_s = cf.read()
         try:
-            # XXX get a real cert validation
-            # so far this is only checking begin/end
-            # delimiters :)
-            # XXX use gnutls for get proper
-            # validation.
-            # crypto.X509Certificate(cert_s)
-            sep = "-" * 5 + "BEGIN CERTIFICATE" + "-" * 5
-            # we might have private key and cert in the same file
-            certparts = cert_s.split(sep)
-            if len(certparts) > 1:
-                cert_s = sep + certparts[1]
-            ssl.PEM_cert_to_DER_cert(cert_s)
-        except:
-            # XXX raise proper exception
-            raise
-        return True
+            valid = certs.can_load_cert_and_pkey(cert_s)
+        except certs.BadCertError:
+            logger.warning("Not valid pemfile")
+            valid = False
+        return valid
 
     @property
     def ca_cert_path(self):
@@ -427,6 +419,7 @@ class EIPConfigChecker(object):
         return True
 
     def fetch_definition(self, skip_download=False,
+                         force_download=False,
                          config=None, uri=None,
                          domain=None):
         """
@@ -459,6 +452,7 @@ class EIPConfigChecker(object):
         self.defaultprovider.save()
 
     def fetch_eip_service_config(self, skip_download=False,
+                                 force_download=False,
                                  config=None, uri=None, domain=None):
         if skip_download:
             return True
@@ -469,7 +463,10 @@ class EIPConfigChecker(object):
                 domain = self.domain or config.get('provider', None)
             uri = self._get_eip_service_uri(domain=domain)
 
-        self.eipserviceconfig.load(from_uri=uri, fetcher=self.fetcher)
+        self.eipserviceconfig.load(
+            from_uri=uri,
+            fetcher=self.fetcher,
+            force_download=force_download)
         self.eipserviceconfig.save()
 
     def check_complete_eip_config(self, config=None):
@@ -497,7 +494,7 @@ class EIPConfigChecker(object):
         return self.eipconfig.exists()
 
     def _dump_default_eipconfig(self):
-        self.eipconfig.save()
+        self.eipconfig.save(force=True)
 
     def _get_provider_definition_uri(self, domain=None, path=None):
         if domain is None:

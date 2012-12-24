@@ -13,6 +13,7 @@ def get_https_domain_and_port(full_domain):
     from a full_domain string that can
     contain a colon
     """
+    full_domain = unicode(full_domain)
     if full_domain is None:
         return None, None
 

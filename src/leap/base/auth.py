@@ -10,6 +10,7 @@ from PyQt4 import QtCore
 
 from leap.base import constants as baseconstants
 from leap.crypto import leapkeyring
+from leap.util.misc import null_check
 from leap.util.web import get_https_domain_and_port
 
 logger = logging.getLogger(__name__)
@@ -26,24 +27,11 @@ one if not.
 """
 
 
-class ImproperlyConfigured(Exception):
-    """
-    """
-
-
 class SRPAuthenticationError(Exception):
     """
     exception raised
     for authentication errors
     """
-
-
-def null_check(value, value_name):
-    try:
-        assert value is not None
-    except AssertionError:
-        raise ImproperlyConfigured(
-            "%s parameter cannot be None" % value_name)
 
 
 safe_unhexlify = lambda x: binascii.unhexlify(x) \
@@ -55,7 +43,7 @@ class LeapSRPRegister(object):
     def __init__(self,
                  schema="https",
                  provider=None,
-                 port=None,
+                 #port=None,
                  verify=True,
                  register_path="1/users.json",
                  method="POST",
@@ -64,13 +52,13 @@ class LeapSRPRegister(object):
                  hashfun=srp.SHA256,
                  ng_constant=srp.NG_1024):
 
-        null_check(provider, provider)
+        null_check(provider, "provider")
 
         self.schema = schema
 
         # XXX FIXME
-        self.provider = provider
-        self.port = port
+        #self.provider = provider
+        #self.port = port
         # XXX splitting server,port
         # deprecate port call.
         domain, port = get_https_domain_and_port(provider)
@@ -154,9 +142,6 @@ class SRPAuth(requests.auth.AuthBase):
 
         self.init_srp()
 
-    def get_json_data(self, response):
-        return json.loads(response.content)
-
     def init_srp(self):
         usr = srp.User(
             self.username,
@@ -187,8 +172,7 @@ class SRPAuth(requests.auth.AuthBase):
             raise SRPAuthenticationError(
                 "No valid response (salt).")
 
-        # XXX should  get auth_result.json instead
-        self.init_data = self.get_json_data(init_session)
+        self.init_data = init_session.json
         return self.init_data
 
     def get_server_proof_data(self):
@@ -206,13 +190,7 @@ class SRPAuth(requests.auth.AuthBase):
             raise SRPAuthenticationError(
                 "No valid response (HAMK).")
 
-        # XXX should  get auth_result.json instead
-        try:
-            self.auth_data = self.get_json_data(auth_result)
-        except ValueError:
-            raise SRPAuthenticationError(
-                "No valid data sent (HAMK)")
-
+        self.auth_data = auth_result.json
         return self.auth_data
 
     def authenticate(self):
@@ -267,13 +245,14 @@ class SRPAuth(requests.auth.AuthBase):
         try:
             assert self.srp_usr.authenticated()
             logger.debug('user is authenticated!')
+            print 'user is authenticated!'
         except (AssertionError):
             raise SRPAuthenticationError(
                 "Auth verification failed.")
 
     def __call__(self, req):
         self.authenticate()
-        req.session = self.session
+        req.cookies = self.session.cookies
         return req
 
 
@@ -367,8 +346,10 @@ if __name__ == "__main__":
             req.raise_for_status
             return req
 
-        req = test_srp_protected_get('https://localhost:8443/1/cert')
-        print 'cert :', req.content[:200] + "..."
+        #req = test_srp_protected_get('https://localhost:8443/1/cert')
+        req = test_srp_protected_get('%s/1/cert' % SERVER)
+        #print 'cert :', req.content[:200] + "..."
+        print req.content
         sys.exit(0)
 
     if action == "add":

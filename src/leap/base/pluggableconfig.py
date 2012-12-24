@@ -180,6 +180,8 @@ class PluggableConfig(object):
         self.adaptors = adaptors
         self.types = types
         self._format = format
+        self.mtime = None
+        self.dirty = False
 
     @property
     def option_dict(self):
@@ -319,6 +321,13 @@ class PluggableConfig(object):
         serializable = self.prep_value(config)
         adaptor.write(serializable, filename)
 
+        if self.mtime:
+            self.touch_mtime(filename)
+
+    def touch_mtime(self, filename):
+        mtime = self.mtime
+        os.utime(filename, (mtime, mtime))
+
     def deserialize(self, string=None, fromfile=None, format=None):
         """
         load configuration from a file or string
@@ -364,6 +373,12 @@ class PluggableConfig(object):
             content = _try_deserialize()
         return content
 
+    def set_dirty(self):
+        self.dirty = True
+
+    def is_dirty(self):
+        return self.dirty
+
     def load(self, *args, **kwargs):
         """
         load from string or file
@@ -373,6 +388,8 @@ class PluggableConfig(object):
         """
         string = args[0] if args else None
         fromfile = kwargs.get("fromfile", None)
+        mtime = kwargs.pop("mtime", None)
+        self.mtime = mtime
         content = None
 
         # start with defaults, so we can
@@ -402,7 +419,8 @@ class PluggableConfig(object):
         return True
 
 
-def testmain():
+def testmain():  # pragma: no cover
+
     from tests import test_validation as t
     import pprint
 

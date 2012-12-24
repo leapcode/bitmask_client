@@ -14,18 +14,27 @@ DEFAULT_PROVIDER = __branding.get(
 DEFINITION_EXPECTED_PATH = "provider.json"
 
 DEFAULT_PROVIDER_DEFINITION = {
-    u'api_uri': u'https://api.%s/' % DEFAULT_PROVIDER,
-    u'api_version': u'0.1.0',
-    u'ca_cert_fingerprint': u'8aab80ae4326fd30721689db813733783fe0bd7e',
-    u'ca_cert_uri': u'https://%s/cacert.pem' % DEFAULT_PROVIDER,
-    u'description': {u'en': u'This is a test provider'},
-    u'display_name': {u'en': u'Test Provider'},
-    u'domain': u'%s' % DEFAULT_PROVIDER,
-    u'enrollment_policy': u'open',
-    u'public_key': u'cb7dbd679f911e85bc2e51bd44afd7308ee19c21',
-    u'serial': 1,
-    u'services': [u'eip'],
-    u'version': u'0.1.0'}
+    u"api_uri": "https://api.%s/" % DEFAULT_PROVIDER,
+    u"api_version": u"1",
+    u"ca_cert_fingerprint": "SHA256: fff",
+    u"ca_cert_uri": u"https://%s/ca.crt" % DEFAULT_PROVIDER,
+    u"default_language": u"en",
+    u"description": {
+        u"en": u"A demonstration service provider using the LEAP platform"
+    },
+    u"domain": "%s" % DEFAULT_PROVIDER,
+    u"enrollment_policy": u"open",
+    u"languages": [
+        u"en"
+    ],
+    u"name": {
+        u"en": u"Test Provider"
+    },
+    u"services": [
+        "openvpn"
+    ]
+}
+
 
 MAX_ICMP_PACKET_LOSS = 10
 

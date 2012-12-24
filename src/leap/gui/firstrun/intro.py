@@ -11,7 +11,7 @@ class IntroPage(QtGui.QWizardPage):
     def __init__(self, parent=None):
         super(IntroPage, self).__init__(parent)
 
-        self.setTitle("First run wizard.")
+        self.setTitle(self.tr("First run wizard."))
 
         #self.setPixmap(
             #QtGui.QWizard.WatermarkPixmap,
@@ -21,7 +21,7 @@ class IntroPage(QtGui.QWizardPage):
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
 
-        label = QtGui.QLabel(
+        label = QtGui.QLabel(self.tr(
             "Now we will guide you through "
             "some configuration that is needed before you "
             "can connect for the first time.<br><br>"
@@ -29,16 +29,16 @@ class IntroPage(QtGui.QWizardPage):
             "you can find the wizard in the '<i>Settings</i>' menu from the "
             "main window.<br><br>"
             "Do you want to <b>sign up</b> for a new account, or <b>log "
-            "in</b> with an already existing username?<br>")
+            "in</b> with an already existing username?<br>"))
         label.setWordWrap(True)
 
         radiobuttonGroup = QtGui.QGroupBox()
 
         self.sign_up = QtGui.QRadioButton(
-            "Sign up for a new account.")
+            self.tr("Sign up for a new account."))
         self.sign_up.setChecked(True)
         self.log_in = QtGui.QRadioButton(
-            "Log In with my credentials.")
+            self.tr("Log In with my credentials."))
 
         radiobLayout = QtGui.QVBoxLayout()
         radiobLayout.addWidget(self.sign_up)

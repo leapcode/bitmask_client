@@ -148,6 +148,6 @@ class MainWindowMixin(object):
         # in conductor
         # XXX send signal instead?
         logger.info('Shutting down')
-        self.conductor.cleanup()
+        self.conductor.disconnect(shutdown=True)
         logger.info('Exiting. Bye.')
         QtGui.qApp.quit()

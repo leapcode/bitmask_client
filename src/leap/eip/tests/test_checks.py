@@ -25,6 +25,7 @@ from leap.eip.tests import data as testdata
 from leap.testing.basetest import BaseLeapTest
 from leap.testing.https_server import BaseHTTPSServerTestCase
 from leap.testing.https_server import where as where_cert
+from leap.util.fileutil import mkdir_f
 
 
 class NoLogRequestHandler:
@@ -118,6 +119,7 @@ class EIPCheckTest(BaseLeapTest):
         sampleconfig = copy.copy(testdata.EIP_SAMPLE_CONFIG)
         sampleconfig['provider'] = None
         eipcfg_path = checker.eipconfig.filename
+        mkdir_f(eipcfg_path)
         with open(eipcfg_path, 'w') as fp:
             json.dump(sampleconfig, fp)
         #with self.assertRaises(eipexceptions.EIPMissingDefaultProvider):
@@ -138,6 +140,8 @@ class EIPCheckTest(BaseLeapTest):
     def test_fetch_definition(self):
         with patch.object(requests, "get") as mocked_get:
             mocked_get.return_value.status_code = 200
+            mocked_get.return_value.headers = {
+                'last-modified': "Wed Dec 12 12:12:12 GMT 2012"}
             mocked_get.return_value.json = DEFAULT_PROVIDER_DEFINITION
             checker = eipchecks.EIPConfigChecker(fetcher=requests)
             sampleconfig = testdata.EIP_SAMPLE_CONFIG
@@ -156,6 +160,8 @@ class EIPCheckTest(BaseLeapTest):
     def test_fetch_eip_service_config(self):
         with patch.object(requests, "get") as mocked_get:
             mocked_get.return_value.status_code = 200
+            mocked_get.return_value.headers = {
+                'last-modified': "Wed Dec 12 12:12:12 GMT 2012"}
             mocked_get.return_value.json = testdata.EIP_SAMPLE_SERVICE
             checker = eipchecks.EIPConfigChecker(fetcher=requests)
             sampleconfig = testdata.EIP_SAMPLE_CONFIG

@@ -40,6 +40,8 @@ from twisted.web.static import File
 from twisted.web.resource import Resource
 from twisted.internet import reactor
 
+from leap.testing.https_server import where
+
 # See
 # http://twistedmatrix.com/documents/current/web/howto/web-in-60/index.htmln
 # for more examples
@@ -229,14 +231,13 @@ def get_certs_path():
 def get_TLS_credentials():
     # XXX this is giving errors
     # XXX REview! We want to use gnutls!
-    certs_path = get_certs_path()
 
     cert = crypto.X509Certificate(
-        open(certs_path + '/leaptestscert.pem').read())
+        open(where('leaptestscert.pem')).read())
     key = crypto.X509PrivateKey(
-        open(certs_path + '/leaptestskey.pem').read())
+        open(where('leaptestskey.pem')).read())
     ca = crypto.X509Certificate(
-        open(certs_path + '/cacert.pem').read())
+        open(where('cacert.pem')).read())
     #crl = crypto.X509CRL(open(certs_path + '/crl.pem').read())
     #cred = crypto.X509Credentials(cert, key, [ca], [crl])
     cred = X509Credentials(cert, key, [ca])
@@ -253,19 +254,17 @@ class OpenSSLServerContextFactory:
         """Create an SSL context.
         This is a sample implementation that loads a certificate from a file
         called 'server.pem'."""
-        certs_path = get_certs_path()
 
         ctx = SSL.Context(SSL.SSLv23_METHOD)
-        ctx.use_certificate_file(certs_path + '/leaptestscert.pem')
-        ctx.use_privatekey_file(certs_path + '/leaptestskey.pem')
+        #certs_path = get_certs_path()
+        #ctx.use_certificate_file(certs_path + '/leaptestscert.pem')
+        #ctx.use_privatekey_file(certs_path + '/leaptestskey.pem')
+        ctx.use_certificate_file(where('leaptestscert.pem'))
+        ctx.use_privatekey_file(where('leaptestskey.pem'))
         return ctx
 
 
-if __name__ == "__main__":
-
-    from twisted.python import log
-    log.startLogging(sys.stdout)
-
+def serve_fake_provider():
     root = Resource()
     root.putChild("provider.json", File("./provider.json"))
     config = Resource()
@@ -293,3 +292,11 @@ if __name__ == "__main__":
     reactor.listenSSL(8443, factory, OpenSSLServerContextFactory())
 
     reactor.run()
+
+
+if __name__ == "__main__":
+
+    from twisted.python import log
+    log.startLogging(sys.stdout)
+
+    serve_fake_provider()

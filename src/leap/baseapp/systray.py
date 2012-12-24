@@ -217,6 +217,8 @@ class StatusAwareTrayIconMixin(object):
         updates icon, according to the openvpn status change.
         """
         icon_name = self.conductor.get_icon_name()
+        if not icon_name:
+            return
 
         # XXX refactor. Use QStateMachine
 
@@ -227,6 +229,11 @@ class StatusAwareTrayIconMixin(object):
             # let's see how it matches
             leap_status_name = self.conductor.get_leap_status()
             self.eipStatusChange.emit(leap_status_name)
+
+        if icon_name == "connected":
+            # When we change to "connected', we launch
+            # the network checker.
+            self.initNetworkChecker.emit()
 
         self.setIcon(icon_name)
         # change connection pixmap widget

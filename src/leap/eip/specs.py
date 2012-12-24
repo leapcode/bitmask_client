@@ -77,12 +77,12 @@ eipconfig_spec = {
         },
         'primary_gateway': {
             'type': unicode,
-            'default': u"turkey",
+            'default': u"location_unknown",
             #'required': True
         },
         'secondary_gateway': {
             'type': unicode,
-            'default': u"france"
+            'default': u"location_unknown2"
         },
         'management_password': {
             'type': unicode
@@ -100,25 +100,37 @@ eipservice_config_spec = {
             'default': 1
         },
         'version': {
-            'type': unicode,
+            'type': int,
             'required': True,
-            'default': "0.1.0"
+            'default': 1
         },
-        'capabilities': {
-            'type': dict,
-            'default': {
-                "transport": ["openvpn"],
-                "ports": ["80", "53"],
-                "protocols": ["udp", "tcp"],
-                "static_ips": True,
-                "adblock": True}
+        'clusters': {
+            'type': list,
+            'default': [
+                {"label": {
+                    "en": "Location Unknown"},
+                    "name": "location_unknown"}]
         },
         'gateways': {
             'type': list,
-            'default': [{"country_code": "us",
-                        "label": {"en":"west"},
-                        "capabilities": {},
-                        "hosts": ["1.2.3.4", "1.2.3.5"]}]
+            'default': [
+                {"capabilities": {
+                    "adblock": True,
+                    "filter_dns": True,
+                    "ports": ["80", "53", "443", "1194"],
+                    "protocols": ["udp", "tcp"],
+                    "transport": ["openvpn"],
+                    "user_ips": False},
+                 "cluster": "location_unknown",
+                 "host": "location.example.org",
+                 "ip_address": "127.0.0.1"}]
+        },
+        'openvpn_configuration': {
+            'type': dict,
+            'default': {
+                "auth": None,
+                "cipher": None,
+                "tls-cipher": None}
         }
     }
 }
