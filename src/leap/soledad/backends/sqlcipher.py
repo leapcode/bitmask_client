@@ -39,7 +39,7 @@ from u1db import (
     )
 
 
-def open(path, create, document_factory=None, password=None):
+def open(path, create, password, document_factory=None):
     """Open a database at the given location.
 
     Will raise u1db.errors.DatabaseDoesNotExist if create=False and the
@@ -53,7 +53,7 @@ def open(path, create, document_factory=None, password=None):
     :return: An instance of Database.
     """
     from u1db.backends import sqlite_backend
-    return sqlite_backend.SQLCipherDatabase.open_database(
+    return SQLCipherDatabase.open_database(
         path, password, create=create, document_factory=document_factory)
 
 
@@ -68,7 +68,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
        db_handle.cursor().execute("PRAGMA key = '%s'" % key)
 
     def __init__(self, sqlite_file, password, document_factory=None):
-        """Create a new sqlite file."""
+        """Create a new sqlcipher file."""
         self._db_handle = dbapi2.connect(sqlite_file)
         SQLCipherDatabase.set_pragma_key(self._db_handle, password)
         self._real_replica_uid = None
