@@ -7,7 +7,7 @@ import string
 import random
 import cStringIO
 import hmac
-from soledad.util import GPGWrapper
+from util import GPGWrapper
 
 class Soledad(object):
 
@@ -85,3 +85,6 @@ class Soledad(object):
     def decrypt_symmetric(self, doc_id, data):
         h = hmac.new(self._secret, doc_id).hexdigest()
         return self.decrypt(data, passphrase=h)
+
+    #def publish_pubkey(self):
+    #    return self._gpg.export_keys(
