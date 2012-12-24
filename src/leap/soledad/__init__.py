@@ -146,20 +146,54 @@ class Soledad(object):
     # Document storage/retrieval and sync
     #-------------------------------------------------------------------------
 
-    def put(self, doc_id, data):
+    def put_doc(self, doc):
         """
-        Store a document in the local encrypted database.
+        Update a document in the local encrypted database.
         """
-        pass
+        return self._db.put_doc(doc)
 
-    def get(self, doc_id):
+    def delete_doc(self, doc):
+        """
+        Delete a document from the local encrypted database.
+        """
+        return self._db.delete_doc(doc)
+
+    def get_doc(self, doc_id, include_deleted=False):
         """
         Retrieve a document from the local encrypted database.
         """
-        pass
+        return self._db.get_doc(doc_id, include_deleted=include_deleted)
 
-    def sync(self):
+    def get_docs(self, doc_ids, check_for_conflicts=True,
+                 include_deleted=False):
+        """
+        Get the content for many documents.
+        """
+        return self._db.get_docs(doc_ids,
+                                 check_for_conflicts=check_for_conflicts,
+                                 include_deleted=include_deleted)
+
+    def create_doc(self, content, doc_id=None):
+        """
+        Create a new document in the local encrypted database.
+        """
+        return self._db.create_doc(content, doc_id=doc_id)
+
+    def get_doc_conflicts(self, doc_id):
+        """
+        Get the list of conflicts for the given document.
+        """
+        return self._db.get_doc_conflicts(doc_id)
+
+    def resolve_doc(self, doc, conflicted_doc_revs):
+        """
+        Mark a document as no longer conflicted.
+        """
+        return self._db.resolve_doc(doc, conflicted_doc_revs)
+
+    def sync(self, url):
         """
         Synchronize the local encrypted database with LEAP server.
         """
-        pass
+        # TODO: create authentication scheme for sync with server.
+        return self._db.sync(url, creds=None, autocreate=True)
