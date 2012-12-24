@@ -7,7 +7,7 @@ import string
 import random
 import cStringIO
 import hmac
-from soledad.util import GPGWrapper
+from util import GPGWrapper
 
 class Soledad(object):
 
@@ -23,21 +23,32 @@ class Soledad(object):
         if not gpghome:
             gpghome = self.GNUPG_HOME
         self._gpg = GPGWrapper(gpghome=gpghome)
-        # load OpenPGP keypair
+        # load/generate OpenPGP keypair
         if not self._has_openpgp_keypair():
             self._gen_openpgp_keypair()
         self._load_openpgp_keypair()
-        # load secret
+        # load/generate secret
         if not self._has_secret():
             self._gen_secret()
         self._load_secret()
 
+
+    #-------------------------------------------------------------------------
+    # Management of secret for symmetric encryption
+    #-------------------------------------------------------------------------
+
     def _has_secret(self):
+        """
+        Verify if secret already exists in a local encrypted file.
+        """
         if os.path.isfile(self.SECRET_PATH):
             return True
         return False
 
     def _load_secret(self):
+        """
+        Load secret from local encrypted file.
+        """
         try:
             with open(self.SECRET_PATH) as f:
                self._secret = str(self._gpg.decrypt(f.read()))
@@ -45,14 +56,24 @@ class Soledad(object):
            raise IOError('Failed to open secret file %s.' % self.SECRET_PATH)
 
     def _gen_secret(self):
+        """
+        Generate secret for symmetric encryption and store it in a local encrypted file.
+        """
         self._secret = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(self.SECRET_LENGTH))
         ciphertext = self._gpg.encrypt(self._secret, self._fingerprint, self._fingerprint)
         f = open(self.SECRET_PATH, 'w')
         f.write(str(ciphertext))
         f.close()
 
+    #-------------------------------------------------------------------------
+    # Management of OpenPGP keypair
+    #-------------------------------------------------------------------------
 
     def _has_openpgp_keypair(self):
+        """
+        Verify if a keypair exists for this user.
+        """
+        # TODO: verify if private key exists.
         try:
             self._gpg.find_key(self._user_email)
             return True
@@ -60,6 +81,9 @@ class Soledad(object):
             return False
 
     def _gen_openpgp_keypair(self):
+        """
+        Generate a keypair for this user.
+        """
         params = self._gpg.gen_key_input(
           key_type='RSA',
           key_length=4096,
@@ -69,19 +93,66 @@ class Soledad(object):
         self._gpg.gen_key(params)
 
     def _load_openpgp_keypair(self):
+        """
+        Load the fingerprint for this user's keypair.
+        """
         self._fingerprint = self._gpg.find_key(self._user_email)['fingerprint']
 
+    def publish_pubkey(self, keyserver):
+        """
+        Publish OpenPGP public key to a keyserver.
+        """
+        pass
+
+    #-------------------------------------------------------------------------
+    # Data encryption and decription
+    #-------------------------------------------------------------------------
+
     def encrypt(self, data, sign=None, passphrase=None, symmetric=False):
+        """
+        Encrypt data.
+        """
         return str(self._gpg.encrypt(data, self._fingerprint, sign=sign,
                                      passphrase=passphrase, symmetric=symmetric))
 
     def encrypt_symmetric(self, doc_id, data, sign=None):
+        """
+        Symmetrically encrypt data using this user's secret.
+        """
         h = hmac.new(self._secret, doc_id).hexdigest()
         return self.encrypt(data, sign=sign, passphrase=h, symmetric=True)
 
     def decrypt(self, data, passphrase=None, symmetric=False):
+        """
+        Decrypt data.
+        """
         return str(self._gpg.decrypt(data, passphrase=passphrase))
 
     def decrypt_symmetric(self, doc_id, data):
+        """
+        Symmetrically decrypt data using this user's secret.
+        """
         h = hmac.new(self._secret, doc_id).hexdigest()
         return self.decrypt(data, passphrase=h)
+
+    #-------------------------------------------------------------------------
+    # Document storage, retrieval and sync
+    #-------------------------------------------------------------------------
+    
+    def put(self, doc_id, data):
+        """
+        Store a document.
+        """
+        pass
+
+    def get(self, doc_id):
+        """
+        Retrieve a document.
+        """
+        pass
+
+    def sync(self):
+        """
+        Synchronize with LEAP server.
+        """
+        pass
