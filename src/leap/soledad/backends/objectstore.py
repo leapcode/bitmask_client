@@ -5,6 +5,9 @@ from soledad.util import SyncLog, TransactionLog
 
 
 class ObjectStore(CommonBackend):
+    """
+    A backend for storing u1db data in an object store.
+    """
 
     def __init__(self):
         # This initialization method should be called after the connection
@@ -153,9 +156,13 @@ class ObjectStore(CommonBackend):
             raise errors.InvalidGeneration
         return trans_id
 
+    #-------------------------------------------------------------------------
+    # methods specific for object stores
+    #-------------------------------------------------------------------------
+
     def _ensure_u1db_data(self):
         """
-        Guarantee that u1db data exists in store.
+        Guarantee that u1db data (logs and replica info) exists in store.
         """
         if not self._is_initialized():
             self._initialize()
