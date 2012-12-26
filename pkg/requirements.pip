@@ -12,3 +12,7 @@ srp  # >=1.0.1 MUST HAVE 1.0.1 BUGFIX, but upstream DID NOT UPDATE setup.py so i
 pycrypto
 keyring
 python-dateutil
+python-gnupg
+u1db
+oauth
+couchdb
