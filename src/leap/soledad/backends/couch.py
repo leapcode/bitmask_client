@@ -2,8 +2,9 @@ from u1db import errors
 from u1db.remote.http_target import HTTPSyncTarget
 from couchdb.client import Server, Document
 from couchdb.http import ResourceNotFound
-from soledad.backends.objectstore import ObjectStore
-from soledad.backends.leap import LeapDocument
+
+from leap.soledad.backends.objectstore import ObjectStore
+from leap.soledad.backends.leap_backend import LeapDocument
 
 try:
     import simplejson as json

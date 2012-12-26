@@ -27,9 +27,9 @@ from u1db import (
     errors,
     query_parser,
     )
-from soledad.backends import sqlcipher
-from soledad.backends.leap import LeapDocument
-from soledad import tests
+from leap.soledad.backends import sqlcipher
+from leap.soledad.backends.leap_backend import LeapDocument
+from leap.soledad import tests
 
 
 simple_doc = '{"key": "value"}'

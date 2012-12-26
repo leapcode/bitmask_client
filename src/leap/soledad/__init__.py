@@ -5,9 +5,11 @@
 import os
 import string
 import random
-import cStringIO
+#import cStringIO
 import hmac
-from util import GPGWrapper
+
+import util
+
 
 class Soledad(object):
 
@@ -22,7 +24,7 @@ class Soledad(object):
             os.makedirs(self.PREFIX)
         if not gpghome:
             gpghome = self.GNUPG_HOME
-        self._gpg = GPGWrapper(gpghome=gpghome)
+        self._gpg = util.GPGWrapper(gpghome=gpghome)
         # load/generate OpenPGP keypair
         if not self._has_openpgp_keypair():
             self._gen_openpgp_keypair()
@@ -156,3 +158,6 @@ class Soledad(object):
         Synchronize with LEAP server.
         """
         pass
+
+
+__all__ = ['util']

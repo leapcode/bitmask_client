@@ -6,8 +6,9 @@ except ImportError:
 from u1db import Document
 from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
-import base64
-from soledad.util import GPGWrapper
+import base64  # unused
+
+#from leap.soledad import util  # import GPGWrapper  # unused
 
 
 class NoDefaultKey(Exception):

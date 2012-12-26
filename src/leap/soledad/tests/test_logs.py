@@ -1,9 +1,8 @@
 import unittest2 as unittest
-from soledad.util import TransactionLog, SyncLog
+from leap.soledad.util import TransactionLog, SyncLog
 
 
 class LogTestCase(unittest.TestCase):
-
 
     def test_transaction_log(self):
         data = [

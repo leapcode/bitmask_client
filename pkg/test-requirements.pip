@@ -1,4 +1,4 @@
-unittest2
+unittest2  # TODO we should include this dep only for python2.6
 coverage
 mock
 nose
