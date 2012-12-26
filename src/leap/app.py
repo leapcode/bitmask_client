@@ -108,6 +108,8 @@ def main():
         # if not, it will be set visible
         # from the systray menu.
         window.show()
+        if sys.platform == "darwin":
+            window.raise_()
 
     # run main loop
     sys.exit(app.exec_())

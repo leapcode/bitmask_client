@@ -1,4 +1,6 @@
 import logging
+import sys
+
 import sip
 sip.setapi('QString', 2)
 sip.setapi('QVariant', 2)
@@ -156,6 +158,8 @@ class StatusAwareTrayIconMixin(object):
             self.hide()
         else:
             self.show()
+            if sys.platform == "darwin":
+                self.raise_()
 
     def about(self):
         # move to widget
