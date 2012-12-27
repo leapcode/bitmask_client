@@ -5,10 +5,10 @@
 import os
 import string
 import random
-import cStringIO
 import hmac
-from backends import sqlcipher
-from soledad.util import GPGWrapper
+from leap.soledad.backends import sqlcipher
+from leap.soledad.util import GPGWrapper
+import util
 
 class Soledad(object):
 
@@ -27,12 +27,12 @@ class Soledad(object):
             os.makedirs(self.PREFIX)
         if not gpghome:
             gpghome = self.GNUPG_HOME
-        self._gpg = GPGWrapper(gpghome=gpghome)
-        # load OpenPGP keypair
+        self._gpg = util.GPGWrapper(gpghome=gpghome)
+        # loaa/generate OpenPGP keypair
         if not self._has_openpgp_keypair():
             self._gen_openpgp_keypair()
         self._load_openpgp_keypair()
-        # load secret
+        # load/generate secret
         if not self._has_secret():
             self._gen_secret()
         self._load_secret()
@@ -42,7 +42,7 @@ class Soledad(object):
         self._db = sqlcipher.open(self.U1DB_PATH, True, self._secret)
 
     #-------------------------------------------------------------------------
-    # Symmetric secret management
+    # Management of secret for symmetric encryption
     #-------------------------------------------------------------------------
 
     def _has_secret(self):
@@ -76,7 +76,7 @@ class Soledad(object):
         f.close()
 
     #-------------------------------------------------------------------------
-    # OpenPGP keypair management
+    # Management of OpenPGP keypair
     #-------------------------------------------------------------------------
 
     def _has_openpgp_keypair(self):
@@ -92,7 +92,7 @@ class Soledad(object):
 
     def _gen_openpgp_keypair(self):
         """
-        Generate and OpenPGP keypair for this user.
+        Generate an OpenPGP keypair for this user.
         """
         params = self._gpg.gen_key_input(
           key_type='RSA',
@@ -109,10 +109,13 @@ class Soledad(object):
         self._fingerprint = self._gpg.find_key(self._user_email)['fingerprint']
 
     def publish_pubkey(self, keyserver):
+        """
+        Publish OpenPGP public key to a keyserver.
+        """
         pass
 
     #-------------------------------------------------------------------------
-    # Data encryption/decryption
+    # Data encryption and decryption
     #-------------------------------------------------------------------------
 
     def encrypt(self, data, sign=None, passphrase=None, symmetric=False):
@@ -143,7 +146,7 @@ class Soledad(object):
         return self.decrypt(data, passphrase=h)
 
     #-------------------------------------------------------------------------
-    # Document storage/retrieval and sync
+    # Document storage, retrieval and sync
     #-------------------------------------------------------------------------
 
     def put_doc(self, doc):
@@ -197,3 +200,5 @@ class Soledad(object):
         """
         # TODO: create authentication scheme for sync with server.
         return self._db.sync(url, creds=None, autocreate=True)
+
+__all__ = ['util']

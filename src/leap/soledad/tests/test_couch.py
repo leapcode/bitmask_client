@@ -1,6 +1,6 @@
 import unittest2
-from soledad.backends.couch import CouchDatabase
-from soledad.backends.leap import LeapDocument
+from leap.soledad.backends.couch import CouchDatabase
+from leap.soledad.backends.leap_backend import LeapDocument
 from u1db import errors, vectorclock
 
 try:

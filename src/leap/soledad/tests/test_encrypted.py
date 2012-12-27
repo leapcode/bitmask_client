@@ -7,8 +7,8 @@ import unittest2 as unittest
 import os
 
 import u1db
-from soledad import Soledad
-from soledad.backends.leap import LeapDocument
+from leap.soledad import Soledad
+from leap.soledad.backends.leap_backend import LeapDocument
 
 
 class EncryptedSyncTestCase(unittest.TestCase):
