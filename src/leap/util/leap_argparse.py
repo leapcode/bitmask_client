@@ -37,5 +37,5 @@ Launches main LEAP Client""", epilog=epilog)
 
 def init_leapc_args():
     parser = build_parser()
-    opts = parser.parse_args()
+    opts, unknown = parser.parse_known_args()
     return parser, opts
