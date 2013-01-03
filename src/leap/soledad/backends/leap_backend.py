@@ -4,9 +4,13 @@ except ImportError:
     import json  # noqa
 
 from u1db import Document
+from u1db.remote import utils
 from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
+from u1db.errors import BrokenSyncStream
 from leap.soledad.util import GPGWrapper
+
+import uuid
 
 import uuid
 

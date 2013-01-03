@@ -19,6 +19,15 @@ from leap.soledad.tests.u1db_tests.test_document import (
   TestDocument,
   TestPyDocument,
 )
+from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
+  TestHTTPSyncTargetBasics,
+  TestParsingSyncStream,
+)
+
+
+#-----------------------------------------------------------------------------
+# LeapDatabase
+#-----------------------------------------------------------------------------
 
 class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
 
@@ -118,6 +127,10 @@ class TestLeapClientBase(TestHTTPClientBase):
     pass
 
 
+#-----------------------------------------------------------------------------
+# LeapDocument
+#-----------------------------------------------------------------------------
+
 def make_document_for_test(test, doc_id, rev, content, has_conflicts=False):
     return LeapDocument(doc_id, rev, content, has_conflicts=has_conflicts)
 
@@ -132,4 +145,84 @@ class TestLeapPyDocument(TestPyDocument):
 
     scenarios = ([(
         'py', {'make_document_for_test': make_document_for_test})])
+
+
+#-----------------------------------------------------------------------------
+# LeapSyncTarget
+#-----------------------------------------------------------------------------
+
+class TestLeapSyncTargetBasics(TestHTTPSyncTargetBasics):
+
+    def test_parse_url(self):
+        remote_target = http_database.LeapSyncTarget('http://127.0.0.1:12345/')
+        self.assertEqual('http', remote_target._url.scheme)
+        self.assertEqual('127.0.0.1', remote_target._url.hostname)
+        self.assertEqual(12345, remote_target._url.port)
+        self.assertEqual('/', remote_target._url.path)
+
+class TestLeapParsingSyncStream(TestParsingSyncStream):
+
+    def test_wrong_start(self):
+        tgt = http_database.LeapSyncTarget("http://foo/foo")
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream, "{}\r\n]", None)
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream, "\r\n{}\r\n]", None)
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream, "", None)
+
+    def test_wrong_end(self):
+        tgt = http_database.LeapSyncTarget("http://foo/foo")
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream, "[\r\n{}", None)
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream, "[\r\n", None)
+
+    def test_missing_comma(self):
+        tgt = http_database.LeapSyncTarget("http://foo/foo")
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream,
+                          '[\r\n{}\r\n{"id": "i", "rev": "r", '
+                          '"content": "c", "gen": 3}\r\n]', None)
+
+    def test_no_entries(self):
+        tgt = http_database.LeapSyncTarget("http://foo/foo")
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream, "[\r\n]", None)
+
+    def test_extra_comma(self):
+        tgt = http_database.LeapSyncTarget("http://foo/foo")
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream, "[\r\n{},\r\n]", None)
+
+        self.assertRaises(http_database.NoSoledadInstance,
+                          tgt._parse_sync_stream,
+                          '[\r\n{},\r\n{"id": "i", "rev": "r", '
+                          '"content": "{}", "gen": 3, "trans_id": "T-sid"}'
+                          ',\r\n]',
+                          lambda doc, gen, trans_id: None)
+
+    def test_error_in_stream(self):
+        tgt = http_database.LeapSyncTarget("http://foo/foo")
+
+        self.assertRaises(errors.Unavailable,
+                          tgt._parse_sync_stream,
+                          '[\r\n{"new_generation": 0},'
+                          '\r\n{"error": "unavailable"}\r\n', None)
+
+        self.assertRaises(errors.Unavailable,
+                          tgt._parse_sync_stream,
+                          '[\r\n{"error": "unavailable"}\r\n', None)
+
+        self.assertRaises(errors.BrokenSyncStream,
+                          tgt._parse_sync_stream,
+                          '[\r\n{"error": "?"}\r\n', None)
 
