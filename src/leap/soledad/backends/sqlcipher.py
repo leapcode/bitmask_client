@@ -27,8 +27,6 @@ import sys
 import time
 import uuid
 
-import pkg_resources
-
 from u1db.backends import CommonBackend, CommonSyncTarget
 from u1db.backends.sqlite_backend import SQLitePartialExpandDatabase
 from u1db import (
