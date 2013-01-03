@@ -6,6 +6,7 @@ from u1db import (
     )
 
 from leap.soledad.backends import leap_backend as http_database
+from leap.soledad.backends.leap_backend import LeapDocument
 
 from leap.soledad.tests import u1db_tests as tests
 from leap.soledad.tests.u1db_tests.test_http_database import (
@@ -14,6 +15,10 @@ from leap.soledad.tests.u1db_tests.test_http_database import (
   TestHTTPDatabaseIntegration,
 )
 from leap.soledad.tests.u1db_tests.test_http_client import TestHTTPClientBase
+from leap.soledad.tests.u1db_tests.test_document import (
+  TestDocument,
+  TestPyDocument,
+)
 
 class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
 
@@ -111,3 +116,20 @@ class TestLeapDatabaseIntegration(TestHTTPDatabaseIntegration):
 
 class TestLeapClientBase(TestHTTPClientBase):
     pass
+
+
+def make_document_for_test(test, doc_id, rev, content, has_conflicts=False):
+    return LeapDocument(doc_id, rev, content, has_conflicts=has_conflicts)
+
+
+class TestLeapDocument(TestDocument):
+
+    scenarios = ([(
+        'py', {'make_document_for_test': make_document_for_test})])
+
+
+class TestLeapPyDocument(TestPyDocument):
+
+    scenarios = ([(
+        'py', {'make_document_for_test': make_document_for_test})])
+
