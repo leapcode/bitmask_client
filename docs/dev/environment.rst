@@ -96,7 +96,7 @@ Or, if you prefer, you can also `download the official PyQt tarball<http://www.r
 Running openvpn without root privileges
 ---------------------------------------
 
-In linux, we are using ``policykit`` to be able to run openvpn without run privileges, and a policy file is needed to be installed for that to be possible.
+In linux, we are using ``policykit`` to be able to run openvpn without root privileges, and a policy file is needed to be installed for that to be possible.
 The setup script tries to install the policy file when installing the client system-wide, so if you have installed the client in your global site-packages at least once it should have copied this file for you. 
 
 If you *only* are running the client from inside a virtualenv, you will need to copy this file by hand::
