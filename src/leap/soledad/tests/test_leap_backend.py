@@ -13,6 +13,7 @@ from leap.soledad.tests.u1db_tests.test_http_database import (
   TestHTTPDatabaseCtrWithCreds,
   TestHTTPDatabaseIntegration,
 )
+from leap.soledad.tests.u1db_tests.test_http_client import TestHTTPClientBase
 
 class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
 
@@ -106,3 +107,7 @@ class TestLeapDatabaseIntegration(TestHTTPDatabaseIntegration):
         db.put_doc(doc)
         self.assertGetDoc(db0, '%fff', doc.rev, '{}', False)
         self.assertGetDoc(db, '%fff', doc.rev, '{}', False)
+
+
+class TestLeapClientBase(TestHTTPClientBase):
+    pass
