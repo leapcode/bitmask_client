@@ -8,6 +8,8 @@ from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
 from leap.soledad.util import GPGWrapper
 
+import uuid
+
 
 class NoDefaultKey(Exception):
     pass
@@ -69,6 +71,10 @@ class LeapDatabase(HTTPDatabase):
         db = LeapDatabase(url)
         db._delete()
         db.close()
+
+    def _allocate_doc_id(self):
+        """Generate a unique identifier for this document."""
+        return 'D-' + uuid.uuid4().hex  # 'D-' stands for document
 
     def get_sync_target(self):
         st = LeapSyncTarget(self._url.geturl())
