@@ -45,7 +45,7 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         self.focused_field = False
 
     def setupUI(self):
-        userNameLabel = QtGui.QLabel("User &name:")
+        userNameLabel = QtGui.QLabel(self.tr("User &name:"))
         userNameLineEdit = QtGui.QLineEdit()
         userNameLineEdit.cursorPositionChanged.connect(
             self.reset_validation_status)
@@ -57,20 +57,20 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             QtGui.QRegExpValidator(usernameRe, self))
         self.userNameLineEdit = userNameLineEdit
 
-        userPasswordLabel = QtGui.QLabel("&Password:")
+        userPasswordLabel = QtGui.QLabel(self.tr("&Password:"))
         self.userPasswordLineEdit = QtGui.QLineEdit()
         self.userPasswordLineEdit.setEchoMode(
             QtGui.QLineEdit.Password)
         userPasswordLabel.setBuddy(self.userPasswordLineEdit)
 
-        userPassword2Label = QtGui.QLabel("Password (again):")
+        userPassword2Label = QtGui.QLabel(self.tr("Password (again):"))
         self.userPassword2LineEdit = QtGui.QLineEdit()
         self.userPassword2LineEdit.setEchoMode(
             QtGui.QLineEdit.Password)
         userPassword2Label.setBuddy(self.userPassword2LineEdit)
 
         rememberPasswordCheckBox = QtGui.QCheckBox(
-            "&Remember username and password.")
+            self.tr("&Remember username and password."))
         rememberPasswordCheckBox.setChecked(True)
 
         self.registerField('userName*', self.userNameLineEdit)

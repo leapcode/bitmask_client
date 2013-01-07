@@ -21,8 +21,8 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         super(LogInPage, self).__init__(parent)
         self.current_page = "login"
 
-        self.setTitle("Log In")
-        self.setSubTitle("Log in with your credentials.")
+        self.setTitle(self.tr("Log In"))
+        self.setSubTitle(self.tr("Log in with your credentials."))
         self.current_page = "login"
 
         self.setPixmap(
@@ -35,7 +35,7 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         self.do_confirm_next = False
 
     def setupUI(self):
-        userNameLabel = QtGui.QLabel("User &name:")
+        userNameLabel = QtGui.QLabel(self.tr("User &name:"))
         userNameLineEdit = QtGui.QLineEdit()
         userNameLineEdit.cursorPositionChanged.connect(
             self.reset_validation_status)
@@ -50,7 +50,7 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
             #'username@provider.example.org')
         self.userNameLineEdit = userNameLineEdit
 
-        userPasswordLabel = QtGui.QLabel("&Password:")
+        userPasswordLabel = QtGui.QLabel(self.tr("&Password:"))
         self.userPasswordLineEdit = QtGui.QLineEdit()
         self.userPasswordLineEdit.setEchoMode(
             QtGui.QLineEdit.Password)
@@ -77,7 +77,7 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         layout.addWidget(self.valFrame, 4, 2, 4, 2)
         self.valFrame.hide()
 
-        self.nextText("Log in")
+        self.nextText(self.tr("Log in"))
         self.setLayout(layout)
 
         #self.registerField('is_login_wizard')

@@ -57,6 +57,24 @@
     </message>
 </context>
 <context>
+    <name>LastPage</name>
+    <message>
+        <location filename="../src/leap/gui/firstrun/last.py" line="18"/>
+        <source>Connecting to Encrypted Internet Proxy service...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/last.py" line="54"/>
+        <source>You are now using an encrypted connection!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/last.py" line="58"/>
+        <source>Click &apos;&lt;i&gt;%s&lt;/i&gt;&apos; to end the wizard and save your settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>LogInPage</name>
     <message>
         <location filename="../src/leap/gui/firstrun/login.py" line="96"/>
@@ -76,6 +94,31 @@
     <message>
         <location filename="../src/leap/gui/firstrun/login.py" line="179"/>
         <source>Credentials validated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/login.py" line="24"/>
+        <source>Log In</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/login.py" line="25"/>
+        <source>Log in with your credentials.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/login.py" line="38"/>
+        <source>User &amp;name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/login.py" line="53"/>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/login.py" line="80"/>
+        <source>Log in</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -177,6 +220,26 @@
         <source>Register a new user with provider %s.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/register.py" line="48"/>
+        <source>User &amp;name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/register.py" line="60"/>
+        <source>&amp;Password:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/register.py" line="66"/>
+        <source>Password (again):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/register.py" line="72"/>
+        <source>&amp;Remember username and password.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>RegisterUserValidationPage</name>
@@ -193,6 +256,16 @@
     <message>
         <location filename="../src/leap/gui/firstrun/regvalidation.py" line="117"/>
         <source>Fetching eip certificate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/regvalidation.py" line="34"/>
+        <source>Connecting...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/regvalidation.py" line="36"/>
+        <source>Checking connection with provider.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -248,11 +321,20 @@
         <source>fetching provider info</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>TestyClass</name>
-</context>
-<context>
-    <name>this is a cat</name>
+    <message>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="103"/>
+        <source>&amp;Trust this provider certificate.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="346"/>
+        <source>Do you want to &lt;b&gt;trust this provider certificate?&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="349"/>
+        <source>SHA-256 fingerprint: &lt;i&gt;%s&lt;/i&gt;&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>
