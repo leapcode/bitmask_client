@@ -83,7 +83,7 @@ class OpenVPNManagement(object):
             try:
                 self._connect_to_management()
             except eip_exceptions.MissingSocketError:
-                logger.warning('missing management socket')
+                #logger.warning('missing management socket')
                 return []
         try:
             if hasattr(self, 'tn'):
@@ -329,11 +329,12 @@ to be triggered for each one of them.
         #use _only_ signal_maps instead
 
         logger.debug('_launch_openvpn called')
+        logger.debug('watcher_cb: %s' % self.watcher_cb)
         if self.watcher_cb is not None:
             linewrite_callback = self.watcher_cb
         else:
             #XXX get logger instead
-            linewrite_callback = lambda line: print('watcher: %s' % line)
+            linewrite_callback = lambda line: logger.debug('watcher: %s' % line)
 
         # the partial is not
         # being applied now because we're not observing the process
@@ -341,7 +342,7 @@ to be triggered for each one of them.
         # here since it will be handy for observing patterns in the
         # thru-the-manager updates (with regex)
         observers = (linewrite_callback,
-                     partial(lambda con_status, line: None, self.status))
+                     partial(lambda con_status, line: linewrite_callback, self.status))
         subp, watcher = spawn_and_watch_process(
             self.command,
             self.args,

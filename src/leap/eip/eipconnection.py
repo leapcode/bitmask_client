@@ -52,7 +52,7 @@ class StatusMixIn(object):
             logger.warning('connection refused')
             return
         if not state:
-            logger.debug('no state')
+            #logger.debug('no state')
             return
         (ts, status_step,
          ok, ip, remote) = state

@@ -211,7 +211,7 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     # XXX take them from the config object.
 
     ourplatform = platform.system()
-    if ourplatform in ("Linux", "Mac"):
+    if ourplatform in ("Linux", "Darwin"):
         opts.append('--management')
 
         if socket_path is None:
@@ -229,6 +229,7 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     client_cert_path = eipspecs.client_cert_path(provider)
     ca_cert_path = eipspecs.provider_ca_path(provider)
 
+    # XXX FIX paths for MAC
     opts.append('--cert')
     opts.append(client_cert_path)
     opts.append('--key')
@@ -260,9 +261,11 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
     use_pkexec = True
     ovpn = None
 
+    _plat = platform.system()
+
     # XXX get use_pkexec from config instead.
 
-    if platform.system() == "Linux" and use_pkexec and do_pkexec_check:
+    if _plat == "Linux" and use_pkexec and do_pkexec_check:
 
         # check for both pkexec
         # AND a suitable authentication
@@ -282,8 +285,17 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
             raise eip_exceptions.EIPNoPolkitAuthAgentAvailable
 
         command.append('pkexec')
+
+
     if vpnbin is None:
-        ovpn = which('openvpn')
+        if _plat == "Darwin":
+            # XXX Should hardcode our installed path
+            # /Applications/LEAPClient.app/Contents/Resources/openvpn.leap
+            openvpn_bin = "openvpn.leap"
+        else:
+            openvpn_bin = "openvpn"
+        #XXX hardcode for darwin
+        ovpn = which(openvpn_bin)
     else:
         ovpn = vpnbin
     if ovpn:
@@ -299,7 +311,18 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
 
     # XXX check len and raise proper error
 
-    return [command[0], command[1:]]
+    if _plat == "Darwin":
+        OSX_ASADMIN = 'do shell script "%s" with administrator privileges'
+        # XXX fix workaround for Nones
+        _command = [x if x else " " for x in command]
+        # XXX debugging!
+        #import ipdb;ipdb.set_trace() 
+        #XXX get openvpn log path from debug flags 
+        _command.append('--log')
+        _command.append('/tmp/leap_openvpn.log')
+        return ["osascript", ["-e", OSX_ASADMIN % ' '.join(_command)]]
+    else:
+        return [command[0], command[1:]]
 
 
 def check_vpn_keys(provider=None):
