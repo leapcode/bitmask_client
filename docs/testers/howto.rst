@@ -36,9 +36,9 @@ Download and source the following script in the parent folder where you want you
 
 .. code-block:: bash
 
-   $ cd /tmp
-   $ wget https://raw.github.com/leapcode/leap_client/develop/pkg/scripts/leap_client_bootstrap.sh
-   $ source leap_client_bootstrap.sh
+   cd /tmp
+   wget https://raw.github.com/leapcode/leap_client/develop/pkg/scripts/leap_client_bootstrap.sh
+   source leap_client_bootstrap.sh
 
 Tada! If everything went well, you should be able to run the client by typing::
 
@@ -68,7 +68,7 @@ Config files
 
 If you want to start fresh without config files, just move them. In linux::
 
-    $ mv ~/.config/leap ~/.config/leap.old
+    mv ~/.config/leap ~/.config/leap.old
 
 Pulling latest changes
 ^^^^^^^^^^^^^^^^^^^^^^

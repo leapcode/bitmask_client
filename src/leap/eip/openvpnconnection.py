@@ -276,6 +276,7 @@ to be triggered for each one of them.
         check if openvpn is already running
         """
         try:
+            #FIXME this gives DeprecationWarning
             for process in psutil.get_process_list():
                 if process.name == "openvpn":
                     logger.debug('an openvpn instance is already running.')
