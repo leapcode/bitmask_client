@@ -51,13 +51,14 @@ def translate(*args, **kwargs):
     except:
         logger.error('error getting stack frame')
 
-    if klsname:
+    if klsname and len(args) == 1:
         nargs = (klsname,) + args
         return qtTranslate(*nargs)
 
     else:
-        nargs = ('default', ) + args
-        return qtTranslate(*nargs)
+        #nargs = ('default', ) + args
+        #import pdb4qt; pdb4qt.set_trace() 
+        return qtTranslate(*args)
 
 
 class LEAPTranslatable(dict):
