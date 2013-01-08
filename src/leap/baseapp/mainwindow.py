@@ -104,7 +104,7 @@ class LeapWindow(QtGui.QMainWindow,
         self.shutdownSignal.connect(
             self.cleanupAndQuit)
         self.initNetworkChecker.connect(
-            lambda: self.init_network_checker(self.provider_domain))
+            lambda: self.init_network_checker(self.conductor.provider))
 
         # status change.
         # TODO unify
