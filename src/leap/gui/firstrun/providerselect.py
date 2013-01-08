@@ -64,7 +64,7 @@ class SelectProviderPage(InlineValidationPage):
         providerNameLabel.setBuddy(providerNameEdit)
 
         # add regex validator
-        providerDomainRe = QtCore.QRegExp(r"^[a-z\d_-.]+$")
+        providerDomainRe = QtCore.QRegExp(r"^[a-z1-9_\-\.]+$")
         providerNameEdit.setValidator(
             QtGui.QRegExpValidator(providerDomainRe, self))
         self.providerNameEdit = providerNameEdit
