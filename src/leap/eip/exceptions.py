@@ -33,6 +33,7 @@ TODO:
 
 """
 from leap.base.exceptions import LeapException
+from leap.util.translations import translate
 
 
 # This should inherit from LeapException
@@ -62,53 +63,69 @@ class Warning(EIPClientError):
 
 class EIPNoPolkitAuthAgentAvailable(CriticalError):
     message = "No polkit authentication agent could be found"
-    usermessage = ("We could not find any authentication "
-                   "agent in your system.<br/>"
-                   "Make sure you have "
-                   "<b>polkit-gnome-authentication-agent-1</b> "
-                   "running and try again.")
+    usermessage = translate(
+        "EIPErrors",
+        "We could not find any authentication "
+        "agent in your system.<br/>"
+        "Make sure you have "
+        "<b>polkit-gnome-authentication-agent-1</b> "
+        "running and try again.")
 
 
 class EIPNoPkexecAvailable(Warning):
     message = "No pkexec binary found"
-    usermessage = ("We could not find <b>pkexec</b> in your "
-                   "system.<br/> Do you want to try "
-                   "<b>setuid workaround</b>? "
-                   "(<i>DOES NOTHING YET</i>)")
+    usermessage = translate(
+        "EIPErrors",
+        "We could not find <b>pkexec</b> in your "
+        "system.<br/> Do you want to try "
+        "<b>setuid workaround</b>? "
+        "(<i>DOES NOTHING YET</i>)")
     failfirst = True
 
 
 class EIPNoCommandError(EIPClientError):
     message = "no suitable openvpn command found"
-    usermessage = ("No suitable openvpn command found. "
-                   "<br/>(Might be a permissions problem)")
+    usermessage = translate(
+        "EIPErrors",
+        "No suitable openvpn command found. "
+        "<br/>(Might be a permissions problem)")
 
 
 class EIPBadCertError(Warning):
     # XXX this should be critical and fail close
     message = "cert verification failed"
-    usermessage = "there is a problem with provider certificate"
+    usermessage = translate(
+        "EIPErrors",
+        "there is a problem with provider certificate")
 
 
 class LeapBadConfigFetchedError(Warning):
     message = "provider sent a malformed json file"
-    usermessage = "an error occurred during configuratio of leap services"
+    usermessage = translate(
+        "EIPErrors",
+        "an error occurred during configuratio of leap services")
 
 
 class OpenVPNAlreadyRunning(EIPClientError):
     message = "Another OpenVPN Process is already running."
-    usermessage = ("Another OpenVPN Process has been detected."
-                   "Please close it before starting leap-client")
+    usermessage = translate(
+        "EIPErrors",
+        "Another OpenVPN Process has been detected."
+        "Please close it before starting leap-client")
 
 
 class HttpsNotSupported(LeapException):
     message = "connection refused while accessing via https"
-    usermessage = "Server does not allow secure connections."
+    usermessage = translate(
+        "EIPErrors",
+        "Server does not allow secure connections")
 
 
 class HttpsBadCertError(LeapException):
     message = "verification error on cert"
-    usermessage = "Server certificate could not be verified."
+    usermessage = translate(
+        "EIPErrors",
+        "Server certificate could not be verified")
 
 #
 # errors still needing some love
@@ -117,7 +134,9 @@ class HttpsBadCertError(LeapException):
 
 class EIPInitNoKeyFileError(CriticalError):
     message = "No vpn keys found in the expected path"
-    usermessage = "We could not find your eip certs in the expected path"
+    usermessage = translate(
+        "EIPErrors",
+        "We could not find your eip certs in the expected path")
 
 
 class EIPInitBadKeyFilePermError(Warning):

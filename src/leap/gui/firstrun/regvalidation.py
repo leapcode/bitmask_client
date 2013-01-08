@@ -31,9 +31,9 @@ class RegisterUserValidationPage(ValidationPage):
         super(RegisterUserValidationPage, self).__init__(parent)
         self.current_page = "signupvalidation"
 
-        title = "Connecting..."
+        title = self.tr("Connecting...")
         # XXX uh... really?
-        subtitle = "Checking connection with provider."
+        subtitle = self.tr("Checking connection with provider.")
 
         self.setTitle(title)
         self.setSubTitle(subtitle)

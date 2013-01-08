@@ -75,7 +75,8 @@ class StatusAwareTrayIconMixin(object):
                 self.iconpath['connected'])),
         self.ConnectionWidgets = con_widgets
 
-        self.statusIconBox = QtGui.QGroupBox("EIP Connection Status")
+        self.statusIconBox = QtGui.QGroupBox(
+            self.tr("EIP Connection Status"))
         statusIconLayout = QtGui.QHBoxLayout()
         statusIconLayout.addWidget(self.ConnectionWidgets['disconnected'])
         statusIconLayout.addWidget(self.ConnectionWidgets['connecting'])
@@ -83,7 +84,8 @@ class StatusAwareTrayIconMixin(object):
         statusIconLayout.itemAt(1).widget().hide()
         statusIconLayout.itemAt(2).widget().hide()
 
-        self.leapConnStatus = QtGui.QLabel("<b>disconnected</b>")
+        self.leapConnStatus = QtGui.QLabel(
+            self.tr("<b>disconnected</b>"))
         statusIconLayout.addWidget(self.leapConnStatus)
 
         self.statusIconBox.setLayout(statusIconLayout)
@@ -113,26 +115,32 @@ class StatusAwareTrayIconMixin(object):
         #self.trayIconMenu.customContextMenuRequested.connect(
             #self.on_context_menu)
 
-    def bad(self):
-        logger.error('this should not be called')
+    #def bad(self):
+        #logger.error('this should not be called')
 
     def createActions(self):
         """
         creates actions to be binded to tray icon
         """
         # XXX change action name on (dis)connect
-        self.connAct = QtGui.QAction("Encryption ON     turn &off", self,
-                                     triggered=lambda: self.start_or_stopVPN())
+        self.connAct = QtGui.QAction(
+            self.tr("Encryption ON     turn &off"),
+            self,
+            triggered=lambda: self.start_or_stopVPN())
 
-        self.detailsAct = QtGui.QAction("&Details...",
-                                        self,
-                                        triggered=self.detailsWin)
-        self.aboutAct = QtGui.QAction("&About", self,
-                                      triggered=self.about)
-        self.aboutQtAct = QtGui.QAction("About Q&t", self,
-                                        triggered=QtGui.qApp.aboutQt)
-        self.quitAction = QtGui.QAction("&Quit", self,
-                                        triggered=self.cleanupAndQuit)
+        self.detailsAct = QtGui.QAction(
+            self.tr("&Details..."),
+            self,
+            triggered=self.detailsWin)
+        self.aboutAct = QtGui.QAction(
+            self.tr("&About"), self,
+            triggered=self.about)
+        self.aboutQtAct = QtGui.QAction(
+            self.tr("About Q&t"), self,
+            triggered=QtGui.qApp.aboutQt)
+        self.quitAction = QtGui.QAction(
+            self.tr("&Quit"), self,
+            triggered=self.cleanupAndQuit)
 
     def toggleEIPAct(self):
         # this is too simple by now.
@@ -141,15 +149,17 @@ class StatusAwareTrayIconMixin(object):
         icon_status = self.conductor.get_icon_name()
         if icon_status == "connected":
             self.connAct.setEnabled(True)
-            self.connAct.setText('Encryption ON    turn o&ff')
+            self.connAct.setText(
+                self.tr('Encryption ON    turn o&ff'))
             return
         if icon_status == "disconnected":
             self.connAct.setEnabled(True)
-            self.connAct.setText('Encryption OFF   turn &on')
+            self.connAct.setText(
+                self.tr('Encryption OFF   turn &on'))
             return
         if icon_status == "connecting":
             self.connAct.setDisabled(True)
-            self.connAct.setText('connecting...')
+            self.connAct.setText(self.tr('connecting...'))
             return
 
     def detailsWin(self):
@@ -164,14 +174,15 @@ class StatusAwareTrayIconMixin(object):
     def about(self):
         # move to widget
         flavor = BRANDING.get('short_name', None)
-        content = ("LEAP client<br>"
-                   "(version <b>%s</b>)<br>" % VERSION)
+        content = self.tr(
+            ("LEAP client<br>"
+             "(version <b>%s</b>)<br>" % VERSION))
         if flavor:
             content = content + ('<br>Flavor: <i>%s</i><br>' % flavor)
         content = content + (
             "<br><a href='https://leap.se/'>"
             "https://leap.se</a>")
-        QtGui.QMessageBox.about(self, "About", content)
+        QtGui.QMessageBox.about(self, self.tr("About"), content)
 
     def setConnWidget(self, icon_name):
         oldlayout = self.statusIconBox.layout()
@@ -209,6 +220,7 @@ class StatusAwareTrayIconMixin(object):
             # is failing in a way beyond my understanding.
             # (not working the first time it's clicked).
             # this works however.
+            # XXX in osx it shows some glitches.
             context_menu.exec_(self.trayIcon.geometry().center())
 
     @QtCore.pyqtSlot()

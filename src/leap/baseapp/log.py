@@ -21,7 +21,7 @@ class LogPaneMixin(object):
         logging_layout = QtGui.QVBoxLayout()
         self.logbrowser = QtGui.QTextBrowser()
 
-        startStopButton = QtGui.QPushButton("&Connect")
+        startStopButton = QtGui.QPushButton(self.tr("&Connect"))
         self.startStopButton = startStopButton
 
         logging_layout.addWidget(self.logbrowser)
@@ -34,7 +34,7 @@ class LogPaneMixin(object):
         grid = QtGui.QGridLayout()
 
         self.updateTS = QtGui.QLabel('')
-        self.status_label = QtGui.QLabel('Disconnected')
+        self.status_label = QtGui.QLabel(self.tr('Disconnected'))
         self.ip_label = QtGui.QLabel('')
         self.remote_label = QtGui.QLabel('')
 

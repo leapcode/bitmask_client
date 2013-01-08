@@ -15,7 +15,7 @@ class LastPage(QtGui.QWizardPage):
     def __init__(self, parent=None):
         super(LastPage, self).__init__(parent)
 
-        self.setTitle("Connecting to Encrypted Internet Proxy service...")
+        self.setTitle(self.tr("Connecting to Encrypted Internet Proxy service..."))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
@@ -51,13 +51,13 @@ class LastPage(QtGui.QWizardPage):
             statusline.setText(status)
 
     def set_finished_status(self):
-        self.setTitle('You are now using an encrypted connection!')
+        self.setTitle(self.tr('You are now using an encrypted connection!'))
         finishText = self.wizard().buttonText(
             QtGui.QWizard.FinishButton)
         finishText = finishText.replace('&', '')
-        self.label.setText(
+        self.label.setText(self.tr(
             "Click '<i>%s</i>' to end the wizard and "
-            "save your settings." % finishText)
+            "save your settings." % finishText))
         # XXX init network checker
         # trigger signal
 

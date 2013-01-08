@@ -101,7 +101,7 @@ class SelectProviderPage(InlineValidationPage):
         self.certInfo.setWordWrap(True)
         self.certWarning = QtGui.QLabel("")
         self.trustProviderCertCheckBox = QtGui.QCheckBox(
-            "&Trust this provider certificate.")
+            self.tr("&Trust this provider certificate."))
 
         self.trustProviderCertCheckBox.stateChanged.connect(
             self.onTrustCheckChanged)
@@ -344,9 +344,10 @@ class SelectProviderPage(InlineValidationPage):
 
     def add_cert_info(self, certinfo):  # pragma: no cover XXX
         self.certWarning.setText(
-            "Do you want to <b>trust this provider certificate?</b>")
+            self.tr("Do you want to <b>trust this provider certificate?</b>"))
+        # XXX Check if this needs to abstracted to remove certinfo
         self.certInfo.setText(
-            'SHA-256 fingerprint: <i>%s</i><br>' % certinfo)
+            self.tr('SHA-256 fingerprint: <i>%s</i><br>' % certinfo))
         self.certInfo.setWordWrap(True)
         self.certinfoGroup.show()
 

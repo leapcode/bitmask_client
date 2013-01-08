@@ -195,7 +195,7 @@ class EIPConductorAppMixin(object):
             else:
                 # no errors, so go on.
                 if self.debugmode:
-                    self.startStopButton.setText('&Disconnect')
+                    self.startStopButton.setText(self.tr('&Disconnect'))
                 self.eip_service_started = True
                 self.toggleEIPAct()
 
@@ -209,7 +209,7 @@ class EIPConductorAppMixin(object):
             self.network_checker.stop()
             self.conductor.disconnect()
             if self.debugmode:
-                self.startStopButton.setText('&Connect')
+                self.startStopButton.setText(self.tr('&Connect'))
             self.eip_service_started = False
             self.toggleEIPAct()
             self.timer.stop()
