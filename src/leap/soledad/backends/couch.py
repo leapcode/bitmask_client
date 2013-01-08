@@ -14,7 +14,7 @@ except ImportError:
 class CouchDatabase(ObjectStore):
     """A U1DB implementation that uses Couch as its persistence layer."""
 
-    def __init__(self, url, database, full_commit=True, session=None): 
+    def __init__(self, url, database, replica_uid=None, full_commit=True, session=None): 
         """Create a new Couch data container."""
         self._url = url
         self._full_commit = full_commit
@@ -22,6 +22,7 @@ class CouchDatabase(ObjectStore):
         self._server = Server(url=self._url,
                               full_commit=self._full_commit,
                               session=self._session)
+        self._dbname = database
         # this will ensure that transaction and sync logs exist and are
         # up-to-date.
         self.set_document_factory(LeapDocument)
@@ -30,7 +31,7 @@ class CouchDatabase(ObjectStore):
         except ResourceNotFound:
             self._server.create(database)
             self._database = self._server[database]
-        super(CouchDatabase, self).__init__()
+        super(CouchDatabase, self).__init__(replica_uid=replica_uid)
 
     #-------------------------------------------------------------------------
     # implemented methods from Database
@@ -84,7 +85,15 @@ class CouchDatabase(ObjectStore):
         return CouchSyncTarget(self)
 
     def close(self):
-        raise NotImplementedError(self.close)
+        # TODO: fix this method so the connection is properly closed and
+        # test_close (+tearDown, which deletes the db) works without problems.
+        self._url = None
+        self._full_commit = None
+        self._session = None
+        #self._server = None
+        self._database = None
+        return True
+        
 
     def sync(self, url, creds=None, autocreate=True):
         from u1db.sync import Synchronizer
@@ -100,11 +109,20 @@ class CouchDatabase(ObjectStore):
         self._replica_uid = content['replica_uid']
         self._couch_rev = cdoc['_rev']
 
+    def _set_u1db_data(self):
+        doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
+        doc.content = { 'transaction_log' : self._transaction_log.log,
+                        'sync_log'        : self._sync_log.log,
+                        'replica_uid'     : self._replica_uid,
+                        '_rev'            : self._couch_rev}
+        self._put_doc(doc)
+
     #-------------------------------------------------------------------------
     # Couch specific methods
     #-------------------------------------------------------------------------
 
-    # no specific methods so far.
+    def delete_database(self):
+        del(self._server[self._dbname])
 
 class CouchSyncTarget(HTTPSyncTarget):
 

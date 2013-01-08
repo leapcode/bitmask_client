@@ -9,13 +9,14 @@ class ObjectStore(CommonBackend):
     A backend for storing u1db data in an object store.
     """
 
-    def __init__(self):
+    def __init__(self, replica_uid=None):
         # This initialization method should be called after the connection
         # with the database is established, so it can ensure that u1db data is
         # configured and up-to-date.
         self.set_document_factory(Document)
         self._sync_log = soledadutil.SyncLog()
         self._transaction_log = soledadutil.TransactionLog()
+        self._replica_uid = replica_uid
         self._ensure_u1db_data()
 
     #-------------------------------------------------------------------------
@@ -183,7 +184,8 @@ class ObjectStore(CommonBackend):
         """
         Create u1db data object in store.
         """
-        self._replica_uid = uuid.uuid4().hex
+        if self._replica_uid is None:
+            self._replica_uid = uuid.uuid4().hex
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
         doc.content = { 'transaction_log' : [],
                         'sync_log' : [],
@@ -200,11 +202,14 @@ class ObjectStore(CommonBackend):
         """
         Save u1db configuration data on backend storage.
         """
-        doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
-        doc.content = { 'transaction_log' : self._transaction_log.log,
-                        'sync_log'        : self._sync_log.log,
-                        'replica_uid'     : self._replica_uid,
-                        '_rev'            : self._couch_rev}
-        self._put_doc(doc)
+        NotImplementedError(self._set_u1db_data)
 
+    def _set_replica_uid(self, replica_uid):
+        self._replica_uid = replica_uid
+        self._set_u1db_data()
 
+    def _get_replica_uid(self):
+        return self._replica_uid
+
+    replica_uid = property(
+        _get_replica_uid, _set_replica_uid, doc="Replica UID of the database")
