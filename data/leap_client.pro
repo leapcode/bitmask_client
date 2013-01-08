@@ -3,6 +3,10 @@
 # is not there a f*** way of expanding this? other to template with python I mean...
 
 SOURCES += ../src/leap/base/exceptions.py
+SOURCES += ../src/leap/eip/exceptions.py
+SOURCES += ../src/leap/baseapp/eip.py
+SOURCES += ../src/leap/baseapp/log.py
+SOURCES += ../src/leap/baseapp/systray.py
 SOURCES += ../src/leap/gui/firstrun/intro.py
 SOURCES	+= ../src/leap/gui/firstrun/last.py
 SOURCES	+= ../src/leap/gui/firstrun/login.py
