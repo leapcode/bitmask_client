@@ -100,7 +100,7 @@ class LeapWindow(QtGui.QMainWindow,
             self.startStopButton.clicked.connect(
                 lambda: self.start_or_stopVPN())
         self.start_eipconnection.connect(
-            lambda: self.start_or_stopVPN())
+            self.do_start_eipconnection)
         self.shutdownSignal.connect(
             self.cleanupAndQuit)
         self.initNetworkChecker.connect(
@@ -147,9 +147,9 @@ class LeapWindow(QtGui.QMainWindow,
 
         # launch wizard if needed
         if need_wizard:
+            logger.debug('running first run wizard')
             self.launch_first_run_wizard()
         else:  # no wizard needed
-            logger.debug('running first run wizard')
             self.initReady.emit()
 
     def launch_first_run_wizard(self):
@@ -174,5 +174,16 @@ class LeapWindow(QtGui.QMainWindow,
             self.cleanupAndQuit()
 
     def runchecks_and_eipconnect(self):
+        """
+        shows icon and run init checks
+        """
         self.show_systray_icon()
         self.initchecks.begin()
+
+    def do_start_eipconnection(self):
+        """
+        shows icon and init eip connection
+        called from the end of wizard
+        """
+        self.show_systray_icon()
+        self.start_or_stopVPN()
