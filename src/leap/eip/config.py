@@ -18,6 +18,8 @@ from leap.eip import specs as eipspecs
 logger = logging.getLogger(name=__name__)
 provider_ca_file = BRANDING.get('provider_ca_file', None)
 
+_platform = platform.system()
+
 
 class EIPConfig(baseconfig.JSONLeapConfig):
     spec = eipspecs.eipconfig_spec
@@ -210,8 +212,13 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     # interface. unix sockets or telnet interface for win.
     # XXX take them from the config object.
 
-    ourplatform = platform.system()
-    if ourplatform in ("Linux", "Darwin"):
+    if _platform == "Windows":
+        opts.append('--management')
+        opts.append('localhost')
+        # XXX which is a good choice?
+        opts.append('7777')
+
+    if _platform in ("Linux", "Darwin"):
         opts.append('--management')
 
         if socket_path is None:
@@ -219,11 +226,14 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
         opts.append(socket_path)
         opts.append('unix')
 
-    if ourplatform == "Windows":
-        opts.append('--management')
-        opts.append('localhost')
-        # XXX which is a good choice?
-        opts.append('7777')
+        opts.append('--script-security')
+        opts.append('2')
+
+    if _platform == "Linux":
+        opts.append("--up")
+        opts.append("/etc/openvpn/update-resolv-conf")
+        opts.append("--down")
+        opts.append("/etc/openvpn/update-resolv-conf")
 
     # certs
     client_cert_path = eipspecs.client_cert_path(provider)
@@ -261,11 +271,9 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
     use_pkexec = True
     ovpn = None
 
-    _plat = platform.system()
-
     # XXX get use_pkexec from config instead.
 
-    if _plat == "Linux" and use_pkexec and do_pkexec_check:
+    if _platform == "Linux" and use_pkexec and do_pkexec_check:
 
         # check for both pkexec
         # AND a suitable authentication
@@ -286,9 +294,8 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
 
         command.append('pkexec')
 
-
     if vpnbin is None:
-        if _plat == "Darwin":
+        if _platform == "Darwin":
             # XXX Should hardcode our installed path
             # /Applications/LEAPClient.app/Contents/Resources/openvpn.leap
             openvpn_bin = "openvpn.leap"
@@ -311,13 +318,12 @@ def build_ovpn_command(debug=False, do_pkexec_check=True, vpnbin=None,
 
     # XXX check len and raise proper error
 
-    if _plat == "Darwin":
+    if _platform == "Darwin":
         OSX_ASADMIN = 'do shell script "%s" with administrator privileges'
         # XXX fix workaround for Nones
         _command = [x if x else " " for x in command]
         # XXX debugging!
-        #import ipdb;ipdb.set_trace() 
-        #XXX get openvpn log path from debug flags 
+        # XXX get openvpn log path from debug flags
         _command.append('--log')
         _command.append('/tmp/leap_openvpn.log')
         return ["osascript", ["-e", OSX_ASADMIN % ' '.join(_command)]]
