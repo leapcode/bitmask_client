@@ -90,8 +90,8 @@ class CannotResolveDomainError(LeapException):
         "Domain cannot be found")
 
 
-class TunnelNotDefaultRouteError(CriticalError):
+class TunnelNotDefaultRouteError(LeapException):
     message = "Tunnel connection dissapeared. VPN down?"
     usermessage = translate(
         "Errors",
-        "The Encrypted Connection was lost. Shutting down...")
+        "The Encrypted Connection was lost.")

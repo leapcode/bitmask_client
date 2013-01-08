@@ -68,6 +68,8 @@ class LeapNetworkChecker(object):
         if not platform.system() == "Linux":
             raise NotImplementedError
 
+        # XXX GET DARWIN IMPLEMENTATION
+
         f = open("/proc/net/route")
         route_table = f.readlines()
         f.close()
