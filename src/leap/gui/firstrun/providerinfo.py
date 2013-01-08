@@ -62,6 +62,7 @@ class ProviderInfoPage(QtGui.QWizardPage):
         # this should be better handled with signals !!
         self.displayName = displayName
         self.description = description
+        self.description.setWordWrap(True)
         self.enrollment_policy = enrollment_policy
 
     def show_provider_info(self):
@@ -72,7 +73,7 @@ class ProviderInfoPage(QtGui.QWizardPage):
         lang = "en"
         pconfig = self.wizard().providerconfig
 
-        dn = pconfig.get('display_name')
+        dn = pconfig.get('name')
         display_name = dn[lang] if dn else ''
         domain_name = self.field('provider_domain')
 
