@@ -37,7 +37,7 @@ from u1db import (
     )
 
 
-def open(path, create, password, document_factory=None):
+def open(path, password, create, document_factory=None):
     """Open a database at the given location.
 
     Will raise u1db.errors.DatabaseDoesNotExist if create=False and the
