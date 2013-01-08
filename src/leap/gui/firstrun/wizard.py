@@ -72,7 +72,7 @@ class FirstRunWizard(QtGui.QWizard):
             conductor_instance,
             parent=None,
             pages_dict=None,
-            eip_username=None,
+            username=None,
             providers=None,
             success_cb=None, is_provider_setup=False,
             trusted_certs=None,
@@ -92,7 +92,7 @@ class FirstRunWizard(QtGui.QWizard):
         # in the connection page, before the wizard has ended.
         self.conductor = conductor_instance
 
-        self.eip_username = eip_username
+        self.username = username
         self.providers = providers
 
         # success callback
@@ -129,7 +129,7 @@ class FirstRunWizard(QtGui.QWizard):
         # by setting 1st page??
         #self.is_previously_registered = is_previously_registered
         # XXX ??? ^v
-        self.is_previously_registered = bool(self.eip_username)
+        self.is_previously_registered = bool(self.username)
         self.from_login = False
 
         pages_dict = pages_dict or get_pages_dict()
@@ -233,7 +233,7 @@ class FirstRunWizard(QtGui.QWizard):
         settings.setValue("remember_user_and_pass", remember_pass)
 
         if remember_pass:
-            settings.setValue("eip_username", full_username)
+            settings.setValue("username", full_username)
             seed = self.get_random_str(10)
             settings.setValue("%s_seed" % provider, seed)
 

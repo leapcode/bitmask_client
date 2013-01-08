@@ -57,10 +57,10 @@ class LeapWindow(QtGui.QMainWindow,
 
         settings = QtCore.QSettings()
         self.provider_domain = settings.value("provider_domain", None)
-        self.eip_username = settings.value("eip_username", None)
+        self.username = settings.value("username", None)
 
         logger.debug('provider: %s', self.provider_domain)
-        logger.debug('eip_username: %s', self.eip_username)
+        logger.debug('username: %s', self.username)
 
         provider = self.provider_domain
         EIPConductorAppMixin.__init__(
@@ -160,7 +160,7 @@ class LeapWindow(QtGui.QMainWindow,
         wizard = FirstRunWizard(
             self.conductor,
             parent=self,
-            eip_username=self.eip_username,
+            username=self.username,
             start_eipconnection_signal=self.start_eipconnection,
             eip_statuschange_signal=self.eipStatusChange,
             quitcallback=self.onWizardCancel)

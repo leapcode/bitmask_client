@@ -94,7 +94,7 @@ class FirstRunWizardTestCase(qunittest.TestCase):
         calls = [call("FirstRunWizardDone", True),
                  call("provider_domain", "testprovider"),
                  call("remember_user_and_pass", True),
-                 call("eip_username", "testuser@testprovider"),
+                 call("username", "testuser@testprovider"),
                  call("testprovider_seed", RANDOMSTR)]
         mqs().setValue.assert_has_calls(calls, any_order=True)
 

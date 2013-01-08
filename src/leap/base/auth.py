@@ -275,7 +275,7 @@ def srpauth_protected(user=None, passwd=None, server=None, verify=True):
 
 def get_leap_credentials():
     settings = QtCore.QSettings()
-    full_username = settings.value('eip_username')
+    full_username = settings.value('username')
     username, domain = full_username.split('@')
     seed = settings.value('%s_seed' % domain, None)
     password = leapkeyring.leap_get_password(full_username, seed=seed)
