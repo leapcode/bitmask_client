@@ -276,10 +276,7 @@ class ProviderCertChecker(object):
         cert = gnutls.crypto.X509Certificate(cert_s)
         from_ = time.gmtime(cert.activation_time)
         to_ = time.gmtime(cert.expiration_time)
-        # FIXME BUG ON LEAP_CLI, certs are not valid on gmtime
-        # See #1153
         return from_ < now() < to_
-        #return now() < to_
 
     def is_valid_pemfile(self, cert_s=None):
         """

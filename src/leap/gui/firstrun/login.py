@@ -108,7 +108,7 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         # page here as a mean to catch
         # srp authentication errors while
         wizard = self.wizard()
-        eipconfigchecker = wizard.eipconfigchecker()
+        eipconfigchecker = wizard.eipconfigchecker(domain=domain)
 
         ########################
         # 1) try name resolution
@@ -321,6 +321,7 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
             self.setField('provider_domain', domain)
             self.setField('login_userName', username)
             self.setField('login_userPassword', password)
+            self.wizard().from_login = True
 
             return True
 
