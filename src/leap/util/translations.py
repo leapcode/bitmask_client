@@ -17,7 +17,7 @@ I guess we could generate the xml for ourselves as a last recourse.
 # XXX BIG NOTE:
 # RESIST the temptation to get the translate function
 # more compact, or have the Context argument passed as a variable
-# It HAS to be explicit due  to how the pylupdate parser
+# Its name HAS to be explicit due  to how the pylupdate parser
 # works.
 
 
@@ -29,18 +29,19 @@ def translate(*args, **kwargs):
     our magic function.
     translate(Context, text, comment)
     """
-    #print 'translating...'
+    if len(args) == 1:
+        obj = args[0]
+        if isinstance(obj, LEAPTranslatable) and hasattr(obj, 'tr'):
+            return obj.tr()
+
     klsname = None
     try:
         # get class value from instance
         # using live object inspection
         prev_frame = inspect.stack()[1][0]
-        self = inspect.getargvalues(prev_frame).locals.get('self')
+        locals_ = inspect.getargvalues(prev_frame).locals
+        self = locals_.get('self')
         if self:
-            # XXX will this work with QObject wrapper??
-            if isinstance(LEAPTranslatable, self) and hasattr(self, 'tr'):
-                print "we got a self in base class"
-                return self.tr(*args)
 
             # Trying to  get the class name
             # but this is useless, the parser
@@ -49,7 +50,6 @@ def translate(*args, **kwargs):
             #print 'KLSNAME  -- ', klsname
     except:
         logger.error('error getting stack frame')
-        #print 'error getting stack frame'
 
     if klsname:
         nargs = (klsname,) + args

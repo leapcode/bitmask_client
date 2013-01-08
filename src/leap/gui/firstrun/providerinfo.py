@@ -6,6 +6,7 @@ import logging
 from PyQt4 import QtGui
 
 from leap.gui.constants import APP_LOGO
+from leap.util.translations import translate
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,10 @@ class ProviderInfoPage(QtGui.QWizardPage):
             "<b>%s</b> https://%s" % (display_name, domain_name))
 
         desc = pconfig.get('description')
-        description_text = desc[lang] if desc else ''
+
+        #description_text = desc[lang] if desc else ''
+        description_text = translate(desc) if desc else ''
+
         self.description.setText(
             "<i>%s</i>" % description_text)
 
