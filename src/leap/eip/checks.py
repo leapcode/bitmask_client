@@ -164,13 +164,12 @@ class ProviderCertChecker(object):
         try:
             self.fetcher.get(uri, verify=verify)
 
-        except requests.exceptions.SSLError as exc:
+        except requests.exceptions.SSLError:  # as exc:
             logger.error("SSLError")
-            # XXX RAISE! See #638
-            #raise eipexceptions.HttpsBadCertError
-            logger.warning('BUG #638 CERT VERIFICATION FAILED! '
-                           '(this should be CRITICAL)')
-            logger.warning('SSLError: %s', exc.message)
+            raise eipexceptions.HttpsBadCertError
+            #logger.warning('BUG #638 CERT VERIFICATION FAILED! '
+                           #'(this should be CRITICAL)')
+            #logger.warning('SSLError: %s', exc.message)
 
         except requests.exceptions.ConnectionError:
             logger.error('ConnectionError')
@@ -225,12 +224,7 @@ class ProviderCertChecker(object):
                 return fgetfn(*args, **kwargs)
         try:
 
-            # XXX FIXME!!!!
-            # verify=verify
-            # Workaround for #638. return to verification
-            # when That's done!!!
-            #req = self.fetcher.get(uri, verify=False)
-            req = getfn(uri, verify=False)
+            req = getfn(uri, verify=verify)
             req.raise_for_status()
 
         except requests.exceptions.SSLError:
@@ -444,8 +438,8 @@ class EIPConfigChecker(object):
         # FIXME FIXME FIXME
         self.defaultprovider.load(
             from_uri=uri,
-            fetcher=self.fetcher,
-            verify=False)
+            fetcher=self.fetcher)
+            #verify=False)
         self.defaultprovider.save()
 
     def fetch_eip_service_config(self, skip_download=False,

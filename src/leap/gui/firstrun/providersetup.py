@@ -20,8 +20,8 @@ class ProviderSetupValidationPage(ValidationPage):
         self.current_page = "providersetupvalidation"
 
         # XXX needed anymore?
-        is_signup = self.field("is_signup")
-        self.is_signup = is_signup
+        #is_signup = self.field("is_signup")
+        #self.is_signup = is_signup
 
         self.setTitle(self.tr("Provider setup"))
         self.setSubTitle(
@@ -158,14 +158,12 @@ class ProviderSetupValidationPage(ValidationPage):
 
     def nextId(self):
         wizard = self.wizard()
-        if not wizard:
-            return
-        is_signup = self.field('is_signup')
-        if is_signup is True:
-            next_ = 'signup'
-        if is_signup is False:
+        from_login = wizard.from_login
+        if from_login:
             # XXX bad name. change to connect again.
             next_ = 'signupvalidation'
+        else:
+            next_ = 'signup'
         return wizard.get_page_index(next_)
 
     def initializePage(self):

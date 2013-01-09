@@ -2,15 +2,7 @@
 Provider Setup Validation Page,
 used in First Run Wizard
 """
-# XXX This page is called regvalidation
-# but it's implementing functionality in the former
-# connect page.
-# We should remame it to connect again, when we integrate
-# the login branch of the wizard.
-
 import logging
-#import json
-#import socket
 
 from PyQt4 import QtGui
 
@@ -25,11 +17,11 @@ from leap.gui.constants import APP_LOGO
 logger = logging.getLogger(__name__)
 
 
-class RegisterUserValidationPage(ValidationPage):
+class ConnectionPage(ValidationPage):
 
     def __init__(self, parent=None):
-        super(RegisterUserValidationPage, self).__init__(parent)
-        self.current_page = "signupvalidation"
+        super(ConnectionPage, self).__init__(parent)
+        self.current_page = "connect"
 
         title = self.tr("Connecting...")
         # XXX uh... really?
@@ -54,20 +46,18 @@ class RegisterUserValidationPage(ValidationPage):
         domain, port = get_https_domain_and_port(full_domain)
         _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
 
-        # FIXME #BUG 638 FIXME FIXME FIXME
-        verify = False  # !!!!!!!!!!!!!!!!
-        # FIXME #BUG 638 FIXME FIXME FIXME
+        verify = True
 
         ###########################################
         # Set Credentials.
         # username and password are in different fields
         # if they were stored in log_in or sign_up pages.
-        is_signup = self.field("is_signup")
+        from_login = wizard.from_login
 
         unamek_base = 'userName'
         passwk_base = 'userPassword'
-        unamek = 'login_%s' % unamek_base if not is_signup else unamek_base
-        passwk = 'login_%s' % passwk_base if not is_signup else passwk_base
+        unamek = 'login_%s' % unamek_base if from_login else unamek_base
+        passwk = 'login_%s' % passwk_base if from_login else passwk_base
 
         username = self.field(unamek)
         password = self.field(passwk)
@@ -182,8 +172,8 @@ class RegisterUserValidationPage(ValidationPage):
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
-        is_signup = self.field("is_signup")
-        prevpage = "signup" if is_signup else "login"
+        from_login = self.wizard().from_login
+        prevpage = "login" if from_login else "signup"
 
         wizard = self.wizard()
         if self.errors:
@@ -200,11 +190,11 @@ class RegisterUserValidationPage(ValidationPage):
 
     def nextId(self):
         wizard = self.wizard()
-        if not wizard:
-            return
+        #if not wizard:
+            #return
         return wizard.get_page_index('lastpage')
 
     def initializePage(self):
-        super(RegisterUserValidationPage, self).initializePage()
+        super(ConnectionPage, self).initializePage()
         self.set_undone()
         self.completeChanged.emit()

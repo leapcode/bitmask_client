@@ -50,7 +50,7 @@ class IntroPage(QtGui.QWizardPage):
         layout.addWidget(radiobuttonGroup)
         self.setLayout(layout)
 
-        self.registerField('is_signup', self.sign_up)
+        #self.registerField('is_signup', self.sign_up)
 
     def validatePage(self):
         return True
