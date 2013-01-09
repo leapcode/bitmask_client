@@ -16,6 +16,7 @@ class ObjectStore(CommonBackend):
         self.set_document_factory(Document)
         self._sync_log = soledadutil.SyncLog()
         self._transaction_log = soledadutil.TransactionLog()
+        self._conflict_log = soledadutil.ConflictLog()
         self._replica_uid = replica_uid
         self._ensure_u1db_data()
 
@@ -44,6 +45,12 @@ class ObjectStore(CommonBackend):
     def _put_doc(self, doc):
         raise NotImplementedError(self._put_doc)
 
+    def _update_gen_and_transaction_log(self, doc_id):
+        new_gen = self._get_generation() + 1
+        trans_id = self._allocate_transaction_id()
+        self._transaction_log.append((new_gen, doc_id, trans_id))
+        self._set_u1db_data()
+
     def put_doc(self, doc):
         # consistency check
         if doc.doc_id is None:
@@ -66,11 +73,7 @@ class ObjectStore(CommonBackend):
             new_rev = self._allocate_doc_rev(doc.rev)
         doc.rev = new_rev
         self._put_doc(doc)
-        # update u1db generation and logs
-        new_gen = self._get_generation() + 1
-        trans_id = self._allocate_transaction_id()
-        self._transaction_log.append((new_gen, doc.doc_id, trans_id))
-        self._set_u1db_data()
+        self._update_gen_and_transaction_log(doc.doc_id)
         return doc.rev
 
     def delete_doc(self, doc):
@@ -87,6 +90,7 @@ class ObjectStore(CommonBackend):
         doc.rev = new_rev
         doc.make_tombstone()
         self._put_doc(doc)
+        self._update_gen_and_transaction_log(doc.doc_id)
         return new_rev
 
     # start of index-related methods: these are not supported by this backend.
@@ -130,6 +134,16 @@ class ObjectStore(CommonBackend):
                                                     other_transaction_id)
         self._set_u1db_data()
 
+    def _do_set_replica_gen_and_trans_id(self, other_replica_uid,
+                                         other_generation, other_transaction_id):
+        return self._set_replica_gen_and_trans_id(
+                 other_replica_uid,
+                 other_generation,
+                 other_transaction_id)
+
+    def _get_transaction_log(self):
+        return self._transaction_log.get_transaction_log()
+
     #-------------------------------------------------------------------------
     # implemented methods from CommonBackend
     #-------------------------------------------------------------------------
@@ -146,9 +160,10 @@ class ObjectStore(CommonBackend):
         # Documents never have conflicts on server.
         return False
 
-    def _put_and_update_indexes(self, doc_id, old_doc, new_rev, content):
-        raise NotImplementedError(self._put_and_update_indexes)
-
+    def _put_and_update_indexes(self, old_doc, doc):
+        # TODO: implement index update
+        self._put_doc(doc)
+        self._update_gen_and_transaction_log(doc.doc_id)
 
     def _get_trans_id_for_gen(self, generation):
         self._get_u1db_data()
@@ -187,8 +202,9 @@ class ObjectStore(CommonBackend):
         if self._replica_uid is None:
             self._replica_uid = uuid.uuid4().hex
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
-        doc.content = { 'transaction_log' : [],
-                        'sync_log' : [],
+        doc.content = { 'sync_log' : [],
+                        'transaction_log' : [],
+                        'conflict_log' : [],
                         'replica_uid' : self._replica_uid }
         self._put_doc(doc)
 
@@ -213,3 +229,36 @@ class ObjectStore(CommonBackend):
 
     replica_uid = property(
         _get_replica_uid, _set_replica_uid, doc="Replica UID of the database")
+
+
+    #-------------------------------------------------------------------------
+    # The methods below were cloned from u1db sqlite backend. They should at
+    # least exist and raise a NotImplementedError exception in CommonBackend
+    # (should we maybe fill a bug in u1db bts?).
+    #-------------------------------------------------------------------------
+
+    def _add_conflict(self, doc_id, my_doc_rev, my_content):
+        self._conflict_log.append((doc_id, my_doc_rev, my_content))
+
+    def _delete_conflicts(self, doc, conflict_revs):
+        deleting = [(doc.doc_id, c_rev) for c_rev in conflict_revs]
+        self._conflict_log.delete_conflicts(deleting)
+        doc.has_conflicts = self._has_conflicts(doc.doc_id)
+
+    def _prune_conflicts(self, doc, doc_vcr):
+        if self._has_conflicts(doc.doc_id):
+            autoresolved = False
+            c_revs_to_prune = []
+            for c_doc in self._get_conflicts(doc.doc_id):
+                c_vcr = vectorclock.VectorClockRev(c_doc.rev)
+                if doc_vcr.is_newer(c_vcr):
+                    c_revs_to_prune.append(c_doc.rev)
+                elif doc.same_content_as(c_doc):
+                    c_revs_to_prune.append(c_doc.rev)
+                    doc_vcr.maximize(c_vcr)
+                    autoresolved = True
+            if autoresolved:
+                doc_vcr.increment(self._replica_uid)
+                doc.rev = doc_vcr.as_str()
+            c = self._db_handle.cursor()
+            self._delete_conflicts(c, doc, c_revs_to_prune)

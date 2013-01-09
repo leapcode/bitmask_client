@@ -149,7 +149,13 @@ class TransactionLog(SimpleLog):
                 cur_gen, _, newest_trans_id = results[0]
 
         return cur_gen, newest_trans_id, changes
-        
+
+
+    def get_transaction_log(self):
+        """
+        Return only a list of (doc_id, transaction_id)
+        """
+        return map(lambda x: (x[1], x[2]), sorted(self._log))
 
 
 class SyncLog(SimpleLog):
@@ -182,3 +188,12 @@ class SyncLog(SimpleLog):
         self.append((other_replica_uid, other_generation,
                      other_transaction_id))
 
+class ConflictLog(SimpleLog):
+    """
+    A list of (doc_id, my_doc_rev, my_content) tuples.
+    """
+    
+    def delete_conflicts(self, conflicts):
+        for conflict in conflicts:
+            self.log = self.filter(lambda x:
+                         x[0] != conflict[0] or x[1] != conflict[1])

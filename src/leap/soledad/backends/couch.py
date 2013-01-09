@@ -58,6 +58,8 @@ class CouchDatabase(ObjectStore):
         generation = self._get_generation()
         results = []
         for doc_id in self._database:
+            if doc_id == self.U1DB_DATA_DOC_ID:
+                continue
             doc = self._get_doc(doc_id)
             if doc.content is None and not include_deleted:
                 continue
@@ -106,13 +108,15 @@ class CouchDatabase(ObjectStore):
         content = json.loads(cdoc['u1db_json'])
         self._sync_log.log = content['sync_log']
         self._transaction_log.log = content['transaction_log']
+        self._conflict_log.log = content['conflict_log']
         self._replica_uid = content['replica_uid']
         self._couch_rev = cdoc['_rev']
 
     def _set_u1db_data(self):
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
-        doc.content = { 'transaction_log' : self._transaction_log.log,
-                        'sync_log'        : self._sync_log.log,
+        doc.content = { 'sync_log'        : self._sync_log.log,
+                        'transaction_log' : self._transaction_log.log,
+                        'conflict_log'    : self._conflict_log.log,
                         'replica_uid'     : self._replica_uid,
                         '_rev'            : self._couch_rev}
         self._put_doc(doc)
