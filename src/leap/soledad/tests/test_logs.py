@@ -69,10 +69,11 @@ class LogTestCase(unittest.TestCase):
           'error getting whats changed.')
 
     def test_conflict_log(self):
+        # TODO: include tests for `get_conflicts` and `has_conflicts`.
         data = [('1', 'my:1', 'irrelevant'),
                 ('2', 'my:1', 'irrelevant'),
                 ('3', 'my:1', 'irrelevant')]
-        log = ConflictLog()
+        log = ConflictLog(None)
         log.log = data
         log.delete_conflicts([('1','my:1'),('2','my:1')])
         self.assertEqual(

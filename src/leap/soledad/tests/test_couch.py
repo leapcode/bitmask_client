@@ -40,7 +40,7 @@ class TestCouchBackendImpl(tests.TestCase):
 # The following tests come from `u1db.tests.test_backends`.
 #-----------------------------------------------------------------------------
 
-def make_couch_database_for_test(test, replica_uid, path='test'):
+def make_couch_database_for_test(test, replica_uid):
     return couch.CouchDatabase('http://localhost:5984', 'u1db_tests',
                                replica_uid=replica_uid)
 
@@ -81,40 +81,44 @@ class CouchDatabaseTests(LocalDatabaseTests):
         super(CouchDatabaseTests, self).tearDown()
 
 
-#class CouchValidateGenNTransIdTests(LocalDatabaseValidateGenNTransIdTests):
-#
-#    scenarios = COUCH_SCENARIOS
-#
-#    def tearDown(self):
-#        self.db.delete_database()
-#        super(CouchTests, self).tearDown()
-#
-#
-#class CouchValidateSourceGenTests(LocalDatabaseValidateSourceGenTests):
-#
-#    scenarios = COUCH_SCENARIOS
-#
-#    def tearDown(self):
-#        self.db.delete_database()
-#        super(CouchTests, self).tearDown()
-#
-#
-#class CouchWithConflictsTests(LocalDatabaseWithConflictsTests):
-#
-#    scenarios = COUCH_SCENARIOS
-#
-#    def tearDown(self):
-#        self.db.delete_database()
-#        super(CouchTests, self).tearDown()
-#
-#
+class CouchValidateGenNTransIdTests(LocalDatabaseValidateGenNTransIdTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchValidateGenNTransIdTests, self).tearDown()
+
+
+class CouchValidateSourceGenTests(LocalDatabaseValidateSourceGenTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchValidateSourceGenTests, self).tearDown()
+
+
+class CouchWithConflictsTests(LocalDatabaseWithConflictsTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchWithConflictsTests, self).tearDown()
+
+
+# Notice: the CouchDB backend is currently used for storing encrypted data in
+# the server, so indexing makes no sense. Thus, we ignore index testing for
+# now.
+
 #class CouchIndexTests(DatabaseIndexTests):
 #
 #    scenarios = COUCH_SCENARIOS
 #
 #    def tearDown(self):
 #        self.db.delete_database()
-#        super(CouchTests, self).tearDown()
+#        super(CouchIndexTests, self).tearDown()
 #
 
 load_tests = tests.load_with_scenarios

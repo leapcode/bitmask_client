@@ -74,13 +74,13 @@ class SimpleLog(object):
         self._log.append(msg)
 
     def reduce(self, func, initializer=None):
-        return reduce(func, self.log, initializer)
+        return reduce(func, self._log, initializer)
 
     def map(self, func):
-        return map(func, self.log)
+        return map(func, self._get_log())
 
     def filter(self, func):
-        return filter(func, self.log)
+        return filter(func, self._get_log())
 
 
 class TransactionLog(SimpleLog):
@@ -141,7 +141,7 @@ class TransactionLog(SimpleLog):
             newest_trans_id = changes[0][2]
             changes.reverse()
         else:
-            results = self.log
+            results = self._get_log()
             if not results:
                 cur_gen = 0
                 newest_trans_id = ''
@@ -164,7 +164,7 @@ class SyncLog(SimpleLog):
     """
 
     def find_by_replica_uid(self, replica_uid):
-        if not self.log:
+        if not self._get_log():
             return ()
         return self.reduce(lambda x, y: y if y[0] == replica_uid else x)
 
@@ -184,7 +184,7 @@ class SyncLog(SimpleLog):
         Set the last-known generation and transaction id for the other
         database replica.
         """
-        self.log = self.filter(lambda x: x[0] != other_replica_uid)
+        self._log = self.filter(lambda x: x[0] != other_replica_uid)
         self.append((other_replica_uid, other_generation,
                      other_transaction_id))
 
@@ -192,8 +192,22 @@ class ConflictLog(SimpleLog):
     """
     A list of (doc_id, my_doc_rev, my_content) tuples.
     """
+
+    def __init__(self, factory):
+        super(ConflictLog, self).__init__()
+        self._factory = factory
     
     def delete_conflicts(self, conflicts):
         for conflict in conflicts:
-            self.log = self.filter(lambda x:
+            self._log = self.filter(lambda x:
                          x[0] != conflict[0] or x[1] != conflict[1])
+
+    def get_conflicts(self, doc_id):
+        conflicts = self.filter(lambda x: x[0] == doc_id)
+        if not conflicts:
+            return []
+        return reversed(map(lambda x: self._factory(doc_id, x[1], x[2]),
+                            conflicts))
+
+    def has_conflicts(self, doc_id):
+        return bool(self.filter(lambda x: x[0] == doc_id))

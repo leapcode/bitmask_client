@@ -1,6 +1,8 @@
+import uuid
+from base64 import b64encode, b64decode
 from u1db import errors
 from u1db.remote.http_target import HTTPSyncTarget
-from couchdb.client import Server, Document
+from couchdb.client import Server, Document as CouchDocument
 from couchdb.http import ResourceNotFound
 from leap.soledad.backends.objectstore import ObjectStore
 from leap.soledad.backends.leap_backend import LeapDocument
@@ -46,7 +48,13 @@ class CouchDatabase(ObjectStore):
         cdoc = self._database.get(doc_id)
         if cdoc is None:
             return None
-        doc = self._factory(doc_id=doc_id, rev=cdoc['u1db_rev'])
+        has_conflicts = False
+        if check_for_conflicts:
+            has_conflicts = self._has_conflicts(doc_id)
+        doc = self._factory(
+            doc_id=doc_id,
+            rev=cdoc['u1db_rev'],
+            has_conflicts=has_conflicts)
         if cdoc['u1db_json'] is not None:
             doc.content = json.loads(cdoc['u1db_json'])
         else:
@@ -60,7 +68,7 @@ class CouchDatabase(ObjectStore):
         for doc_id in self._database:
             if doc_id == self.U1DB_DATA_DOC_ID:
                 continue
-            doc = self._get_doc(doc_id)
+            doc = self._get_doc(doc_id, check_for_conflicts=True)
             if doc.content is None and not include_deleted:
                 continue
             results.append(doc)
@@ -68,7 +76,7 @@ class CouchDatabase(ObjectStore):
 
     def _put_doc(self, doc):
         # prepare couch's Document
-        cdoc = Document()
+        cdoc = CouchDocument()
         cdoc['_id'] = doc.doc_id
         # we have to guarantee that couch's _rev is cosistent
         old_cdoc = self._database.get(doc.doc_id)
@@ -81,6 +89,7 @@ class CouchDatabase(ObjectStore):
             cdoc['u1db_json'] = doc.get_json()
         else:
             cdoc['u1db_json'] = None
+        # save doc in db
         self._database.save(cdoc)
 
     def get_sync_target(self):
@@ -103,12 +112,22 @@ class CouchDatabase(ObjectStore):
         return Synchronizer(self, CouchSyncTarget(url, creds=creds)).sync(
             autocreate=autocreate)
 
+    def _initialize(self):
+        if self._replica_uid is None:
+            self._replica_uid = uuid.uuid4().hex
+        doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
+        doc.content = { 'sync_log' : [],
+                        'transaction_log' : [],
+                        'conflict_log' : b64encode(json.dumps([])),
+                        'replica_uid' : self._replica_uid }
+        self._put_doc(doc)
+
     def _get_u1db_data(self):
         cdoc = self._database.get(self.U1DB_DATA_DOC_ID)
         content = json.loads(cdoc['u1db_json'])
         self._sync_log.log = content['sync_log']
         self._transaction_log.log = content['transaction_log']
-        self._conflict_log.log = content['conflict_log']
+        self._conflict_log.log = json.loads(b64decode(content['conflict_log']))
         self._replica_uid = content['replica_uid']
         self._couch_rev = cdoc['_rev']
 
@@ -116,7 +135,10 @@ class CouchDatabase(ObjectStore):
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
         doc.content = { 'sync_log'        : self._sync_log.log,
                         'transaction_log' : self._transaction_log.log,
-                        'conflict_log'    : self._conflict_log.log,
+                        # Here, the b64 encode ensures that document content
+                        # does not cause strange behaviour in couchdb because
+                        # of encoding.
+                        'conflict_log'    : b64encode(json.dumps(self._conflict_log.log)),
                         'replica_uid'     : self._replica_uid,
                         '_rev'            : self._couch_rev}
         self._put_doc(doc)

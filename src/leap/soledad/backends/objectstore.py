@@ -1,8 +1,6 @@
-import uuid
 from u1db.backends import CommonBackend
-from u1db import errors, Document
+from u1db import errors, Document, vectorclock
 from leap.soledad import util as soledadutil
-
 
 class ObjectStore(CommonBackend):
     """
@@ -11,12 +9,12 @@ class ObjectStore(CommonBackend):
 
     def __init__(self, replica_uid=None):
         # This initialization method should be called after the connection
-        # with the database is established, so it can ensure that u1db data is
-        # configured and up-to-date.
+        # with the database is established in each implementation, so it can
+        # ensure that u1db data is configured and up-to-date.
         self.set_document_factory(Document)
         self._sync_log = soledadutil.SyncLog()
         self._transaction_log = soledadutil.TransactionLog()
-        self._conflict_log = soledadutil.ConflictLog()
+        self._conflict_log = soledadutil.ConflictLog(self._factory)
         self._replica_uid = replica_uid
         self._ensure_u1db_data()
 
@@ -72,8 +70,7 @@ class ObjectStore(CommonBackend):
                     raise errors.RevisionConflict()
             new_rev = self._allocate_doc_rev(doc.rev)
         doc.rev = new_rev
-        self._put_doc(doc)
-        self._update_gen_and_transaction_log(doc.doc_id)
+        self._put_and_update_indexes(old_doc, doc)
         return doc.rev
 
     def delete_doc(self, doc):
@@ -89,8 +86,7 @@ class ObjectStore(CommonBackend):
         new_rev = self._allocate_doc_rev(doc.rev)
         doc.rev = new_rev
         doc.make_tombstone()
-        self._put_doc(doc)
-        self._update_gen_and_transaction_log(doc.doc_id)
+        self._put_and_update_indexes(old_doc, doc)
         return new_rev
 
     # start of index-related methods: these are not supported by this backend.
@@ -117,10 +113,25 @@ class ObjectStore(CommonBackend):
     # end of index-related methods: these are not supported by this backend.
 
     def get_doc_conflicts(self, doc_id):
-        return []
+        self._get_u1db_data()
+        conflict_docs = self._conflict_log.get_conflicts(doc_id)
+        if not conflict_docs:
+            return []
+        this_doc = self._get_doc(doc_id)
+        this_doc.has_conflicts = True
+        return [this_doc] + list(conflict_docs)
 
     def resolve_doc(self, doc, conflicted_doc_revs):
-        raise NotImplementedError(self.resolve_doc)
+        cur_doc = self._get_doc(doc.doc_id)
+        new_rev = self._ensure_maximal_rev(cur_doc.rev,
+                                           conflicted_doc_revs)
+        superseded_revs = set(conflicted_doc_revs)
+        doc.rev = new_rev
+        if cur_doc.rev in superseded_revs:
+            self._put_and_update_indexes(cur_doc, doc)
+        else:
+            self._add_conflict(doc.doc_id, new_rev, doc.get_json())
+        self._delete_conflicts(doc, superseded_revs)
 
     def _get_replica_gen_and_trans_id(self, other_replica_uid):
         self._get_u1db_data()
@@ -142,6 +153,7 @@ class ObjectStore(CommonBackend):
                  other_transaction_id)
 
     def _get_transaction_log(self):
+        self._get_u1db_data()
         return self._transaction_log.get_transaction_log()
 
     #-------------------------------------------------------------------------
@@ -157,11 +169,12 @@ class ObjectStore(CommonBackend):
         return self._transaction_log.get_generation_info()
 
     def _has_conflicts(self, doc_id):
-        # Documents never have conflicts on server.
-        return False
+        self._get_u1db_data()
+        return self._conflict_log.has_conflicts(doc_id)
 
     def _put_and_update_indexes(self, old_doc, doc):
-        # TODO: implement index update
+        # for now we ignore indexes as this backend is used to store encrypted
+        # blobs of data in the server.
         self._put_doc(doc)
         self._update_gen_and_transaction_log(doc.doc_id)
 
@@ -199,14 +212,7 @@ class ObjectStore(CommonBackend):
         """
         Create u1db data object in store.
         """
-        if self._replica_uid is None:
-            self._replica_uid = uuid.uuid4().hex
-        doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
-        doc.content = { 'sync_log' : [],
-                        'transaction_log' : [],
-                        'conflict_log' : [],
-                        'replica_uid' : self._replica_uid }
-        self._put_doc(doc)
+        NotImplementedError(self._initialize)
 
     def _get_u1db_data(self, u1db_data_doc_id):
         """
@@ -239,17 +245,19 @@ class ObjectStore(CommonBackend):
 
     def _add_conflict(self, doc_id, my_doc_rev, my_content):
         self._conflict_log.append((doc_id, my_doc_rev, my_content))
+        self._set_u1db_data()
 
     def _delete_conflicts(self, doc, conflict_revs):
         deleting = [(doc.doc_id, c_rev) for c_rev in conflict_revs]
         self._conflict_log.delete_conflicts(deleting)
+        self._set_u1db_data()
         doc.has_conflicts = self._has_conflicts(doc.doc_id)
 
     def _prune_conflicts(self, doc, doc_vcr):
         if self._has_conflicts(doc.doc_id):
             autoresolved = False
             c_revs_to_prune = []
-            for c_doc in self._get_conflicts(doc.doc_id):
+            for c_doc in self._conflict_log.get_conflicts(doc.doc_id):
                 c_vcr = vectorclock.VectorClockRev(c_doc.rev)
                 if doc_vcr.is_newer(c_vcr):
                     c_revs_to_prune.append(c_doc.rev)
@@ -260,5 +268,11 @@ class ObjectStore(CommonBackend):
             if autoresolved:
                 doc_vcr.increment(self._replica_uid)
                 doc.rev = doc_vcr.as_str()
-            c = self._db_handle.cursor()
-            self._delete_conflicts(c, doc, c_revs_to_prune)
+            self._delete_conflicts(doc, c_revs_to_prune)
+
+    def _force_doc_sync_conflict(self, doc):
+        my_doc = self._get_doc(doc.doc_id)
+        self._prune_conflicts(doc, vectorclock.VectorClockRev(doc.rev))
+        self._add_conflict(doc.doc_id, my_doc.rev, my_doc.get_json())
+        doc.has_conflicts = True
+        self._put_and_update_indexes(my_doc, doc)
