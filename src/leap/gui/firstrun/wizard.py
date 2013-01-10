@@ -59,8 +59,8 @@ def get_pages_dict():
         ('providersetupvalidation',
             firstrun.providersetup.ProviderSetupValidationPage),
         ('signup', firstrun.register.RegisterUserPage),
-        ('signupvalidation',
-            firstrun.regvalidation.RegisterUserValidationPage),
+        ('connect',
+            firstrun.connect.ConnectionPage),
         ('lastpage', firstrun.last.LastPage)
     ))
 

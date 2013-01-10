@@ -6,6 +6,7 @@ except ValueError:
     pass
 
 import intro
+import connect
 import last
 import login
 import mixins
@@ -13,10 +14,10 @@ import providerinfo
 import providerselect
 import providersetup
 import register
-import regvalidation
 
 __all__ = [
     'intro',
+    'connect',
     'last',
     'login',
     'mixins',
@@ -24,4 +25,4 @@ __all__ = [
     'providerselect',
     'providersetup',
     'register',
-    'regvalidation']  # ,'wizard']
+    ]  # ,'wizard']

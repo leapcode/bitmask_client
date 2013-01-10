@@ -118,11 +118,12 @@ class StepsTableWidget(QtGui.QTableWidget):
         self.setSelectionMode(
             QtGui.QAbstractItemView.NoSelection)
         width = self.width()
+
         # WTF? Here init width is 100...
         # but on populating is 456... :(
+        #logger.debug('init table. width=%s' % width)
 
         # XXX do we need this initial?
-        logger.debug('init table. width=%s' % width)
         self.horizontalHeader().resizeSection(0, width * 0.7)
 
         # this disables the table grid.
@@ -286,7 +287,7 @@ class WithStepsMixIn(object):
             pagename = getattr(self, 'prev_page', None)
         if pagename is None:  # pragma: no cover
             return
-        logger.debug('cleaning wizard errors for %s' % pagename)
+        #logger.debug('cleaning wizard errors for %s' % pagename)
         self.wizard().set_validation_error(pagename, None)
 
     def populateStepsTable(self):
@@ -318,7 +319,7 @@ class WithStepsMixIn(object):
         table = self.stepsTableWidget
         FIRST_COLUMN_PERCENT = 0.70
         width = table.width()
-        logger.debug('populate table. width=%s' % width)
+        #logger.debug('populate table. width=%s' % width)
         table.horizontalHeader().resizeSection(0, width * FIRST_COLUMN_PERCENT)
 
     def set_item_icon(self, img=ICON_CHECKMARK, current=True):

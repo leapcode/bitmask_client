@@ -113,7 +113,7 @@ class RegisterUserPageUITestCase(qunittest.TestCase):
         pages = OrderedDict((
             (self.pagename, TestPage),
             ('signupvalidation',
-             firstrun.regvalidation.RegisterUserValidationPage)))
+             firstrun.connect.ConnectionPage)))
         self.wizard = firstrun.wizard.FirstRunWizard(None, pages_dict=pages)
         self.page = self.wizard.page(self.wizard.get_page_index(self.pagename))
 

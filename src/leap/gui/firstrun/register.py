@@ -224,10 +224,16 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
         generator that yields actual checks
         that are executed in a separate thread
         """
+        wizard = self.wizard()
+
         provider = self.field('provider_domain')
         username = self.userNameLineEdit.text()
         password = self.userPasswordLineEdit.text()
         password2 = self.userPassword2LineEdit.text()
+
+        pconfig = wizard.eipconfigchecker(domain=provider)
+        pconfig.defaultprovider.load()
+        pconfig.set_api_domain()
 
         def checkpass():
             # we better have here
@@ -263,14 +269,11 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             self, "showStepsFrame")
 
         def register():
-            # XXX FIXME!
-            verify = False
 
             signup = auth.LeapSRPRegister(
                 schema="https",
-                provider=provider,
-                verify=verify)
-            #import ipdb;ipdb.set_trace()
+                provider=pconfig.apidomain,
+                verify=pconfig.cacert)
             try:
                 ok, req = signup.register_user(
                     username, password)
@@ -381,7 +384,4 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
 
     def nextId(self):
         wizard = self.wizard()
-        #if not wizard:
-            #return
-        # XXX this should be called connect
-        return wizard.get_page_index('signupvalidation')
+        return wizard.get_page_index('connect')

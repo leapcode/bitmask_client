@@ -4,6 +4,8 @@ used if First Run Wizard
 """
 import logging
 
+import requests
+
 from PyQt4 import QtGui
 
 from leap.base import exceptions as baseexceptions
@@ -20,8 +22,8 @@ class ProviderSetupValidationPage(ValidationPage):
         self.current_page = "providersetupvalidation"
 
         # XXX needed anymore?
-        is_signup = self.field("is_signup")
-        self.is_signup = is_signup
+        #is_signup = self.field("is_signup")
+        #self.is_signup = is_signup
 
         self.setTitle(self.tr("Provider setup"))
         self.setSubTitle(
@@ -110,26 +112,15 @@ class ProviderSetupValidationPage(ValidationPage):
         #########################
 
         def validatecacert():
-            pass
-            #api_uri = pconfig.get('api_uri', None)
-            #try:
-                #api_cert_verified = pCertChecker.verify_api_https(api_uri)
-            #except requests.exceptions.SSLError as exc:
-                #logger.error('BUG #638. %s' % exc.message)
-                # XXX RAISE! See #638
-                # bypassing until the hostname is fixed.
-                # We probably should raise yet-another-warning
-                # here saying user that the hostname "XX.XX.XX.XX' does not
-                # match 'foo.bar.baz'
-                #api_cert_verified = True
-
-            #if not api_cert_verified:
-                # XXX update validationMsg
-                # should catch exception
-                #return False
-
-            #???
-            #ca_cert_path = checker.ca_cert_path
+            api_uri = pconfig.get('api_uri', None)
+            try:
+                pCertChecker.verify_api_https(api_uri)
+            except requests.exceptions.SSLError as exc:
+                return self.fail("Validation Error")
+            except Exception as exc:
+                return self.fail(exc.msg)
+            else:
+                return True
 
         yield((self.tr('Validating api certificate'), 90), validatecacert)
 
@@ -141,8 +132,8 @@ class ProviderSetupValidationPage(ValidationPage):
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
-        prevpage = "providerselection" if self.is_signup else "login"
         wizard = self.wizard()
+        prevpage = "login" if wizard.from_login else "providerselection"
 
         if self.errors:
             logger.debug('going back with errors')
@@ -158,14 +149,12 @@ class ProviderSetupValidationPage(ValidationPage):
 
     def nextId(self):
         wizard = self.wizard()
-        if not wizard:
-            return
-        is_signup = self.field('is_signup')
-        if is_signup is True:
-            next_ = 'signup'
-        if is_signup is False:
+        from_login = wizard.from_login
+        if from_login:
             # XXX bad name. change to connect again.
             next_ = 'signupvalidation'
+        else:
+            next_ = 'signup'
         return wizard.get_page_index(next_)
 
     def initializePage(self):
