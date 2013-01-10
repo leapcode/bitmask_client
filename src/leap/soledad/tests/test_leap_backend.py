@@ -8,6 +8,7 @@ import sys
 import copy
 import testtools
 import testscenarios
+from u1db import errors, Document
 from leap.soledad.backends import leap_backend
 from leap.soledad.tests import u1db_tests as tests
 from leap.soledad.tests.u1db_tests.test_remote_sync_target import make_http_app
@@ -15,6 +16,7 @@ from leap.soledad.tests.u1db_tests.test_backends import AllDatabaseTests
 from leap.soledad.tests.u1db_tests.test_http_database import (
     TestHTTPDatabaseSimpleOperations,
     TestHTTPDatabaseCtrWithCreds,
+    TestHTTPDatabaseIntegration
 )
 
 
@@ -102,8 +104,59 @@ class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
         self.db._request = _request
         self.db._request_json = _request_json
 
+
 class TestLeapDatabaseCtrWithCreds(TestHTTPDatabaseCtrWithCreds):
     pass
 
+
+class TestLeapDatabaseIntegration(TestHTTPDatabaseIntegration):
+
+    def test_non_existing_db(self):
+        db = leap_backend.LeapDatabase(self.getURL('not-there'))
+        self.assertRaises(errors.DatabaseDoesNotExist, db.get_doc, 'doc1')
+
+    def test__ensure(self):
+        db = leap_backend.LeapDatabase(self.getURL('new'))
+        db._ensure()
+        self.assertIs(None, db.get_doc('doc1'))
+
+    def test__delete(self):
+        self.request_state._create_database('db0')
+        db = leap_backend.LeapDatabase(self.getURL('db0'))
+        db._delete()
+        self.assertRaises(errors.DatabaseDoesNotExist,
+                          self.request_state.check_database, 'db0')
+
+    def test_open_database_existing(self):
+        self.request_state._create_database('db0')
+        db = leap_backend.LeapDatabase.open_database(self.getURL('db0'),
+                                                      create=False)
+        self.assertIs(None, db.get_doc('doc1'))
+
+    def test_open_database_non_existing(self):
+        self.assertRaises(errors.DatabaseDoesNotExist,
+                          leap_backend.LeapDatabase.open_database,
+                          self.getURL('not-there'),
+                          create=False)
+
+    def test_open_database_create(self):
+        db = leap_backend.LeapDatabase.open_database(self.getURL('new'),
+                                                      create=True)
+        self.assertIs(None, db.get_doc('doc1'))
+
+    def test_delete_database_existing(self):
+        self.request_state._create_database('db0')
+        leap_backend.LeapDatabase.delete_database(self.getURL('db0'))
+        self.assertRaises(errors.DatabaseDoesNotExist,
+                          self.request_state.check_database, 'db0')
+
+    def test_doc_ids_needing_quoting(self):
+        db0 = self.request_state._create_database('db0')
+        db = leap_backend.LeapDatabase.open_database(self.getURL('db0'),
+                                                      create=False)
+        doc = Document('%fff', None, '{}')
+        db.put_doc(doc)
+        self.assertGetDoc(db0, '%fff', doc.rev, '{}', False)
+        self.assertGetDoc(db, '%fff', doc.rev, '{}', False)
 
 load_tests = tests.load_with_scenarios
