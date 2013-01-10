@@ -16,7 +16,10 @@ from leap.soledad.tests.u1db_tests.test_backends import AllDatabaseTests
 from leap.soledad.tests.u1db_tests.test_http_database import (
     TestHTTPDatabaseSimpleOperations,
     TestHTTPDatabaseCtrWithCreds,
-    TestHTTPDatabaseIntegration
+    TestHTTPDatabaseIntegration,
+)
+from leap.soledad.tests.u1db_tests.test_http_client import (
+    TestHTTPClientBase,
 )
 
 
@@ -75,7 +78,7 @@ class LeapTests(AllDatabaseTests):
 
 
 #-----------------------------------------------------------------------------
-# The following tests come from `u1db.tests.test_http_client`.
+# The following tests come from `u1db.tests.test_http_database`.
 #-----------------------------------------------------------------------------
 
 class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
@@ -158,5 +161,14 @@ class TestLeapDatabaseIntegration(TestHTTPDatabaseIntegration):
         db.put_doc(doc)
         self.assertGetDoc(db0, '%fff', doc.rev, '{}', False)
         self.assertGetDoc(db, '%fff', doc.rev, '{}', False)
+
+
+#-----------------------------------------------------------------------------
+# The following tests come from `u1db.tests.test_http_client`.
+#-----------------------------------------------------------------------------
+
+class TestLeapClientBase(TestHTTPClientBase):
+    pass
+
 
 load_tests = tests.load_with_scenarios
