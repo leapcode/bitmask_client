@@ -14,6 +14,7 @@ from leap.soledad.tests.u1db_tests.test_remote_sync_target import make_http_app
 from leap.soledad.tests.u1db_tests.test_backends import AllDatabaseTests
 from leap.soledad.tests.u1db_tests.test_http_database import (
     TestHTTPDatabaseSimpleOperations,
+    TestHTTPDatabaseCtrWithCreds,
 )
 
 
@@ -100,5 +101,9 @@ class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
 
         self.db._request = _request
         self.db._request_json = _request_json
+
+class TestLeapDatabaseCtrWithCreds(TestHTTPDatabaseCtrWithCreds):
+    pass
+
 
 load_tests = tests.load_with_scenarios
