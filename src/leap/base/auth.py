@@ -43,7 +43,6 @@ class LeapSRPRegister(object):
     def __init__(self,
                  schema="https",
                  provider=None,
-                 #port=None,
                  verify=True,
                  register_path="1/users.json",
                  method="POST",
@@ -56,11 +55,6 @@ class LeapSRPRegister(object):
 
         self.schema = schema
 
-        # XXX FIXME
-        #self.provider = provider
-        #self.port = port
-        # XXX splitting server,port
-        # deprecate port call.
         domain, port = get_https_domain_and_port(provider)
         self.provider = domain
         self.port = port
@@ -137,6 +131,9 @@ class SRPAuth(requests.auth.AuthBase):
         self.server = server
         self.verify = verify
 
+        logger.debug('SRPAuth. verify=%s' % verify)
+        logger.debug('server: %s. username=%s' % (server, username))
+
         self.init_data = None
         self.session = requests.session()
 
@@ -168,6 +165,9 @@ class SRPAuth(requests.auth.AuthBase):
         except requests.exceptions.ConnectionError:
             raise SRPAuthenticationError(
                 "No connection made (salt).")
+        except:
+            raise SRPAuthenticationError(
+                "Unknown error (salt).")
         if init_session.status_code not in (200, ):
             raise SRPAuthenticationError(
                 "No valid response (salt).")
@@ -245,7 +245,6 @@ class SRPAuth(requests.auth.AuthBase):
         try:
             assert self.srp_usr.authenticated()
             logger.debug('user is authenticated!')
-            print 'user is authenticated!'
         except (AssertionError):
             raise SRPAuthenticationError(
                 "Auth verification failed.")
@@ -268,6 +267,8 @@ def srpauth_protected(user=None, passwd=None, server=None, verify=True):
                 auth = SRPAuth(user, passwd, server, verify)
                 kwargs['auth'] = auth
                 kwargs['verify'] = verify
+            if not args:
+                logger.warning('attempting to get from empty uri!')
             return fn(*args, **kwargs)
         return wrapper
     return srpauth

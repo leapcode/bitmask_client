@@ -287,7 +287,7 @@ class WithStepsMixIn(object):
             pagename = getattr(self, 'prev_page', None)
         if pagename is None:  # pragma: no cover
             return
-        logger.debug('cleaning wizard errors for %s' % pagename)
+        #logger.debug('cleaning wizard errors for %s' % pagename)
         self.wizard().set_validation_error(pagename, None)
 
     def populateStepsTable(self):

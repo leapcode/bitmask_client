@@ -155,7 +155,7 @@ class JSONLeapConfig(BaseLeapConfig):
             return False
 
     def load(self, fromfile=None, from_uri=None, fetcher=None,
-             force_download=False, verify=False):
+             force_download=False, verify=True):
 
         if from_uri is not None:
             fetched = self.fetch(
@@ -177,8 +177,7 @@ class JSONLeapConfig(BaseLeapConfig):
         if not fetcher:
             fetcher = self.fetcher
 
-        logger.debug('verify: %s', verify)
-        logger.debug('uri: %s', uri)
+        logger.debug('uri: %s (verify: %s)' % (uri, verify))
 
         rargs = (uri, )
         rkwargs = {'verify': verify}

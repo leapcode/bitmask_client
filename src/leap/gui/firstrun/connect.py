@@ -44,9 +44,15 @@ class ConnectionPage(ValidationPage):
         wizard = self.wizard()
         full_domain = self.field('provider_domain')
         domain, port = get_https_domain_and_port(full_domain)
-        _domain = u"%s:%s" % (domain, port) if port != 443 else unicode(domain)
 
-        verify = True
+        pconfig = wizard.eipconfigchecker(domain=domain)
+        # this should be persisted...
+        pconfig.defaultprovider.load()
+        pconfig.set_api_domain()
+
+        pCertChecker = wizard.providercertchecker(
+            domain=domain)
+        pCertChecker.set_api_domain(pconfig.apidomain)
 
         ###########################################
         # Set Credentials.
@@ -63,11 +69,6 @@ class ConnectionPage(ValidationPage):
         password = self.field(passwk)
         credentials = username, password
 
-        eipconfigchecker = wizard.eipconfigchecker(domain=_domain)
-        #XXX change for _domain (sanitized)
-        pCertChecker = wizard.providercertchecker(
-            domain=full_domain)
-
         yield(("head_sentinel", 0), lambda: None)
 
         ##################################################
@@ -75,8 +76,7 @@ class ConnectionPage(ValidationPage):
         ##################################################
         def fetcheipconf():
             try:
-                eipconfigchecker.fetch_eip_service_config(
-                    domain=full_domain)
+                pconfig.fetch_eip_service_config()
 
             # XXX get specific exception
             except Exception as exc:
@@ -92,8 +92,7 @@ class ConnectionPage(ValidationPage):
         def fetcheipcert():
             try:
                 downloaded = pCertChecker.download_new_client_cert(
-                    credentials=credentials,
-                    verify=verify)
+                    credentials=credentials)
                 if not downloaded:
                     logger.error('Could not download client cert.')
                     return False
@@ -101,6 +100,9 @@ class ConnectionPage(ValidationPage):
             except auth.SRPAuthenticationError as exc:
                 return self.fail(self.tr(
                     "Authentication error: %s" % exc.message))
+
+            except Exception as exc:
+                return self.fail(exc.message)
             else:
                 return True
 
