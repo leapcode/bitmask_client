@@ -15,7 +15,10 @@ exe = EXE(pyz,
           upx=True,
           console=False)
 coll = COLLECT(exe,
-               a.binaries,
+               a.binaries +
+	       # this will easitly break if we setup the venv
+	       # somewhere else. FIXME
+	       [('cacert.pem', '../../../../lib/python2.6/site-packages/requests/cacert.pem', 'DATA')],
                a.zipfiles,
                a.datas,
                strip=True,

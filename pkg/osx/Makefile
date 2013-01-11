@@ -1,6 +1,10 @@
 #WARNING: You need to run this with an activated VIRTUALENV.
 
 OSX = dist/LEAP\ Client.app/Contents/MacOS/
+GITC = `git rev-parse --short HEAD`
+DMG = "dist/leap-client-$(GITC).dmg"
+INST = "dist/LEAP Client installer.app"
+INSTR = "dist/LEAP Client installer.app/Contents/Resources"
 
 pkg :  dist trim installer dmg
 
@@ -16,28 +20,27 @@ trim:
 
 installer:
 	#XXX need to fix some paths there (binary, etc)
-	platypus -P install/leap-installer.platypus -y dist/LEAPClient_installer.app
+	platypus -P install/leap-installer.platypus -y $(INST)
 	#XXX should build tuntap extensions ourselves
-	mkdir "dist/LEAPClient_installer.app/Contents/Resources/StartupItems"
-	mkdir "dist/LEAPClient_installer.app/Contents/Resources/Extensions/"
-	cp -r /opt/local/Library/StartupItems/tun "dist/LEAPClient_installer.app/Contents/Resources/StartupItems/"
-	cp -r /opt/local/Library/StartupItems/tap "dist/LEAPClient_installer.app/Contents/Resources/StartupItems/"
-	cp -r /opt/local/Library/Extensions/tun.kext "dist/LEAPClient_installer.app/Contents/Resources/Extensions/"
-	cp -r /opt/local/Library/Extensions/tap.kext "dist/LEAPClient_installer.app/Contents/Resources/Extensions/"
+	mkdir $(INSTR)/StartupItems
+	mkdir $(INSTR)/Extensions
+	cp -r /opt/local/Library/StartupItems/tun $(INSTR)/StartupItems
+	cp -r /opt/local/Library/StartupItems/tap $(INSTR)/StartupItems
+	cp -r /opt/local/Library/Extensions/tun.kext $(INSTR)/Extensions
+	cp -r /opt/local/Library/Extensions/tap.kext $(INSTR)/Extensions
 	#copy the binary that we have previously built
 	#XXX not building it yet...
-	cp ../../openvpn/build/openvpn.leap "dist/LEAPClient_installer.app/Contents/Resources/"
+	cp ../../openvpn/build/openvpn.leap $(INSTR)
 	#copy startup scripts
-	cp install/client.up.sh "dist/LEAP Client.app/Contents/Resources"
-	cp install/client.down.sh "dist/LEAP Client.app/Contents/Resources"
-	cp install/ProcessNetworkChanges.plist.template "dist/LEAP Client.app/Contents/Resources"
+	cp install/client.up.sh $(INSTR) 
+	cp install/client.down.sh $(INSTR)
+	cp install/ProcessNetworkChanges.plist.template $(INSTR) 
 	#Finally, copy application bundle...
-	cp -r "dist/LEAP Client.app" "dist/LEAPClient_installer.app/Contents/Resources/"
+	cp -r "dist/LEAP Client.app" $(INSTR) 
 
 dmg :
-	#TODO: remove if already present
-	#rm dist/LEAPClient.dmg
-	hdiutil create -format UDBZ -srcfolder "dist/LEAPClient_installer.app/" "dist/LEAP Client Installer.dmg"
+	rm -f $(DMG)
+	hdiutil create -format UDBZ -srcfolder $(INST) $(DMG)
 
 clean :
 	rm -rf dist/ build/

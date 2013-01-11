@@ -14,3 +14,5 @@ echo "Loading tun/tap kernel extension"
 /Library/StartupItems/tun/tun start
 
 echo "Installation Finished!"
+
+open /Applications/LEAP\ Client.app/

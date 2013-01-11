@@ -287,8 +287,6 @@ class SelectProviderPage(InlineValidationPage):
                 wizard.set_providerconfig(
                     eipconfigchecker.defaultprovider.config)
             except requests.exceptions.SSLError:
-                # XXX we should have catched this before.
-                # but cert checking is broken.
                 return self.fail(self.tr(
                     "Could not get info from provider."))
             except requests.exceptions.ConnectionError:

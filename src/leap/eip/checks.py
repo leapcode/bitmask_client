@@ -3,6 +3,7 @@ import logging
 #import platform
 import time
 import os
+import sys
 
 import gnutls.crypto
 #import netifaces
@@ -20,6 +21,7 @@ from leap.eip import config as eipconfig
 from leap.eip import constants as eipconstants
 from leap.eip import exceptions as eipexceptions
 from leap.eip import specs as eipspecs
+from leap.util.certs import get_mac_cabundle
 from leap.util.fileutil import mkdir_p
 from leap.util.web import get_https_domain_and_port
 from leap.util.misc import null_check
@@ -165,13 +167,15 @@ class ProviderCertChecker(object):
         if autocacert and verify is True and self.cacert is not None:
             logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
+        if sys.platform == "darwin": 
+            verify = get_mac_cabundle()
         logger.debug('checking https connection')
         logger.debug('uri: %s (verify:%s)', uri, verify)
+
         try:
             self.fetcher.get(uri, verify=verify)
 
-        except requests.exceptions.SSLError:  # as exc:
-            logger.error("SSLError")
+        except requests.exceptions.SSLError as exc:
             raise eipexceptions.HttpsBadCertError
 
         except requests.exceptions.ConnectionError:
@@ -448,9 +452,15 @@ class EIPConfigChecker(object):
                 domain = config.get('provider', None)
             uri = self._get_provider_definition_uri(domain=domain)
 
+        if sys.platform == "darwin": 
+            verify = get_mac_cabundle()
+        else:
+            verify = True
+
         self.defaultprovider.load(
             from_uri=uri,
-            fetcher=self.fetcher)
+            fetcher=self.fetcher,
+            verify=verify)
         self.defaultprovider.save()
 
     def fetch_eip_service_config(self, skip_download=False,
