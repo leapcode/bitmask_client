@@ -1,7 +1,8 @@
+import sys
 import uuid
 from base64 import b64encode, b64decode
 from u1db import errors
-from u1db.remote.http_target import HTTPSyncTarget
+from u1db.sync import LocalSyncTarget
 from couchdb.client import Server, Document as CouchDocument
 from couchdb.http import ResourceNotFound
 from leap.soledad.backends.objectstore import ObjectStore
@@ -108,7 +109,6 @@ class CouchDatabase(ObjectStore):
 
     def sync(self, url, creds=None, autocreate=True):
         from u1db.sync import Synchronizer
-        from u1db.remote.http_target import CouchSyncTarget
         return Synchronizer(self, CouchSyncTarget(url, creds=creds)).sync(
             autocreate=autocreate)
 
@@ -150,7 +150,8 @@ class CouchDatabase(ObjectStore):
     def delete_database(self):
         del(self._server[self._dbname])
 
-class CouchSyncTarget(HTTPSyncTarget):
+
+class CouchSyncTarget(LocalSyncTarget):
 
     def get_sync_info(self, source_replica_uid):
         source_gen, source_trans_id = self._db._get_replica_gen_and_trans_id(
@@ -167,5 +168,4 @@ class CouchSyncTarget(HTTPSyncTarget):
         self._db._set_replica_gen_and_trans_id(
             source_replica_uid, source_replica_generation,
             source_replica_transaction_id)
-
 
