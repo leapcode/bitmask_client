@@ -4,6 +4,12 @@ For these tests to run, a couch server has to be running on (default) port
 5984.
 """
 
+try:
+    import simplejson as json
+except ImportError:
+    import json  # noqa
+
+import os
 import sys
 import copy
 import testtools
@@ -18,6 +24,17 @@ from leap.soledad.tests.u1db_tests.test_backends import (
   LocalDatabaseValidateSourceGenTests,
   LocalDatabaseWithConflictsTests,
   DatabaseIndexTests,
+)
+from leap.soledad.tests.u1db_tests.test_sync import (
+    target_scenarios,
+    _make_local_db_and_target,
+    _make_local_db_and_http_target,
+    _make_local_db_and_oauth_http_target,
+    DatabaseSyncTargetTests,
+)
+from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
+    make_http_app,
+    make_oauth_http_app,
 )
 
 
@@ -42,11 +59,11 @@ class TestCouchBackendImpl(tests.TestCase):
 
 def make_couch_database_for_test(test, replica_uid):
     return couch.CouchDatabase('http://localhost:5984', 'u1db_tests',
-                               replica_uid=replica_uid)
+                               replica_uid=replica_uid or 'test')
 
 def copy_couch_database_for_test(test, db):
     new_db = couch.CouchDatabase('http://localhost:5984', 'u1db_tests_2',
-                                 replica_uid=db.replica_uid)
+                                 replica_uid=db.replica_uid or 'test')
     new_db._transaction_log = copy.deepcopy(db._transaction_log)
     new_db._sync_log = copy.deepcopy(db._sync_log)
     gen, docs = db.get_all_docs(include_deleted=True)
@@ -120,5 +137,49 @@ class CouchWithConflictsTests(LocalDatabaseWithConflictsTests):
 #        self.db.delete_database()
 #        super(CouchIndexTests, self).tearDown()
 #
+
+
+#-----------------------------------------------------------------------------
+# The following tests come from `u1db.tests.test_sync`.
+#-----------------------------------------------------------------------------
+
+target_scenarios = [
+    ('local', {'create_db_and_target': _make_local_db_and_target}), ]
+
+
+simple_doc = tests.simple_doc
+nested_doc = tests.nested_doc
+
+
+class CouchDatabaseSyncTargetTests(DatabaseSyncTargetTests):
+
+    scenarios = (tests.multiply_scenarios(COUCH_SCENARIOS, target_scenarios))
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchDatabaseSyncTargetTests, self).tearDown()
+
+    def test_sync_exchange_returns_many_new_docs(self):
+        # This test was replicated to allow dictionaries to be compared after
+        # JSON expansion (because one dictionary may have many different
+        # serialized representations).
+        doc = self.db.create_doc_from_json(simple_doc)
+        doc2 = self.db.create_doc_from_json(nested_doc)
+        self.assertTransactionLog([doc.doc_id, doc2.doc_id], self.db)
+        new_gen, _ = self.st.sync_exchange(
+            [], 'other-replica', last_known_generation=0,
+            last_known_trans_id=None, return_doc_cb=self.receive_doc)
+        self.assertTransactionLog([doc.doc_id, doc2.doc_id], self.db)
+        self.assertEqual(2, new_gen)
+        self.assertEqual(
+            [(doc.doc_id, doc.rev, json.loads(simple_doc), 1),
+             (doc2.doc_id, doc2.rev, json.loads(nested_doc), 2)],
+            [c[:-3] + (json.loads(c[-3]), c[-2]) for c in self.other_changes])
+        if self.whitebox:
+            self.assertEqual(
+                self.db._last_exchange_log['return'],
+                {'last_gen': 2, 'docs':
+                 [(doc.doc_id, doc.rev), (doc2.doc_id, doc2.rev)]})
+
 
 load_tests = tests.load_with_scenarios
