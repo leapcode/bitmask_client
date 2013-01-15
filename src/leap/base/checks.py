@@ -120,6 +120,12 @@ class LeapNetworkChecker(object):
         # -- is it a valid ip? (there's something in util)
         # -- is it a domain?
         # -- can we resolve? -- raise NoDNSError if not.
+
+        # XXX -- needs review!
+        # We cannout use this ping implementation; it needs root.
+        # We need to look for another, poors-man implementation
+        # or wrap around system traceroute (using sh module, fi)
+        # -- kali
         packet_loss = ping.quiet_ping(gateway)[0]
         if packet_loss > constants.MAX_ICMP_PACKET_LOSS:
             raise exceptions.NoConnectionToGateway
