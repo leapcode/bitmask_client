@@ -18,7 +18,11 @@ coll = COLLECT(exe,
                a.binaries +
 	       # this will easitly break if we setup the venv
 	       # somewhere else. FIXME
-	       [('cacert.pem', '../../../../lib/python2.6/site-packages/requests/cacert.pem', 'DATA')],
+	       [('cacert.pem', '../../../../lib/python2.6/site-packages/requests/cacert.pem', 'DATA'),
+	       # XXX osx only
+	        ('libgnutls.26.dylib', '/opt/local/lib/libgnutls.26.dylib', 'BINARY'),
+	        ('libgnutls-extra.26.dylib', '/opt/local/lib/libgnutls-extra.26.dylib', 'BINARY'),
+		],
                a.zipfiles,
                a.datas,
                strip=True,
