@@ -1,5 +1,5 @@
 import unittest2 as unittest
-from leap.soledad.util import TransactionLog, SyncLog, ConflictLog
+from leap.soledad.backends.objectstore import TransactionLog, SyncLog, ConflictLog
 
 
 class LogTestCase(unittest.TestCase):
