@@ -9,6 +9,7 @@ from leap.baseapp.dialogs import ErrorDialog
 from leap.baseapp import constants
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
+from leap.base.checks import EVENT_CONNECT_REFUSED
 
 logger = logging.getLogger(name=__name__)
 
@@ -173,6 +174,11 @@ class EIPConductorAppMixin(object):
             self.updateTS.setText(ts)
             self.tun_read_bytes.setText(tun_read)
             self.tun_write_bytes.setText(tun_write)
+
+        # connection information via management interface
+        log = self.conductor.get_log()
+        error_matrix = [(EVENT_CONNECT_REFUSED, (self.start_or_stopVPN, ))]
+        self.network_checker.checker.parse_log_and_react(log, error_matrix)
 
     @QtCore.pyqtSlot()
     def start_or_stopVPN(self):

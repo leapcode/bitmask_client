@@ -12,6 +12,9 @@ from leap.base import exceptions
 
 logger = logging.getLogger(name=__name__)
 
+#EVENTS OF NOTE
+EVENT_CONNECT_REFUSED = "[ECONNREFUSED]: Connection refused (code=111)"
+
 
 class LeapNetworkChecker(object):
     """
@@ -33,6 +36,8 @@ class LeapNetworkChecker(object):
 
         if self.provider_gateway:
             checker.ping_gateway(self.provider_gateway)
+
+        checker.parse_log_and_react([], ())
 
     def check_internet_connection(self):
         try:
@@ -136,3 +141,21 @@ class LeapNetworkChecker(object):
             return True
         except socket.gaierror:
             raise exceptions.CannotResolveDomainError
+
+    def parse_log_and_react(self, log, error_matrix=None):
+        """
+        compares the recent openvpn status log to
+        strings passed in and executes the callbacks passed in.
+        @param log: openvpn log
+        @type log: list of strings
+        @param error_matrix: tuples of strings and tuples of callbacks
+        @type error_matrix: tuples strings and call backs
+        """
+        for line in log:
+            # we could compile a regex here to save some cycles up -- kali
+            for each in error_matrix:
+                error, callbacks = each
+                if error in line:
+                    for cb in callbacks:
+                        if callable(cb):
+                            cb()

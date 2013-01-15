@@ -37,6 +37,8 @@ class LeapNetworkCheckTest(BaseLeapTest):
                         "missing meth")
         self.assertTrue(hasattr(checker, "ping_gateway"),
                         "missing meth")
+        self.assertTrue(hasattr(checker, "parse_log_and_react"),
+                        "missing meth")
 
     def test_checker_should_actually_call_all_tests(self):
         checker = checks.LeapNetworkChecker()
@@ -45,6 +47,7 @@ class LeapNetworkCheckTest(BaseLeapTest):
         self.assertTrue(mc.check_internet_connection.called, "not called")
         self.assertTrue(mc.check_tunnel_default_interface.called, "not called")
         self.assertTrue(mc.is_internet_up.called, "not called")
+        self.assertTrue(mc.parse_log_and_react.called, "not called")
 
         # ping gateway only called if we pass provider_gw
         checker = checks.LeapNetworkChecker(provider_gw="0.0.0.0")
@@ -54,6 +57,7 @@ class LeapNetworkCheckTest(BaseLeapTest):
         self.assertTrue(mc.check_tunnel_default_interface.called, "not called")
         self.assertTrue(mc.ping_gateway.called, "not called")
         self.assertTrue(mc.is_internet_up.called, "not called")
+        self.assertTrue(mc.parse_log_and_react.called, "not called")
 
     def test_get_default_interface_no_interface(self):
         checker = checks.LeapNetworkChecker()
@@ -133,6 +137,40 @@ class LeapNetworkCheckTest(BaseLeapTest):
                 with patch.object(checker, "ping_gateway") as mock_ping:
                     mock_ping.side_effect = exceptions.NoConnectionToGateway
                     checker.check_internet_connection()
+
+    def test_parse_log_and_react(self):
+        checker = checks.LeapNetworkChecker()
+        to_call = Mock()
+        log = [("leap.openvpn - INFO - Mon Nov 19 13:36:24 2012 "
+                "read UDPv4 [ECONNREFUSED]: Connection refused (code=111)"]
+        err_matrix = [(checks.EVENT_CONNECT_REFUSED, (to_call, ))]
+        checker.parse_log_and_react(log, err_matrix)
+        self.assertTrue(to_call.called)
+
+        log = [("2012-11-19 13:36:26,177 - leap.openvpn - INFO - "
+                "Mon Nov 19 13:36:24 2012 ERROR: Linux route delete command "
+                "failed: external program exited"),
+               ("2012-11-19 13:36:26,178 - leap.openvpn - INFO - "
+                "Mon Nov 19 13:36:24 2012 ERROR: Linux route delete command "
+                "failed: external program exited"),
+               ("2012-11-19 13:36:26,180 - leap.openvpn - INFO - "
+                "Mon Nov 19 13:36:24 2012 ERROR: Linux route delete command "
+                "failed: external program exited"),
+               ("2012-11-19 13:36:26,181 - leap.openvpn - INFO - "
+                "Mon Nov 19 13:36:24 2012 /sbin/ifconfig tun0 0.0.0.0"),
+               ("2012-11-19 13:36:26,182 - leap.openvpn - INFO - "
+                "Mon Nov 19 13:36:24 2012 Linux ip addr del failed: external "
+                "program exited with error stat"),
+               ("2012-11-19 13:36:26,183 - leap.openvpn - INFO - "
+                "Mon Nov 19 13:36:26 2012 SIGTERM[hard,] received, process"
+                "exiting"), ]
+        to_call.reset_mock()
+        checker.parse_log_and_react(log, err_matrix)
+        self.assertFalse(to_call.called)
+
+        to_call.reset_mock()
+        checker.parse_log_and_react([], err_matrix)
+        self.assertFalse(to_call.called)
 
     @unittest.skipUnless(_uid == 0, "root only")
     def test_ping_gateway(self):

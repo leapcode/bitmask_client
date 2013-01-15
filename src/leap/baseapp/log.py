@@ -11,6 +11,7 @@ class LogPaneMixin(object):
     a simple log pane
     that writes new lines as they come
     """
+    EXCLUDES = ('MANAGEMENT',)
 
     def createLogBrowser(self):
         """
@@ -60,6 +61,7 @@ class LogPaneMixin(object):
         simple slot: writes new line to logger Pane.
         """
         msg = line[:-1]
-        if self.debugmode:
+        if self.debugmode and all(map(lambda w: w not in msg,
+                                      LogPaneMixin.EXCLUDES)):
             self.logbrowser.append(msg)
-        vpnlogger.info(msg)
+            vpnlogger.info(msg)
