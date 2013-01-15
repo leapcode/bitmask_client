@@ -17,6 +17,8 @@ class NetworkCheckerAppMixin(object):
     initialize an instance of the Network Checker,
     which gathers error and passes them on.
     """
+    ERR_NETERR = False
+
     def __init__(self, *args, **kwargs):
         provider = kwargs.pop('provider', None)
         if provider:
@@ -41,11 +43,19 @@ class NetworkCheckerAppMixin(object):
         slot that receives a network exceptions
         and raises a user error message
         """
-        logger.debug('handling network exception')
-        logger.error(exc.message)
-        dialog = ErrorDialog(parent=self)
+        # FIXME this should not HANDLE anything after
+        # the network check thread has been stopped.
 
-        if exc.critical:
-            dialog.criticalMessage(exc.usermessage, "network error")
-        else:
-            dialog.warningMessage(exc.usermessage, "network error")
+        logger.debug('handling network exception')
+        if not self.ERR_NETERR:
+            self.ERR_NETERR = True
+
+            logger.error(exc.message)
+            dialog = ErrorDialog(parent=self)
+            if exc.critical:
+                dialog.criticalMessage(exc.usermessage, "network error")
+            else:
+                dialog.warningMessage(exc.usermessage, "network error")
+
+            self.start_or_stopVPN()
+            self.network_checker.stop()

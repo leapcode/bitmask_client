@@ -92,14 +92,17 @@ class OpenVPNManagement(object):
             logger.error('socket error')
             self._close_management_socket(announce=False)
             return []
-        buf = self.tn.read_until(b"END", 2)
-        self._seek_to_eof()
-        blist = buf.split('\r\n')
-        if blist[-1].startswith('END'):
-            del blist[-1]
-            return blist
-        else:
-            return []
+        try:
+            buf = self.tn.read_until(b"END", 2)
+            self._seek_to_eof()
+            blist = buf.split('\r\n')
+            if blist[-1].startswith('END'):
+                del blist[-1]
+                return blist
+            else:
+                return []
+        except socket.error as exc:
+            logger.debug('socket error: %s' % exc.message)
 
     def _send_short_command(self, cmd):
         """
@@ -329,12 +332,12 @@ to be triggered for each one of them.
         #use _only_ signal_maps instead
 
         logger.debug('_launch_openvpn called')
-        logger.debug('watcher_cb: %s' % self.watcher_cb)
         if self.watcher_cb is not None:
             linewrite_callback = self.watcher_cb
         else:
             #XXX get logger instead
-            linewrite_callback = lambda line: logger.debug('watcher: %s' % line)
+            linewrite_callback = lambda line: logger.debug(
+                    'watcher: %s' % line)
 
         # the partial is not
         # being applied now because we're not observing the process
@@ -342,7 +345,8 @@ to be triggered for each one of them.
         # here since it will be handy for observing patterns in the
         # thru-the-manager updates (with regex)
         observers = (linewrite_callback,
-                     partial(lambda con_status, line: linewrite_callback, self.status))
+                     partial(lambda con_status,
+                             line: linewrite_callback, self.status))
         subp, watcher = spawn_and_watch_process(
             self.command,
             self.args,

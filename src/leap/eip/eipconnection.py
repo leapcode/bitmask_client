@@ -27,6 +27,8 @@ class StatusMixIn(object):
     # Should separate EIPConnectionStatus (self.status)
     # from the OpenVPN state/status command and parsing.
 
+    ERR_CONNREFUSED = False
+
     def connection_state(self):
         """
         returns the current connection state
@@ -49,7 +51,9 @@ class StatusMixIn(object):
             state = self.get_connection_state()
         except eip_exceptions.ConnectionRefusedError:
             # connection refused. might be not ready yet.
-            logger.warning('connection refused')
+            if not self.ERR_CONNREFUSED:
+                logger.warning('connection refused')
+                self.ERR_CONNREFUSED = True
             return
         if not state:
             #logger.debug('no state')
