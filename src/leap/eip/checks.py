@@ -167,7 +167,7 @@ class ProviderCertChecker(object):
         if autocacert and verify is True and self.cacert is not None:
             logger.debug('verify cert: %s', self.cacert)
             verify = self.cacert
-        if sys.platform == "darwin": 
+        if sys.platform == "darwin":
             verify = get_mac_cabundle()
         logger.debug('checking https connection')
         logger.debug('uri: %s (verify:%s)', uri, verify)
