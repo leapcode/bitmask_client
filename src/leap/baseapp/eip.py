@@ -22,6 +22,7 @@ class EIPConductorAppMixin(object):
     Connects the eip connect/disconnect logic
     to the switches in the app (buttons/menu items).
     """
+    ERR_DIALOG = False
 
     def __init__(self, *args, **kwargs):
         opts = kwargs.pop('opts')
@@ -94,6 +95,15 @@ class EIPConductorAppMixin(object):
         in the future we plan to derive errors to
         our log viewer.
         """
+        if self.ERR_DIALOG:
+            logger.warning('another error dialog suppressed')
+            return
+
+        # XXX this is actually a one-shot.
+        # On the dialog there should be 
+        # a reset signal binded to the ok button
+        # or something like that.
+        self.ERR_DIALOG = True
 
         if getattr(error, 'usermessage', None):
             message = error.usermessage
@@ -105,6 +115,7 @@ class EIPConductorAppMixin(object):
         # launching dialog.
         # (so Qt tests can assert stuff)
 
+
         if error.critical:
             logger.critical(error.message)
             #critical error (non recoverable),
@@ -113,6 +124,7 @@ class EIPConductorAppMixin(object):
             ErrorDialog(errtype="critical",
                         msg=message,
                         label="critical error")
+
         elif error.warning:
             logger.warning(error.message)
 

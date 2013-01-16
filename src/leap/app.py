@@ -89,6 +89,10 @@ def main():
     app.setApplicationName("leap")
     app.setOrganizationDomain("leap.se")
 
+    # XXX we could check here
+    # if leap-client is already running, and abort
+    # gracefully in that case.
+
     if not QSystemTrayIcon.isSystemTrayAvailable():
         QMessageBox.critical(None, "Systray",
                              "I couldn't detect"

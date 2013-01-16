@@ -106,11 +106,11 @@ class LeapBadConfigFetchedError(Warning):
         "an error occurred during configuratio of leap services")
 
 
-class OpenVPNAlreadyRunning(EIPClientError):
+class OpenVPNAlreadyRunning(CriticalError):
     message = "Another OpenVPN Process is already running."
     usermessage = translate(
         "EIPErrors",
-        "Another OpenVPN Process has been detected."
+        "Another OpenVPN Process has been detected. "
         "Please close it before starting leap-client")
 
 

@@ -1,6 +1,7 @@
 """constants to be used in base module"""
 from leap import __branding
-APP_NAME = __branding.get("short_name", "leap")
+APP_NAME = __branding.get("short_name", "leap-client")
+OPENVPN_BIN = "openvpn"
 
 # default provider placeholder
 # using `example.org` we make sure that this

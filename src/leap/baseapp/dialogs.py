@@ -23,7 +23,8 @@ class ErrorDialog(QDialog):
 
     def warningMessage(self, msg, label):
         msgBox = QMessageBox(QMessageBox.Warning,
-                             "QMessageBox.warning()", msg,
+                             "LEAP Client Error",
+                             msg,
                              QMessageBox.NoButton, self)
         msgBox.addButton("&Ok", QMessageBox.AcceptRole)
         if msgBox.exec_() == QMessageBox.AcceptRole:
@@ -34,7 +35,8 @@ class ErrorDialog(QDialog):
 
     def criticalMessage(self, msg, label):
         msgBox = QMessageBox(QMessageBox.Critical,
-                             "QMessageBox.critical()", msg,
+                             "LEAP Client Error",
+                             msg,
                              QMessageBox.NoButton, self)
         msgBox.addButton("&Ok", QMessageBox.AcceptRole)
         msgBox.exec_()
@@ -49,7 +51,8 @@ class ErrorDialog(QDialog):
 
     def confirmMessage(self, msg, label, action):
         msgBox = QMessageBox(QMessageBox.Critical,
-                             "QMessageBox.critical()", msg,
+                             self.tr("LEAP Client Error"),
+                             msg,
                              QMessageBox.NoButton, self)
         msgBox.addButton("&Ok", QMessageBox.AcceptRole)
         msgBox.addButton("&Cancel", QMessageBox.RejectRole)

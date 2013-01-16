@@ -2,18 +2,21 @@
 OpenVPN Connection
 """
 from __future__ import (print_function)
+from functools import partial
 import logging
 import os
 import psutil
 import shutil
 import select
 import socket
-from functools import partial
+from time import sleep
 
 logger = logging.getLogger(name=__name__)
 
 from leap.base.connection import Connection
+from leap.base.constants import OPENVPN_BIN
 from leap.util.coroutines import spawn_and_watch_process
+from leap.util.misc import get_openvpn_pids
 
 from leap.eip.udstelnet import UDSTelnet
 from leap.eip import config as eip_config
@@ -277,23 +280,20 @@ to be triggered for each one of them.
 
     # checks
 
+
     def _check_if_running_instance(self):
         """
         check if openvpn is already running
         """
-        try:
-            #FIXME this gives DeprecationWarning
-            for process in psutil.get_process_list():
-                if process.name == "openvpn":
-                    logger.debug('an openvpn instance is already running.')
-                    logger.debug('attempting to stop openvpn instance.')
-                    if not self._stop_openvpn():
-                        raise eip_exceptions.OpenVPNAlreadyRunning
-
-        except psutil.error.NoSuchProcess:
-            logger.debug('detected a process which died. passing.')
-
-        logger.debug('no openvpn instance found.')
+        openvpn_pids = get_openvpn_pids()
+        if openvpn_pids:
+            logger.debug('an openvpn instance is already running.')
+            logger.debug('attempting to stop openvpn instance.')
+            if not self._stop_openvpn():
+                raise eip_exceptions.OpenVPNAlreadyRunning
+            return
+        else:
+            logger.debug('no openvpn instance found.')
 
     def _set_ovpn_command(self):
         try:
@@ -334,7 +334,7 @@ to be triggered for each one of them.
         #deprecate watcher_cb,
         #use _only_ signal_maps instead
 
-        logger.debug('_launch_openvpn called')
+        #logger.debug('_launch_openvpn called')
         if self.watcher_cb is not None:
             linewrite_callback = self.watcher_cb
         else:
@@ -364,23 +364,24 @@ to be triggered for each one of them.
         interface
         """
         # XXX method a bit too long, split
-        logger.debug("terminating openvpn process...")
+        logger.debug("atempting to terminate openvpn process...")
         if self.connected():
             try:
                 self._send_command("signal SIGTERM\n")
+                sleep(1)
+                if not self.subp:  # XXX ???
+                    return True
             except socket.error:
                 logger.warning('management socket died')
                 return
 
-        if self.subp:
-            # ???
-            return True
 
         #shutting openvpn failured
         #try patching in old openvpn host and trying again
+        # XXX could be more than one!
         process = self._get_openvpn_process()
         if process:
-            logger.debug('process :%s' % process)
+            logger.debug('process: %s' % process.name)
             cmdline = process.cmdline
 
             manag_flag = "--management"
@@ -401,10 +402,8 @@ to be triggered for each one of them.
         return True
 
     def _get_openvpn_process(self):
-        # plist = [p for p in psutil.get_process_list() if p.name == "openvpn"]
-        # return plist[0] if plist else None
-        for process in psutil.get_process_list():
-            if process.name == "openvpn":
+        for process in psutil.process_iter():
+            if OPENVPN_BIN in process.name:
                 return process
         return None
 
