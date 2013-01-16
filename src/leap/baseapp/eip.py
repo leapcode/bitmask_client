@@ -10,6 +10,7 @@ from leap.baseapp import constants
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
 from leap.base.checks import EVENT_CONNECT_REFUSED
+from leap.util import geo
 
 logger = logging.getLogger(name=__name__)
 
@@ -175,6 +176,8 @@ class EIPConductorAppMixin(object):
             self.status_label.setText(con_status)
             self.ip_label.setText(ip)
             self.remote_label.setText(remote)
+            self.remote_country.setText(
+                geo.get_country_name(remote))
 
         # status i/o
 
