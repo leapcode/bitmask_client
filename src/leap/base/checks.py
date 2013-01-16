@@ -61,6 +61,9 @@ class LeapNetworkChecker(object):
             raise exceptions.NoInternetConnection(error)
         except (requests.HTTPError, requests.RequestException) as e:
             raise exceptions.NoInternetConnection(e.message)
+
+        # XXX should redirect this to netcheck logger.
+        # and don't clutter main log.
         logger.debug('Network appears to be up.')
 
     def is_internet_up(self):
@@ -83,8 +86,8 @@ class LeapNetworkChecker(object):
 
     def _get_def_iface_osx(self):
         default_iface = None
-        gateway = None
-        routes = list(sh.route('-n', 'get',  ICMP_TARGET, _iter=True)) 
+        #gateway = None
+        routes = list(sh.route('-n', 'get',  ICMP_TARGET, _iter=True))
         iface = filter(lambda l: "interface" in l, routes)
         if not iface:
             return None, None
@@ -96,7 +99,7 @@ class LeapNetworkChecker(object):
         gw = re.findall('\d+\.\d+\.\d+\.\d+', _gw[0])[0]
         return default_iface, gw
 
-    def _get_tunnel_iface_linux():
+    def _get_tunnel_iface_linux(self):
         # XXX review.
         # valid also when local router has a default entry?
         route_table = self._get_route_table_linux()
@@ -129,9 +132,8 @@ class LeapNetworkChecker(object):
                 # in the logs
                 raise exceptions.TunnelNotDefaultRouteError
         else:
-            logger.debug('PLATFORM !!! %s', _platform)
+            #logger.debug('PLATFORM !!! %s', _platform)
             raise NotImplementedError
-
 
     def _get_def_iface_linux(self):
         default_iface = None
@@ -145,7 +147,6 @@ class LeapNetworkChecker(object):
                 default_iface = iface
                 break
         return default_iface, gateway
-
 
     def get_default_interface_gateway(self):
         """
@@ -166,8 +167,7 @@ class LeapNetworkChecker(object):
         if default_iface not in netifaces.interfaces():
             raise exceptions.InterfaceNotFoundError
         logger.debug('-- default iface', default_iface)
-        return default_iface, gateway
-
+        return default_iface, gw
 
     def ping_gateway(self, gateway):
         # TODO: Discuss how much packet loss (%) is acceptable.
