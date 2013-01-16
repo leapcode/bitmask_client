@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 import logging
 import platform
+import re
 import socket
 
 import netifaces
 import ping
 import requests
+import sh
 
 from leap.base import constants
 from leap.base import exceptions
 
 logger = logging.getLogger(name=__name__)
+_platform = platform.system()
 
 #EVENTS OF NOTE
 EVENT_CONNECT_REFUSED = "[ECONNREFUSED]: Connection refused (code=111)"
+
+ICMP_TARGET = "8.8.8.8"
 
 
 class LeapNetworkChecker(object):
@@ -43,6 +48,7 @@ class LeapNetworkChecker(object):
         try:
             # XXX remove this hardcoded random ip
             # ping leap.se or eip provider instead...?
+            # XXX could use icmp instead..
             requests.get('http://216.172.161.165')
         except requests.ConnectionError as e:
             error = "Unidentified Connection Error"
@@ -65,58 +71,103 @@ class LeapNetworkChecker(object):
             return False
         return True
 
-    def check_tunnel_default_interface(self):
-        """
-        Raises an TunnelNotDefaultRouteError
-        (including when no routes are present)
-        """
-        if not platform.system() == "Linux":
-            raise NotImplementedError
+    def _get_route_table_linux(self):
 
-        # XXX GET DARWIN IMPLEMENTATION
-
-        f = open("/proc/net/route")
-        route_table = f.readlines()
-        f.close()
+        with open("/proc/net/route") as f:
+            route_table = f.readlines()
         #toss out header
         route_table.pop(0)
-
         if not route_table:
             raise exceptions.TunnelNotDefaultRouteError()
+        return route_table
 
+    def _get_def_iface_osx(self):
+        default_iface = None
+        gateway = None
+        routes = list(sh.route('-n', 'get',  ICMP_TARGET, _iter=True)) 
+        iface = filter(lambda l: "interface" in l, routes)
+        if not iface:
+            return None, None
+        def_ifacel = re.findall('\w+\d', iface[0])
+        default_iface = def_ifacel[0] if def_ifacel else None
+        if not default_iface:
+            return None, None
+        _gw = filter(lambda l: "gateway" in l, routes)
+        gw = re.findall('\d+\.\d+\.\d+\.\d+', _gw[0])[0]
+        return default_iface, gw
+
+    def _get_tunnel_iface_linux():
+        # XXX review.
+        # valid also when local router has a default entry?
+        route_table = self._get_route_table_linux()
         line = route_table.pop(0)
         iface, destination = line.split('\t')[0:2]
         if not destination == '00000000' or not iface == 'tun0':
             raise exceptions.TunnelNotDefaultRouteError()
+        return True
 
-    def get_default_interface_gateway(self):
-        """only impletemented for linux so far."""
-        if not platform.system() == "Linux":
+    def check_tunnel_default_interface(self):
+        """
+        Raises an TunnelNotDefaultRouteError
+        if tun0 is not the chosen default route
+        (including when no routes are present)
+        """
+        #logger.debug('checking tunnel default interface...')
+
+        if _platform == "Linux":
+            valid = self._get_tunnel_iface_linux()
+            return valid
+        elif _platform == "Darwin":
+            default_iface, gw = self._get_def_iface_osx()
+            #logger.debug('iface: %s', default_iface)
+            if default_iface != "tun0":
+                logger.debug('tunnel not default route! gw: %s', default_iface)
+                # XXX should catch this and act accordingly...
+                # but rather, this test should only be launched
+                # when we have successfully completed a connection
+                # ... TRIGGER: Connection stablished (or whatever it is)
+                # in the logs
+                raise exceptions.TunnelNotDefaultRouteError
+        else:
+            logger.debug('PLATFORM !!! %s', _platform)
             raise NotImplementedError
 
-        # XXX use psutil
-        f = open("/proc/net/route")
-        route_table = f.readlines()
-        f.close()
-        #toss out header
-        route_table.pop(0)
 
+    def _get_def_iface_linux(self):
         default_iface = None
         gateway = None
+
+        route_table = self._get_route_table_linux()
         while route_table:
             line = route_table.pop(0)
             iface, destination, gateway = line.split('\t')[0:3]
             if destination == '00000000':
                 default_iface = iface
                 break
+        return default_iface, gateway
+
+
+    def get_default_interface_gateway(self):
+        """
+        gets the interface we are going thru.
+        (this should be merged with check tunnel default interface,
+        imo...)
+        """
+        if _platform == "Linux":
+            default_iface, gw = self.get_def_iface_linux()
+        elif _platform == "Darwin":
+            default_iface, gw = self.get_def_iface_osx()
+        else:
+            raise NotImplementedError
 
         if not default_iface:
             raise exceptions.NoDefaultInterfaceFoundError
 
         if default_iface not in netifaces.interfaces():
             raise exceptions.InterfaceNotFoundError
-
+        logger.debug('-- default iface', default_iface)
         return default_iface, gateway
+
 
     def ping_gateway(self, gateway):
         # TODO: Discuss how much packet loss (%) is acceptable.
@@ -132,6 +183,7 @@ class LeapNetworkChecker(object):
         # or wrap around system traceroute (using sh module, fi)
         # -- kali
         packet_loss = ping.quiet_ping(gateway)[0]
+        logger.debug('packet loss %s' % packet_loss)
         if packet_loss > constants.MAX_ICMP_PACKET_LOSS:
             raise exceptions.NoConnectionToGateway
 

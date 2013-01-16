@@ -6,6 +6,7 @@ import logging
 import os
 import psutil
 import shutil
+import select
 import socket
 from functools import partial
 
@@ -103,6 +104,8 @@ class OpenVPNManagement(object):
                 return []
         except socket.error as exc:
             logger.debug('socket error: %s' % exc.message)
+        except select.error as exc:    
+            logger.debug('select error: %s' % exc.message)
 
     def _send_short_command(self, cmd):
         """

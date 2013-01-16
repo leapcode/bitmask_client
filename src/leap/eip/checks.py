@@ -187,7 +187,6 @@ class ProviderCertChecker(object):
 
     def check_new_cert_needed(self, skip_download=False, verify=True):
         # XXX add autocacert
-        logger.debug('is new cert needed?')
         if not self.is_cert_valid(do_raise=False):
             logger.debug('cert needed: true')
             self.download_new_client_cert(

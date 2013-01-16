@@ -14,4 +14,5 @@ def get_mac_cabundle():
     #logger.error('VERIFY PATH = %s' % verify)
     exists = os.path.isfile(verify)
     #logger.error('do exist? %s', exists)
-    return verify
+    if exists:
+        return verify

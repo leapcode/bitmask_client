@@ -49,6 +49,13 @@ def main():
     logger.addHandler(console)
 
     #logger.debug(opts)
+    import os
+    ldlib = os.environ.get("LD_LIBRARY_PATH", None)
+    dyldlib = os.environ.get("DYLD_LIBRARY_PATH", None)
+
+    logger.debug("LD_LIBRARY_PATH %s" % ldlib)
+    logger.debug("DYLD_LIBRARY_PATH %s" % dyldlib)
+
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('LEAP client version %s', VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')

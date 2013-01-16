@@ -253,7 +253,7 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     #if daemon is True:
         #opts.append('--daemon')
 
-    logger.debug('vpn options: %s', opts)
+    logger.debug('vpn options: %s', ' '.join(opts))
     return opts
 
 
