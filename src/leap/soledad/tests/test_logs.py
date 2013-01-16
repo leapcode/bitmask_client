@@ -1,3 +1,4 @@
+import ipdb
 import unittest2 as unittest
 from leap.soledad.backends.objectstore import TransactionLog, SyncLog, ConflictLog
 
@@ -39,7 +40,7 @@ class LogTestCase(unittest.TestCase):
             (1, 'tran_1'), 'error getting replica gen and trans id')
         # test setting
         log.set_replica_gen_and_trans_id('replica_1', 2, 'tran_12')
-        self.assertEqual(len(log._log), 3, 'error in log size after setting')
+        self.assertEqual(len(log._data), 3, 'error in log size after setting')
         self.assertEqual(log.get_replica_gen_and_trans_id('replica_1'),
             (2, 'tran_12'), 'error setting replica gen and trans id')
         self.assertEqual(log.get_replica_gen_and_trans_id('replica_2'),

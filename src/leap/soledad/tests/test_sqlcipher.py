@@ -40,7 +40,7 @@ from leap.soledad.tests.u1db_tests.test_open import (
 PASSWORD = '123456'
 
 #-----------------------------------------------------------------------------
-# The following tests come from `u1db.tests.test_common_backends`.
+# The following tests come from `u1db.tests.test_common_backend`.
 #-----------------------------------------------------------------------------
 
 class TestSQLCipherBackendImpl(tests.TestCase):

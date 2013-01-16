@@ -85,7 +85,7 @@ class SoledadTest(unittest.TestCase):
 
 
 #-----------------------------------------------------------------------------
-# The following tests come from `u1db.tests.test_common_backends`.
+# The following tests come from `u1db.tests.test_common_backend`.
 #-----------------------------------------------------------------------------
 
 class TestLeapBackendImpl(tests.TestCase):

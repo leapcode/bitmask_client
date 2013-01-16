@@ -277,45 +277,59 @@ class ObjectStore(CommonBackend):
 
 
 #----------------------------------------------------------------------------
-# U1DB's Transaction, Sync, and conflict Logs
+# U1DB's TransactionLog, SyncLog, ConflictLog, and Index
 #----------------------------------------------------------------------------
 
 class SimpleList(object):
     def __init__(self):
-        self._log = []
+        self._data = []
+
+    def _set_data(self, data):
+        self._data = data
+
+    def _get_data(self):
+        return self._data
+
+    data = property(
+        _get_data, _set_data, doc="List contents.")
+
+    def append(self, msg):
+        self._data.append(msg)
+
+    def reduce(self, func, initializer=None):
+        return reduce(func, self._data, initializer)
+
+    def map(self, func):
+        return map(func, self._get_data())
+
+    def filter(self, func):
+        return filter(func, self._get_data())
+
+
+class SimpleLog(SimpleList):
 
     def _set_log(self, log):
-        self._log = log
+        self._data = log
 
     def _get_log(self):
-        return self._log
+        return self._data
 
     log = property(
         _get_log, _set_log, doc="Log contents.")
 
-    def append(self, msg):
-        self._log.append(msg)
 
-    def reduce(self, func, initializer=None):
-        return reduce(func, self._log, initializer)
-
-    def map(self, func):
-        return map(func, self._get_log())
-
-    def filter(self, func):
-        return filter(func, self._get_log())
-
-
-class TransactionLog(SimpleList):
+class TransactionLog(SimpleLog):
     """
     An ordered list of (generation, doc_id, transaction_id) tuples.
     """
 
     def _set_log(self, log):
-        self._log = log
+        self._data = log
 
-    def _get_log(self):
-        return sorted(self._log, reverse=True)
+    def _get_data(self, reverse=True):
+        return sorted(self._data, reverse=reverse)
+
+    _get_log = _get_data
 
     log = property(
         _get_log, _set_log, doc="Log contents.")
@@ -333,7 +347,7 @@ class TransactionLog(SimpleList):
         """
         Return the current generation and transaction id.
         """
-        if not self._log:
+        if not self._get_log():
             return(0, '')
         info = self.map(lambda x: (x[0], x[2]))
         return reduce(lambda x, y: x if (x[0] > y[0]) else y, info)
@@ -378,10 +392,10 @@ class TransactionLog(SimpleList):
         """
         Return only a list of (doc_id, transaction_id)
         """
-        return map(lambda x: (x[1], x[2]), sorted(self._log))
+        return map(lambda x: (x[1], x[2]), sorted(self._get_log(reverse=False)))
 
 
-class SyncLog(SimpleList):
+class SyncLog(SimpleLog):
     """
     A list of (replica_id, generation, transaction_id) tuples.
     """
@@ -407,11 +421,11 @@ class SyncLog(SimpleList):
         Set the last-known generation and transaction id for the other
         database replica.
         """
-        self._log = self.filter(lambda x: x[0] != other_replica_uid)
+        self._set_log(self.filter(lambda x: x[0] != other_replica_uid))
         self.append((other_replica_uid, other_generation,
                      other_transaction_id))
 
-class ConflictLog(SimpleList):
+class ConflictLog(SimpleLog):
     """
     A list of (doc_id, my_doc_rev, my_content) tuples.
     """
@@ -422,8 +436,8 @@ class ConflictLog(SimpleList):
     
     def delete_conflicts(self, conflicts):
         for conflict in conflicts:
-            self._log = self.filter(lambda x:
-                         x[0] != conflict[0] or x[1] != conflict[1])
+            self._set_log(self.filter(lambda x:
+                          x[0] != conflict[0] or x[1] != conflict[1]))
 
     def get_conflicts(self, doc_id):
         conflicts = self.filter(lambda x: x[0] == doc_id)
