@@ -31,6 +31,8 @@ from leap.soledad.tests.u1db_tests.test_sync import (
     _make_local_db_and_http_target,
     _make_local_db_and_oauth_http_target,
     DatabaseSyncTargetTests,
+    DatabaseSyncTests,
+    sync_via_synchronizer,
 )
 from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
     make_http_app,
@@ -58,18 +60,19 @@ class TestCouchBackendImpl(tests.TestCase):
 #-----------------------------------------------------------------------------
 
 def make_couch_database_for_test(test, replica_uid):
-    return couch.CouchDatabase('http://localhost:5984', 'u1db_tests',
+    return couch.CouchDatabase('http://localhost:5984', replica_uid,
                                replica_uid=replica_uid or 'test')
 
 def copy_couch_database_for_test(test, db):
-    new_db = couch.CouchDatabase('http://localhost:5984', 'u1db_tests_2',
-                                 replica_uid=db.replica_uid or 'test')
-    new_db._transaction_log = copy.deepcopy(db._transaction_log)
-    new_db._sync_log = copy.deepcopy(db._sync_log)
+    new_db = couch.CouchDatabase('http://localhost:5984',  db._replica_uid+'_copy',
+                                 replica_uid=db._replica_uid or 'test')
     gen, docs = db.get_all_docs(include_deleted=True)
     for doc in docs:
         new_db._put_doc(doc)
-    new_db._ensure_u1db_data()
+    new_db._transaction_log._log = copy.deepcopy(db._transaction_log._log)
+    new_db._sync_log._log = copy.deepcopy(db._sync_log._log)
+    new_db._conflict_log._log = copy.deepcopy(db._conflict_log._log)
+    new_db._set_u1db_data()
     return new_db
 
 
@@ -136,7 +139,7 @@ class CouchWithConflictsTests(LocalDatabaseWithConflictsTests):
 #    def tearDown(self):
 #        self.db.delete_database()
 #        super(CouchIndexTests, self).tearDown()
-#
+
 
 
 #-----------------------------------------------------------------------------
@@ -180,6 +183,36 @@ class CouchDatabaseSyncTargetTests(DatabaseSyncTargetTests):
                 self.db._last_exchange_log['return'],
                 {'last_gen': 2, 'docs':
                  [(doc.doc_id, doc.rev), (doc2.doc_id, doc2.rev)]})
+
+
+sync_scenarios = []
+for name, scenario in COUCH_SCENARIOS:
+    scenario = dict(scenario)
+    scenario['do_sync'] = sync_via_synchronizer
+    sync_scenarios.append((name, scenario))
+    scenario = dict(scenario)
+
+#class CouchDatabaseSyncTests(DatabaseSyncTests):
+#
+#    scenarios = sync_scenarios
+#
+#    def setUp(self):
+#        self.db  = None
+#        self.db1 = None
+#        self.db2 = None
+#        self.db3 = None
+#        super(CouchDatabaseSyncTests, self).setUp()
+#
+#    def tearDown(self):
+#        self.db and self.db.delete_database()
+#        self.db1 and self.db1.delete_database()
+#        self.db2 and self.db2.delete_database()
+#        self.db3 and self.db3.delete_database()
+#        db = self.create_database('test1_copy', 'source')
+#        db.delete_database()
+#        db = self.create_database('test2_copy', 'target')
+#        db.delete_database()
+#        super(CouchDatabaseSyncTests, self).tearDown()
 
 
 load_tests = tests.load_with_scenarios

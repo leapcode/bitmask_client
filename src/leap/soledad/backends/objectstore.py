@@ -212,7 +212,7 @@ class ObjectStore(CommonBackend):
         """
         NotImplementedError(self._initialize)
 
-    def _get_u1db_data(self, u1db_data_doc_id):
+    def _get_u1db_data(self):
         """
         Fetch u1db configuration data from backend storage.
         """

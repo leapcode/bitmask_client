@@ -41,10 +41,8 @@ class CouchDatabase(ObjectStore):
     #-------------------------------------------------------------------------
 
     def _get_doc(self, doc_id, check_for_conflicts=False):
-        """Get just the document content, without fancy handling.
-        
-        Conflicts do not happen on server side, so there's no need to check
-        for them.
+        """
+        Get just the document content, without fancy handling.
         """
         cdoc = self._database.get(doc_id)
         if cdoc is None:
