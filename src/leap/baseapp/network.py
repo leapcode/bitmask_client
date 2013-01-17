@@ -21,12 +21,13 @@ class NetworkCheckerAppMixin(object):
 
     def __init__(self, *args, **kwargs):
         provider = kwargs.pop('provider', None)
+        self.network_checker = None
         if provider:
             self.init_network_checker(provider)
 
     def init_network_checker(self, provider):
         null_check(provider, "provider_domain")
-        if not hasattr(self, 'network_checker'):
+        if not self.network_checker:
             self.network_checker = NetworkCheckerThread(
                 error_cb=self.networkError.emit,
                 debug=self.debugmode,
