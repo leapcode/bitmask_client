@@ -2,7 +2,7 @@
 
 import os
 import time
-from sqlite3 import dbapi2
+from sqlite3 import dbapi2, DatabaseError
 import unittest2 as unittest
 from StringIO import StringIO
 import threading
@@ -12,10 +12,13 @@ from u1db import (
     errors,
     query_parser,
     )
-from u1db.backends.sqlite_backend import SQLiteDatabase
+from u1db.backends.sqlite_backend import SQLitePartialExpandDatabase
 
 # soledad stuff.
-from leap.soledad.backends.sqlcipher import SQLCipherDatabase
+from leap.soledad.backends.sqlcipher import (
+    SQLCipherDatabase,
+    DatabaseIsNotEncrypted,
+)
 from leap.soledad.backends.sqlcipher import open as u1db_open
 
 # u1db tests stuff.
@@ -130,7 +133,7 @@ class TestSQLCipherDatabase(TestSQLiteDatabase):
 
         t2 = None  # will be a thread
 
-        class SQLCipherDatabaseTesting(SQLiteDatabase):
+        class SQLCipherDatabaseTesting(SQLitePartialExpandDatabase):
             _index_storage_value = "testing"
 
             def __init__(self, dbname, ntry):
@@ -298,3 +301,51 @@ class SQLCipherOpen(TestU1DBOpen):
         db2 = u1db_open(self.db_path, password=PASSWORD, create=False)
         self.addCleanup(db2.close)
         self.assertIsInstance(db2, SQLCipherDatabase)
+
+#-----------------------------------------------------------------------------
+# Tests for actual encryption of the database
+#-----------------------------------------------------------------------------
+
+class SQLCipherEncryptionTest(unittest.TestCase):
+
+    DB_FILE = '/tmp/test.db'
+
+    def delete_dbfiles(self):
+        for dbfile in [self.DB_FILE]:
+            if os.path.exists(dbfile):
+                os.unlink(dbfile)
+
+    def setUp(self):
+        self.delete_dbfiles()
+
+    def tearDown(self):
+        self.delete_dbfiles()
+
+    def test_try_to_open_encrypted_db_with_sqlite_backend(self):
+        db = SQLCipherDatabase(self.DB_FILE, PASSWORD)
+        doc = db.create_doc_from_json(tests.simple_doc)
+        db.close()
+        try:
+            # trying to open an encrypted database with the regular u1db backend
+            # should raise a DatabaseError exception.
+            SQLitePartialExpandDatabase(self.DB_FILE)
+            raise DatabaseIsNotEncrypted()
+        except DatabaseError:
+            # at this point we know that the regular U1DB sqlcipher backend
+            # did not succeed on opening the database, so it was indeed
+            # encrypted.
+            db = SQLCipherDatabase(self.DB_FILE, PASSWORD)
+            doc = db.get_doc(doc.doc_id)
+            self.assertEqual(tests.simple_doc, doc.get_json(), 'decrypted content mismatch')
+
+    def test_try_to_open_raw_db_with_sqlcipher_backend(self):
+        db = SQLitePartialExpandDatabase(self.DB_FILE)
+        db.create_doc_from_json(tests.simple_doc)
+        db.close()
+        try:
+            # trying to open the a non-encrypted database with sqlcipher backend
+            # should raise a DatabaseIsNotEncrypted exception.
+            SQLCipherDatabase(self.DB_FILE, PASSWORD)
+            raise DatabaseError("SQLCipher backend should not be able to open non-encrypted dbs.")
+        except DatabaseIsNotEncrypted:
+            pass

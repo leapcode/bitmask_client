@@ -16,25 +16,15 @@
 
 """A U1DB implementation that uses SQLCipher as its persistence layer."""
 
-import errno
 import os
-try:
-    import simplejson as json
-except ImportError:
-    import json  # noqa
-from sqlite3 import dbapi2
-import sys
+from sqlite3 import dbapi2, DatabaseError
 import time
-import uuid
 
-from u1db.backends import CommonBackend
 from u1db.backends.sqlite_backend import SQLitePartialExpandDatabase
 from u1db import (
     Document,
     errors,
-    query_parser,
-    vectorclock,
-    )
+)
 
 
 def open(path, password, create, document_factory=None):
@@ -50,9 +40,15 @@ def open(path, password, create, document_factory=None):
         parameters as Document.__init__.
     :return: An instance of Database.
     """
-    from u1db.backends import sqlite_backend
     return SQLCipherDatabase.open_database(
         path, password, create=create, document_factory=document_factory)
+
+
+class DatabaseIsNotEncrypted(Exception):
+    """
+    Exception raised when trying to open non-encrypted databases.
+    """
+    pass
 
 
 class SQLCipherDatabase(SQLitePartialExpandDatabase):
@@ -67,11 +63,25 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
 
     def __init__(self, sqlite_file, password, document_factory=None):
         """Create a new sqlcipher file."""
+        self._check_if_db_is_encrypted(sqlite_file)
         self._db_handle = dbapi2.connect(sqlite_file)
         SQLCipherDatabase.set_pragma_key(self._db_handle, password)
         self._real_replica_uid = None
         self._ensure_schema()
         self._factory = document_factory or Document
+
+    def _check_if_db_is_encrypted(self, sqlite_file):
+        if not os.path.exists(sqlite_file):
+            return
+        else:
+            try:
+                # try to open an encrypted database with the regular u1db backend
+                # should raise a DatabaseError exception.
+                SQLitePartialExpandDatabase(sqlite_file)
+                raise DatabaseIsNotEncrypted()
+            except DatabaseError:
+                pass
+
 
     @classmethod
     def _open_database(cls, sqlite_file, password, document_factory=None):
