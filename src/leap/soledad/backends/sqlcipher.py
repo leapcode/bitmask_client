@@ -61,6 +61,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
     def set_pragma_key(cls, db_handle, key):
        db_handle.cursor().execute("PRAGMA key = '%s'" % key)
 
+
     def __init__(self, sqlite_file, password, document_factory=None):
         """Create a new sqlcipher file."""
         self._check_if_db_is_encrypted(sqlite_file)
@@ -69,6 +70,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         self._real_replica_uid = None
         self._ensure_schema()
         self._factory = document_factory or Document
+
 
     def _check_if_db_is_encrypted(self, sqlite_file):
         if not os.path.exists(sqlite_file):
@@ -108,6 +110,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         return SQLCipherDatabase._sqlite_registry[v](
             sqlite_file, password, document_factory=document_factory)
 
+
     @classmethod
     def open_database(cls, sqlite_file, password, create, backend_cls=None,
                       document_factory=None):
@@ -123,6 +126,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
             return backend_cls(sqlite_file, password,
                                document_factory=document_factory)
 
+
     @staticmethod
     def register_implementation(klass):
         """Register that we implement an SQLCipherDatabase.
@@ -132,4 +136,5 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         SQLCipherDatabase._sqlite_registry[klass._index_storage_value] = klass
 
 
-SQLCipherDatabase.register_implementation(SQLCipherDatabase)
+SQLiteDatabase.register_implementation(SQLCipherDatabase)
+
