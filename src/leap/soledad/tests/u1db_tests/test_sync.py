@@ -57,28 +57,10 @@ def _make_local_db_and_http_target(test, path='test'):
     return db, st
 
 
-def _make_c_db_and_c_http_target(test, path='test'):
-    test.startServer()
-    db = test.request_state._create_database(os.path.basename(path))
-    url = test.getURL(path)
-    st = tests.c_backend_wrapper.create_http_sync_target(url)
-    return db, st
-
-
 def _make_local_db_and_oauth_http_target(test):
     db, st = _make_local_db_and_http_target(test, '~/test')
     st.set_oauth_credentials(tests.consumer1.key, tests.consumer1.secret,
                              tests.token1.key, tests.token1.secret)
-    return db, st
-
-
-def _make_c_db_and_oauth_http_target(test, path='~/test'):
-    test.startServer()
-    db = test.request_state._create_database(os.path.basename(path))
-    url = test.getURL(path)
-    st = tests.c_backend_wrapper.create_oauth_http_sync_target(url,
-        tests.consumer1.key, tests.consumer1.secret,
-        tests.token1.key, tests.token1.secret)
     return db, st
 
 
@@ -89,26 +71,6 @@ target_scenarios = [
     ('oauth_http', {'create_db_and_target':
                     _make_local_db_and_oauth_http_target,
                     'make_app_with_state': make_oauth_http_app}),
-    ]
-
-c_db_scenarios = [
-    ('local,c', {'create_db_and_target': _make_local_db_and_target,
-                 'make_database_for_test': tests.make_c_database_for_test,
-                 'copy_database_for_test': tests.copy_c_database_for_test,
-                 'make_document_for_test': tests.make_c_document_for_test,
-                 'whitebox': False}),
-    ('http,c', {'create_db_and_target': _make_c_db_and_c_http_target,
-                'make_database_for_test': tests.make_c_database_for_test,
-                'copy_database_for_test': tests.copy_c_database_for_test,
-                'make_document_for_test': tests.make_c_document_for_test,
-                'make_app_with_state': make_http_app,
-                'whitebox': False}),
-    ('oauth_http,c', {'create_db_and_target': _make_c_db_and_oauth_http_target,
-                      'make_database_for_test': tests.make_c_database_for_test,
-                      'copy_database_for_test': tests.copy_c_database_for_test,
-                      'make_document_for_test': tests.make_c_document_for_test,
-                      'make_app_with_state': make_oauth_http_app,
-                      'whitebox': False}),
     ]
 
 
@@ -495,25 +457,6 @@ sync_scenarios.append(('pyhttp', {
     'make_app_with_state': make_http_app,
     'do_sync': sync_via_synchronizer_and_http
     }))
-
-
-if tests.c_backend_wrapper is not None:
-    # TODO: We should hook up sync tests with an HTTP target
-    def sync_via_c_sync(test, db_source, db_target, trace_hook=None,
-                        trace_hook_shallow=None):
-        target = db_target.get_sync_target()
-        trace_hook = trace_hook or trace_hook_shallow
-        if trace_hook:
-            target._set_trace_hook(trace_hook)
-        return tests.c_backend_wrapper.sync_db_to_target(db_source, target)
-
-    #for name, scenario in tests.C_DATABASE_SCENARIOS:
-    #    scenario = dict(scenario)
-    #    scenario['do_sync'] = sync_via_synchronizer
-    #    sync_scenarios.append((name + ',pysync', scenario))
-    #    scenario = dict(scenario)
-    #    scenario['do_sync'] = sync_via_c_sync
-    #    sync_scenarios.append((name + ',csync', scenario))
 
 
 class DatabaseSyncTests(tests.DatabaseBaseTests,
@@ -1162,20 +1105,11 @@ class TestDbSync(tests.TestCaseWithServer):
             'make_app_with_state': make_http_app,
             'make_database_for_test': tests.make_memory_database_for_test,
             }),
-        #('c-http', {
-        #    'make_app_with_state': make_http_app,
-        #    'make_database_for_test': tests.make_c_database_for_test
-        #    }),
         ('py-oauth-http', {
             'make_app_with_state': make_oauth_http_app,
             'make_database_for_test': tests.make_memory_database_for_test,
             'oauth': True
             }),
-        #('c-oauth-http', {
-        #    'make_app_with_state': make_oauth_http_app,
-        #    'make_database_for_test': tests.make_c_database_for_test,
-        #    'oauth': True
-        #    }),
         ]
 
     oauth = False
