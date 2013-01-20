@@ -13,10 +13,10 @@ import util
 class Soledad(object):
 
     # paths
-    PREFIX      = os.environ['HOME']  + '/.config/leap/soledad'
-    SECRET_PATH = PREFIX + '/secret.gpg'
-    GNUPG_HOME  = PREFIX + '/gnupg'
-    U1DB_PATH   = PREFIX + '/soledad.u1db'
+    PREFIX        = os.environ['HOME']  + '/.config/leap/soledad'
+    SECRET_PATH   = PREFIX + '/secret.gpg'
+    GNUPG_HOME    = PREFIX + '/gnupg'
+    LOCAL_DB_PATH = PREFIX + '/soledad.u1db'
 
     # other configs
     SECRET_LENGTH = 50
@@ -28,7 +28,7 @@ class Soledad(object):
         if not gpghome:
             gpghome = self.GNUPG_HOME
         self._gpg = util.GPGWrapper(gpghome=gpghome)
-        # loaa/generate OpenPGP keypair
+        # load/generate OpenPGP keypair
         if not self._has_openpgp_keypair():
             self._gen_openpgp_keypair()
         self._load_openpgp_keypair()
@@ -39,7 +39,7 @@ class Soledad(object):
         # instantiate u1db
         # TODO: verify if secret for sqlcipher should be the same as the one
         # for symmetric encryption.
-        self._db = sqlcipher.open(self.U1DB_PATH, True, self._secret)
+        self._db = sqlcipher.open(self.LOCAL_DB_PATH, True, self._secret)
 
     #-------------------------------------------------------------------------
     # Management of secret for symmetric encryption
@@ -112,6 +112,7 @@ class Soledad(object):
         """
         Publish OpenPGP public key to a keyserver.
         """
+        # TODO: this has to talk to LEAP's Nickserver.
         pass
 
     #-------------------------------------------------------------------------
@@ -199,6 +200,7 @@ class Soledad(object):
         Synchronize the local encrypted database with LEAP server.
         """
         # TODO: create authentication scheme for sync with server.
-        return self._db.sync(url, creds=None, autocreate=True)
+        return self._db.sync(url, creds=None, autocreate=True, soledad=self)
 
 __all__ = ['util']
+

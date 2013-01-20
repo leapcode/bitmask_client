@@ -20,14 +20,17 @@ import os
 from sqlite3 import dbapi2, DatabaseError
 import time
 
-from u1db.backends.sqlite_backend import SQLitePartialExpandDatabase
+from u1db.backends.sqlite_backend import (
+    SQLiteDatabase,
+    SQLitePartialExpandDatabase,
+)
 from u1db import (
     Document,
     errors,
 )
 
 
-def open(path, password, create, document_factory=None):
+def open(path, password, create=True, document_factory=None):
     """Open a database at the given location.
 
     Will raise u1db.errors.DatabaseDoesNotExist if create=False and the
@@ -127,13 +130,15 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
                                document_factory=document_factory)
 
 
-    @staticmethod
-    def register_implementation(klass):
-        """Register that we implement an SQLCipherDatabase.
-
-        The attribute _index_storage_value will be used as the lookup key.
+    def sync(self, url, creds=None, autocreate=True, soledad=None):
         """
-        SQLCipherDatabase._sqlite_registry[klass._index_storage_value] = klass
+        Synchronize encrypted documents with remote replica exposed at url.
+        """
+        from u1db.sync import Synchronizer
+        from leap.soledad.backends.leap_backend import LeapSyncTarget
+        return Synchronizer(self, LeapSyncTarget(url, creds=creds),
+                            soledad=self._soledad).sync(
+            autocreate=autocreate)
 
 
 SQLiteDatabase.register_implementation(SQLCipherDatabase)
