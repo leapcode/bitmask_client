@@ -16,30 +16,21 @@
 
 """A U1DB implementation that uses SQLCipher as its persistence layer."""
 
-import errno
 import os
-try:
-    import simplejson as json
-except ImportError:
-    import json  # noqa
-from sqlite3 import dbapi2
-import sys
+from sqlite3 import dbapi2, DatabaseError
 import time
-import uuid
 
-import pkg_resources
-
-from u1db.backends import CommonBackend, CommonSyncTarget
-from u1db.backends.sqlite_backend import SQLitePartialExpandDatabase
+from u1db.backends.sqlite_backend import (
+    SQLiteDatabase,
+    SQLitePartialExpandDatabase,
+)
 from u1db import (
     Document,
     errors,
-    query_parser,
-    vectorclock,
-    )
+)
 
 
-def open(path, create, document_factory=None, password=None):
+def open(path, password, create=True, document_factory=None):
     """Open a database at the given location.
 
     Will raise u1db.errors.DatabaseDoesNotExist if create=False and the
@@ -52,9 +43,15 @@ def open(path, create, document_factory=None, password=None):
         parameters as Document.__init__.
     :return: An instance of Database.
     """
-    from u1db.backends import sqlite_backend
-    return sqlite_backend.SQLCipherDatabase.open_database(
+    return SQLCipherDatabase.open_database(
         path, password, create=create, document_factory=document_factory)
+
+
+class DatabaseIsNotEncrypted(Exception):
+    """
+    Exception raised when trying to open non-encrypted databases.
+    """
+    pass
 
 
 class SQLCipherDatabase(SQLitePartialExpandDatabase):
@@ -67,13 +64,29 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
     def set_pragma_key(cls, db_handle, key):
        db_handle.cursor().execute("PRAGMA key = '%s'" % key)
 
+
     def __init__(self, sqlite_file, password, document_factory=None):
-        """Create a new sqlite file."""
+        """Create a new sqlcipher file."""
+        self._check_if_db_is_encrypted(sqlite_file)
         self._db_handle = dbapi2.connect(sqlite_file)
         SQLCipherDatabase.set_pragma_key(self._db_handle, password)
         self._real_replica_uid = None
         self._ensure_schema()
         self._factory = document_factory or Document
+
+
+    def _check_if_db_is_encrypted(self, sqlite_file):
+        if not os.path.exists(sqlite_file):
+            return
+        else:
+            try:
+                # try to open an encrypted database with the regular u1db backend
+                # should raise a DatabaseError exception.
+                SQLitePartialExpandDatabase(sqlite_file)
+                raise DatabaseIsNotEncrypted()
+            except DatabaseError:
+                pass
+
 
     @classmethod
     def _open_database(cls, sqlite_file, password, document_factory=None):
@@ -100,6 +113,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         return SQLCipherDatabase._sqlite_registry[v](
             sqlite_file, password, document_factory=document_factory)
 
+
     @classmethod
     def open_database(cls, sqlite_file, password, create, backend_cls=None,
                       document_factory=None):
@@ -115,13 +129,17 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
             return backend_cls(sqlite_file, password,
                                document_factory=document_factory)
 
-    @staticmethod
-    def register_implementation(klass):
-        """Register that we implement an SQLCipherDatabase.
 
-        The attribute _index_storage_value will be used as the lookup key.
+    def sync(self, url, creds=None, autocreate=True, soledad=None):
         """
-        SQLCipherDatabase._sqlite_registry[klass._index_storage_value] = klass
+        Synchronize encrypted documents with remote replica exposed at url.
+        """
+        from u1db.sync import Synchronizer
+        from leap.soledad.backends.leap_backend import LeapSyncTarget
+        return Synchronizer(self, LeapSyncTarget(url, creds=creds),
+                            soledad=self._soledad).sync(
+            autocreate=autocreate)
 
 
-SQLCipherDatabase.register_implementation(SQLCipherDatabase)
+SQLiteDatabase.register_implementation(SQLCipherDatabase)
+

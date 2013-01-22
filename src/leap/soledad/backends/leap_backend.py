@@ -4,15 +4,18 @@ except ImportError:
     import json  # noqa
 
 from u1db import Document
+from u1db.remote import utils
 from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
-import base64  # unused
+from u1db.errors import BrokenSyncStream
+from leap.soledad.util import GPGWrapper
 
-#from leap.soledad import util  # import GPGWrapper  # unused
+import uuid
 
 
 class NoDefaultKey(Exception):
     pass
+
 
 class NoSoledadInstance(Exception):
     pass
@@ -71,6 +74,10 @@ class LeapDatabase(HTTPDatabase):
         db = LeapDatabase(url)
         db._delete()
         db.close()
+
+    def _allocate_doc_id(self):
+        """Generate a unique identifier for this document."""
+        return 'D-' + uuid.uuid4().hex  # 'D-' stands for document
 
     def get_sync_target(self):
         st = LeapSyncTarget(self._url.geturl())
