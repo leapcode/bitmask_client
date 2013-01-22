@@ -23,22 +23,9 @@ from leap.soledad.backends.sqlcipher import open as u1db_open
 
 # u1db tests stuff.
 from leap.soledad.tests import u1db_tests as tests
-from leap.soledad.tests.u1db_tests.test_sqlite_backend import (
-  TestSQLiteDatabase,
-  TestSQLitePartialExpandDatabase,
-)
-from leap.soledad.tests.u1db_tests.test_backends import (
-  TestAlternativeDocument,
-  AllDatabaseTests,
-  LocalDatabaseTests,
-  LocalDatabaseValidateGenNTransIdTests,
-  LocalDatabaseValidateSourceGenTests,
-  LocalDatabaseWithConflictsTests,
-  DatabaseIndexTests,
-)
-from leap.soledad.tests.u1db_tests.test_open import (
-  TestU1DBOpen,
-)
+from leap.soledad.tests.u1db_tests import test_sqlite_backend
+from leap.soledad.tests.u1db_tests import test_backends
+from leap.soledad.tests.u1db_tests import test_open
 
 PASSWORD = '123456'
 
@@ -94,27 +81,27 @@ SQLCIPHER_SCENARIOS = [
     ]
 
 
-class SQLCipherTests(AllDatabaseTests):
+class SQLCipherTests(test_backends.AllDatabaseTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherDatabaseTests(LocalDatabaseTests):
+class SQLCipherDatabaseTests(test_backends.LocalDatabaseTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherValidateGenNTransIdTests(LocalDatabaseValidateGenNTransIdTests):
+class SQLCipherValidateGenNTransIdTests(test_backends.LocalDatabaseValidateGenNTransIdTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherValidateSourceGenTests(LocalDatabaseValidateSourceGenTests):
+class SQLCipherValidateSourceGenTests(test_backends.LocalDatabaseValidateSourceGenTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherWithConflictsTests(LocalDatabaseWithConflictsTests):
+class SQLCipherWithConflictsTests(test_backends.LocalDatabaseWithConflictsTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherIndexTests(DatabaseIndexTests):
+class SQLCipherIndexTests(test_backends.DatabaseIndexTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
@@ -125,7 +112,7 @@ load_tests = tests.load_with_scenarios
 # The following tests come from `u1db.tests.test_sqlite_backend`.
 #-----------------------------------------------------------------------------
 
-class TestSQLCipherDatabase(TestSQLiteDatabase):
+class TestSQLCipherDatabase(test_sqlite_backend.TestSQLiteDatabase):
 
     def test_atomic_initialize(self):
         tmpdir = self.createTempDir()
@@ -170,14 +157,14 @@ class TestSQLCipherDatabase(TestSQLiteDatabase):
         self.assertTrue(db2._is_initialized(db1._get_sqlite_handle().cursor()))
 
 
-class TestSQLCipherPartialExpandDatabase(TestSQLitePartialExpandDatabase):
+class TestSQLCipherPartialExpandDatabase(test_sqlite_backend.TestSQLitePartialExpandDatabase):
 
     # The following tests had to be cloned from u1db because they all
     # instantiate the backend directly, so we need to change that in order to
     # our backend be instantiated in place.
 
     def setUp(self):
-        super(TestSQLitePartialExpandDatabase, self).setUp()
+        super(test_sqlite_backend.TestSQLitePartialExpandDatabase, self).setUp()
         self.db = SQLCipherDatabase(':memory:', PASSWORD)
         self.db._set_replica_uid('test')
 
@@ -229,8 +216,8 @@ class TestSQLCipherPartialExpandDatabase(TestSQLitePartialExpandDatabase):
         path = temp_dir + '/test.sqlite'
         SQLCipherDatabase(path, PASSWORD)
         db2 = SQLCipherDatabase._open_database(
-            path, PASSWORD, document_factory=TestAlternativeDocument)
-        self.assertEqual(TestAlternativeDocument, db2._factory)
+            path, PASSWORD, document_factory=test_backends.TestAlternativeDocument)
+        self.assertEqual(test_backends.TestAlternativeDocument, db2._factory)
 
     def test_open_database_existing(self):
         temp_dir = self.createTempDir(prefix='u1db-test-')
@@ -244,8 +231,8 @@ class TestSQLCipherPartialExpandDatabase(TestSQLitePartialExpandDatabase):
         path = temp_dir + '/existing.sqlite'
         SQLCipherDatabase(path, PASSWORD)
         db2 = SQLCipherDatabase.open_database(
-            path, PASSWORD, create=False, document_factory=TestAlternativeDocument)
-        self.assertEqual(TestAlternativeDocument, db2._factory)
+            path, PASSWORD, create=False, document_factory=test_backends.TestAlternativeDocument)
+        self.assertEqual(test_backends.TestAlternativeDocument, db2._factory)
 
     def test_create_database_initializes_schema(self):
         # This test had to be cloned because our implementation of SQLCipher
@@ -264,7 +251,7 @@ class TestSQLCipherPartialExpandDatabase(TestSQLitePartialExpandDatabase):
 # The following tests come from `u1db.tests.test_open`.
 #-----------------------------------------------------------------------------
 
-class SQLCipherOpen(TestU1DBOpen):
+class SQLCipherOpen(test_open.TestU1DBOpen):
 
     def test_open_no_create(self):
         self.assertRaises(errors.DatabaseDoesNotExist,
@@ -281,9 +268,9 @@ class SQLCipherOpen(TestU1DBOpen):
 
     def test_open_with_factory(self):
         db = u1db_open(self.db_path, password=PASSWORD, create=True,
-                       document_factory=TestAlternativeDocument)
+                       document_factory=test_backends.TestAlternativeDocument)
         self.addCleanup(db.close)
-        self.assertEqual(TestAlternativeDocument, db._factory)
+        self.assertEqual(test_backends.TestAlternativeDocument, db._factory)
 
     def test_open_existing(self):
         db = SQLCipherDatabase(self.db_path, PASSWORD)

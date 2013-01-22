@@ -4,12 +4,8 @@ For these tests to run, a leap server has to be running on (default) port
 5984.
 """
 
-from shutil import rmtree
 import os
-import copy
 import unittest2 as unittest
-import testtools
-import testscenarios
 import u1db
 from leap.soledad import Soledad
 from leap.soledad.backends import leap_backend
@@ -18,41 +14,17 @@ from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
     make_http_app,
     make_oauth_http_app,
 )
-from leap.soledad.tests.u1db_tests.test_backends import AllDatabaseTests
-from leap.soledad.tests.u1db_tests.test_http_database import (
-    TestHTTPDatabaseSimpleOperations,
-    TestHTTPDatabaseCtrWithCreds,
-    TestHTTPDatabaseIntegration,
-)
-from leap.soledad.tests.u1db_tests.test_http_client import (
-    TestHTTPClientBase,
-)
-from leap.soledad.tests.u1db_tests.test_document import (
-    TestDocument,
-    TestPyDocument,
-)
-from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
-    TestHTTPSyncTargetBasics,
-    TestParsingSyncStream,
-)
-from leap.soledad.tests.u1db_tests.test_sync import (
-    _make_local_db_and_target,
-    DatabaseSyncTargetTests,
-)
-from leap.soledad.tests.u1db_tests.test_https import (
-    TestHttpSyncTargetHttpsSupport,
-    https_server_def,
-)
+from leap.soledad.tests.u1db_tests import test_backends
+from leap.soledad.tests.u1db_tests import test_http_database
+from leap.soledad.tests.u1db_tests import test_http_client
+from leap.soledad.tests.u1db_tests import test_document
+from leap.soledad.tests.u1db_tests import test_remote_sync_target
+from leap.soledad.tests.u1db_tests import test_https
 from leap.soledad.tests.test_encrypted import (
     PUBLIC_KEY,
     PRIVATE_KEY,
-    KEY_FINGERPRINT,
 )
 
-try:
-    import simplejson as json
-except ImportError:
-    import json  # noqa
 
 #-----------------------------------------------------------------------------
 # The EncryptedSyncTest is used with multiple inheritance to guarantee that we
@@ -152,7 +124,7 @@ LEAP_SCENARIOS = [
         ]
 
 
-class LeapTests(AllDatabaseTests, SoledadTest):
+class LeapTests(test_backends.AllDatabaseTests, SoledadTest):
 
     scenarios = LEAP_SCENARIOS
 
@@ -161,10 +133,10 @@ class LeapTests(AllDatabaseTests, SoledadTest):
 # The following tests come from `u1db.tests.test_http_database`.
 #-----------------------------------------------------------------------------
 
-class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
+class TestLeapDatabaseSimpleOperations(test_http_database.TestHTTPDatabaseSimpleOperations):
 
     def setUp(self):
-        super(TestHTTPDatabaseSimpleOperations, self).setUp()
+        super(test_http_database.TestHTTPDatabaseSimpleOperations, self).setUp()
         self.db = leap_backend.LeapDatabase('dbase')
         self.db._conn = object()  # crash if used
         self.got = None
@@ -193,11 +165,11 @@ class TestLeapDatabaseSimpleOperations(TestHTTPDatabaseSimpleOperations):
         self.assertEqual(st._url, self.db._url)
 
 
-class TestLeapDatabaseCtrWithCreds(TestHTTPDatabaseCtrWithCreds):
+class TestLeapDatabaseCtrWithCreds(test_http_database.TestHTTPDatabaseCtrWithCreds):
     pass
 
 
-class TestLeapDatabaseIntegration(TestHTTPDatabaseIntegration):
+class TestLeapDatabaseIntegration(test_http_database.TestHTTPDatabaseIntegration):
 
     def test_non_existing_db(self):
         db = leap_backend.LeapDatabase(self.getURL('not-there'))
@@ -252,7 +224,7 @@ class TestLeapDatabaseIntegration(TestHTTPDatabaseIntegration):
 # The following tests come from `u1db.tests.test_http_client`.
 #-----------------------------------------------------------------------------
 
-class TestLeapClientBase(TestHTTPClientBase):
+class TestLeapClientBase(test_http_client.TestHTTPClientBase):
     pass
 
 
@@ -260,13 +232,13 @@ class TestLeapClientBase(TestHTTPClientBase):
 # The following tests come from `u1db.tests.test_document`.
 #-----------------------------------------------------------------------------
 
-class TestLeapDocument(TestDocument, SoledadTest):
+class TestLeapDocument(test_document.TestDocument, SoledadTest):
 
     scenarios = ([(
         'leap', {'make_document_for_test': make_leap_document_for_test})])
 
 
-class TestLeapPyDocument(TestPyDocument, SoledadTest):
+class TestLeapPyDocument(test_document.TestPyDocument, SoledadTest):
 
     scenarios = ([(
         'leap', {'make_document_for_test': make_leap_document_for_test})])
@@ -276,7 +248,7 @@ class TestLeapPyDocument(TestPyDocument, SoledadTest):
 # The following tests come from `u1db.tests.test_remote_sync_target`.
 #-----------------------------------------------------------------------------
 
-class TestLeapSyncTargetBasics(TestHTTPSyncTargetBasics):
+class TestLeapSyncTargetBasics(test_remote_sync_target.TestHTTPSyncTargetBasics):
 
     def test_parse_url(self):
         remote_target = leap_backend.LeapSyncTarget('http://127.0.0.1:12345/')
@@ -285,7 +257,7 @@ class TestLeapSyncTargetBasics(TestHTTPSyncTargetBasics):
         self.assertEqual(12345, remote_target._url.port)
         self.assertEqual('/', remote_target._url.path)
 
-class TestLeapParsingSyncStream(TestParsingSyncStream):
+class TestLeapParsingSyncStream(test_remote_sync_target.TestParsingSyncStream):
 
     def test_wrong_start(self):
         tgt = leap_backend.LeapSyncTarget("http://foo/foo")
@@ -386,10 +358,10 @@ def oauth_https_sync_target(test, host, path):
                              tests.token1.key, tests.token1.secret)
     return st
 
-class TestLeapSyncTargetHttpsSupport(TestHttpSyncTargetHttpsSupport, SoledadTest):
+class TestLeapSyncTargetHttpsSupport(test_https.TestHttpSyncTargetHttpsSupport, SoledadTest):
 
     scenarios = [
-        ('oauth_https', {'server_def': https_server_def,
+        ('oauth_https', {'server_def': test_https.https_server_def,
                          'make_app_with_state': make_oauth_http_app,
                          'make_document_for_test': make_leap_document_for_test,
                          'sync_target': oauth_https_sync_target

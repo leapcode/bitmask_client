@@ -1,4 +1,3 @@
-import ipdb
 import unittest2 as unittest
 from leap.soledad.backends.objectstore import TransactionLog, SyncLog, ConflictLog
 

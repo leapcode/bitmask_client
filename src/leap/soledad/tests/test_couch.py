@@ -4,41 +4,15 @@ For these tests to run, a couch server has to be running on (default) port
 5984.
 """
 
+import copy
+from leap.soledad.backends import couch
+from leap.soledad.tests import u1db_tests as tests
+from leap.soledad.tests.u1db_tests import test_backends
+from leap.soledad.tests.u1db_tests import test_sync
 try:
     import simplejson as json
 except ImportError:
     import json  # noqa
-
-import os
-import sys
-import copy
-import testtools
-import testscenarios
-from leap.soledad.backends import couch
-from leap.soledad.tests import u1db_tests as tests
-from leap.soledad.tests.u1db_tests.test_backends import (
-  TestAlternativeDocument,
-  AllDatabaseTests,
-  LocalDatabaseTests,
-  LocalDatabaseValidateGenNTransIdTests,
-  LocalDatabaseValidateSourceGenTests,
-  LocalDatabaseWithConflictsTests,
-  DatabaseIndexTests,
-)
-from leap.soledad.tests.u1db_tests.test_sync import (
-    target_scenarios,
-    _make_local_db_and_target,
-    _make_local_db_and_http_target,
-    _make_local_db_and_oauth_http_target,
-    DatabaseSyncTargetTests,
-    DatabaseSyncTests,
-    sync_via_synchronizer,
-)
-from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
-    make_http_app,
-    make_oauth_http_app,
-)
-
 
 #-----------------------------------------------------------------------------
 # The following tests come from `u1db.tests.test_common_backend`.
@@ -83,7 +57,7 @@ COUCH_SCENARIOS = [
         ]
 
 
-class CouchTests(AllDatabaseTests):
+class CouchTests(test_backends.AllDatabaseTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -92,7 +66,7 @@ class CouchTests(AllDatabaseTests):
         super(CouchTests, self).tearDown()
 
 
-class CouchDatabaseTests(LocalDatabaseTests):
+class CouchDatabaseTests(test_backends.LocalDatabaseTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -101,7 +75,7 @@ class CouchDatabaseTests(LocalDatabaseTests):
         super(CouchDatabaseTests, self).tearDown()
 
 
-class CouchValidateGenNTransIdTests(LocalDatabaseValidateGenNTransIdTests):
+class CouchValidateGenNTransIdTests(test_backends.LocalDatabaseValidateGenNTransIdTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -110,7 +84,7 @@ class CouchValidateGenNTransIdTests(LocalDatabaseValidateGenNTransIdTests):
         super(CouchValidateGenNTransIdTests, self).tearDown()
 
 
-class CouchValidateSourceGenTests(LocalDatabaseValidateSourceGenTests):
+class CouchValidateSourceGenTests(test_backends.LocalDatabaseValidateSourceGenTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -119,7 +93,7 @@ class CouchValidateSourceGenTests(LocalDatabaseValidateSourceGenTests):
         super(CouchValidateSourceGenTests, self).tearDown()
 
 
-class CouchWithConflictsTests(LocalDatabaseWithConflictsTests):
+class CouchWithConflictsTests(test_backends.LocalDatabaseWithConflictsTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -147,14 +121,14 @@ class CouchWithConflictsTests(LocalDatabaseWithConflictsTests):
 #-----------------------------------------------------------------------------
 
 target_scenarios = [
-    ('local', {'create_db_and_target': _make_local_db_and_target}), ]
+    ('local', {'create_db_and_target': test_sync._make_local_db_and_target}), ]
 
 
 simple_doc = tests.simple_doc
 nested_doc = tests.nested_doc
 
 
-class CouchDatabaseSyncTargetTests(DatabaseSyncTargetTests):
+class CouchDatabaseSyncTargetTests(test_sync.DatabaseSyncTargetTests):
 
     scenarios = (tests.multiply_scenarios(COUCH_SCENARIOS, target_scenarios))
 
@@ -188,11 +162,11 @@ class CouchDatabaseSyncTargetTests(DatabaseSyncTargetTests):
 sync_scenarios = []
 for name, scenario in COUCH_SCENARIOS:
     scenario = dict(scenario)
-    scenario['do_sync'] = sync_via_synchronizer
+    scenario['do_sync'] = test_sync.sync_via_synchronizer
     sync_scenarios.append((name, scenario))
     scenario = dict(scenario)
 
-class CouchDatabaseSyncTests(DatabaseSyncTests):
+class CouchDatabaseSyncTests(test_sync.DatabaseSyncTests):
 
     scenarios = sync_scenarios
 
