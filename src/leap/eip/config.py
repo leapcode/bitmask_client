@@ -130,6 +130,22 @@ def get_cipher_options(eipserviceconfig=None):
                     opts.append('%s' % _val)
     return opts
 
+LINUX_UP_DOWN_SCRIPT = "/etc/leap/resolv-update"
+OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-down-root.so"
+
+
+def has_updown_scripts():
+    """
+    checks the existence of the up/down scripts
+    """
+    # XXX should check permissions too
+    is_file = os.path.isfile(LINUX_UP_DOWN_SCRIPT)
+    if not is_file:
+        logger.warning(
+            "Could not find up/down scripts at %s! "
+            "Risk of DNS Leaks!!!")
+    return is_file
+
 
 def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
     """
@@ -230,10 +246,14 @@ def build_ovpn_options(daemon=False, socket_path=None, **kwargs):
         opts.append('2')
 
     if _platform == "Linux":
-        opts.append("--up")
-        opts.append("/etc/openvpn/update-resolv-conf")
-        opts.append("--down")
-        opts.append("/etc/openvpn/update-resolv-conf")
+        if has_updown_scripts():
+            opts.append("--up")
+            opts.append(LINUX_UP_DOWN_SCRIPT)
+            opts.append("--down")
+            opts.append(LINUX_UP_DOWN_SCRIPT)
+            opts.append("--plugin")
+            opts.append(OPENVPN_DOWN_ROOT)
+            opts.append("'script_type=down %s'" % LINUX_UP_DOWN_SCRIPT)
 
     # certs
     client_cert_path = eipspecs.client_cert_path(provider)

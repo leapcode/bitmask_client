@@ -90,6 +90,15 @@ Or, if you prefer, you can also `download the official PyQt tarball<http://www.r
    this section could be completed with useful options that can be passed to the virtualenv command (e.g., to make portable paths, site-packages, ...).
 
 
+.. _files:
+
+Copy script files
+-----------------
+
+The openvpn invocation expects some files to be in place. If you have not installed `leap-client` from a debian package, you must copy these files manually::
+
+    $ sudo mkdir -p /etc/leap
+    $ sudo cp pkg/linux/resolv-update /etc/leap 
 
 .. _policykit:
 
@@ -102,6 +111,7 @@ The setup script tries to install the policy file when installing the client sys
 If you *only* are running the client from inside a virtualenv, you will need to copy this file by hand::
 
     $ sudo cp pkg/linux/polkit/net.openvpn.gui.leap.policy /usr/share/polkit-1/actions/
+
 
 Missing Authentication agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
