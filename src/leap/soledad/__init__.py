@@ -5,17 +5,20 @@
 import os
 import string
 import random
-#import cStringIO
 import hmac
-
+from leap.soledad.backends import sqlcipher
+from leap.soledad.util import GPGWrapper
 import util
-
 
 class Soledad(object):
 
+    # paths
     PREFIX        = os.environ['HOME']  + '/.config/leap/soledad'
     SECRET_PATH   = PREFIX + '/secret.gpg'
     GNUPG_HOME    = PREFIX + '/gnupg'
+    LOCAL_DB_PATH = PREFIX + '/soledad.u1db'
+
+    # other configs
     SECRET_LENGTH = 50
 
     def __init__(self, user_email, gpghome=None):
@@ -33,6 +36,14 @@ class Soledad(object):
         if not self._has_secret():
             self._gen_secret()
         self._load_secret()
+        # instantiate u1db
+        # TODO: verify if secret for sqlcipher should be the same as the one
+        # for symmetric encryption.
+        self._db = sqlcipher.open(self.LOCAL_DB_PATH, True, self._secret)
+
+    #-------------------------------------------------------------------------
+    # Management of secret for symmetric encryption
+    #-------------------------------------------------------------------------
 
 
     #-------------------------------------------------------------------------
@@ -41,15 +52,17 @@ class Soledad(object):
 
     def _has_secret(self):
         """
-        Verify if secret already exists in a local encrypted file.
+        Verify if secret for symmetric encryption exists on local encrypted file.
         """
+        # TODO: verify if file is a GPG-encrypted file and if we have the
+        # corresponding private key for decryption.
         if os.path.isfile(self.SECRET_PATH):
             return True
         return False
 
     def _load_secret(self):
         """
-        Load secret from local encrypted file.
+        Load secret for symmetric encryption from local encrypted file.
         """
         try:
             with open(self.SECRET_PATH) as f:
@@ -59,7 +72,7 @@ class Soledad(object):
 
     def _gen_secret(self):
         """
-        Generate secret for symmetric encryption and store it in a local encrypted file.
+        Generate a secret for symmetric encryption and store in a local encrypted file.
         """
         self._secret = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(self.SECRET_LENGTH))
         ciphertext = self._gpg.encrypt(self._secret, self._fingerprint, self._fingerprint)
@@ -73,9 +86,9 @@ class Soledad(object):
 
     def _has_openpgp_keypair(self):
         """
-        Verify if a keypair exists for this user.
+        Verify if there exists an OpenPGP keypair for this user.
         """
-        # TODO: verify if private key exists.
+        # TODO: verify if we have the corresponding private key.
         try:
             self._gpg.find_key(self._user_email)
             return True
@@ -84,7 +97,7 @@ class Soledad(object):
 
     def _gen_openpgp_keypair(self):
         """
-        Generate a keypair for this user.
+        Generate an OpenPGP keypair for this user.
         """
         params = self._gpg.gen_key_input(
           key_type='RSA',
@@ -96,7 +109,7 @@ class Soledad(object):
 
     def _load_openpgp_keypair(self):
         """
-        Load the fingerprint for this user's keypair.
+        Find fingerprint for this user's OpenPGP keypair.
         """
         self._fingerprint = self._gpg.find_key(self._user_email)['fingerprint']
 
@@ -104,10 +117,11 @@ class Soledad(object):
         """
         Publish OpenPGP public key to a keyserver.
         """
+        # TODO: this has to talk to LEAP's Nickserver.
         pass
 
     #-------------------------------------------------------------------------
-    # Data encryption and decription
+    # Data encryption and decryption
     #-------------------------------------------------------------------------
 
     def encrypt(self, data, sign=None, passphrase=None, symmetric=False):
@@ -119,7 +133,7 @@ class Soledad(object):
 
     def encrypt_symmetric(self, doc_id, data, sign=None):
         """
-        Symmetrically encrypt data using this user's secret.
+        Encrypt data using symmetric secret.
         """
         h = hmac.new(self._secret, doc_id).hexdigest()
         return self.encrypt(data, sign=sign, passphrase=h, symmetric=True)
@@ -132,7 +146,7 @@ class Soledad(object):
 
     def decrypt_symmetric(self, doc_id, data):
         """
-        Symmetrically decrypt data using this user's secret.
+        Decrypt data using symmetric secret.
         """
         h = hmac.new(self._secret, doc_id).hexdigest()
         return self.decrypt(data, passphrase=h)
@@ -140,24 +154,58 @@ class Soledad(object):
     #-------------------------------------------------------------------------
     # Document storage, retrieval and sync
     #-------------------------------------------------------------------------
-    
-    def put(self, doc_id, data):
-        """
-        Store a document.
-        """
-        pass
 
-    def get(self, doc_id):
+    def put_doc(self, doc):
         """
-        Retrieve a document.
+        Update a document in the local encrypted database.
         """
-        pass
+        return self._db.put_doc(doc)
 
-    def sync(self):
+    def delete_doc(self, doc):
         """
-        Synchronize with LEAP server.
+        Delete a document from the local encrypted database.
         """
-        pass
+        return self._db.delete_doc(doc)
 
+    def get_doc(self, doc_id, include_deleted=False):
+        """
+        Retrieve a document from the local encrypted database.
+        """
+        return self._db.get_doc(doc_id, include_deleted=include_deleted)
+
+    def get_docs(self, doc_ids, check_for_conflicts=True,
+                 include_deleted=False):
+        """
+        Get the content for many documents.
+        """
+        return self._db.get_docs(doc_ids,
+                                 check_for_conflicts=check_for_conflicts,
+                                 include_deleted=include_deleted)
+
+    def create_doc(self, content, doc_id=None):
+        """
+        Create a new document in the local encrypted database.
+        """
+        return self._db.create_doc(content, doc_id=doc_id)
+
+    def get_doc_conflicts(self, doc_id):
+        """
+        Get the list of conflicts for the given document.
+        """
+        return self._db.get_doc_conflicts(doc_id)
+
+    def resolve_doc(self, doc, conflicted_doc_revs):
+        """
+        Mark a document as no longer conflicted.
+        """
+        return self._db.resolve_doc(doc, conflicted_doc_revs)
+
+    def sync(self, url):
+        """
+        Synchronize the local encrypted database with LEAP server.
+        """
+        # TODO: create authentication scheme for sync with server.
+        return self._db.sync(url, creds=None, autocreate=True, soledad=self)
 
 __all__ = ['util']
+

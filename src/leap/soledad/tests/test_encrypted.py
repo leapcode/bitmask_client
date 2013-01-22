@@ -1,8 +1,3 @@
-try:
-    import simplejson as json
-except ImportError:
-    import json  # noqa
-
 import unittest2 as unittest
 import os
 

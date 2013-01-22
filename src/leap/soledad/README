@@ -19,3 +19,14 @@ Soledad depends on the following python libraries:
 [3] http://pypi.python.org/pypi/python-gnupg/0.3.1
 [4] http://pypi.python.org/pypi/CouchDB/0.8
 [5] http://pypi.python.org/pypi/hmac/20101005
+
+
+Tests
+-----
+
+Soledad's tests should be run with nose2, like this:
+
+  nose2 leap.soledad.tests
+
+CouchDB backend tests need an http CouchDB instance running on
+`localhost:5984`.

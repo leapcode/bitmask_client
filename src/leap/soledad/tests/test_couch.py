@@ -1,280 +1,213 @@
-import unittest2
-from leap.soledad.backends.couch import CouchDatabase
-from leap.soledad.backends.leap_backend import LeapDocument
-from u1db import errors, vectorclock
+"""Test ObjectStore backend bits.
 
+For these tests to run, a couch server has to be running on (default) port
+5984.
+"""
+
+import copy
+from leap.soledad.backends import couch
+from leap.soledad.tests import u1db_tests as tests
+from leap.soledad.tests.u1db_tests import test_backends
+from leap.soledad.tests.u1db_tests import test_sync
 try:
     import simplejson as json
 except ImportError:
     import json  # noqa
 
-simple_doc = '{"key": "value"}'
-nested_doc = '{"key": "value", "sub": {"doc": "underneath"}}'
+#-----------------------------------------------------------------------------
+# The following tests come from `u1db.tests.test_common_backend`.
+#-----------------------------------------------------------------------------
 
-def make_document_for_test(test, doc_id, rev, content, has_conflicts=False):
-    return LeapDocument(doc_id, rev, content, has_conflicts=has_conflicts)
+class TestCouchBackendImpl(tests.TestCase):
 
-class CouchTestCase(unittest2.TestCase):
-
-    def setUp(self):
-        self.db = CouchDatabase('http://localhost:5984', 'u1db_tests')
-
-    def make_document(self, doc_id, doc_rev, content, has_conflicts=False):
-        return self.make_document_for_test(
-            self, doc_id, doc_rev, content, has_conflicts)
-
-    def make_document_for_test(self, test, doc_id, doc_rev, content,
-                               has_conflicts):
-        return make_document_for_test(
-            test, doc_id, doc_rev, content, has_conflicts)
-
-    def assertGetDoc(self, db, doc_id, doc_rev, content, has_conflicts):
-        """Assert that the document in the database looks correct."""
-        exp_doc = self.make_document(doc_id, doc_rev, content,
-                                     has_conflicts=has_conflicts)
-        self.assertEqual(exp_doc, db.get_doc(doc_id))
-
-    def assertGetDocIncludeDeleted(self, db, doc_id, doc_rev, content,
-                                   has_conflicts):
-        """Assert that the document in the database looks correct."""
-        exp_doc = self.make_document(doc_id, doc_rev, content,
-                                     has_conflicts=has_conflicts)
-        self.assertEqual(exp_doc, db.get_doc(doc_id, include_deleted=True))
+    def test__allocate_doc_id(self):
+        db = couch.CouchDatabase('http://localhost:5984', 'u1db_tests')
+        doc_id1 = db._allocate_doc_id()
+        self.assertTrue(doc_id1.startswith('D-'))
+        self.assertEqual(34, len(doc_id1))
+        int(doc_id1[len('D-'):], 16)
+        self.assertNotEqual(doc_id1, db._allocate_doc_id())
 
 
-    def test_create_doc_allocating_doc_id(self):
-        doc = self.db.create_doc_from_json(simple_doc)
-        self.assertNotEqual(None, doc.doc_id)
-        self.assertNotEqual(None, doc.rev)
-        self.assertGetDoc(self.db, doc.doc_id, doc.rev, simple_doc, False)
+#-----------------------------------------------------------------------------
+# The following tests come from `u1db.tests.test_backends`.
+#-----------------------------------------------------------------------------
 
-    def test_create_doc_different_ids_same_db(self):
-        doc1 = self.db.create_doc_from_json(simple_doc)
-        doc2 = self.db.create_doc_from_json(nested_doc)
-        self.assertNotEqual(doc1.doc_id, doc2.doc_id)
+def make_couch_database_for_test(test, replica_uid):
+    return couch.CouchDatabase('http://localhost:5984', replica_uid,
+                               replica_uid=replica_uid or 'test')
 
-    def test_create_doc_with_id(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my-id')
-        self.assertEqual('my-id', doc.doc_id)
-        self.assertNotEqual(None, doc.rev)
-        self.assertGetDoc(self.db, doc.doc_id, doc.rev, simple_doc, False)
-
-    def test_create_doc_existing_id(self):
-        doc = self.db.create_doc_from_json(simple_doc)
-        new_content = '{"something": "else"}'
-        self.assertRaises(
-            errors.RevisionConflict, self.db.create_doc_from_json,
-            new_content, doc.doc_id)
-        self.assertGetDoc(self.db, doc.doc_id, doc.rev, simple_doc, False)
-
-    def test_put_doc_creating_initial(self):
-        doc = self.make_document('my_doc_id', None, simple_doc)
-        new_rev = self.db.put_doc(doc)
-        self.assertIsNot(None, new_rev)
-        self.assertGetDoc(self.db, 'my_doc_id', new_rev, simple_doc, False)
-
-    def test_put_doc_space_in_id(self):
-        doc = self.make_document('my doc id', None, simple_doc)
-        self.assertRaises(errors.InvalidDocId, self.db.put_doc, doc)
-
-    def test_put_doc_update(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        orig_rev = doc.rev
-        doc.set_json('{"updated": "stuff"}')
-        new_rev = self.db.put_doc(doc)
-        self.assertNotEqual(new_rev, orig_rev)
-        self.assertGetDoc(self.db, 'my_doc_id', new_rev,
-                          '{"updated": "stuff"}', False)
-        self.assertEqual(doc.rev, new_rev)
-
-    def test_put_non_ascii_key(self):
-        content = json.dumps({u'key\xe5': u'val'})
-        doc = self.db.create_doc_from_json(content, doc_id='my_doc')
-        self.assertGetDoc(self.db, 'my_doc', doc.rev, content, False)
-
-    def test_put_non_ascii_value(self):
-        content = json.dumps({'key': u'\xe5'})
-        doc = self.db.create_doc_from_json(content, doc_id='my_doc')
-        self.assertGetDoc(self.db, 'my_doc', doc.rev, content, False)
-
-    def test_put_doc_refuses_no_id(self):
-        doc = self.make_document(None, None, simple_doc)
-        self.assertRaises(errors.InvalidDocId, self.db.put_doc, doc)
-        doc = self.make_document("", None, simple_doc)
-        self.assertRaises(errors.InvalidDocId, self.db.put_doc, doc)
-
-    def test_put_doc_refuses_slashes(self):
-        doc = self.make_document('a/b', None, simple_doc)
-        self.assertRaises(errors.InvalidDocId, self.db.put_doc, doc)
-        doc = self.make_document(r'\b', None, simple_doc)
-        self.assertRaises(errors.InvalidDocId, self.db.put_doc, doc)
-
-    def test_put_doc_url_quoting_is_fine(self):
-        doc_id = "%2F%2Ffoo%2Fbar"
-        doc = self.make_document(doc_id, None, simple_doc)
-        new_rev = self.db.put_doc(doc)
-        self.assertGetDoc(self.db, doc_id, new_rev, simple_doc, False)
-
-    def test_put_doc_refuses_non_existing_old_rev(self):
-        doc = self.make_document('doc-id', 'test:4', simple_doc)
-        self.assertRaises(errors.RevisionConflict, self.db.put_doc, doc)
-
-    def test_put_doc_refuses_non_ascii_doc_id(self):
-        doc = self.make_document('d\xc3\xa5c-id', None, simple_doc)
-        self.assertRaises(errors.InvalidDocId, self.db.put_doc, doc)
-
-    def test_put_fails_with_bad_old_rev(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        old_rev = doc.rev
-        bad_doc = self.make_document(doc.doc_id, 'other:1',
-                                     '{"something": "else"}')
-        self.assertRaises(errors.RevisionConflict, self.db.put_doc, bad_doc)
-        self.assertGetDoc(self.db, 'my_doc_id', old_rev, simple_doc, False)
-
-    def test_create_succeeds_after_delete(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        self.db.delete_doc(doc)
-        deleted_doc = self.db.get_doc('my_doc_id', include_deleted=True)
-        deleted_vc = vectorclock.VectorClockRev(deleted_doc.rev)
-        new_doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        self.assertGetDoc(self.db, 'my_doc_id', new_doc.rev, simple_doc, False)
-        new_vc = vectorclock.VectorClockRev(new_doc.rev)
-        self.assertTrue(
-            new_vc.is_newer(deleted_vc),
-            "%s does not supersede %s" % (new_doc.rev, deleted_doc.rev))
-
-    def test_put_succeeds_after_delete(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        self.db.delete_doc(doc)
-        deleted_doc = self.db.get_doc('my_doc_id', include_deleted=True)
-        deleted_vc = vectorclock.VectorClockRev(deleted_doc.rev)
-        doc2 = self.make_document('my_doc_id', None, simple_doc)
-        self.db.put_doc(doc2)
-        self.assertGetDoc(self.db, 'my_doc_id', doc2.rev, simple_doc, False)
-        new_vc = vectorclock.VectorClockRev(doc2.rev)
-        self.assertTrue(
-            new_vc.is_newer(deleted_vc),
-            "%s does not supersede %s" % (doc2.rev, deleted_doc.rev))
-
-    def test_get_doc_after_put(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        self.assertGetDoc(self.db, 'my_doc_id', doc.rev, simple_doc, False)
-
-    def test_get_doc_nonexisting(self):
-        self.assertIs(None, self.db.get_doc('non-existing'))
-
-    def test_get_doc_deleted(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        self.db.delete_doc(doc)
-        self.assertIs(None, self.db.get_doc('my_doc_id'))
-
-    def test_get_doc_include_deleted(self):
-        doc = self.db.create_doc_from_json(simple_doc, doc_id='my_doc_id')
-        self.db.delete_doc(doc)
-        self.assertGetDocIncludeDeleted(
-            self.db, doc.doc_id, doc.rev, None, False)
-
-    def test_get_docs(self):
-        doc1 = self.db.create_doc_from_json(simple_doc)
-        doc2 = self.db.create_doc_from_json(nested_doc)
-        self.assertEqual([doc1, doc2],
-                         list(self.db.get_docs([doc1.doc_id, doc2.doc_id])))
-
-    def test_get_docs_deleted(self):
-        doc1 = self.db.create_doc_from_json(simple_doc)
-        doc2 = self.db.create_doc_from_json(nested_doc)
-        self.db.delete_doc(doc1)
-        self.assertEqual([doc2],
-                         list(self.db.get_docs([doc1.doc_id, doc2.doc_id])))
-
-    def test_get_docs_include_deleted(self):
-        doc1 = self.db.create_doc_from_json(simple_doc)
-        doc2 = self.db.create_doc_from_json(nested_doc)
-        self.db.delete_doc(doc1)
-        self.assertEqual(
-            [doc1, doc2],
-            list(self.db.get_docs([doc1.doc_id, doc2.doc_id],
-                                  include_deleted=True)))
-
-    def test_get_docs_request_ordered(self):
-        doc1 = self.db.create_doc_from_json(simple_doc)
-        doc2 = self.db.create_doc_from_json(nested_doc)
-        self.assertEqual([doc1, doc2],
-                         list(self.db.get_docs([doc1.doc_id, doc2.doc_id])))
-        self.assertEqual([doc2, doc1],
-                         list(self.db.get_docs([doc2.doc_id, doc1.doc_id])))
-
-    def test_get_docs_empty_list(self):
-        self.assertEqual([], list(self.db.get_docs([])))
-
-    def test_handles_nested_content(self):
-        doc = self.db.create_doc_from_json(nested_doc)
-        self.assertGetDoc(self.db, doc.doc_id, doc.rev, nested_doc, False)
-
-    def test_handles_doc_with_null(self):
-        doc = self.db.create_doc_from_json('{"key": null}')
-        self.assertGetDoc(self.db, doc.doc_id, doc.rev, '{"key": null}', False)
-
-    def test_delete_doc(self):
-        doc = self.db.create_doc_from_json(simple_doc)
-        self.assertGetDoc(self.db, doc.doc_id, doc.rev, simple_doc, False)
-        orig_rev = doc.rev
-        self.db.delete_doc(doc)
-        self.assertNotEqual(orig_rev, doc.rev)
-        self.assertGetDocIncludeDeleted(
-            self.db, doc.doc_id, doc.rev, None, False)
-        self.assertIs(None, self.db.get_doc(doc.doc_id))
-
-    def test_delete_doc_non_existent(self):
-        doc = self.make_document('non-existing', 'other:1', simple_doc)
-        self.assertRaises(errors.DocumentDoesNotExist, self.db.delete_doc, doc)
-
-    def test_delete_doc_already_deleted(self):
-        doc = self.db.create_doc_from_json(simple_doc)
-        self.db.delete_doc(doc)
-        self.assertRaises(errors.DocumentAlreadyDeleted,
-                          self.db.delete_doc, doc)
-        self.assertGetDocIncludeDeleted(
-            self.db, doc.doc_id, doc.rev, None, False)
-
-    def test_delete_doc_bad_rev(self):
-        doc1 = self.db.create_doc_from_json(simple_doc)
-        self.assertGetDoc(self.db, doc1.doc_id, doc1.rev, simple_doc, False)
-        doc2 = self.make_document(doc1.doc_id, 'other:1', simple_doc)
-        self.assertRaises(errors.RevisionConflict, self.db.delete_doc, doc2)
-        self.assertGetDoc(self.db, doc1.doc_id, doc1.rev, simple_doc, False)
-
-    def test_delete_doc_sets_content_to_None(self):
-        doc = self.db.create_doc_from_json(simple_doc)
-        self.db.delete_doc(doc)
-        self.assertIs(None, doc.get_json())
-
-    def test_delete_doc_rev_supersedes(self):
-        doc = self.db.create_doc_from_json(simple_doc)
-        doc.set_json(nested_doc)
-        self.db.put_doc(doc)
-        doc.set_json('{"fishy": "content"}')
-        self.db.put_doc(doc)
-        old_rev = doc.rev
-        self.db.delete_doc(doc)
-        cur_vc = vectorclock.VectorClockRev(old_rev)
-        deleted_vc = vectorclock.VectorClockRev(doc.rev)
-        self.assertTrue(deleted_vc.is_newer(cur_vc),
-                "%s does not supersede %s" % (doc.rev, old_rev))
-
-    def test_delete_then_put(self):
-        doc = self.db.create_doc_from_json(simple_doc)
-        self.db.delete_doc(doc)
-        self.assertGetDocIncludeDeleted(
-            self.db, doc.doc_id, doc.rev, None, False)
-        doc.set_json(nested_doc)
-        self.db.put_doc(doc)
-        self.assertGetDoc(self.db, doc.doc_id, doc.rev, nested_doc, False)
+def copy_couch_database_for_test(test, db):
+    new_db = couch.CouchDatabase('http://localhost:5984',  db._replica_uid+'_copy',
+                                 replica_uid=db._replica_uid or 'test')
+    gen, docs = db.get_all_docs(include_deleted=True)
+    for doc in docs:
+        new_db._put_doc(doc)
+    new_db._transaction_log._data = copy.deepcopy(db._transaction_log._data)
+    new_db._sync_log._data = copy.deepcopy(db._sync_log._data)
+    new_db._conflict_log._data = copy.deepcopy(db._conflict_log._data)
+    new_db._set_u1db_data()
+    return new_db
 
 
+COUCH_SCENARIOS = [
+        ('couch', {'make_database_for_test': make_couch_database_for_test,
+                  'copy_database_for_test': copy_couch_database_for_test,
+                  'make_document_for_test': tests.make_document_for_test,}),
+        ]
+
+
+class CouchTests(test_backends.AllDatabaseTests):
+
+    scenarios = COUCH_SCENARIOS
 
     def tearDown(self):
-        self.db._server.delete('u1db_tests')
+        self.db.delete_database()
+        super(CouchTests, self).tearDown()
 
-if __name__ == '__main__':
-    unittest2.main()
+
+class CouchDatabaseTests(test_backends.LocalDatabaseTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchDatabaseTests, self).tearDown()
+
+
+class CouchValidateGenNTransIdTests(test_backends.LocalDatabaseValidateGenNTransIdTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchValidateGenNTransIdTests, self).tearDown()
+
+
+class CouchValidateSourceGenTests(test_backends.LocalDatabaseValidateSourceGenTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchValidateSourceGenTests, self).tearDown()
+
+
+class CouchWithConflictsTests(test_backends.LocalDatabaseWithConflictsTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchWithConflictsTests, self).tearDown()
+
+
+# Notice: the CouchDB backend is currently used for storing encrypted data in
+# the server, so indexing makes no sense. Thus, we ignore index testing for
+# now.
+
+#class CouchIndexTests(DatabaseIndexTests):
+#
+#    scenarios = COUCH_SCENARIOS
+#
+#    def tearDown(self):
+#        self.db.delete_database()
+#        super(CouchIndexTests, self).tearDown()
+
+
+
+#-----------------------------------------------------------------------------
+# The following tests come from `u1db.tests.test_sync`.
+#-----------------------------------------------------------------------------
+
+target_scenarios = [
+    ('local', {'create_db_and_target': test_sync._make_local_db_and_target}), ]
+
+
+simple_doc = tests.simple_doc
+nested_doc = tests.nested_doc
+
+
+class CouchDatabaseSyncTargetTests(test_sync.DatabaseSyncTargetTests):
+
+    scenarios = (tests.multiply_scenarios(COUCH_SCENARIOS, target_scenarios))
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchDatabaseSyncTargetTests, self).tearDown()
+
+    def test_sync_exchange_returns_many_new_docs(self):
+        # This test was replicated to allow dictionaries to be compared after
+        # JSON expansion (because one dictionary may have many different
+        # serialized representations).
+        doc = self.db.create_doc_from_json(simple_doc)
+        doc2 = self.db.create_doc_from_json(nested_doc)
+        self.assertTransactionLog([doc.doc_id, doc2.doc_id], self.db)
+        new_gen, _ = self.st.sync_exchange(
+            [], 'other-replica', last_known_generation=0,
+            last_known_trans_id=None, return_doc_cb=self.receive_doc)
+        self.assertTransactionLog([doc.doc_id, doc2.doc_id], self.db)
+        self.assertEqual(2, new_gen)
+        self.assertEqual(
+            [(doc.doc_id, doc.rev, json.loads(simple_doc), 1),
+             (doc2.doc_id, doc2.rev, json.loads(nested_doc), 2)],
+            [c[:-3] + (json.loads(c[-3]), c[-2]) for c in self.other_changes])
+        if self.whitebox:
+            self.assertEqual(
+                self.db._last_exchange_log['return'],
+                {'last_gen': 2, 'docs':
+                 [(doc.doc_id, doc.rev), (doc2.doc_id, doc2.rev)]})
+
+
+sync_scenarios = []
+for name, scenario in COUCH_SCENARIOS:
+    scenario = dict(scenario)
+    scenario['do_sync'] = test_sync.sync_via_synchronizer
+    sync_scenarios.append((name, scenario))
+    scenario = dict(scenario)
+
+class CouchDatabaseSyncTests(test_sync.DatabaseSyncTests):
+
+    scenarios = sync_scenarios
+
+    def setUp(self):
+        self.db  = None
+        self.db1 = None
+        self.db2 = None
+        self.db3 = None
+        super(CouchDatabaseSyncTests, self).setUp()
+
+    def tearDown(self):
+        self.db and self.db.delete_database()
+        self.db1 and self.db1.delete_database()
+        self.db2 and self.db2.delete_database()
+        self.db3 and self.db3.delete_database()
+        db = self.create_database('test1_copy', 'source')
+        db.delete_database()
+        db = self.create_database('test2_copy', 'target')
+        db.delete_database()
+        db = self.create_database('test3', 'target')
+        db.delete_database()
+        super(CouchDatabaseSyncTests, self).tearDown()
+
+    # The following tests use indexing, so we eliminate them for now because
+    # indexing is still not implemented in couch backend.
+
+    def test_sync_pulls_changes(self):
+        pass
+
+    def test_sync_sees_remote_conflicted(self):
+        pass
+
+    def test_sync_sees_remote_delete_conflicted(self):
+        pass
+
+    def test_sync_local_race_conflicted(self):
+        pass
+
+    def test_sync_propagates_deletes(self):
+        pass
+
+
+
+load_tests = tests.load_with_scenarios
