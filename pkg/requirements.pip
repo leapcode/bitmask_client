@@ -3,18 +3,20 @@
 
 argparse # only for python 2.6
 requests<1.0.0 
-ping # don't use it! needs root.
 psutil
 netifaces
-python-gnutls==1.1.9  # see https://bugs.launchpad.net/ubuntu/+source/python-gnutls/+bug/1027129
+pyopenssl
 jsonschema
 srp>=1.0.2
 pycrypto
 keyring
 python-dateutil
+sh
+pygeoip # optional
+#ping # to be deprecated
+
+# soledad deps -- will move to its own repo soon
 python-gnupg
 u1db
 oauth
 couchdb
-sh
-pygeoip
