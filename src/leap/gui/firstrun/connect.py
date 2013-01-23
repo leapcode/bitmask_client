@@ -24,8 +24,8 @@ class ConnectionPage(ValidationPage):
         self.current_page = "connect"
 
         title = self.tr("Connecting...")
-        # XXX uh... really?
-        subtitle = self.tr("Checking connection with provider.")
+        subtitle = self.tr("Setting up a encrypted "
+                           "connection with the provider")
 
         self.setTitle(title)
         self.setSubTitle(subtitle)
@@ -82,7 +82,7 @@ class ConnectionPage(ValidationPage):
             except Exception as exc:
                 return self.fail(exc.message)
 
-        yield((self.tr("Fetching provider config..."), 40),
+        yield((self.tr("Getting EIP configuration files"), 40),
               fetcheipconf)
 
         ##################################################
@@ -94,7 +94,7 @@ class ConnectionPage(ValidationPage):
                 downloaded = pCertChecker.download_new_client_cert(
                     credentials=credentials)
                 if not downloaded:
-                    logger.error('Could not download client cert.')
+                    logger.error('Could not download client cert')
                     return False
 
             except auth.SRPAuthenticationError as exc:
@@ -106,7 +106,7 @@ class ConnectionPage(ValidationPage):
             else:
                 return True
 
-        yield((self.tr("Fetching eip certificate"), 80),
+        yield((self.tr("Getting EIP certificate"), 80),
               fetcheipcert)
 
         ################
@@ -120,9 +120,11 @@ class ConnectionPage(ValidationPage):
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
-        # this should be called CONNECT PAGE AGAIN.
         # here we go! :)
         if self.is_done():
+            nextbutton = self.wizard().button(QtGui.QWizard.NextButton)
+            nextbutton.setFocus()
+
             full_domain = self.field('provider_domain')
             domain, port = get_https_domain_and_port(full_domain)
             _domain = u"%s:%s" % (
@@ -138,10 +140,15 @@ class ConnectionPage(ValidationPage):
 
         if conductor:
             conductor.set_provider_domain(domain)
-            conductor.run_checks()
-            self.conductor = conductor
-            errors = self.eip_error_check()
-            if not errors and start_eip_signal:
+            # we could run some of the checks to be
+            # sure everything is in order, but
+            # I see no point in doing it, we assume
+            # we've gone thru all checks during the wizard.
+            #conductor.run_checks()
+            #self.conductor = conductor
+            #errors = self.eip_error_check()
+            #if not errors and start_eip_signal:
+            if start_eip_signal:
                 start_eip_signal.emit()
 
         else:
@@ -150,53 +157,58 @@ class ConnectionPage(ValidationPage):
                 "probably the wizard has been launched "
                 "in an stand-alone way.")
 
-        # XXX look for a better place to signal
-        # we are done.
-        # We could probably have a fake validatePage
-        # that checks if the domain transfer has been
-        # done to conductor object, triggers the start_signal
-        # and does the go_next()
         self.set_done()
 
-    def eip_error_check(self):
-        """
-        a version of the main app error checker,
-        but integrated within the connecting page of the wizard.
-        consumes the conductor error queue.
-        pops errors, and add those to the wizard page
-        """
-        logger.debug('eip error check from connecting page')
-        errq = self.conductor.error_queue
-        # XXX missing!
+    #def eip_error_check(self):
+        #"""
+        #a version of the main app error checker,
+        #but integrated within the connecting page of the wizard.
+        #consumes the conductor error queue.
+        #pops errors, and add those to the wizard page
+        #"""
+        # TODO handle errors.
+        # We should redirect them to the log viewer
+        # with a brief message.
+        # XXX move to LAST PAGE instead.
+        #logger.debug('eip error check from connecting page')
+        #errq = self.conductor.error_queue
 
-    def _do_validation(self):
-        """
-        called after _do_checks has finished
-        (connected to checker thread finished signal)
-        """
-        from_login = self.wizard().from_login
-        prevpage = "login" if from_login else "signup"
+    #def _do_validation(self):
+        #"""
+        #called after _do_checks has finished
+        #(connected to checker thread finished signal)
+        #"""
+        #from_login = self.wizard().from_login
+        #prevpage = "login" if from_login else "signup"
 
-        wizard = self.wizard()
-        if self.errors:
-            logger.debug('going back with errors')
-            logger.error(self.errors)
-            name, first_error = self.pop_first_error()
-            wizard.set_validation_error(
-                prevpage,
-                first_error)
-            self.go_back()
-        else:
-            logger.debug('should go next, wait for user to click next')
-            #self.go_next()
+        #wizard = self.wizard()
+        #if self.errors:
+            #logger.debug('going back with errors')
+            #logger.error(self.errors)
+            #name, first_error = self.pop_first_error()
+            #wizard.set_validation_error(
+                #prevpage,
+                #first_error)
+            #self.go_back()
 
     def nextId(self):
         wizard = self.wizard()
-        #if not wizard:
-            #return
         return wizard.get_page_index('lastpage')
 
     def initializePage(self):
         super(ConnectionPage, self).initializePage()
         self.set_undone()
+        cancelbutton = self.wizard().button(QtGui.QWizard.CancelButton)
+        cancelbutton.hide()
         self.completeChanged.emit()
+
+        wizard = self.wizard()
+        eip_statuschange_signal = wizard.eip_statuschange_signal
+        if eip_statuschange_signal:
+            eip_statuschange_signal.connect(
+                lambda status: self.send_status(
+                    status))
+
+    def send_status(self, status):
+        wizard = self.wizard()
+        wizard.openvpn_status.append(status)

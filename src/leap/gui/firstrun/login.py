@@ -22,7 +22,7 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         self.current_page = "login"
 
         self.setTitle(self.tr("Log In"))
-        self.setSubTitle(self.tr("Log in with your credentials."))
+        self.setSubTitle(self.tr("Log in with your credentials"))
         self.current_page = "login"
 
         self.setPixmap(

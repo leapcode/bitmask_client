@@ -15,7 +15,8 @@ class LastPage(QtGui.QWizardPage):
     def __init__(self, parent=None):
         super(LastPage, self).__init__(parent)
 
-        self.setTitle(self.tr("Connecting to Encrypted Internet Proxy service..."))
+        self.setTitle(self.tr(
+            "Connecting to Encrypted Internet Proxy service..."))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
@@ -33,6 +34,7 @@ class LastPage(QtGui.QWizardPage):
         self.status_line_2 = QtGui.QLabel()
         self.status_line_3 = QtGui.QLabel()
         self.status_line_4 = QtGui.QLabel()
+        self.status_line_5 = QtGui.QLabel()
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.label)
@@ -42,6 +44,7 @@ class LastPage(QtGui.QWizardPage):
         layout.addWidget(self.status_line_2)
         layout.addWidget(self.status_line_3)
         layout.addWidget(self.status_line_4)
+        layout.addWidget(self.status_line_5)
 
         self.setLayout(layout)
 
@@ -67,7 +70,7 @@ class LastPage(QtGui.QWizardPage):
         # signals. See progress.py
         logger.debug('logging status in last page')
         self.validation_done = False
-        status_count = 0
+        status_count = 1
         try:
             while True:
                 status = (yield)
@@ -84,11 +87,23 @@ class LastPage(QtGui.QWizardPage):
             pass
 
     def initializePage(self):
+        super(LastPage, self).initializePage()
         wizard = self.wizard()
-        if not wizard:
-            return
-        eip_status_handler = self.eip_status_handler()
+        handler = self.eip_status_handler()
+
+        # get statuses done in prev page
+        for st in wizard.openvpn_status:
+            self.send_status(handler.send, st)
+
+        # bind signal for events yet to come
         eip_statuschange_signal = wizard.eip_statuschange_signal
         if eip_statuschange_signal:
             eip_statuschange_signal.connect(
-                lambda status: eip_status_handler.send(status))
+                lambda status: self.send_status(
+                    handler.send, status))
+
+    def send_status(self, cb, status):
+        try:
+            cb(status)
+        except StopIteration:
+            pass

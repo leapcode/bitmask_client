@@ -280,7 +280,6 @@ to be triggered for each one of them.
 
     # checks
 
-
     def _check_if_running_instance(self):
         """
         check if openvpn is already running

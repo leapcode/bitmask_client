@@ -11,7 +11,7 @@ class IntroPage(QtGui.QWizardPage):
     def __init__(self, parent=None):
         super(IntroPage, self).__init__(parent)
 
-        self.setTitle(self.tr("First run wizard."))
+        self.setTitle(self.tr("First run wizard"))
 
         #self.setPixmap(
             #QtGui.QWizard.WatermarkPixmap,
@@ -35,10 +35,10 @@ class IntroPage(QtGui.QWizardPage):
         radiobuttonGroup = QtGui.QGroupBox()
 
         self.sign_up = QtGui.QRadioButton(
-            self.tr("Sign up for a new account."))
+            self.tr("Sign up for a new account"))
         self.sign_up.setChecked(True)
         self.log_in = QtGui.QRadioButton(
-            self.tr("Log In with my credentials."))
+            self.tr("Log In with my credentials"))
 
         radiobLayout = QtGui.QVBoxLayout()
         radiobLayout.addWidget(self.sign_up)

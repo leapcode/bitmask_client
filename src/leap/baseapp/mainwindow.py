@@ -186,4 +186,6 @@ class LeapWindow(QtGui.QMainWindow,
         called from the end of wizard
         """
         self.show_systray_icon()
+        # this will setup the command
+        self.conductor.run_openvpn_checks()
         self.start_or_stopVPN()

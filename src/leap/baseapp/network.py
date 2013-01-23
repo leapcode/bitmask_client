@@ -36,6 +36,7 @@ class NetworkCheckerAppMixin(object):
 
     @QtCore.pyqtSlot(object)
     def runNetworkChecks(self):
+        logger.debug('running checks (from NetworkChecker Mixin slot)')
         self.network_checker.run_checks()
 
     @QtCore.pyqtSlot(object)

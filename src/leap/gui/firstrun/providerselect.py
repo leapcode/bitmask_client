@@ -32,7 +32,7 @@ class SelectProviderPage(InlineValidationPage):
         self.setTitle(self.tr("Enter Provider"))
         self.setSubTitle(self.tr(
             "Please enter the domain of the provider you want "
-            "to use for your connection.")
+            "to use for your connection")
         )
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
@@ -219,7 +219,7 @@ class SelectProviderPage(InlineValidationPage):
                 return True
 
         logger.debug('checking name resolution')
-        yield((self.tr("checking domain name"), 20), namecheck)
+        yield((self.tr("Checking if it is a valid provider"), 20), namecheck)
 
         #########################
         # 2) try https connection
@@ -273,7 +273,7 @@ class SelectProviderPage(InlineValidationPage):
                 return True
 
         logger.debug('checking https connection')
-        yield((self.tr("checking https connection"), 40), httpscheck)
+        yield((self.tr("Checking for a secure connection"), 40), httpscheck)
 
         ##################################
         # 3) try download provider info...
@@ -300,7 +300,7 @@ class SelectProviderPage(InlineValidationPage):
             else:
                 return True
 
-        yield((self.tr("fetching provider info"), 80), fetchinfo)
+        yield((self.tr("Getting info from the provider"), 80), fetchinfo)
 
         # done!
 
