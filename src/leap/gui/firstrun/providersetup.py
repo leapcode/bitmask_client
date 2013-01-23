@@ -141,18 +141,12 @@ class ProviderSetupValidationPage(ValidationPage):
             wizard.set_validation_error(
                 prevpage,
                 first_error)
-            # XXX don't go back, signal error
-            #self.go_back()
-        else:
-            logger.debug('should be going next, wait on user')
-            #self.go_next()
 
     def nextId(self):
         wizard = self.wizard()
         from_login = wizard.from_login
         if from_login:
-            # XXX bad name. change to connect again.
-            next_ = 'signupvalidation'
+            next_ = 'connect'
         else:
             next_ = 'signup'
         return wizard.get_page_index(next_)

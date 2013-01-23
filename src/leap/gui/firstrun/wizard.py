@@ -136,6 +136,7 @@ class FirstRunWizard(QtGui.QWizard):
         self.add_pages_from_dict(pages_dict)
 
         self.validation_errors = {}
+        self.openvpn_status = []
 
         self.setPixmap(
             QtGui.QWizard.BannerPixmap,

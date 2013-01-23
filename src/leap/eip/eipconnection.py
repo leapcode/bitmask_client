@@ -177,7 +177,7 @@ class EIPConnection(OpenVPNConnection, StatusMixIn):
 
         super(EIPConnection, self).__init__(*args, **kwargs)
 
-    def connect(self):
+    def connect(self, **kwargs):
         """
         entry point for connection process
         """

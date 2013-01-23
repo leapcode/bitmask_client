@@ -48,14 +48,6 @@ def main():
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    #logger.debug(opts)
-    import os
-    ldlib = os.environ.get("LD_LIBRARY_PATH", None)
-    dyldlib = os.environ.get("DYLD_LIBRARY_PATH", None)
-
-    logger.debug("LD_LIBRARY_PATH %s" % ldlib)
-    logger.debug("DYLD_LIBRARY_PATH %s" % dyldlib)
-
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('LEAP client version %s', VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
@@ -73,7 +65,6 @@ def main():
     # To test:
     # $ LANG=es ./app.py
     locale = QtCore.QLocale.system().name()
-    print locale
     qtTranslator = QtCore.QTranslator()
     if qtTranslator.load("qt_%s" % locale, ":/translations"):
         app.installTranslator(qtTranslator)

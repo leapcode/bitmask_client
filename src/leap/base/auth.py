@@ -44,7 +44,7 @@ class LeapSRPRegister(object):
                  schema="https",
                  provider=None,
                  verify=True,
-                 register_path="1/users.json",
+                 register_path="1/users",
                  method="POST",
                  fetcher=requests,
                  srp=srp,
@@ -113,9 +113,6 @@ class LeapSRPRegister(object):
             uri, data=user_data,
             timeout=SIGNUP_TIMEOUT,
             verify=self.verify)
-        logger.debug(req)
-        logger.debug('user_data: %s', user_data)
-        #logger.debug('response: %s', req.text)
         # we catch it in the form
         #req.raise_for_status()
         return (req.ok, req)
@@ -159,7 +156,7 @@ class SRPAuth(requests.auth.AuthBase):
     def get_init_data(self):
         try:
             init_session = self.session.post(
-                self.server + '/1/sessions.json/',
+                self.server + '/1/sessions/',
                 data=self.get_auth_data(),
                 verify=self.verify)
         except requests.exceptions.ConnectionError:

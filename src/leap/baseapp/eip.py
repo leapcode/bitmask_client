@@ -193,21 +193,24 @@ class EIPConductorAppMixin(object):
         # connection information via management interface
         log = self.conductor.get_log()
         error_matrix = [(EVENT_CONNECT_REFUSED, (self.start_or_stopVPN, ))]
-        self.network_checker.checker.parse_log_and_react(log, error_matrix)
+        if hasattr(self.network_checker, 'checker'):
+            self.network_checker.checker.parse_log_and_react(log, error_matrix)
 
     @QtCore.pyqtSlot()
-    def start_or_stopVPN(self):
+    def start_or_stopVPN(self, **kwargs):
         """
         stub for running child process with vpn
         """
         if self.conductor.has_errors():
             logger.debug('not starting vpn; conductor has errors')
+            return
 
         if self.eip_service_started is False:
             try:
                 self.conductor.connect()
 
             except eip_exceptions.EIPNoCommandError as exc:
+                logger.error('tried to run openvpn but no command is set')
                 self.triggerEIPError.emit(exc)
 
             except Exception as err:

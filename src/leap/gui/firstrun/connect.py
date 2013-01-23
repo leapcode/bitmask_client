@@ -120,9 +120,11 @@ class ConnectionPage(ValidationPage):
         called after _do_checks has finished
         (connected to checker thread finished signal)
         """
-        # this should be called CONNECT PAGE AGAIN.
         # here we go! :)
         if self.is_done():
+            nextbutton = self.wizard().button(QtGui.QWizard.NextButton)
+            nextbutton.setFocus()
+
             full_domain = self.field('provider_domain')
             domain, port = get_https_domain_and_port(full_domain)
             _domain = u"%s:%s" % (
@@ -138,10 +140,15 @@ class ConnectionPage(ValidationPage):
 
         if conductor:
             conductor.set_provider_domain(domain)
-            conductor.run_checks()
-            self.conductor = conductor
-            errors = self.eip_error_check()
-            if not errors and start_eip_signal:
+            # we could run some of the checks to be
+            # sure everything is in order, but
+            # I see no point in doing it, we assume
+            # we've gone thru all checks during the wizard.
+            #conductor.run_checks()
+            #self.conductor = conductor
+            #errors = self.eip_error_check()
+            #if not errors and start_eip_signal:
+            if start_eip_signal:
                 start_eip_signal.emit()
 
         else:
@@ -150,12 +157,6 @@ class ConnectionPage(ValidationPage):
                 "probably the wizard has been launched "
                 "in an stand-alone way.")
 
-        # XXX look for a better place to signal
-        # we are done.
-        # We could probably have a fake validatePage
-        # that checks if the domain transfer has been
-        # done to conductor object, triggers the start_signal
-        # and does the go_next()
         self.set_done()
 
     def eip_error_check(self):
@@ -165,9 +166,13 @@ class ConnectionPage(ValidationPage):
         consumes the conductor error queue.
         pops errors, and add those to the wizard page
         """
-        logger.debug('eip error check from connecting page')
-        errq = self.conductor.error_queue
-        # XXX missing!
+        # TODO handle errors.
+        # We should redirect them to the log viewer
+        # with a brief message.
+        # XXX move to LAST PAGE instead.
+        #logger.debug('eip error check from connecting page')
+        #errq = self.conductor.error_queue
+        pass
 
     def _do_validation(self):
         """
@@ -186,17 +191,25 @@ class ConnectionPage(ValidationPage):
                 prevpage,
                 first_error)
             self.go_back()
-        else:
-            logger.debug('should go next, wait for user to click next')
-            #self.go_next()
 
     def nextId(self):
         wizard = self.wizard()
-        #if not wizard:
-            #return
         return wizard.get_page_index('lastpage')
 
     def initializePage(self):
         super(ConnectionPage, self).initializePage()
         self.set_undone()
+        cancelbutton = self.wizard().button(QtGui.QWizard.CancelButton)
+        cancelbutton.hide()
         self.completeChanged.emit()
+
+        wizard = self.wizard()
+        eip_statuschange_signal = wizard.eip_statuschange_signal
+        if eip_statuschange_signal:
+            eip_statuschange_signal.connect(
+                lambda status: self.send_status(
+                    status))
+
+    def send_status(self, status):
+        wizard = self.wizard()
+        wizard.openvpn_status.append(status)
