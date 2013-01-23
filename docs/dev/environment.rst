@@ -81,7 +81,7 @@ A second option if that does not work for you would be to install PyQt globally 
     $ apt-get install python-qt4
     $ virtualenv --site-packages .
 
-Or, if you prefer, you can also `download the official PyQt tarball<http://www.riverbankcomputing.com/software/pyqt/download>`_ and execute ``configure.py`` in the root folder of their distribution, which generates a ``Makefile``::
+Or, if you prefer, you can also `download the official PyQt tarball <http://www.riverbankcomputing.com/software/pyqt/download>`_ and execute ``configure.py`` in the root folder of their distribution, which generates a ``Makefile``::
 
     $ python configure.py
     $ make && make install
@@ -90,7 +90,7 @@ Or, if you prefer, you can also `download the official PyQt tarball<http://www.r
    this section could be completed with useful options that can be passed to the virtualenv command (e.g., to make portable paths, site-packages, ...).
 
 
-.. _files:
+.. _copyscriptfiles:
 
 Copy script files
 -----------------

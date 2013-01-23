@@ -58,13 +58,17 @@ from the directory where you *sourced* the bootstrap script.
 
 Refer to :ref:`Working with virtualenv <virtualenv>` to learn more about virtualenv.
 
-Policy files
-^^^^^^^^^^^^
+Copying config files
+^^^^^^^^^^^^^^^^^^^^
 
-If you have never installed the ``leap-client`` globally, **you need to copy a policykit file to its proper path before running it for the first time** (you only need to do this once). This, unless the virtualenv-based operations, will need root permissions. See :ref:`running openvpn without root privileges <policykit>` section for more info on this.
+If you have never installed the ``leap-client`` globally, **you need to copy some files to its proper path before running it for the first time** (you only need to do this once). This, unless the virtualenv-based operations, will need root permissions. See :ref:`copy script files <copyscriptfiles>` and :ref:`running openvpn without root privileges <policykit>` sections for more info on this. In short::
 
-Config files
-^^^^^^^^^^^^
+    $ sudo cp pkg/linux/polkit/net.openvpn.gui.leap.policy /usr/share/polkit-1/actions/
+    $ sudo mkdir -p /etc/leap
+    $ sudo cp pkg/linux/resolv-update /etc/leap 
+
+Local config files
+^^^^^^^^^^^^^^^^^^^
 
 If you want to start fresh without config files, just move them. In linux::
 
