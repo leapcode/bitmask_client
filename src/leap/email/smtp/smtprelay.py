@@ -7,6 +7,7 @@ from twisted.internet.protocol import ServerFactory
 from twisted.internet import reactor
 from twisted.internet import defer
 from twisted.application import internet, service
+from twisted.python import log
 from email.Header import Header
 
 
@@ -56,7 +57,7 @@ class SMTPDelivery(object):
             # be encrypted. So, we check for this below
             #if trust != 'u':
             #    raise smtp.SMTPBadRcpt(user)
-            print "Accepting mail for %s..." % user.dest
+            log.msg("Accepting mail for %s..." % user.dest)
             return lambda: EncryptedMessage(user, gpg=self._gpg)
         except LookupError:
             raise smtp.SMTPBadRcpt(user)
@@ -92,7 +93,7 @@ class EncryptedMessage():
 
     def eomReceived(self):
         """Encrypt and send message."""
-        print "Message data complete."
+        log.msg("Message data complete.")
         self.lines.append('') # add a trailing newline
         self.parseMessage()
         try:
@@ -108,15 +109,17 @@ class EncryptedMessage():
         self.body = self.lines[sep+1:]
 
     def connectionLost(self):
-        print "Connection lost unexpectedly!"
+        log.msg("Connection lost unexpectedly!")
+        log.err()
         # unexpected loss of connection; don't save
         self.lines = []
 
     def sendSuccess(self, r):
-        print r
+        log.msg(r)
 
     def sendError(self, e):
-        print e
+        log.msg(e)
+        log.err()
 
     def prepareHeader(self):
         self.headers.insert(1, "From: %s" % self.user.orig.addrstr)
@@ -142,7 +145,7 @@ class EncryptedMessage():
     def encrypt(self, always_trust=True):
         # TODO: do not "always trust" here.
         fp = self._gpg.find_key(self.user.dest.addrstr)['fingerprint']
-        print "Encrypting to %s" % fp
+        log.msg("Encrypting to %s" % fp)
         self.cyphertext = str(self._gpg.encrypt('\n'.join(self.body), [fp],
                                                 always_trust=always_trust))
     

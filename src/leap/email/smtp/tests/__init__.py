@@ -21,7 +21,7 @@ class OpenPGPTestCase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.GNUPG_HOME)
 
-    def test_encrypt_decrypt(self):
+    def test_openpgp_encrypt_decrypt(self):
         text = "simple raw text"
         encrypted = str(self._gpg.encrypt(text, KEY_FINGERPRINT,
                                           # TODO: handle always trust issue
