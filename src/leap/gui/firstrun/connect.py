@@ -24,8 +24,8 @@ class ConnectionPage(ValidationPage):
         self.current_page = "connect"
 
         title = self.tr("Connecting...")
-        # XXX uh... really?
-        subtitle = self.tr("Checking connection with provider.")
+        subtitle = self.tr("Setting up a encrypted "
+                           "connection with the provider")
 
         self.setTitle(title)
         self.setSubTitle(subtitle)
@@ -82,7 +82,7 @@ class ConnectionPage(ValidationPage):
             except Exception as exc:
                 return self.fail(exc.message)
 
-        yield((self.tr("Fetching provider config..."), 40),
+        yield((self.tr("Getting EIP configuration files"), 40),
               fetcheipconf)
 
         ##################################################
@@ -94,7 +94,7 @@ class ConnectionPage(ValidationPage):
                 downloaded = pCertChecker.download_new_client_cert(
                     credentials=credentials)
                 if not downloaded:
-                    logger.error('Could not download client cert.')
+                    logger.error('Could not download client cert')
                     return False
 
             except auth.SRPAuthenticationError as exc:
@@ -106,7 +106,7 @@ class ConnectionPage(ValidationPage):
             else:
                 return True
 
-        yield((self.tr("Fetching eip certificate"), 80),
+        yield((self.tr("Getting EIP certificate"), 80),
               fetcheipcert)
 
         ################
@@ -159,38 +159,37 @@ class ConnectionPage(ValidationPage):
 
         self.set_done()
 
-    def eip_error_check(self):
-        """
-        a version of the main app error checker,
-        but integrated within the connecting page of the wizard.
-        consumes the conductor error queue.
-        pops errors, and add those to the wizard page
-        """
+    #def eip_error_check(self):
+        #"""
+        #a version of the main app error checker,
+        #but integrated within the connecting page of the wizard.
+        #consumes the conductor error queue.
+        #pops errors, and add those to the wizard page
+        #"""
         # TODO handle errors.
         # We should redirect them to the log viewer
         # with a brief message.
         # XXX move to LAST PAGE instead.
         #logger.debug('eip error check from connecting page')
         #errq = self.conductor.error_queue
-        pass
 
-    def _do_validation(self):
-        """
-        called after _do_checks has finished
-        (connected to checker thread finished signal)
-        """
-        from_login = self.wizard().from_login
-        prevpage = "login" if from_login else "signup"
+    #def _do_validation(self):
+        #"""
+        #called after _do_checks has finished
+        #(connected to checker thread finished signal)
+        #"""
+        #from_login = self.wizard().from_login
+        #prevpage = "login" if from_login else "signup"
 
-        wizard = self.wizard()
-        if self.errors:
-            logger.debug('going back with errors')
-            logger.error(self.errors)
-            name, first_error = self.pop_first_error()
-            wizard.set_validation_error(
-                prevpage,
-                first_error)
-            self.go_back()
+        #wizard = self.wizard()
+        #if self.errors:
+            #logger.debug('going back with errors')
+            #logger.error(self.errors)
+            #name, first_error = self.pop_first_error()
+            #wizard.set_validation_error(
+                #prevpage,
+                #first_error)
+            #self.go_back()
 
     def nextId(self):
         wizard = self.wizard()

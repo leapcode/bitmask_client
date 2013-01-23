@@ -16,9 +16,9 @@ class ProviderInfoPage(QtGui.QWizardPage):
     def __init__(self, parent=None):
         super(ProviderInfoPage, self).__init__(parent)
 
-        self.setTitle(self.tr("Provider Info"))
+        self.setTitle(self.tr("Provider Information"))
         self.setSubTitle(self.tr(
-            "This is what provider says."))
+            "Services offered by this provider"))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
@@ -89,10 +89,13 @@ class ProviderInfoPage(QtGui.QWizardPage):
         self.description.setText(
             "<i>%s</i>" % description_text)
 
+        # XXX should translate this...
         enroll = pconfig.get('enrollment_policy')
         if enroll:
             self.enrollment_policy.setText(
-                'enrollment policy: %s' % enroll)
+                '<b>%s</b>: <em>%s</em>' % (
+                    self.tr('enrollment policy'),
+                    enroll))
 
     def nextId(self):
         wizard = self.wizard()

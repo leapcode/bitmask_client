@@ -315,7 +315,7 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
             return True
 
         logger.debug('registering user')
-        yield(("registering with provider", 40), register)
+        yield(("Registering username", 40), register)
 
         self.set_done()
         yield(("end_sentinel", 100), lambda: None)
@@ -376,7 +376,7 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
                 #self.tr("Register a new user with provider %s.") %
                         #provider)
             self.setSubTitle(
-                self.tr("Register a new user with provider %s." %
+                self.tr("Register a new user with provider <em>%s</em>" %
                         provider))
         self.validationMsg.setText('')
         self.userPassword2LineEdit.setText('')

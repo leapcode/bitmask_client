@@ -27,7 +27,7 @@ class ProviderSetupValidationPage(ValidationPage):
 
         self.setTitle(self.tr("Provider setup"))
         self.setSubTitle(
-            self.tr("Doing autoconfig."))
+            self.tr("Gathering configuration options for this provider"))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,

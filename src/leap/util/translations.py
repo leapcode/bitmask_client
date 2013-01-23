@@ -56,8 +56,6 @@ def translate(*args, **kwargs):
         return qtTranslate(*nargs)
 
     else:
-        #nargs = ('default', ) + args
-        #import pdb4qt; pdb4qt.set_trace() 
         return qtTranslate(*args)
 
 
