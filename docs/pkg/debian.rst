@@ -14,13 +14,12 @@ Dependencies
 * ``python-crypto``
 * ``python setuptools``
 * ``python-requests``
-* ``python-gnutls``
+* ``python-openssl``
 
 .. note::
-   these two need a version that is not found in the current debian stable or in ubuntu 12.04. 
+   these need a version that is not found in the current debian stable or in ubuntu 12.04. 
    They will be packaged... soon.
 
-* ``python-gnutls == 1.1.9``
 * ``python-keyring``
 
 For tests

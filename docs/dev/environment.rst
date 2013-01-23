@@ -21,18 +21,18 @@ Leap client depends on these libraries:
 
 * `python 2.6 or 2.7`
 * `qt4` libraries (see also :ref:`Troubleshooting PyQt install <pyqtvirtualenv>` about how to install inside your virtualenv)
-* `libgnutls`
-* `openvpn<http://openvpn.net/index.php/open-source/345-openvpn-project.html>`_
+* `openssl`
+* `openvpn <http://openvpn.net/index.php/open-source/345-openvpn-project.html>`_
 
 Debian
 ^^^^^^
 In debian-based systems::
 
-  $ apt-get install openvpn python-qt4 python-crypto python-gnutls
+  $ apt-get install openvpn python-qt4 python-crypto python-openssl
 
 To install the software from sources::
 
-  $ apt-get install python-pip python-dev libgnutls-dev
+  $ apt-get install python-pip python-dev
 
 .. _virtualenv:
 
