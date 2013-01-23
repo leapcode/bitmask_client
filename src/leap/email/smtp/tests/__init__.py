@@ -1,7 +1,6 @@
-import unittest
-import gnupg
+from leap.email.smtp.smtprelay import GPGWrapper
 import shutil
-import ipdb
+from twisted.trial import unittest
 
 class OpenPGPTestCase(unittest.TestCase):
 
@@ -10,7 +9,7 @@ class OpenPGPTestCase(unittest.TestCase):
     EMAIL      = 'leap@leap.se'
 
     def setUp(self):
-        self._gpg = gnupg.GPG(gnupghome=self.GNUPG_HOME)
+        self._gpg = GPGWrapper(gpghome=self.GNUPG_HOME)
         
         self.assertEqual(self._gpg.import_keys(PUBLIC_KEY).summary(),
                          '1 imported', "error importing public key")
@@ -25,6 +24,7 @@ class OpenPGPTestCase(unittest.TestCase):
     def test_encrypt_decrypt(self):
         text = "simple raw text"
         encrypted = str(self._gpg.encrypt(text, KEY_FINGERPRINT,
+                                          # TODO: handle always trust issue
                                           always_trust=True))
         self.assertNotEqual(text, encrypted, "failed encrypting text")
         decrypted = str(self._gpg.decrypt(encrypted))

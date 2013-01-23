@@ -20,3 +20,4 @@ src/leap/_branding.py
 src/leap/certs/*.pem
 src/*.egg-info
 MANIFEST
+_trial_temp*

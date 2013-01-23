@@ -15,9 +15,13 @@ class SMTPFactory(ServerFactory):
     Factory for an SMTP server with encrypted relaying capabilities.
     """
 
+    def __init__(self, gpg=None):
+        self._gpg = gpg
+
     def buildProtocol(self, addr):
         "Return a protocol suitable for the job."
-        smtpProtocol = smtp.SMTP(SMTPDelivery())
+        # TODO: use ESMTP here.
+        smtpProtocol = smtp.SMTP(SMTPDelivery(self._gpg))
         smtpProtocol.factory = self
         return smtpProtocol
 
@@ -29,8 +33,11 @@ class SMTPDelivery(object):
 
     implements(smtp.IMessageDelivery)
 
-    def __init__(self):
-        self.gpg = GPGWrapper()
+    def __init__(self, gpg=None):
+        if gpg:
+            self._gpg = gpg
+        else:
+            self._gpg = GPGWrapper()
     
     def receivedHeader(self, helo, origin, recipients):
         myHostname, clientIP = helo
@@ -44,13 +51,13 @@ class SMTPDelivery(object):
         # try to find recipient's public key
         try:
             # this will raise an exception if key is not found
-            trust = self.gpg.find_key(user.dest.addrstr)['trust']
+            trust = self._gpg.find_key(user.dest.addrstr)['trust']
             # if key is not ultimatelly trusted, then the message will not
             # be encrypted. So, we check for this below
-            if trust != 'u':
-                raise smtp.SMTPBadRcpt(user)
+            #if trust != 'u':
+            #    raise smtp.SMTPBadRcpt(user)
             print "Accepting mail for %s..." % user.dest
-            return lambda: EncryptedMessage(user)
+            return lambda: EncryptedMessage(user, gpg=self._gpg)
         except LookupError:
             raise smtp.SMTPBadRcpt(user)
 
@@ -70,11 +77,14 @@ class EncryptedMessage():
     SMTP_HOSTNAME = "mail.riseup.net"
     SMTP_PORT     = 25
 
-    def __init__(self, user):
+    def __init__(self, user, gpg=None):
         self.user = user
         self.getSMTPInfo()
         self.lines = []
-        self.gpg = GPGWrapper()
+        if gpg:
+            self._gpg = gpg
+        else:
+            self._gpg = GPGWrapper()
 
     def lineReceived(self, line):
         """Store email DATA lines as they arrive."""
@@ -129,10 +139,12 @@ class EncryptedMessage():
         d.addErrback(self.sendError)
         return d
 
-    def encrypt(self):
-        fp = self.gpg.find_key(self.user.dest.addrstr)['fingerprint']
+    def encrypt(self, always_trust=True):
+        # TODO: do not "always trust" here.
+        fp = self._gpg.find_key(self.user.dest.addrstr)['fingerprint']
         print "Encrypting to %s" % fp
-        self.cyphertext = str(self.gpg.encrypt('\n'.join(self.body), [fp]))
+        self.cyphertext = str(self._gpg.encrypt('\n'.join(self.body), [fp],
+                                                always_trust=always_trust))
     
     # this will be replaced by some other mechanism of obtaining credentials
     # for SMTP server.
@@ -167,8 +179,12 @@ class GPGWrapper():
                     return key
         raise LookupError("GnuPG public key for %s not found!" % email)
 
-    def encrypt(self, data, recipient):
-        return self.gpg.encrypt(data, recipient)
+    def encrypt(self, data, recipient, always_trust=True):
+        # TODO: do not 'always_trust'.
+        return self.gpg.encrypt(data, recipient, always_trust=always_trust)
+
+    def decrypt(self, data):
+        return self.gpg.decrypt(data)
 
     def import_keys(self, data):
         return self.gpg.import_keys(data)
