@@ -25,9 +25,9 @@ import sys
 import srp
 
 # GnuTLS Example -- is not working as expected
-from gnutls import crypto
-from gnutls.constants import COMP_LZO, COMP_DEFLATE, COMP_NULL
-from gnutls.interfaces.twisted import X509Credentials
+#from gnutls import crypto
+#from gnutls.constants import COMP_LZO, COMP_DEFLATE, COMP_NULL
+#from gnutls.interfaces.twisted import X509Credentials
 
 # Going with OpenSSL as a workaround instead
 # But we DO NOT want to introduce this dependency.

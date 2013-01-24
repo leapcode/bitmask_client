@@ -1,13 +1,8 @@
 import logging
-#import ssl
-#import platform
 import time
 import os
 import sys
 
-import gnutls.crypto
-#import netifaces
-#import ping
 import requests
 
 from leap import __branding as BRANDING
@@ -24,7 +19,6 @@ from leap.eip import specs as eipspecs
 from leap.util.certs import get_mac_cabundle
 from leap.util.fileutil import mkdir_p
 from leap.util.web import get_https_domain_and_port
-from leap.util.misc import null_check
 
 logger = logging.getLogger(name=__name__)
 
@@ -276,11 +270,8 @@ class ProviderCertChecker(object):
     def is_cert_not_expired(self, certfile=None, now=time.gmtime):
         if certfile is None:
             certfile = self._get_client_cert_path()
-        with open(certfile) as cf:
-            cert_s = cf.read()
-        cert = gnutls.crypto.X509Certificate(cert_s)
-        from_ = time.gmtime(cert.activation_time)
-        to_ = time.gmtime(cert.expiration_time)
+        from_, to_ = certs.get_time_boundaries(certfile)
+
         return from_ < now() < to_
 
     def is_valid_pemfile(self, cert_s=None):

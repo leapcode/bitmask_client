@@ -2,7 +2,9 @@ import logging
 import os
 from StringIO import StringIO
 import ssl
+import time
 
+from dateutil.parser import parse
 from OpenSSL import crypto
 
 from leap.util.misc import null_check
@@ -33,7 +35,7 @@ def get_https_cert_from_domain(domain, port=443):
 
 def get_cert_from_file(_file):
     null_check(_file, "pem file")
-    if isinstance(_file, str):
+    if isinstance(_file, (str, unicode)):
         if not os.path.isfile(_file):
             raise NoCertError
         with open(_file) as f:
@@ -97,3 +99,14 @@ def get_cert_fingerprint(domain=None, port=443, filepath=None,
         cert = get_cert_from_file(filepath)
     hex_fpr = cert.digest(hash_type)
     return hex_fpr
+
+
+def get_time_boundaries(certfile):
+    cert = get_cert_from_file(certfile)
+    null_check(cert, 'certificate')
+
+    fromts, tots = (cert.get_notBefore(), cert.get_notAfter())
+    from_, to_ = map(
+        lambda ts: time.gmtime(time.mktime(parse(ts).timetuple())),
+        (fromts, tots))
+    return from_, to_
