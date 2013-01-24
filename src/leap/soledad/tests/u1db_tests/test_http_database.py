@@ -200,7 +200,7 @@ class TestHTTPDatabaseCtrWithCreds(tests.TestCase):
             'token_key': tests.token1.key,
             'token_secret': tests.token1.secret
         }})
-        self.assertIn('oauth',  db1._creds)
+        self.assertIn('oauth', db1._creds)
 
 
 class TestHTTPDatabaseIntegration(tests.TestCaseWithServer):

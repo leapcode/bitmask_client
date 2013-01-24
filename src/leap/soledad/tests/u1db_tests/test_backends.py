@@ -953,7 +953,7 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
     def test_put_doc_if_newer_autoresolve_3(self):
         doc_a1 = self.db.create_doc_from_json(simple_doc)
         doc_a1b1 = self.make_document(doc_a1.doc_id, 'test:1|other:1', "{}")
-        doc_a2 = self.make_document(doc_a1.doc_id, 'test:2',  '{"a":"42"}')
+        doc_a2 = self.make_document(doc_a1.doc_id, 'test:2', '{"a":"42"}')
         doc_a3 = self.make_document(doc_a1.doc_id, 'test:3', "{}")
         state, _ = self.db._put_doc_if_newer(
             doc_a1b1, save_conflict=True, replica_uid='r', replica_gen=1,
@@ -979,7 +979,7 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
     def test_put_doc_if_newer_autoresolve_4(self):
         doc_a1 = self.db.create_doc_from_json(simple_doc)
         doc_a1b1 = self.make_document(doc_a1.doc_id, 'test:1|other:1', None)
-        doc_a2 = self.make_document(doc_a1.doc_id, 'test:2',  '{"a":"42"}')
+        doc_a2 = self.make_document(doc_a1.doc_id, 'test:2', '{"a":"42"}')
         doc_a3 = self.make_document(doc_a1.doc_id, 'test:3', None)
         state, _ = self.db._put_doc_if_newer(
             doc_a1b1, save_conflict=True, replica_uid='r', replica_gen=1,

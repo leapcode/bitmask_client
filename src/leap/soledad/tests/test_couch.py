@@ -41,7 +41,7 @@ def make_couch_database_for_test(test, replica_uid):
 
 def copy_couch_database_for_test(test, db):
     new_db = couch.CouchDatabase('http://localhost:5984',
-                                 db._replica_uid+'_copy',
+                                 db._replica_uid + '_copy',
                                  replica_uid=db._replica_uid or 'test')
     gen, docs = db.get_all_docs(include_deleted=True)
     for doc in docs:
@@ -112,7 +112,7 @@ class CouchWithConflictsTests(
 # the server, so indexing makes no sense. Thus, we ignore index testing for
 # now.
 
-#class CouchIndexTests(DatabaseIndexTests):
+# class CouchIndexTests(DatabaseIndexTests):
 #
 #    scenarios = COUCH_SCENARIOS
 #

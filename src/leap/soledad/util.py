@@ -53,4 +53,3 @@ class GPGWrapper(gnupg.GPG):
         logger.debug('send_keys result: %r', result.__dict__)
         data.close()
         return result
-
