@@ -1,7 +1,5 @@
-import sys
 import uuid
 from base64 import b64encode, b64decode
-from u1db import errors
 from u1db.sync import LocalSyncTarget
 from couchdb.client import Server, Document as CouchDocument
 from couchdb.http import ResourceNotFound
@@ -17,7 +15,8 @@ except ImportError:
 class CouchDatabase(ObjectStore):
     """A U1DB implementation that uses Couch as its persistence layer."""
 
-    def __init__(self, url, database, replica_uid=None, full_commit=True, session=None): 
+    def __init__(self, url, database, replica_uid=None, full_commit=True,
+                 session=None):
         """Create a new Couch data container."""
         self._url = url
         self._full_commit = full_commit
@@ -54,8 +53,9 @@ class CouchDatabase(ObjectStore):
             doc_id=doc_id,
             rev=cdoc['u1db_rev'],
             has_conflicts=has_conflicts)
-        if cdoc['u1db_json'] is not None:
-            doc.content = json.loads(cdoc['u1db_json'])
+        contents = self._database.get_attachment(cdoc, 'u1db_json')
+        if contents:
+            doc.content = json.loads(contents.getvalue())
         else:
             doc.make_tombstone()
         return doc
@@ -83,13 +83,14 @@ class CouchDatabase(ObjectStore):
             cdoc['_rev'] = old_cdoc['_rev']
         # store u1db's rev
         cdoc['u1db_rev'] = doc.rev
-        # store u1db's content as json string
-        if not doc.is_tombstone():
-            cdoc['u1db_json'] = doc.get_json()
-        else:
-            cdoc['u1db_json'] = None
         # save doc in db
         self._database.save(cdoc)
+        # store u1db's content as json string
+        if not doc.is_tombstone():
+            self._database.put_attachment(cdoc, doc.get_json(),
+                                          filename='u1db_json')
+        else:
+            self._database.delete_attachment(cdoc, 'u1db_json')
 
     def get_sync_target(self):
         return CouchSyncTarget(self)
@@ -103,7 +104,6 @@ class CouchDatabase(ObjectStore):
         #self._server = None
         self._database = None
         return True
-        
 
     def sync(self, url, creds=None, autocreate=True):
         from u1db.sync import Synchronizer
@@ -114,15 +114,16 @@ class CouchDatabase(ObjectStore):
         if self._replica_uid is None:
             self._replica_uid = uuid.uuid4().hex
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
-        doc.content = { 'sync_log' : [],
-                        'transaction_log' : [],
-                        'conflict_log' : b64encode(json.dumps([])),
-                        'replica_uid' : self._replica_uid }
+        doc.content = {'sync_log': [],
+                       'transaction_log': [],
+                       'conflict_log': b64encode(json.dumps([])),
+                       'replica_uid': self._replica_uid}
         self._put_doc(doc)
 
     def _get_u1db_data(self):
         cdoc = self._database.get(self.U1DB_DATA_DOC_ID)
-        content = json.loads(cdoc['u1db_json'])
+        jsonstr = self._database.get_attachment(cdoc, 'u1db_json').getvalue()
+        content = json.loads(jsonstr)
         self._sync_log.log = content['sync_log']
         self._transaction_log.log = content['transaction_log']
         self._conflict_log.log = json.loads(b64decode(content['conflict_log']))
@@ -131,14 +132,15 @@ class CouchDatabase(ObjectStore):
 
     def _set_u1db_data(self):
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
-        doc.content = { 'sync_log'        : self._sync_log.log,
-                        'transaction_log' : self._transaction_log.log,
-                        # Here, the b64 encode ensures that document content
-                        # does not cause strange behaviour in couchdb because
-                        # of encoding.
-                        'conflict_log'    : b64encode(json.dumps(self._conflict_log.log)),
-                        'replica_uid'     : self._replica_uid,
-                        '_rev'            : self._couch_rev}
+        doc.content = {
+            'sync_log': self._sync_log.log,
+            'transaction_log': self._transaction_log.log,
+            # Here, the b64 encode ensures that document content
+            # does not cause strange behaviour in couchdb because
+            # of encoding.
+            'conflict_log': b64encode(json.dumps(self._conflict_log.log)),
+            'replica_uid': self._replica_uid,
+            '_rev': self._couch_rev}
         self._put_doc(doc)
 
     #-------------------------------------------------------------------------
@@ -166,4 +168,3 @@ class CouchSyncTarget(LocalSyncTarget):
         self._db._set_replica_gen_and_trans_id(
             source_replica_uid, source_replica_generation,
             source_replica_transaction_id)
-
