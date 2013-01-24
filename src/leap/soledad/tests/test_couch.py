@@ -46,9 +46,10 @@ def copy_couch_database_for_test(test, db):
     gen, docs = db.get_all_docs(include_deleted=True)
     for doc in docs:
         new_db._put_doc(doc)
-    new_db._transaction_log._data = copy.deepcopy(db._transaction_log._data)
-    new_db._sync_log._data = copy.deepcopy(db._sync_log._data)
-    new_db._conflict_log._data = copy.deepcopy(db._conflict_log._data)
+    new_db._transaction_log = copy.deepcopy(db._transaction_log)
+    new_db._conflicts = copy.deepcopy(db._conflicts)
+    new_db._other_generations = copy.deepcopy(db._other_generations)
+    new_db._indexes = copy.deepcopy(db._indexes)
     new_db._set_u1db_data()
     return new_db
 
@@ -112,13 +113,13 @@ class CouchWithConflictsTests(
 # the server, so indexing makes no sense. Thus, we ignore index testing for
 # now.
 
-# class CouchIndexTests(DatabaseIndexTests):
-#
-#    scenarios = COUCH_SCENARIOS
-#
-#    def tearDown(self):
-#        self.db.delete_database()
-#        super(CouchIndexTests, self).tearDown()
+class CouchIndexTests(test_backends.DatabaseIndexTests):
+
+    scenarios = COUCH_SCENARIOS
+
+    def tearDown(self):
+        self.db.delete_database()
+        super(CouchIndexTests, self).tearDown()
 
 
 #-----------------------------------------------------------------------------
