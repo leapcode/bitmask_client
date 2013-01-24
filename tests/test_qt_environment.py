@@ -2,7 +2,7 @@ import sys
 import unittest
 
 import sip
-sip.setapi('QVariant', 2)
+#sip.setapi('QVariant', 2)
 
 from PyQt4 import QtGui
 
