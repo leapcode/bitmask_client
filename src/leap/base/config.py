@@ -336,11 +336,8 @@ def get_username():
     try:
         return os.getlogin()
     except OSError as e:
-        if e.message == "[Errno 22] Invalid argument":
-            import pwd
-            return pwd.getpwuid(os.getuid())[0]
-        else:
-            raise OSError(e.message)
+        import pwd
+        return pwd.getpwuid(os.getuid())[0]
 
 
 def get_groupname():
