@@ -1,6 +1,8 @@
 import uuid
 from base64 import b64encode, b64decode
+from u1db import errors
 from u1db.sync import LocalSyncTarget
+from u1db.backends.inmemory import InMemoryIndex
 from couchdb.client import Server, Document as CouchDocument
 from couchdb.http import ResourceNotFound
 from leap.soledad.backends.objectstore import ObjectStore
@@ -36,7 +38,7 @@ class CouchDatabase(ObjectStore):
         super(CouchDatabase, self).__init__(replica_uid=replica_uid)
 
     #-------------------------------------------------------------------------
-    # implemented methods from Database
+    # methods from Database
     #-------------------------------------------------------------------------
 
     def _get_doc(self, doc_id, check_for_conflicts=False):
@@ -95,6 +97,23 @@ class CouchDatabase(ObjectStore):
     def get_sync_target(self):
         return CouchSyncTarget(self)
 
+    def create_index(self, index_name, *index_expressions):
+        if index_name in self._indexes:
+            if self._indexes[index_name]._definition == list(
+                    index_expressions):
+                return
+            raise errors.IndexNameTakenError
+        index = InMemoryIndex(index_name, list(index_expressions))
+        for doc_id in self._database:
+            if doc_id == self.U1DB_DATA_DOC_ID:
+                continue
+            doc = self._get_doc(doc_id)
+            if doc.content is not None:
+                index.add_json(doc_id, doc.get_json())
+        self._indexes[index_name] = index
+        # save data in object store
+        self._set_u1db_data()
+
     def close(self):
         # TODO: fix this method so the connection is properly closed and
         # test_close (+tearDown, which deletes the db) works without problems.
@@ -110,35 +129,47 @@ class CouchDatabase(ObjectStore):
         return Synchronizer(self, CouchSyncTarget(url, creds=creds)).sync(
             autocreate=autocreate)
 
-    def _initialize(self):
+    #-------------------------------------------------------------------------
+    # methods from ObjectStore
+    #-------------------------------------------------------------------------
+
+    def _init_u1db_data(self):
         if self._replica_uid is None:
             self._replica_uid = uuid.uuid4().hex
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
-        doc.content = {'sync_log': [],
-                       'transaction_log': [],
-                       'conflict_log': b64encode(json.dumps([])),
+        doc.content = {'transaction_log': [],
+                       'conflicts': b64encode(json.dumps({})),
+                       'other_generations': {},
+                       'indexes': b64encode(json.dumps({})),
                        'replica_uid': self._replica_uid}
         self._put_doc(doc)
 
     def _get_u1db_data(self):
+        # retrieve u1db data from couch db
         cdoc = self._database.get(self.U1DB_DATA_DOC_ID)
         jsonstr = self._database.get_attachment(cdoc, 'u1db_json').getvalue()
         content = json.loads(jsonstr)
-        self._sync_log.log = content['sync_log']
-        self._transaction_log.log = content['transaction_log']
-        self._conflict_log.log = json.loads(b64decode(content['conflict_log']))
+        # set u1db database info
+        #self._sync_log = content['sync_log']
+        self._transaction_log = content['transaction_log']
+        self._conflicts = json.loads(b64decode(content['conflicts']))
+        self._other_generations = content['other_generations']
+        self._indexes = self._load_indexes_from_json(
+            b64decode(content['indexes']))
         self._replica_uid = content['replica_uid']
+        # save couch _rev
         self._couch_rev = cdoc['_rev']
 
     def _set_u1db_data(self):
         doc = self._factory(doc_id=self.U1DB_DATA_DOC_ID)
         doc.content = {
-            'sync_log': self._sync_log.log,
-            'transaction_log': self._transaction_log.log,
+            'transaction_log': self._transaction_log,
             # Here, the b64 encode ensures that document content
             # does not cause strange behaviour in couchdb because
             # of encoding.
-            'conflict_log': b64encode(json.dumps(self._conflict_log.log)),
+            'conflicts': b64encode(json.dumps(self._conflicts)),
+            'other_generations': self._other_generations,
+            'indexes': b64encode(self._dump_indexes_as_json()),
             'replica_uid': self._replica_uid,
             '_rev': self._couch_rev}
         self._put_doc(doc)
@@ -149,6 +180,22 @@ class CouchDatabase(ObjectStore):
 
     def delete_database(self):
         del(self._server[self._dbname])
+
+    def _dump_indexes_as_json(self):
+        indexes = {}
+        for name, idx in self._indexes.iteritems():
+            indexes[name] = {}
+            for attr in ['name', 'definition', 'values']:
+                indexes[name][attr] = getattr(idx, '_' + attr)
+        return json.dumps(indexes)
+
+    def _load_indexes_from_json(self, indexes):
+        dict = {}
+        for name, idx_dict in json.loads(indexes).iteritems():
+            idx = InMemoryIndex(name, idx_dict['definition'])
+            idx._values = idx_dict['values']
+            dict[name] = idx
+        return dict
 
 
 class CouchSyncTarget(LocalSyncTarget):
