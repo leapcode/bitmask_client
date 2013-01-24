@@ -333,7 +333,14 @@ def validate_ip(ip_str):
 
 
 def get_username():
-    return os.getlogin()
+    try:
+        return os.getlogin()
+    except OSError as e:
+        if e.message == "[Errno 22] Invalid argument":
+            import pwd
+            return pwd.getpwuid(os.getuid())[0]
+        else:
+            raise OSError(e.message)
 
 
 def get_groupname():
