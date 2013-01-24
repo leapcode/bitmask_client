@@ -11,6 +11,7 @@ import os
 logger = logging.getLogger(name=__name__)
 
 from dateutil import parser as dateparser
+import dirspec
 import requests
 
 from leap.base import exceptions
@@ -279,15 +280,8 @@ def get_config_dir():
     @rparam: config path
     @rtype: string
     """
-    # TODO
-    # check for $XDG_CONFIG_HOME var?
-    # get a more sensible path for win/mac
-    # kclair: opinion? ^^
-
-    return os.path.expanduser(
-        os.path.join('~',
-                     '.config',
-                     'leap'))
+    return os.path.join(dirspec.basedir.default_config_home,
+                        'leap')
 
 
 def get_config_file(filename, folder=None):

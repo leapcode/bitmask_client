@@ -14,6 +14,7 @@ python-dateutil
 sh
 pygeoip # optional
 ping # to be deprecated
+dirspec
 
 # soledad deps -- will move to its own repo soon
 python-gnupg
