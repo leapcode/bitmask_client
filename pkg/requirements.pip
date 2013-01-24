@@ -13,7 +13,7 @@ keyring
 python-dateutil
 sh
 pygeoip # optional
-#ping # to be deprecated
+ping # to be deprecated
 
 # soledad deps -- will move to its own repo soon
 python-gnupg
