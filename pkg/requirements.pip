@@ -13,6 +13,7 @@ keyring
 python-dateutil
 sh
 pygeoip # optional
+dirspec
 
 # soledad deps -- will move to its own repo soon
 python-gnupg
