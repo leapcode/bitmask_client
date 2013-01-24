@@ -46,11 +46,6 @@ class Soledad(object):
     # Management of secret for symmetric encryption
     #-------------------------------------------------------------------------
 
-
-    #-------------------------------------------------------------------------
-    # Management of secret for symmetric encryption
-    #-------------------------------------------------------------------------
-
     def _has_secret(self):
         """
         Verify if secret for symmetric encryption exists on local encrypted
