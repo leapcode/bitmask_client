@@ -197,23 +197,5 @@ class CouchDatabaseSyncTests(test_sync.DatabaseSyncTests):
         db.delete_database()
         super(CouchDatabaseSyncTests, self).tearDown()
 
-    # The following tests use indexing, so we eliminate them for now because
-    # indexing is still not implemented in couch backend.
-
-    def test_sync_pulls_changes(self):
-        pass
-
-    def test_sync_sees_remote_conflicted(self):
-        pass
-
-    def test_sync_sees_remote_delete_conflicted(self):
-        pass
-
-    def test_sync_local_race_conflicted(self):
-        pass
-
-    def test_sync_propagates_deletes(self):
-        pass
-
 
 load_tests = tests.load_with_scenarios
