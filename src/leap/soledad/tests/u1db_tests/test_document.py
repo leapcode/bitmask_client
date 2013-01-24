@@ -23,7 +23,7 @@ from leap.soledad.tests import u1db_tests as tests
 class TestDocument(tests.TestCase):
 
     scenarios = ([(
-        'py', {'make_document_for_test': tests.make_document_for_test})]) #+
+        'py', {'make_document_for_test': tests.make_document_for_test})])  # +
         #tests.C_DATABASE_SCENARIOS)
 
     def test_create_doc(self):
@@ -37,7 +37,7 @@ class TestDocument(tests.TestCase):
         doc = self.make_document('doc-id', 'uid:1', tests.simple_doc)
         self.assertEqual(
             '%s(doc-id, uid:1, \'{"key": "value"}\')'
-                % (doc.__class__.__name__,),
+            % (doc.__class__.__name__,),
             repr(doc))
 
     def test__repr__conflicted(self):
@@ -45,7 +45,7 @@ class TestDocument(tests.TestCase):
                                  has_conflicts=True)
         self.assertEqual(
             '%s(doc-id, uid:1, conflicted, \'{"key": "value"}\')'
-                % (doc.__class__.__name__,),
+            % (doc.__class__.__name__,),
             repr(doc))
 
     def test__lt__(self):

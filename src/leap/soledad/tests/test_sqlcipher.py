@@ -11,7 +11,7 @@ import threading
 from u1db import (
     errors,
     query_parser,
-    )
+)
 from u1db.backends.sqlite_backend import SQLitePartialExpandDatabase
 
 # soledad stuff.
@@ -28,6 +28,7 @@ from leap.soledad.tests.u1db_tests import test_backends
 from leap.soledad.tests.u1db_tests import test_open
 
 PASSWORD = '123456'
+
 
 #-----------------------------------------------------------------------------
 # The following tests come from `u1db.tests.test_common_backend`.
@@ -77,8 +78,8 @@ def copy_sqlcipher_database_for_test(test, db):
 SQLCIPHER_SCENARIOS = [
     ('sqlcipher', {'make_database_for_test': make_sqlcipher_database_for_test,
                    'copy_database_for_test': copy_sqlcipher_database_for_test,
-                   'make_document_for_test': tests.make_document_for_test,}),
-    ]
+                   'make_document_for_test': tests.make_document_for_test, }),
+]
 
 
 class SQLCipherTests(test_backends.AllDatabaseTests):
@@ -89,15 +90,18 @@ class SQLCipherDatabaseTests(test_backends.LocalDatabaseTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherValidateGenNTransIdTests(test_backends.LocalDatabaseValidateGenNTransIdTests):
+class SQLCipherValidateGenNTransIdTests(
+        test_backends.LocalDatabaseValidateGenNTransIdTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherValidateSourceGenTests(test_backends.LocalDatabaseValidateSourceGenTests):
+class SQLCipherValidateSourceGenTests(
+        test_backends.LocalDatabaseValidateSourceGenTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
-class SQLCipherWithConflictsTests(test_backends.LocalDatabaseWithConflictsTests):
+class SQLCipherWithConflictsTests(
+        test_backends.LocalDatabaseWithConflictsTests):
     scenarios = SQLCIPHER_SCENARIOS
 
 
@@ -157,14 +161,16 @@ class TestSQLCipherDatabase(test_sqlite_backend.TestSQLiteDatabase):
         self.assertTrue(db2._is_initialized(db1._get_sqlite_handle().cursor()))
 
 
-class TestSQLCipherPartialExpandDatabase(test_sqlite_backend.TestSQLitePartialExpandDatabase):
+class TestSQLCipherPartialExpandDatabase(
+        test_sqlite_backend.TestSQLitePartialExpandDatabase):
 
     # The following tests had to be cloned from u1db because they all
     # instantiate the backend directly, so we need to change that in order to
     # our backend be instantiated in place.
 
     def setUp(self):
-        super(test_sqlite_backend.TestSQLitePartialExpandDatabase, self).setUp()
+        super(test_sqlite_backend.TestSQLitePartialExpandDatabase,
+              self).setUp()
         self.db = SQLCipherDatabase(':memory:', PASSWORD)
         self.db._set_replica_uid('test')
 
@@ -216,7 +222,8 @@ class TestSQLCipherPartialExpandDatabase(test_sqlite_backend.TestSQLitePartialEx
         path = temp_dir + '/test.sqlite'
         SQLCipherDatabase(path, PASSWORD)
         db2 = SQLCipherDatabase._open_database(
-            path, PASSWORD, document_factory=test_backends.TestAlternativeDocument)
+            path, PASSWORD,
+            document_factory=test_backends.TestAlternativeDocument)
         self.assertEqual(test_backends.TestAlternativeDocument, db2._factory)
 
     def test_open_database_existing(self):
@@ -231,7 +238,8 @@ class TestSQLCipherPartialExpandDatabase(test_sqlite_backend.TestSQLitePartialEx
         path = temp_dir + '/existing.sqlite'
         SQLCipherDatabase(path, PASSWORD)
         db2 = SQLCipherDatabase.open_database(
-            path, PASSWORD, create=False, document_factory=test_backends.TestAlternativeDocument)
+            path, PASSWORD, create=False,
+            document_factory=test_backends.TestAlternativeDocument)
         self.assertEqual(test_backends.TestAlternativeDocument, db2._factory)
 
     def test_create_database_initializes_schema(self):
@@ -244,7 +252,8 @@ class TestSQLCipherPartialExpandDatabase(test_sqlite_backend.TestSQLitePartialEx
         c.execute("SELECT * FROM u1db_config")
         config = dict([(r[0], r[1]) for r in c.fetchall()])
         self.assertEqual({'sql_schema': '0', 'replica_uid': 'test',
-                          'index_storage': 'expand referenced encrypted'}, config)
+                          'index_storage': 'expand referenced encrypted'},
+                         config)
 
 
 #-----------------------------------------------------------------------------
@@ -289,6 +298,7 @@ class SQLCipherOpen(test_open.TestU1DBOpen):
         self.addCleanup(db2.close)
         self.assertIsInstance(db2, SQLCipherDatabase)
 
+
 #-----------------------------------------------------------------------------
 # Tests for actual encryption of the database
 #-----------------------------------------------------------------------------
@@ -313,8 +323,8 @@ class SQLCipherEncryptionTest(unittest.TestCase):
         doc = db.create_doc_from_json(tests.simple_doc)
         db.close()
         try:
-            # trying to open an encrypted database with the regular u1db backend
-            # should raise a DatabaseError exception.
+            # trying to open an encrypted database with the regular u1db
+            # backend should raise a DatabaseError exception.
             SQLitePartialExpandDatabase(self.DB_FILE)
             raise DatabaseIsNotEncrypted()
         except DatabaseError:
@@ -323,16 +333,18 @@ class SQLCipherEncryptionTest(unittest.TestCase):
             # encrypted.
             db = SQLCipherDatabase(self.DB_FILE, PASSWORD)
             doc = db.get_doc(doc.doc_id)
-            self.assertEqual(tests.simple_doc, doc.get_json(), 'decrypted content mismatch')
+            self.assertEqual(tests.simple_doc, doc.get_json(),
+                             'decrypted content mismatch')
 
     def test_try_to_open_raw_db_with_sqlcipher_backend(self):
         db = SQLitePartialExpandDatabase(self.DB_FILE)
         db.create_doc_from_json(tests.simple_doc)
         db.close()
         try:
-            # trying to open the a non-encrypted database with sqlcipher backend
-            # should raise a DatabaseIsNotEncrypted exception.
+            # trying to open the a non-encrypted database with sqlcipher
+            # backend should raise a DatabaseIsNotEncrypted exception.
             SQLCipherDatabase(self.DB_FILE, PASSWORD)
-            raise DatabaseError("SQLCipher backend should not be able to open non-encrypted dbs.")
+            raise DatabaseError("SQLCipher backend should not be able to open "
+                                "non-encrypted dbs.")
         except DatabaseIsNotEncrypted:
             pass

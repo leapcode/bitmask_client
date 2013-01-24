@@ -11,11 +11,11 @@ from leap.soledad.tests import u1db_tests as tests
 from u1db.remote import (
     http_client,
     http_target,
-    )
+)
 
 from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
     make_oauth_http_app,
-    )
+)
 
 
 def https_server_def():
@@ -56,10 +56,11 @@ class TestHttpSyncTargetHttpsSupport(tests.TestCaseWithServer):
     scenarios = [
         ('oauth_https', {'server_def': https_server_def,
                          'make_app_with_state': make_oauth_http_app,
-                         'make_document_for_test': tests.make_document_for_test,
+                         'make_document_for_test':
+                         tests.make_document_for_test,
                          'sync_target': oauth_https_sync_target
                          }),
-        ]
+    ]
 
     def setUp(self):
         try:

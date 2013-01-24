@@ -59,11 +59,9 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
 
     _index_storage_value = 'expand referenced encrypted'
 
-
     @classmethod
     def set_pragma_key(cls, db_handle, key):
-       db_handle.cursor().execute("PRAGMA key = '%s'" % key)
-
+        db_handle.cursor().execute("PRAGMA key = '%s'" % key)
 
     def __init__(self, sqlite_file, password, document_factory=None):
         """Create a new sqlcipher file."""
@@ -74,19 +72,17 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         self._ensure_schema()
         self._factory = document_factory or Document
 
-
     def _check_if_db_is_encrypted(self, sqlite_file):
         if not os.path.exists(sqlite_file):
             return
         else:
             try:
-                # try to open an encrypted database with the regular u1db backend
-                # should raise a DatabaseError exception.
+                # try to open an encrypted database with the regular u1db
+                # backend should raise a DatabaseError exception.
                 SQLitePartialExpandDatabase(sqlite_file)
                 raise DatabaseIsNotEncrypted()
             except DatabaseError:
                 pass
-
 
     @classmethod
     def _open_database(cls, sqlite_file, password, document_factory=None):
@@ -113,7 +109,6 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         return SQLCipherDatabase._sqlite_registry[v](
             sqlite_file, password, document_factory=document_factory)
 
-
     @classmethod
     def open_database(cls, sqlite_file, password, create, backend_cls=None,
                       document_factory=None):
@@ -129,7 +124,6 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
             return backend_cls(sqlite_file, password,
                                document_factory=document_factory)
 
-
     def sync(self, url, creds=None, autocreate=True, soledad=None):
         """
         Synchronize encrypted documents with remote replica exposed at url.
@@ -137,9 +131,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         from u1db.sync import Synchronizer
         from leap.soledad.backends.leap_backend import LeapSyncTarget
         return Synchronizer(self, LeapSyncTarget(url, creds=creds),
-                            soledad=self._soledad).sync(
-            autocreate=autocreate)
+                            soledad=self._soledad).sync(autocreate=autocreate)
 
 
 SQLiteDatabase.register_implementation(SQLCipherDatabase)
-

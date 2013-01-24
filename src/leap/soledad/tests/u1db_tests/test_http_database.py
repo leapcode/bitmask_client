@@ -25,14 +25,14 @@ except ImportError:
 from u1db import (
     errors,
     Document,
-    )
+)
 
 from leap.soledad.tests import u1db_tests as tests
 
 from u1db.remote import (
     http_database,
     http_target,
-    )
+)
 from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
     make_http_app,
 )
@@ -48,14 +48,14 @@ class TestHTTPDatabaseSimpleOperations(tests.TestCase):
         self.response_val = None
 
         def _request(method, url_parts, params=None, body=None,
-                                                     content_type=None):
+                     content_type=None):
             self.got = method, url_parts, params, body, content_type
             if isinstance(self.response_val, Exception):
                 raise self.response_val
             return self.response_val
 
         def _request_json(method, url_parts, params=None, body=None,
-                                                          content_type=None):
+                          content_type=None):
             self.got = method, url_parts, params, body, content_type
             if isinstance(self.response_val, Exception):
                 raise self.response_val
@@ -67,13 +67,15 @@ class TestHTTPDatabaseSimpleOperations(tests.TestCase):
     def test__sanity_same_signature(self):
         my_request_sig = inspect.getargspec(self.db._request)
         my_request_sig = (['self'] + my_request_sig[0],) + my_request_sig[1:]
-        self.assertEqual(my_request_sig,
-                       inspect.getargspec(http_database.HTTPDatabase._request))
+        self.assertEqual(
+            my_request_sig,
+            inspect.getargspec(http_database.HTTPDatabase._request))
         my_request_json_sig = inspect.getargspec(self.db._request_json)
         my_request_json_sig = ((['self'] + my_request_json_sig[0],) +
                                my_request_json_sig[1:])
-        self.assertEqual(my_request_json_sig,
-                  inspect.getargspec(http_database.HTTPDatabase._request_json))
+        self.assertEqual(
+            my_request_json_sig,
+            inspect.getargspec(http_database.HTTPDatabase._request_json))
 
     def test__ensure(self):
         self.response_val = {'ok': True}, {}
@@ -197,7 +199,7 @@ class TestHTTPDatabaseCtrWithCreds(tests.TestCase):
             'consumer_secret': tests.consumer1.secret,
             'token_key': tests.token1.key,
             'token_secret': tests.token1.secret
-            }})
+        }})
         self.assertIn('oauth',  db1._creds)
 
 

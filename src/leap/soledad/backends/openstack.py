@@ -1,6 +1,6 @@
-from u1db import errors
+# TODO: this backend is not tested yet.
 from u1db.remote.http_target import HTTPSyncTarget
-from swiftclient import client
+import swiftclient
 from soledad.backends.objectstore import ObjectStore
 
 
@@ -25,12 +25,13 @@ class OpenStackDatabase(ObjectStore):
 
     def _get_doc(self, doc_id, check_for_conflicts=False):
         """Get just the document content, without fancy handling.
-        
+
         Conflicts do not happen on server side, so there's no need to check
         for them.
         """
         try:
-            response, contents = self._connection.get_object(self._container, doc_id)
+            response, contents = self._connection.get_object(self._container,
+                                                             doc_id)
             # TODO: change revision to be a dictionary element?
             rev = response['x-object-meta-rev']
             return self._factory(doc_id, rev, contents)
@@ -53,7 +54,7 @@ class OpenStackDatabase(ObjectStore):
     def _put_doc(self, doc, new_rev):
         new_rev = self._allocate_doc_rev(doc.rev)
         # TODO: change revision to be a dictionary element?
-        headers = { 'X-Object-Meta-Rev' : new_rev }
+        headers = {'X-Object-Meta-Rev': new_rev}
         self._connection.put_object(self._container, doc_id, doc.get_json(),
                                     headers=headers)
 
@@ -77,6 +78,7 @@ class OpenStackDatabase(ObjectStore):
         self._url, self._auth_token = self._connection.get_auth()
         return self._url, self.auth_token
 
+
 class OpenStackSyncTarget(HTTPSyncTarget):
 
     def get_sync_info(self, source_replica_uid):
@@ -94,5 +96,3 @@ class OpenStackSyncTarget(HTTPSyncTarget):
         self._db._set_replica_gen_and_trans_id(
             source_replica_uid, source_replica_generation,
             source_replica_transaction_id)
-
-

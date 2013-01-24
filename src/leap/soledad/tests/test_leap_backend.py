@@ -33,11 +33,11 @@ from leap.soledad.tests.test_encrypted import (
 
 class SoledadTest(unittest.TestCase):
 
-    PREFIX     = "/var/tmp"
+    PREFIX = "/var/tmp"
     GNUPG_HOME = "%s/gnupg" % PREFIX
-    DB1_FILE   = "%s/db1.u1db" % PREFIX
-    DB2_FILE   = "%s/db2.u1db" % PREFIX
-    EMAIL      = 'leap@leap.se'
+    DB1_FILE = "%s/db1.u1db" % PREFIX
+    DB2_FILE = "%s/db2.u1db" % PREFIX
+    EMAIL = 'leap@leap.se'
 
     def setUp(self):
         super(SoledadTest, self).setUp()
@@ -102,7 +102,8 @@ def make_document_for_test(test, doc_id, rev, content, has_conflicts=False):
         doc_id, rev, content, has_conflicts=has_conflicts)
 
 
-def make_leap_document_for_test(test, doc_id, rev, content, has_conflicts=False):
+def make_leap_document_for_test(test, doc_id, rev, content,
+                                has_conflicts=False):
     return leap_backend.LeapDocument(
         doc_id, rev, content, has_conflicts=has_conflicts,
         soledad=test._soledad)
@@ -117,11 +118,11 @@ def make_leap_encrypted_document_for_test(test, doc_id, rev, encrypted_content,
 
 
 LEAP_SCENARIOS = [
-        ('http', {'make_database_for_test': make_leap_database_for_test,
-                  'copy_database_for_test': copy_leap_database_for_test,
-                  'make_document_for_test': make_leap_document_for_test,
-                  'make_app_with_state': make_http_app}),
-        ]
+    ('http', {'make_database_for_test': make_leap_database_for_test,
+              'copy_database_for_test': copy_leap_database_for_test,
+              'make_document_for_test': make_leap_document_for_test,
+              'make_app_with_state': make_http_app}),
+]
 
 
 class LeapTests(test_backends.AllDatabaseTests, SoledadTest):
@@ -133,24 +134,26 @@ class LeapTests(test_backends.AllDatabaseTests, SoledadTest):
 # The following tests come from `u1db.tests.test_http_database`.
 #-----------------------------------------------------------------------------
 
-class TestLeapDatabaseSimpleOperations(test_http_database.TestHTTPDatabaseSimpleOperations):
+class TestLeapDatabaseSimpleOperations(
+        test_http_database.TestHTTPDatabaseSimpleOperations):
 
     def setUp(self):
-        super(test_http_database.TestHTTPDatabaseSimpleOperations, self).setUp()
+        super(test_http_database.TestHTTPDatabaseSimpleOperations,
+              self).setUp()
         self.db = leap_backend.LeapDatabase('dbase')
         self.db._conn = object()  # crash if used
         self.got = None
         self.response_val = None
 
         def _request(method, url_parts, params=None, body=None,
-                                                     content_type=None):
+                     content_type=None):
             self.got = method, url_parts, params, body, content_type
             if isinstance(self.response_val, Exception):
                 raise self.response_val
             return self.response_val
 
         def _request_json(method, url_parts, params=None, body=None,
-                                                          content_type=None):
+                          content_type=None):
             self.got = method, url_parts, params, body, content_type
             if isinstance(self.response_val, Exception):
                 raise self.response_val
@@ -165,11 +168,13 @@ class TestLeapDatabaseSimpleOperations(test_http_database.TestHTTPDatabaseSimple
         self.assertEqual(st._url, self.db._url)
 
 
-class TestLeapDatabaseCtrWithCreds(test_http_database.TestHTTPDatabaseCtrWithCreds):
+class TestLeapDatabaseCtrWithCreds(
+        test_http_database.TestHTTPDatabaseCtrWithCreds):
     pass
 
 
-class TestLeapDatabaseIntegration(test_http_database.TestHTTPDatabaseIntegration):
+class TestLeapDatabaseIntegration(
+        test_http_database.TestHTTPDatabaseIntegration):
 
     def test_non_existing_db(self):
         db = leap_backend.LeapDatabase(self.getURL('not-there'))
@@ -190,7 +195,7 @@ class TestLeapDatabaseIntegration(test_http_database.TestHTTPDatabaseIntegration
     def test_open_database_existing(self):
         self.request_state._create_database('db0')
         db = leap_backend.LeapDatabase.open_database(self.getURL('db0'),
-                                                      create=False)
+                                                     create=False)
         self.assertIs(None, db.get_doc('doc1'))
 
     def test_open_database_non_existing(self):
@@ -201,7 +206,7 @@ class TestLeapDatabaseIntegration(test_http_database.TestHTTPDatabaseIntegration
 
     def test_open_database_create(self):
         db = leap_backend.LeapDatabase.open_database(self.getURL('new'),
-                                                      create=True)
+                                                     create=True)
         self.assertIs(None, db.get_doc('doc1'))
 
     def test_delete_database_existing(self):
@@ -213,7 +218,7 @@ class TestLeapDatabaseIntegration(test_http_database.TestHTTPDatabaseIntegration
     def test_doc_ids_needing_quoting(self):
         db0 = self.request_state._create_database('db0')
         db = leap_backend.LeapDatabase.open_database(self.getURL('db0'),
-                                                      create=False)
+                                                     create=False)
         doc = leap_backend.LeapDocument('%fff', None, '{}')
         db.put_doc(doc)
         self.assertGetDoc(db0, '%fff', doc.rev, '{}', False)
@@ -248,7 +253,8 @@ class TestLeapPyDocument(test_document.TestPyDocument, SoledadTest):
 # The following tests come from `u1db.tests.test_remote_sync_target`.
 #-----------------------------------------------------------------------------
 
-class TestLeapSyncTargetBasics(test_remote_sync_target.TestHTTPSyncTargetBasics):
+class TestLeapSyncTargetBasics(
+        test_remote_sync_target.TestHTTPSyncTargetBasics):
 
     def test_parse_url(self):
         remote_target = leap_backend.LeapSyncTarget('http://127.0.0.1:12345/')
@@ -256,6 +262,7 @@ class TestLeapSyncTargetBasics(test_remote_sync_target.TestHTTPSyncTargetBasics)
         self.assertEqual('127.0.0.1', remote_target._url.hostname)
         self.assertEqual(12345, remote_target._url.port)
         self.assertEqual('/', remote_target._url.path)
+
 
 class TestLeapParsingSyncStream(test_remote_sync_target.TestParsingSyncStream):
 
@@ -344,7 +351,7 @@ class TestRemoteSyncTargets(tests.TestCaseWithServer):
         ('oauth_http', {'make_app_with_state': make_oauth_http_app,
                         'make_document_for_test': make_leap_document_for_test,
                         'sync_target': oauth_leap_sync_target}),
-        ]
+    ]
 
 
 #-----------------------------------------------------------------------------
@@ -358,14 +365,15 @@ def oauth_https_sync_target(test, host, path):
                              tests.token1.key, tests.token1.secret)
     return st
 
-class TestLeapSyncTargetHttpsSupport(test_https.TestHttpSyncTargetHttpsSupport, SoledadTest):
+
+class TestLeapSyncTargetHttpsSupport(test_https.TestHttpSyncTargetHttpsSupport,
+                                     SoledadTest):
 
     scenarios = [
         ('oauth_https', {'server_def': test_https.https_server_def,
                          'make_app_with_state': make_oauth_http_app,
                          'make_document_for_test': make_leap_document_for_test,
-                         'sync_target': oauth_https_sync_target
-                         }),
-        ]
+                         'sync_target': oauth_https_sync_target,
+                         }), ]
 
 load_tests = tests.load_with_scenarios

@@ -25,7 +25,7 @@ from sqlite3 import dbapi2
 from u1db import (
     errors,
     query_parser,
-    )
+)
 
 from leap.soledad.tests import u1db_tests as tests
 
@@ -103,7 +103,7 @@ class TestSQLitePartialExpandDatabase(tests.TestCase):
         raw_db = self.db._get_sqlite_handle()
         self.db._close_sqlite_handle()
         self.assertRaises(dbapi2.ProgrammingError,
-            raw_db.cursor)
+                          raw_db.cursor)
 
     def test_create_database_initializes_schema(self):
         raw_db = self.db._get_sqlite_handle()
@@ -210,8 +210,7 @@ class TestSQLitePartialExpandDatabase(tests.TestCase):
             [(doc1.doc_id, "key1", "val1"),
              (doc1.doc_id, "key2", "val2"),
              (doc2.doc_id, "key1", "valx"),
-             (doc2.doc_id, "key2", "valy"),
-            ]), sorted(c.fetchall()))
+             (doc2.doc_id, "key2", "valy"), ]), sorted(c.fetchall()))
 
     def test_put_updates_fields(self):
         self.db.create_index('test', 'key1', 'key2')
@@ -223,8 +222,7 @@ class TestSQLitePartialExpandDatabase(tests.TestCase):
         c.execute("SELECT doc_id, field_name, value FROM document_fields"
                   " ORDER BY doc_id, field_name, value")
         self.assertEqual([(doc1.doc_id, "key1", "val1"),
-                          (doc1.doc_id, "key2", "valy"),
-                         ], c.fetchall())
+                          (doc1.doc_id, "key2", "valy"), ], c.fetchall())
 
     def test_put_updates_nested_fields(self):
         self.db.create_index('test', 'key', 'sub.doc')
@@ -233,19 +231,19 @@ class TestSQLitePartialExpandDatabase(tests.TestCase):
         c.execute("SELECT doc_id, field_name, value FROM document_fields"
                   " ORDER BY doc_id, field_name, value")
         self.assertEqual([(doc1.doc_id, "key", "value"),
-                          (doc1.doc_id, "sub.doc", "underneath"),
-                         ], c.fetchall())
+                          (doc1.doc_id, "sub.doc", "underneath"), ],
+                         c.fetchall())
 
     def test__ensure_schema_rollback(self):
         temp_dir = self.createTempDir(prefix='u1db-test-')
         path = temp_dir + '/rollback.db'
 
         class SQLitePartialExpandDbTesting(
-            sqlite_backend.SQLitePartialExpandDatabase):
+                sqlite_backend.SQLitePartialExpandDatabase):
 
             def _set_replica_uid_in_transaction(self, uid):
                 super(SQLitePartialExpandDbTesting,
-                    self)._set_replica_uid_in_transaction(uid)
+                      self)._set_replica_uid_in_transaction(uid)
                 if fail:
                     raise Exception()
 
@@ -275,13 +273,13 @@ class TestSQLitePartialExpandDatabase(tests.TestCase):
         temp_dir = self.createTempDir(prefix='u1db-test-')
         path = temp_dir + '/non-existent.sqlite'
         self.assertRaises(errors.DatabaseDoesNotExist,
-                         sqlite_backend.SQLiteDatabase._open_database, path)
+                          sqlite_backend.SQLiteDatabase._open_database, path)
 
     def test__open_database_during_init(self):
         temp_dir = self.createTempDir(prefix='u1db-test-')
         path = temp_dir + '/initialised.db'
         db = sqlite_backend.SQLitePartialExpandDatabase.__new__(
-                                    sqlite_backend.SQLitePartialExpandDatabase)
+            sqlite_backend.SQLitePartialExpandDatabase)
         db._db_handle = dbapi2.connect(path)  # db is there but not yet init-ed
         self.addCleanup(db.close)
         observed = []
@@ -299,9 +297,10 @@ class TestSQLitePartialExpandDatabase(tests.TestCase):
         db2 = SQLiteDatabaseTesting._open_database(path)
         self.addCleanup(db2.close)
         self.assertIsInstance(db2, sqlite_backend.SQLitePartialExpandDatabase)
-        self.assertEqual([None,
-              sqlite_backend.SQLitePartialExpandDatabase._index_storage_value],
-                         observed)
+        self.assertEqual(
+            [None,
+             sqlite_backend.SQLitePartialExpandDatabase._index_storage_value],
+            observed)
 
     def test__open_database_invalid(self):
         class SQLiteDatabaseTesting(sqlite_backend.SQLiteDatabase):

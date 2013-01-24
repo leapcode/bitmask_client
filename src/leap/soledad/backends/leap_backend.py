@@ -12,11 +12,10 @@ from leap.soledad.util import GPGWrapper
 
 import uuid
 
-import uuid
-
 
 class NoDefaultKey(Exception):
     pass
+
 
 class NoSoledadInstance(Exception):
     pass
@@ -42,8 +41,9 @@ class LeapDocument(Document):
         """
         if not self._soledad:
             raise NoSoledadInstance()
-        ciphertext = self._soledad.encrypt_symmetric(self.doc_id, self.get_json())
-        return json.dumps({'_encrypted_json' : ciphertext})
+        ciphertext = self._soledad.encrypt_symmetric(self.doc_id,
+                                                     self.get_json())
+        return json.dumps({'_encrypted_json': ciphertext})
 
     def set_encrypted_json(self, encrypted_json):
         """
@@ -90,7 +90,8 @@ class LeapDatabase(HTTPDatabase):
             doc_id = self._allocate_doc_id()
         res, headers = self._request_json('PUT', ['doc', doc_id], {},
                                           content, 'application/json')
-        new_doc = self._factory(doc_id, res['rev'], content, soledad=self._soledad)
+        new_doc = self._factory(doc_id, res['rev'], content,
+                                soledad=self._soledad)
         return new_doc
 
 
