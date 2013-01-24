@@ -4,6 +4,7 @@ Configuration Base Class
 import grp
 import json
 import logging
+import re
 import socket
 import time
 import os
@@ -11,7 +12,7 @@ import os
 logger = logging.getLogger(name=__name__)
 
 from dateutil import parser as dateparser
-import dirspec
+from dirspec import basedir
 import requests
 
 from leap.base import exceptions
@@ -280,7 +281,12 @@ def get_config_dir():
     @rparam: config path
     @rtype: string
     """
-    return os.path.join(dirspec.basedir.default_config_home,
+    home = os.path.expanduser("~")
+    if re.findall("leap_tests-[a-zA-Z0-9]{6}", home):
+        # we're inside a test! :)
+        return os.path.join(home, ".config/leap")
+    else:
+        return os.path.join(basedir.default_config_home,
                         'leap')
 
 
