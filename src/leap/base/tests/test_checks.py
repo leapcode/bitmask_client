@@ -3,12 +3,10 @@ try:
 except ImportError:
     import unittest
 import os
+import sh
 
 from mock import (patch, Mock)
 from StringIO import StringIO
-
-import ping
-import requests
 
 from leap.base import checks
 from leap.base import exceptions
@@ -21,6 +19,7 @@ class LeapNetworkCheckTest(BaseLeapTest):
     __name__ = "leap_network_check_tests"
 
     def setUp(self):
+        os.environ['PATH'] += ':/bin'
         pass
 
     def tearDown(self):
@@ -62,9 +61,7 @@ class LeapNetworkCheckTest(BaseLeapTest):
     def test_get_default_interface_no_interface(self):
         checker = checks.LeapNetworkChecker()
         with patch('leap.base.checks.open', create=True) as mock_open:
-            # aa is working on this and probably will merge this
-            # correctly. By now just writing something so test pass
-            with self.assertRaises(exceptions.TunnelNotDefaultRouteError):
+            with self.assertRaises(exceptions.NoDefaultInterfaceFoundError):
                 mock_open.return_value = StringIO(
                     "Iface\tDestination Gateway\t"
                     "Flags\tRefCntd\tUse\tMetric\t"
@@ -73,14 +70,6 @@ class LeapNetworkCheckTest(BaseLeapTest):
 
     def test_check_tunnel_default_interface(self):
         checker = checks.LeapNetworkChecker()
-        with patch('leap.base.checks.open', create=True) as mock_open:
-            with self.assertRaises(exceptions.TunnelNotDefaultRouteError):
-                mock_open.return_value = StringIO(
-                    "Iface\tDestination Gateway\t"
-                    "Flags\tRefCntd\tUse\tMetric\t"
-                    "Mask\tMTU\tWindow\tIRTT")
-                checker.check_tunnel_default_interface()
-
         with patch('leap.base.checks.open', create=True) as mock_open:
             with self.assertRaises(exceptions.TunnelNotDefaultRouteError):
                 mock_open.return_value = StringIO(
@@ -101,43 +90,49 @@ class LeapNetworkCheckTest(BaseLeapTest):
 
     def test_ping_gateway_fail(self):
         checker = checks.LeapNetworkChecker()
-        with patch.object(ping, "quiet_ping") as mocked_ping:
+        with patch.object(sh, "ping") as mocked_ping:
             with self.assertRaises(exceptions.NoConnectionToGateway):
-                mocked_ping.return_value = [11, "", ""]
+                mocked_ping.return_value = Mock
+                mocked_ping.return_value.stdout = "11% packet loss"
                 checker.ping_gateway("4.2.2.2")
+
+    def test_ping_gateway(self):
+        checker = checks.LeapNetworkChecker()
+        with patch.object(sh, "ping") as mocked_ping:
+            mocked_ping.return_value = Mock
+            mocked_ping.return_value.stdout = """
+PING 4.2.2.2 (4.2.2.2) 56(84) bytes of data.
+64 bytes from 4.2.2.2: icmp_req=1 ttl=54 time=33.8 ms
+64 bytes from 4.2.2.2: icmp_req=2 ttl=54 time=30.6 ms
+64 bytes from 4.2.2.2: icmp_req=3 ttl=54 time=31.4 ms
+64 bytes from 4.2.2.2: icmp_req=4 ttl=54 time=36.1 ms
+64 bytes from 4.2.2.2: icmp_req=5 ttl=54 time=30.8 ms
+64 bytes from 4.2.2.2: icmp_req=6 ttl=54 time=30.4 ms
+64 bytes from 4.2.2.2: icmp_req=7 ttl=54 time=30.7 ms
+64 bytes from 4.2.2.2: icmp_req=8 ttl=54 time=32.7 ms
+64 bytes from 4.2.2.2: icmp_req=9 ttl=54 time=31.4 ms
+64 bytes from 4.2.2.2: icmp_req=10 ttl=54 time=33.3 ms
+
+--- 4.2.2.2 ping statistics ---
+10 packets transmitted, 10 received, 0% packet loss, time 9016ms
+rtt min/avg/max/mdev = 30.497/32.172/36.161/1.755 ms"""
+        checker.ping_gateway("4.2.2.2")
 
     def test_check_internet_connection_failures(self):
         checker = checks.LeapNetworkChecker()
-        with patch.object(requests, "get") as mocked_get:
-            mocked_get.side_effect = requests.HTTPError
+        TimeoutError = get_ping_timeout_error()
+        with patch.object(sh, "ping") as mocked_ping:
+            mocked_ping.side_effect = TimeoutError
             with self.assertRaises(exceptions.NoInternetConnection):
-                checker.check_internet_connection()
-
-        with patch.object(requests, "get") as mocked_get:
-            mocked_get.side_effect = requests.RequestException
-            with self.assertRaises(exceptions.NoInternetConnection):
-                checker.check_internet_connection()
-
-        #TODO: Mock possible errors that can be raised by is_internet_up
-        with patch.object(requests, "get") as mocked_get:
-            mocked_get.side_effect = requests.ConnectionError
-            with self.assertRaises(exceptions.NoInternetConnection):
-                checker.check_internet_connection()
-
-        with patch.object(requests, "get") as mocked_get:
-            mocked_get.side_effect = requests.ConnectionError(
-                "[Errno 113] No route to host")
-            with self.assertRaises(exceptions.NoInternetConnection):
-                with patch.object(checker, "ping_gateway") as mock_ping:
-                    mock_ping.return_value = True
+                with patch.object(checker, "ping_gateway") as mock_gateway:
+                    mock_gateway.side_effect = exceptions.NoConnectionToGateway
                     checker.check_internet_connection()
 
-        with patch.object(requests, "get") as mocked_get:
-            mocked_get.side_effect = requests.ConnectionError(
-                "[Errno 113] No route to host")
+        with patch.object(sh, "ping") as mocked_ping:
+            mocked_ping.side_effect = TimeoutError
             with self.assertRaises(exceptions.NoInternetConnection):
-                with patch.object(checker, "ping_gateway") as mock_ping:
-                    mock_ping.side_effect = exceptions.NoConnectionToGateway
+                with patch.object(checker, "ping_gateway") as mock_gateway:
+                    mock_gateway.return_value = True
                     checker.check_internet_connection()
 
     def test_parse_log_and_react(self):
@@ -174,7 +169,9 @@ class LeapNetworkCheckTest(BaseLeapTest):
         checker.parse_log_and_react([], err_matrix)
         self.assertFalse(to_call.called)
 
-    @unittest.skipUnless(_uid == 0, "root only")
-    def test_ping_gateway(self):
-        checker = checks.LeapNetworkChecker()
-        checker.ping_gateway("4.2.2.2")
+
+def get_ping_timeout_error():
+    try:
+        sh.ping("-c", "1", "-w", "1", "8.8.7.7")
+    except Exception as e:
+        return e

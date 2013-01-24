@@ -5,8 +5,6 @@ import re
 import socket
 
 import netifaces
-import ping
-import requests
 import sh
 
 from leap.base import constants
@@ -45,26 +43,25 @@ class LeapNetworkChecker(object):
         checker.parse_log_and_react([], ())
 
     def check_internet_connection(self):
-        try:
-            # XXX remove this hardcoded random ip
-            # ping leap.se or eip provider instead...?
-            # XXX could use icmp instead..
-            requests.get('http://216.172.161.165')
-        except requests.ConnectionError as e:
-            error = "Unidentified Connection Error"
-            if e.message == "[Errno 113] No route to host":
+        if _platform == "Linux":
+            try:
+                output = sh.ping("-c", "5", "-w", "5", ICMP_TARGET)
+                # XXX should redirect this to netcheck logger.
+                # and don't clutter main log.
+                logger.debug('Network appears to be up.')
+            except sh.ErrorReturnCode_1 as e:
+                packet_loss = re.findall("\d+% packet loss", e.message)[0]
+                logger.debug("Unidentified Connection Error: " + packet_loss)
                 if not self.is_internet_up():
                     error = "No valid internet connection found."
                 else:
                     error = "Provider server appears to be down."
-            logger.error(error)
-            raise exceptions.NoInternetConnection(error)
-        except (requests.HTTPError, requests.RequestException) as e:
-            raise exceptions.NoInternetConnection(e.message)
 
-        # XXX should redirect this to netcheck logger.
-        # and don't clutter main log.
-        logger.debug('Network appears to be up.')
+                logger.error(error)
+                raise exceptions.NoInternetConnection(error)
+
+        else:
+            raise NotImplementedError
 
     def is_internet_up(self):
         iface, gateway = self.get_default_interface_gateway()
@@ -82,7 +79,7 @@ class LeapNetworkChecker(object):
         #toss out header
         route_table.pop(0)
         if not route_table:
-            raise exceptions.TunnelNotDefaultRouteError()
+            raise exceptions.NoDefaultInterfaceFoundError
         return route_table
 
     def _get_def_iface_osx(self):
@@ -158,7 +155,7 @@ class LeapNetworkChecker(object):
         if _platform == "Linux":
             default_iface, gw = self._get_def_iface_linux()
         elif _platform == "Darwin":
-            default_iface, gw = self.get_def_iface_osx()
+            default_iface, gw = self._get_def_iface_osx()
         else:
             raise NotImplementedError
 
@@ -167,7 +164,7 @@ class LeapNetworkChecker(object):
 
         if default_iface not in netifaces.interfaces():
             raise exceptions.InterfaceNotFoundError
-        logger.debug('-- default iface', default_iface)
+        logger.debug('-- default iface %s', default_iface)
         return default_iface, gw
 
     def ping_gateway(self, gateway):
@@ -178,13 +175,15 @@ class LeapNetworkChecker(object):
         # -- is it a domain?
         # -- can we resolve? -- raise NoDNSError if not.
 
-        # XXX -- needs review!
-        # We cannout use this ping implementation; it needs root.
-        # We need to look for another, poors-man implementation
-        # or wrap around system traceroute (using sh module, fi)
-        # -- kali
-        packet_loss = ping.quiet_ping(gateway)[0]
-        logger.debug('packet loss %s' % packet_loss)
+        # XXX -- sh.ping implemtation needs review!
+        try:
+            output = sh.ping("-c", "10", gateway).stdout
+        except sh.ErrorReturnCode_1 as e:
+            output = e.message
+        finally:
+            packet_loss = int(re.findall("(\d+)% packet loss", output)[0])
+
+        logger.debug('packet loss %s%%' % packet_loss)
         if packet_loss > constants.MAX_ICMP_PACKET_LOSS:
             raise exceptions.NoConnectionToGateway
 
