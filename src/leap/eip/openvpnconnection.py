@@ -107,7 +107,7 @@ class OpenVPNManagement(object):
                 return []
         except socket.error as exc:
             logger.debug('socket error: %s' % exc.message)
-        except select.error as exc:    
+        except select.error as exc:
             logger.debug('select error: %s' % exc.message)
 
     def _send_short_command(self, cmd):
@@ -373,7 +373,6 @@ to be triggered for each one of them.
             except socket.error:
                 logger.warning('management socket died')
                 return
-
 
         #shutting openvpn failured
         #try patching in old openvpn host and trying again

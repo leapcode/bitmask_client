@@ -78,7 +78,7 @@ class RegisterUserPageLogicTestCase(qunittest.TestCase):
             eq(len(checks), 3)
             labels = [str(x) for (x, y), z in checks]
             eq(labels, ['head_sentinel',
-                        'registering with provider',
+                        'Registering username',
                         'end_sentinel'])
             progress = [y for (x, y), z in checks]
             eq(progress, [0, 40, 100])
@@ -112,7 +112,7 @@ class RegisterUserPageUITestCase(qunittest.TestCase):
         self.pagename = "signup"
         pages = OrderedDict((
             (self.pagename, TestPage),
-            ('signupvalidation',
+            ('connect',
              firstrun.connect.ConnectionPage)))
         self.wizard = firstrun.wizard.FirstRunWizard(None, pages_dict=pages)
         self.page = self.wizard.page(self.wizard.get_page_index(self.pagename))

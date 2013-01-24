@@ -101,7 +101,7 @@ class EIPConductorAppMixin(object):
             return
 
         # XXX this is actually a one-shot.
-        # On the dialog there should be 
+        # On the dialog there should be
         # a reset signal binded to the ok button
         # or something like that.
         self.ERR_DIALOG = True
@@ -115,7 +115,6 @@ class EIPConductorAppMixin(object):
         # check headless = False before
         # launching dialog.
         # (so Qt tests can assert stuff)
-
 
         if error.critical:
             logger.critical(error.message)

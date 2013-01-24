@@ -17,7 +17,8 @@ def null_check(value, value_name):
     except AssertionError:
         raise ImproperlyConfigured(
             "%s parameter cannot be None" % value_name)
-        
+
+
 def get_openvpn_pids():
     # binary name might change
 

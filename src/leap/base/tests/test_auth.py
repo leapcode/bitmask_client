@@ -55,4 +55,4 @@ class LeapSRPRegisterTests(BaseHTTPSServerTestCase, BaseLeapTest):
         self.assertIsInstance(srp_auth.session, requests.sessions.Session)
         self.assertEqual(
             srp_auth.get_registration_uri(),
-            "https://localhost:8443/1/users.json")
+            "https://localhost:8443/1/users")

@@ -75,9 +75,10 @@ class LeapNetworkChecker(object):
         return True
 
     def _get_route_table_linux(self):
-
-        with open("/proc/net/route") as f:
-            route_table = f.readlines()
+        # do not use context manager, tests pass a StringIO
+        f = open("/proc/net/route")
+        route_table = f.readlines()
+        f.close()
         #toss out header
         route_table.pop(0)
         if not route_table:
@@ -87,7 +88,7 @@ class LeapNetworkChecker(object):
     def _get_def_iface_osx(self):
         default_iface = None
         #gateway = None
-        routes = list(sh.route('-n', 'get',  ICMP_TARGET, _iter=True))
+        routes = list(sh.route('-n', 'get', ICMP_TARGET, _iter=True))
         iface = filter(lambda l: "interface" in l, routes)
         if not iface:
             return None, None
@@ -155,7 +156,7 @@ class LeapNetworkChecker(object):
         imo...)
         """
         if _platform == "Linux":
-            default_iface, gw = self.get_def_iface_linux()
+            default_iface, gw = self._get_def_iface_linux()
         elif _platform == "Darwin":
             default_iface, gw = self.get_def_iface_osx()
         else:

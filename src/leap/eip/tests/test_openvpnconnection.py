@@ -91,9 +91,10 @@ class OpenVPNConnectionTest(BaseLeapTest):
         # while fixing. kali.
         openvpn_connection = openvpnconnection.OpenVPNConnection()
 
-        with patch.object(psutil, "get_process_list") as mocked_psutil:
+        with patch.object(psutil, "process_iter") as mocked_psutil:
             mocked_process = Mock()
             mocked_process.name = "openvpn"
+            mocked_process.cmdline = ["openvpn", "-foo", "-bar", "-gaaz"]
             mocked_psutil.return_value = [mocked_process]
             with self.assertRaises(eipexceptions.OpenVPNAlreadyRunning):
                 openvpn_connection._check_if_running_instance()

@@ -15,6 +15,7 @@ function usage {
   echo "  -P, --no-pep8            Don't run pep8"
   echo "  -c, --coverage           Generate coverage report"
   echo "  -h, --help               Print this usage message"
+  echo "  -A, --all		   Run all tests, without excluding any"
   echo "  --hide-elapsed           Don't print the elapsed time for each test along with slow test list"
   echo ""
   echo "Note: with no options specified, the script will try to run the tests in a virtual environment,"
@@ -33,6 +34,7 @@ function process_option {
     -p|--pep8) just_pep8=1;;
     -P|--no-pep8) no_pep8=1;;
     -c|--coverage) coverage=1;;
+    -A|--all) alltests=1;;
     -*) noseopts="$noseopts $1";;
     *) noseargs="$noseargs $1"
   esac
@@ -51,6 +53,7 @@ wrapper=""
 just_pep8=0
 no_pep8=0
 coverage=0
+alltests=0
 
 for arg in "$@"; do
   process_option $arg
@@ -63,6 +66,11 @@ fi
 
 if [ $no_site_packages -eq 1 ]; then
   installvenvopts="--no-site-packages"
+fi
+
+# If alltests flag is not set, let's exclude some dirs that are troublesome.
+if [ $alltests -eq 0 ]; then
+    noseopts="$noseopts --exclude-dir=src/leap/soledad"
 fi
 
 function run_tests {

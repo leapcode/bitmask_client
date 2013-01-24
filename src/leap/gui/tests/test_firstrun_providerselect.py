@@ -61,9 +61,11 @@ class SelectProviderPageLogicTestCase(qunittest.TestCase):
         checks = [x for x in self.page._do_checks()]
         eq(len(checks), 5)
         labels = [str(x) for (x, y), z in checks]
-        eq(labels, ['head_sentinel', 'checking domain name',
-                    'checking https connection',
-                    'fetching provider info', 'end_sentinel'])
+        eq(labels, ['head_sentinel',
+                    'Checking if it is a valid provider',
+                    'Checking for a secure connection',
+                    'Getting info from the provider',
+                    'end_sentinel'])
         progress = [y for (x, y), z in checks]
         eq(progress, [0, 20, 40, 80, 100])
 

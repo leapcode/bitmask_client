@@ -28,6 +28,8 @@ class EIPConfigTest(BaseLeapTest):
     __name__ = "eip_config_tests"
     provider = "testprovider.example.org"
 
+    maxDiff = None
+
     def setUp(self):
         pass
 
@@ -129,6 +131,18 @@ class EIPConfigTest(BaseLeapTest):
         #get platform switches here!
         args.append('/tmp/test.socket')
         args.append('unix')
+
+        args.append('--script-security')
+        args.append('2')
+
+        if _system == "Linux":
+            args.append('--up')
+            args.append('/etc/leap/resolv-update')
+            args.append('--down')
+            args.append('/etc/leap/resolv-update')
+            args.append('--plugin')
+            args.append('/usr/lib/openvpn/openvpn-down-root.so')
+            args.append("'script_type=down /etc/leap/resolv-update'")
 
         # certs
         # XXX get values from specs?

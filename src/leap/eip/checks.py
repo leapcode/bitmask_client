@@ -451,7 +451,7 @@ class EIPConfigChecker(object):
                 domain = config.get('provider', None)
             uri = self._get_provider_definition_uri(domain=domain)
 
-        if sys.platform == "darwin": 
+        if sys.platform == "darwin":
             verify = get_mac_cabundle()
         else:
             verify = True
@@ -465,7 +465,7 @@ class EIPConfigChecker(object):
     def fetch_eip_service_config(self, skip_download=False,
                                  force_download=False,
                                  config=None, uri=None,  # domain=None,
-                                 autocacert=True):
+                                 autocacert=True, verify=True):
         if skip_download:
             return True
         if config is None:

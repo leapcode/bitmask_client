@@ -113,7 +113,7 @@ class FirstRunWizardTestCase(qunittest.TestCase):
         # remember it's implemented as an ordered dict
 
         pagenames = ('intro', 'providerselection', 'login', 'providerinfo',
-                     'providersetupvalidation', 'signup', 'signupvalidation',
+                     'providersetupvalidation', 'signup', 'connect',
                      'lastpage')
         eq = self.assertEqual
         w = self.wizard
