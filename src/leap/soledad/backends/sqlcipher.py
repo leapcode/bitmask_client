@@ -25,9 +25,10 @@ from u1db.backends.sqlite_backend import (
     SQLitePartialExpandDatabase,
 )
 from u1db import (
-    Document,
     errors,
 )
+
+from leap.soledad.backends.leap_backend import LeapDocument
 
 
 def open(path, password, create=True, document_factory=None):
@@ -70,7 +71,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         SQLCipherDatabase.set_pragma_key(self._db_handle, password)
         self._real_replica_uid = None
         self._ensure_schema()
-        self._factory = document_factory or Document
+        self._factory = document_factory or LeapDocument
 
     def _check_if_db_is_encrypted(self, sqlite_file):
         if not os.path.exists(sqlite_file):
@@ -132,6 +133,27 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         from leap.soledad.backends.leap_backend import LeapSyncTarget
         return Synchronizer(self, LeapSyncTarget(url, creds=creds),
                             soledad=self._soledad).sync(autocreate=autocreate)
+
+    def _extra_schema_init(self, c):
+        c.execute(
+            'ALTER TABLE document '
+            'ADD COLUMN syncable BOOL NOT NULL DEFAULT TRUE')
+
+    def _put_and_update_indexes(self, old_doc, doc):
+        super(SQLCipherDatabase, self)._put_and_update_indexes(old_doc, doc)
+        c = self._db_handle.cursor()
+        c.execute('UPDATE document SET syncable=? WHERE doc_id=?',
+                  (doc.syncable, doc.doc_id))
+
+    def _get_doc(self, doc_id, check_for_conflicts=False):
+        doc = super(SQLCipherDatabase, self)._get_doc(doc_id,
+                                                      check_for_conflicts)
+        if doc:
+            c = self._db_handle.cursor()
+            c.execute('SELECT syncable FROM document WHERE doc_id=?',
+                      (doc.doc_id,))
+            doc.syncable = bool(c.fetchone()[0])
+        return doc
 
 
 SQLiteDatabase.register_implementation(SQLCipherDatabase)

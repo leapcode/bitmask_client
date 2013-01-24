@@ -8,7 +8,6 @@ from u1db.remote import utils
 from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
 from u1db.errors import BrokenSyncStream
-from leap.soledad.util import GPGWrapper
 
 import uuid
 
@@ -29,9 +28,10 @@ class LeapDocument(Document):
     """
 
     def __init__(self, doc_id=None, rev=None, json='{}', has_conflicts=False,
-                 encrypted_json=None, soledad=None):
+                 encrypted_json=None, soledad=None, syncable=True):
         super(LeapDocument, self).__init__(doc_id, rev, json, has_conflicts)
         self._soledad = soledad
+        self._syncable = syncable
         if encrypted_json:
             self.set_encrypted_json(encrypted_json)
 
@@ -54,6 +54,18 @@ class LeapDocument(Document):
         ciphertext = json.loads(encrypted_json)['_encrypted_json']
         plaintext = self._soledad.decrypt_symmetric(self.doc_id, ciphertext)
         return self.set_json(plaintext)
+
+    def _get_syncable(self):
+        return self._syncable
+
+    def _set_syncable(self, syncable=True):
+        self._syncable = syncable
+
+    syncable = property(
+        _get_syncable,
+        _set_syncable,
+        doc="Determine if document should be synced with server."
+    )
 
 
 class LeapDatabase(HTTPDatabase):
@@ -168,10 +180,11 @@ class LeapSyncTarget(HTTPSyncTarget):
             ensure=ensure_callback is not None)
         comma = ','
         for doc, gen, trans_id in docs_by_generations:
-            # encrypt before sending to server.
-            size += prepare(id=doc.doc_id, rev=doc.rev,
-                            content=doc.get_encrypted_json(),
-                            gen=gen, trans_id=trans_id)
+            if doc.syncable:
+                # encrypt before sending to server.
+                size += prepare(id=doc.doc_id, rev=doc.rev,
+                                content=doc.get_encrypted_json(),
+                                gen=gen, trans_id=trans_id)
         entries.append('\r\n]')
         size += len(entries[-1])
         self._conn.putheader('content-length', str(size))

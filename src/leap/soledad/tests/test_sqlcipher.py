@@ -20,6 +20,7 @@ from leap.soledad.backends.sqlcipher import (
     DatabaseIsNotEncrypted,
 )
 from leap.soledad.backends.sqlcipher import open as u1db_open
+from leap.soledad.backends.leap_backend import LeapDocument
 
 # u1db tests stuff.
 from leap.soledad.tests import u1db_tests as tests
@@ -75,10 +76,14 @@ def copy_sqlcipher_database_for_test(test, db):
     return new_db
 
 
+def make_document_for_test(test, doc_id, rev, content, has_conflicts=False):
+    return LeapDocument(doc_id, rev, content, has_conflicts=has_conflicts)
+
+
 SQLCIPHER_SCENARIOS = [
     ('sqlcipher', {'make_database_for_test': make_sqlcipher_database_for_test,
                    'copy_database_for_test': copy_sqlcipher_database_for_test,
-                   'make_document_for_test': tests.make_document_for_test, }),
+                   'make_document_for_test': make_document_for_test, }),
 ]
 
 
@@ -161,6 +166,10 @@ class TestSQLCipherDatabase(test_sqlite_backend.TestSQLiteDatabase):
         self.assertTrue(db2._is_initialized(db1._get_sqlite_handle().cursor()))
 
 
+class TestAlternativeDocument(LeapDocument):
+    """A (not very) alternative implementation of Document."""
+
+
 class TestSQLCipherPartialExpandDatabase(
         test_sqlite_backend.TestSQLitePartialExpandDatabase):
 
@@ -223,8 +232,8 @@ class TestSQLCipherPartialExpandDatabase(
         SQLCipherDatabase(path, PASSWORD)
         db2 = SQLCipherDatabase._open_database(
             path, PASSWORD,
-            document_factory=test_backends.TestAlternativeDocument)
-        self.assertEqual(test_backends.TestAlternativeDocument, db2._factory)
+            document_factory=TestAlternativeDocument)
+        self.assertEqual(TestAlternativeDocument, db2._factory)
 
     def test_open_database_existing(self):
         temp_dir = self.createTempDir(prefix='u1db-test-')
@@ -239,8 +248,8 @@ class TestSQLCipherPartialExpandDatabase(
         SQLCipherDatabase(path, PASSWORD)
         db2 = SQLCipherDatabase.open_database(
             path, PASSWORD, create=False,
-            document_factory=test_backends.TestAlternativeDocument)
-        self.assertEqual(test_backends.TestAlternativeDocument, db2._factory)
+            document_factory=TestAlternativeDocument)
+        self.assertEqual(TestAlternativeDocument, db2._factory)
 
     def test_create_database_initializes_schema(self):
         # This test had to be cloned because our implementation of SQLCipher
@@ -254,6 +263,19 @@ class TestSQLCipherPartialExpandDatabase(
         self.assertEqual({'sql_schema': '0', 'replica_uid': 'test',
                           'index_storage': 'expand referenced encrypted'},
                          config)
+
+    def test_store_syncable(self):
+        doc = self.db.create_doc_from_json(tests.simple_doc)
+        # assert that docs are syncable by default
+        self.assertEqual(True, doc.syncable)
+        # assert that we can store syncable = False
+        doc.syncable = False
+        self.db.put_doc(doc)
+        self.assertEqual(False, self.db.get_doc(doc.doc_id).syncable)
+        # assert that we can store syncable = True
+        doc.syncable = True
+        self.db.put_doc(doc)
+        self.assertEqual(True, self.db.get_doc(doc.doc_id).syncable)
 
 
 #-----------------------------------------------------------------------------
@@ -277,9 +299,9 @@ class SQLCipherOpen(test_open.TestU1DBOpen):
 
     def test_open_with_factory(self):
         db = u1db_open(self.db_path, password=PASSWORD, create=True,
-                       document_factory=test_backends.TestAlternativeDocument)
+                       document_factory=TestAlternativeDocument)
         self.addCleanup(db.close)
-        self.assertEqual(test_backends.TestAlternativeDocument, db._factory)
+        self.assertEqual(TestAlternativeDocument, db._factory)
 
     def test_open_existing(self):
         db = SQLCipherDatabase(self.db_path, PASSWORD)
@@ -325,7 +347,8 @@ class SQLCipherEncryptionTest(unittest.TestCase):
         try:
             # trying to open an encrypted database with the regular u1db
             # backend should raise a DatabaseError exception.
-            SQLitePartialExpandDatabase(self.DB_FILE)
+            SQLitePartialExpandDatabase(self.DB_FILE,
+                                        document_factory=LeapDocument)
             raise DatabaseIsNotEncrypted()
         except DatabaseError:
             # at this point we know that the regular U1DB sqlcipher backend
@@ -337,7 +360,8 @@ class SQLCipherEncryptionTest(unittest.TestCase):
                              'decrypted content mismatch')
 
     def test_try_to_open_raw_db_with_sqlcipher_backend(self):
-        db = SQLitePartialExpandDatabase(self.DB_FILE)
+        db = SQLitePartialExpandDatabase(self.DB_FILE,
+                                         document_factory=LeapDocument)
         db.create_doc_from_json(tests.simple_doc)
         db.close()
         try:
