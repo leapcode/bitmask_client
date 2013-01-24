@@ -1,3 +1,4 @@
+six>=1.1,<1.2 # soledad req (nose2)
 unittest2  # TODO we should include this dep only for python2.6
 coverage
 mock
@@ -7,5 +8,6 @@ sphinx>=1.1.2
 nose-exclude
 
 # for soledad * to be splitted *
+nose2
 testscenarios
 testtools
