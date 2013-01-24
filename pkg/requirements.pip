@@ -12,8 +12,12 @@ pycrypto
 keyring
 python-dateutil
 sh
-pygeoip # optional
 dirspec
+
+pygeoip # optional
+
+# email
+zope.interface
 
 # soledad deps -- will move to its own repo soon
 python-gnupg
