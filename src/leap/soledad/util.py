@@ -2,17 +2,19 @@ import os
 import gnupg
 import re
 
+
 class GPGWrapper(gnupg.GPG):
     """
     This is a temporary class for handling GPG requests, and should be
     replaced by a more general class used throughout the project.
     """
 
-    GNUPG_HOME    = os.environ['HOME'] + "/.config/leap/gnupg"
-    GNUPG_BINARY  = "/usr/bin/gpg" # this has to be changed based on OS
+    GNUPG_HOME = os.environ['HOME'] + "/.config/leap/gnupg"
+    GNUPG_BINARY = "/usr/bin/gpg"  # this has to be changed based on OS
 
     def __init__(self, gpghome=GNUPG_HOME, gpgbinary=GNUPG_BINARY):
-        super(GPGWrapper, self).__init__(gnupghome=gpghome, gpgbinary=gpgbinary)
+        super(GPGWrapper, self).__init__(gnupghome=gpghome,
+                                         gpgbinary=gpgbinary)
 
     def find_key(self, email):
         """

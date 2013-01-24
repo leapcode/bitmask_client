@@ -8,11 +8,11 @@ from leap.soledad.backends.leap_backend import LeapDocument
 
 class EncryptedSyncTestCase(unittest.TestCase):
 
-    PREFIX     = "/var/tmp"
+    PREFIX = "/var/tmp"
     GNUPG_HOME = "%s/gnupg" % PREFIX
-    DB1_FILE   = "%s/db1.u1db" % PREFIX
-    DB2_FILE   = "%s/db2.u1db" % PREFIX
-    EMAIL      = 'leap@leap.se'
+    DB1_FILE = "%s/db1.u1db" % PREFIX
+    DB2_FILE = "%s/db2.u1db" % PREFIX
+    EMAIL = 'leap@leap.se'
 
     def setUp(self):
         self.db1 = u1db.open(self.DB1_FILE, create=True,
@@ -29,10 +29,10 @@ class EncryptedSyncTestCase(unittest.TestCase):
 
     def test_get_set_encrypted(self):
         doc1 = LeapDocument(soledad=self.soledad)
-        doc1.content = { 'key' : 'val' }
+        doc1.content = {'key': 'val'}
         doc2 = LeapDocument(doc_id=doc1.doc_id,
-                                 encrypted_json=doc1.get_encrypted_json(),
-                                 soledad=self.soledad)
+                            encrypted_json=doc1.get_encrypted_json(),
+                            soledad=self.soledad)
         res1 = doc1.get_json()
         res2 = doc2.get_json()
         self.assertEqual(res1, res2, 'incorrect document encryption')

@@ -24,13 +24,13 @@ except ImportError:
 
 from u1db import (
     errors,
-    )
+)
 
 from leap.soledad.tests import u1db_tests as tests
 
 from u1db.remote import (
     http_client,
-    )
+)
 
 
 class TestEncoder(tests.TestCase):
@@ -126,7 +126,7 @@ class TestHTTPClientBase(tests.TestCaseWithServer):
                 start_response("401 Unauthorized",
                                [('Content-Type', 'application/json')])
                 return [json.dumps({"error": "unauthorized",
-                                          "message": e.message})]
+                                    "message": e.message})]
             start_response("200 OK", [('Content-Type', 'application/json')])
             return [json.dumps([environ['PATH_INFO'], token.key, params])]
 
@@ -146,7 +146,7 @@ class TestHTTPClientBase(tests.TestCaseWithServer):
 
     def test_parse_url(self):
         cli = http_client.HTTPClientBase(
-                                     '%s://127.0.0.1:12345/' % self.url_scheme)
+            '%s://127.0.0.1:12345/' % self.url_scheme)
         self.assertEqual(self.url_scheme, cli._url.scheme)
         self.assertEqual('127.0.0.1', cli._url.hostname)
         self.assertEqual(12345, cli._url.port)
@@ -187,7 +187,7 @@ class TestHTTPClientBase(tests.TestCaseWithServer):
                           'REQUEST_METHOD': 'GET'}, json.loads(res))
 
         res, headers = cli._request('POST', ['echo'], {'b': 2}, 'Body',
-                                   'application/x-test')
+                                    'application/x-test')
         self.assertEqual({'CONTENT_TYPE': 'application/x-test',
                           'PATH_INFO': '/dbase/echo',
                           'QUERY_STRING': 'b=2',
@@ -342,7 +342,7 @@ class TestHTTPClientBase(tests.TestCaseWithServer):
             'consumer_secret': tests.consumer1.secret,
             'token_key': tests.token1.key,
             'token_secret': tests.token1.secret,
-            }})
+        }})
         params = {'x': u'\xf0', 'y': "foo"}
         res, headers = cli._request('GET', ['doc', 'oauth'], params)
         self.assertEqual(

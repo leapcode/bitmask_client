@@ -24,7 +24,7 @@ from u1db import (
     DocumentBase,
     errors,
     vectorclock,
-    )
+)
 
 from leap.soledad.tests import u1db_tests as tests
 
@@ -38,12 +38,7 @@ from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
 
 from u1db.remote import (
     http_database,
-    )
-
-try:
-    from u1db.tests import c_backend_wrapper
-except ImportError:
-    c_backend_wrapper = None  # noqa
+)
 
 
 def make_http_database_for_test(test, replica_uid, path='test'):
@@ -97,7 +92,7 @@ class AllDatabaseTests(tests.DatabaseBaseTests, tests.TestCaseWithServer):
                         copy_oauth_http_database_for_test,
                         'make_document_for_test': tests.make_document_for_test,
                         'make_app_with_state': make_oauth_http_app})
-        ] #+ tests.C_DATABASE_SCENARIOS
+    ]
 
     def test_close(self):
         self.db.close()
@@ -320,7 +315,7 @@ class AllDatabaseTests(tests.DatabaseBaseTests, tests.TestCaseWithServer):
         cur_vc = vectorclock.VectorClockRev(old_rev)
         deleted_vc = vectorclock.VectorClockRev(doc.rev)
         self.assertTrue(deleted_vc.is_newer(cur_vc),
-                "%s does not supersede %s" % (doc.rev, old_rev))
+                        "%s does not supersede %s" % (doc.rev, old_rev))
 
     def test_delete_then_put(self):
         doc = self.db.create_doc_from_json(simple_doc)
@@ -334,7 +329,7 @@ class AllDatabaseTests(tests.DatabaseBaseTests, tests.TestCaseWithServer):
 
 class DocumentSizeTests(tests.DatabaseBaseTests):
 
-    scenarios = tests.LOCAL_DATABASES_SCENARIOS #+ tests.C_DATABASE_SCENARIOS
+    scenarios = tests.LOCAL_DATABASES_SCENARIOS
 
     def test_put_doc_refuses_oversized_documents(self):
         self.db.set_document_size_limit(1)
@@ -358,7 +353,7 @@ class DocumentSizeTests(tests.DatabaseBaseTests):
 
 class LocalDatabaseTests(tests.DatabaseBaseTests):
 
-    scenarios = tests.LOCAL_DATABASES_SCENARIOS #+ tests.C_DATABASE_SCENARIOS
+    scenarios = tests.LOCAL_DATABASES_SCENARIOS
 
     def test_create_doc_different_ids_diff_db(self):
         doc1 = self.db.create_doc_from_json(simple_doc)
@@ -517,17 +512,23 @@ class LocalDatabaseTests(tests.DatabaseBaseTests):
         doc2 = self.make_document(doc1.doc_id, doc1.rev + '|other:1',
                                   nested_doc)
         self.assertEqual('inserted',
-            self.db._put_doc_if_newer(doc2, save_conflict=False,
-                                      replica_uid='other', replica_gen=2,
-                                      replica_trans_id='T-id2')[0])
+                         self.db._put_doc_if_newer(
+                             doc2,
+                             save_conflict=False,
+                             replica_uid='other',
+                             replica_gen=2,
+                             replica_trans_id='T-id2')[0])
         self.assertEqual((2, 'T-id2'), self.db._get_replica_gen_and_trans_id(
             'other'))
         # Compare to the old rev, should be superseded
         doc2 = self.make_document(doc1.doc_id, doc1.rev, nested_doc)
         self.assertEqual('superseded',
-            self.db._put_doc_if_newer(doc2, save_conflict=False,
-                                      replica_uid='other', replica_gen=3,
-                                      replica_trans_id='T-id3')[0])
+                         self.db._put_doc_if_newer(
+                             doc2,
+                             save_conflict=False,
+                             replica_uid='other',
+                             replica_gen=3,
+                             replica_trans_id='T-id3')[0])
         self.assertEqual(
             (3, 'T-id3'), self.db._get_replica_gen_and_trans_id('other'))
         # A conflict that isn't saved still records the sync gen, because we
@@ -535,9 +536,12 @@ class LocalDatabaseTests(tests.DatabaseBaseTests):
         doc2 = self.make_document(doc1.doc_id, doc1.rev + '|fourth:1',
                                   '{}')
         self.assertEqual('conflicted',
-            self.db._put_doc_if_newer(doc2, save_conflict=False,
-                                      replica_uid='other', replica_gen=4,
-                                      replica_trans_id='T-id4')[0])
+                         self.db._put_doc_if_newer(
+                             doc2,
+                             save_conflict=False,
+                             replica_uid='other',
+                             replica_gen=4,
+                             replica_trans_id='T-id4')[0])
         self.assertEqual(
             (4, 'T-id4'), self.db._get_replica_gen_and_trans_id('other'))
 
@@ -603,7 +607,7 @@ class LocalDatabaseTests(tests.DatabaseBaseTests):
 
 class LocalDatabaseValidateGenNTransIdTests(tests.DatabaseBaseTests):
 
-    scenarios = tests.LOCAL_DATABASES_SCENARIOS #+ tests.C_DATABASE_SCENARIOS
+    scenarios = tests.LOCAL_DATABASES_SCENARIOS
 
     def test_validate_gen_and_trans_id(self):
         self.db.create_doc_from_json(simple_doc)
@@ -627,7 +631,7 @@ class LocalDatabaseValidateGenNTransIdTests(tests.DatabaseBaseTests):
 
 class LocalDatabaseValidateSourceGenTests(tests.DatabaseBaseTests):
 
-    scenarios = tests.LOCAL_DATABASES_SCENARIOS #+ tests.C_DATABASE_SCENARIOS
+    scenarios = tests.LOCAL_DATABASES_SCENARIOS
 
     def test_validate_source_gen_and_trans_id_same(self):
         self.db._set_replica_gen_and_trans_id('other', 1, 'T-sid')
@@ -647,7 +651,7 @@ class LocalDatabaseValidateSourceGenTests(tests.DatabaseBaseTests):
 class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
     # test supporting/functionality around storing conflicts
 
-    scenarios = tests.LOCAL_DATABASES_SCENARIOS #+ tests.C_DATABASE_SCENARIOS
+    scenarios = tests.LOCAL_DATABASES_SCENARIOS
 
     def test_get_docs_conflicted(self):
         doc1 = self.db.create_doc_from_json(simple_doc)
@@ -668,7 +672,7 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
                                              nested_doc)
         self.assertEqual([no_conflict_doc, doc2],
                          list(self.db.get_docs([doc1.doc_id, doc2.doc_id],
-                                          check_for_conflicts=False)))
+                                               check_for_conflicts=False)))
 
     def test_get_doc_conflicts(self):
         doc = self.db.create_doc_from_json(simple_doc)
@@ -702,7 +706,8 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
             alt_doc, save_conflict=True, replica_uid='r', replica_gen=1,
             replica_trans_id='foo')
         self.assertGetDocConflicts(self.db, doc.doc_id,
-            [('alternate:1', nested_doc), (doc.rev, simple_doc)])
+                                   [('alternate:1', nested_doc),
+                                    (doc.rev, simple_doc)])
         orig_rev = doc.rev
         self.db.resolve_doc(doc, [alt_doc.rev, doc.rev])
         self.assertNotEqual(orig_rev, doc.rev)
@@ -746,15 +751,15 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
             doc3, save_conflict=True, replica_uid='r', replica_gen=2,
             replica_trans_id='bar')
         self.assertGetDocConflicts(self.db, doc1.doc_id,
-            [(doc3.rev, content3),
-             (doc1.rev, simple_doc),
-             (doc2.rev, nested_doc)])
+                                   [(doc3.rev, content3),
+                                    (doc1.rev, simple_doc),
+                                    (doc2.rev, nested_doc)])
         self.db.resolve_doc(doc1, [doc2.rev, doc1.rev])
         self.assertTrue(doc1.has_conflicts)
         self.assertGetDoc(self.db, doc1.doc_id, doc3.rev, content3, True)
         self.assertGetDocConflicts(self.db, doc1.doc_id,
-            [(doc3.rev, content3),
-             (doc1.rev, simple_doc)])
+                                   [(doc3.rev, content3),
+                                    (doc1.rev, simple_doc)])
 
     def test_resolve_doc_partial_winning(self):
         doc1 = self.db.create_doc_from_json(simple_doc)
@@ -832,9 +837,9 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
             doc22, save_conflict=True, replica_uid='r', replica_gen=3,
             replica_trans_id='zed')
         self.assertGetDocConflicts(self.db, doc1.doc_id,
-            [('alternate:2', doc22.get_json()),
-             ('altalt:1', doc3.get_json()),
-             (doc1.rev, simple_doc)])
+                                   [('alternate:2', doc22.get_json()),
+                                    ('altalt:1', doc3.get_json()),
+                                    (doc1.rev, simple_doc)])
 
     def test_put_doc_if_newer_save_conflict_was_deleted(self):
         doc1 = self.db.create_doc_from_json(simple_doc)
@@ -847,7 +852,8 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
         self.assertGetDoc(
             self.db, doc1.doc_id, 'alternate:1', nested_doc, True)
         self.assertGetDocConflicts(self.db, doc1.doc_id,
-            [('alternate:1', nested_doc), (doc1.rev, None)])
+                                   [('alternate:1', nested_doc),
+                                    (doc1.rev, None)])
 
     def test_put_doc_if_newer_propagates_full_resolution(self):
         doc1 = self.db.create_doc_from_json(simple_doc)
@@ -860,7 +866,7 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
         resolved_vcr.maximize(vcr_2)
         resolved_vcr.increment('alternate')
         doc_resolved = self.make_document(doc1.doc_id, resolved_vcr.as_str(),
-                                '{"good": 1}')
+                                          '{"good": 1}')
         state, _ = self.db._put_doc_if_newer(
             doc_resolved, save_conflict=True, replica_uid='r', replica_gen=2,
             replica_trans_id='foo2')
@@ -881,8 +887,9 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
             doc3, save_conflict=True, replica_uid='r', replica_gen=2,
             replica_trans_id='foo2')
         self.assertGetDocConflicts(self.db, doc1.doc_id,
-            [('alternate:1', nested_doc), ('test:1', simple_doc),
-             ('altalt:1', '{}')])
+                                   [('alternate:1', nested_doc),
+                                    ('test:1', simple_doc),
+                                    ('altalt:1', '{}')])
         resolved_vcr = vectorclock.VectorClockRev(doc1.rev)
         vcr_3 = vectorclock.VectorClockRev(doc3.rev)
         resolved_vcr.maximize(vcr_3)
@@ -897,7 +904,8 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
         doc4 = self.db.get_doc(doc1.doc_id)
         self.assertTrue(doc4.has_conflicts)
         self.assertGetDocConflicts(self.db, doc1.doc_id,
-            [('alternate:2|test:1', '{"good": 1}'), ('altalt:1', '{}')])
+                                   [('alternate:2|test:1', '{"good": 1}'),
+                                    ('altalt:1', '{}')])
 
     def test_put_doc_if_newer_replica_uid(self):
         doc1 = self.db.create_doc_from_json(simple_doc)
@@ -911,9 +919,12 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
         doc2 = self.make_document(doc1.doc_id, doc1.rev + '|third:3',
                                   '{}')
         self.assertEqual('conflicted',
-            self.db._put_doc_if_newer(doc2, save_conflict=True,
-                replica_uid='other', replica_gen=3,
-                replica_trans_id='T-id3')[0])
+                         self.db._put_doc_if_newer(
+                             doc2,
+                             save_conflict=True,
+                             replica_uid='other',
+                             replica_gen=3,
+                             replica_trans_id='T-id3')[0])
         self.assertEqual(
             (3, 'T-id3'), self.db._get_replica_gen_and_trans_id('other'))
 
@@ -962,7 +973,7 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
         rev_a3 = vectorclock.VectorClockRev('test:3')
         rev_a1b1 = vectorclock.VectorClockRev('test:1|other:1')
         self.assertTrue(rev.is_newer(rev_a3))
-        self.assertTrue('test:4' in doc.rev) # locally increased
+        self.assertTrue('test:4' in doc.rev)  # locally increased
         self.assertTrue(rev.is_newer(rev_a1b1))
 
     def test_put_doc_if_newer_autoresolve_4(self):
@@ -988,7 +999,7 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
         rev_a3 = vectorclock.VectorClockRev('test:3')
         rev_a1b1 = vectorclock.VectorClockRev('test:1|other:1')
         self.assertTrue(rev.is_newer(rev_a3))
-        self.assertTrue('test:4' in doc.rev) # locally increased
+        self.assertTrue('test:4' in doc.rev)  # locally increased
         self.assertTrue(rev.is_newer(rev_a1b1))
 
     def test_put_refuses_to_update_conflicted(self):
@@ -1015,7 +1026,7 @@ class LocalDatabaseWithConflictsTests(tests.DatabaseBaseTests):
 
 class DatabaseIndexTests(tests.DatabaseBaseTests):
 
-    scenarios = tests.LOCAL_DATABASES_SCENARIOS #+ tests.C_DATABASE_SCENARIOS
+    scenarios = tests.LOCAL_DATABASES_SCENARIOS
 
     def assertParseError(self, definition):
         self.db.create_doc_from_json(nested_doc)

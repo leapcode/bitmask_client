@@ -28,14 +28,14 @@ from u1db import (
     __version__ as _u1db_version,
     errors,
     sync,
-    )
+)
 
 from leap.soledad.tests import u1db_tests as tests
 
 from u1db.remote import (
     http_app,
     http_errors,
-    )
+)
 
 
 class TestFencedReader(tests.TestCase):
@@ -286,7 +286,7 @@ class TestHTTPInvocationByMethodWithBody(tests.TestCase):
             '{"entry": "x"},\r\n'  # stream entry
             '{"entry": "y"}\r\n'   # stream entry
             ']'
-            )
+        )
         environ = {'QUERY_STRING': 'a=1', 'REQUEST_METHOD': 'PUT',
                    'wsgi.input': StringIO.StringIO(body),
                    'CONTENT_LENGTH': str(len(body)),
@@ -500,8 +500,8 @@ class TestHTTPResponder(tests.TestCase):
         self.assertEqual({'content-type': 'application/x-u1db-multi-json',
                           'cache-control': 'no-cache'}, self.headers)
         self.assertEqual(['[',
-                           '\r\n', '{"entry": 1}',
-                           ',\r\n', '{"entry": 2}',
+                          '\r\n', '{"entry": 1}',
+                          ',\r\n', '{"entry": 2}',
                           '\r\n]\r\n'], self.response_body)
         self.assertEqual([], responder.content)
 
@@ -516,7 +516,7 @@ class TestHTTPResponder(tests.TestCase):
         self.assertEqual({'content-type': 'application/x-u1db-multi-json',
                           'cache-control': 'no-cache'}, self.headers)
         self.assertEqual(['[',
-                           '\r\n', '{"entry": 1}'], self.response_body)
+                          '\r\n', '{"entry": 1}'], self.response_body)
         self.assertEqual([',\r\n', '{"error": "unavailable"}\r\n'],
                          responder.content)
 
@@ -780,12 +780,13 @@ class TestHTTPApp(tests.TestCase):
                               source_replica_uid='other-id',
                               source_replica_generation=1,
                               source_transaction_id='T-transid'),
-                              json.loads(resp.body))
+                         json.loads(resp.body))
 
     def test_record_sync_info(self):
         resp = self.app.put('/db0/sync-from/other-id',
-            params='{"generation": 2, "transaction_id": "T-transid"}',
-            headers={'content-type': 'application/json'})
+                            params='{"generation": 2, "transaction_id": '
+                                   '"T-transid"}',
+                            headers={'content-type': 'application/json'})
         self.assertEqual(200, resp.status)
         self.assertEqual('application/json', resp.header('content-type'))
         self.assertEqual({'ok': True}, json.loads(resp.body))
@@ -799,7 +800,7 @@ class TestHTTPApp(tests.TestCase):
                  '{"value": "here"}', 'gen': 10, 'trans_id': 'T-sid'},
             11: {'id': 'doc-here2', 'rev': 'replica:1', 'content':
                  '{"value": "here2"}', 'gen': 11, 'trans_id': 'T-sed'}
-            }
+        }
 
         gens = []
         _do_set_replica_gen_and_trans_id = \
@@ -824,9 +825,9 @@ class TestHTTPApp(tests.TestCase):
                 "%s\r\n" % json.dumps(entries[11]) +
                 "]\r\n")
         resp = self.app.post('/db0/sync-from/replica',
-                            params=body,
-                            headers={'content-type':
-                                     'application/x-u1db-sync-stream'})
+                             params=body,
+                             headers={'content-type':
+                                      'application/x-u1db-sync-stream'})
         self.assertEqual(200, resp.status)
         self.assertEqual('application/x-u1db-sync-stream',
                          resp.header('content-type'))
@@ -846,7 +847,7 @@ class TestHTTPApp(tests.TestCase):
                  '{"value": "here"}', 'gen': 10, 'trans_id': 'T-sid'},
             11: {'id': 'doc-here2', 'rev': 'replica:1', 'content':
                  '{"value": "here2"}', 'gen': 11, 'trans_id': 'T-sed'}
-            }
+        }
 
         args = dict(last_known_generation=0, ensure=True)
         body = ("[\r\n" +
@@ -855,9 +856,9 @@ class TestHTTPApp(tests.TestCase):
                 "%s\r\n" % json.dumps(entries[11]) +
                 "]\r\n")
         resp = self.app.post('/dbnew/sync-from/replica',
-                            params=body,
-                            headers={'content-type':
-                                     'application/x-u1db-sync-stream'})
+                             params=body,
+                             headers={'content-type':
+                                      'application/x-u1db-sync-stream'})
         self.assertEqual(200, resp.status)
         self.assertEqual('application/x-u1db-sync-stream',
                          resp.header('content-type'))
@@ -878,16 +879,16 @@ class TestHTTPApp(tests.TestCase):
         entries = {
             10: {'id': 'doc-here', 'rev': 'replica:1', 'content':
                  '{"value": "%s"}' % ('H' * 11000), 'gen': 10},
-            }
+        }
         args = dict(last_known_generation=0)
         body = ("[\r\n" +
                 "%s,\r\n" % json.dumps(args) +
                 "%s\r\n" % json.dumps(entries[10]) +
                 "]\r\n")
         resp = self.app.post('/db0/sync-from/replica',
-                            params=body,
-                            headers={'content-type':
-                                     'application/x-u1db-sync-stream'},
+                             params=body,
+                             headers={'content-type':
+                                      'application/x-u1db-sync-stream'},
                              expect_errors=True)
         self.assertEqual(400, resp.status)
 
@@ -897,9 +898,9 @@ class TestHTTPApp(tests.TestCase):
         args = dict(last_known_generation=0)
         body = "[\r\n%s\r\n]" % json.dumps(args)
         resp = self.app.post('/db0/sync-from/replica',
-                            params=body,
-                            headers={'content-type':
-                                     'application/x-u1db-sync-stream'})
+                             params=body,
+                             headers={'content-type':
+                                      'application/x-u1db-sync-stream'})
         self.assertEqual(200, resp.status)
         self.assertEqual('application/x-u1db-sync-stream',
                          resp.header('content-type'))
@@ -934,9 +935,9 @@ class TestHTTPApp(tests.TestCase):
         self.patch(sync.SyncExchange, 'return_docs',
                    boom)
         resp = self.app.post('/db0/sync-from/replica',
-                            params=body,
-                            headers={'content-type':
-                                     'application/x-u1db-sync-stream'})
+                             params=body,
+                             headers={'content-type':
+                                      'application/x-u1db-sync-stream'})
         self.assertEqual(200, resp.status)
         self.assertEqual('application/x-u1db-sync-stream',
                          resp.header('content-type'))

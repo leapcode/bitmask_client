@@ -39,26 +39,14 @@ import testtools
 from u1db import (
     errors,
     Document,
-    )
+)
 from u1db.backends import (
     inmemory,
     sqlite_backend,
-    )
+)
 from u1db.remote import (
     server_state,
-    )
-
-try:
-    from leap.soledad.tests.u1db_tests import c_backend_wrapper
-    c_backend_error = None
-except ImportError, e:
-    c_backend_wrapper = None  # noqa
-    c_backend_error = e
-
-# Setting this means that failing assertions will not include this module in
-# their traceback. However testtools doesn't seem to set it, and we don't want
-# this level to be omitted, but the lower levels to be shown.
-# __unittest = 1
+)
 
 
 class TestCase(testtools.TestCase):
@@ -102,13 +90,16 @@ class TestCase(testtools.TestCase):
             database, however the rest can be returned in any order.
         """
         if conflicts:
-            conflicts = [(rev, (json.loads(cont) if isinstance(cont, basestring)
+            conflicts = [(rev,
+                          (json.loads(cont) if isinstance(cont, basestring)
                            else cont)) for (rev, cont) in conflicts]
             conflicts = conflicts[:1] + sorted(conflicts[1:])
         actual = db.get_doc_conflicts(doc_id)
         if actual:
-            actual = [(doc.rev, (json.loads(doc.get_json())
-                   if doc.get_json() is not None else None)) for doc in actual]
+            actual = [
+                (doc.rev, (json.loads(doc.get_json())
+                           if doc.get_json() is not None else None))
+                for doc in actual]
             actual = actual[:1] + sorted(actual[1:])
         self.assertEqual(conflicts, actual)
 
@@ -179,49 +170,16 @@ def make_document_for_test(test, doc_id, rev, content, has_conflicts=False):
     return Document(doc_id, rev, content, has_conflicts=has_conflicts)
 
 
-def make_c_database_for_test(test, replica_uid):
-    if c_backend_wrapper is None:
-        test.skipTest('c_backend_wrapper is not available')
-    db = c_backend_wrapper.CDatabase(':memory:')
-    db._set_replica_uid(replica_uid)
-    return db
-
-
-def copy_c_database_for_test(test, db):
-    # DO NOT COPY OR REUSE THIS CODE OUTSIDE TESTS: COPYING U1DB DATABASES IS
-    # THE WRONG THING TO DO, THE ONLY REASON WE DO SO HERE IS TO TEST THAT WE
-    # CORRECTLY DETECT IT HAPPENING SO THAT WE CAN RAISE ERRORS RATHER THAN
-    # CORRUPT USER DATA. USE SYNC INSTEAD, OR WE WILL SEND NINJA TO YOUR
-    # HOUSE.
-    if c_backend_wrapper is None:
-        test.skipTest('c_backend_wrapper is not available')
-    new_db = db._copy(db)
-    return new_db
-
-
-def make_c_document_for_test(test, doc_id, rev, content, has_conflicts=False):
-    if c_backend_wrapper is None:
-        test.skipTest('c_backend_wrapper is not available')
-    return c_backend_wrapper.make_document(
-        doc_id, rev, content, has_conflicts=has_conflicts)
-
-
 LOCAL_DATABASES_SCENARIOS = [
-        ('mem', {'make_database_for_test': make_memory_database_for_test,
-                 'copy_database_for_test': copy_memory_database_for_test,
-                 'make_document_for_test': make_document_for_test}),
-        ('sql', {'make_database_for_test':
-                 make_sqlite_partial_expanded_for_test,
-                 'copy_database_for_test':
-                 copy_sqlite_partial_expanded_for_test,
-                 'make_document_for_test': make_document_for_test}),
-        ]
-
-
-C_DATABASE_SCENARIOS = [
-        ('c', {'make_database_for_test': make_c_database_for_test,
-               'copy_database_for_test': copy_c_database_for_test,
-               'make_document_for_test': make_c_document_for_test})]
+    ('mem', {'make_database_for_test': make_memory_database_for_test,
+             'copy_database_for_test': copy_memory_database_for_test,
+             'make_document_for_test': make_document_for_test}),
+    ('sql', {'make_database_for_test':
+             make_sqlite_partial_expanded_for_test,
+             'copy_database_for_test':
+             copy_sqlite_partial_expanded_for_test,
+             'make_document_for_test': make_document_for_test}),
+]
 
 
 class DatabaseBaseTests(TestCase):
@@ -293,7 +251,7 @@ class ServerStateForTests(server_state.ServerState):
 
     def ensure_database(self, path):
         try:
-            db =  self.open_database(path)
+            db = self.open_database(path)
         except errors.DatabaseDoesNotExist:
             db = self._create_database(path)
         return db, db._replica_uid
@@ -429,12 +387,12 @@ class TestingOAuthDataStore(oauth.OAuthDataStore):
     consumers = {
         consumer1.key: consumer1,
         consumer2.key: consumer2,
-        }
+    }
 
     tokens = {
         token1.key: token1,
         token2.key: token2
-        }
+    }
 
     def lookup_consumer(self, key):
         return self.consumers.get(key)

@@ -28,5 +28,10 @@ Soledad's tests should be run with nose2, like this:
 
   nose2 leap.soledad.tests
 
-CouchDB backend tests need an http CouchDB instance running on
-`localhost:5984`.
+Right now, there are 3 conditions that have to be met for all Soledad tests to
+pass without problems:
+
+  1. Use nose2.
+  2. Have an http CouchDB instance running on `localhost:5984`.
+  3. Have sqlcipher configured (using LD_PRELOAD or LD_LIBRARY_CONFIG to point
+     to the place where libsqlite3.so.0 is located).

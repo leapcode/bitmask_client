@@ -14,6 +14,7 @@ try:
 except ImportError:
     import json  # noqa
 
+
 #-----------------------------------------------------------------------------
 # The following tests come from `u1db.tests.test_common_backend`.
 #-----------------------------------------------------------------------------
@@ -37,8 +38,10 @@ def make_couch_database_for_test(test, replica_uid):
     return couch.CouchDatabase('http://localhost:5984', replica_uid,
                                replica_uid=replica_uid or 'test')
 
+
 def copy_couch_database_for_test(test, db):
-    new_db = couch.CouchDatabase('http://localhost:5984',  db._replica_uid+'_copy',
+    new_db = couch.CouchDatabase('http://localhost:5984',
+                                 db._replica_uid+'_copy',
                                  replica_uid=db._replica_uid or 'test')
     gen, docs = db.get_all_docs(include_deleted=True)
     for doc in docs:
@@ -51,10 +54,10 @@ def copy_couch_database_for_test(test, db):
 
 
 COUCH_SCENARIOS = [
-        ('couch', {'make_database_for_test': make_couch_database_for_test,
-                  'copy_database_for_test': copy_couch_database_for_test,
-                  'make_document_for_test': tests.make_document_for_test,}),
-        ]
+    ('couch', {'make_database_for_test': make_couch_database_for_test,
+               'copy_database_for_test': copy_couch_database_for_test,
+               'make_document_for_test': tests.make_document_for_test, }),
+]
 
 
 class CouchTests(test_backends.AllDatabaseTests):
@@ -75,7 +78,8 @@ class CouchDatabaseTests(test_backends.LocalDatabaseTests):
         super(CouchDatabaseTests, self).tearDown()
 
 
-class CouchValidateGenNTransIdTests(test_backends.LocalDatabaseValidateGenNTransIdTests):
+class CouchValidateGenNTransIdTests(
+        test_backends.LocalDatabaseValidateGenNTransIdTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -84,7 +88,8 @@ class CouchValidateGenNTransIdTests(test_backends.LocalDatabaseValidateGenNTrans
         super(CouchValidateGenNTransIdTests, self).tearDown()
 
 
-class CouchValidateSourceGenTests(test_backends.LocalDatabaseValidateSourceGenTests):
+class CouchValidateSourceGenTests(
+        test_backends.LocalDatabaseValidateSourceGenTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -93,7 +98,8 @@ class CouchValidateSourceGenTests(test_backends.LocalDatabaseValidateSourceGenTe
         super(CouchValidateSourceGenTests, self).tearDown()
 
 
-class CouchWithConflictsTests(test_backends.LocalDatabaseWithConflictsTests):
+class CouchWithConflictsTests(
+        test_backends.LocalDatabaseWithConflictsTests):
 
     scenarios = COUCH_SCENARIOS
 
@@ -113,7 +119,6 @@ class CouchWithConflictsTests(test_backends.LocalDatabaseWithConflictsTests):
 #    def tearDown(self):
 #        self.db.delete_database()
 #        super(CouchIndexTests, self).tearDown()
-
 
 
 #-----------------------------------------------------------------------------
@@ -166,12 +171,13 @@ for name, scenario in COUCH_SCENARIOS:
     sync_scenarios.append((name, scenario))
     scenario = dict(scenario)
 
+
 class CouchDatabaseSyncTests(test_sync.DatabaseSyncTests):
 
     scenarios = sync_scenarios
 
     def setUp(self):
-        self.db  = None
+        self.db = None
         self.db1 = None
         self.db2 = None
         self.db3 = None
@@ -207,7 +213,6 @@ class CouchDatabaseSyncTests(test_sync.DatabaseSyncTests):
 
     def test_sync_propagates_deletes(self):
         pass
-
 
 
 load_tests = tests.load_with_scenarios

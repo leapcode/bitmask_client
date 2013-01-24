@@ -21,7 +21,7 @@ import os
 from u1db import (
     errors,
     open as u1db_open,
-    )
+)
 from leap.soledad.tests import u1db_tests as tests
 from u1db.backends import sqlite_backend
 from leap.soledad.tests.u1db_tests.test_backends import TestAlternativeDocument

@@ -1,6 +1,7 @@
 from u1db.backends import CommonBackend
 from u1db import errors, Document, vectorclock
 
+
 class ObjectStore(CommonBackend):
     """
     A backend for storing u1db data in an object store.
@@ -139,12 +140,13 @@ class ObjectStore(CommonBackend):
     def _set_replica_gen_and_trans_id(self, other_replica_uid,
                                       other_generation, other_transaction_id):
         return self._do_set_replica_gen_and_trans_id(
-                 other_replica_uid,
-                 other_generation,
-                 other_transaction_id)
+            other_replica_uid,
+            other_generation,
+            other_transaction_id)
 
     def _do_set_replica_gen_and_trans_id(self, other_replica_uid,
-                                         other_generation, other_transaction_id):
+                                         other_generation,
+                                         other_transaction_id):
         self._sync_log.set_replica_gen_and_trans_id(other_replica_uid,
                                                     other_generation,
                                                     other_transaction_id)
@@ -201,7 +203,6 @@ class ObjectStore(CommonBackend):
         """
         Verify if u1db data exists in store.
         """
-        doc = self._get_doc(self.U1DB_DATA_DOC_ID)
         if not self._get_doc(self.U1DB_DATA_DOC_ID):
             return False
         return True
@@ -233,7 +234,6 @@ class ObjectStore(CommonBackend):
 
     replica_uid = property(
         _get_replica_uid, _set_replica_uid, doc="Replica UID of the database")
-
 
     #-------------------------------------------------------------------------
     # The methods below were cloned from u1db sqlite backend. They should at
@@ -387,12 +387,12 @@ class TransactionLog(SimpleLog):
 
         return cur_gen, newest_trans_id, changes
 
-
     def get_transaction_log(self):
         """
         Return only a list of (doc_id, transaction_id)
         """
-        return map(lambda x: (x[1], x[2]), sorted(self._get_log(reverse=False)))
+        return map(lambda x: (x[1], x[2]),
+                   sorted(self._get_log(reverse=False)))
 
 
 class SyncLog(SimpleLog):
@@ -416,7 +416,7 @@ class SyncLog(SimpleLog):
         return (info[1], info[2])
 
     def set_replica_gen_and_trans_id(self, other_replica_uid,
-                                      other_generation, other_transaction_id):
+                                     other_generation, other_transaction_id):
         """
         Set the last-known generation and transaction id for the other
         database replica.
@@ -424,6 +424,7 @@ class SyncLog(SimpleLog):
         self._set_log(self.filter(lambda x: x[0] != other_replica_uid))
         self.append((other_replica_uid, other_generation,
                      other_transaction_id))
+
 
 class ConflictLog(SimpleLog):
     """
@@ -433,7 +434,7 @@ class ConflictLog(SimpleLog):
     def __init__(self, factory):
         super(ConflictLog, self).__init__()
         self._factory = factory
-    
+
     def delete_conflicts(self, conflicts):
         for conflict in conflicts:
             self._set_log(self.filter(lambda x:
@@ -448,4 +449,3 @@ class ConflictLog(SimpleLog):
 
     def has_conflicts(self, doc_id):
         return bool(self.filter(lambda x: x[0] == doc_id))
-

@@ -20,7 +20,7 @@ import cStringIO
 
 from u1db import (
     errors,
-    )
+)
 
 from leap.soledad.tests import u1db_tests as tests
 
@@ -28,7 +28,7 @@ from u1db.remote import (
     http_app,
     http_target,
     oauth_middleware,
-    )
+)
 
 
 class TestHTTPSyncTargetBasics(tests.TestCase):
@@ -139,7 +139,7 @@ class TestRemoteSyncTargets(tests.TestCaseWithServer):
         ('oauth_http', {'make_app_with_state': make_oauth_http_app,
                         'make_document_for_test': tests.make_document_for_test,
                         'sync_target': oauth_http_sync_target}),
-        ]
+    ]
 
     def getSyncTarget(self, path=None):
         if self.server is None:
@@ -197,8 +197,9 @@ class TestRemoteSyncTargets(tests.TestCaseWithServer):
             if doc.doc_id in trigger_ids:
                 raise Exception
             return _put_doc_if_newer(doc, save_conflict=save_conflict,
-                replica_uid=replica_uid, replica_gen=replica_gen,
-                replica_trans_id=replica_trans_id)
+                                     replica_uid=replica_uid,
+                                     replica_gen=replica_gen,
+                                     replica_trans_id=replica_trans_id)
         self.patch(db, '_put_doc_if_newer', bomb_put_doc_if_newer)
         remote_target = self.getSyncTarget('test')
         other_changes = []
