@@ -29,6 +29,8 @@ class LastPage(QtGui.QWizardPage):
         self.label = QtGui.QLabel()
         self.label.setWordWrap(True)
 
+        self.wizard_done = False
+
         # XXX REFACTOR to a Validating Page...
         self.status_line_1 = QtGui.QLabel()
         self.status_line_2 = QtGui.QLabel()
@@ -48,6 +50,9 @@ class LastPage(QtGui.QWizardPage):
 
         self.setLayout(layout)
 
+    def isComplete(self):
+        return self.wizard_done
+
     def set_status_line(self, line, status):
         statusline = getattr(self, 'status_line_%s' % line)
         if statusline:
@@ -61,8 +66,8 @@ class LastPage(QtGui.QWizardPage):
         self.label.setText(self.tr(
             "Click '<i>%s</i>' to end the wizard and "
             "save your settings." % finishText))
-        # XXX init network checker
-        # trigger signal
+        self.wizard_done = True
+        self.completeChanged.emit()
 
     @coroutine
     def eip_status_handler(self):
@@ -80,7 +85,9 @@ class LastPage(QtGui.QWizardPage):
                 self.set_status_line(status_count, status)
                 if status == "connected":
                     self.set_finished_status()
+                    self.completeChanged.emit()
                     break
+                self.completeChanged.emit()
         except GeneratorExit:
             pass
         except StopIteration:
@@ -89,6 +96,8 @@ class LastPage(QtGui.QWizardPage):
     def initializePage(self):
         super(LastPage, self).initializePage()
         wizard = self.wizard()
+        wizard.button(QtGui.QWizard.FinishButton).setDisabled(True)
+
         handler = self.eip_status_handler()
 
         # get statuses done in prev page
@@ -101,6 +110,7 @@ class LastPage(QtGui.QWizardPage):
             eip_statuschange_signal.connect(
                 lambda status: self.send_status(
                     handler.send, status))
+        self.completeChanged.emit()
 
     def send_status(self, cb, status):
         try:
