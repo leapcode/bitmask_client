@@ -12,7 +12,7 @@ import os
 logger = logging.getLogger(name=__name__)
 
 from dateutil import parser as dateparser
-from dirspec import basedir
+from xdg import BaseDirectory
 import requests
 
 from leap.base import exceptions
@@ -286,7 +286,10 @@ def get_config_dir():
         # we're inside a test! :)
         return os.path.join(home, ".config/leap")
     else:
-        return os.path.join(basedir.default_config_home,
+        # XXX dirspec is cross-platform,
+        # we should borrow some of those
+        # routines for osx/win and wrap this call.
+        return os.path.join(BaseDirectory.xdg_config_home,
                         'leap')
 
 

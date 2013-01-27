@@ -12,7 +12,7 @@ pycrypto
 keyring
 python-dateutil
 sh
-dirspec
+pyxdg
 
 pygeoip # optional
 
