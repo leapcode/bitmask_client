@@ -39,11 +39,11 @@ class SMTPDelivery(object):
             self._gpg = gpg
         else:
             self._gpg = GPGWrapper()
-    
+
     def receivedHeader(self, helo, origin, recipients):
         myHostname, clientIP = helo
         headerValue = "by %s from %s with ESMTP ; %s" % (
-            myHostname, clientIP, smtp.rfc822date( ))
+            myHostname, clientIP, smtp.rfc822date())
         # email.Header.Header used for automatic wrapping of long lines
         return "Received: %s" % Header(headerValue)
 
@@ -76,7 +76,7 @@ class EncryptedMessage():
     implements(smtp.IMessage)
 
     SMTP_HOSTNAME = "mail.riseup.net"
-    SMTP_PORT     = 25
+    SMTP_PORT = 25
 
     def __init__(self, user, gpg=None):
         self.user = user
@@ -94,7 +94,7 @@ class EncryptedMessage():
     def eomReceived(self):
         """Encrypt and send message."""
         log.msg("Message data complete.")
-        self.lines.append('') # add a trailing newline
+        self.lines.append('')  # add a trailing newline
         self.parseMessage()
         try:
             self.encrypt()
@@ -148,7 +148,7 @@ class EncryptedMessage():
         log.msg("Encrypting to %s" % fp)
         self.cyphertext = str(self._gpg.encrypt('\n'.join(self.body), [fp],
                                                 always_trust=always_trust))
-    
+
     # this will be replaced by some other mechanism of obtaining credentials
     # for SMTP server.
     def getSMTPInfo(self):
@@ -166,8 +166,8 @@ class GPGWrapper():
     replaced by a more general class used throughout the project.
     """
 
-    GNUPG_HOME    = "~/.config/leap/gnupg"
-    GNUPG_BINARY  = "/usr/bin/gpg" # this has to be changed based on OS
+    GNUPG_HOME = "~/.config/leap/gnupg"
+    GNUPG_BINARY = "/usr/bin/gpg"  # TODO: change this based on OS
 
     def __init__(self, gpghome=GNUPG_HOME, gpgbinary=GNUPG_BINARY):
         self.gpg = gnupg.GPG(gnupghome=gpghome, gpgbinary=gpgbinary)
