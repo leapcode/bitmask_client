@@ -152,12 +152,16 @@ class EncryptedMessage():
     # this will be replaced by some other mechanism of obtaining credentials
     # for SMTP server.
     def getSMTPInfo(self):
-        f = open('/media/smtp-info.txt', 'r')
-        self.smtp_host = f.readline().rstrip()
-        self.smtp_port = f.readline().rstrip()
-        self.smtp_username = f.readline().rstrip()
-        self.smtp_password = f.readline().rstrip()
-        f.close()
+        #f = open('/media/smtp-info.txt', 'r')
+        #self.smtp_host = f.readline().rstrip()
+        #self.smtp_port = f.readline().rstrip()
+        #self.smtp_username = f.readline().rstrip()
+        #self.smtp_password = f.readline().rstrip()
+        #f.close()
+        self.smtp_host = ''
+        self.smtp_port = ''
+        self.smtp_username = ''
+        self.smtp_password = ''
 
 
 class GPGWrapper():
