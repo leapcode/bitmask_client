@@ -8,7 +8,6 @@ import random
 import hmac
 from leap.soledad.backends import sqlcipher
 from leap.soledad.util import GPGWrapper
-import util
 
 
 class Soledad(object):
@@ -28,7 +27,7 @@ class Soledad(object):
             os.makedirs(self.PREFIX)
         if not gpghome:
             gpghome = self.GNUPG_HOME
-        self._gpg = util.GPGWrapper(gpghome=gpghome)
+        self._gpg = GPGWrapper(gpghome=gpghome)
         # load/generate OpenPGP keypair
         if not self._has_openpgp_keypair():
             self._gen_openpgp_keypair()
@@ -64,7 +63,7 @@ class Soledad(object):
         try:
             with open(self.SECRET_PATH) as f:
                 self._secret = str(self._gpg.decrypt(f.read()))
-        except IOError as e:
+        except IOError:
             raise IOError('Failed to open secret file %s.' % self.SECRET_PATH)
 
     def _gen_secret(self):

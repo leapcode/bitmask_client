@@ -1,10 +1,16 @@
+# general imports
 import uuid
 from base64 import b64encode, b64decode
+import re
+# u1db
 from u1db import errors
 from u1db.sync import LocalSyncTarget
 from u1db.backends.inmemory import InMemoryIndex
+from u1db.remote.server_state import ServerState
+# couchdb
 from couchdb.client import Server, Document as CouchDocument
 from couchdb.http import ResourceNotFound
+# leap
 from leap.soledad.backends.objectstore import ObjectStore
 from leap.soledad.backends.leap_backend import LeapDocument
 
@@ -14,8 +20,28 @@ except ImportError:
     import json  # noqa
 
 
+class InvalidURLError(Exception):
+    pass
+
+
 class CouchDatabase(ObjectStore):
     """A U1DB implementation that uses Couch as its persistence layer."""
+
+    @classmethod
+    def open_database(cls, url, create):
+        # get database from url
+        m = re.match('(.*)/([^/]+)$', url)
+        if not m:
+            raise InvalidURLError
+        url = m.group(1)
+        dbname = m.group(2)
+        server = Server(url=url)
+        try:
+            server[dbname]
+        except ResourceNotFound:
+            if not create:
+                raise
+            return cls(url, dbname)
 
     def __init__(self, url, database, replica_uid=None, full_commit=True,
                  session=None):
@@ -215,3 +241,30 @@ class CouchSyncTarget(LocalSyncTarget):
         self._db._set_replica_gen_and_trans_id(
             source_replica_uid, source_replica_generation,
             source_replica_transaction_id)
+
+
+class CouchServerState(ServerState):
+
+    def open_database(self, path):
+        """
+        Open a database at the given location.
+        """
+        return CouchDatabase.open_database(path, create=False)
+
+    def check_database(self, path):
+        """
+        Check if the database at the given location exists.
+        """
+        db = self.open_database(path)
+        db.close()
+
+    def ensure_database(self, path):
+        """Ensure database at the given location."""
+        db = CouchDatabase.open_database(path,
+                                         create=True)
+        return db, db._replica_uid
+
+    def delete_database(self, path):
+        """Delete database at the given location."""
+        db = CouchDatabase.open_database(path)
+        db.delete_database()

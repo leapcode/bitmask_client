@@ -7,8 +7,13 @@ class ObjectStore(InMemoryDatabase):
     A backend for storing u1db data in an object store.
     """
 
-    def __init__(self, replica_uid=None):
-        super(ObjectStore, self).__init__(replica_uid)
+    @classmethod
+    def open_database(cls, url, create, document_factory=None):
+        raise NotImplementedError(cls.open_database)
+
+    def __init__(self, replica_uid=None, document_factory=None):
+        super(ObjectStore, self).__init__(replica_uid,
+                                          document_factory=document_factory)
         # sync data in memory with data in object store
         if not self._get_doc(self.U1DB_DATA_DOC_ID):
             self._init_u1db_data()
