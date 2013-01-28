@@ -21,8 +21,10 @@ Dependencies
 Leap SMTP Relay depends on the following python libraries:
 
   * Twisted 12.3.0 [1]
+  * zope.interface 4.0.3 [2]
 
 [1] http://pypi.python.org/pypi/Twisted/12.3.0
+[2] http://pypi.python.org/pypi/zope.interface/4.0.3
 
 
 How to run

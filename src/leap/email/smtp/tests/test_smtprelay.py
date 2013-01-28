@@ -6,9 +6,7 @@ from leap.email.smtp.smtprelay import (
     EncryptedMessage,
 )
 from leap.email.smtp import tests
-from twisted.internet.error import ConnectionDone
 from twisted.test import proto_helpers
-from twisted.internet import defer
 from twisted.mail.smtp import User
 
 

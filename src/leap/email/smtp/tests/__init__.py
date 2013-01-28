@@ -1,15 +1,29 @@
-from leap.email.smtp.smtprelay import GPGWrapper
+import os
 import shutil
+import tempfile
+from leap.email.smtp.smtprelay import GPGWrapper
 from twisted.trial import unittest
+from leap.testing.basetest import BaseLeapTest
 
-class OpenPGPTestCase(unittest.TestCase):
-
-    PREFIX     = "/var/tmp"
-    GNUPG_HOME = "%s/gnupg" % PREFIX
-    EMAIL      = 'leap@leap.se'
+class OpenPGPTestCase(unittest.TestCase, BaseLeapTest):
 
     def setUp(self):
-        self._gpg = GPGWrapper(gpghome=self.GNUPG_HOME)
+        # mimic LeapBaseTest.setUpClass behaviour, because this is deprecated
+        # in Twisted: http://twistedmatrix.com/trac/ticket/1870
+        self.old_path = os.environ['PATH']
+        self.old_home = os.environ['HOME']
+        self.tempdir = tempfile.mkdtemp(prefix="leap_tests-")
+        self.home = self.tempdir
+        bin_tdir = os.path.join(
+            self.tempdir,
+            'bin')
+        os.environ["PATH"] = bin_tdir
+        os.environ["HOME"] = self.tempdir
+        # setup our own stuff
+        self.gnupg_home = self.tempdir + '/gnupg'
+        os.mkdir(self.gnupg_home)
+        self.email = 'leap@leap.se'
+        self._gpg = GPGWrapper(gpghome=self.gnupg_home)
         
         self.assertEqual(self._gpg.import_keys(PUBLIC_KEY).summary(),
                          '1 imported', "error importing public key")
@@ -19,7 +33,12 @@ class OpenPGPTestCase(unittest.TestCase):
                          '0 imported', "error importing private key")
 
     def tearDown(self):
-        shutil.rmtree(self.GNUPG_HOME)
+        # mimic LeapBaseTest.tearDownClass behaviour
+        os.environ["PATH"] = self.old_path
+        os.environ["HOME"] = self.old_home
+        # safety check
+        assert self.tempdir.startswith('/tmp/leap_tests-')
+        shutil.rmtree(self.tempdir)
 
     def test_openpgp_encrypt_decrypt(self):
         text = "simple raw text"
