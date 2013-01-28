@@ -5,6 +5,7 @@ from leap.email.smtp.smtprelay import GPGWrapper
 from twisted.trial import unittest
 from leap.testing.basetest import BaseLeapTest
 
+
 class OpenPGPTestCase(unittest.TestCase, BaseLeapTest):
 
     def setUp(self):
@@ -24,7 +25,7 @@ class OpenPGPTestCase(unittest.TestCase, BaseLeapTest):
         os.mkdir(self.gnupg_home)
         self.email = 'leap@leap.se'
         self._gpg = GPGWrapper(gpghome=self.gnupg_home)
-        
+
         self.assertEqual(self._gpg.import_keys(PUBLIC_KEY).summary(),
                          '1 imported', "error importing public key")
         self.assertEqual(self._gpg.import_keys(PRIVATE_KEY).summary(),
@@ -48,7 +49,6 @@ class OpenPGPTestCase(unittest.TestCase, BaseLeapTest):
         self.assertNotEqual(text, encrypted, "failed encrypting text")
         decrypted = str(self._gpg.decrypt(encrypted))
         self.assertEqual(text, decrypted, "failed decrypting text")
-        
 
 
 # Key material for testing
