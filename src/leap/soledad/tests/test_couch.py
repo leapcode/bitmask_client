@@ -16,13 +16,102 @@ except ImportError:
 
 
 #-----------------------------------------------------------------------------
+# A wrapper for running couchdb locally.
+#-----------------------------------------------------------------------------
+
+import re
+import os
+import tempfile
+import subprocess
+import time
+import unittest
+
+
+class CouchDBWrapper(object):
+    """
+    Wrapper for external CouchDB instance which is started and stopped for
+    testing.
+    """
+
+    def start(self):
+        self.tempdir = tempfile.mkdtemp(suffix='.couch.test')
+
+        path = os.path.join(os.path.dirname(__file__),
+                            'couchdb.ini.template')
+        handle = open(path)
+        conf = handle.read() % {
+            'tempdir': self.tempdir,
+        }
+
+        confPath = os.path.join(self.tempdir, 'test.ini')
+        handle = open(confPath, 'w')
+        handle.write(conf)
+        handle.close()
+
+        # create the dirs from the template
+        os.mkdir(os.path.join(self.tempdir, 'lib'))
+        os.mkdir(os.path.join(self.tempdir, 'log'))
+        argus = ['couchdb', '-n' '-a', confPath]
+        null = open('/dev/null', 'w')
+        self.process = subprocess.Popen(
+            argus, env=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # find port
+        logPath = os.path.join(self.tempdir, 'log', 'couch.log')
+        while not os.path.exists(logPath):
+            if self.process.poll() is not None:
+                raise Exception("""
+couchdb exited with code %d.
+stdout:
+%s
+stderr:
+%s""" % (
+                    self.process.returncode, self.process.stdout.read(),
+                    self.process.stderr.read()))
+            time.sleep(0.01)
+        while os.stat(logPath).st_size == 0:
+            time.sleep(0.01)
+        PORT_RE = re.compile(
+            'Apache CouchDB has started on http://127.0.0.1:(?P<port>\d+)')
+
+        handle = open(logPath)
+        line = handle.read()
+        m = PORT_RE.search(line)
+        if not m:
+            self.stop()
+            raise Exception("Cannot find port in line %s" % line)
+        self.port = int(m.group('port'))
+
+    def stop(self):
+        self.process.terminate()
+
+        os.system("rm -rf %s" % self.tempdir)
+
+
+class CouchDBTestCase(unittest.TestCase):
+    """
+    TestCase base class for tests against a real CouchDB server.
+    """
+
+    def setUp(self):
+        self.wrapper = CouchDBWrapper()
+        self.wrapper.start()
+        #self.db = self.wrapper.db
+        super(CouchDBTestCase, self).setUp()
+
+    def tearDown(self):
+        self.wrapper.stop()
+        super(CouchDBTestCase, self).tearDown()
+
+
+#-----------------------------------------------------------------------------
 # The following tests come from `u1db.tests.test_common_backend`.
 #-----------------------------------------------------------------------------
 
-class TestCouchBackendImpl(tests.TestCase):
+class TestCouchBackendImpl(CouchDBTestCase):
 
     def test__allocate_doc_id(self):
-        db = couch.CouchDatabase('http://localhost:5984', 'u1db_tests')
+        db = couch.CouchDatabase('http://localhost:'+str(self.wrapper.port),
+                                 'u1db_tests')
         doc_id1 = db._allocate_doc_id()
         self.assertTrue(doc_id1.startswith('D-'))
         self.assertEqual(34, len(doc_id1))
@@ -35,12 +124,14 @@ class TestCouchBackendImpl(tests.TestCase):
 #-----------------------------------------------------------------------------
 
 def make_couch_database_for_test(test, replica_uid):
-    return couch.CouchDatabase('http://localhost:5984', replica_uid,
+    port = str(test.wrapper.port)
+    return couch.CouchDatabase('http://localhost:'+port, replica_uid,
                                replica_uid=replica_uid or 'test')
 
 
 def copy_couch_database_for_test(test, db):
-    new_db = couch.CouchDatabase('http://localhost:5984',
+    port = str(test.wrapper.port)
+    new_db = couch.CouchDatabase('http://localhost:'+port,
                                  db._replica_uid + '_copy',
                                  replica_uid=db._replica_uid or 'test')
     gen, docs = db.get_all_docs(include_deleted=True)
@@ -61,7 +152,7 @@ COUCH_SCENARIOS = [
 ]
 
 
-class CouchTests(test_backends.AllDatabaseTests):
+class CouchTests(test_backends.AllDatabaseTests, CouchDBTestCase):
 
     scenarios = COUCH_SCENARIOS
 
@@ -70,7 +161,7 @@ class CouchTests(test_backends.AllDatabaseTests):
         super(CouchTests, self).tearDown()
 
 
-class CouchDatabaseTests(test_backends.LocalDatabaseTests):
+class CouchDatabaseTests(test_backends.LocalDatabaseTests, CouchDBTestCase):
 
     scenarios = COUCH_SCENARIOS
 
@@ -80,7 +171,7 @@ class CouchDatabaseTests(test_backends.LocalDatabaseTests):
 
 
 class CouchValidateGenNTransIdTests(
-        test_backends.LocalDatabaseValidateGenNTransIdTests):
+        test_backends.LocalDatabaseValidateGenNTransIdTests, CouchDBTestCase):
 
     scenarios = COUCH_SCENARIOS
 
@@ -90,7 +181,7 @@ class CouchValidateGenNTransIdTests(
 
 
 class CouchValidateSourceGenTests(
-        test_backends.LocalDatabaseValidateSourceGenTests):
+        test_backends.LocalDatabaseValidateSourceGenTests, CouchDBTestCase):
 
     scenarios = COUCH_SCENARIOS
 
@@ -100,7 +191,7 @@ class CouchValidateSourceGenTests(
 
 
 class CouchWithConflictsTests(
-        test_backends.LocalDatabaseWithConflictsTests):
+        test_backends.LocalDatabaseWithConflictsTests, CouchDBTestCase):
 
     scenarios = COUCH_SCENARIOS
 
@@ -113,7 +204,7 @@ class CouchWithConflictsTests(
 # the server, so indexing makes no sense. Thus, we ignore index testing for
 # now.
 
-class CouchIndexTests(test_backends.DatabaseIndexTests):
+class CouchIndexTests(test_backends.DatabaseIndexTests, CouchDBTestCase):
 
     scenarios = COUCH_SCENARIOS
 
@@ -134,7 +225,8 @@ simple_doc = tests.simple_doc
 nested_doc = tests.nested_doc
 
 
-class CouchDatabaseSyncTargetTests(test_sync.DatabaseSyncTargetTests):
+class CouchDatabaseSyncTargetTests(test_sync.DatabaseSyncTargetTests,
+                                   CouchDBTestCase):
 
     scenarios = (tests.multiply_scenarios(COUCH_SCENARIOS, target_scenarios))
 
@@ -173,7 +265,7 @@ for name, scenario in COUCH_SCENARIOS:
     scenario = dict(scenario)
 
 
-class CouchDatabaseSyncTests(test_sync.DatabaseSyncTests):
+class CouchDatabaseSyncTests(test_sync.DatabaseSyncTests, CouchDBTestCase):
 
     scenarios = sync_scenarios
 

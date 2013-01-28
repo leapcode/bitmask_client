@@ -4,56 +4,20 @@ For these tests to run, a leap server has to be running on (default) port
 5984.
 """
 
-import os
-import unittest2 as unittest
 import u1db
-from leap.soledad import Soledad
 from leap.soledad.backends import leap_backend
 from leap.soledad.tests import u1db_tests as tests
 from leap.soledad.tests.u1db_tests.test_remote_sync_target import (
     make_http_app,
     make_oauth_http_app,
 )
+from leap.soledad.tests import BaseSoledadTest
 from leap.soledad.tests.u1db_tests import test_backends
 from leap.soledad.tests.u1db_tests import test_http_database
 from leap.soledad.tests.u1db_tests import test_http_client
 from leap.soledad.tests.u1db_tests import test_document
 from leap.soledad.tests.u1db_tests import test_remote_sync_target
 from leap.soledad.tests.u1db_tests import test_https
-from leap.soledad.tests.test_encrypted import (
-    PUBLIC_KEY,
-    PRIVATE_KEY,
-)
-
-
-#-----------------------------------------------------------------------------
-# The EncryptedSyncTest is used with multiple inheritance to guarantee that we
-# have a working Soledad instance in each test.
-#-----------------------------------------------------------------------------
-
-class SoledadTest(unittest.TestCase):
-
-    PREFIX = "/var/tmp"
-    GNUPG_HOME = "%s/gnupg" % PREFIX
-    DB1_FILE = "%s/db1.u1db" % PREFIX
-    DB2_FILE = "%s/db2.u1db" % PREFIX
-    EMAIL = 'leap@leap.se'
-
-    def setUp(self):
-        super(SoledadTest, self).setUp()
-        self._db1 = u1db.open(self.DB1_FILE, create=True,
-                              document_factory=leap_backend.LeapDocument)
-        self._db2 = u1db.open(self.DB2_FILE, create=True,
-                              document_factory=leap_backend.LeapDocument)
-        self._soledad = Soledad(self.EMAIL, gpghome=self.GNUPG_HOME)
-        self._soledad._gpg.import_keys(PUBLIC_KEY)
-        self._soledad._gpg.import_keys(PRIVATE_KEY)
-
-    def tearDown(self):
-        super(SoledadTest, self).tearDown()
-        os.unlink(self.DB1_FILE)
-        os.unlink(self.DB2_FILE)
-        #rmtree(self.GNUPG_HOME)
 
 
 #-----------------------------------------------------------------------------
@@ -125,7 +89,7 @@ LEAP_SCENARIOS = [
 ]
 
 
-class LeapTests(test_backends.AllDatabaseTests, SoledadTest):
+class LeapTests(test_backends.AllDatabaseTests, BaseSoledadTest):
 
     scenarios = LEAP_SCENARIOS
 
@@ -237,13 +201,13 @@ class TestLeapClientBase(test_http_client.TestHTTPClientBase):
 # The following tests come from `u1db.tests.test_document`.
 #-----------------------------------------------------------------------------
 
-class TestLeapDocument(test_document.TestDocument, SoledadTest):
+class TestLeapDocument(test_document.TestDocument, BaseSoledadTest):
 
     scenarios = ([(
         'leap', {'make_document_for_test': make_leap_document_for_test})])
 
 
-class TestLeapPyDocument(test_document.TestPyDocument, SoledadTest):
+class TestLeapPyDocument(test_document.TestPyDocument, BaseSoledadTest):
 
     scenarios = ([(
         'leap', {'make_document_for_test': make_leap_document_for_test})])
@@ -367,7 +331,7 @@ def oauth_https_sync_target(test, host, path):
 
 
 class TestLeapSyncTargetHttpsSupport(test_https.TestHttpSyncTargetHttpsSupport,
-                                     SoledadTest):
+                                     BaseSoledadTest):
 
     scenarios = [
         ('oauth_https', {'server_def': test_https.https_server_def,
