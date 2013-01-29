@@ -59,9 +59,8 @@ $(COMPILED_DIR)/ui_%.py : $(RESOURCE_DIR)/%.ui
 $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
 
-deb:
-	@git tag -a debian/$(DEBVER) -m "..."
-	@debuild -us -uc -i.git
+manpages:
+	rst2man docs/man/leap.1.rst docs/man/leap.1
 
 apidocs:
 	@sphinx-apidoc -o docs/api src/leap
