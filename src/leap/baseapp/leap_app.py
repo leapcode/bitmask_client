@@ -52,7 +52,7 @@ class MainWindowMixin(object):
 
         self.firstRunWizardAct = QtGui.QAction(
             "&First run wizard...", self,
-            triggered=self.launch_first_run_wizard)
+            triggered=self.stop_connection_and_launch_first_run_wizard)
         self.aboutAct = QtGui.QAction("&About", self, triggered=self.about)
 
         #self.aboutQtAct = QtGui.QAction("About &Qt", self,
@@ -74,16 +74,21 @@ class MainWindowMixin(object):
         self.menuBar().addMenu(self.settingsMenu)
         self.menuBar().addMenu(self.helpMenu)
 
-    def launch_first_run_wizard(self):
+    def stop_connection_and_launch_first_run_wizard(self):
         settings = QtCore.QSettings()
         settings.setValue('FirstRunWizardDone', False)
         logger.debug('should run first run wizard again...')
 
-        from leap.gui.firstrunwizard import FirstRunWizard
-        wizard = FirstRunWizard(
-            parent=self,
-            success_cb=self.initReady.emit)
-        wizard.show()
+        status = self.conductor.get_icon_name()
+        if status != "disconnected":
+            self.start_or_stopVPN()
+
+        self.launch_first_run_wizard()
+        #from leap.gui.firstrunwizard import FirstRunWizard
+        #wizard = FirstRunWizard(
+            #parent=self,
+            #success_cb=self.initReady.emit)
+        #wizard.show()
 
     def set_app_icon(self):
         icon = QtGui.QIcon(APP_LOGO)
@@ -127,8 +132,8 @@ class MainWindowMixin(object):
                 "context menu of the system tray entry.")
             self.hide()
             event.ignore()
-        if self.debugmode:
-            self.cleanupAndQuit()
+            return
+        self.cleanupAndQuit()
 
     def cleanupAndQuit(self):
         """
@@ -143,6 +148,6 @@ class MainWindowMixin(object):
         # in conductor
         # XXX send signal instead?
         logger.info('Shutting down')
-        self.conductor.cleanup()
+        self.conductor.disconnect(shutdown=True)
         logger.info('Exiting. Bye.')
         QtGui.qApp.quit()

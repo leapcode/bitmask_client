@@ -12,6 +12,7 @@ curl -d login=python_test_user -d password_salt=54321\
 from BaseHTTPServer import HTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler
 import cgi
+import json
 import urlparse
 
 HOST = "localhost"
@@ -19,12 +20,15 @@ PORT = 8000
 
 LOGIN_ERROR = """{"errors":{"login":["has already been taken"]}}"""
 
+from leap.base.tests.test_providers import EXPECTED_DEFAULT_CONFIG
+
 
 class request_handler(BaseHTTPRequestHandler):
     responses = {
         '/': ['ok\n'],
         '/users.json': ['ok\n'],
-        '/timeout': ['ok\n']
+        '/timeout': ['ok\n'],
+        '/provider.json': ['%s\n' % json.dumps(EXPECTED_DEFAULT_CONFIG)]
     }
 
     def do_GET(self):

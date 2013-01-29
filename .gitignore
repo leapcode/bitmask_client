@@ -1,7 +1,10 @@
 *.swp
 *.swo
 *.pyc
+*.log
 .*
+!.coveragerc
+!.tx
 bin/
 build/
 core
@@ -12,11 +15,13 @@ docs/covhtml
 include/
 lib/
 local/
-man/
 share/
 src/leap.egg-info/
 src/leap_client.egg-info
 src/leap/_branding.py
 src/leap/certs/*.pem
 src/*.egg-info
+pkg/osx/dist
+pkg/osx/build
 MANIFEST
+_trial_temp*

@@ -9,6 +9,8 @@ from leap.baseapp.dialogs import ErrorDialog
 from leap.baseapp import constants
 from leap.eip import exceptions as eip_exceptions
 from leap.eip.eipconnection import EIPConnection
+from leap.base.checks import EVENT_CONNECT_REFUSED
+from leap.util import geo
 
 logger = logging.getLogger(name=__name__)
 
@@ -21,10 +23,12 @@ class EIPConductorAppMixin(object):
     Connects the eip connect/disconnect logic
     to the switches in the app (buttons/menu items).
     """
+    ERR_DIALOG = False
 
     def __init__(self, *args, **kwargs):
         opts = kwargs.pop('opts')
         config_file = getattr(opts, 'config_file', None)
+        provider = kwargs.pop('provider')
 
         self.eip_service_started = False
 
@@ -36,13 +40,18 @@ class EIPConductorAppMixin(object):
         self.conductor = EIPConnection(
             watcher_cb=self.newLogLine.emit,
             config_file=config_file,
-            checker_signals=(self.changeLeapStatus.emit, ),
-            status_signals=(self.statusChange.emit, ),
+            checker_signals=(self.eipStatusChange.emit, ),
+            status_signals=(self.openvpnStatusChange.emit, ),
             debug=self.debugmode,
-            ovpn_verbosity=opts.openvpn_verb)
+            ovpn_verbosity=opts.openvpn_verb,
+            provider=provider)
 
-        self.skip_download = opts.no_provider_checks
-        self.skip_verify = opts.no_ca_verify
+        # Do we want to enable the skip checks w/o being
+        # in debug mode??
+        #self.skip_download = opts.no_provider_checks
+        #self.skip_verify = opts.no_ca_verify
+        self.skip_download = False
+        self.skip_verify = False
 
     def run_eip_checks(self):
         """
@@ -91,6 +100,15 @@ class EIPConductorAppMixin(object):
         in the future we plan to derive errors to
         our log viewer.
         """
+        if self.ERR_DIALOG:
+            logger.warning('another error dialog suppressed')
+            return
+
+        # XXX this is actually a one-shot.
+        # On the dialog there should be
+        # a reset signal binded to the ok button
+        # or something like that.
+        self.ERR_DIALOG = True
 
         if getattr(error, 'usermessage', None):
             message = error.usermessage
@@ -110,6 +128,7 @@ class EIPConductorAppMixin(object):
             ErrorDialog(errtype="critical",
                         msg=message,
                         label="critical error")
+
         elif error.warning:
             logger.warning(error.message)
 
@@ -137,14 +156,14 @@ class EIPConductorAppMixin(object):
             # is not ready yet.
             return
 
-        if self.conductor.with_errors:
+        #if self.conductor.with_errors:
             #XXX how to wait on pkexec???
             #something better that this workaround, plz!!
             #I removed the pkexec pass authentication at all.
             #time.sleep(5)
             #logger.debug('timeout')
-            logger.error('errors. disconnect')
-            self.start_or_stopVPN()  # is stop
+            #logger.error('errors. disconnect')
+            #self.start_or_stopVPN()  # is stop
 
         state = self.conductor.poll_connection_state()
         if not state:
@@ -160,6 +179,8 @@ class EIPConductorAppMixin(object):
             self.status_label.setText(con_status)
             self.ip_label.setText(ip)
             self.remote_label.setText(remote)
+            self.remote_country.setText(
+                geo.get_country_name(remote))
 
         # status i/o
 
@@ -172,19 +193,27 @@ class EIPConductorAppMixin(object):
             self.tun_read_bytes.setText(tun_read)
             self.tun_write_bytes.setText(tun_write)
 
+        # connection information via management interface
+        log = self.conductor.get_log()
+        error_matrix = [(EVENT_CONNECT_REFUSED, (self.start_or_stopVPN, ))]
+        if hasattr(self.network_checker, 'checker'):
+            self.network_checker.checker.parse_log_and_react(log, error_matrix)
+
     @QtCore.pyqtSlot()
-    def start_or_stopVPN(self):
+    def start_or_stopVPN(self, **kwargs):
         """
         stub for running child process with vpn
         """
         if self.conductor.has_errors():
             logger.debug('not starting vpn; conductor has errors')
+            return
 
         if self.eip_service_started is False:
             try:
                 self.conductor.connect()
 
             except eip_exceptions.EIPNoCommandError as exc:
+                logger.error('tried to run openvpn but no command is set')
                 self.triggerEIPError.emit(exc)
 
             except Exception as err:
@@ -193,7 +222,7 @@ class EIPConductorAppMixin(object):
             else:
                 # no errors, so go on.
                 if self.debugmode:
-                    self.startStopButton.setText('&Disconnect')
+                    self.startStopButton.setText(self.tr('&Disconnect'))
                 self.eip_service_started = True
                 self.toggleEIPAct()
 
@@ -201,14 +230,13 @@ class EIPConductorAppMixin(object):
                 # we could bring Timer Init to this Mixin
                 # or to its own Mixin.
                 self.timer.start(constants.TIMER_MILLISECONDS)
-                self.network_checker.start()
             return
 
         if self.eip_service_started is True:
             self.network_checker.stop()
             self.conductor.disconnect()
             if self.debugmode:
-                self.startStopButton.setText('&Connect')
+                self.startStopButton.setText(self.tr('&Connect'))
             self.eip_service_started = False
             self.toggleEIPAct()
             self.timer.stop()

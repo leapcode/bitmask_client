@@ -2,4 +2,3 @@ include pkg/*
 include pkg/branding/*
 include docs/*
 include versioneer.py
-include src/leap/certs/*.pem

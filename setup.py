@@ -159,59 +159,19 @@ class cmd_sdist(_sdist):
             versioneer.SHORT_VERSION_PY % self._versioneer_generated_versions)
         f.close()
 
-from distutils.command.install_data import install_data as _install_data
-
-
-class cmd_post_install(_install_data):
-    """
-    workaround for installing non-package data
-    outside of the bounds of our internal data
-    Debian or other packaging should igore this.
-    """
-    # We could use a environmental flag.
-    def run(self):
-        _install_data.run(self)
-        # get environ flag to skip copy
-        skip_copy_val = os.environ.get('LEAP_SKIP_COPY_POLKIT', '0')
-        try:
-            skip_copy = bool(int(skip_copy_val))
-        except ValueError:
-            skip_copy = False
-            print("WARNING! LEAP_SKIP_COPY_POLKIT must be '0' or '1'")
-        if skip_copy is True:
-            print("Skipping install of policykit file per environ var.")
-            return
-
-        print('about to check for virtualenv')
-        # is this the real life? is this just fantasy?
-        if not hasattr(sys, 'real_prefix'):
-            # looks like we are NOT
-            # running inside a virtualenv...
-            # let's install data.
-            import shutil
-            print("Now installing policykit file...")
-            try:
-                shutil.copyfile(
-                    "pkg/linux/polkit/net.openvpn.gui.leap.policy",
-                    "/usr/share/polkit-1/actions"
-                    "/net.openvpn.gui.leap.policy")
-            except:
-                print("WARNING! Could not copy data.")
-        else:
-            print('inside virtualenv. skipping policykit file install')
-
 cmdclass = versioneer.get_cmdclass()
 cmdclass["branding"] = DoBranding
-cmdclass["build"] = cmd_build
-cmdclass["sdist"] = cmd_sdist
-cmdclass["install_data"] = cmd_post_install
 
+# Uncomment this to have the branding command run automatically
+# on the build and sdist commands.
+#cmdclass["build"] = cmd_build
+#cmdclass["sdist"] = cmd_sdist
 
 launcher_name = branding.get_shortname()
 if launcher_name:
     leap_launcher = 'leap-%s-client=leap.app:main' % launcher_name
 else:
-    leap_launcher = 'leap=leap.app:main'
+    leap_launcher = 'leap-client=leap.app:main'
 
 setup(
     name=branding.get_name(),
@@ -236,11 +196,11 @@ setup(
     test_suite='nose.collector',
     test_requires=utils.parse_requirements(
         reqfiles=['pkg/test-requirements.pip']),
-    keywords='leap, client, qt, encryption, proxy',
-    author='The LEAP project',
+    keywords='LEAP, client, qt, encryption, proxy, openvpn',
+    author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',
-    license='GPL',
+    license='GPLv3+',
     packages=find_packages(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
@@ -248,14 +208,15 @@ setup(
     zip_safe=False,
 
     # not being used since setuptools does not like it.
+    # XXX it should be only for linux!
     data_files=[
         ("share/man/man1",
-            ["docs/leap.1"]),
+            ["docs/man/leap.1"]),
         ("share/polkit-1/actions",
             ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
     ],
     platforms="all",
-    entry_points = {
+    entry_points={
         'console_scripts': [leap_launcher]
     },
 )

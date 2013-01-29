@@ -11,6 +11,7 @@ class LogPaneMixin(object):
     a simple log pane
     that writes new lines as they come
     """
+    EXCLUDES = ('MANAGEMENT',)
 
     def createLogBrowser(self):
         """
@@ -21,7 +22,7 @@ class LogPaneMixin(object):
         logging_layout = QtGui.QVBoxLayout()
         self.logbrowser = QtGui.QTextBrowser()
 
-        startStopButton = QtGui.QPushButton("&Connect")
+        startStopButton = QtGui.QPushButton(self.tr("&Connect"))
         self.startStopButton = startStopButton
 
         logging_layout.addWidget(self.logbrowser)
@@ -34,9 +35,10 @@ class LogPaneMixin(object):
         grid = QtGui.QGridLayout()
 
         self.updateTS = QtGui.QLabel('')
-        self.status_label = QtGui.QLabel('Disconnected')
+        self.status_label = QtGui.QLabel(self.tr('Disconnected'))
         self.ip_label = QtGui.QLabel('')
         self.remote_label = QtGui.QLabel('')
+        self.remote_country = QtGui.QLabel('')
 
         tun_read_label = QtGui.QLabel("tun read")
         self.tun_read_bytes = QtGui.QLabel("0")
@@ -47,10 +49,11 @@ class LogPaneMixin(object):
         grid.addWidget(self.status_label, 0, 1)
         grid.addWidget(self.ip_label, 1, 0)
         grid.addWidget(self.remote_label, 1, 1)
-        grid.addWidget(tun_read_label, 2, 0)
-        grid.addWidget(self.tun_read_bytes, 2, 1)
-        grid.addWidget(tun_write_label, 3, 0)
-        grid.addWidget(self.tun_write_bytes, 3, 1)
+        grid.addWidget(self.remote_country, 2, 1)
+        grid.addWidget(tun_read_label, 3, 0)
+        grid.addWidget(self.tun_read_bytes, 3, 1)
+        grid.addWidget(tun_write_label, 4, 0)
+        grid.addWidget(self.tun_write_bytes, 4, 1)
 
         self.statusBox.setLayout(grid)
 
@@ -60,6 +63,7 @@ class LogPaneMixin(object):
         simple slot: writes new line to logger Pane.
         """
         msg = line[:-1]
-        if self.debugmode:
+        if self.debugmode and all(map(lambda w: w not in msg,
+                                      LogPaneMixin.EXCLUDES)):
             self.logbrowser.append(msg)
-        vpnlogger.info(msg)
+            vpnlogger.info(msg)

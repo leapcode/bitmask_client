@@ -93,6 +93,11 @@ def mkdir_p(path):
             raise
 
 
+def mkdir_f(path):
+    folder, fname = os.path.split(path)
+    mkdir_p(folder)
+
+
 def check_and_fix_urw_only(_file):
     """
     test for 600 mode and try

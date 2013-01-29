@@ -1,13 +1,17 @@
 # in order of addition to the project.
-# do not change it, we will freeze the requirements before tagging a release.
+# do not change the ordering.
 
 argparse # only for python 2.6
-requests
-ping
+requests<1.0.0 
 psutil
 netifaces
-python-gnutls==1.1.9  # see https://bugs.launchpad.net/ubuntu/+source/python-gnutls/+bug/1027129
+pyopenssl
 jsonschema
-srp
+srp>=1.0.2
 pycrypto
 keyring
+python-dateutil
+sh
+pyxdg
+
+pygeoip # optional
