@@ -15,14 +15,3 @@ sh
 pyxdg
 
 pygeoip # optional
-
-# email
-
-zope.interface
-twisted>=12.3.0
-
-# soledad deps -- will move to its own repo soon
-python-gnupg
-u1db
-oauth
-couchdb
