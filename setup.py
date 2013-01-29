@@ -196,11 +196,11 @@ setup(
     test_suite='nose.collector',
     test_requires=utils.parse_requirements(
         reqfiles=['pkg/test-requirements.pip']),
-    keywords='leap, client, qt, encryption, proxy',
-    author='The LEAP project',
+    keywords='LEAP, client, qt, encryption, proxy, openvpn',
+    author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',
-    license='GPL',
+    license='GPLv3+',
     packages=find_packages(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
@@ -216,7 +216,7 @@ setup(
             ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
     ],
     platforms="all",
-    entry_points = {
+    entry_points={
         'console_scripts': [leap_launcher]
     },
 )
