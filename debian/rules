@@ -28,6 +28,12 @@ test-python%:
 override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
 endif
 
+override_dh_preps:
+	# XXX trying to generate the manpage from rst,
+	# but not the right override... :(
+	rst2html docs/man/leap-client.1.rst docs/man/leap-client.1
+	dh_preps
+
 #dh_auto_build should be enough to build the python2 version
 
 build-python%:
@@ -56,3 +62,4 @@ override_dh_auto_clean:
 	rm -rf build
 	rm -rf docs/_build 
 	rm -rf *.egg-info
+	#rm docs/man/leap.1
