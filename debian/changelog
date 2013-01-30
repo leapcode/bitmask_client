@@ -1,5 +1,7 @@
-leap-client (0.2.0+4377854) unstable; urgency=low
-
+leap-client (0.2.0rc+g3e6e506) unstable; urgency=low
+  [ Kali ]
+  * merged release/v0.2.0 branch
+  * updated dependency list
   [ Micah Anderson ]
   * removed unused comments from control file
   * move build-depends to source package section of control file
