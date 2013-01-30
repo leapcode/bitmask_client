@@ -1,16 +1,38 @@
-Source: python-leap-client
-Section: unknown
+Source: leap-client
+Section: misc
 Priority: extra
-Maintainer: kali <kali@leap.se>
+Maintainer: Micah Anderson <micah@debian.org>
 Standards-Version: 3.9.3
 Homepage: http://leap.se
-#Vcs-Git: git://git.debian.org/collab-maint/python-leap-client.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/python-leap-client.git;a=summary
-Build-Depends: debhelper (>= 8.0.0), pyqt4-dev-tools, python-nose, python-mock, python-sphinx, pep8
+#Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
+#Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
+Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6)
 X-Python-Version: >= 2.6
 
-Package: python-leap-client
-Architecture: all
-Depends: openvpn, python-qt4
-Description: the encrypted interned toolkit
+Package: leap-client
+Architecture: any
+Depends: ${misc:Depends}, ${python:Depends},
+  python-qt4,
+  python-openssl,
+  python-pycrypto,
+  python-keyring,
+  python-srp,
+  python-dateutil,
+  python-argparse,
+  python-psutil,
+  python-netifaces,
+  python-requests,
+  python-xdg,
+  python-jsonschema,
+  pithon-sh,
+  python-nose,
+  python-mock,
+  python-sphinx,
+  pep8,
+  openvpn
+#pyqt4-dev-tools, ???
+Suggests: resolvconf, python-geoip
+Conflicts: autoresolv
+Enhances: openvpn
+Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
  <insert long description, indented with spaces>
