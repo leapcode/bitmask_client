@@ -60,7 +60,7 @@ class TestSmtpRelay(tests.OpenPGPTestCase):
         for i, line in enumerate(self.EMAIL_DATA):
             proto.lineReceived(line + '\r\n')
             self.assertMatch(transport.value(),
-                             '\r\n'.join(SMTP_ANSWERS[0:i+1]))
+                             '\r\n'.join(SMTP_ANSWERS[0:i + 1]))
         proto.setTimeout(None)
 
     def test_message_encrypt(self):

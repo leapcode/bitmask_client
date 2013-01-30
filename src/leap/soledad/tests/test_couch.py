@@ -110,7 +110,7 @@ class CouchDBTestCase(unittest.TestCase):
 class TestCouchBackendImpl(CouchDBTestCase):
 
     def test__allocate_doc_id(self):
-        db = couch.CouchDatabase('http://localhost:'+str(self.wrapper.port),
+        db = couch.CouchDatabase('http://localhost:' + str(self.wrapper.port),
                                  'u1db_tests')
         doc_id1 = db._allocate_doc_id()
         self.assertTrue(doc_id1.startswith('D-'))
@@ -125,13 +125,13 @@ class TestCouchBackendImpl(CouchDBTestCase):
 
 def make_couch_database_for_test(test, replica_uid):
     port = str(test.wrapper.port)
-    return couch.CouchDatabase('http://localhost:'+port, replica_uid,
+    return couch.CouchDatabase('http://localhost:' + port, replica_uid,
                                replica_uid=replica_uid or 'test')
 
 
 def copy_couch_database_for_test(test, db):
     port = str(test.wrapper.port)
-    new_db = couch.CouchDatabase('http://localhost:'+port,
+    new_db = couch.CouchDatabase('http://localhost:' + port,
                                  db._replica_uid + '_copy',
                                  replica_uid=db._replica_uid or 'test')
     gen, docs = db.get_all_docs(include_deleted=True)

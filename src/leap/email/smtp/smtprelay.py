@@ -106,7 +106,7 @@ class EncryptedMessage():
         """Separate message headers from body."""
         sep = self.lines.index('')
         self.headers = self.lines[:sep]
-        self.body = self.lines[sep+1:]
+        self.body = self.lines[sep + 1:]
 
     def connectionLost(self):
         log.msg("Connection lost unexpectedly!")
@@ -128,7 +128,7 @@ class EncryptedMessage():
 
     def sendMessage(self):
         self.prepareHeader()
-        msg = '\n'.join(self.headers+[self.cyphertext])
+        msg = '\n'.join(self.headers + [self.cyphertext])
         d = defer.Deferred()
         factory = smtp.ESMTPSenderFactory(self.smtp_username,
                                           self.smtp_password,
