@@ -1,4 +1,4 @@
-leap-client (0.2.0+xxx) unstable; urgency=low
+leap-client (0.2.0+4377854) unstable; urgency=low
 
   [ Micah Anderson ]
   * removed unused comments from control file

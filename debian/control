@@ -6,7 +6,7 @@ Standards-Version: 3.9.3
 Homepage: http://leap.se
 #Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
 #Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
-Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6)
+Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6), python-sphinx (>= 1.0.7+dfsg)
 X-Python-Version: >= 2.6
 
 Package: leap-client
@@ -14,7 +14,7 @@ Architecture: any
 Depends: ${misc:Depends}, ${python:Depends},
   python-qt4,
   python-openssl,
-  python-pycrypto,
+  python-crypto,
   python-keyring,
   python-srp,
   python-dateutil,
@@ -24,15 +24,22 @@ Depends: ${misc:Depends}, ${python:Depends},
   python-requests,
   python-xdg,
   python-jsonschema,
-  pithon-sh,
+  python-sh,
   python-nose,
   python-mock,
-  python-sphinx,
   pep8,
   openvpn
 #pyqt4-dev-tools, ???
+#python-sphinx, only build-depend, right?
 Suggests: resolvconf, python-geoip
 Conflicts: autoresolv
 Enhances: openvpn
 Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
- <insert long description, indented with spaces>
+ LEAP (LEAP Encryption Access Project) develops
+ a plan to secure everyday communication, breaking down
+ into discrete services.
+ .
+ The client for the current phase gives support to the EIP Service.
+ EIP (the Encrypted Internet Proxy) provides circumvention, location
+ anonymization, and traffic encryption in a hassle-free,
+ automatically self-configuring fashion, and has an enhanced level of security.
