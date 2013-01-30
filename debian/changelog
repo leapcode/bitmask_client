@@ -1,4 +1,4 @@
-python-leap-client (0.1.0+d2250c4) unstable; urgency=low
+leap-client (0.2.0+xxx) unstable; urgency=low
 
   [ Micah Anderson ]
   * removed unused comments from control file
