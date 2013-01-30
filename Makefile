@@ -60,7 +60,7 @@ $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
 
 manpages:
-	rst2man docs/man/leap.1.rst docs/man/leap.1
+	rst2man docs/man/leap-client.1.rst docs/man/leap-client.1
 
 apidocs:
 	@sphinx-apidoc -o docs/api src/leap
