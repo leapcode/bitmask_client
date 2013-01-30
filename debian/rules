@@ -12,7 +12,7 @@
 PYTHON2=$(shell pyversions -vr)
 
 %:
-	dh $@ --with python2,sphinxdoc --buildsystem=python_distutils  #,sphinxdoc
+	dh $@ --with python2,sphinxdoc --buildsystem=python_distutils
 
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 
@@ -54,4 +54,5 @@ override_dh_installdocs:
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -rf build
+	rm -rf docs/_build 
 	rm -rf *.egg-info
