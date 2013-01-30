@@ -282,7 +282,7 @@ def get_config_dir():
     @rtype: string
     """
     home = os.path.expanduser("~")
-    if re.findall("leap_tests-[a-zA-Z0-9]{6}", home):
+    if re.findall("leap_tests-[_a-zA-Z0-9]{6}", home):
         # we're inside a test! :)
         return os.path.join(home, ".config/leap")
     else:
