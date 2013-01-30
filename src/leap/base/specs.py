@@ -2,11 +2,6 @@ leap_provider_spec = {
     'description': 'provider definition',
     'type': 'object',
     'properties': {
-        #'serial': {
-            #'type': int,
-            #'default': 1,
-            #'required': True,
-        #},
         'version': {
             'type': unicode,
             'default': '0.1.0'
