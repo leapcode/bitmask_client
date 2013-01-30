@@ -12,7 +12,7 @@
 PYTHON2=$(shell pyversions -vr)
 
 %:
-	dh $@ --with python2 --buildsystem=python_distutils  #,sphinxdoc
+	dh $@ --with python2,sphinxdoc --buildsystem=python_distutils  #,sphinxdoc
 
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 
@@ -47,9 +47,9 @@ override_dh_installchangelogs:
 
 # build and install sphinx docs
 # 
-#override_dh_installdocs:
-#        python setup.py build_sphinx
-#	 dh_installdocs build/sphinx/html
+override_dh_installdocs:
+	python setup.py build_sphinx
+	dh_installdocs build/sphinx/html
 
 override_dh_auto_clean:
 	dh_auto_clean
