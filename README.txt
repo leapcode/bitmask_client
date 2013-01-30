@@ -1,37 +1,7 @@
-========================================
-=               LEAP                   =
-=   The Internet Encryption Toolkit    =
-========================================
+Nothing here yet!
+=================
 
-Install
-=======
-python setup.py install
+This is the master branch, but it contains really old code.
+The integration branch is develop/
 
-Running tests
-=============
-nosetests -v
-
-Deps
-====
-apt-get install python-qt4 python-qt4-doc pyqt4-dev-tools
-
-Hack
-====
-
-(recommended)
-virtualenv .  # ensure your .gitignore knows about it
-bin/activate
-
-# you should probably simlink sip.so and PyQt4 to your system-wide
-# install, there are some issues with it.
-
-python setup.py develop  # ... TBD: finish develop howto.
-
-Compiling resource/ui files
-===========================
-You should refresh resource/ui files every time you
-change an image or a resource/ui (.ui / .qc). From
-the root folder:
-
-make ui
-make resources
+You will be able to find here the next tagged release (0.2) real soon.
