@@ -50,5 +50,11 @@ deb:
 	#@git tag -a upstream/$(DEBVER) -m "..."
 	@git-buildpackage --git-ignore-new --git-builder="debuild -us -uc -i'.*|bin|share|lib|local|include|\.git'"  --git-upstream-branch=upstream --git-upstream-tree=branch --git-debian-branch=debian
 
+manpages:
+	rst2man docs/man/leap-client.1.rst docs/man/leap-client.1
+
+apidocs:
+	@sphinx-apidoc -o docs/api src/leap
+
 clean : 
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)  

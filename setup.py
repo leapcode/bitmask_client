@@ -200,7 +200,7 @@ setup(
     author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',
-    license='GPLv3+',
+    license='GPL-3+',
     packages=find_packages(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
@@ -211,7 +211,7 @@ setup(
     # but looks that debhelper honors it...
     data_files=[
         ("share/man/man1",
-            ["docs/man/leap.1"]),
+            ["docs/man/leap-client.1"]),
         ("share/polkit-1/actions",
             ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
     ],
