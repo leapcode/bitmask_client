@@ -1,5 +1,6 @@
-leap-client (0.2.0~rc+2329aea) unstable; urgency=low
+leap-client (0.2.0~rc+g0c00fcc) unstable; urgency=low
   [ Kali ]
+  * added jsonschema 0.8 as workaround for old version
   * fixes to sphinxdoc install
   * merged release/v0.2.0 branch
   * updated dependency list
