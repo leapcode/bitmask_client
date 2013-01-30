@@ -24,7 +24,6 @@ LEAP Client depends on these libraries:
 
 * ``python 2.6`` or ``2.7``
 * ``qt4 libraries``
-* ``libgnutls``
 * ``openvpn``
 
 Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requirements.pip``
