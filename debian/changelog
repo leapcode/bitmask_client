@@ -1,5 +1,6 @@
-leap-client (0.2.0rc+g3e6e506) unstable; urgency=low
+leap-client (0.2.0~rc+263b502) unstable; urgency=low
   [ Kali ]
+  * fixes to sphinxdoc install
   * merged release/v0.2.0 branch
   * updated dependency list
   [ Micah Anderson ]
