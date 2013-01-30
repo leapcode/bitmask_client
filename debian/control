@@ -25,14 +25,15 @@ Depends: ${misc:Depends}, ${python:Depends},
   python-xdg,
   python-jsonschema,
   python-sh,
-  pyhon-setuptools,
+  python-setuptools,
   python-nose,
   python-mock,
   pep8,
   openvpn
 #pyqt4-dev-tools, ???
 #python-sphinx, only build-depend, right?
-Suggests: resolvconf, python-geoip
+Suggests: resolvconf 
+#, python-geoip ???
 Conflicts: autoresolv
 Enhances: openvpn
 Description: Provides the desktop client for the LEAP Encryption Access Project Platform.

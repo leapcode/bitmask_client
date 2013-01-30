@@ -14,4 +14,4 @@ python-dateutil
 sh
 pyxdg
 
-pygeoip # optional
+#pygeoip # optional
