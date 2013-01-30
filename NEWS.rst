@@ -2,10 +2,10 @@
 User-facing changes in Leap Client
 ==================================
 
-Release 0.2.0 (2012-10-XX)
+Release 0.2.0 (2013-1-XX)
 --------------------------
 
-This release is a functionally working version in Debian Squeeze and Ubuntu 12.04.
+This release is a functionally working version in Debian Wheezy and Ubuntu 12.04.
 It is able to connect to a preconfigured leap provider and autoconfigures a EIP connection.
 
 Python Support
@@ -14,7 +14,6 @@ This release supports Python2.6 and Python2.7
 
 New Features
 ''''''''''''
-- Branded build: the final package includes branding info needed to connect to a default provider. 
 - First run wizard: allows to register an user with the selected provider. It also downloads all
   the config files needed to connect to the eip service on this provider.
 - Network checks: we do some basic network testing and warn user in case we cannot find a
@@ -40,15 +39,14 @@ for building the package dependencies, you will need also:
 
 Leap-Client depends on the following python packages:
 
+- pyopenssl
 - requests
-- ping
 - psutil
 - netifaces
 - jsonschema
 - srp
 - pycrypto
 - keyring
-- python-gnutls==1.1.9
 
 We are freezing the python-gnutls library dependency for this release due to a bug in ubuntu, see:
 https://bugs.launchpad.net/ubuntu/+source/python-gnutls/+bug/1027129
