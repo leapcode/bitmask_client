@@ -290,7 +290,7 @@ def get_config_dir():
         # we should borrow some of those
         # routines for osx/win and wrap this call.
         return os.path.join(BaseDirectory.xdg_config_home,
-                        'leap')
+                            'leap')
 
 
 def get_config_file(filename, folder=None):

@@ -339,7 +339,7 @@ to be triggered for each one of them.
         else:
             #XXX get logger instead
             linewrite_callback = lambda line: logger.debug(
-                    'watcher: %s' % line)
+                'watcher: %s' % line)
 
         # the partial is not
         # being applied now because we're not observing the process
