@@ -23,5 +23,13 @@ class LeapArgParseTest(unittest.TestCase):
             ['--debug'])
         self.assertEqual(
             opts,
-            Namespace(config_file=None,
-                      debug=True))
+            Namespace(
+                config_file=None,
+                debug=True,
+                log_file=None,
+                no_provider_checks=False,
+                no_ca_verify=False,
+                openvpn_verb=None))
+
+if __name__ == "__main__":
+    unittest.main()
