@@ -26,7 +26,7 @@ class MainWindowResourcesTest(unittest.TestCase):
     def test_mainwindow_resources_hash(self):
         self.assertEqual(
             hashlib.md5(mainwindow_rc.qt_resource_data).hexdigest(),
-            '53e196f29061d8f08f112e5a2e64eb53')
+            'e04cb467985ba38b9eb91e7689f9458f')
 
 if __name__ == "__main__":
     unittest.main()
