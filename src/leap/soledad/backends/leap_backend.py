@@ -7,6 +7,7 @@ from u1db import Document
 from u1db.remote import utils
 from u1db.remote.http_target import HTTPSyncTarget
 from u1db.remote.http_database import HTTPDatabase
+from u1db.remote.server_state import ServerState
 from u1db.errors import BrokenSyncStream
 
 import uuid
@@ -108,6 +109,10 @@ class LeapDatabase(HTTPDatabase):
 
 
 class LeapSyncTarget(HTTPSyncTarget):
+    """
+    A SyncTarget that encrypts data before sending and decrypts data after
+    receiving.
+    """
 
     def __init__(self, url, creds=None, soledad=None):
         super(LeapSyncTarget, self).__init__(url, creds)
@@ -196,3 +201,26 @@ class LeapSyncTarget(HTTPSyncTarget):
         res = self._parse_sync_stream(data, return_doc_cb, ensure_callback)
         data = None
         return res['new_generation'], res['new_transaction_id']
+
+
+class LeapServerState(ServerState):
+    """
+    Inteface of the WSGI server with the CouchDB backend.
+    """
+
+    def __init__(self):
+        pass
+
+    def open_database(self, url):
+        # TODO: open couch
+        from leap.soledad.backends.couch import CouchDatabase
+        return CouchDatabase(url, create=False)
+
+    def ensure_database(self, url):
+        from leap.soledad.backends.couch import CouchDatabase
+        db = CouchDatabase(url, create=True)
+        return db, db._replica_uid
+
+    def delete_database(self, url):
+        from leap.soledad.backends.couch import CouchDatabase
+        CouchDatabase.delete_database(url)
