@@ -16,7 +16,7 @@ from leap.gui import styles
 from leap.gui.utils import delay
 from leap.util.web import get_https_domain_and_port
 
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, APP_WATERMARK
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,10 @@ class SelectProviderPage(InlineValidationPage):
             "Please enter the domain of the provider you want "
             "to use for your connection")
         )
+        self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
+
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))

@@ -4,7 +4,7 @@ Intro page used in first run wizard
 
 from PyQt4 import QtGui
 
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, APP_WATERMARK
 
 
 class IntroPage(QtGui.QWizardPage):
@@ -13,9 +13,9 @@ class IntroPage(QtGui.QWizardPage):
 
         self.setTitle(self.tr("First run wizard"))
 
-        #self.setPixmap(
-            #QtGui.QWizard.WatermarkPixmap,
-            #QtGui.QPixmap(':/images/watermark1.png'))
+        self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
