@@ -372,3 +372,5 @@ class SQLCipherEncryptionTest(unittest.TestCase):
                                 "non-encrypted dbs.")
         except DatabaseIsNotEncrypted:
             pass
+
+load_tests = tests.load_with_scenarios
