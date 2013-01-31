@@ -172,8 +172,8 @@ class JSONLeapConfig(BaseLeapConfig):
         if os.path.isfile(fromfile):
             self._config.load(fromfile=fromfile)
         else:
-            logger.error('tried to load config from non-existent path')
-            logger.error('Not Found: %s', fromfile)
+            logger.warning('tried to load config from non-existent path')
+            logger.warning('Not Found: %s', fromfile)
 
     def fetch(self, uri, fetcher=None, verify=True, force_dl=False):
         if not fetcher:
