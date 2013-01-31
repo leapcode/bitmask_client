@@ -28,7 +28,9 @@ class BaseSoledadTest(BaseLeapTest):
         self._soledad._gpg.import_keys(PRIVATE_KEY)
 
     def tearDown(self):
-        pass
+        self._db1.close()
+        self._db2.close()
+        self._soledad.close()
 
 
 # Key material for testing

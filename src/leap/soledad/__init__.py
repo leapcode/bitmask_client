@@ -41,6 +41,9 @@ class Soledad(object):
         # for symmetric encryption.
         self._db = sqlcipher.open(self.LOCAL_DB_PATH, True, self._secret)
 
+    def close(self):
+        self._db.close()
+
     #-------------------------------------------------------------------------
     # Management of secret for symmetric encryption
     #-------------------------------------------------------------------------
@@ -63,6 +66,7 @@ class Soledad(object):
         try:
             with open(self.SECRET_PATH) as f:
                 self._secret = str(self._gpg.decrypt(f.read()))
+                f.close()
         except IOError:
             raise IOError('Failed to open secret file %s.' % self.SECRET_PATH)
 
