@@ -34,5 +34,7 @@ fi
 
 for LIB in ${LIBS[@]}
 do
-    ln -s $LIB_SYSTEM_PATH/$LIB $LIB_VIRTUALENV_PATH/$LIB 
+    if [[ ! -e $LIB_VIRTUALENV_PATH/$LIB ]]; then
+       ln -s $LIB_SYSTEM_PATH/$LIB $LIB_VIRTUALENV_PATH/$LIB
+    fi
 done
