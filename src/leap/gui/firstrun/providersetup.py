@@ -118,7 +118,7 @@ class ProviderSetupValidationPage(ValidationPage):
             except requests.exceptions.SSLError as exc:
                 return self.fail("Validation Error")
             except Exception as exc:
-                return self.fail(exc.msg)
+                return self.fail(exc.message)
             else:
                 return True
 
