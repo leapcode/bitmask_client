@@ -26,6 +26,10 @@ __all__ = ['PluggableConfig',
 # exceptions
 
 
+class ValidationError(Exception):
+    pass
+
+
 class UnknownOptionException(Exception):
     """exception raised when a non-configuration
     value is present in the configuration"""
@@ -107,7 +111,10 @@ class JSONAdaptor(ConfigAdaptor):
     def validate(self, config, schema_obj):
         schema_json = JSONSchemaEncoder().encode(schema_obj)
         schema = json.loads(schema_json)
-        jsonschema.validate(config, schema)
+        try:
+            jsonschema.validate(config, schema)
+        except jsonschema.ValidationError:
+            raise ValidationError
 
 
 adaptors['json'] = JSONAdaptor()

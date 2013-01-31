@@ -11,11 +11,10 @@ import urlparse
 
 from mock import (patch, Mock)
 
-import jsonschema
-#import ping
 import requests
 
 from leap.base import config as baseconfig
+from leap.base import pluggableconfig
 from leap.base.constants import (DEFAULT_PROVIDER_DEFINITION,
                                  DEFINITION_EXPECTED_PATH)
 from leap.eip import checks as eipchecks
@@ -125,7 +124,7 @@ class EIPCheckTest(BaseLeapTest):
         #with self.assertRaises(eipexceptions.EIPMissingDefaultProvider):
         # XXX we should catch this as one of our errors, but do not
         # see how to do it quickly.
-        with self.assertRaises(jsonschema.ValidationError):
+        with self.assertRaises(pluggableconfig.ValidationError):
             #import ipdb;ipdb.set_trace()
             checker.eipconfig.load(fromfile=eipcfg_path)
             checker.check_is_there_default_provider()

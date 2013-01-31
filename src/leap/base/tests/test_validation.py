@@ -1,13 +1,12 @@
 import copy
 import datetime
+from functools import partial
 #import json
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 import os
-
-import jsonschema
 
 from leap.base.config import JSONLeapConfig
 from leap.base import pluggableconfig
@@ -76,16 +75,18 @@ class TestJSONLeapConfigValidation(BaseLeapTest):
     def test_broken_int(self):
         _config = copy.deepcopy(SAMPLE_CONFIG_DICT)
         _config['prop_one'] = '1'
-        with self.assertRaises(jsonschema.ValidationError):
-            self.sampleconfig.validate(_config)
+        self.assertRaises(
+            pluggableconfig.ValidationError,
+            partial(self.sampleconfig.validate, _config))
 
     def test_format_property(self):
         # JsonSchema Validator does not check the format property.
         # We should have to extend the Configuration class
         blah = copy.deepcopy(SAMPLE_CONFIG_DICT)
         blah['prop_uri'] = 'xxx'
-        with self.assertRaises(pluggableconfig.TypeCastException):
-            self.sampleconfig.validate(blah)
+        self.assertRaises(
+            pluggableconfig.TypeCastException,
+            partial(self.sampleconfig.validate, blah))
 
 
 if __name__ == "__main__":
