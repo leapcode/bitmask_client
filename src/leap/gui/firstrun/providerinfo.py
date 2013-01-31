@@ -5,7 +5,7 @@ import logging
 
 from PyQt4 import QtGui
 
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, APP_WATERMARK
 from leap.util.translations import translate
 
 logger = logging.getLogger(__name__)
@@ -19,6 +19,10 @@ class ProviderInfoPage(QtGui.QWizardPage):
         self.setTitle(self.tr("Provider Information"))
         self.setSubTitle(self.tr(
             "Services offered by this provider"))
+
+        self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,

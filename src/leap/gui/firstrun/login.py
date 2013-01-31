@@ -11,7 +11,7 @@ from leap.gui.firstrun.mixins import UserFormMixIn
 from leap.gui.progress import InlineValidationPage
 from leap.gui import styles
 
-from leap.gui.constants import APP_LOGO, FULL_USERNAME_REGEX
+from leap.gui.constants import APP_LOGO, APP_WATERMARK, FULL_USERNAME_REGEX
 
 
 class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
@@ -24,6 +24,10 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         self.setTitle(self.tr("Log In"))
         self.setSubTitle(self.tr("Log in with your credentials"))
         self.current_page = "login"
+
+        self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,

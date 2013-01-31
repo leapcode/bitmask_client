@@ -1,6 +1,7 @@
 import time
 
 APP_LOGO = ':/images/leap-color-small.png'
+APP_WATERMARK = ':/images/watermark.png'
 
 # bare is the username portion of a JID
 # full includes the "at" and some extra chars
