@@ -7,13 +7,11 @@ This should be run with:
 
 from twisted.web.wsgi import WSGIResource
 from twisted.internet import reactor
+from u1db.remote import http_app
+from leap.soledad.backends.couch import CouchServerState
 
-from u1db.remote import (
-    http_app,
-    server_state,
-)
-
-state = server_state.ServerState()
+couch_url = 'http://localhost:5984'
+state = CouchServerState(couch_url)
 # TODO: change working dir to something meaningful
 state.set_workingdir('/tmp')
 # TODO: write a LeapHTTPApp that will use Couch as backend instead of SQLite

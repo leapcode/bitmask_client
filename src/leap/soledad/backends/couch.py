@@ -7,6 +7,7 @@ from u1db import errors
 from u1db.sync import LocalSyncTarget
 from u1db.backends.inmemory import InMemoryIndex
 from u1db.remote.server_state import ServerState
+from u1db.errors import DatabaseDoesNotExist
 # couchdb
 from couchdb.client import Server, Document as CouchDocument
 from couchdb.http import ResourceNotFound
@@ -30,7 +31,7 @@ class CouchDatabase(ObjectStore):
     @classmethod
     def open_database(cls, url, create):
         # get database from url
-        m = re.match('(.*)/([^/]+)$', url)
+        m = re.match('(^https?://[^/]+)/(.+)$', url)
         if not m:
             raise InvalidURLError
         url = m.group(1)
@@ -40,8 +41,8 @@ class CouchDatabase(ObjectStore):
             server[dbname]
         except ResourceNotFound:
             if not create:
-                raise
-            return cls(url, dbname)
+                raise DatabaseDoesNotExist()
+        return cls(url, dbname)
 
     def __init__(self, url, database, replica_uid=None, full_commit=True,
                  session=None):
@@ -242,29 +243,26 @@ class CouchSyncTarget(LocalSyncTarget):
             source_replica_uid, source_replica_generation,
             source_replica_transaction_id)
 
-
 class CouchServerState(ServerState):
+    """
+    Inteface of the WSGI server with the CouchDB backend.
+    """
 
-    def open_database(self, path):
-        """
-        Open a database at the given location.
-        """
-        return CouchDatabase.open_database(path, create=False)
+    def __init__(self, couch_url):
+        self.couch_url = couch_url
 
-    def check_database(self, path):
-        """
-        Check if the database at the given location exists.
-        """
-        db = self.open_database(path)
-        db.close()
+    def open_database(self, dbname):
+        # TODO: open couch
+        from leap.soledad.backends.couch import CouchDatabase
+        return CouchDatabase.open_database(self.couch_url + '/' + dbname,
+                                           create=False)
 
-    def ensure_database(self, path):
-        """Ensure database at the given location."""
-        db = CouchDatabase.open_database(path,
+    def ensure_database(self, dbname):
+        from leap.soledad.backends.couch import CouchDatabase
+        db = CouchDatabase.open_database(self.couch_url + '/' + dbname,
                                          create=True)
         return db, db._replica_uid
 
-    def delete_database(self, path):
-        """Delete database at the given location."""
-        db = CouchDatabase.open_database(path)
-        db.delete_database()
+    def delete_database(self, dbname):
+        from leap.soledad.backends.couch import CouchDatabase
+        CouchDatabase.delete_database(self.couch_url + '/' + dbname)
