@@ -56,5 +56,15 @@ manpages:
 apidocs:
 	@sphinx-apidoc -o docs/api src/leap
 
+cleandebinstall:
+	rm debian/files
+	rm debian/leap-client.debhelper.log
+	rm debian/leap-client.postinst.debhelper
+	rm debian/leap-client.postrm.debhelper
+	rm debian/leap-client.prerm.debhelper
+	rm debian/leap-client.substvars
+	rm -rf debian/leap-client/
+
+
 clean : 
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)  
