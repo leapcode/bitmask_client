@@ -49,7 +49,7 @@ install-python%:
 #        dh_auto_install
 
 override_dh_installchangelogs:
-	dh_installchangelogs -k CHANGES.txt
+	dh_installchangelogs -k NEWS.rst
 
 # build and install sphinx docs
 # 

@@ -2,7 +2,7 @@
 User-facing changes in LEAP Client
 ==================================
 
-Release 0.2.0 (2013-1-XX)
+Release 0.2.0 (2013-2-23)
 --------------------------
 
 This release is a functionally working version in Debian Wheezy and Ubuntu 12.04.
