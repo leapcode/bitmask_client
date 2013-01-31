@@ -11,7 +11,7 @@ from PyQt4 import QtGui
 from leap.base import exceptions as baseexceptions
 from leap.gui.progress import ValidationPage
 
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, APP_WATERMARK
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +28,10 @@ class ProviderSetupValidationPage(ValidationPage):
         self.setTitle(self.tr("Provider setup"))
         self.setSubTitle(
             self.tr("Gathering configuration options for this provider"))
+
+        self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 from leap.base import auth
 from leap.gui import styles
-from leap.gui.constants import APP_LOGO, BARE_USERNAME_REGEX
+from leap.gui.constants import APP_LOGO, APP_WATERMARK, BARE_USERNAME_REGEX
 from leap.gui.progress import InlineValidationPage
 from leap.gui.styles import ErrorLabelStyleSheet
 
@@ -30,6 +30,10 @@ class RegisterUserPage(InlineValidationPage, UserFormMixIn):
 
         self.setTitle(self.tr("Sign Up"))
         # subtitle is set in the initializePage
+
+        self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,

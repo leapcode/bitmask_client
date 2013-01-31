@@ -6,7 +6,7 @@ import logging
 from PyQt4 import QtGui
 
 from leap.util.coroutines import coroutine
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, APP_WATERMARK
 
 logger = logging.getLogger(__name__)
 
@@ -19,12 +19,12 @@ class LastPage(QtGui.QWizardPage):
             "Connecting to Encrypted Internet Proxy service..."))
 
         self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
+
+        self.setPixmap(
             QtGui.QWizard.LogoPixmap,
             QtGui.QPixmap(APP_LOGO))
-
-        #self.setPixmap(
-            #QtGui.QWizard.WatermarkPixmap,
-            #QtGui.QPixmap(':/images/watermark2.png'))
 
         self.label = QtGui.QLabel()
         self.label.setWordWrap(True)

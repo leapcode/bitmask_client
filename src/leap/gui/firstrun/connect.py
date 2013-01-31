@@ -12,7 +12,7 @@ from leap.gui.progress import ValidationPage
 from leap.util.web import get_https_domain_and_port
 
 from leap.base import auth
-from leap.gui.constants import APP_LOGO
+from leap.gui.constants import APP_LOGO, APP_WATERMARK
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +29,10 @@ class ConnectionPage(ValidationPage):
 
         self.setTitle(title)
         self.setSubTitle(subtitle)
+
+        self.setPixmap(
+            QtGui.QWizard.WatermarkPixmap,
+            QtGui.QPixmap(APP_WATERMARK))
 
         self.setPixmap(
             QtGui.QWizard.LogoPixmap,
