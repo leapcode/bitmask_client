@@ -6,9 +6,7 @@ except ImportError:
     import unittest
 import os
 
-import jsonschema
-
-#from leap import __branding as BRANDING
+from leap.base.pluggableconfig import ValidationError
 from leap.testing.basetest import BaseLeapTest
 from leap.base import providers
 
@@ -96,7 +94,7 @@ class TestLeapProviderDefinition(BaseLeapTest):
         _config = copy.deepcopy(self.config)
         # bad type, raise validation error
         _config['domain'] = 111
-        with self.assertRaises(jsonschema.ValidationError):
+        with self.assertRaises(ValidationError):
             self.definition.validate(_config)
 
     @unittest.skip
