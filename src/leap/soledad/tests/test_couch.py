@@ -42,6 +42,7 @@ class CouchDBWrapper(object):
         conf = handle.read() % {
             'tempdir': self.tempdir,
         }
+        handle.close()
 
         confPath = os.path.join(self.tempdir, 'test.ini')
         handle = open(confPath, 'w')
@@ -51,10 +52,10 @@ class CouchDBWrapper(object):
         # create the dirs from the template
         os.mkdir(os.path.join(self.tempdir, 'lib'))
         os.mkdir(os.path.join(self.tempdir, 'log'))
-        argus = ['couchdb', '-n' '-a', confPath]
-        null = open('/dev/null', 'w')
+        args = ['couchdb', '-n' '-a', confPath]
+        #null = open('/dev/null', 'w')
         self.process = subprocess.Popen(
-            argus, env=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args, env=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # find port
         logPath = os.path.join(self.tempdir, 'log', 'couch.log')
         while not os.path.exists(logPath):
@@ -75,6 +76,7 @@ stderr:
 
         handle = open(logPath)
         line = handle.read()
+        handle.close()
         m = PORT_RE.search(line)
         if not m:
             self.stop()

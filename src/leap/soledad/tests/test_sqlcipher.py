@@ -3,7 +3,7 @@
 import os
 import time
 from sqlite3 import dbapi2, DatabaseError
-import unittest2 as unittest
+import unittest
 from StringIO import StringIO
 import threading
 

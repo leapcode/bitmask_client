@@ -66,7 +66,6 @@ class Soledad(object):
         try:
             with open(self.SECRET_PATH) as f:
                 self._secret = str(self._gpg.decrypt(f.read()))
-                f.close()
         except IOError:
             raise IOError('Failed to open secret file %s.' % self.SECRET_PATH)
 
