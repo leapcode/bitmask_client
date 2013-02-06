@@ -2,7 +2,7 @@ Source: leap-client
 Section: misc
 Priority: extra
 Maintainer: Micah Anderson <micah@debian.org>
-Standards-Version: 3.9.3
+Standards-Version: 3.9.4
 Homepage: http://leap.se
 #Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
 #Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
@@ -21,7 +21,7 @@ Depends: ${misc:Depends}, ${python:Depends},
   python-argparse,
   python-psutil,
   python-netifaces,
-  python-requests (< 1.0),
+  python-requests (<= 0.14.2),
   python-xdg,
   python-jsonschema,
   python-sh,
