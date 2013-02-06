@@ -27,6 +27,7 @@ from leap.soledad.tests import u1db_tests as tests
 from leap.soledad.tests.u1db_tests import test_sqlite_backend
 from leap.soledad.tests.u1db_tests import test_backends
 from leap.soledad.tests.u1db_tests import test_open
+from leap.soledad.tests.u1db_tests import test_sync
 
 PASSWORD = '123456'
 
@@ -322,6 +323,23 @@ class SQLCipherOpen(test_open.TestU1DBOpen):
 
 
 #-----------------------------------------------------------------------------
+# The following tests come from `u1db.tests.test_sync`.
+#-----------------------------------------------------------------------------
+
+sync_scenarios = []
+for name, scenario in SQLCIPHER_SCENARIOS:
+    scenario = dict(scenario)
+    scenario['do_sync'] = test_sync.sync_via_synchronizer
+    sync_scenarios.append((name, scenario))
+    scenario = dict(scenario)
+
+
+class SQLCipherDatabaseSyncTests(test_sync.DatabaseSyncTests):
+
+    scenarios = sync_scenarios
+
+
+#-----------------------------------------------------------------------------
 # Tests for actual encryption of the database
 #-----------------------------------------------------------------------------
 
@@ -372,5 +390,6 @@ class SQLCipherEncryptionTest(unittest.TestCase):
                                 "non-encrypted dbs.")
         except DatabaseIsNotEncrypted:
             pass
+
 
 load_tests = tests.load_with_scenarios
