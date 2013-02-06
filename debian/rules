@@ -19,11 +19,8 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 # run tests!
 #
 
-# have to fix running tests inside venv.
-# XXX breaking git-buildpackage process
-# if we choose to run inside venv
 test-python%:
-	xvfb-run ./run_tests.sh
+	xvfb-run ./run_tests.sh -x -N
 
 override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
 endif
