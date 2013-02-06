@@ -210,8 +210,8 @@ setup(
     # not being used since setuptools does not like it.
     # looks like debhelper is honoring it...
     data_files=[
-        ("share/man/man1",
-            ["docs/man/leap-client.1"]),
+    #    ("share/man/man1",
+    #        ["docs/man/leap-client.1"]),
         ("share/polkit-1/actions",
             ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
     ],
