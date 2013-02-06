@@ -243,6 +243,7 @@ class CouchSyncTarget(LocalSyncTarget):
             source_replica_uid, source_replica_generation,
             source_replica_transaction_id)
 
+
 class CouchServerState(ServerState):
     """
     Inteface of the WSGI server with the CouchDB backend.
