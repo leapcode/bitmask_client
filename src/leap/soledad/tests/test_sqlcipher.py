@@ -11,6 +11,7 @@ import threading
 from u1db import (
     errors,
     query_parser,
+    sync,
 )
 from u1db.backends.sqlite_backend import SQLitePartialExpandDatabase
 
@@ -27,6 +28,8 @@ from leap.soledad.tests import u1db_tests as tests
 from leap.soledad.tests.u1db_tests import test_sqlite_backend
 from leap.soledad.tests.u1db_tests import test_backends
 from leap.soledad.tests.u1db_tests import test_open
+from leap.soledad.tests.u1db_tests import test_sync
+from leap.soledad.backends.leap_backend import LeapSyncTarget
 
 PASSWORD = '123456'
 
@@ -322,6 +325,63 @@ class SQLCipherOpen(test_open.TestU1DBOpen):
 
 
 #-----------------------------------------------------------------------------
+# The following tests come from `u1db.tests.test_sync`.
+#-----------------------------------------------------------------------------
+
+sync_scenarios = []
+for name, scenario in SQLCIPHER_SCENARIOS:
+    scenario = dict(scenario)
+    scenario['do_sync'] = test_sync.sync_via_synchronizer
+    sync_scenarios.append((name, scenario))
+    scenario = dict(scenario)
+
+
+def sync_via_synchronizer_and_leap(test, db_source, db_target,
+                                   trace_hook=None, trace_hook_shallow=None):
+    if trace_hook:
+        test.skipTest("full trace hook unsupported over http")
+    path = test._http_at[db_target]
+    target = LeapSyncTarget.connect(test.getURL(path))
+    if trace_hook_shallow:
+        target._set_trace_hook_shallow(trace_hook_shallow)
+    return sync.Synchronizer(db_source, target).sync()
+
+
+sync_scenarios.append(('pyleap', {
+    'make_database_for_test': test_sync.make_database_for_http_test,
+    'copy_database_for_test': test_sync.copy_database_for_http_test,
+    'make_document_for_test': tests.make_document_for_test,
+    'make_app_with_state': tests.test_remote_sync_target.make_http_app,
+    'do_sync': sync_via_synchronizer_and_leap,
+}))
+
+
+class SQLCipherDatabaseSyncTests(test_sync.DatabaseSyncTests):
+
+    scenarios = sync_scenarios
+
+
+def _make_local_db_and_leap_target(test, path='test'):
+    test.startServer()
+    db = test.request_state._create_database(os.path.basename(path))
+    st = LeapSyncTarget.connect(test.getURL(path))
+    return db, st
+
+
+target_scenarios = [
+    ('leap', {
+        'create_db_and_target': _make_local_db_and_leap_target,
+        'make_app_with_state': tests.test_remote_sync_target.make_http_app}),
+]
+
+
+class SQLCipherSyncTargetTests(test_sync.DatabaseSyncTargetTests):
+
+    scenarios = (tests.multiply_scenarios(SQLCIPHER_SCENARIOS,
+                                          target_scenarios))
+
+
+#-----------------------------------------------------------------------------
 # Tests for actual encryption of the database
 #-----------------------------------------------------------------------------
 
@@ -372,5 +432,6 @@ class SQLCipherEncryptionTest(unittest.TestCase):
                                 "non-encrypted dbs.")
         except DatabaseIsNotEncrypted:
             pass
+
 
 load_tests = tests.load_with_scenarios

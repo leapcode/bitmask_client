@@ -131,8 +131,11 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
         """
         from u1db.sync import Synchronizer
         from leap.soledad.backends.leap_backend import LeapSyncTarget
-        return Synchronizer(self, LeapSyncTarget(url, creds=creds),
-                            soledad=self._soledad).sync(autocreate=autocreate)
+        return Synchronizer(
+            self,
+            LeapSyncTarget(url,
+                           creds=creds,
+                           soledad=self._soledad)).sync(autocreate=autocreate)
 
     def _extra_schema_init(self, c):
         c.execute(

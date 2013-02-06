@@ -200,4 +200,3 @@ class LeapSyncTarget(HTTPSyncTarget):
         res = self._parse_sync_stream(data, return_doc_cb, ensure_callback)
         data = None
         return res['new_generation'], res['new_transaction_id']
-

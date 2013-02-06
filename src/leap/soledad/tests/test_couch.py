@@ -27,6 +27,8 @@ import time
 import unittest
 
 
+# from: https://github.com/smcq/paisley/blob/master/paisley/test/util.py
+# TODO: include license of above project.
 class CouchDBWrapper(object):
     """
     Wrapper for external CouchDB instance which is started and stopped for
