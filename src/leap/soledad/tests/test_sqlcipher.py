@@ -361,6 +361,26 @@ class SQLCipherDatabaseSyncTests(test_sync.DatabaseSyncTests):
     scenarios = sync_scenarios
 
 
+def _make_local_db_and_leap_target(test, path='test'):
+    test.startServer()
+    db = test.request_state._create_database(os.path.basename(path))
+    st = LeapSyncTarget.connect(test.getURL(path))
+    return db, st
+
+
+target_scenarios = [
+    ('leap', {
+        'create_db_and_target': _make_local_db_and_leap_target,
+        'make_app_with_state': tests.test_remote_sync_target.make_http_app}),
+]
+
+
+class SQLCipherSyncTargetTests(test_sync.DatabaseSyncTargetTests):
+
+    scenarios = (tests.multiply_scenarios(SQLCIPHER_SCENARIOS,
+                                          target_scenarios))
+
+
 #-----------------------------------------------------------------------------
 # Tests for actual encryption of the database
 #-----------------------------------------------------------------------------
