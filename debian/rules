@@ -14,6 +14,10 @@ PYTHON2=$(shell pyversions -vr)
 %:
 	dh $@ --with python2,sphinxdoc --buildsystem=python_distutils
 
+override_dh_prep:
+	rst2man docs/man/leap-client.1.rst docs/man/leap-client.1
+	dh_prep
+
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 
 # run tests!
@@ -24,12 +28,6 @@ test-python%:
 
 override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
 endif
-
-override_dh_preps:
-	# XXX trying to generate the manpage from rst,
-	# but not the right override... :(
-	rst2html docs/man/leap-client.1.rst docs/man/leap-client.1
-	dh_preps
 
 #dh_auto_build should be enough to build the python2 version
 
