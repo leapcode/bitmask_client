@@ -7,6 +7,7 @@ leap-client (0.2.0~rc+874bbf7local) unstable; urgency=low
   * updated dependency list
 
   [ Micah Anderson ]
+  * updated build-dependencies to have necessary packages to pass tests
   * removed unused comments from control file
   * move build-depends to source package section of control file
   * switch source/format to 3.0 (native)
