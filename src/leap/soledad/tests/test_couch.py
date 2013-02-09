@@ -57,7 +57,8 @@ class CouchDBWrapper(object):
         args = ['couchdb', '-n' '-a', confPath]
         #null = open('/dev/null', 'w')
         self.process = subprocess.Popen(
-            args, env=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            args, env=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            close_fds=True)
         # find port
         logPath = os.path.join(self.tempdir, 'log', 'couch.log')
         while not os.path.exists(logPath):
@@ -87,7 +88,7 @@ stderr:
 
     def stop(self):
         self.process.terminate()
-
+        self.process.wait()
         os.system("rm -rf %s" % self.tempdir)
 
 
