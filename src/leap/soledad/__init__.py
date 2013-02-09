@@ -21,13 +21,17 @@ class Soledad(object):
     # other configs
     SECRET_LENGTH = 50
 
-    def __init__(self, user_email, gpghome=None):
+    def __init__(self, user_email, gpghome=None, initialize=True):
         self._user_email = user_email
         if not os.path.isdir(self.PREFIX):
             os.makedirs(self.PREFIX)
         if not gpghome:
             gpghome = self.GNUPG_HOME
         self._gpg = GPGWrapper(gpghome=gpghome)
+        if initialize:
+            self._initialize()
+
+    def _initialize(self):
         # load/generate OpenPGP keypair
         if not self._has_openpgp_keypair():
             self._gen_openpgp_keypair()

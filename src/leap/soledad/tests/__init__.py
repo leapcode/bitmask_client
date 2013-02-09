@@ -23,9 +23,11 @@ class BaseSoledadTest(BaseLeapTest):
         self._db2 = u1db.open(self.db2_file, create=True,
                               document_factory=LeapDocument)
         # open a soledad instance
-        self._soledad = Soledad(self.email, gpghome=self.gnupg_home)
+        self._soledad = Soledad(self.email, gpghome=self.gnupg_home,
+                                initialize=False)
         self._soledad._gpg.import_keys(PUBLIC_KEY)
         self._soledad._gpg.import_keys(PRIVATE_KEY)
+        self._soledad._initialize()
 
     def tearDown(self):
         self._db1.close()
