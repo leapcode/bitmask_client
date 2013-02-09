@@ -56,13 +56,13 @@ class CouchDatabase(ObjectStore):
         self._dbname = database
         # this will ensure that transaction and sync logs exist and are
         # up-to-date.
-        self.set_document_factory(LeapDocument)
         try:
             self._database = self._server[database]
         except ResourceNotFound:
             self._server.create(database)
             self._database = self._server[database]
-        super(CouchDatabase, self).__init__(replica_uid=replica_uid)
+        super(CouchDatabase, self).__init__(replica_uid=replica_uid,
+                                            document_factory=LeapDocument)
 
     #-------------------------------------------------------------------------
     # methods from Database

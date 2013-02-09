@@ -22,6 +22,8 @@ class NoSoledadInstance(Exception):
 
 class LeapDocument(Document):
     """
+    Encryptable and syncable document.
+
     LEAP Documents are standard u1db documents with cabability of returning an
     encrypted version of the document json string as well as setting document
     content based on an encrypted version of json string.
@@ -37,7 +39,7 @@ class LeapDocument(Document):
 
     def get_encrypted_json(self):
         """
-        Returns document's json serialization encrypted with user's public key.
+        Return document's json serialization encrypted with user's public key.
         """
         if not self._soledad:
             raise NoSoledadInstance()
@@ -66,6 +68,22 @@ class LeapDocument(Document):
         _set_syncable,
         doc="Determine if document should be synced with server."
     )
+
+    # Returning the revision as string solves the following exception in
+    # Twisted web:
+    #     exceptions.TypeError: Can only pass-through bytes on Python 2
+    def _get_rev(self):
+        if self._rev is None:
+            return None
+        return str(self._rev)
+
+    def _set_rev(self, rev):
+        self._rev = rev
+
+    rev = property(
+        _get_rev,
+        _set_rev,
+        doc="Wrapper to ensure `doc.rev` is always returned as bytes.")
 
 
 class LeapDatabase(HTTPDatabase):
