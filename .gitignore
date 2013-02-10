@@ -15,7 +15,6 @@ docs/covhtml
 include/
 lib/
 local/
-man/
 share/
 src/leap.egg-info/
 src/leap_client.egg-info
@@ -25,3 +24,4 @@ src/*.egg-info
 pkg/osx/dist
 pkg/osx/build
 MANIFEST
+_trial_temp*

@@ -159,32 +159,6 @@ class cmd_sdist(_sdist):
             versioneer.SHORT_VERSION_PY % self._versioneer_generated_versions)
         f.close()
 
-from distutils.command.install_data import install_data as _install_data
-
-
-class cmd_post_install(_install_data):
-    """
-    workaround for installing non-package data
-    outside of the bounds of our internal data
-    Debian or other packaging should igore this.
-    """
-    # We could use a environmental flag.
-    def run(self):
-        _install_data.run(self)
-        # is this the real life?
-        # is this just fantasy?
-        if not hasattr(sys, 'real_prefix'):
-            # looks like we are NOT
-            # running inside a virtualenv...
-            # let's install data.
-            # XXX should add platform switch
-            import shutil
-            print("Now installing policykit file...")
-            shutil.copyfile(
-                "pkg/linux/polkit/net.openvpn.gui.leap.policy",
-                "/usr/share/polkit-1/actions"
-                "/net.openvpn.gui.leap.policy")
-
 cmdclass = versioneer.get_cmdclass()
 cmdclass["branding"] = DoBranding
 
@@ -192,9 +166,6 @@ cmdclass["branding"] = DoBranding
 # on the build and sdist commands.
 #cmdclass["build"] = cmd_build
 #cmdclass["sdist"] = cmd_sdist
-
-cmdclass["install_data"] = cmd_post_install
-
 
 launcher_name = branding.get_shortname()
 if launcher_name:
@@ -225,11 +196,11 @@ setup(
     test_suite='nose.collector',
     test_requires=utils.parse_requirements(
         reqfiles=['pkg/test-requirements.pip']),
-    keywords='leap, client, qt, encryption, proxy',
-    author='The LEAP project',
+    keywords='LEAP, client, qt, encryption, proxy, openvpn',
+    author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',
-    license='GPL',
+    license='GPLv3+',
     packages=find_packages(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
@@ -237,14 +208,15 @@ setup(
     zip_safe=False,
 
     # not being used since setuptools does not like it.
+    # XXX it should be only for linux!
     data_files=[
         ("share/man/man1",
-            ["docs/leap.1"]),
+            ["docs/man/leap.1"]),
         ("share/polkit-1/actions",
             ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
     ],
     platforms="all",
-    entry_points = {
+    entry_points={
         'console_scripts': [leap_launcher]
     },
 )

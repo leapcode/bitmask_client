@@ -46,8 +46,12 @@ class EIPConductorAppMixin(object):
             ovpn_verbosity=opts.openvpn_verb,
             provider=provider)
 
-        self.skip_download = opts.no_provider_checks
-        self.skip_verify = opts.no_ca_verify
+        # Do we want to enable the skip checks w/o being
+        # in debug mode??
+        #self.skip_download = opts.no_provider_checks
+        #self.skip_verify = opts.no_ca_verify
+        self.skip_download = False
+        self.skip_verify = False
 
     def run_eip_checks(self):
         """

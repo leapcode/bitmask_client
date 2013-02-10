@@ -20,6 +20,10 @@ class NoSoledadInstance(Exception):
     pass
 
 
+class DocumentEncryptionFailed(Exception):
+    pass
+
+
 class LeapDocument(Document):
     """
     Encryptable and syncable document.
@@ -164,9 +168,17 @@ class LeapSyncTarget(HTTPSyncTarget):
         comma = ','
         for doc, gen, trans_id in docs_by_generations:
             if doc.syncable:
-                # encrypt before sending to server.
+                # encrypt and verify before sending to server.
+                doc_content = doc.get_encrypted_json()
+                if doc_content == doc.get_json():
+                    raise DocumentEncryptionFailed
+                enc_doc = LeapDocument(doc.doc_id, doc.rev,
+                                       encrypted_json=doc_content,
+                                       soledad=self._soledad)
+                if doc.get_json() != enc_doc.get_json():
+                    raise DocumentEncryptionFailed
                 size += prepare(id=doc.doc_id, rev=doc.rev,
-                                content=doc.get_encrypted_json(),
+                                content=doc_content,
                                 gen=gen, trans_id=trans_id)
         entries.append('\r\n]')
         size += len(entries[-1])

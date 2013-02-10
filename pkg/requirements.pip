@@ -12,8 +12,14 @@ pycrypto
 keyring
 python-dateutil
 sh
+pyxdg
+
 pygeoip # optional
-ping # to be deprecated
+
+# email
+
+zope.interface
+twisted>=12.3.0
 
 # soledad deps -- will move to its own repo soon
 python-gnupg

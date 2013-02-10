@@ -136,13 +136,15 @@ class EIPConfigTest(BaseLeapTest):
         args.append('2')
 
         if _system == "Linux":
-            args.append('--up')
-            args.append('/etc/leap/resolv-update')
-            args.append('--down')
-            args.append('/etc/leap/resolv-update')
-            args.append('--plugin')
-            args.append('/usr/lib/openvpn/openvpn-down-root.so')
-            args.append("'script_type=down /etc/leap/resolv-update'")
+            UPDOWN_SCRIPT = "/etc/leap/resolv-update"
+            if os.path.isfile(UPDOWN_SCRIPT):
+                args.append('--up')
+                args.append('/etc/leap/resolv-update')
+                args.append('--down')
+                args.append('/etc/leap/resolv-update')
+                args.append('--plugin')
+                args.append('/usr/lib/openvpn/openvpn-down-root.so')
+                args.append("'script_type=down /etc/leap/resolv-update'")
 
         # certs
         # XXX get values from specs?

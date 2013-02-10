@@ -4,6 +4,7 @@ Configuration Base Class
 import grp
 import json
 import logging
+import re
 import socket
 import time
 import os
@@ -11,6 +12,7 @@ import os
 logger = logging.getLogger(name=__name__)
 
 from dateutil import parser as dateparser
+from xdg import BaseDirectory
 import requests
 
 from leap.base import exceptions
@@ -279,15 +281,16 @@ def get_config_dir():
     @rparam: config path
     @rtype: string
     """
-    # TODO
-    # check for $XDG_CONFIG_HOME var?
-    # get a more sensible path for win/mac
-    # kclair: opinion? ^^
-
-    return os.path.expanduser(
-        os.path.join('~',
-                     '.config',
-                     'leap'))
+    home = os.path.expanduser("~")
+    if re.findall("leap_tests-[_a-zA-Z0-9]{6}", home):
+        # we're inside a test! :)
+        return os.path.join(home, ".config/leap")
+    else:
+        # XXX dirspec is cross-platform,
+        # we should borrow some of those
+        # routines for osx/win and wrap this call.
+        return os.path.join(BaseDirectory.xdg_config_home,
+                        'leap')
 
 
 def get_config_file(filename, folder=None):
@@ -333,7 +336,11 @@ def validate_ip(ip_str):
 
 
 def get_username():
-    return os.getlogin()
+    try:
+        return os.getlogin()
+    except OSError as e:
+        import pwd
+        return pwd.getpwuid(os.getuid())[0]
 
 
 def get_groupname():
