@@ -21,13 +21,15 @@ class Soledad(object):
     # other configs
     SECRET_LENGTH = 50
 
-    def __init__(self, user_email, gpghome=None, initialize=True):
+    def __init__(self, user_email, gpghome=None, initialize=True,
+                 prefix=None, secret_path=None, local_db_path=None):
         self._user_email = user_email
+        self.PREFIX = prefix or self.PREFIX
+        self.SECRET_PATH = secret_path or self.SECRET_PATH
+        self.LOCAL_DB_PATH = local_db_path or self.LOCAL_DB_PATH
         if not os.path.isdir(self.PREFIX):
             os.makedirs(self.PREFIX)
-        if not gpghome:
-            gpghome = self.GNUPG_HOME
-        self._gpg = GPGWrapper(gpghome=gpghome)
+        self._gpg = GPGWrapper(gpghome=(gpghome or self.GNUPG_HOME))
         if initialize:
             self._initialize()
 
