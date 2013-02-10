@@ -88,7 +88,7 @@ stderr:
 
     def stop(self):
         self.process.terminate()
-        self.process.wait()
+        self.process.communicate()
         os.system("rm -rf %s" % self.tempdir)
 
 
