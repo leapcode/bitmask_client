@@ -86,44 +86,6 @@ class LeapDocument(Document):
         doc="Wrapper to ensure `doc.rev` is always returned as bytes.")
 
 
-class LeapDatabase(HTTPDatabase):
-    """Implement the HTTP remote database API to a Leap server."""
-
-    def __init__(self, url, document_factory=None, creds=None, soledad=None):
-        super(LeapDatabase, self).__init__(url, creds=creds)
-        self._soledad = soledad
-
-        # wrap soledad in factory
-        def factory(doc_id=None, rev=None, json='{}', has_conflicts=False,
-                    encrypted_json=None, syncable=True):
-            return LeapDocument(doc_id=doc_id, rev=rev, json=json,
-                                has_conflicts=has_conflicts,
-                                encrypted_json=encrypted_json,
-                                syncable=syncable, soledad=self._soledad)
-        self.set_document_factory(factory)
-
-    @staticmethod
-    def open_database(url, create):
-        db = LeapDatabase(url)
-        db.open(create)
-        return db
-
-    @staticmethod
-    def delete_database(url):
-        db = LeapDatabase(url)
-        db._delete()
-        db.close()
-
-    def _allocate_doc_id(self):
-        """Generate a unique identifier for this document."""
-        return 'D-' + uuid.uuid4().hex  # 'D-' stands for document
-
-    def get_sync_target(self):
-        st = LeapSyncTarget(self._url.geturl())
-        st._creds = self._creds
-        return st
-
-
 class LeapSyncTarget(HTTPSyncTarget):
     """
     A SyncTarget that encrypts data before sending and decrypts data after
