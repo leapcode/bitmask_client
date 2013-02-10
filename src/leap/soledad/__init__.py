@@ -43,7 +43,8 @@ class Soledad(object):
         # instantiate u1db
         # TODO: verify if secret for sqlcipher should be the same as the one
         # for symmetric encryption.
-        self._db = sqlcipher.open(self.LOCAL_DB_PATH, True, self._secret)
+        self._db = sqlcipher.open(self.LOCAL_DB_PATH, True, self._secret,
+                                  soledad=self)
 
     def close(self):
         self._db.close()
@@ -213,6 +214,6 @@ class Soledad(object):
         Synchronize the local encrypted database with LEAP server.
         """
         # TODO: create authentication scheme for sync with server.
-        return self._db.sync(url, creds=None, autocreate=True, soledad=self)
+        return self._db.sync(url, creds=None, autocreate=True)
 
 __all__ = ['util']

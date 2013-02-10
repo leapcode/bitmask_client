@@ -92,7 +92,15 @@ class LeapDatabase(HTTPDatabase):
     def __init__(self, url, document_factory=None, creds=None, soledad=None):
         super(LeapDatabase, self).__init__(url, creds=creds)
         self._soledad = soledad
-        self._factory = LeapDocument
+
+        # wrap soledad in factory
+        def factory(doc_id=None, rev=None, json='{}', has_conflicts=False,
+                    encrypted_json=None, syncable=True):
+            return LeapDocument(doc_id=doc_id, rev=rev, json=json,
+                                has_conflicts=has_conflicts,
+                                encrypted_json=encrypted_json,
+                                syncable=syncable, soledad=self._soledad)
+        self.set_document_factory(factory)
 
     @staticmethod
     def open_database(url, create):
@@ -114,15 +122,6 @@ class LeapDatabase(HTTPDatabase):
         st = LeapSyncTarget(self._url.geturl())
         st._creds = self._creds
         return st
-
-    def create_doc_from_json(self, content, doc_id=None):
-        if doc_id is None:
-            doc_id = self._allocate_doc_id()
-        res, headers = self._request_json('PUT', ['doc', doc_id], {},
-                                          content, 'application/json')
-        new_doc = self._factory(doc_id, res['rev'], content,
-                                soledad=self._soledad)
-        return new_doc
 
 
 class LeapSyncTarget(HTTPSyncTarget):

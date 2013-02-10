@@ -236,7 +236,8 @@ class TestSQLCipherPartialExpandDatabase(
         db2 = SQLCipherDatabase._open_database(
             path, PASSWORD,
             document_factory=TestAlternativeDocument)
-        self.assertEqual(TestAlternativeDocument, db2._factory)
+        doc = db2.create_doc({})
+        self.assertTrue(isinstance(doc, LeapDocument))
 
     def test_open_database_existing(self):
         temp_dir = self.createTempDir(prefix='u1db-test-')
@@ -252,7 +253,8 @@ class TestSQLCipherPartialExpandDatabase(
         db2 = SQLCipherDatabase.open_database(
             path, PASSWORD, create=False,
             document_factory=TestAlternativeDocument)
-        self.assertEqual(TestAlternativeDocument, db2._factory)
+        doc = db2.create_doc({})
+        self.assertTrue(isinstance(doc, LeapDocument))
 
     def test_create_database_initializes_schema(self):
         # This test had to be cloned because our implementation of SQLCipher
@@ -304,7 +306,8 @@ class SQLCipherOpen(test_open.TestU1DBOpen):
         db = u1db_open(self.db_path, password=PASSWORD, create=True,
                        document_factory=TestAlternativeDocument)
         self.addCleanup(db.close)
-        self.assertEqual(TestAlternativeDocument, db._factory)
+        doc = db.create_doc({})
+        self.assertTrue(isinstance(doc, LeapDocument))
 
     def test_open_existing(self):
         db = SQLCipherDatabase(self.db_path, PASSWORD)

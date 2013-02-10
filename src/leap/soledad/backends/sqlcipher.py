@@ -31,7 +31,7 @@ from u1db import (
 from leap.soledad.backends.leap_backend import LeapDocument
 
 
-def open(path, password, create=True, document_factory=None):
+def open(path, password, create=True, document_factory=None, soledad=None):
     """Open a database at the given location.
 
     Will raise u1db.errors.DatabaseDoesNotExist if create=False and the
@@ -45,7 +45,8 @@ def open(path, password, create=True, document_factory=None):
     :return: An instance of Database.
     """
     return SQLCipherDatabase.open_database(
-        path, password, create=create, document_factory=document_factory)
+        path, password, create=create, document_factory=document_factory,
+        soledad=soledad)
 
 
 class DatabaseIsNotEncrypted(Exception):
@@ -64,14 +65,23 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
     def set_pragma_key(cls, db_handle, key):
         db_handle.cursor().execute("PRAGMA key = '%s'" % key)
 
-    def __init__(self, sqlite_file, password, document_factory=None):
+    def __init__(self, sqlite_file, password, document_factory=None,
+                 soledad=None):
         """Create a new sqlcipher file."""
         self._check_if_db_is_encrypted(sqlite_file)
         self._db_handle = dbapi2.connect(sqlite_file)
         SQLCipherDatabase.set_pragma_key(self._db_handle, password)
         self._real_replica_uid = None
         self._ensure_schema()
-        self._factory = document_factory or LeapDocument
+        self._soledad = soledad
+
+        def factory(doc_id=None, rev=None, json='{}', has_conflicts=False,
+                    encrypted_json=None, syncable=True):
+            return LeapDocument(doc_id=doc_id, rev=rev, json=json,
+                                has_conflicts=has_conflicts,
+                                encrypted_json=encrypted_json,
+                                syncable=syncable, soledad=self._soledad)
+        self.set_document_factory(factory)
 
     def _check_if_db_is_encrypted(self, sqlite_file):
         if not os.path.exists(sqlite_file):
@@ -86,7 +96,8 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
                 pass
 
     @classmethod
-    def _open_database(cls, sqlite_file, password, document_factory=None):
+    def _open_database(cls, sqlite_file, password, document_factory=None,
+                       soledad=None):
         if not os.path.isfile(sqlite_file):
             raise errors.DatabaseDoesNotExist()
         tries = 2
@@ -108,14 +119,16 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
             tries -= 1
             time.sleep(cls.WAIT_FOR_PARALLEL_INIT_HALF_INTERVAL)
         return SQLCipherDatabase._sqlite_registry[v](
-            sqlite_file, password, document_factory=document_factory)
+            sqlite_file, password, document_factory=document_factory,
+            soledad=soledad)
 
     @classmethod
     def open_database(cls, sqlite_file, password, create, backend_cls=None,
-                      document_factory=None):
+                      document_factory=None, soledad=None):
         try:
             return cls._open_database(sqlite_file, password,
-                                      document_factory=document_factory)
+                                      document_factory=document_factory,
+                                      soledad=soledad)
         except errors.DatabaseDoesNotExist:
             if not create:
                 raise
@@ -123,9 +136,10 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
                 # default is SQLCipherPartialExpandDatabase
                 backend_cls = SQLCipherDatabase
             return backend_cls(sqlite_file, password,
-                               document_factory=document_factory)
+                               document_factory=document_factory,
+                               soledad=soledad)
 
-    def sync(self, url, creds=None, autocreate=True, soledad=None):
+    def sync(self, url, creds=None, autocreate=True):
         """
         Synchronize encrypted documents with remote replica exposed at url.
         """
