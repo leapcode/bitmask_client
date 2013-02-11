@@ -120,7 +120,12 @@ class ProviderCertChecker(object):
     def verify_api_https(self, uri):
         assert uri.startswith('https://')
         cacert = self.ca_cert_path
-        verify = cacert and cacert or True
+        verify = cacert or True
+
+        # DEBUG
+        logger.debug('uri -> %s' % uri)
+        logger.debug('cacertpath -> %s' % cacert)
+
         req = self.fetcher.get(uri, verify=verify)
         req.raise_for_status()
         return True
