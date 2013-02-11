@@ -16,4 +16,4 @@ leap-client (0.2.0~rc+874bbf7local) unstable; urgency=low
   [ Kali ]
   * Initial release (Closes: #XXX)
 
- -- Kali Kaneko (leap communications) <kali@leap.se>  Fri, 01 Feb 2013 02:40:00 -0900
+ -- Ben Carrillo <ben@futeisha.org>  Fri, 01 Feb 2013 02:40:00 -0900
