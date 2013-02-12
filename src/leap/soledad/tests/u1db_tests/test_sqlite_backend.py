@@ -20,7 +20,7 @@ import os
 import time
 import threading
 
-from sqlite3 import dbapi2
+from pysqlcipher import dbapi2
 
 from u1db import (
     errors,

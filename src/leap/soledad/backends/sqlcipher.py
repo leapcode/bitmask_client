@@ -17,7 +17,7 @@
 """A U1DB implementation that uses SQLCipher as its persistence layer."""
 
 import os
-from sqlite3 import dbapi2, DatabaseError
+from pysqlcipher import dbapi2
 import time
 
 from u1db.backends.sqlite_backend import (
@@ -92,7 +92,7 @@ class SQLCipherDatabase(SQLitePartialExpandDatabase):
                 # backend should raise a DatabaseError exception.
                 SQLitePartialExpandDatabase(sqlite_file)
                 raise DatabaseIsNotEncrypted()
-            except DatabaseError:
+            except dbapi2.DatabaseError:
                 pass
 
     @classmethod

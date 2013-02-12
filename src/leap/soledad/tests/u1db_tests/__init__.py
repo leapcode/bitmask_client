@@ -30,7 +30,7 @@ except ImportError:
 from wsgiref import simple_server
 
 from oauth import oauth
-from sqlite3 import dbapi2
+from pysqlcipher import dbapi2
 from StringIO import StringIO
 
 import testscenarios

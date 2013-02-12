@@ -2,7 +2,7 @@
 
 import os
 import time
-from sqlite3 import dbapi2, DatabaseError
+from pysqlcipher import dbapi2
 import unittest
 from StringIO import StringIO
 import threading
@@ -30,6 +30,7 @@ from leap.soledad.tests.u1db_tests import test_backends
 from leap.soledad.tests.u1db_tests import test_open
 from leap.soledad.tests.u1db_tests import test_sync
 from leap.soledad.backends.leap_backend import LeapSyncTarget
+from leap.testing.basetest import BaseLeapTest
 
 PASSWORD = '123456'
 
@@ -125,20 +126,20 @@ load_tests = tests.load_with_scenarios
 #-----------------------------------------------------------------------------
 
 class TestSQLCipherDatabase(test_sqlite_backend.TestSQLiteDatabase):
-
+    
     def test_atomic_initialize(self):
         tmpdir = self.createTempDir()
         dbname = os.path.join(tmpdir, 'atomic.db')
 
         t2 = None  # will be a thread
 
-        class SQLCipherDatabaseTesting(SQLitePartialExpandDatabase):
+        class SQLCipherDatabaseTesting(SQLCipherDatabase):
             _index_storage_value = "testing"
 
             def __init__(self, dbname, ntry):
                 self._try = ntry
                 self._is_initialized_invocations = 0
-                super(SQLCipherDatabaseTesting, self).__init__(dbname)
+                super(SQLCipherDatabaseTesting, self).__init__(dbname, PASSWORD)
 
             def _is_initialized(self, c):
                 res = super(SQLCipherDatabaseTesting, self)._is_initialized(c)
@@ -238,6 +239,59 @@ class TestSQLCipherPartialExpandDatabase(
             document_factory=TestAlternativeDocument)
         doc = db2.create_doc({})
         self.assertTrue(isinstance(doc, LeapDocument))
+        
+    def test__open_database_non_existent(self):
+        temp_dir = self.createTempDir(prefix='u1db-test-')
+        path = temp_dir + '/non-existent.sqlite'
+        self.assertRaises(errors.DatabaseDoesNotExist,
+                          SQLCipherDatabase._open_database,
+                          path, PASSWORD)
+
+    def test__open_database_during_init(self):
+        temp_dir = self.createTempDir(prefix='u1db-test-')
+        path = temp_dir + '/initialised.db'
+        db = SQLCipherDatabase.__new__(
+            SQLCipherDatabase)
+        db._db_handle = dbapi2.connect(path)  # db is there but not yet init-ed
+        c = db._db_handle.cursor()
+        c.execute('PRAGMA key="%s"' % PASSWORD)
+        self.addCleanup(db.close)
+        observed = []
+
+        class SQLiteDatabaseTesting(SQLCipherDatabase):
+            WAIT_FOR_PARALLEL_INIT_HALF_INTERVAL = 0.1
+
+            @classmethod
+            def _which_index_storage(cls, c):
+                res = super(SQLiteDatabaseTesting, cls)._which_index_storage(c)
+                db._ensure_schema()  # init db
+                observed.append(res[0])
+                return res
+
+        db2 = SQLiteDatabaseTesting._open_database(path, PASSWORD)
+        self.addCleanup(db2.close)
+        self.assertIsInstance(db2, SQLCipherDatabase)
+        self.assertEqual(
+            [None,
+             SQLCipherDatabase._index_storage_value],
+            observed)
+
+    def test__open_database_invalid(self):
+        class SQLiteDatabaseTesting(SQLCipherDatabase):
+            WAIT_FOR_PARALLEL_INIT_HALF_INTERVAL = 0.1
+        temp_dir = self.createTempDir(prefix='u1db-test-')
+        path1 = temp_dir + '/invalid1.db'
+        with open(path1, 'wb') as f:
+            f.write("")
+        self.assertRaises(dbapi2.OperationalError,
+                          SQLiteDatabaseTesting._open_database, path1,
+                          PASSWORD)
+        with open(path1, 'wb') as f:
+            f.write("invalid")
+        self.assertRaises(dbapi2.DatabaseError,
+                          SQLiteDatabaseTesting._open_database, path1,
+                          PASSWORD)
+
 
     def test_open_database_existing(self):
         temp_dir = self.createTempDir(prefix='u1db-test-')
@@ -255,6 +309,13 @@ class TestSQLCipherPartialExpandDatabase(
             document_factory=TestAlternativeDocument)
         doc = db2.create_doc({})
         self.assertTrue(isinstance(doc, LeapDocument))
+
+    def test_open_database_create(self):
+        temp_dir = self.createTempDir(prefix='u1db-test-')
+        path = temp_dir + '/new.sqlite'
+        SQLCipherDatabase.open_database(path, PASSWORD, create=True)
+        db2 = SQLCipherDatabase.open_database(path, PASSWORD, create=False)
+        self.assertIsInstance(db2, SQLCipherDatabase)
 
     def test_create_database_initializes_schema(self):
         # This test had to be cloned because our implementation of SQLCipher
@@ -388,9 +449,7 @@ class SQLCipherSyncTargetTests(test_sync.DatabaseSyncTargetTests):
 # Tests for actual encryption of the database
 #-----------------------------------------------------------------------------
 
-class SQLCipherEncryptionTest(unittest.TestCase):
-
-    DB_FILE = '/tmp/test.db'
+class SQLCipherEncryptionTest(BaseLeapTest):
 
     def delete_dbfiles(self):
         for dbfile in [self.DB_FILE]:
@@ -398,6 +457,7 @@ class SQLCipherEncryptionTest(unittest.TestCase):
                 os.unlink(dbfile)
 
     def setUp(self):
+        self.DB_FILE = self.tempdir + '/test.db'
         self.delete_dbfiles()
 
     def tearDown(self):
@@ -413,7 +473,7 @@ class SQLCipherEncryptionTest(unittest.TestCase):
             SQLitePartialExpandDatabase(self.DB_FILE,
                                         document_factory=LeapDocument)
             raise DatabaseIsNotEncrypted()
-        except DatabaseError:
+        except dbapi2.DatabaseError:
             # at this point we know that the regular U1DB sqlcipher backend
             # did not succeed on opening the database, so it was indeed
             # encrypted.
@@ -431,8 +491,9 @@ class SQLCipherEncryptionTest(unittest.TestCase):
             # trying to open the a non-encrypted database with sqlcipher
             # backend should raise a DatabaseIsNotEncrypted exception.
             SQLCipherDatabase(self.DB_FILE, PASSWORD)
-            raise DatabaseError("SQLCipher backend should not be able to open "
-                                "non-encrypted dbs.")
+            raise db1pi2.DatabaseError(
+                "SQLCipher backend should not be able to open non-encrypted "
+                "dbs.")
         except DatabaseIsNotEncrypted:
             pass
 
