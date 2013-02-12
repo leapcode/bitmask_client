@@ -6,7 +6,7 @@ requests<1.0.0
 psutil
 netifaces
 pyopenssl
-jsonschema
+jsonschema #>0.7
 srp>=1.0.2
 pycrypto
 keyring
