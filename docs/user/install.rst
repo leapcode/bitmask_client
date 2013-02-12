@@ -9,32 +9,51 @@ We assume that you want to get it properly installed before being able to use it
 Debian package
 --------------
 
-.. warning::
+If you are lucky enough to be using a debian system... well, you are lucky enough :)
 
-   No updated debian package yet.
+To be able to install ``leap-client``, you need to add the leap repo to your software sources. First you add the leap keys to your keyring::
 
-Once we have a release candidate, probably the easiest way of having the LEAP Client installed will be to install a .deb package under debian or ubuntu systems.
+  gpg --recv-key 0x1E34A1828E207901 0x485B12FA218E81EB
+  gpg -a --export 0x1E34A1828E207901  | sudo apt-key add - 
+
+Now you edit :file:`/etc/apt/sources.list` and add the leap repository::
+
+  deb http://deb.leap.se/debian unstable main
+
+Get the package ``leap-keyring``, so you can install the packages in a trusted way and get key updates automatically::
+
+  apt-get update
+  apt-get install leap-keyring
+
+And, finally, install the client::
+
+  apt-get install leap-client
 
 
 Distribute & Pip
 ----------------
 
-.. warning::
+Install the dependencies::
 
-   This does not work yet, since we have not released an initial version yet to the cheese shop.
+    apt-get install openvpn python-qt4 python-dev python-openssl
 
-Installing LEAP Client will be as simple as using `pip <http://www.pip-installer.org/>`_ once we have a release candidate::
 
-    $ pip install leap-client
+And then installing the client with `pip <http://www.pip-installer.org/>`_ is as simple as::
 
-Get the code
-------------
+    pip install leap-client
 
-.. warning::
+Show me the code!
+-----------------
 
-   This... won't work either, as-is. This should be the third optional way to install stable releases from master branch. Right now that does not work because there is *nothing* updated in the master branch. Leaving this here since this is what we will be doing, but if you really intend to have a working tree, refer to the sections :ref:`setting up a working environment <environment>` or :ref:`fetching latest code for testing <fetchinglatest>`.
+You can get the latest tarball ::
 
-You can get the code from LEAP public git repository ::
+    wget https://leap.se/downloads/leap-client/tarball/latest
+
+Or the zipball::
+
+    wget http://leap.se/downloads/leap-client/zipball/latest
+
+Or, if you prefer, you can also get the code from LEAP public git repository ::
 
     git clone git://leap.se/leap_client
 
@@ -42,6 +61,6 @@ Or from the github mirror ::
 
     git clone git://github.com/leapcode/leap_client.git
 
-Once you have grabbed a copy of the sources, you can install it into your site-packages easily ::
+Once you have grabbed a copy of the sources for whatever mean, you can install it into your site-packages::
 
    $ pyton setup.py install
