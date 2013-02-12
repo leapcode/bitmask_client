@@ -1,6 +1,7 @@
 # vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
 from functools import partial
 import logging
+import platform
 import signal
 
 # This is only needed for Python v2 but is harmless for Python v3.
@@ -12,6 +13,7 @@ from PyQt4 import QtCore
 
 from leap import __version__ as VERSION
 from leap.baseapp.mainwindow import LeapWindow
+from leap.util import polkit
 from leap.gui import locale_rc
 
 
@@ -61,6 +63,10 @@ def main():
 
     logger.info('Starting app')
     app = QApplication(sys.argv)
+
+    # launch polkit-auth agent if needed
+    if platform.system() == "Linux":
+        polkit.check_if_running_polkit_auth()
 
     # To test:
     # $ LANG=es ./app.py
