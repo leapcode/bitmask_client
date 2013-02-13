@@ -6,10 +6,13 @@ Standards-Version: 3.9.4
 Homepage: http://leap.se
 #Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
 #Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
-Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6),
-               python-sphinx (>= 1.0.7+dfsg), docutils-common, python-nose,
-               python-requests (<= 0.15), python-srp, python-keyring, python-xdg,
-               python-jsonschema, python-psutil, python-openssl, python-sh, xvfb, xauth
+Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6), python-setuptools,
+               python-qt4, pep8,
+               python-sphinx (>= 1.0.7+dfsg), docutils-common, python-nose, python-mock,
+               python-requests (<= 0.15), python-srp, python-crypto, python-keyring, python-xdg,
+               python-jsonschema (>= 0.7.0), python-psutil, python-openssl, python-sh,
+               python-dateutil, python-argparse, python-netifaces, 
+               xvfb, xauth
 X-Python-Version: >= 2.6
 
 Package: leap-client
