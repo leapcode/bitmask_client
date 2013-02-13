@@ -1,18 +1,19 @@
 ﻿= LEAP CLient Release Checklist (*) =
 
-  * [ ] validate rc
-    * [ ] all rc-critical closed!
+  * [.] validate rc
+    * [X] all rc-critical closed!
     * [ ] all bbots green
     * [ ] uploaded translations: make translations
     * [ ] re-generate pyqt resources
     
   * [ ] update docs
+    * [ ] check installation sections
     * [ ] CREDITS
     * [ ] relnotes.txt
     * [ ] docs/known_issues.rst
     * [ ] NEWS.rst: Add release name and date to top-most item in NEWS.
 
-  * [ ] change docs/quickstart.rst to point to just the current
+  * [ ] change docs/install.rst to point to just the current
     leap-client-X.Y.Z.deb binaries and .tar.gz source code files
   * [ ] on release/vX.Y.Z branch: git pull
   * [ ] git tag X.Y.Z
@@ -45,4 +46,4 @@
      
 notes
 -----
-(*) this checklist kindly borrowed from tahoe-lafs documentation =)
+(*) the original version of this handy checklist kindly borrowed from tahoe-lafs documentation =)

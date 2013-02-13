@@ -1,6 +1,8 @@
 """
 LogIn Page, used inf First Run Wizard
 """
+import logging
+
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 
@@ -12,6 +14,8 @@ from leap.gui.progress import InlineValidationPage
 from leap.gui import styles
 
 from leap.gui.constants import APP_LOGO, APP_WATERMARK, FULL_USERNAME_REGEX
+
+logger = logging.getLogger(__name__)
 
 
 class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
@@ -112,7 +116,9 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         # page here as a mean to catch
         # srp authentication errors while
         wizard = self.wizard()
-        eipconfigchecker = wizard.eipconfigchecker(domain=domain)
+        pconfig = wizard.eipconfigchecker(domain=domain)
+        pconfig.defaultprovider.load()
+        pconfig.set_api_domain()
 
         ########################
         # 1) try name resolution
@@ -126,7 +132,7 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         # two-by-one
         def resolvedomain():
             try:
-                eipconfigchecker.fetch_definition(domain=domain)
+                pconfig.fetch_definition(domain=domain)
 
             # we're using requests here for all
             # the possible error cases that it catches.
@@ -144,30 +150,29 @@ class LogInPage(InlineValidationPage, UserFormMixIn):  # InlineValidationPage
         yield((self.tr("Resolving domain name"), 20), resolvedomain)
 
         wizard.set_providerconfig(
-            eipconfigchecker.defaultprovider.config)
+            pconfig.defaultprovider.config)
 
         ########################
         # 2) do authentication
         ########################
         credentials = username, password
         pCertChecker = wizard.providercertchecker(
-            domain=domain)
+            domain=domain,
+            apidomain=pconfig.get_api_domain())
 
         def validate_credentials():
-            #################
-            # FIXME #BUG #638
-            verify = False
 
             try:
                 pCertChecker.download_new_client_cert(
-                    credentials=credentials,
-                    verify=verify)
+                    credentials=credentials)
 
             except auth.SRPAuthenticationError as exc:
+                logger.debug('srp auth error in validate credentials step')
                 return self.fail(
                     self.tr("Authentication error: %s" % exc.message))
 
             except Exception as exc:
+                logger.error('unknown error in validate credentials step')
                 return self.fail(exc.message)
 
             else:

@@ -57,14 +57,15 @@ class ProviderCertChecker(object):
     with provider.
     """
     def __init__(self, fetcher=requests,
-                 domain=None):
+                 domain=None,
+                 apidomain=None):
 
         self.fetcher = fetcher
         self.domain = domain
         #XXX needs some kind of autoinit
         #right now we set by hand
         #by loading and reading provider config
-        self.apidomain = None
+        self.apidomain = apidomain
         self.cacert = eipspecs.provider_ca_path(domain)
 
     def run_all(
@@ -235,10 +236,9 @@ class ProviderCertChecker(object):
         except requests.exceptions.SSLError:
             logger.warning('SSLError while fetching cert. '
                            'Look below for stack trace.')
-            # XXX raise better exception
-            return self.fail("SSLError")
+            raise eipexceptions.HttpsBadCertError("SSLError")
         except Exception as exc:
-            return self.fail(exc.message)
+            raise eipexceptions.EIPClientError(exc.message)
 
         try:
             logger.debug('validating cert...')
