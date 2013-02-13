@@ -57,4 +57,4 @@ override_dh_auto_clean:
 	rm -rf build
 	rm -rf docs/_build 
 	rm -rf *.egg-info
-	rm docs/man/leap-client.1
+	#rm docs/man/leap-client.1
