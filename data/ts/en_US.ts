@@ -13,17 +13,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/connect.py" line="85"/>
+        <location filename="../src/leap/gui/firstrun/connect.py" line="89"/>
         <source>Getting EIP configuration files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/connect.py" line="101"/>
+        <location filename="../src/leap/gui/firstrun/connect.py" line="105"/>
         <source>Authentication error: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/connect.py" line="109"/>
+        <location filename="../src/leap/gui/firstrun/connect.py" line="113"/>
         <source>Getting EIP certificate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -31,12 +31,12 @@
 <context>
     <name>EIPConductorAppMixin</name>
     <message>
-        <location filename="../src/leap/baseapp/eip.py" line="221"/>
+        <location filename="../src/leap/baseapp/eip.py" line="225"/>
         <source>&amp;Disconnect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/baseapp/eip.py" line="235"/>
+        <location filename="../src/leap/baseapp/eip.py" line="239"/>
         <source>&amp;Connect</source>
         <translation type="unfinished"></translation>
     </message>
@@ -166,47 +166,47 @@
 <context>
     <name>LogInPage</name>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="96"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="104"/>
         <source>Username must be in the username@provider form.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="140"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="150"/>
         <source>Resolving domain name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="163"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="171"/>
         <source>Authentication error: %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="179"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="188"/>
         <source>Credentials validated.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="24"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="28"/>
         <source>Log In</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="38"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="46"/>
         <source>User &amp;name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="53"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="61"/>
         <source>&amp;Password:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="80"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="88"/>
         <source>Log in</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/login.py" line="25"/>
+        <location filename="../src/leap/gui/firstrun/login.py" line="29"/>
         <source>Log in with your credentials</source>
         <translation type="unfinished"></translation>
     </message>
@@ -237,7 +237,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerinfo.py" line="95"/>
+        <location filename="../src/leap/gui/firstrun/providerinfo.py" line="99"/>
         <source>enrollment policy</source>
         <translation type="unfinished"></translation>
     </message>
@@ -250,17 +250,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providersetup.py" line="85"/>
+        <location filename="../src/leap/gui/firstrun/providersetup.py" line="89"/>
         <source>Fetching CA certificate</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providersetup.py" line="107"/>
+        <location filename="../src/leap/gui/firstrun/providersetup.py" line="111"/>
         <source>Checking CA fingerprint</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providersetup.py" line="125"/>
+        <location filename="../src/leap/gui/firstrun/providersetup.py" line="129"/>
         <source>Validating api certificate</source>
         <translation type="unfinished"></translation>
     </message>
@@ -278,72 +278,72 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="208"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="212"/>
         <source>Registration succeeded!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="244"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="248"/>
         <source>Password does not match..</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="248"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="252"/>
         <source>Password too short.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="253"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="257"/>
         <source>Password too obvious.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="282"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="286"/>
         <source>Error connecting to provider (timeout)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="287"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="291"/>
         <source>Error Connecting to provider (connerr).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="295"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="299"/>
         <source>Error during registration (%s)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="305"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="309"/>
         <source>Could not register (bad response)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="312"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="316"/>
         <source>Username not available.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="48"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="52"/>
         <source>User &amp;name:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="60"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="64"/>
         <source>&amp;Password:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="66"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="70"/>
         <source>Password (again):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="72"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="76"/>
         <source>&amp;Remember username and password.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/register.py" line="378"/>
+        <location filename="../src/leap/gui/firstrun/register.py" line="382"/>
         <source>Register a new user with provider &lt;em&gt;%s&lt;/em&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -356,42 +356,42 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="87"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="91"/>
         <source>chec&amp;k!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="97"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="101"/>
         <source>Server certificate could not be verified.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="136"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="140"/>
         <source>Certificate validation</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="290"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="294"/>
         <source>Could not get info from provider.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="293"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="297"/>
         <source>Could not download provider info (refused conn.).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="103"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="107"/>
         <source>&amp;Trust this provider certificate.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="344"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="348"/>
         <source>Do you want to &lt;b&gt;trust this provider certificate?&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="347"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="351"/>
         <source>SHA-256 fingerprint: &lt;i&gt;%s&lt;/i&gt;&lt;br&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -401,17 +401,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="222"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="226"/>
         <source>Checking if it is a valid provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="276"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="280"/>
         <source>Checking for a secure connection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/gui/firstrun/providerselect.py" line="303"/>
+        <location filename="../src/leap/gui/firstrun/providerselect.py" line="307"/>
         <source>Getting info from the provider</source>
         <translation type="unfinished"></translation>
     </message>
