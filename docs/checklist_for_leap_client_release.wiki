@@ -3,22 +3,22 @@
 Not that we are following all steps here, but it is good to keep some
 sort of sanity...
 
-  * [.] validate rc
+  * [X] validate rc
     * [X] all rc-critical closed!
-    * [ ] all bbots green
-    * [ ] uploaded translations: make translations
-    * [ ] re-generate pyqt resources
+    * [X] all bbots green
+    * [X] uploaded translations: make translations
+    * [X] re-generate pyqt resources
     
-  * [.] update docs
+  * [O] update docs
     * [X] check installation sections
     * [ ] CREDITS
-    * [ ] relnotes.txt
-    * [ ] docs/known_issues.rst
-    * [ ] NEWS.rst: Add release name and date to top-most item in NEWS.
+    * [X] relnotes.txt
+    * [X] docs/known_issues.rst
+    * [X] NEWS.rst: Add release name and date to top-most item in NEWS.
 
   * [X] change docs/install.rst to point to just the current
     leap-client-X.Y.Z.deb binaries and .tar.gz source code files
-  * [ ] on release/vX.Y.Z branch: git pull
+  * [X] on release/vX.Y.Z branch: git pull
   * [ ] git tag X.Y.Z
   * [ ] build locally to make sure the release is reporting itself as the
     intended version ...
@@ -33,7 +33,7 @@ sort of sanity...
   * [ ] symlink the release tarball on leap.se downloads page:
     /var/www/source/leap-client/releases/ CHANGEME XXX
     
-  * [ ] update news pages. release notes.
+  * [X] update news pages. release notes.
   * [ ] send out relnotes.txt to internal list.
 
   * [ ] wait ...?
