@@ -1,0 +1,82 @@
+﻿ANNOUNCING LEAP Client, the internet encryption toolkit, v0.2.0
+
+The LEAP team is pleased to announce the immediate
+availability of version 0.2.0 of LEAP Client
+
+https://leap.se/downloads/leap-client
+
+LEAP (LEAP Encryption Access Project) develops a plan to secure
+everyday communication, breaking down into discrete services.
+
+The client for the current phase gives support to the EIP Service.
+EIP (the Encrypted Internet Proxy) provides circumvention,
+location anonymization, and traffic encryption in a hassle-free,
+automatically self-configuring fashion.
+
+You can read the user manual and the developer notes online at:
+
+http://leap-client.readthedocs.org
+
+This is the first testing release for the LEAP Client, and it
+is by no means intended for real production use. Especially you
+are encouraged to not provide any kind of sensitive password during
+your registration process. 
+
+See the NEWS file for more details.
+
+
+WHAT CAN THIS VERSION OF THE CLIENT DO FOR ME?
+
+You can connect to the EIP service offered by a provider of your
+choice, and enjoy a encrypted internet connection.
+
+The first run wizard allows to register an user with the selected
+provider, downloading all the config files needed to connect to the
+eip service There are also some minimal network checks in place.
+
+
+LICENCE
+
+You may use this package under the GNU General Public License,
+version 3 or, at your option, any later version. See the file
+"COPYING.GPL" for the terms of the GNU General Public
+License, version 3.
+
+In addition, as a special exception, the copyright holders give
+permission to link the code of portions of this program with the
+OpenSSL library under certain conditions as described in each
+individual source file, and distribute linked combinations
+including the two.
+
+
+INSTALLATION
+
+The current version of the LEAP Client has been tested on GNU/Linux
+and OSX, but it is likely that you are able to run it under other
+systems, specially if you are skillful and patient is one of your
+virtues.
+
+Have a look at "docs/user/install.rst".
+
+Packages are provided for debian and ubuntu. OSX and win installers
+will be following soon.
+
+
+BUGS
+
+You can send the bugs our way by pointing your telnet session to port 443 on 
+https://leap.se/code. We will do our best to make them follow our 
+intensive bug-reeducation program.
+
+
+HACKING
+
+You can find us in the #leap-dev channel on the freenode network.
+If you are lucky enough, you can spot us sleepless in night trains,
+rooftops, rainforests, and beyond any border.
+
+
+Kali Kaneko, and all the LEAP team.
+
+Feb 15, 2012
+Somewhere in the middle of the intertubes.
