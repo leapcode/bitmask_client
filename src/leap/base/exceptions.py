@@ -67,7 +67,7 @@ class NoDefaultInterfaceFoundError(LeapException):
         "is not connected to the internet")
 
 
-class NoConnectionToGateway(CriticalError):
+class NoConnectionToGateway(LeapException):
     message = "no connection to gateway"
     usermessage = translate(
         "Errors",
@@ -75,7 +75,7 @@ class NoConnectionToGateway(CriticalError):
         "with your internet connection")
 
 
-class NoInternetConnection(CriticalError):
+class NoInternetConnection(LeapException):
     message = "No Internet connection found"
     usermessage = translate(
         "Errors",
