@@ -2,11 +2,20 @@
 User-facing changes in LEAP Client
 ==================================
 
-Release 0.2.0 (2013-2-23)
---------------------------
+Release 0.2.0 "The Eternal Friday Release" (2013-2-15)
+------------------------------------------------------
 
-This release is a functionally working version in Debian Wheezy and Ubuntu 12.04.
-It is able to connect to a preconfigured LEAP provider and autoconfigures a EIP connection.
+This release is the first functionally working version released for the
+LEAP Client.
+
+It can be installed from pypi, or using the official leap repository at
+``deb.leap.se``. Packages are built for:
+
+* debian: wheezy and sid
+* ubuntu: precise, quantal and raring
+
+On first use, the first connection wizard guides user through steps needed
+to stablish a Encrypted Internet Proxy (EIP) connection with the chosen provider.
 
 Python Support
 ''''''''''''''
@@ -28,7 +37,7 @@ See the ``README.rst`` for a step-to-step install guide.
 The following libraries are needed:
 
 - PyQt4
-- OpenSSL
+- openssl
 - openvpn
 
 for building the package dependencies, you will need also:
@@ -36,22 +45,26 @@ for building the package dependencies, you will need also:
 - python-setuptools
 - python-dev
 
-leap-client depends on the following python packages:
+LEAP-Client depends also on the following python packages:
 
-- pyopenssl
 - requests
 - psutil
 - netifaces
+- pyopenssl
 - jsonschema
 - srp
 - pycrypto
 - keyring
+- python-dateutil
+- sh
+- pyxdg
 
 
 Configuration files
 '''''''''''''''''''
 
 Config files are created under ``~/.config/leap``
+
 Currently user should be able to completely remove this folder and have it auto-generated in the first run.
 
 - Current eip service config is stored in ``eip.json``
