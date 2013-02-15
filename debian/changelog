@@ -1,4 +1,4 @@
-leap-client (0.2.0-1) unstable; urgency=low
+leap-client (0.2.0~1) unstable; urgency=low
   [ Kali ]
   * add python-jsonschema dependency >= 0.8
   * generate manpage from .rst file
