@@ -26,3 +26,6 @@ python-gnupg
 u1db
 oauth
 couchdb
+
+# tenporary pysqlcipher package
+-e git://rhizolab.org/pysqlcipher.git#egg=pysqlcipher
