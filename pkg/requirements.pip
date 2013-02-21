@@ -29,4 +29,5 @@ couchdb
 hmac
 
 # tenporary pysqlcipher package
+# XXX not installing OK, it needs python src/pysqlcypher/setup.py install
 -e git://rhizolab.org/pysqlcipher.git#egg=pysqlcipher
