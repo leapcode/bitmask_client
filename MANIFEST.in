@@ -1,4 +1,0 @@
-include pkg/*
-include pkg/branding/*
-include docs/*
-include versioneer.py

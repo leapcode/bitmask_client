@@ -1,6 +1,0 @@
-OpenVPN binary, build scripts
-Works using a GCC minGW32 cross-compiler on Debian/Ubuntu
-Produces a working MS Windows executable
-openvpn.exe: PE32 executable (DLL) (console) Intel 80386, for MS Windows
-goes smooth for the 99%, might still need some slapping the flags around now and then
- -jrml
