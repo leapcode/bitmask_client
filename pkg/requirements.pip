@@ -1,0 +1,7 @@
+# in order of addition to the project.
+# do not change the ordering.
+
+jsonschema
+requests
+srp>=1.0.2
+pyopenssl
