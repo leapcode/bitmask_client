@@ -4,6 +4,8 @@
 *.log
 *.*~
 .*
+*_rc.py
+ui_*.py
 !.coveragerc
 !.tx
 bin/
