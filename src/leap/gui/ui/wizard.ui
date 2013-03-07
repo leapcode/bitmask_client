@@ -47,7 +47,7 @@
     <item row="0" column="0">
      <widget class="QLabel" name="label_3">
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;New we will guide you through some configuration that is needed before you can connect for the first time.&lt;/p&gt;&lt;p&gt;If you ever need to modify these options again, you can find the wizard in the &lt;span style=&quot; font-style:italic;&quot;&gt;'Settings'&lt;/span&gt; menu from the main window.&lt;/p&gt;&lt;p&gt;Do you want to &lt;span style=&quot; font-weight:600;&quot;&gt;sign up&lt;/span&gt; for a new account, or &lt;span style=&quot; font-weight:600;&quot;&gt;log in&lt;/span&gt; with an already existing username?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Now we will guide you through some configuration that is needed before you can connect for the first time.&lt;/p&gt;&lt;p&gt;If you ever need to modify these options again, you can find the wizard in the &lt;span style=&quot; font-style:italic;&quot;&gt;'Settings'&lt;/span&gt; menu from the main window.&lt;/p&gt;&lt;p&gt;Do you want to &lt;span style=&quot; font-weight:600;&quot;&gt;sign up&lt;/span&gt; for a new account, or &lt;span style=&quot; font-weight:600;&quot;&gt;log in&lt;/span&gt; with an already existing username?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="textFormat">
        <enum>Qt::RichText</enum>
@@ -496,6 +496,9 @@
      <widget class="QLabel" name="lblRegisterStatus">
       <property name="text">
        <string/>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::AutoText</enum>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>

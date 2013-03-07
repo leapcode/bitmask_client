@@ -28,6 +28,8 @@ import urlparse
 import jsonschema
 
 #from leap.base.util.translations import LEAPTranslatable
+from leap.util.check import leap_assert
+
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +380,7 @@ class PluggableConfig(object):
         # XXX cleanup this!
 
         if fromfile:
-            assert os.path.exists(fromfile)
+            leap_assert(os.path.exists(fromfile))
             if not format:
                 format = self.filename2format(fromfile)
 

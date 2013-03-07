@@ -24,6 +24,7 @@ import logging
 from leap.config.baseconfig import BaseConfig
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipspec import eipservice_config_spec
+from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class EIPConfig(BaseConfig):
 
     def get_gateway_ip(self, index=0):
         gateways = self.get_gateways()
-        assert len(gateways) > 0, "We don't have any gateway!"
+        leap_assert(len(gateways) > 0, "We don't have any gateway!")
         if index > len(gateways):
             index = 0
             logger.warning("Provided an unknown gateway index %s, " +
@@ -75,10 +76,8 @@ class EIPConfig(BaseConfig):
         Returns the path to the certificate used by openvpn
         """
 
-        assert providerconfig, "We need a provider"
-        assert isinstance(providerconfig, ProviderConfig), "The provider " + \
-            "needs to be of type ProviderConfig instead of %s" % \
-            (type(providerconfig),)
+        leap_assert(providerconfig, "We need a provider")
+        leap_assert_type(providerconfig, ProviderConfig)
 
         cert_path = os.path.join(self.get_path_prefix(),
                                  "leap",
@@ -89,8 +88,8 @@ class EIPConfig(BaseConfig):
                                  "openvpn.pem")
 
         if not about_to_download:
-            assert os.path.exists(cert_path), \
-                "You need to download the certificate first"
+            leap_assert(os.path.exists(cert_path),
+                        "You need to download the certificate first")
             logger.debug("Using OpenVPN cert %s" % (cert_path,))
 
         return cert_path

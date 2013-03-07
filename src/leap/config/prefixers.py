@@ -24,6 +24,8 @@ import platform
 from abc import ABCMeta, abstractmethod
 from xdg import BaseDirectory
 
+from leap.util.check import leap_assert
+
 
 class Prefixer:
     """
@@ -47,8 +49,8 @@ class Prefixer:
 
 def get_platform_prefixer():
     prefixer = globals()[platform.system() + "Prefixer"]
-    assert prefixer, "Unimplemented platform prefixer: %s" % \
-        (platform.system(),)
+    leap_assert(prefixer, "Unimplemented platform prefixer: %s" %
+                (platform.system(),))
     return prefixer()
 
 

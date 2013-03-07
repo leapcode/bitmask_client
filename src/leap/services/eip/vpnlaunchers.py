@@ -29,6 +29,7 @@ from abc import ABCMeta, abstractmethod
 
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig
+from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +66,8 @@ class VPNLauncher:
 
 def get_platform_launcher():
     launcher = globals()[platform.system() + "VPNLauncher"]
-    assert launcher, "Unimplemented platform launcher: %s" % \
-        (platform.system(),)
+    leap_assert(launcher, "Unimplemented platform launcher: %s" %
+                (platform.system(),))
     return launcher()
 
 
@@ -165,17 +166,15 @@ class LinuxVPNLauncher(VPNLauncher):
         @return: A VPN command ready to be launched
         @rtype: list
         """
-        assert eipconfig, "We need an eip config"
-        assert isinstance(eipconfig, EIPConfig), "Expected EIPConfig " + \
-            "object instead of %s" % (type(eipconfig),)
-        assert providerconfig, "We need a provider config"
-        assert isinstance(providerconfig, ProviderConfig), "Expected " + \
-            "ProviderConfig object instead of %s" % (type(providerconfig),)
-        assert socket_host, "We need a socket host!"
-        assert socket_port, "We need a socket port!"
+        leap_assert(eipconfig, "We need an eip config")
+        leap_assert_type(eipconfig, EIPConfig)
+        leap_assert(providerconfig, "We need a provider config")
+        leap_assert_type(providerconfig, ProviderConfig)
+        leap_assert(socket_host, "We need a socket host!")
+        leap_assert(socket_port, "We need a socket port!")
 
         openvpn_possibilities = which(self.OPENVPN_BIN)
-        assert len(openvpn_possibilities) > 0, "We couldn't find openvpn"
+        leap_assert(len(openvpn_possibilities) > 0, "We couldn't find openvpn")
 
         openvpn = openvpn_possibilities[0]
         args = []
@@ -183,7 +182,8 @@ class LinuxVPNLauncher(VPNLauncher):
         if _is_pkexec_in_system():
             if _is_auth_agent_running():
                 pkexec_possibilities = which(self.PKEXEC_BIN)
-                assert len(pkexec_possibilities) > 0, "We couldn't find pkexec"
+                leap_assert(len(pkexec_possibilities) > 0,
+                            "We couldn't find pkexec")
                 args.append(openvpn)
                 openvpn = pkexec_possibilities[0]
             else:

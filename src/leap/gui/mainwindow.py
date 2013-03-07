@@ -31,6 +31,8 @@ from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.gui.wizard import Wizard
+from leap.util.check import leap_assert
+from leap.util.checkerthread import CheckerThread
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +45,9 @@ class MainWindow(QtGui.QMainWindow):
     # StackedWidget indexes
     LOGIN_INDEX = 0
     EIP_STATUS_INDEX = 1
+
+    GEOMETRY_KEY = "Geometry"
+    WINDOWSTATE_KEY = "WindowState"
 
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
@@ -68,6 +73,9 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_config = EIPConfig()
         # This is created once we have a valid provider config
         self._srp_auth = None
+
+        self._checker_thread = CheckerThread()
+        self._checker_thread.start()
 
         # This thread is always running, although it's quite
         # lightweight when it's done setting up provider
@@ -110,11 +118,7 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.instance().connect(
             QtCore.QCoreApplication.instance(),
             QtCore.SIGNAL("aboutToQuit()"),
-            self._provider_bootstrapper.set_should_quit)
-        QtCore.QCoreApplication.instance().connect(
-            QtCore.QCoreApplication.instance(),
-            QtCore.SIGNAL("aboutToQuit()"),
-            self._eip_bootstrapper.set_should_quit)
+            self._checker_thread.set_should_quit)
 
         self.ui.action_sign_out.setEnabled(False)
         self.ui.action_sign_out.triggered.connect(self._logout)
@@ -131,17 +135,26 @@ class MainWindow(QtGui.QMainWindow):
 
         self._center_window()
         self._wizard = None
+        self._wizard_firstrun = False
         if self._first_run():
-            self._wizard = Wizard()
+            self._wizard_firstrun = True
+            self._wizard = Wizard(self._checker_thread)
             # Give this window time to finish init and then show the wizard
             QtCore.QTimer.singleShot(1, self._launch_wizard)
-            self._wizard.finished.connect(self._finish_init)
+            self._wizard.accepted.connect(self._finish_init)
+            self._wizard.rejected.connect(self._rejected_wizard)
+        else:
+            self._finish_init()
+
+    def _rejected_wizard(self):
+        if self._wizard_firstrun:
+            self.quit()
         else:
             self._finish_init()
 
     def _launch_wizard(self):
         if self._wizard is None:
-            self._wizard = Wizard()
+            self._wizard = Wizard(self._checker_thread)
         self._wizard.exec_()
 
     def _finish_init(self):
@@ -187,14 +200,23 @@ class MainWindow(QtGui.QMainWindow):
         """
         Centers the mainwindow based on the desktop geometry
         """
-        app = QtGui.QApplication.instance()
-        width = app.desktop().width()
-        height = app.desktop().height()
-        window_width = self.size().width()
-        window_height = self.size().height()
-        x = (width / 2.0) - (window_width / 2.0)
-        y = (height / 2.0) - (window_height / 2.0)
-        self.move(x, y)
+        settings = QtCore.QSettings()
+        geometry = settings.value(self.GEOMETRY_KEY, None)
+        state = settings.value(self.WINDOWSTATE_KEY, None)
+        if geometry is None:
+            app = QtGui.QApplication.instance()
+            width = app.desktop().width()
+            height = app.desktop().height()
+            window_width = self.size().width()
+            window_height = self.size().height()
+            x = (width / 2.0) - (window_width / 2.0)
+            y = (height / 2.0) - (window_height / 2.0)
+            self.move(x, y)
+        else:
+            self.restoreGeometry(geometry)
+
+        if state is not None:
+            self.restoreState(state)
 
     def _about(self):
         """
@@ -236,6 +258,9 @@ class MainWindow(QtGui.QMainWindow):
             self._toggle_visible()
             e.ignore()
             return
+        settings = QtCore.QSettings()
+        settings.setValue(self.GEOMETRY_KEY, self.saveGeometry())
+        settings.setValue(self.WINDOWSTATE_KEY, self.saveState())
         QtGui.QMainWindow.closeEvent(self, e)
 
     def _configured_providers(self):
@@ -244,10 +269,16 @@ class MainWindow(QtGui.QMainWindow):
 
         @rtype: list
         """
-        providers = os.listdir(
-            os.path.join(self._provider_config.get_path_prefix(),
-                         "leap",
-                         "providers"))
+        providers = []
+        try:
+            providers = os.listdir(
+                os.path.join(self._provider_config.get_path_prefix(),
+                             "leap",
+                             "providers"))
+        except Exception as e:
+            logger.debug("Error listing providers, assume there are none. %r"
+                         % (e,))
+
         return providers
 
     def _first_run(self):
@@ -303,8 +334,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         provider = self.ui.cmbProviders.currentText()
 
-        self._provider_bootstrapper.start()
         self._provider_bootstrapper.run_provider_select_checks(
+            self._checker_thread,
             provider,
             download_if_needed=True)
 
@@ -329,6 +360,7 @@ class MainWindow(QtGui.QMainWindow):
                                                             provider,
                                                             "provider.json")):
                 self._provider_bootstrapper.run_provider_setup_checks(
+                    self._checker_thread,
                     self._provider_config,
                     download_if_needed=True)
             else:
@@ -350,7 +382,7 @@ class MainWindow(QtGui.QMainWindow):
         start the SRP authentication, and as the last step
         bootstrapping the EIP service
         """
-        assert self._provider_config, "We need a provider config"
+        leap_assert(self._provider_config, "We need a provider config")
 
         username = self.ui.lnUser.text()
         password = self.ui.lnPassword.text()
@@ -381,9 +413,7 @@ class MainWindow(QtGui.QMainWindow):
         Once the provider configuration is loaded, this starts the SRP
         authentication
         """
-        assert self._provider_config, "We need a provider config!"
-
-        self._provider_bootstrapper.set_should_quit()
+        leap_assert(self._provider_config, "We need a provider config!")
 
         if data[self._provider_bootstrapper.PASSED_KEY]:
             username = self.ui.lnUser.text()
@@ -431,14 +461,14 @@ class MainWindow(QtGui.QMainWindow):
         """
         Starts the EIP bootstrapping sequence
         """
-        assert self._eip_bootstrapper, "We need an eip bootstrapper!"
-        assert self._provider_config, "We need a provider config"
+        leap_assert(self._eip_bootstrapper, "We need an eip bootstrapper!")
+        leap_assert(self._provider_config, "We need a provider config")
 
         self._set_eip_status("Checking configuration, please wait...")
 
         if self._provider_config.provides_eip():
-            self._eip_bootstrapper.start()
             self._eip_bootstrapper.run_eip_setup_checks(
+                self._checker_thread,
                 self._provider_config,
                 download_if_needed=True)
         else:
@@ -503,10 +533,9 @@ class MainWindow(QtGui.QMainWindow):
         Starts the VPN thread if the eip configuration is properly
         loaded
         """
-        assert self._eip_config, "We need an eip config!"
-        assert self._provider_config, "We need a provider config!"
+        leap_assert(self._eip_config, "We need an eip config!")
+        leap_assert(self._provider_config, "We need a provider config!")
 
-        self._eip_bootstrapper.set_should_quit()
         if self._eip_config.loaded() or \
                 self._eip_config.load(os.path.join("leap",
                                                    "providers",

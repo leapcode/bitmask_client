@@ -28,11 +28,13 @@ from PySide import QtGui, QtCore
 
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig
+from leap.util.check import leap_assert, leap_assert_type
+from leap.util.checkerthread import CheckerThread
 
 logger = logging.getLogger(__name__)
 
 
-class EIPBootstrapper(QtCore.QThread):
+class EIPBootstrapper(QtCore.QObject):
     """
     Sets up EIP for a provider a series of checks and emits signals
     after they are passed.
@@ -50,13 +52,7 @@ class EIPBootstrapper(QtCore.QThread):
     download_client_certificate = QtCore.Signal(dict)
 
     def __init__(self):
-        QtCore.QThread.__init__(self)
-
-        self._checks = []
-        self._checks_lock = QtCore.QMutex()
-
-        self._should_quit = False
-        self._should_quit_lock = QtCore.QMutex()
+        QtCore.QObject.__init__(self)
 
         # **************************************************** #
         # Dependency injection helpers, override this for more
@@ -69,35 +65,6 @@ class EIPBootstrapper(QtCore.QThread):
         self._eip_config = None
         self._download_if_needed = False
 
-    def get_should_quit(self):
-        """
-        Returns wether this thread should quit
-
-        @rtype: bool
-        @return: True if the thread should terminate itself, Flase otherwise
-        """
-
-        QtCore.QMutexLocker(self._should_quit_lock)
-        return self._should_quit
-
-    def set_should_quit(self):
-        """
-        Sets the should_quit flag to True so that this thread
-        terminates the first chance it gets
-        """
-        QtCore.QMutexLocker(self._should_quit_lock)
-        self._should_quit = True
-        self.wait()
-
-    def start(self):
-        """
-        Starts the thread and resets the should_quit flag
-        """
-        with QtCore.QMutexLocker(self._should_quit_lock):
-            self._should_quit = False
-
-        QtCore.QThread.start(self)
-
     def _download_config(self):
         """
         Downloads the EIP config for the given provider
@@ -106,7 +73,8 @@ class EIPBootstrapper(QtCore.QThread):
         @rtype: bool
         """
 
-        assert self._provider_config, "We need a provider configuration!"
+        leap_assert(self._provider_config,
+                    "We need a provider configuration!")
 
         logger.debug("Downloading EIP config for %s" %
                      (self._provider_config.get_domain(),))
@@ -162,8 +130,8 @@ class EIPBootstrapper(QtCore.QThread):
         @return: True if the checks passed, False otherwise
         @rtype: bool
         """
-        assert self._provider_config, "We need a provider configuration!"
-        assert self._eip_config, "We need an eip configuration!"
+        leap_assert(self._provider_config, "We need a provider configuration!")
+        leap_assert(self._eip_config, "We need an eip configuration!")
 
         logger.debug("Downloading EIP client certificate for %s" %
                      (self._provider_config.get_domain(),))
@@ -218,49 +186,25 @@ class EIPBootstrapper(QtCore.QThread):
 
         return download_cert[self.PASSED_KEY]
 
-    def run_eip_setup_checks(self, provider_config, download_if_needed=False):
+    def run_eip_setup_checks(self, checker,
+                             provider_config,
+                             download_if_needed=False):
         """
         Starts the checks needed for a new eip setup
 
         @param provider_config: Provider configuration
         @type provider_config: ProviderConfig
         """
-        assert provider_config, "We need a provider config!"
-        assert isinstance(provider_config, ProviderConfig), "Expected " + \
-            "ProviderConfig type, not %r" % (type(provider_config),)
+        leap_assert(provider_config, "We need a provider config!")
+        leap_assert_type(provider_config, ProviderConfig)
 
         self._provider_config = provider_config
         self._download_if_needed = download_if_needed
 
-        QtCore.QMutexLocker(self._checks_lock)
-        self._checks = [
+        checker.add_checks([
             self._download_config,
             self._download_client_certificates
-        ]
-
-    def run(self):
-        """
-        Main run loop for this thread. Executes the checks.
-        """
-        shouldContinue = False
-        while True:
-            if self.get_should_quit():
-                logger.debug("Quitting provider bootstrap thread")
-                return
-            checkSomething = False
-            with QtCore.QMutexLocker(self._checks_lock):
-                if len(self._checks) > 0:
-                    check = self._checks.pop(0)
-                    shouldContinue = check()
-                    checkSomething = True
-                    if not shouldContinue:
-                        logger.debug("Something went wrong with the checks, "
-
-                                     "clearing...")
-                        self._checks = []
-                        checkSomething = False
-            if not checkSomething:
-                self.usleep(self.IDLE_SLEEP_INTERVAL)
+        ])
 
 
 if __name__ == "__main__":
@@ -272,8 +216,8 @@ if __name__ == "__main__":
 
     def sigint_handler(*args, **kwargs):
         logger.debug('SIGINT catched. shutting down...')
-        bootstrapper_thread = args[0]
-        bootstrapper_thread.set_should_quit()
+        checker = args[0]
+        checker.set_should_quit()
         QtGui.QApplication.quit()
 
     def signal_tester(d):
@@ -289,27 +233,28 @@ if __name__ == "__main__":
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    eip_thread = EIPBootstrapper()
+    eip_checks = EIPBootstrapper()
+    checker = CheckerThread()
 
-    sigint = partial(sigint_handler, eip_thread)
+    sigint = partial(sigint_handler, checker)
     signal.signal(signal.SIGINT, sigint)
 
     timer = QtCore.QTimer()
     timer.start(500)
     timer.timeout.connect(lambda: None)
     app.connect(app, QtCore.SIGNAL("aboutToQuit()"),
-                eip_thread.set_should_quit)
+                checker.set_should_quit)
     w = QtGui.QWidget()
     w.resize(100, 100)
     w.show()
 
-    eip_thread.start()
+    checker.start()
 
     provider_config = ProviderConfig()
     if provider_config.load(os.path.join("leap",
                                          "providers",
                                          "bitmask.net",
                                          "provider.json")):
-        eip_thread.run_eip_setup_checks(provider_config)
+        eip_checks.run_eip_setup_checks(checker, provider_config)
 
     sys.exit(app.exec_())

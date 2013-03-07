@@ -29,6 +29,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.vpnlaunchers import get_platform_launcher
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.udstelnet import UDSTelnet
+from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 ON_POSIX = 'posix' in sys.builtin_module_names
@@ -123,13 +124,11 @@ class VPN(QtCore.QThread):
         socket, or port otherwise
         @type socket_port: str
         """
-        assert eipconfig, "We need an eip config"
-        assert isinstance(eipconfig, EIPConfig), "Expected EIPConfig " + \
-            "object instead of %s" % (type(eipconfig),)
-        assert providerconfig, "We need a provider config"
-        assert isinstance(providerconfig, ProviderConfig), "Expected " + \
-            "ProviderConfig object instead of %s" % (type(providerconfig),)
-        assert not self._started, "Starting process more than once!"
+        leap_assert(eipconfig, "We need an eip config")
+        leap_assert_type(eipconfig, EIPConfig)
+        leap_assert(providerconfig, "We need a provider config")
+        leap_assert_type(providerconfig, ProviderConfig)
+        leap_assert(not self._started, "Starting process more than once!")
 
         logger.debug("Starting VPN...")
 
@@ -202,7 +201,7 @@ class VPN(QtCore.QThread):
         @return: response read
         @rtype: list
         """
-        assert self._tn, "We need a tn connection!"
+        leap_assert(self._tn, "We need a tn connection!")
         try:
             self._tn.write("%s\n" % (command,))
             buf = self._tn.read_until(until, 2)

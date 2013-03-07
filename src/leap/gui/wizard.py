@@ -21,7 +21,8 @@ First run wizard
 import os
 import logging
 
-from PySide import QtCore, QtGui
+from PySide import QtGui
+from functools import partial
 
 from ui_wizard import Ui_Wizard
 from leap.config.providerconfig import ProviderConfig
@@ -45,14 +46,17 @@ class Wizard(QtGui.QWizard):
     SETUP_EIP_PAGE = 5
     FINISH_PATH = 6
 
-    WEAK_PASSWORDS = ("1234", "12345", "123456",
+    WEAK_PASSWORDS = ("123456", "qweasd", "qwerty",
                       "password")
 
-    def __init__(self):
+    def __init__(self, checker):
         QtGui.QWizard.__init__(self)
 
         self.ui = Ui_Wizard()
         self.ui.setupUi(self)
+
+        self.setPixmap(QtGui.QWizard.LogoPixmap,
+                       QtGui.QPixmap(":/images/leap-color-small.png"))
 
         self.QUESTION_ICON = QtGui.QPixmap(":/images/Emblem-question.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/Dialog-error.png")
@@ -94,6 +98,9 @@ class Wizard(QtGui.QWizard):
         self.ui.lblPassword.setEchoMode(QtGui.QLineEdit.Password)
         self.ui.lblPassword2.setEchoMode(QtGui.QLineEdit.Password)
 
+        self.ui.lnProvider.textChanged.connect(
+            self._enable_check)
+
         self.ui.lblUser.returnPressed.connect(
             self._focus_password)
         self.ui.lblPassword.returnPressed.connect(
@@ -105,14 +112,13 @@ class Wizard(QtGui.QWizard):
 
         self._username = None
 
-    def __del__(self):
-        self._provider_bootstrapper.set_should_quit()
-        self._eip_bootstrapper.set_should_quit()
-        self._provider_bootstrapper.wait()
-        self._eip_bootstrapper.wait()
+        self._checker_thread = checker
 
     def get_username(self):
         return self._username
+
+    def _enable_check(self, text):
+        self.ui.btnCheck.setEnabled(len(self.ui.lnProvider.text()) != 0)
 
     def _focus_password(self):
         """
@@ -151,13 +157,13 @@ class Wizard(QtGui.QWizard):
         if message is not None and password != password2:
             message = "Passwords don't match"
 
-        if message is not None and len(password) < 4:
+        if message is None and len(password) < 6:
             message = "Password too short"
 
-        if message is not None and password in self.WEAK_PASSWORDS:
+        if message is None and password in self.WEAK_PASSWORDS:
             message = "Password too easy"
 
-        if message is not None and username == password:
+        if message is None and username == password:
             message = "Password equal to username"
 
         if message is not None:
@@ -172,10 +178,6 @@ class Wizard(QtGui.QWizard):
         Performs the registration based on the values provided in the form
         """
         self.ui.btnRegister.setEnabled(False)
-        # See the disabled button
-        while QtGui.QApplication.instance().hasPendingEvents():
-            QtGui.QApplication.instance().processEvents()
-        self.button(QtGui.QWizard.NextButton).setFocus()
 
         username = self.ui.lblUser.text()
         password = self.ui.lblPassword.text()
@@ -183,25 +185,30 @@ class Wizard(QtGui.QWizard):
 
         if self._basic_password_checks(username, password, password2):
             register = SRPRegister(provider_config=self._provider_config)
-            ok, req = register.register_user(username, password)
-            if ok:
-                self._set_register_status("<b>User registration OK</b>")
-                self._username = username
-                self.ui.lblPassword2.clearFocus()
-                # Detach this call to allow UI updates briefly
-                QtCore.QTimer.singleShot(1,
-                                         self.page(self.REGISTER_USER_PAGE)
-                                         .set_completed)
-            else:
-                print req.content
-                error_msg = "Unknown error"
-                try:
-                    error_msg = req.json().get("errors").get("login")[0]
-                except:
-                    logger.error("Unknown error: %r" % (req.content,))
-                self._set_register_status(error_msg)
-                self.ui.btnRegister.setEnabled(True)
+            register.registration_finished.connect(
+                self._registration_finished)
+            self._checker_thread.add_checks(
+                [partial(register.register_user, username, password)])
+            self._username = username
+            self._set_register_status("Starting registration...")
         else:
+            self.ui.btnRegister.setEnabled(True)
+
+    def _registration_finished(self, ok, req):
+        if ok:
+            self._set_register_status("<font color='green'>"
+                                      "<b>User registration OK</b></font>")
+            self.ui.lblPassword2.clearFocus()
+            self.page(self.REGISTER_USER_PAGE).set_completed()
+            self.button(QtGui.QWizard.BackButton).setEnabled(False)
+        else:
+            self._username = None
+            error_msg = "Unknown error"
+            try:
+                error_msg = req.json().get("errors").get("login")[0]
+            except:
+                logger.error("Unknown error: %r" % (req.content,))
+            self._set_register_status(error_msg)
             self.ui.btnRegister.setEnabled(True)
 
     def _set_register_status(self, status):
@@ -222,12 +229,16 @@ class Wizard(QtGui.QWizard):
 
         Starts the checks for a given provider
         """
+        if len(self.ui.lnProvider.text()) == 0:
+            return
+
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
         self._domain = self.ui.lnProvider.text()
 
-        self._provider_bootstrapper.start()
-        self._provider_bootstrapper.run_provider_select_checks(self._domain)
+        self._provider_bootstrapper.run_provider_select_checks(
+            self._checker_thread,
+            self._domain)
 
     def _complete_task(self, data, label, complete=False, complete_page=-1):
         """
@@ -328,7 +339,6 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblCheckApiCert,
                             True, self.SETUP_PROVIDER_PAGE)
-        self._provider_bootstrapper.set_should_quit()
 
     def _download_eip_config(self, data):
         """
@@ -351,7 +361,6 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblDownloadClientCert,
                             True, self.SETUP_EIP_PAGE)
-        self._eip_bootstrapper.set_should_quit()
 
     def _current_id_changed(self, pageId):
         """
@@ -365,14 +374,16 @@ class Wizard(QtGui.QWizard):
             self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
             self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
             self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
+            self._enable_check("")
 
         if pageId == self.SETUP_PROVIDER_PAGE:
             self._provider_bootstrapper.\
-                run_provider_setup_checks(self._provider_config)
+                run_provider_setup_checks(self._checker_thread,
+                                          self._provider_config)
 
         if pageId == self.SETUP_EIP_PAGE:
-            self._eip_bootstrapper.start()
-            self._eip_bootstrapper.run_eip_setup_checks(self._provider_config)
+            self._eip_bootstrapper.run_eip_setup_checks(self._checker_thread,
+                                                        self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             # TODO: get the right lang for these

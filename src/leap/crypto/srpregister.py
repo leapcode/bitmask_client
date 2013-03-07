@@ -20,15 +20,17 @@ import binascii
 import srp
 import logging
 
+from PySide import QtCore
 from urlparse import urlparse
 
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.constants import SIGNUP_TIMEOUT
+from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 
 
-class SRPRegister(object):
+class SRPRegister(QtCore.QObject):
     """
     Registers a user to a specific provider using SRP
     """
@@ -36,6 +38,8 @@ class SRPRegister(object):
     USER_LOGIN_KEY = 'user[login]'
     USER_VERIFIER_KEY = 'user[password_verifier]'
     USER_SALT_KEY = 'user[password_salt]'
+
+    registration_finished = QtCore.Signal(bool, object)
 
     def __init__(self,
                  provider_config=None,
@@ -49,10 +53,9 @@ class SRPRegister(object):
         @param register_path: webapp path for registering users
         @type register_path; str
         """
-
-        assert provider_config, "Please provider a provider"
-        assert isinstance(provider_config, ProviderConfig), \
-            "We need a ProviderConfig instead of %r" % (provider_config,)
+        QtCore.QObject.__init__(self)
+        leap_assert(provider_config, "Please provider a provider")
+        leap_assert_type(provider_config, ProviderConfig)
 
         self._provider_config = provider_config
 
@@ -131,7 +134,9 @@ class SRPRegister(object):
                                  verify=self._provider_config.
                                  get_ca_cert_path())
 
-        return (req.ok, req)
+        self.registration_finished.emit(req.ok, req)
+
+        return req.ok
 
 
 if __name__ == "__main__":

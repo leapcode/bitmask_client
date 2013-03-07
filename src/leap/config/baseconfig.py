@@ -29,6 +29,7 @@ from abc import ABCMeta, abstractmethod
 
 from leap.config.prefixers import get_platform_prefixer
 from leap.config.pluggableconfig import PluggableConfig
+from leap.util.check import leap_assert
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ class BaseConfig:
         @rtype: depends on the config structure, dict, str, array, int
         @return: returns the value for the specified key in the config
         """
-        assert self._config_checker, "Load the config first"
+        leap_assert(self._config_checker, "Load the config first")
         return self._config_checker.config[key]
 
     def get_path_prefix(self, standalone=False):

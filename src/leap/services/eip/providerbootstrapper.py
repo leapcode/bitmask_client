@@ -29,11 +29,13 @@ from OpenSSL import crypto
 from PySide import QtGui, QtCore
 
 from leap.config.providerconfig import ProviderConfig
+from leap.util.check import leap_assert, leap_assert_type
+from leap.util.checkerthread import CheckerThread
 
 logger = logging.getLogger(__name__)
 
 
-class ProviderBootstrapper(QtCore.QThread):
+class ProviderBootstrapper(QtCore.QObject):
     """
     Given a provider URL performs a series of checks and emits signals
     after they are passed.
@@ -56,13 +58,7 @@ class ProviderBootstrapper(QtCore.QThread):
     check_api_certificate = QtCore.Signal(dict)
 
     def __init__(self):
-        QtCore.QThread.__init__(self)
-
-        self._checks = []
-        self._checks_lock = QtCore.QMutex()
-
-        self._should_quit = False
-        self._should_quit_lock = QtCore.QMutex()
+        QtCore.QObject.__init__(self)
 
         # **************************************************** #
         # Dependency injection helpers, override this for more
@@ -74,35 +70,6 @@ class ProviderBootstrapper(QtCore.QThread):
         self._domain = None
         self._provider_config = None
         self._download_if_needed = False
-
-    def get_should_quit(self):
-        """
-        Returns wether this thread should quit
-
-        @rtype: bool
-        @return: True if the thread should terminate itself, Flase otherwise
-        """
-
-        QtCore.QMutexLocker(self._should_quit_lock)
-        return self._should_quit
-
-    def set_should_quit(self):
-        """
-        Sets the should_quit flag to True so that this thread
-        terminates the first chance it gets
-        """
-        QtCore.QMutexLocker(self._should_quit_lock)
-        self._should_quit = True
-        self.wait()
-
-    def start(self):
-        """
-        Starts the thread and resets the should_quit flag
-        """
-        with QtCore.QMutexLocker(self._should_quit_lock):
-            self._should_quit = False
-
-        QtCore.QThread.start(self)
 
     def _should_proceed_provider(self):
         """
@@ -131,7 +98,7 @@ class ProviderBootstrapper(QtCore.QThread):
         @rtype: bool
         """
 
-        assert self._domain, "Cannot check DNS without a domain"
+        leap_assert(self._domain, "Cannot check DNS without a domain")
 
         logger.debug("Checking name resolution for %s" % (self._domain))
 
@@ -162,7 +129,7 @@ class ProviderBootstrapper(QtCore.QThread):
         @rtype: bool
         """
 
-        assert self._domain, "Cannot check HTTPS without a domain"
+        leap_assert(self._domain, "Cannot check HTTPS without a domain")
 
         logger.debug("Checking https for %s" % (self._domain))
 
@@ -193,7 +160,8 @@ class ProviderBootstrapper(QtCore.QThread):
         @return: True if the checks passed, False otherwise
         @rtype: bool
         """
-        assert self._domain, "Cannot download provider info without a domain"
+        leap_assert(self._domain,
+                    "Cannot download provider info without a domain")
 
         logger.debug("Downloading provider info for %s" % (self._domain))
 
@@ -230,7 +198,8 @@ class ProviderBootstrapper(QtCore.QThread):
 
         return download_data[self.PASSED_KEY]
 
-    def run_provider_select_checks(self, domain, download_if_needed=False):
+    def run_provider_select_checks(self, checker,
+                                   domain, download_if_needed=False):
         """
         Populates the check queue
 
@@ -243,17 +212,16 @@ class ProviderBootstrapper(QtCore.QThread):
         @return: True if the checks passed, False otherwise
         @rtype: bool
         """
-        assert domain and len(domain) > 0, "We need a domain!"
+        leap_assert(domain and len(domain) > 0, "We need a domain!")
 
         self._domain = domain
         self._download_if_needed = download_if_needed
 
-        QtCore.QMutexLocker(self._checks_lock)
-        self._checks = [
+        checker.add_checks([
             self._check_name_resolution,
             self._check_https,
             self._download_provider_info
-        ]
+        ])
 
     def _should_proceed_cert(self):
         """
@@ -262,7 +230,7 @@ class ProviderBootstrapper(QtCore.QThread):
 
         @rtype: bool
         """
-        assert self._provider_config, "We need a provider config!"
+        leap_assert(self._provider_config, "We need a provider config!")
 
         if not self._download_if_needed:
             return True
@@ -278,8 +246,8 @@ class ProviderBootstrapper(QtCore.QThread):
         @rtype: bool
         """
 
-        assert self._provider_config, "Cannot download the ca cert " + \
-            "without a provider config!"
+        leap_assert(self._provider_config, "Cannot download the ca cert "
+                    "without a provider config!")
 
         logger.debug("Downloading ca cert for %s at %s" %
                      (self._domain, self._provider_config.get_ca_cert_uri()))
@@ -331,8 +299,8 @@ class ProviderBootstrapper(QtCore.QThread):
         @return: True if the checks passed, False otherwise
         @rtype: bool
         """
-        assert self._provider_config, "Cannot check the ca cert " + \
-            "without a provider config!"
+        leap_assert(self._provider_config, "Cannot check the ca cert "
+                    "without a provider config!")
 
         logger.debug("Checking ca fingerprint for %s and cert %s" %
                      (self._domain,
@@ -350,7 +318,7 @@ class ProviderBootstrapper(QtCore.QThread):
 
         try:
             parts = self._provider_config.get_ca_cert_fingerprint().split(":")
-            assert len(parts) == 2, "Wrong fingerprint format"
+            leap_assert(len(parts) == 2, "Wrong fingerprint format")
 
             method = parts[0].strip()
             fingerprint = parts[1].strip()
@@ -358,13 +326,13 @@ class ProviderBootstrapper(QtCore.QThread):
             with open(self._provider_config.get_ca_cert_path()) as f:
                 cert_data = f.read()
 
-            assert len(cert_data) > 0, "Could not read certificate data"
+            leap_assert(len(cert_data) > 0, "Could not read certificate data")
 
             x509 = crypto.load_certificate(crypto.FILETYPE_PEM, cert_data)
             digest = x509.digest(method).replace(":", "").lower()
 
-            assert digest == fingerprint, \
-                "Downloaded certificate has a different fingerprint!"
+            leap_assert(digest == fingerprint,
+                        "Downloaded certificate has a different fingerprint!")
 
             check_ca_fingerprint_data[self.PASSED_KEY] = True
         except Exception as e:
@@ -384,8 +352,8 @@ class ProviderBootstrapper(QtCore.QThread):
         @return: True if the checks passed, False otherwise
         @rtype: bool
         """
-        assert self._provider_config, "Cannot check the ca cert " + \
-            "without a provider config!"
+        leap_assert(self._provider_config, "Cannot check the ca cert "
+                    "without a provider config!")
 
         logger.debug("Checking api certificate for %s and cert %s" %
                      (self._provider_config.get_api_uri(),
@@ -418,7 +386,8 @@ class ProviderBootstrapper(QtCore.QThread):
 
         return check_api_certificate_data[self.PASSED_KEY]
 
-    def run_provider_setup_checks(self, provider_config,
+    def run_provider_setup_checks(self, checker,
+                                  provider_config,
                                   download_if_needed=False):
         """
         Starts the checks needed for a new provider setup
@@ -429,43 +398,17 @@ class ProviderBootstrapper(QtCore.QThread):
         overwrite already downloaded data
         @type download_if_needed: bool
         """
-        assert provider_config, "We need a provider config!"
-        assert isinstance(provider_config, ProviderConfig), "Expected " + \
-            "ProviderConfig type, not %r" % (type(provider_config),)
+        leap_assert(provider_config, "We need a provider config!")
+        leap_assert_type(provider_config, ProviderConfig)
 
         self._provider_config = provider_config
         self._download_if_needed = download_if_needed
 
-        QtCore.QMutexLocker(self._checks_lock)
-        self._checks = [
+        checker.add_checks([
             self._download_ca_cert,
             self._check_ca_fingerprint,
             self._check_api_certificate
-        ]
-
-    def run(self):
-        """
-        Main run loop for this thread. Executes the checks.
-        """
-        shouldContinue = False
-        while True:
-            if self.get_should_quit():
-                logger.debug("Quitting provider bootstrap thread")
-                return
-            checkSomething = False
-            with QtCore.QMutexLocker(self._checks_lock):
-                if len(self._checks) > 0:
-                    check = self._checks.pop(0)
-                    shouldContinue = check()
-                    checkSomething = True
-                    if not shouldContinue:
-                        logger.debug("Something went wrong with the checks, "
-                                     "clearing...")
-                        self._checks = []
-                        checkSomething = False
-            if not checkSomething:
-                self.usleep(self.IDLE_SLEEP_INTERVAL)
-
+        ])
 
 if __name__ == "__main__":
     import sys
@@ -476,8 +419,8 @@ if __name__ == "__main__":
 
     def sigint_handler(*args, **kwargs):
         logger.debug('SIGINT catched. shutting down...')
-        bootstrapper_thread = args[0]
-        bootstrapper_thread.set_should_quit()
+        bootstrapper_checks = args[0]
+        bootstrapper_checks.set_should_quit()
         QtGui.QApplication.quit()
 
     def signal_tester(d):
@@ -493,28 +436,32 @@ if __name__ == "__main__":
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    bootstrapper_thread = ProviderBootstrapper()
+    bootstrapper_checks = ProviderBootstrapper()
 
-    sigint = partial(sigint_handler, bootstrapper_thread)
+    checker = CheckerThread()
+    checker.start()
+
+    sigint = partial(sigint_handler, checker)
     signal.signal(signal.SIGINT, sigint)
 
     timer = QtCore.QTimer()
     timer.start(500)
     timer.timeout.connect(lambda: None)
     app.connect(app, QtCore.SIGNAL("aboutToQuit()"),
-                bootstrapper_thread.set_should_quit)
+                checker.set_should_quit)
     w = QtGui.QWidget()
     w.resize(100, 100)
     w.show()
 
-    bootstrapper_thread.start()
-    bootstrapper_thread.run_provider_select_checks("bitmask.net")
+    bootstrapper_checks.run_provider_select_checks(checker,
+                                                   "bitmask.net")
 
     provider_config = ProviderConfig()
     if provider_config.load(os.path.join("leap",
                                          "providers",
                                          "bitmask.net",
                                          "provider.json")):
-        bootstrapper_thread.run_provider_setup_checks(provider_config)
+        bootstrapper_checks.run_provider_setup_checks(checker,
+                                                      provider_config)
 
     sys.exit(app.exec_())

@@ -20,9 +20,11 @@ import srp
 import binascii
 import logging
 
-from PySide import QtCore
+from PySide import QtCore, QtGui
 
 from leap.config.providerconfig import ProviderConfig
+from leap.util.check import leap_assert
+from leap.util.checkerthread import CheckerThread
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ class SRPAuthenticationError(Exception):
     pass
 
 
-class SRPAuth(QtCore.QThread):
+class SRPAuth(QtCore.QObject):
     """
     SRPAuth singleton
     """
@@ -55,7 +57,8 @@ class SRPAuth(QtCore.QThread):
             @param server: Server to which we will authenticate
             @type server: str
             """
-            assert provider_config, "We need a provider config to authenticate"
+            leap_assert(provider_config,
+                        "We need a provider config to authenticate")
 
             self._provider_config = provider_config
 
@@ -277,15 +280,15 @@ class SRPAuth(QtCore.QThread):
             @param password: password for this user
             @type password: str
             """
-            assert self.get_session_id() is None, "Already logged in"
+            leap_assert(self.get_session_id() is None, "Already logged in")
 
             self._authentication_preprocessing(username, password)
             salt, B = self._start_authentication(username, password)
             M2 = self._process_challenge(salt, B, username)
             self._verify_session(M2)
 
-            assert self.get_session_id(), "Something went wrong because" + \
-                " we don't have the auth cookie afterwards"
+            leap_assert(self.get_session_id(), "Something went wrong because"
+                        " we don't have the auth cookie afterwards")
 
         def logout(self):
             """
@@ -294,7 +297,8 @@ class SRPAuth(QtCore.QThread):
             """
             logger.debug("Starting logout...")
 
-            assert self.get_session_id(), "Cannot logout an unexisting session"
+            leap_assert(self.get_session_id(),
+                        "Cannot logout an unexisting session")
 
             logout_url = "%s/%s/%s/" % (self._provider_config.get_api_uri(),
                                         self._provider_config.
@@ -344,7 +348,7 @@ class SRPAuth(QtCore.QThread):
         """
         Creates a singleton instance if needed
         """
-        QtCore.QThread.__init__(self)
+        QtCore.QObject.__init__(self)
 
         # Check whether we already have an instance
         if SRPAuth.__instance is None:
@@ -371,47 +375,47 @@ class SRPAuth(QtCore.QThread):
         @type password: str
         """
 
-        with QtCore.QMutexLocker(self._should_login_lock):
-            self._should_login = self.DO_LOGIN
-            self._username = username
-            self._password = password
-        # Detach the start call to Qt's event loop
-        QtCore.QTimer.singleShot(0, self.start)
+        try:
+            self.__instance.authenticate(username, password)
+
+            logger.debug("Successful login!")
+            self.authentication_finished.emit(True, "Succeeded")
+            return True
+        except Exception as e:
+            logger.error("Error logging in %s" % (e,))
+            self.authentication_finished.emit(False, "%s" % (e,))
+        return False
 
     def logout(self):
         """
         Logs out the current session.
         Expects a session_id to exists, might raise AssertionError
         """
-        QtCore.QMutexLocker(self._should_login_lock)
-        self._should_login = self.DO_LOGOUT
-        # Detach the start call to Qt's event loop
-        QtCore.QTimer.singleShot(0, self.start)
-
-    def _runLogin(self, username, password):
-        try:
-            self.__instance.authenticate(username, password)
-            self.authentication_finished.emit(True, "Succeeded")
-        except Exception as e:
-            self.authentication_finished.emit(False, "%s" % (e,))
-
-    def _runLogout(self):
         try:
             self.__instance.logout()
             self.logout_finished.emit(True, "Succeeded")
+            return True
         except Exception as e:
             self.logout_finished.emit(False, "%s" % (e,))
-
-    def run(self):
-        QtCore.QMutexLocker(self._should_login_lock)
-        if self._should_login == self.DO_LOGIN:
-            self._runLogin(self._username, self._password)
-        elif self._should_login == self.DO_LOGOUT:
-            self._runLogout()
-        self._should_login = self.DO_NOTHING
+        return False
 
 
 if __name__ == "__main__":
+    import sys
+    from functools import partial
+    app = QtGui.QApplication(sys.argv)
+
+    import signal
+
+    def sigint_handler(*args, **kwargs):
+        logger.debug('SIGINT catched. shutting down...')
+        checker = args[0]
+        checker.set_should_quit()
+        QtGui.QApplication.quit()
+
+    def signal_tester(d):
+        print d
+
     logger = logging.getLogger(name='leap')
     logger.setLevel(logging.DEBUG)
     console = logging.StreamHandler()
@@ -422,8 +426,23 @@ if __name__ == "__main__":
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    provider = ProviderConfig()
+    checker = CheckerThread()
 
+    sigint = partial(sigint_handler, checker)
+    signal.signal(signal.SIGINT, sigint)
+
+    timer = QtCore.QTimer()
+    timer.start(500)
+    timer.timeout.connect(lambda: None)
+    app.connect(app, QtCore.SIGNAL("aboutToQuit()"),
+                checker.set_should_quit)
+    w = QtGui.QWidget()
+    w.resize(100, 100)
+    w.show()
+
+    checker.start()
+
+    provider = ProviderConfig()
     if provider.load("leap/providers/bitmask.net/provider.json"):
         # url = "%s/tickets" % (provider.get_api_uri(),)
         # print url
@@ -431,9 +450,14 @@ if __name__ == "__main__":
         # print res.content
         # res.raise_for_status()
         auth = SRPAuth(provider)
-        auth.start()
-        auth.authenticate("test2", "sarasaaaa")
-        res = requests.session().get("%s/cert" % (provider.get_api_uri(),),
-                                     verify=provider.get_ca_cert_path())
-        print res.content
-        auth.logout()
+        auth_instantiated = partial(auth.authenticate, "test2", "sarasaaaa")
+
+        checker.add_checks([auth_instantiated, auth.logout])
+
+        #auth.authenticate("test2", "sarasaaaa")
+        #res = requests.session().get("%s/cert" % (provider.get_api_uri(),),
+                                     #verify=provider.get_ca_cert_path())
+        #print res.content
+        #auth.logout()
+
+    sys.exit(app.exec_())

@@ -23,6 +23,7 @@ import os
 
 from leap.config.baseconfig import BaseConfig, LocalizedKey
 from leap.config.provider_spec import leap_provider_spec
+from leap.util.check import leap_assert
 
 logger = logging.getLogger(__name__)
 
@@ -95,8 +96,8 @@ class ProviderConfig(BaseConfig):
                                  "cacert.pem")
 
         if not about_to_download:
-            assert os.path.exists(cert_path), \
-                "You need to download the certificate first"
+            leap_assert(os.path.exists(cert_path),
+                        "You need to download the certificate first")
             logger.debug("Going to verify SSL against %s" % (cert_path,))
 
         return cert_path
