@@ -21,7 +21,7 @@ First run wizard
 import os
 import logging
 
-from PySide import QtGui
+from PySide import QtCore, QtGui
 from functools import partial
 
 from ui_wizard import Ui_Wizard
@@ -152,19 +152,20 @@ class Wizard(QtGui.QWizard):
             username.encode("ascii")
             password.encode("ascii")
         except:
-            message = u"Refrain from using non ASCII áñ characters"
+            message = self.tr(u"Refrain from using non "
+                              u"ASCII characters like á, ñ, æ")
 
         if message is not None and password != password2:
-            message = "Passwords don't match"
+            message = self.tr("Passwords don't match")
 
         if message is None and len(password) < 6:
-            message = "Password too short"
+            message = self.tr("Password too short")
 
         if message is None and password in self.WEAK_PASSWORDS:
-            message = "Password too easy"
+            message = self.tr("Password too easy")
 
         if message is None and username == password:
-            message = "Password equal to username"
+            message = self.tr("Password equal to username")
 
         if message is not None:
             self._set_register_status(message)
@@ -190,20 +191,20 @@ class Wizard(QtGui.QWizard):
             self._checker_thread.add_checks(
                 [partial(register.register_user, username, password)])
             self._username = username
-            self._set_register_status("Starting registration...")
+            self._set_register_status(self.tr("Starting registration..."))
         else:
             self.ui.btnRegister.setEnabled(True)
 
     def _registration_finished(self, ok, req):
         if ok:
-            self._set_register_status("<font color='green'>"
-                                      "<b>User registration OK</b></font>")
+            self._set_register_status(self.tr("<font color='green'>"
+                                      "<b>User registration OK</b></font>"))
             self.ui.lblPassword2.clearFocus()
             self.page(self.REGISTER_USER_PAGE).set_completed()
             self.button(QtGui.QWizard.BackButton).setEnabled(False)
         else:
             self._username = None
-            error_msg = "Unknown error"
+            error_msg = self.tr("Unknown error")
             try:
                 error_msg = req.json().get("errors").get("login")[0]
             except:
@@ -304,7 +305,7 @@ class Wizard(QtGui.QWizard):
             new_data = {
                 self._provider_bootstrapper.PASSED_KEY: False,
                 self._provider_bootstrapper.ERROR_KEY:
-                "Unable to load provider configuration"
+                self.tr("Unable to load provider configuration")
             }
             self._complete_task(new_data, self.ui.lblProviderInfo)
 
@@ -387,13 +388,14 @@ class Wizard(QtGui.QWizard):
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             # TODO: get the right lang for these
+            lang = QtCore.QLocale.system().name()
             self.ui.lblProviderName.setText(
                 "<b>%s</b>" %
-                (self._provider_config.get_name(),))
+                (self._provider_config.get_name(lang=lang),))
             self.ui.lblProviderURL.setText(self._provider_config.get_domain())
             self.ui.lblProviderDesc.setText(
                 "<i>%s</i>" %
-                (self._provider_config.get_description(),))
+                (self._provider_config.get_description(lang=lang),))
             self.ui.lblProviderPolicy.setText(self._provider_config
                                               .get_enrollment_policy())
 

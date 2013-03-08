@@ -798,6 +798,7 @@
  </tabstops>
  <resources>
   <include location="../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../data/resources/locale.qrc"/>
  </resources>
  <connections/>
 </ui>

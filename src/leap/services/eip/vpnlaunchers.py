@@ -215,8 +215,15 @@ class LinuxVPNLauncher(VPNLauncher):
 
         args += [
             '--user', getpass.getuser(),
-            '--group', grp.getgrgid(os.getgroups()[-1]).gr_name,
-            '--management-client-user', getpass.getuser(),
+            '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
+        ]
+
+        if socket_port == "unix":
+            args += [
+                '--management-client-user', getpass.getuser()
+            ]
+
+        args += [
             '--management-signal',
             '--management', socket_host, socket_port,
             '--script-security', '2'

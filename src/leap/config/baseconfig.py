@@ -159,10 +159,13 @@ class LocalizedKey(object):
         """
         descriptions = self._func(instance)
         description_lang = ""
-        if lang in descriptions.keys():
-            description_lang = descriptions[lang]
-        else:
-            logger.warning("Unknown language: %s" % (lang,))
+        config_lang = "en"
+        for key in descriptions.keys():
+            if lang.startswith(key):
+                config_lang = key
+                break
+
+        description_lang = descriptions[config_lang]
         return description_lang
 
     def __get__(self, instance, instancetype):

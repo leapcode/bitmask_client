@@ -20,7 +20,7 @@ import argparse
 
 def build_parser():
     """
-    all the options for the leap arg parser
+    All the options for the leap arg parser
     Some of these could be switched on only if debug flag is present!
     """
     epilog = "Copyright 2012 The LEAP Encryption Access Project"

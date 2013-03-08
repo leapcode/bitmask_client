@@ -31,7 +31,6 @@ from leap.services.eip.udstelnet import UDSTelnet
 from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
-ON_POSIX = 'posix' in sys.builtin_module_names
 
 
 # TODO: abstract the thread that can be asked to quit to another
@@ -103,6 +102,7 @@ class VPN(QtCore.QThread):
             self._send_command("signal SIGTERM")
             self._tn.close()
             self._subp.terminate()
+            self._subp.waitForFinished()
         except Exception as e:
             logger.debug("Could not terminate process, trying command " +
                          "signal SIGNINT: %r" % (e,))
@@ -309,6 +309,9 @@ class VPN(QtCore.QThread):
                 self._parse_state_and_notify(self._send_command("state"))
                 self._parse_status_and_notify(self._send_command("status"))
                 output_sofar = self._subp.readAllStandardOutput()
+                if len(output_sofar) > 0:
+                    logger.debug(output_sofar)
+                output_sofar = self._subp.readAllStandardError()
                 if len(output_sofar) > 0:
                     logger.debug(output_sofar)
                 QtCore.QThread.msleep(self.POLL_TIME)

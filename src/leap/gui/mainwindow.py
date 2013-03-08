@@ -20,6 +20,7 @@ Main window for the leap client
 """
 import os
 import logging
+import random
 
 from PySide import QtCore, QtGui
 
@@ -141,9 +142,10 @@ class MainWindow(QtGui.QMainWindow):
         self._systray = None
         self._vpn_systray = None
 
-        self._action_eip_status = QtGui.QAction("Encryption is OFF", self)
+        self._action_eip_status = QtGui.QAction(self.tr("Encryption is OFF"),
+                                                self)
         self._action_eip_status.setEnabled(False)
-        self._action_eip_stop = QtGui.QAction("Stop", self)
+        self._action_eip_stop = QtGui.QAction(self.tr("Stop"), self)
         self._action_eip_stop.triggered.connect(
             self._stop_eip)
         self._action_eip_write = QtGui.QAction(
@@ -155,7 +157,7 @@ class MainWindow(QtGui.QMainWindow):
             "0.0 Kb", self)
         self._action_eip_read.setEnabled(False)
 
-        self._action_visible = QtGui.QAction("Hide", self)
+        self._action_visible = QtGui.QAction(self.tr("Hide"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
 
         self._center_window()
@@ -226,9 +228,9 @@ class MainWindow(QtGui.QMainWindow):
         Toggles the window visibility
         """
         self.setVisible(not self.isVisible())
-        action_visible_text = "Hide"
+        action_visible_text = self.tr("Hide")
         if not self.isVisible():
-            action_visible_text = "Show"
+            action_visible_text = self.tr("Show")
         self._action_visible.setText(action_visible_text)
 
     def _center_window(self):
@@ -257,14 +259,15 @@ class MainWindow(QtGui.QMainWindow):
         """
         Display the About LEAP dialog
         """
-        QtGui.QMessageBox.about(self, "About LEAP",
-                                "LEAP is a non-profit dedicated to giving "
-                                "all internet users access to secure "
-                                "communication. Our focus is on adapting "
-                                "encryption technology to make it easy to use "
-                                "and widely available. "
-                                "<a href=\"https://leap.se\">More about LEAP"
-                                "</a>")
+        QtGui.QMessageBox.about(
+            self, self.tr("About LEAP"),
+            self.tr("LEAP is a non-profit dedicated to giving "
+                    "all internet users access to secure "
+                    "communication. Our focus is on adapting "
+                    "encryption technology to make it easy to use "
+                    "and widely available. "
+                    "<a href=\"https://leap.se\">More about LEAP"
+                    "</a>"))
 
     def quit(self):
         self._really_quit = True
@@ -399,7 +402,8 @@ class MainWindow(QtGui.QMainWindow):
                     self._provider_config,
                     download_if_needed=True)
             else:
-                self._set_status("Could not load provider configuration")
+                self._set_status(
+                    self.tr("Could not load provider configuration"))
                 self._login_set_enabled(True)
         else:
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
@@ -424,18 +428,18 @@ class MainWindow(QtGui.QMainWindow):
         provider = self.ui.cmbProviders.currentText()
 
         if len(provider) == 0:
-            self._set_status("Please select a valid provider")
+            self._set_status(self.tr("Please select a valid provider"))
             return
 
         if len(username) == 0:
-            self._set_status("Please provide a valid username")
+            self._set_status(self.tr("Please provide a valid username"))
             return
 
         if len(password) == 0:
-            self._set_status("Please provide a valid Password")
+            self._set_status(self.tr("Please provide a valid Password"))
             return
 
-        self._set_status("Logging in...")
+        self._set_status(self.tr("Logging in..."))
         self._login_set_enabled(False)
 
         self._download_provider_config()
@@ -496,11 +500,11 @@ class MainWindow(QtGui.QMainWindow):
     def _start_eip(self):
         self._vpn.start(eipconfig=self._eip_config,
                         providerconfig=self._provider_config,
-                        socket_host="/home/chiiph/vpnsock",
-                        socket_port="unix")
+                        socket_host="localhost",
+                        socket_port=str(random.randint(1000, 9999)))
         self._vpn_systray.setVisible(True)
         self.ui.btnEipStartStop.setEnabled(True)
-        self.ui.btnEipStartStop.setText("Stop EIP")
+        self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
         self.ui.btnEipStartStop.clicked.disconnect(
             self._start_eip)
         self.ui.btnEipStartStop.clicked.connect(
@@ -509,9 +513,9 @@ class MainWindow(QtGui.QMainWindow):
     def _stop_eip(self):
         self._vpn.set_should_quit()
         self._vpn_systray.setVisible(False)
-        self._set_eip_status("EIP has stopped")
+        self._set_eip_status(self.tr("EIP has stopped"))
         self._set_eip_status_icon("error")
-        self.ui.btnEipStartStop.setText("Start EIP")
+        self.ui.btnEipStartStop.setText(self.tr("Start EIP"))
         self.ui.btnEipStartStop.clicked.disconnect(
             self._stop_eip)
         self.ui.btnEipStartStop.clicked.connect(
@@ -524,7 +528,7 @@ class MainWindow(QtGui.QMainWindow):
         leap_assert(self._eip_bootstrapper, "We need an eip bootstrapper!")
         leap_assert(self._provider_config, "We need a provider config")
 
-        self._set_eip_status("Checking configuration, please wait...")
+        self._set_eip_status(self.tr("Checking configuration, please wait..."))
 
         if self._provider_config.provides_eip():
             self._eip_bootstrapper.run_eip_setup_checks(
@@ -532,7 +536,7 @@ class MainWindow(QtGui.QMainWindow):
                 self._provider_config,
                 download_if_needed=True)
         else:
-            self._set_eip_status("%s does not support EIP" %
+            self._set_eip_status(self.tr("%s does not support EIP") %
                                  (self._provider_config.get_domain(),))
 
     def _set_eip_status_icon(self, status):
@@ -543,11 +547,11 @@ class MainWindow(QtGui.QMainWindow):
         @type status: str
         """
         selected_pixmap = self.ERROR_ICON
-        tray_message = "Encryption is OFF"
-        if status in ("AUTH", "GET_CONFIG"):
+        tray_message = self.tr("Encryption is OFF")
+        if status in ("WAIT", "AUTH", "GET_CONFIG"):
             selected_pixmap = self.CONNECTING_ICON
         elif status in ("CONNECTED"):
-            tray_message = "Encryption is ON"
+            tray_message = self.tr("Encryption is ON")
             selected_pixmap = self.CONNECTED_ICON
 
         self.ui.lblVPNStatusIcon.setPixmap(selected_pixmap)
@@ -565,11 +569,13 @@ class MainWindow(QtGui.QMainWindow):
         status = data[self._vpn.STATUS_STEP_KEY]
         self._set_eip_status_icon(status)
         if status == "AUTH":
-            self._set_eip_status("VPN: Authenticating...")
+            self._set_eip_status(self.tr("VPN: Authenticating..."))
         elif status == "GET_CONFIG":
-            self._set_eip_status("VPN: Retrieving configuration...")
+            self._set_eip_status(self.tr("VPN: Retrieving configuration..."))
         elif status == "CONNECTED":
-            self._set_eip_status("VPN: Connected!")
+            self._set_eip_status(self.tr("VPN: Connected!"))
+        elif status == "WAIT":
+            self._set_eip_status(self.tr("VPN: Waiting to start..."))
         else:
             self._set_eip_status(status)
 
@@ -621,8 +627,8 @@ class MainWindow(QtGui.QMainWindow):
         Starts the logout sequence
         """
         self._set_eip_status_icon("error")
-        self._set_eip_status("Signing out...")
-        self._srp_auth.logout()
+        self._set_eip_status(self.tr("Signing out..."))
+        self._checker_thread.add_checks([self._srp_auth.logout])
 
     def _done_logging_out(self, ok, message):
         """

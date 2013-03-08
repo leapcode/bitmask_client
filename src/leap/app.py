@@ -27,8 +27,7 @@ from PySide import QtCore, QtGui
 VERSION = "unknown"
 
 from leap.util import leap_argparse
-# TODO: add translations
-#from leap.gui import locale_rc
+from leap.gui import locale_rc
 from leap.gui.mainwindow import MainWindow
 
 
