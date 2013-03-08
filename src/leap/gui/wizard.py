@@ -148,13 +148,6 @@ class Wizard(QtGui.QWizard):
         """
         message = None
 
-        try:
-            username.encode("ascii")
-            password.encode("ascii")
-        except:
-            message = self.tr(u"Refrain from using non "
-                              u"ASCII characters like á, ñ, æ")
-
         if message is not None and password != password2:
             message = self.tr("Passwords don't match")
 
@@ -189,7 +182,9 @@ class Wizard(QtGui.QWizard):
             register.registration_finished.connect(
                 self._registration_finished)
             self._checker_thread.add_checks(
-                [partial(register.register_user, username, password)])
+                [partial(register.register_user,
+                         username.encode("utf8"),
+                         password.encode("utf8"))])
             self._username = username
             self._set_register_status(self.tr("Starting registration..."))
         else:

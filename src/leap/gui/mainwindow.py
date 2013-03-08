@@ -21,6 +21,7 @@ Main window for the leap client
 import os
 import logging
 import random
+import keyring
 
 from PySide import QtCore, QtGui
 
@@ -49,6 +50,9 @@ class MainWindow(QtGui.QMainWindow):
 
     GEOMETRY_KEY = "Geometry"
     WINDOWSTATE_KEY = "WindowState"
+    USER_KEY = "User"
+
+    KEYRING_KEY = "leap_client"
 
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
@@ -183,6 +187,7 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard is None:
             self._wizard = Wizard(self._checker_thread)
         self._wizard.exec_()
+        self._wizard = None
 
     def _finish_init(self):
         self.ui.cmbProviders.addItems(self._configured_providers())
@@ -194,6 +199,17 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.lnUser.setText(possible_username)
                 self._focus_password()
             self._wizard = None
+        else:
+            settings = QtCore.QSettings()
+            saved_user = settings.value(self.USER_KEY, None)
+
+            if saved_user is not None:
+                self.ui.lnUser.setText(saved_user)
+                self.ui.chkRemember.setChecked(True)
+                saved_password = keyring.get_password(self.KEYRING_KEY,
+                                                      saved_user
+                                                      .encode("utf8"))
+                self.ui.lnPassword.setText(saved_password.decode("utf8"))
 
     def _show_systray(self):
         """
@@ -442,6 +458,19 @@ class MainWindow(QtGui.QMainWindow):
         self._set_status(self.tr("Logging in..."))
         self._login_set_enabled(False)
 
+        if self.ui.chkRemember.isChecked():
+            try:
+                keyring.set_password(self.KEYRING_KEY,
+                                     username.encode("utf8"),
+                                     password.encode("utf8"))
+                # Only save the username if it was saved correctly in
+                # the keyring
+                settings = QtCore.QSettings()
+                settings.setValue(self.USER_KEY, username)
+            except Exception as e:
+                logger.error("Problem saving data to keyring. %r"
+                             % (e,))
+
         self._download_provider_config()
 
     def _provider_config_loaded(self, data):
@@ -455,8 +484,8 @@ class MainWindow(QtGui.QMainWindow):
         leap_assert(self._provider_config, "We need a provider config!")
 
         if data[self._provider_bootstrapper.PASSED_KEY]:
-            username = self.ui.lnUser.text()
-            password = self.ui.lnPassword.text()
+            username = self.ui.lnUser.text().encode("utf8")
+            password = self.ui.lnPassword.text().encode("utf8")
 
             if self._srp_auth is None:
                 self._srp_auth = SRPAuth(self._provider_config)

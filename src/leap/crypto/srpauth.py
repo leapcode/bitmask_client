@@ -41,7 +41,7 @@ class SRPAuth(QtCore.QObject):
     SRPAuth singleton
     """
 
-    class __impl(object):
+    class __impl(QtCore.QObject):
         """
         Implementation of the SRPAuth interface
         """
@@ -57,6 +57,8 @@ class SRPAuth(QtCore.QObject):
             @param server: Server to which we will authenticate
             @type server: str
             """
+            QtCore.QObject.__init__(self)
+
             leap_assert(provider_config,
                         "We need a provider config to authenticate")
 
