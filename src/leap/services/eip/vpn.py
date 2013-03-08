@@ -22,7 +22,6 @@ import logging
 import sys
 
 from PySide import QtCore, QtGui
-from subprocess import Popen, PIPE
 from functools import partial
 
 from leap.config.providerconfig import ProviderConfig
@@ -45,6 +44,8 @@ class VPN(QtCore.QThread):
 
     state_changed = QtCore.Signal(dict)
     status_changed = QtCore.Signal(dict)
+
+    process_finished = QtCore.Signal(int)
 
     CONNECTION_RETRY_TIME = 1000
     POLL_TIME = 100
@@ -69,7 +70,6 @@ class VPN(QtCore.QThread):
 
         self._launcher = get_platform_launcher()
         self._subp = None
-        self._started = False
 
         self._tn = None
         self._host = None
@@ -100,15 +100,14 @@ class VPN(QtCore.QThread):
             return
 
         try:
-            self._disconnect()
+            self._send_command("signal SIGTERM")
+            self._tn.close()
             self._subp.terminate()
         except Exception as e:
             logger.debug("Could not terminate process, trying command " +
                          "signal SIGNINT: %r" % (e,))
-            self._send_command("signal SIGINT")
-        self._subp.wait()
-        self.wait()
-        self._started = False
+        finally:
+            self._tn = None
 
     def start(self, eipconfig, providerconfig, socket_host, socket_port):
         """
@@ -128,7 +127,7 @@ class VPN(QtCore.QThread):
         leap_assert_type(eipconfig, EIPConfig)
         leap_assert(providerconfig, "We need a provider config")
         leap_assert_type(providerconfig, ProviderConfig)
-        leap_assert(not self._started, "Starting process more than once!")
+        leap_assert(not self.isRunning(), "Starting process more than once!")
 
         logger.debug("Starting VPN...")
 
@@ -140,8 +139,12 @@ class VPN(QtCore.QThread):
                                                  socket_host=socket_host,
                                                  socket_port=socket_port)
         try:
-            self._subp = Popen(command, stdout=PIPE, stderr=PIPE,
-                               bufsize=1, close_fds=ON_POSIX)
+            self._subp = QtCore.QProcess()
+            self._subp.finished.connect(self.process_finished)
+            self._subp.start(command[:1][0], command[1:])
+            logger.debug("Waiting for started...")
+            self._subp.waitForStarted()
+            logger.debug("Started!")
 
             self._host = socket_host
             self._port = socket_port
@@ -296,12 +299,18 @@ class VPN(QtCore.QThread):
                 logger.debug("Quitting VPN thread")
                 return
 
+            if self._subp and self._subp.state() != QtCore.QProcess.Running:
+                QtCore.QThread.msleep(self.CONNECTION_RETRY_TIME)
+
             if self._tn is None:
                 self._connect(self._host, self._port)
                 QtCore.QThread.msleep(self.CONNECTION_RETRY_TIME)
             else:
                 self._parse_state_and_notify(self._send_command("state"))
                 self._parse_status_and_notify(self._send_command("status"))
+                output_sofar = self._subp.readAllStandardOutput()
+                if len(output_sofar) > 0:
+                    logger.debug(output_sofar)
                 QtCore.QThread.msleep(self.POLL_TIME)
 
 

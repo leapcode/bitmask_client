@@ -56,6 +56,9 @@ class MainWindow(QtGui.QMainWindow):
         self.CONNECTED_ICON = QtGui.QPixmap(":/images/conn_connected.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/conn_error.png")
 
+        self.LOGGED_OUT_ICON = QtGui.QPixmap(":/images/leap-gray-big.png")
+        self.LOGGED_IN_ICON = QtGui.QPixmap(":/images/leap-color-big.png")
+
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -66,6 +69,10 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.lnPassword.returnPressed.connect(self._login)
 
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
+
+        self.ui.btnEipStartStop.setEnabled(False)
+        self.ui.btnEipStartStop.clicked.connect(
+            self._stop_eip)
 
         # This is loaded only once, there's a bug when doing that more
         # than once
@@ -105,11 +112,13 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_bootstrapper.download_config.connect(
             self._intermediate_stage)
         self._eip_bootstrapper.download_client_certificate.connect(
-            self._start_eip)
+            self._finish_eip_bootstrap)
 
         self._vpn = VPN()
         self._vpn.state_changed.connect(self._update_vpn_state)
         self._vpn.status_changed.connect(self._update_vpn_status)
+        self._vpn.process_finished.connect(
+            self._eip_finished)
 
         QtCore.QCoreApplication.instance().connect(
             QtCore.QCoreApplication.instance(),
@@ -130,6 +139,22 @@ class MainWindow(QtGui.QMainWindow):
         self._really_quit = False
 
         self._systray = None
+        self._vpn_systray = None
+
+        self._action_eip_status = QtGui.QAction("Encryption is OFF", self)
+        self._action_eip_status.setEnabled(False)
+        self._action_eip_stop = QtGui.QAction("Stop", self)
+        self._action_eip_stop.triggered.connect(
+            self._stop_eip)
+        self._action_eip_write = QtGui.QAction(
+            QtGui.QIcon(":/images/Arrow-Up-32.png"),
+            "0.0 Kb", self)
+        self._action_eip_write.setEnabled(False)
+        self._action_eip_read = QtGui.QAction(
+            QtGui.QIcon(":/images/Arrow-Down-32.png"),
+            "0.0 Kb", self)
+        self._action_eip_read.setEnabled(False)
+
         self._action_visible = QtGui.QAction("Hide", self)
         self._action_visible.triggered.connect(self._toggle_visible)
 
@@ -179,9 +204,19 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self.ui.action_quit)
         self._systray = QtGui.QSystemTrayIcon(self)
         self._systray.setContextMenu(systrayMenu)
-        self._systray.setIcon(QtGui.QIcon(self.ERROR_ICON))
+        self._systray.setIcon(QtGui.QIcon(self.LOGGED_OUT_ICON))
         self._systray.setVisible(True)
         self._systray.activated.connect(self._toggle_visible)
+
+        vpn_systrayMenu = QtGui.QMenu(self)
+        vpn_systrayMenu.addAction(self._action_eip_status)
+        vpn_systrayMenu.addAction(self._action_eip_stop)
+        vpn_systrayMenu.addAction(self._action_eip_read)
+        vpn_systrayMenu.addAction(self._action_eip_write)
+        self._vpn_systray = QtGui.QSystemTrayIcon(self)
+        self._vpn_systray.setContextMenu(vpn_systrayMenu)
+        self._vpn_systray.setIcon(QtGui.QIcon(self.ERROR_ICON))
+        self._vpn_systray.setVisible(False)
 
     def _toggle_visible(self):
         """
@@ -455,7 +490,32 @@ class MainWindow(QtGui.QMainWindow):
         triggers the eip bootstrapping
         """
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
+        self._systray.setIcon(self.LOGGED_IN_ICON)
         self._download_eip_config()
+
+    def _start_eip(self):
+        self._vpn.start(eipconfig=self._eip_config,
+                        providerconfig=self._provider_config,
+                        socket_host="/home/chiiph/vpnsock",
+                        socket_port="unix")
+        self._vpn_systray.setVisible(True)
+        self.ui.btnEipStartStop.setEnabled(True)
+        self.ui.btnEipStartStop.setText("Stop EIP")
+        self.ui.btnEipStartStop.clicked.disconnect(
+            self._start_eip)
+        self.ui.btnEipStartStop.clicked.connect(
+            self._stop_eip)
+
+    def _stop_eip(self):
+        self._vpn.set_should_quit()
+        self._vpn_systray.setVisible(False)
+        self._set_eip_status("EIP has stopped")
+        self._set_eip_status_icon("error")
+        self.ui.btnEipStartStop.setText("Start EIP")
+        self.ui.btnEipStartStop.clicked.disconnect(
+            self._stop_eip)
+        self.ui.btnEipStartStop.clicked.connect(
+            self._start_eip)
 
     def _download_eip_config(self):
         """
@@ -483,13 +543,16 @@ class MainWindow(QtGui.QMainWindow):
         @type status: str
         """
         selected_pixmap = self.ERROR_ICON
+        tray_message = "Encryption is OFF"
         if status in ("AUTH", "GET_CONFIG"):
             selected_pixmap = self.CONNECTING_ICON
         elif status in ("CONNECTED"):
+            tray_message = "Encryption is ON"
             selected_pixmap = self.CONNECTED_ICON
 
         self.ui.lblVPNStatusIcon.setPixmap(selected_pixmap)
-        self._systray.setIcon(QtGui.QIcon(selected_pixmap))
+        self._vpn_systray.setIcon(QtGui.QIcon(selected_pixmap))
+        self._action_eip_status.setText(tray_message)
 
     def _update_vpn_state(self, data):
         """
@@ -520,12 +583,16 @@ class MainWindow(QtGui.QMainWindow):
         """
         upload = float(data[self._vpn.TUNTAP_WRITE_KEY])
         upload = upload / 1000.0
-        self.ui.lblUpload.setText("%s Kb" % (upload,))
+        upload_str = "%s Kb" % (upload,)
+        self.ui.lblUpload.setText(upload_str)
+        self._action_eip_write.setText(upload_str)
         download = float(data[self._vpn.TUNTAP_READ_KEY])
         download = download / 1000.0
-        self.ui.lblDownload.setText("%s Kb" % (download,))
+        download_str = "%s Kb" % (download,)
+        self.ui.lblDownload.setText(download_str)
+        self._action_eip_read.setText(download_str)
 
-    def _start_eip(self, data):
+    def _finish_eip_bootstrap(self, data):
         """
         SLOT
         TRIGGER: self._eip_bootstrapper.download_client_certificate
@@ -542,10 +609,7 @@ class MainWindow(QtGui.QMainWindow):
                                                    self._provider_config
                                                    .get_domain(),
                                                    "eip-service.json")):
-            self._vpn.start(eipconfig=self._eip_config,
-                            providerconfig=self._provider_config,
-                            socket_host="/home/chiiph/vpnsock",
-                            socket_port="unix")
+                self._start_eip()
         # TODO: display a message if the EIP configuration cannot be
         # loaded
 
@@ -569,12 +633,14 @@ class MainWindow(QtGui.QMainWindow):
         logging out
         """
         self._set_status(message)
+        self._vpn_systray.setIcon(self.LOGGED_OUT_ICON)
         self.ui.action_sign_out.setEnabled(False)
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
         self.ui.lnPassword.setText("")
         self._login_set_enabled(True)
         self._set_status("")
         self._vpn.set_should_quit()
+        self._vpn_systray.setVisible(False)
 
     def _intermediate_stage(self, data):
         """
@@ -593,6 +659,18 @@ class MainWindow(QtGui.QMainWindow):
         if not passed:
             self._login_set_enabled(True)
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
+
+    def _eip_finished(self, exitCode):
+        """
+        SLOT
+        TRIGGERS:
+          self._vpn.process_finished
+
+        Triggered when the EIP/VPN process finishes to set the UI
+        accordingly
+        """
+        logger.debug("Finished VPN with exitCode %s" % (exitCode,))
+        self._stop_eip()
 
 if __name__ == "__main__":
     import signal
