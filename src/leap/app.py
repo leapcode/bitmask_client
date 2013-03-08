@@ -22,9 +22,7 @@ import sys
 from functools import partial
 from PySide import QtCore, QtGui
 
-# TODO: add version handling
-#from leap import __version__ as VERSION
-VERSION = "unknown"
+from leap import __version__ as VERSION
 
 from leap.util import leap_argparse
 from leap.gui import locale_rc
