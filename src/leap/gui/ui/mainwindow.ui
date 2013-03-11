@@ -70,13 +70,10 @@
     <item row="2" column="0" colspan="5">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="page">
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="2" column="2" colspan="2">
-         <widget class="QLineEdit" name="lnUser"/>
-        </item>
         <item row="4" column="2">
          <widget class="QCheckBox" name="chkRemember">
           <property name="text">
@@ -84,15 +81,11 @@
           </property>
          </widget>
         </item>
-        <item row="5" column="2">
-         <widget class="QPushButton" name="btnLogin">
-          <property name="text">
-           <string>Login</string>
-          </property>
-         </widget>
+        <item row="2" column="2" colspan="2">
+         <widget class="QLineEdit" name="lnUser"/>
         </item>
-        <item row="2" column="4">
-         <spacer name="horizontalSpacer_4">
+        <item row="2" column="0">
+         <spacer name="horizontalSpacer_3">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -104,8 +97,15 @@
           </property>
          </spacer>
         </item>
-        <item row="2" column="0">
-         <spacer name="horizontalSpacer_3">
+        <item row="6" column="2">
+         <widget class="QPushButton" name="btnLogin">
+          <property name="text">
+           <string>Login</string>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="4">
+         <spacer name="horizontalSpacer_4">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
@@ -164,6 +164,16 @@
           </property>
           <property name="alignment">
            <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item row="5" column="2" colspan="2">
+         <widget class="QCheckBox" name="chkAutoLogin">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Automatically login</string>
           </property>
          </widget>
         </item>

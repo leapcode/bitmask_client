@@ -48,10 +48,13 @@ class MainWindow(QtGui.QMainWindow):
     LOGIN_INDEX = 0
     EIP_STATUS_INDEX = 1
 
+    # Settings
     GEOMETRY_KEY = "Geometry"
     WINDOWSTATE_KEY = "WindowState"
     USER_KEY = "User"
+    AUTOLOGIN_KEY = "AutoLogin"
 
+    # Keyring
     KEYRING_KEY = "leap_client"
 
     def __init__(self):
@@ -202,14 +205,21 @@ class MainWindow(QtGui.QMainWindow):
         else:
             settings = QtCore.QSettings()
             saved_user = settings.value(self.USER_KEY, None)
+            auto_login = settings.value(self.AUTOLOGIN_KEY, None)
 
             if saved_user is not None:
                 self.ui.lnUser.setText(saved_user)
                 self.ui.chkRemember.setChecked(True)
+                self.ui.chkAutoLogin.setEnabled(True)
                 saved_password = keyring.get_password(self.KEYRING_KEY,
                                                       saved_user
                                                       .encode("utf8"))
                 self.ui.lnPassword.setText(saved_password.decode("utf8"))
+
+                # Only automatically login if there is a saved user
+                if auto_login is not None:
+                    self.ui.chkAutoLogin.setChecked(True)
+                    self._login()
 
     def _show_systray(self):
         """
@@ -315,6 +325,7 @@ class MainWindow(QtGui.QMainWindow):
         settings = QtCore.QSettings()
         settings.setValue(self.GEOMETRY_KEY, self.saveGeometry())
         settings.setValue(self.WINDOWSTATE_KEY, self.saveState())
+        settings.setValue(self.AUTOLOGIN_KEY, self.ui.chkAutoLogin.isChecked())
         QtGui.QMainWindow.closeEvent(self, e)
 
     def _configured_providers(self):
@@ -378,6 +389,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.lnPassword.setEnabled(enabled)
         self.ui.btnLogin.setEnabled(enabled)
         self.ui.chkRemember.setEnabled(enabled)
+        self.ui.chkAutoLogin.setEnabled(enabled)
         self.ui.cmbProviders.setEnabled(enabled)
 
     def _download_provider_config(self):
@@ -458,6 +470,8 @@ class MainWindow(QtGui.QMainWindow):
         self._set_status(self.tr("Logging in..."))
         self._login_set_enabled(False)
 
+        settings = QtCore.QSettings()
+
         if self.ui.chkRemember.isChecked():
             try:
                 keyring.set_password(self.KEYRING_KEY,
@@ -465,7 +479,6 @@ class MainWindow(QtGui.QMainWindow):
                                      password.encode("utf8"))
                 # Only save the username if it was saved correctly in
                 # the keyring
-                settings = QtCore.QSettings()
                 settings.setValue(self.USER_KEY, username)
             except Exception as e:
                 logger.error("Problem saving data to keyring. %r"
@@ -577,7 +590,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         selected_pixmap = self.ERROR_ICON
         tray_message = self.tr("Encryption is OFF")
-        if status in ("WAIT", "AUTH", "GET_CONFIG"):
+        if status in ("WAIT", "AUTH", "GET_CONFIG", "RECONNECTING"):
             selected_pixmap = self.CONNECTING_ICON
         elif status in ("CONNECTED"):
             tray_message = self.tr("Encryption is ON")
