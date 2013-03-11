@@ -210,14 +210,17 @@ class Wizard(QtGui.QWizard):
             self.page(self.REGISTER_USER_PAGE).set_completed()
             self.button(QtGui.QWizard.BackButton).setEnabled(False)
         else:
+            old_username = self._username
             self._username = None
             self._password = None
             error_msg = self.tr("Unknown error")
             try:
                 error_msg = req.json().get("errors").get("login")[0]
+                if not error_msg.istitle():
+                    error_msg = "%s %s" % (old_username, error_msg)
+                self._set_register_status(error_msg)
             except:
                 logger.error("Unknown error: %r" % (req.content,))
-            self._set_register_status(error_msg)
             self.ui.btnRegister.setEnabled(True)
 
     def _set_register_status(self, status):
