@@ -23,13 +23,18 @@ def parse_requirements(reqfiles=['requirements.txt',
                                  'requirements.pip',
                                  'pkg/requirements.pip']):
     """
-    Parses the requirement files provided
+    Parses the requirement files provided.
+
+    Checks the value of LEAP_VENV_SKIP_PYSIDE to see if it should
+    return PySide as a dep or not. Don't set, or set to 0 if you want
+    to install it through pip.
 
     @param reqfiles: requirement files to parse
     @type reqfiles: list of str
     """
 
     requirements = []
+    skip_pyside = os.getenv("LEAP_VENV_SKIP_PYSIDE", "0") != "0"
     for line in get_reqs_from_files(reqfiles):
         # -e git://foo.bar/baz/master#egg=foobar
         if re.match(r'\s*-e\s+', line):
@@ -46,6 +51,8 @@ def parse_requirements(reqfiles=['requirements.txt',
         # argparse is part of the standard library starting with 2.7
         # adding it to the requirements list screws distro installs
         elif line == 'argparse' and sys.version_info >= (2, 7):
+            pass
+        elif line == 'PySide' and skip_pyside:
             pass
         else:
             if line != '':

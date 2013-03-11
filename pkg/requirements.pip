@@ -8,3 +8,4 @@ pyopenssl
 keyring
 pyxdg
 argparse
+PySide
