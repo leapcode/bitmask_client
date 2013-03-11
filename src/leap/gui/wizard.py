@@ -116,6 +116,8 @@ class Wizard(QtGui.QWizard):
         self.ui.lblUser.setValidator(
             QtGui.QRegExpValidator(usernameRe, self))
 
+        self.page(self.REGISTER_USER_PAGE).setCommitPage(True)
+
         self._username = None
         self._password = None
 
@@ -233,12 +235,24 @@ class Wizard(QtGui.QWizard):
         self.ui.lblRegisterStatus.setText(status)
 
     def _reset_provider_check(self):
+        """
+        Resets the UI for checking a provider. Also resets the domain
+        in this object.
+        """
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
         self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
         self._domain = None
         self.button(QtGui.QWizard.NextButton).setEnabled(False)
         self.page(self.SELECT_PROVIDER_PAGE).set_completed(False)
+
+    def _reset_provider_setup(self):
+        """
+        Resets the UI for setting up a provider.
+        """
+        self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
+        self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
+        self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 
     def _check_provider(self):
         """
@@ -421,6 +435,7 @@ class Wizard(QtGui.QWizard):
             self._enable_check("")
 
         if pageId == self.SETUP_PROVIDER_PAGE:
+            self._reset_provider_setup()
             self.page(pageId).setSubTitle(self.tr("Gathering configuration "
                                                   "options for %s") %
                                           (self._provider_config
