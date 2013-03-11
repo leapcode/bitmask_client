@@ -81,7 +81,7 @@ def main():
     if qtTranslator.load("qt_%s" % locale, ":/translations"):
         app.installTranslator(qtTranslator)
     appTranslator = QtCore.QTranslator()
-    if appTranslator.load("leap_client_%s" % locale, ":/translations"):
+    if appTranslator.load("%s.qm" % locale[:2], ":/translations"):
         app.installTranslator(appTranslator)
 
     # Needed for initializing qsettings it will write

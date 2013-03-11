@@ -205,7 +205,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             settings = QtCore.QSettings()
             saved_user = settings.value(self.USER_KEY, None)
-            auto_login = settings.value(self.AUTOLOGIN_KEY, None)
+            auto_login = settings.value(self.AUTOLOGIN_KEY, "false") != "false"
 
             if saved_user is not None:
                 self.ui.lnUser.setText(saved_user)
@@ -217,8 +217,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.lnPassword.setText(saved_password.decode("utf8"))
 
                 # Only automatically login if there is a saved user
-                if auto_login is not None:
-                    self.ui.chkAutoLogin.setChecked(True)
+                self.ui.chkAutoLogin.setChecked(auto_login)
+                if auto_login:
                     self._login()
 
     def _show_systray(self):
