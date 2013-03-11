@@ -54,6 +54,7 @@ class MainWindow(QtGui.QMainWindow):
     WINDOWSTATE_KEY = "WindowState"
     USER_KEY = "User"
     AUTOLOGIN_KEY = "AutoLogin"
+    PROPER_PROVIDER = "ProperProvider"
 
     # Keyring
     KEYRING_KEY = "leap_client"
@@ -183,6 +184,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def _rejected_wizard(self):
         if self._wizard_firstrun:
+            settings = QtCore.QSettings()
+            settings.setValue(self.PROPER_PROVIDER, False)
             self.quit()
         else:
             self._finish_init()
@@ -194,9 +197,11 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard = None
 
     def _finish_init(self):
+        settings = QtCore.QSettings()
         self.ui.cmbProviders.addItems(self._configured_providers())
         self._show_systray()
         self.show()
+
         if self._wizard:
             possible_username = self._wizard.get_username()
             possible_password = self._wizard.get_password()
@@ -208,8 +213,8 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.chkRemember.setChecked(True)
                 self._login()
             self._wizard = None
+            settings.setValue(self.PROPER_PROVIDER, True)
         else:
-            settings = QtCore.QSettings()
             saved_user = settings.value(self.USER_KEY, None)
             auto_login = settings.value(self.AUTOLOGIN_KEY, "false") != "false"
 
@@ -305,7 +310,7 @@ class MainWindow(QtGui.QMainWindow):
     def quit(self):
         self._really_quit = True
         if self._wizard:
-            self._wizard.accept()
+            self._wizard.close()
         self.close()
 
     def changeEvent(self, e):
@@ -359,7 +364,11 @@ class MainWindow(QtGui.QMainWindow):
 
         @rtype: bool
         """
-        return len(self._configured_providers()) == 0
+        settings = QtCore.QSettings()
+        has_provider_on_disk = len(self._configured_providers()) != 0
+        is_proper_provider = settings.value(self.PROPER_PROVIDER,
+                                            "false") != "false"
+        return not (has_provider_on_disk and is_proper_provider)
 
     def _focus_password(self):
         """
