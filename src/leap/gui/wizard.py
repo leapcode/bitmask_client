@@ -49,6 +49,8 @@ class Wizard(QtGui.QWizard):
     WEAK_PASSWORDS = ("123456", "qweasd", "qwerty",
                       "password")
 
+    BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
+
     def __init__(self, checker):
         QtGui.QWizard.__init__(self)
 
@@ -109,6 +111,10 @@ class Wizard(QtGui.QWizard):
             self._register)
         self.ui.btnRegister.clicked.connect(
             self._register)
+
+        usernameRe = QtCore.QRegExp(self.BARE_USERNAME_REGEX)
+        self.ui.lblUser.setValidator(
+            QtGui.QRegExpValidator(usernameRe, self))
 
         self._username = None
         self._password = None
