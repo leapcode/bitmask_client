@@ -283,6 +283,11 @@ class Wizard(QtGui.QWizard):
         Sets the status for the name resolution check
         """
         self._complete_task(data, self.ui.lblNameResolution)
+        status = ""
+        if not data[self._provider_bootstrapper.PASSED_KEY]:
+            status = self.tr("<font color='red'><b>Non-existent "
+                             "provider</b></font>")
+        self.ui.lblProviderSelectStatus.setText(status)
 
     def _https_connection(self, data):
         """
@@ -292,6 +297,11 @@ class Wizard(QtGui.QWizard):
         Sets the status for the https connection check
         """
         self._complete_task(data, self.ui.lblHTTPS)
+        status = ""
+        if not data[self._provider_bootstrapper.PASSED_KEY]:
+            status = self.tr("<font color='red'><b>Provider does not "
+                             "support HTTPS</b></font>")
+            self.ui.lblProviderSelectStatus.setText(status)
 
     def _download_provider_info(self, data):
         """
@@ -316,6 +326,11 @@ class Wizard(QtGui.QWizard):
             }
             self._complete_task(new_data, self.ui.lblProviderInfo)
 
+        status = ""
+        if not data[self._provider_bootstrapper.PASSED_KEY]:
+            status = self.tr("<font color='red'><b>Not a valid provider"
+                             "</b></font>")
+            self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(True)
 
     def _download_ca_cert(self, data):
