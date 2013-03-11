@@ -14,21 +14,12 @@ except ImportError:
 import os
 
 from pkg import utils
-#from pkg import branding
-#from setuptools import Command
-from distutils.command.build import build as _build
-from distutils.command.sdist import sdist as _sdist
 
 import versioneer
 versioneer.versionfile_source = 'src/leap/_version.py'
 versioneer.versionfile_build = 'leap/_version.py'
 versioneer.tag_prefix = ''  # tags are like 1.2.0
 versioneer.parentdir_prefix = 'leap_client-'
-#versioneer.parentdir_prefix = branding.APP_PREFIX
-
-#branding.brandingfile = 'src/leap/_branding.py'
-#branding.brandingfile_build = 'leap/_branding.py'
-#branding.cert_path = 'src/leap/certs'
 
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
@@ -49,131 +40,12 @@ trove_classifiers = [
     "Topic :: Utilities"
 ]
 
-# BRANDING_OPTS = """
-# # Do NOT manually edit this file!
-# # This file has been written from pkg/branding/config.py data by leap setup.py
-# # script.
-
-# BRANDING = {
-#     'short_name': "%(short_name)s",
-#     'provider_domain': "%(provider_domain)s",
-#     'provider_ca_file': "%(provider_ca_file)s"}
-# """
-
-
-# def write_to_branding_file(filename, branding_dict):
-#     f = open(filename, "w")
-#     f.write(BRANDING_OPTS % branding_dict)
-#     f.close()
-
-
-# def copy_pemfile_to_certdir(frompath, topath):
-#     with open(frompath, "r") as cert_f:
-#         cert_s = cert_f.read()
-#     with open(topath, "w") as f:
-#         f.write(cert_s)
-
-
-# def do_branding(targetfile=branding.brandingfile):
-#     if branding.BRANDED_BUILD:
-#         opts = branding.BRANDED_OPTS
-#         print("DOING BRANDING FOR LEAP")
-#         certpath = opts['provider_ca_path']
-#         shortname = opts['short_name']
-#         tocertfile = shortname + '-cacert.pem'
-#         topath = os.path.join(
-#             branding.cert_path,
-#             tocertfile)
-#         copy_pemfile_to_certdir(
-#             certpath,
-#             topath)
-#         opts['provider_ca_file'] = tocertfile
-#         write_to_branding_file(
-#             targetfile,
-#             opts)
-#     else:
-#         print('not running branding because BRANDED_BUILD set to False')
-
-
-# class DoBranding(Command):
-#     description = "copy the branding info the the top level package"
-#     user_options = []
-
-#     def initialize_options(self):
-#         pass
-
-#     def finalize_options(self):
-#         pass
-
-#     def run(self):
-#         do_branding()
-
-
-class cmd_build(_build):
-    def run(self):
-        _build.run(self)
-
-        versions = versioneer.get_versions(verbose=True)
-        # now locate _version.py in the new build/ directory and replace it
-        # with an updated value
-        target_versionfile = os.path.join(
-            self.build_lib,
-            versioneer.versionfile_build)
-        print("UPDATING %s" % target_versionfile)
-        os.unlink(target_versionfile)
-        f = open(target_versionfile, "w")
-        f.write(versioneer.SHORT_VERSION_PY % versions)
-        f.close()
-
-        # branding
-        # target_brandingfile = os.path.join(
-        #     self.build_lib,
-        #     branding.brandingfile_build)
-        # do_branding(targetfile=target_brandingfile)
-
-
-class cmd_sdist(_sdist):
-    def run(self):
-        # versioneer:
-        versions = versioneer.get_versions(verbose=True)
-        self._versioneer_generated_versions = versions
-        # unless we update this, the command will keep using the old version
-        self.distribution.metadata.version = versions["version"]
-
-        # branding:
-        #do_branding()
-        return _sdist.run(self)
-
-    def make_release_tree(self, base_dir, files):
-        _sdist.make_release_tree(self, base_dir, files)
-        # now locate _version.py in the new base_dir directory (remembering
-        # that it may be a hardlink) and replace it with an updated value
-        target_versionfile = os.path.join(
-            base_dir, versioneer.versionfile_source)
-        print("UPDATING %s" % target_versionfile)
-        os.unlink(target_versionfile)
-        f = open(target_versionfile, "w")
-        f.write(
-            versioneer.SHORT_VERSION_PY % self._versioneer_generated_versions)
-        f.close()
 
 cmdclass = versioneer.get_cmdclass()
-#cmdclass["branding"] = DoBranding
-
-# Uncomment this to have the branding command run automatically
-# on the build and sdist commands.
-#cmdclass["build"] = cmd_build
-#cmdclass["sdist"] = cmd_sdist
-
-#launcher_name = branding.get_shortname()
-#if launcher_name:
-#    leap_launcher = 'leap-%s-client=leap.app:main' % launcher_name
-#else:
-#    leap_launcher = 'leap-client=leap.app:main'
 leap_launcher = 'leap-client=leap.app:main'
 
 setup(
-    name="leap-client",  # branding.get_name(),
+    name="leap-client",
     package_dir={"": "src"},
     version=versioneer.get_version(),
     cmdclass=cmdclass,
