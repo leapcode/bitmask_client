@@ -384,13 +384,15 @@ class MainWindow(QtGui.QMainWindow):
         """
         self.ui.lnPassword.setFocus()
 
-    def _set_status(self, status):
+    def _set_status(self, status, error=True):
         """
         Sets the status label at the login stage to status
 
         @param status: status message
         @type status: str
         """
+        if error:
+            status = "<font color='red'><b>%s</b></font>" % (status,)
         self.ui.lblStatus.setText(status)
 
     def _set_eip_status(self, status):
@@ -492,7 +494,7 @@ class MainWindow(QtGui.QMainWindow):
             self._set_status(self.tr("Please provide a valid Password"))
             return
 
-        self._set_status(self.tr("Logging in..."))
+        self._set_status(self.tr("Logging in..."), error=False)
         self._login_set_enabled(False)
 
         settings = QtCore.QSettings()
@@ -545,7 +547,7 @@ class MainWindow(QtGui.QMainWindow):
         Once the user is properly authenticated, try starting the EIP
         service
         """
-        self._set_status(message)
+        self._set_status(message, error=not ok)
         if ok:
             self.ui.action_sign_out.setEnabled(True)
             # We leave a bit of room for the user to see the
@@ -708,7 +710,6 @@ class MainWindow(QtGui.QMainWindow):
         Switches the stackedWidget back to the login stage after
         logging out
         """
-        self._set_status(message)
         self._vpn_systray.setIcon(self.LOGGED_OUT_ICON)
         self.ui.action_sign_out.setEnabled(False)
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
