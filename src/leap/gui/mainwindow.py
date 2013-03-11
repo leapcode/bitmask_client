@@ -139,6 +139,10 @@ class MainWindow(QtGui.QMainWindow):
             QtCore.SIGNAL("aboutToQuit()"),
             self._checker_thread.set_should_quit)
 
+        self.ui.chkRemember.stateChanged.connect(
+            self._remember_state_changed)
+        self.ui.chkRemember.setEnabled(keyring.get_keyring() is not None)
+
         self.ui.action_sign_out.setEnabled(False)
         self.ui.action_sign_out.triggered.connect(self._logout)
         self.ui.action_about_leap.triggered.connect(self._about)
@@ -196,6 +200,9 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard.exec_()
         self._wizard = None
 
+    def _remember_state_changed(self, state):
+        self.ui.chkAutoLogin.setEnabled(state == QtCore.Qt.Checked)
+
     def _finish_init(self):
         settings = QtCore.QSettings()
         self.ui.cmbProviders.addItems(self._configured_providers())
@@ -221,7 +228,8 @@ class MainWindow(QtGui.QMainWindow):
             if saved_user is not None:
                 self.ui.lnUser.setText(saved_user)
                 self.ui.chkRemember.setChecked(True)
-                self.ui.chkAutoLogin.setEnabled(True)
+                self.ui.chkAutoLogin.setEnabled(self.ui.chkRemember
+                                                .isEnabled())
                 saved_password = keyring.get_password(self.KEYRING_KEY,
                                                       saved_user
                                                       .encode("utf8"))
@@ -405,7 +413,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.lnPassword.setEnabled(enabled)
         self.ui.btnLogin.setEnabled(enabled)
         self.ui.chkRemember.setEnabled(enabled)
-        self.ui.chkAutoLogin.setEnabled(enabled)
+        if not enabled:
+            self.ui.chkAutoLogin.setEnabled(False)
         self.ui.cmbProviders.setEnabled(enabled)
 
     def _download_provider_config(self):
