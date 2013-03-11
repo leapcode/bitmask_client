@@ -27,9 +27,10 @@ class WizardPage(QtGui.QWizardPage):
         QtGui.QWizardPage.__init__(self)
         self._completed = False
 
-    def set_completed(self):
-        self._completed = True
-        self.completeChanged.emit()
+    def set_completed(self, val=True):
+        self._completed = val
+        if val:
+            self.completeChanged.emit()
 
     def isComplete(self):
         return self._completed

@@ -129,6 +129,7 @@ class Wizard(QtGui.QWizard):
 
     def _enable_check(self, text):
         self.ui.btnCheck.setEnabled(len(self.ui.lnProvider.text()) != 0)
+        self._reset_provider_check()
 
     def _focus_password(self):
         """
@@ -228,6 +229,14 @@ class Wizard(QtGui.QWizard):
         """
         self.ui.lblRegisterStatus.setText(status)
 
+    def _reset_provider_check(self):
+        self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
+        self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
+        self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
+        self._domain = None
+        self.button(QtGui.QWizard.NextButton).setEnabled(False)
+        self.page(self.SELECT_PROVIDER_PAGE).set_completed(False)
+
     def _check_provider(self):
         """
         SLOT
@@ -242,6 +251,8 @@ class Wizard(QtGui.QWizard):
 
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
+        self.ui.lnProvider.setEnabled(False)
+        self.button(QtGui.QWizard.BackButton).clearFocus()
         self._domain = self.ui.lnProvider.text()
 
         self._provider_bootstrapper.run_provider_select_checks(
@@ -284,10 +295,13 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblNameResolution)
         status = ""
-        if not data[self._provider_bootstrapper.PASSED_KEY]:
+        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        if not passed:
             status = self.tr("<font color='red'><b>Non-existent "
                              "provider</b></font>")
         self.ui.lblProviderSelectStatus.setText(status)
+        self.ui.btnCheck.setEnabled(not passed)
+        self.ui.lnProvider.setEnabled(not passed)
 
     def _https_connection(self, data):
         """
@@ -298,10 +312,13 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblHTTPS)
         status = ""
-        if not data[self._provider_bootstrapper.PASSED_KEY]:
+        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        if not passed:
             status = self.tr("<font color='red'><b>Provider does not "
                              "support HTTPS</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
+        self.ui.btnCheck.setEnabled(not passed)
+        self.ui.lnProvider.setEnabled(not passed)
 
     def _download_provider_info(self, data):
         """
@@ -332,6 +349,7 @@ class Wizard(QtGui.QWizard):
                              "</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(True)
+        self.ui.lnProvider.setEnabled(True)
 
     def _download_ca_cert(self, data):
         """
@@ -400,6 +418,10 @@ class Wizard(QtGui.QWizard):
             self._enable_check("")
 
         if pageId == self.SETUP_PROVIDER_PAGE:
+            self.page(pageId).setSubTitle(self.tr("Gathering configuration "
+                                                  "options for %s") %
+                                          (self._provider_config
+                                           .get_name(),))
             self._provider_bootstrapper.\
                 run_provider_setup_checks(self._checker_thread,
                                           self._provider_config)
@@ -409,7 +431,10 @@ class Wizard(QtGui.QWizard):
                                                         self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
-            # TODO: get the right lang for these
+            self.page(pageId).setSubTitle(self.tr("Services offered by %s") %
+                                          (self._provider_config
+                                           .get_name(),))
+
             lang = QtCore.QLocale.system().name()
             self.ui.lblProviderName.setText(
                 "<b>%s</b>" %
@@ -420,6 +445,12 @@ class Wizard(QtGui.QWizard):
                 (self._provider_config.get_description(lang=lang),))
             self.ui.lblProviderPolicy.setText(self._provider_config
                                               .get_enrollment_policy())
+
+        if pageId == self.REGISTER_USER_PAGE:
+            self.page(pageId).setSubTitle(self.tr("Register a new user with "
+                                                  "%s") %
+                                          (self._provider_config
+                                           .get_name(),))
 
     def nextId(self):
         """
