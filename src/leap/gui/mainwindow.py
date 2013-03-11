@@ -29,6 +29,7 @@ from ui_mainwindow import Ui_MainWindow
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.vpn import VPN
+from leap.services.eip.vpnlaunchers import VPNLauncherException
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
@@ -546,17 +547,20 @@ class MainWindow(QtGui.QMainWindow):
         self._download_eip_config()
 
     def _start_eip(self):
-        self._vpn.start(eipconfig=self._eip_config,
-                        providerconfig=self._provider_config,
-                        socket_host="localhost",
-                        socket_port=str(random.randint(1000, 9999)))
-        self._vpn_systray.setVisible(True)
+        try:
+            self._vpn.start(eipconfig=self._eip_config,
+                            providerconfig=self._provider_config,
+                            socket_host="localhost",
+                            socket_port=str(random.randint(1000, 9999)))
+            self._vpn_systray.setVisible(True)
+            self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
+            self.ui.btnEipStartStop.clicked.disconnect(
+                self._start_eip)
+            self.ui.btnEipStartStop.clicked.connect(
+                self._stop_eip)
+        except VPNLauncherException as e:
+            self._set_eip_status("%s" % (e,))
         self.ui.btnEipStartStop.setEnabled(True)
-        self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
-        self.ui.btnEipStartStop.clicked.disconnect(
-            self._start_eip)
-        self.ui.btnEipStartStop.clicked.connect(
-            self._stop_eip)
 
     def _stop_eip(self):
         self._vpn.set_should_quit()

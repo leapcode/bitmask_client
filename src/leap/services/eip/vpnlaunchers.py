@@ -34,6 +34,10 @@ from leap.util.check import leap_assert, leap_assert_type
 logger = logging.getLogger(__name__)
 
 
+class VPNLauncherException(Exception):
+    pass
+
+
 class VPNLauncher:
     """
     Abstract launcher class
@@ -153,6 +157,8 @@ class LinuxVPNLauncher(VPNLauncher):
         """
         Returns the platform dependant vpn launching command
 
+        Might raise VPNException.
+
         @param eipconfig: eip configuration object
         @type eipconfig: EIPConfig
         @param providerconfig: provider specific configuration
@@ -174,7 +180,8 @@ class LinuxVPNLauncher(VPNLauncher):
         leap_assert(socket_port, "We need a socket port!")
 
         openvpn_possibilities = which(self.OPENVPN_BIN)
-        leap_assert(len(openvpn_possibilities) > 0, "We couldn't find openvpn")
+        if len(openvpn_possibilities) == 0:
+            raise VPNLauncherException("We couldn't find openvpn")
 
         openvpn = openvpn_possibilities[0]
         args = []
