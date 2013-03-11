@@ -6,3 +6,4 @@ requests
 srp>=1.0.2
 pyopenssl
 keyring
+pyxdg

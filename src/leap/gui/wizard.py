@@ -111,11 +111,15 @@ class Wizard(QtGui.QWizard):
             self._register)
 
         self._username = None
+        self._password = None
 
         self._checker_thread = checker
 
     def get_username(self):
         return self._username
+
+    def get_password(self):
+        return self._password
 
     def _enable_check(self, text):
         self.ui.btnCheck.setEnabled(len(self.ui.lnProvider.text()) != 0)
@@ -186,6 +190,7 @@ class Wizard(QtGui.QWizard):
                          username.encode("utf8"),
                          password.encode("utf8"))])
             self._username = username
+            self._password = password
             self._set_register_status(self.tr("Starting registration..."))
         else:
             self.ui.btnRegister.setEnabled(True)
@@ -199,6 +204,7 @@ class Wizard(QtGui.QWizard):
             self.button(QtGui.QWizard.BackButton).setEnabled(False)
         else:
             self._username = None
+            self._password = None
             error_msg = self.tr("Unknown error")
             try:
                 error_msg = req.json().get("errors").get("login")[0]

@@ -198,9 +198,14 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         if self._wizard:
             possible_username = self._wizard.get_username()
+            possible_password = self._wizard.get_password()
             if possible_username is not None:
                 self.ui.lnUser.setText(possible_username)
                 self._focus_password()
+            if possible_password is not None:
+                self.ui.lnPassword.setText(possible_password)
+                self.ui.chkRemember.setChecked(True)
+                self._login()
             self._wizard = None
         else:
             settings = QtCore.QSettings()
@@ -214,7 +219,8 @@ class MainWindow(QtGui.QMainWindow):
                 saved_password = keyring.get_password(self.KEYRING_KEY,
                                                       saved_user
                                                       .encode("utf8"))
-                self.ui.lnPassword.setText(saved_password.decode("utf8"))
+                if saved_password is not None:
+                    self.ui.lnPassword.setText(saved_password.decode("utf8"))
 
                 # Only automatically login if there is a saved user
                 self.ui.chkAutoLogin.setChecked(auto_login)
