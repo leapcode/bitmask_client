@@ -27,9 +27,7 @@ from functools import partial
 from ui_wizard import Ui_Wizard
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpregister import SRPRegister
-from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.services.eip.eipbootstrapper import EIPBootstrapper
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +42,7 @@ class Wizard(QtGui.QWizard):
     PRESENT_PROVIDER_PAGE = 2
     SETUP_PROVIDER_PAGE = 3
     REGISTER_USER_PAGE = 4
-    SETUP_EIP_PAGE = 5
+    SERVICES_PAGE = 5
     FINISH_PAGE = 6
 
     WEAK_PASSWORDS = ("123456", "qweasd", "qwerty",
@@ -64,6 +62,16 @@ class Wizard(QtGui.QWizard):
         self.QUESTION_ICON = QtGui.QPixmap(":/images/Emblem-question.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/Dialog-error.png")
         self.OK_ICON = QtGui.QPixmap(":/images/Dialog-accept.png")
+
+        # Correspondence for services and their name to display
+        self.SERVICE_DISPLAY = [
+            self.tr("Encrypted Internet")
+        ]
+        self.SERVICE_CONFIG = [
+            "openvpn"
+        ]
+
+        self._selected_services = set()
 
         self._show_register = False
 
@@ -85,13 +93,6 @@ class Wizard(QtGui.QWizard):
             self._check_ca_fingerprint)
         self._provider_bootstrapper.check_api_certificate.connect(
             self._check_api_certificate)
-
-        self._eip_bootstrapper = EIPBootstrapper()
-
-        self._eip_bootstrapper.download_config.connect(
-            self._download_eip_config)
-        self._eip_bootstrapper.download_client_certificate.connect(
-            self._download_client_certificate)
 
         self._domain = None
         self._provider_config = ProviderConfig()
@@ -134,6 +135,12 @@ class Wizard(QtGui.QWizard):
 
     def get_password(self):
         return self._password
+
+    def get_remember(self):
+        return self.ui.chkRemember.isChecked()
+
+    def get_services(self):
+        return self._selected_services
 
     def _enable_check(self, text):
         self.ui.btnCheck.setEnabled(len(self.ui.lnProvider.text()) != 0)
@@ -214,19 +221,11 @@ class Wizard(QtGui.QWizard):
         if ok:
             self._set_register_status(self.tr("<font color='green'>"
                                               "<b>User registration OK. "
-                                              "Logging in...</b></font>"))
+                                              "</b></font>"))
             self.ui.lblPassword2.clearFocus()
-
-            srp_auth = SRPAuth(self._provider_config)
-            srp_auth.authentication_finished.connect(
-                self._authentication_finished)
-
-            auth_partial = partial(srp_auth.authenticate,
-                                   self._username,
-                                   self._password)
-            self._checker_thread.add_checks([auth_partial])
-
             self.ui.chkRemember.setEnabled(True)
+
+            self.page(self.REGISTER_USER_PAGE).set_completed()
         else:
             old_username = self._username
             self._username = None
@@ -240,24 +239,6 @@ class Wizard(QtGui.QWizard):
             except:
                 logger.error("Unknown error: %r" % (req.content,))
             self.ui.btnRegister.setEnabled(True)
-
-    def _authentication_finished(self, ok, message):
-        """
-        SLOT
-        TRIGGER: srp_auth.authentication_finished
-
-        Finish the authentication process as it comes from the
-        register form
-        """
-        if ok:
-            self._set_register_status(self.tr("<font color='green'>"
-                                              "<b>Login succeeded!"
-                                              "</b></font>"))
-            self.page(self.REGISTER_USER_PAGE).set_completed()
-        else:
-            self._set_register_status(message)
-            self.ui.btnRegister.setEnabled(True)
-            self.ui.chkRemember.setEnabled(False)
 
     def _set_register_status(self, status, error=False):
         """
@@ -290,13 +271,6 @@ class Wizard(QtGui.QWizard):
         self.ui.lblDownloadCaCert.setPixmap(None)
         self.ui.lblCheckCaFpr.setPixmap(None)
         self.ui.lblCheckApiCert.setPixmap(None)
-
-    def _reset_eip_check(self):
-        """
-        Resets the UI for the EIP check
-        """
-        self.ui.lblDownloadEIPConfig.setPixmap(None)
-        self.ui.lblDownloadClientCert.setPixmap(None)
 
     def _check_provider(self):
         """
@@ -447,28 +421,47 @@ class Wizard(QtGui.QWizard):
         self._complete_task(data, self.ui.lblCheckApiCert,
                             True, self.SETUP_PROVIDER_PAGE)
 
-    def _download_eip_config(self, data):
+    def _service_selection_changed(self, service, state):
         """
         SLOT
-        TRIGGER: self._eip_bootstrapper.download_config
+        TRIGGER: service_checkbox.stateChanged
+        Adds the service to the state if the state is checked, removes
+        it otherwise
 
-        Sets the status for the EIP config downloading check
+        @param service: service to handle
+        @type service: str
+        @param state: state of the checkbox
+        @type state: int
         """
-        self._complete_task(data, self.ui.lblDownloadEIPConfig)
-        self.ui.lblDownloadClientCert.setPixmap(self.QUESTION_ICON)
+        if state == QtCore.Qt.Checked:
+            self._selected_services = \
+                self._selected_services.union({service})
+        else:
+            self._selected_services = \
+                self._selected_services.difference({service})
 
-    def _download_client_certificate(self, data):
+    def _populate_services(self):
         """
-        SLOT
-        TRIGGER: self._provider_bootstrapper.download_client_certificate
+        Loads the services that the provider provides into the UI for
+        the user to enable or disable
+        """
+        self.ui.grpServices.setTitle(
+            self.tr("Services by %s") %
+            (self._provider_config.get_name(),))
 
-        Sets the status for the download client certificate check and
-        completes the page if passed. Also stops the eip bootstrapper
-        thread since it's not needed from this point on unless the
-        check chain is restarted
-        """
-        self._complete_task(data, self.ui.lblDownloadClientCert,
-                            True, self.SETUP_EIP_PAGE)
+        for service in self._provider_config.get_services():
+            try:
+                checkbox = QtGui.QCheckBox(self)
+                service_index = self.SERVICE_CONFIG.index(service)
+                checkbox.setText(self.SERVICE_DISPLAY[service_index])
+                self.ui.serviceListLayout.addWidget(checkbox)
+                checkbox.stateChanged.connect(
+                    partial(self._service_selection_changed, service))
+                checkbox.setChecked(True)
+            except ValueError:
+                logger.error(
+                    self.tr("Something went wrong while trying to "
+                            "load service %s" % (service,)))
 
     def _current_id_changed(self, pageId):
         """
@@ -491,12 +484,6 @@ class Wizard(QtGui.QWizard):
             self._provider_bootstrapper.\
                 run_provider_setup_checks(self._checker_thread,
                                           self._provider_config)
-
-        if pageId == self.SETUP_EIP_PAGE:
-            self._reset_eip_check()
-            self.ui.lblDownloadEIPConfig.setPixmap(self.QUESTION_ICON)
-            self._eip_bootstrapper.run_eip_setup_checks(self._checker_thread,
-                                                        self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             self.page(pageId).setSubTitle(self.tr("Services offered by %s") %
@@ -521,6 +508,9 @@ class Wizard(QtGui.QWizard):
                                           (self._provider_config
                                            .get_name(),))
 
+        if pageId == self.SERVICES_PAGE:
+            self._populate_services()
+
     def nextId(self):
         """
         Sets the next page id for the wizard based on wether the user
@@ -533,6 +523,6 @@ class Wizard(QtGui.QWizard):
             if self._show_register:
                 return self.REGISTER_USER_PAGE
             else:
-                return self.SETUP_EIP_PAGE
+                return self.SERVICES_PAGE
 
         return QtGui.QWizard.nextId(self)

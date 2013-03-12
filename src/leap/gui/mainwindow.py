@@ -175,6 +175,8 @@ class MainWindow(QtGui.QMainWindow):
         self._action_visible = QtGui.QAction(self.tr("Hide"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
 
+        self._enabled_services = []
+
         self._center_window()
         self._wizard = None
         self._wizard_firstrun = False
@@ -214,6 +216,11 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard:
             possible_username = self._wizard.get_username()
             possible_password = self._wizard.get_password()
+            self.ui.chkRemember.setChecked(self._wizard.get_remember())
+            self._enabled_services = list(self._wizard.get_services())
+            settings.setValue("%s/Services" %
+                              (self.ui.cmbProviders.currentText(),),
+                              self._enabled_services)
             if possible_username is not None:
                 self.ui.lnUser.setText(possible_username)
                 self._focus_password()
@@ -487,6 +494,11 @@ class MainWindow(QtGui.QMainWindow):
         password = self.ui.lnPassword.text()
         provider = self.ui.cmbProviders.currentText()
 
+        settings = QtCore.QSettings()
+        self._enabled_services = settings.value(
+            "%s/Services" %
+            (self.ui.cmbProviders.currentText(),), "").split(",")
+
         if len(provider) == 0:
             self._set_status(self.tr("Please select a valid provider"))
             return
@@ -608,15 +620,20 @@ class MainWindow(QtGui.QMainWindow):
 
         self._set_eip_status(self.tr("Checking configuration, please wait..."))
 
-        if self._provider_config.provides_eip():
+        if self._provider_config.provides_eip() and \
+                self._enabled_services.count("openvpn") > 0:
             self._eip_bootstrapper.run_eip_setup_checks(
                 self._checker_thread,
                 self._provider_config,
                 download_if_needed=True)
         else:
-            self._set_eip_status(self.tr("%s does not support EIP") %
-                                 (self._provider_config.get_domain(),),
-                                 error=True)
+            if self._enabled_services.count("openvpn") > 0:
+                self._set_eip_status(self.tr("%s does not support EIP") %
+                                     (self._provider_config.get_domain(),),
+                                     error=True)
+            else:
+                self._set_eip_status(self.tr("EIP is disabled"))
+            self.ui.btnEipStartStop.setEnabled(False)
 
     def _set_eip_status_icon(self, status):
         """

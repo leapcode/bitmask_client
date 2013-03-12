@@ -632,122 +632,28 @@
     </item>
    </layout>
   </widget>
-  <widget class="WizardPage" name="eip_setup_page">
+  <widget class="QWizardPage" name="service_selection">
    <property name="title">
-    <string>EIP Setup</string>
+    <string>Service selection</string>
    </property>
    <property name="subTitle">
-    <string>Setting up Encrypted Internet</string>
+    <string>Please select the services you would like to have</string>
    </property>
    <attribute name="pageId">
     <string notr="true">5</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_8">
     <item row="0" column="0">
-     <spacer name="verticalSpacer_5">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="1" column="0">
-     <widget class="QGroupBox" name="groupBox_3">
+     <widget class="QGroupBox" name="grpServices">
       <property name="title">
-       <string>Checking EIP</string>
+       <string notr="true">Services by PROVIDER</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_9">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_19">
-         <property name="text">
-          <string>Download EIP configuration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_20">
-         <property name="text">
-          <string>Download client certificate</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLabel" name="lblDownloadEIPConfig">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>24</width>
-           <height>24</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="lblDownloadClientCert">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>24</width>
-           <height>24</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="0">
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>0</height>
-          </size>
-         </property>
-        </spacer>
+        <layout class="QVBoxLayout" name="serviceListLayout"/>
        </item>
       </layout>
      </widget>
-    </item>
-    <item row="2" column="0">
-     <spacer name="verticalSpacer_6">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
     </item>
    </layout>
   </widget>

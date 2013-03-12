@@ -70,7 +70,7 @@
     <item row="2" column="0" colspan="5">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="page">
        <layout class="QGridLayout" name="gridLayout_2">
@@ -389,6 +389,7 @@
  </tabstops>
  <resources>
   <include location="../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../data/resources/locale.qrc"/>
  </resources>
  <connections/>
 </ui>
