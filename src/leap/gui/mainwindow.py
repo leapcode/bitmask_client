@@ -719,7 +719,7 @@ class MainWindow(QtGui.QMainWindow):
         Switches the stackedWidget back to the login stage after
         logging out
         """
-        self._vpn_systray.setIcon(self.LOGGED_OUT_ICON)
+        self._systray.setIcon(self.LOGGED_OUT_ICON)
         self.ui.action_sign_out.setEnabled(False)
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
         self.ui.lnPassword.setText("")
