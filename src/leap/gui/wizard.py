@@ -249,6 +249,7 @@ class Wizard(QtGui.QWizard):
         self.ui.lblNameResolution.setPixmap(None)
         self.ui.lblHTTPS.setPixmap(None)
         self.ui.lblProviderInfo.setPixmap(None)
+        self.ui.lblProviderSelectStatus.setText("")
         self._domain = None
         self.button(QtGui.QWizard.NextButton).setEnabled(False)
         self.page(self.SELECT_PROVIDER_PAGE).set_completed(False)
