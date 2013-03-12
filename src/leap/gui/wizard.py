@@ -479,7 +479,8 @@ class Wizard(QtGui.QWizard):
             self.ui.lblProviderName.setText(
                 "<b>%s</b>" %
                 (self._provider_config.get_name(lang=lang),))
-            self.ui.lblProviderURL.setText(self._provider_config.get_domain())
+            self.ui.lblProviderURL.setText(
+                "https://%s" % (self._provider_config.get_domain(),))
             self.ui.lblProviderDesc.setText(
                 "<i>%s</i>" %
                 (self._provider_config.get_description(lang=lang),))
