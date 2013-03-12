@@ -36,6 +36,7 @@ from leap.services.eip.eipconfig import EIPConfig
 from leap.gui.wizard import Wizard
 from leap.util.check import leap_assert
 from leap.util.checkerthread import CheckerThread
+from leap import __version__ as VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -306,7 +307,7 @@ class MainWindow(QtGui.QMainWindow):
         Display the About LEAP dialog
         """
         QtGui.QMessageBox.about(
-            self, self.tr("About LEAP"),
+            self, self.tr("About LEAP - %s") % (VERSION,),
             self.tr("LEAP is a non-profit dedicated to giving "
                     "all internet users access to secure "
                     "communication. Our focus is on adapting "
