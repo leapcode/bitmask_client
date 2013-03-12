@@ -76,7 +76,7 @@ def get_platform_launcher():
 
 
 # Twisted implementation of which
-def which(name, flags=os.X_OK):
+def which(name, flags=os.X_OK, path_extension="/usr/sbin:/sbin"):
     """
     Search PATH for executable files with the given name.
 
@@ -99,14 +99,14 @@ def which(name, flags=os.X_OK):
     order in which they were found.
     """
 
-    # TODO: make sure sbin is in path
-
     result = []
     exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
     path = os.environ.get('PATH', None)
+    path += ":" + path_extension
     if path is None:
         return []
-    for p in os.environ.get('PATH', '').split(os.pathsep):
+    parts = path.split(os.pathsep)
+    for p in parts:
         p = os.path.join(p, name)
         if os.access(p, flags):
             result.append(p)
