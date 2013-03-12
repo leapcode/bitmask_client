@@ -44,7 +44,7 @@ class Wizard(QtGui.QWizard):
     SETUP_PROVIDER_PAGE = 3
     REGISTER_USER_PAGE = 4
     SETUP_EIP_PAGE = 5
-    FINISH_PATH = 6
+    FINISH_PAGE = 6
 
     WEAK_PASSWORDS = ("123456", "qweasd", "qwerty",
                       "password")
@@ -62,7 +62,7 @@ class Wizard(QtGui.QWizard):
 
         self.setPixmap(QtGui.QWizard.WatermarkPixmap, None)
 
-        self.QUESTION_ICON = None
+        self.QUESTION_ICON = QtGui.QPixmap(":/images/Emblem-question.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/Dialog-error.png")
         self.OK_ICON = QtGui.QPixmap(":/images/Dialog-accept.png")
 
@@ -124,6 +124,11 @@ class Wizard(QtGui.QWizard):
         self._password = None
 
         self._checker_thread = checker
+
+        self.page(self.REGISTER_USER_PAGE).setButtonText(
+            QtGui.QWizard.CommitButton, self.tr("&Next >"))
+        self.page(self.FINISH_PAGE).setButtonText(
+            QtGui.QWizard.FinishButton, self.tr("Connect"))
 
     def get_username(self):
         return self._username
@@ -241,9 +246,9 @@ class Wizard(QtGui.QWizard):
         Resets the UI for checking a provider. Also resets the domain
         in this object.
         """
-        self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
-        self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
-        self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
+        self.ui.lblNameResolution.setPixmap(None)
+        self.ui.lblHTTPS.setPixmap(None)
+        self.ui.lblProviderInfo.setPixmap(None)
         self._domain = None
         self.button(QtGui.QWizard.NextButton).setEnabled(False)
         self.page(self.SELECT_PROVIDER_PAGE).set_completed(False)
@@ -252,9 +257,16 @@ class Wizard(QtGui.QWizard):
         """
         Resets the UI for setting up a provider.
         """
-        self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
-        self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
-        self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
+        self.ui.lblDownloadCaCert.setPixmap(None)
+        self.ui.lblCheckCaFpr.setPixmap(None)
+        self.ui.lblCheckApiCert.setPixmap(None)
+
+    def _reset_eip_check(self):
+        """
+        Resets the UI for the EIP check
+        """
+        self.ui.lblDownloadEIPConfig.setPixmap(None)
+        self.ui.lblDownloadClientCert.setPixmap(None)
 
     def _check_provider(self):
         """
@@ -274,6 +286,7 @@ class Wizard(QtGui.QWizard):
         self.button(QtGui.QWizard.BackButton).clearFocus()
         self._domain = self.ui.lnProvider.text()
 
+        self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_bootstrapper.run_provider_select_checks(
             self._checker_thread,
             self._domain)
@@ -321,6 +334,7 @@ class Wizard(QtGui.QWizard):
         self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
+        self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
 
     def _https_connection(self, data):
         """
@@ -338,6 +352,7 @@ class Wizard(QtGui.QWizard):
             self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
+        self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
 
     def _download_provider_info(self, data):
         """
@@ -378,6 +393,7 @@ class Wizard(QtGui.QWizard):
         Sets the status for the download of the CA certificate check
         """
         self._complete_task(data, self.ui.lblDownloadCaCert)
+        self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
 
     def _check_ca_fingerprint(self, data):
         """
@@ -387,6 +403,7 @@ class Wizard(QtGui.QWizard):
         Sets the status for the CA fingerprint check
         """
         self._complete_task(data, self.ui.lblCheckCaFpr)
+        self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 
     def _check_api_certificate(self, data):
         """
@@ -408,6 +425,7 @@ class Wizard(QtGui.QWizard):
         Sets the status for the EIP config downloading check
         """
         self._complete_task(data, self.ui.lblDownloadEIPConfig)
+        self.ui.lblDownloadClientCert.setPixmap(self.QUESTION_ICON)
 
     def _download_client_certificate(self, data):
         """
@@ -430,10 +448,7 @@ class Wizard(QtGui.QWizard):
         Prepares the pages when they appear
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
-            self.ui.grpCheckProvider.setVisible(False)
-            self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
-            self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
-            self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
+            self._reset_provider_check()
             self._enable_check("")
 
         if pageId == self.SETUP_PROVIDER_PAGE:
@@ -442,11 +457,14 @@ class Wizard(QtGui.QWizard):
                                                   "options for %s") %
                                           (self._provider_config
                                            .get_name(),))
+            self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
             self._provider_bootstrapper.\
                 run_provider_setup_checks(self._checker_thread,
                                           self._provider_config)
 
         if pageId == self.SETUP_EIP_PAGE:
+            self._reset_eip_check()
+            self.ui.lblDownloadEIPConfig.setPixmap(self.QUESTION_ICON)
             self._eip_bootstrapper.run_eip_setup_checks(self._checker_thread,
                                                         self._provider_config)
 
