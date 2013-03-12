@@ -82,7 +82,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.ui.btnEipStartStop.setEnabled(False)
         self.ui.btnEipStartStop.clicked.connect(
-            self._stop_eip)
+            self._start_eip)
 
         # This is loaded only once, there's a bug when doing that more
         # than once
@@ -577,8 +577,7 @@ class MainWindow(QtGui.QMainWindow):
                             socket_port=str(random.randint(1000, 9999)))
             self._vpn_systray.setVisible(True)
             self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
-            self.ui.btnEipStartStop.clicked.disconnect(
-                self._start_eip)
+            self.ui.btnEipStartStop.disconnect(self)
             self.ui.btnEipStartStop.clicked.connect(
                 self._stop_eip)
         except VPNLauncherException as e:
@@ -591,8 +590,7 @@ class MainWindow(QtGui.QMainWindow):
         self._set_eip_status(self.tr("EIP has stopped"))
         self._set_eip_status_icon("error")
         self.ui.btnEipStartStop.setText(self.tr("Start EIP"))
-        self.ui.btnEipStartStop.clicked.disconnect(
-            self._stop_eip)
+        self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
             self._start_eip)
 
