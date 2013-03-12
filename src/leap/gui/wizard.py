@@ -27,6 +27,7 @@ from functools import partial
 from ui_wizard import Ui_Wizard
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpregister import SRPRegister
+from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 
@@ -59,9 +60,6 @@ class Wizard(QtGui.QWizard):
 
         self.setPixmap(QtGui.QWizard.LogoPixmap,
                        QtGui.QPixmap(":/images/leap-color-small.png"))
-
-        self.setPixmap(QtGui.QWizard.WatermarkPixmap,
-                       QtGui.QPixmap(":/images/watermark.png"))
 
         self.QUESTION_ICON = QtGui.QPixmap(":/images/Emblem-question.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/Dialog-error.png")
@@ -182,7 +180,7 @@ class Wizard(QtGui.QWizard):
             message = self.tr("Password equal to username")
 
         if message is not None:
-            self._set_register_status(message)
+            self._set_register_status(message, error=True)
             self._focus_password()
             return False
 
@@ -215,10 +213,20 @@ class Wizard(QtGui.QWizard):
     def _registration_finished(self, ok, req):
         if ok:
             self._set_register_status(self.tr("<font color='green'>"
-                                      "<b>User registration OK</b></font>"))
+                                              "<b>User registration OK. "
+                                              "Logging in...</b></font>"))
             self.ui.lblPassword2.clearFocus()
-            self.page(self.REGISTER_USER_PAGE).set_completed()
-            self.button(QtGui.QWizard.BackButton).setEnabled(False)
+
+            srp_auth = SRPAuth(self._provider_config)
+            srp_auth.authentication_finished.connect(
+                self._authentication_finished)
+
+            auth_partial = partial(srp_auth.authenticate,
+                                   self._username,
+                                   self._password)
+            self._checker_thread.add_checks([auth_partial])
+
+            self.ui.chkRemember.setEnabled(True)
         else:
             old_username = self._username
             self._username = None
@@ -233,13 +241,33 @@ class Wizard(QtGui.QWizard):
                 logger.error("Unknown error: %r" % (req.content,))
             self.ui.btnRegister.setEnabled(True)
 
-    def _set_register_status(self, status):
+    def _authentication_finished(self, ok, message):
+        """
+        SLOT
+        TRIGGER: srp_auth.authentication_finished
+
+        Finish the authentication process as it comes from the
+        register form
+        """
+        if ok:
+            self._set_register_status(self.tr("<font color='green'>"
+                                              "<b>Login succeeded!"
+                                              "</b></font>"))
+            self.page(self.REGISTER_USER_PAGE).set_completed()
+        else:
+            self._set_register_status(message)
+            self.ui.btnRegister.setEnabled(True)
+            self.ui.chkRemember.setEnabled(False)
+
+    def _set_register_status(self, status, error=False):
         """
         Sets the status label in the registration page to status
 
         @param status: status message to display, can be HTML
         @type status: str
         """
+        if error:
+            status = "<font color='red'><b>%s</b></font>" % (status,)
         self.ui.lblRegisterStatus.setText(status)
 
     def _reset_provider_check(self):
