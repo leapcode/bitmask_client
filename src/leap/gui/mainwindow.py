@@ -395,13 +395,15 @@ class MainWindow(QtGui.QMainWindow):
             status = "<font color='red'><b>%s</b></font>" % (status,)
         self.ui.lblStatus.setText(status)
 
-    def _set_eip_status(self, status):
+    def _set_eip_status(self, status, error=False):
         """
         Sets the status label at the VPN stage to status
 
         @param status: status message
         @type status: str
         """
+        if error:
+            status = "<font color='red'><b>%s</b></font>" % (status,)
         self.ui.lblEIPStatus.setText(status)
 
     def _login_set_enabled(self, enabled=False):
@@ -579,7 +581,7 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.btnEipStartStop.clicked.connect(
                 self._stop_eip)
         except VPNLauncherException as e:
-            self._set_eip_status("%s" % (e,))
+            self._set_eip_status("%s" % (e,), error=True)
         self.ui.btnEipStartStop.setEnabled(True)
 
     def _stop_eip(self):
@@ -609,7 +611,8 @@ class MainWindow(QtGui.QMainWindow):
                 download_if_needed=True)
         else:
             self._set_eip_status(self.tr("%s does not support EIP") %
-                                 (self._provider_config.get_domain(),))
+                                 (self._provider_config.get_domain(),),
+                                 error=True)
 
     def _set_eip_status_icon(self, status):
         """
@@ -681,15 +684,21 @@ class MainWindow(QtGui.QMainWindow):
         leap_assert(self._eip_config, "We need an eip config!")
         leap_assert(self._provider_config, "We need a provider config!")
 
-        if self._eip_config.loaded() or \
-                self._eip_config.load(os.path.join("leap",
-                                                   "providers",
-                                                   self._provider_config
-                                                   .get_domain(),
-                                                   "eip-service.json")):
+        if data[self._eip_bootstrapper.PASSED_KEY] and \
+                (self._eip_config.loaded() or
+                 self._eip_config.load(os.path.join("leap",
+                                                    "providers",
+                                                    self._provider_config
+                                                    .get_domain(),
+                                                    "eip-service.json"))):
                 self._start_eip()
-        # TODO: display a message if the EIP configuration cannot be
-        # loaded
+        else:
+            if data[self._eip_bootstrapper.PASSED_KEY]:
+                self._set_eip_status(self.tr("Could not load EIP "
+                                             "Configuration"), error=True)
+            else:
+                self._set_eip_status(data[self._eip_bootstrapper.ERROR_KEY],
+                                     error=True)
 
     def _logout(self):
         """

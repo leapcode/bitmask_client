@@ -31,6 +31,7 @@ from PySide import QtGui, QtCore
 from leap.config.providerconfig import ProviderConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
+from leap.util.files import check_and_fix_urw_only
 
 logger = logging.getLogger(__name__)
 
@@ -258,9 +259,16 @@ class ProviderBootstrapper(QtCore.QObject):
         }
 
         if not self._should_proceed_cert():
-            download_ca_cert_data[self.PASSED_KEY] = True
+            try:
+                check_and_fix_urw_only(
+                    self._provider_config
+                    .get_ca_cert_path(about_to_download=True))
+                download_ca_cert_data[self.PASSED_KEY] = True
+            except Exception as e:
+                download_ca_cert_data[self.PASSED_KEY] = False
+                download_ca_cert_data[self.ERROR_KEY] = "%s" % (e,)
             self.download_ca_cert.emit(download_ca_cert_data)
-            return True
+            return download_ca_cert_data[self.PASSED_KEY]
 
         try:
             res = self._session.get(self._provider_config.get_ca_cert_uri())
@@ -281,6 +289,8 @@ class ProviderBootstrapper(QtCore.QObject):
 
             with open(cert_path, "w") as f:
                 f.write(res.content)
+
+            check_and_fix_urw_only(cert_path)
 
             download_ca_cert_data[self.PASSED_KEY] = True
         except Exception as e:

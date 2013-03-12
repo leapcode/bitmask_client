@@ -30,6 +30,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
+from leap.util.files import check_and_fix_urw_only
 
 logger = logging.getLogger(__name__)
 
@@ -147,9 +148,14 @@ class EIPBootstrapper(QtCore.QObject):
 
         if self._download_if_needed and \
                 os.path.exists(client_cert_path):
-            download_cert[self.PASSED_KEY] = True
+            try:
+                check_and_fix_urw_only(client_cert_path)
+                download_cert[self.PASSED_KEY] = True
+            except Exception as e:
+                download_cert[self.PASSED_KEY] = False
+                download_cert[self.ERROR_KEY] = "%s" % (e,)
             self.download_client_certificate.emit(download_cert)
-            return True
+            return download_cert[self.PASSED_KEY]
 
         try:
             res = self._session.get("%s/%s/%s/" %
@@ -175,6 +181,8 @@ class EIPBootstrapper(QtCore.QObject):
 
             with open(client_cert_path, "w") as f:
                 f.write(client_cert)
+
+            check_and_fix_urw_only(client_cert_path)
 
             download_cert[self.PASSED_KEY] = True
         except Exception as e:
