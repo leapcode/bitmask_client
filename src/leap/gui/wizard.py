@@ -163,7 +163,7 @@ class Wizard(QtGui.QWizard):
         """
         message = None
 
-        if message is not None and password != password2:
+        if message is None and password != password2:
             message = self.tr("Passwords don't match")
 
         if message is None and len(password) < 6:
