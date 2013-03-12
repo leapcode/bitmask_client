@@ -24,6 +24,7 @@ import random
 import keyring
 
 from PySide import QtCore, QtGui
+from functools import partial
 
 from ui_mainwindow import Ui_MainWindow
 from leap.config.providerconfig import ProviderConfig
@@ -538,7 +539,10 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth.logout_finished.connect(
                     self._done_logging_out)
 
-            self._srp_auth.authenticate(username, password)
+            auth_partial = partial(self._srp_auth.authenticate,
+                                   username,
+                                   password)
+            self._checker_thread.add_checks([auth_partial])
         else:
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
             self._login_set_enabled(True)
@@ -760,7 +764,6 @@ class MainWindow(QtGui.QMainWindow):
 
 if __name__ == "__main__":
     import signal
-    from functools import partial
 
     def sigint_handler(*args, **kwargs):
         logger.debug('SIGINT catched. shutting down...')
