@@ -60,7 +60,8 @@ class Wizard(QtGui.QWizard):
         self.setPixmap(QtGui.QWizard.LogoPixmap,
                        QtGui.QPixmap(":/images/leap-color-small.png"))
 
-        self.setPixmap(QtGui.QWizard.WatermarkPixmap, None)
+        self.setPixmap(QtGui.QWizard.WatermarkPixmap,
+                       QtGui.QPixmap(":/images/watermark.png"))
 
         self.QUESTION_ICON = QtGui.QPixmap(":/images/Emblem-question.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/Dialog-error.png")

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>../images/watermark.png</file>
     <file>../images/leap-gray-big.png</file>
     <file>../images/Blue-Arrow-Right-32.png</file>
     <file>../images/Globe.png</file>
