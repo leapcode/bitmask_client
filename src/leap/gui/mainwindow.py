@@ -402,6 +402,7 @@ class MainWindow(QtGui.QMainWindow):
         @param status: status message
         @type status: str
         """
+        self._vpn_systray.setToolTip(status)
         if error:
             status = "<font color='red'><b>%s</b></font>" % (status,)
         self.ui.lblEIPStatus.setText(status)
