@@ -26,6 +26,7 @@ import errno
 
 from PySide import QtGui, QtCore
 
+from leap.crypto.srpauth import SRPAuth
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig
 from leap.util.check import leap_assert, leap_assert_type
@@ -158,12 +159,18 @@ class EIPBootstrapper(QtCore.QObject):
             return download_cert[self.PASSED_KEY]
 
         try:
+            srp_auth = SRPAuth(self._provider_config)
+            session_id = srp_auth.get_session_id()
+            cookies = None
+            if session_id:
+                cookies = {"_session_id": session_id}
             res = self._session.get("%s/%s/%s/" %
                                     (self._provider_config.get_api_uri(),
                                      self._provider_config.get_api_version(),
                                      "cert"),
                                     verify=self._provider_config
-                                    .get_ca_cert_path())
+                                    .get_ca_cert_path(),
+                                    cookies=cookies)
             res.raise_for_status()
 
             client_cert = res.content

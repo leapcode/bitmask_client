@@ -390,6 +390,9 @@ class SRPAuth(QtCore.QObject):
             self.authentication_finished.emit(False, "%s" % (e,))
         return False
 
+    def get_session_id(self):
+        return self.__instance.get_session_id()
+
     def logout(self):
         """
         Logs out the current session.
