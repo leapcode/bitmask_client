@@ -10,3 +10,4 @@ pyxdg
 argparse
 PySide
 python-dateutil
+psutil

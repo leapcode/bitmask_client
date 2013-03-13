@@ -18,8 +18,10 @@
 """
 VPN launcher and watcher thread
 """
+
 import logging
 import sys
+import psutil
 
 from PySide import QtCore, QtGui
 from functools import partial
@@ -60,6 +62,8 @@ class VPN(QtCore.QThread):
     TCPUDP_READ_KEY = "tcp_udp_read"
     TCPUDP_WRITE_KEY = "tcp_udp_write"
     AUTH_READ_KEY = "auth_read"
+
+    ALREADY_RUNNING_STEP = "ALREADYRUNNING"
 
     def __init__(self):
         QtCore.QThread.__init__(self)
@@ -134,6 +138,20 @@ class VPN(QtCore.QThread):
         with QtCore.QMutexLocker(self._should_quit_lock):
             self._should_quit = False
 
+        if not self._stop_if_already_running():
+            # We send a fake state
+            state_dict = {
+                self.TS_KEY: "",
+                self.STATUS_STEP_KEY: self.ALREADY_RUNNING_STEP,
+                self.OK_KEY: "",
+                self.IP_KEY: "",
+                self.REMOTE_KEY: ""
+            }
+
+            self.state_changed.emit(state_dict)
+            # And just return, don't start the process
+            return
+
         command = self._launcher.get_vpn_command(eipconfig=eipconfig,
                                                  providerconfig=providerconfig,
                                                  socket_host=socket_host,
@@ -155,6 +173,64 @@ class VPN(QtCore.QThread):
         except Exception as e:
             logger.warning("Something went wrong while starting OpenVPN: %r" %
                            (e,))
+
+    def _get_openvpn_process(self):
+        """
+        Looks for openvpn instances running
+
+        @rtype: process
+        """
+        openvpn_process = None
+        for p in psutil.process_iter():
+            try:
+                # XXX Not exact!
+                # Will give false positives.
+                # we should check that cmdline BEGINS
+                # with openvpn or with our wrapper
+                # (pkexec / osascript / whatever)
+                if self._launcher.OPENVPN_BIN in ' '.join(p.cmdline):
+                    openvpn_process = p
+                    break
+            except psutil.error.AccessDenied:
+                pass
+        return openvpn_process
+
+    def _stop_if_already_running(self):
+        """
+        Checks if VPN is already running and tries to stop it
+
+        @return: True if stopped, False otherwise
+        """
+
+        process = self._get_openvpn_process()
+        if process:
+            logger.debug("OpenVPN is already running, trying to stop it")
+            cmdline = process.cmdline
+
+            manag_flag = "--management"
+            if isinstance(cmdline, list) and manag_flag in cmdline:
+                try:
+                    index = cmdline.index(manag_flag)
+                    host = cmdline[index + 1]
+                    port = cmdline[index + 2]
+                    logger.debug("Trying to connect to %s:%s"
+                                 % (host, port))
+                    self._connect(host, port)
+                    self._send_command("signal SIGTERM")
+                    self._tn.close()
+                    self._tn = None
+                except Exception as e:
+                    logger.warning("Problem trying to terminate OpenVPN: %r"
+                                   % (e,))
+
+            process = self._get_openvpn_process()
+            if process is None:
+                logger.warning("Unabled to terminate OpenVPN")
+                return True
+            else:
+                return False
+
+        return True
 
     def _connect(self, socket_host, socket_port):
         """

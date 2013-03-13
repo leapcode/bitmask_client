@@ -162,14 +162,16 @@ def should_redownload(certfile, now=time.gmtime):
     if not exists:
         return True
 
+    certdata = None
     try:
         with open(certfile, "r") as f:
-            if not is_valid_pemfile(f.read()):
+            certdata = f.read()
+            if not is_valid_pemfile(certdata):
                 return True
     except:
         return True
 
-    valid_from, valid_to = get_cert_time_boundaries(certfile)
+    valid_from, valid_to = get_cert_time_boundaries(certdata)
 
     if not (valid_from < now() < valid_to):
         return True

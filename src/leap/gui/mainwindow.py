@@ -680,6 +680,14 @@ class MainWindow(QtGui.QMainWindow):
             self._set_eip_status(self.tr("VPN: Connected!"))
         elif status == "WAIT":
             self._set_eip_status(self.tr("VPN: Waiting to start..."))
+        elif status == "ALREADYRUNNING":
+            # Put the following calls in Qt's event queue, otherwise
+            # the UI won't update properly
+            QtCore.QTimer.singleShot(0, self._stop_eip)
+            QtCore.QTimer.singleShot(0, partial(self._set_eip_status,
+                                                self.tr("Unable to start VPN, "
+                                                        "it's already "
+                                                        "running.")))
         else:
             self._set_eip_status(status)
 
