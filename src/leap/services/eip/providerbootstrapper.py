@@ -23,9 +23,7 @@ import requests
 import logging
 import socket
 import os
-import errno
 
-from OpenSSL import crypto
 from PySide import QtGui, QtCore
 
 from leap.config.providerconfig import ProviderConfig
@@ -33,6 +31,7 @@ from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
 from leap.util.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.util.request_helpers import get_content
+from leap.util.certs import get_digest
 
 logger = logging.getLogger(__name__)
 
@@ -324,8 +323,7 @@ class ProviderBootstrapper(QtCore.QObject):
 
             leap_assert(len(cert_data) > 0, "Could not read certificate data")
 
-            x509 = crypto.load_certificate(crypto.FILETYPE_PEM, cert_data)
-            digest = x509.digest(method).replace(":", "").lower()
+            digest = get_digest(cert_data, method)
 
             leap_assert(digest == fingerprint,
                         "Downloaded certificate has a different fingerprint!")
