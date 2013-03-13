@@ -32,6 +32,7 @@ from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
 from leap.util.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.util.request_helpers import get_content
+from leap.util.certs import is_valid_pemfile
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +183,10 @@ class EIPBootstrapper(QtCore.QObject):
             client_cert = res.content
 
             # TODO: check certificate validity
+
+            if not is_valid_pemfile(client_cert):
+                raise Exception(self.tr("The downloaded certificate is not a "
+                                        "valid PEM file"))
 
             mkdir_p(os.path.dirname(client_cert_path))
 
