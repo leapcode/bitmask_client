@@ -15,10 +15,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import requests
 import binascii
-import srp
 import logging
+
+import requests
+import srp
 
 from PySide import QtCore
 from urlparse import urlparse
