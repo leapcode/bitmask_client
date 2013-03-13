@@ -142,8 +142,8 @@ def _has_updown_scripts(path):
     # XXX should check permissions too
     is_file = os.path.isfile(path)
     if not is_file:
-        logger.warning("Could not find up/down scripts. " +
-                       "Might produce DNS leaks.")
+        logger.error("Could not find up/down scripts. " +
+                     "Might produce DNS leaks.")
     return is_file
 
 
