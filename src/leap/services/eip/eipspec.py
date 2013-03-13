@@ -18,18 +18,16 @@
 eipservice_config_spec = {
     'description': 'sample eip service config',
     'type': 'object',
-    'required': [
-        'serial',
-        'version'
-    ],
     'properties': {
         'serial': {
             'type': int,
-            'default': 1
+            'default': 1,
+            'required': True
         },
         'version': {
             'type': int,
-            'default': 1
+            'default': 1,
+            'required': True
         },
         'clusters': {
             'type': list,

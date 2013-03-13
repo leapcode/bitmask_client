@@ -1,7 +1,7 @@
 # in order of addition to the project.
 # do not change the ordering.
 
-jsonschema
+jsonschema<=0.8
 requests
 srp>=1.0.2
 pyopenssl
