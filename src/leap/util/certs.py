@@ -19,13 +19,56 @@
 Implements cert checks and helpers
 """
 
+import os
+import time
 import logging
 
 from OpenSSL import crypto
+from dateutil.parser import parse as dateparse
 
 from leap.util.check import leap_assert
 
 logger = logging.getLogger(__name__)
+
+
+def get_cert_from_string(string):
+    """
+    Returns the x509 from the contents of this string
+
+    @param string: certificate contents as downloaded
+    @type string: str
+
+    @return: x509 or None
+    """
+    leap_assert(string, "We need something to load")
+
+    x509 = None
+    try:
+        x509 = crypto.load_certificate(crypto.FILETYPE_PEM, string)
+    except Exception as e:
+        logger.error("Something went wrong while loading the certificate: %r"
+                     % (e,))
+    return x509
+
+
+def get_privatekey_from_string(string):
+    """
+    Returns the private key from the contents of this string
+
+    @param string: private key contents as downloaded
+    @type string: str
+
+    @return: private key or None
+    """
+    leap_assert(string, "We need something to load")
+
+    pkey = None
+    try:
+        pkey = crypto.load_privatekey(crypto.FILETYPE_PEM, string)
+    except Exception as e:
+        logger.error("Something went wrong while loading the certificate: %r"
+                     % (e,))
+    return pkey
 
 
 def get_digest(cert_data, method):
@@ -39,7 +82,7 @@ def get_digest(cert_data, method):
 
     @rtype: str
     """
-    x509 = crypto.load_certificate(crypto.FILETYPE_PEM, cert_data)
+    x509 = get_cert_from_string(cert_data)
     digest = x509.digest(method).replace(":", "").lower()
 
     return digest
@@ -55,12 +98,11 @@ def can_load_cert_and_pkey(string):
 
     @rtype: bool
     """
-
     can_load = True
 
     try:
-        cert = crypto.load_certificate(crypto.FILETYPE_PEM, string)
-        key = crypto.load_privatekey(crypto.FILETYPE_PEM, string)
+        cert = get_cert_from_string(string)
+        key = get_privatekey_from_string(string)
 
         leap_assert(cert, 'The certificate could not be loaded')
         leap_assert(key, 'The private key could not be loaded')
@@ -84,3 +126,52 @@ def is_valid_pemfile(cert):
     leap_assert(cert, "We need a cert to load")
 
     return can_load_cert_and_pkey(cert)
+
+
+def get_cert_time_boundaries(certfile):
+    """
+    Returns the time boundaries for the certificate saved in certfile
+
+    @param certfile: path to certificate
+    @type certfile: str
+
+    @rtype: tuple (from, to)
+    """
+    cert = get_cert_from_string(certfile)
+    leap_assert(cert, 'There was a problem loading the certificate')
+
+    fromts, tots = (cert.get_notBefore(), cert.get_notAfter())
+    from_, to_ = map(
+        lambda ts: time.gmtime(time.mktime(dateparse(ts).timetuple())),
+        (fromts, tots))
+    return from_, to_
+
+
+def should_redownload(certfile, now=time.gmtime):
+    """
+    Returns True if any of the checks don't pass, False otherwise
+
+    @param certfile: path to certificate
+    @type certfile: str
+    @param now: current date function, ONLY USED FOR TESTING
+
+    @rtype: bool
+    """
+    exists = os.path.isfile(certfile)
+
+    if not exists:
+        return True
+
+    try:
+        with open(certfile, "r") as f:
+            if not is_valid_pemfile(f.read()):
+                return True
+    except:
+        return True
+
+    valid_from, valid_to = get_cert_time_boundaries(certfile)
+
+    if not (valid_from < now() < valid_to):
+        return True
+
+    return False

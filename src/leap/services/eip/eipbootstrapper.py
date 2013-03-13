@@ -32,7 +32,7 @@ from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
 from leap.util.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.util.request_helpers import get_content
-from leap.util.certs import is_valid_pemfile
+from leap.util.certs import is_valid_pemfile, should_redownload
 
 logger = logging.getLogger(__name__)
 
@@ -153,6 +153,10 @@ class EIPBootstrapper(QtCore.QObject):
         client_cert_path = self._eip_config.\
             get_client_cert_path(self._provider_config,
                                  about_to_download=True)
+
+        # For re-download if something is wrong with the cert
+        self._download_if_needed = self._download_if_needed and \
+            not should_redownload(client_cert_path)
 
         if self._download_if_needed and \
                 os.path.exists(client_cert_path):
