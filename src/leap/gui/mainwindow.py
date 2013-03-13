@@ -374,6 +374,9 @@ class MainWindow(QtGui.QMainWindow):
 
         @rtype: list
         """
+
+        # TODO: check which providers have a valid certificate among
+        # other things, not just the directories
         providers = []
         try:
             providers = os.listdir(
