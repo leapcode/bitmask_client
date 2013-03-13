@@ -60,8 +60,7 @@ def get_mtime(filename):
     @rtype: str
     """
     try:
-        _mtime = os.stat(filename)[8]
-        mtime = time.strftime("%c GMT", time.gmtime(_mtime))
+        mtime = time.ctime(os.path.getmtime(filename)) + " GMT"
         return mtime
     except OSError:
         return None
