@@ -42,7 +42,7 @@ class Prefixer:
         @param standalone: if True it will return the prefix for a
         standalone application. Otherwise, it will return the system
         default for configuration storage.
-        @param type: bool
+        @type standalone: bool
         """
         return ""
 
@@ -68,7 +68,7 @@ class LinuxPrefixer(Prefixer):
         @param standalone: if True it will return the prefix for a
         standalone application. Otherwise, it will return the system
         default for configuration storage.
-        @param type: bool
+        @type standalone: bool
         """
         config_dir = BaseDirectory.xdg_config_home
         if not standalone:

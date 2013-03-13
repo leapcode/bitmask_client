@@ -69,7 +69,7 @@ class BaseConfig:
         @param standalone: if True it will return the prefix for a
         standalone application. Otherwise, it will return the system
         default for configuration storage.
-        @param type: bool
+        @type standalone: bool
         """
         return get_platform_prefixer().get_path_prefix(standalone=standalone)
 
@@ -147,7 +147,7 @@ class LocalizedKey(object):
         informs the problem and returns an empty string
 
         @param lang: language code
-        @param type: str
+        @type lang: str
 
         @return: localized value from the possible values returned by
         self._func
