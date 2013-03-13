@@ -64,7 +64,6 @@ class CheckerThread(QtCore.QThread):
         """
         QtCore.QMutexLocker(self._should_quit_lock)
         self._should_quit = True
-        self.wait()
 
     def start(self):
         """

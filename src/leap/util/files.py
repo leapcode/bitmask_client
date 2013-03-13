@@ -1,6 +1,7 @@
 import os
 import stat
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -25,3 +26,20 @@ def check_and_fix_urw_only(cert):
             logger.error('Error while trying to chmod 600 %s' %
                          cert)
             raise
+
+
+def get_mtime(filename):
+    """
+    Returns the modified time or None if the file doesn't exist
+
+    @param filename: path to check
+    @type filename: str
+
+    @rtype: str
+    """
+    try:
+        _mtime = os.stat(filename)[8]
+        mtime = time.strftime("%c GMT", time.gmtime(_mtime))
+        return mtime
+    except OSError:
+        return None

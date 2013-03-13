@@ -31,7 +31,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
-from leap.util.files import check_and_fix_urw_only
+from leap.util.files import check_and_fix_urw_only, get_mtime
 
 logger = logging.getLogger(__name__)
 
@@ -88,33 +88,39 @@ class EIPBootstrapper(QtCore.QObject):
 
         self._eip_config = EIPConfig()
 
-        if self._download_if_needed and \
-                os.path.exists(os.path.join(self._eip_config.get_path_prefix(),
-                                            "leap",
-                                            "providers",
-                                            self._provider_config.get_domain(),
-                                            "eip-service.json")):
-                download_config_data[self.PASSED_KEY] = True
-                self.download_config.emit(download_config_data)
-                return True
-
         try:
+            headers = {}
+            mtime = get_mtime(os.path.join(self._eip_config
+                                           .get_path_prefix(),
+                                           "leap",
+                                           "providers",
+                                           self._provider_config.get_domain(),
+                                           "eip-service.json"))
+
+            if self._download_if_needed and mtime:
+                headers['if-modified-since'] = mtime
+
             res = self._session.get("%s/%s/%s/%s" %
                                     (self._provider_config.get_api_uri(),
                                      self._provider_config.get_api_version(),
                                      "config",
                                      "eip-service.json"),
                                     verify=self._provider_config
-                                    .get_ca_cert_path())
+                                    .get_ca_cert_path(),
+                                    headers=headers)
             res.raise_for_status()
 
-            eip_definition = res.content
+            # Not modified
+            if res.status_code == 304:
+                logger.debug("EIP definition has not been modified")
+            else:
+                eip_definition = res.content
 
-            self._eip_config.load(data=eip_definition)
-            self._eip_config.save(["leap",
-                                   "providers",
-                                   self._provider_config.get_domain(),
-                                   "eip-service.json"])
+                self._eip_config.load(data=eip_definition)
+                self._eip_config.save(["leap",
+                                       "providers",
+                                       self._provider_config.get_domain(),
+                                       "eip-service.json"])
 
             download_config_data[self.PASSED_KEY] = True
         except Exception as e:

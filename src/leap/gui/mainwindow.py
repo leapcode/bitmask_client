@@ -139,7 +139,15 @@ class MainWindow(QtGui.QMainWindow):
         QtCore.QCoreApplication.instance().connect(
             QtCore.QCoreApplication.instance(),
             QtCore.SIGNAL("aboutToQuit()"),
+            self._vpn.wait)
+        QtCore.QCoreApplication.instance().connect(
+            QtCore.QCoreApplication.instance(),
+            QtCore.SIGNAL("aboutToQuit()"),
             self._checker_thread.set_should_quit)
+        QtCore.QCoreApplication.instance().connect(
+            QtCore.QCoreApplication.instance(),
+            QtCore.SIGNAL("aboutToQuit()"),
+            self._checker_thread.wait)
 
         self.ui.chkRemember.stateChanged.connect(
             self._remember_state_changed)

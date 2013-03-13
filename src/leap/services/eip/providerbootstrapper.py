@@ -31,7 +31,7 @@ from PySide import QtGui, QtCore
 from leap.config.providerconfig import ProviderConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
-from leap.util.files import check_and_fix_urw_only
+from leap.util.files import check_and_fix_urw_only, get_mtime
 
 logger = logging.getLogger(__name__)
 
@@ -71,25 +71,6 @@ class ProviderBootstrapper(QtCore.QObject):
         self._domain = None
         self._provider_config = None
         self._download_if_needed = False
-
-    def _should_proceed_provider(self):
-        """
-        Returns False if provider.json already exists for the given
-        domain. True otherwise
-
-        @rtype: bool
-        """
-        if not self._download_if_needed:
-            return True
-
-        # We don't really need a provider config at this stage, just
-        # the path prefix
-        return not os.path.exists(os.path.join(ProviderConfig()
-                                               .get_path_prefix(),
-                                               "leap",
-                                               "providers",
-                                               self._domain,
-                                               "provider.json"))
 
     def _check_name_resolution(self):
         """
@@ -171,24 +152,34 @@ class ProviderBootstrapper(QtCore.QObject):
             self.ERROR_KEY: ""
         }
 
-        if not self._should_proceed_provider():
-            download_data[self.PASSED_KEY] = True
-            self.download_provider_info.emit(download_data)
-            return True
-
         try:
+            headers = {}
+            mtime = get_mtime(os.path.join(ProviderConfig()
+                                           .get_path_prefix(),
+                                           "leap",
+                                           "providers",
+                                           self._domain,
+                                           "provider.json"))
+            if self._download_if_needed and mtime:
+                headers['if-modified-since'] = mtime
+
             res = self._session.get("https://%s/%s" % (self._domain,
-                                                       "provider.json"))
+                                                       "provider.json"),
+                                    headers=headers)
             res.raise_for_status()
 
-            provider_definition = res.content
+            # Not modified
+            if res.status_code == 304:
+                logger.debug("Provider definition has not been modified")
+            else:
+                provider_definition = res.content
 
-            provider_config = ProviderConfig()
-            provider_config.load(data=provider_definition)
-            provider_config.save(["leap",
-                                  "providers",
-                                  self._domain,
-                                  "provider.json"])
+                provider_config = ProviderConfig()
+                provider_config.load(data=provider_definition)
+                provider_config.save(["leap",
+                                      "providers",
+                                      self._domain,
+                                      "provider.json"])
 
             download_data[self.PASSED_KEY] = True
         except Exception as e:
