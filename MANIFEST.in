@@ -1,0 +1,3 @@
+include pkg/*
+include docs/*
+include versioneer.py
