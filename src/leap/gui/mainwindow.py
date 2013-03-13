@@ -104,8 +104,6 @@ class MainWindow(QtGui.QMainWindow):
         # configuration and certificate.
         self._provider_bootstrapper = ProviderBootstrapper()
 
-        # TODO: add sigint handler
-
         # Intermediate stages, only do something if there was an error
         self._provider_bootstrapper.name_resolution.connect(
             self._intermediate_stage)
@@ -171,8 +169,8 @@ class MainWindow(QtGui.QMainWindow):
         self._action_eip_status = QtGui.QAction(self.tr("Encryption is OFF"),
                                                 self)
         self._action_eip_status.setEnabled(False)
-        self._action_eip_stop = QtGui.QAction(self.tr("Stop"), self)
-        self._action_eip_stop.triggered.connect(
+        self._action_eip_startstop = QtGui.QAction(self.tr("Stop"), self)
+        self._action_eip_startstop.triggered.connect(
             self._stop_eip)
         self._action_eip_write = QtGui.QAction(
             QtGui.QIcon(":/images/Arrow-Up-32.png"),
@@ -278,7 +276,7 @@ class MainWindow(QtGui.QMainWindow):
 
         vpn_systrayMenu = QtGui.QMenu(self)
         vpn_systrayMenu.addAction(self._action_eip_status)
-        vpn_systrayMenu.addAction(self._action_eip_stop)
+        vpn_systrayMenu.addAction(self._action_eip_startstop)
         vpn_systrayMenu.addAction(self._action_eip_read)
         vpn_systrayMenu.addAction(self._action_eip_write)
         self._vpn_systray = QtGui.QSystemTrayIcon(self)
@@ -624,10 +622,13 @@ class MainWindow(QtGui.QMainWindow):
                             providerconfig=self._provider_config,
                             socket_host=host,
                             socket_port=port)
-            self._vpn_systray.setVisible(True)
             self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
             self.ui.btnEipStartStop.disconnect(self)
             self.ui.btnEipStartStop.clicked.connect(
+                self._stop_eip)
+            self._action_eip_startstop.setText(self.tr("Stop"))
+            self._action_eip_startstop.disconnect(self)
+            self._action_eip_startstop.triggered.connect(
                 self._stop_eip)
         except EIPNoPolkitAuthAgentAvailable:
             self._set_eip_status(self.tr("We could not find any "
@@ -652,12 +653,15 @@ class MainWindow(QtGui.QMainWindow):
 
     def _stop_eip(self):
         self._vpn.set_should_quit()
-        self._vpn_systray.setVisible(False)
         self._set_eip_status(self.tr("EIP has stopped"))
         self._set_eip_status_icon("error")
         self.ui.btnEipStartStop.setText(self.tr("Start EIP"))
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
+            self._start_eip)
+        self._action_eip_startstop.setText(self.tr("Start"))
+        self._action_eip_startstop.disconnect(self)
+        self._action_eip_startstop.triggered.connect(
             self._start_eip)
 
     def _download_eip_config(self):
@@ -671,6 +675,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._provider_config.provides_eip() and \
                 self._enabled_services.count("openvpn") > 0:
+            self._vpn_systray.setVisible(True)
             self._eip_bootstrapper.run_eip_setup_checks(
                 self._checker_thread,
                 self._provider_config,
@@ -804,7 +809,6 @@ class MainWindow(QtGui.QMainWindow):
         self._login_set_enabled(True)
         self._set_status("")
         self._vpn.set_should_quit()
-        self._vpn_systray.setVisible(False)
 
     def _intermediate_stage(self, data):
         """
