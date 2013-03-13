@@ -115,7 +115,7 @@ class BaseConfig:
         @param path: relative path to configuration. The absolute path
         will be calculated depending on the platform
 
-        @return: True if loaded to disk correctly, False otherwise
+        @return: True if loaded from disk correctly, False otherwise
         """
 
         # TODO: retrieve standalone option from app-level config
