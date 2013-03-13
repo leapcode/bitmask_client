@@ -201,6 +201,8 @@ class ProviderBootstrapper(QtCore.QObject):
         """
         Populates the check queue
 
+        @param checker: checker thread to be used to run this check
+        @type checker: CheckerThread
         @param domain: domain to check
         @type domain: str
         @param download_if_needed: if True, makes the checks do not
