@@ -20,7 +20,7 @@ Main window for the leap client
 """
 import os
 import logging
-import random
+import tempfile
 import keyring
 
 from PySide import QtCore, QtGui
@@ -603,12 +603,27 @@ class MainWindow(QtGui.QMainWindow):
         self._systray.setIcon(self.LOGGED_IN_ICON)
         self._download_eip_config()
 
+    def _get_socket_host(self):
+        """
+        Returns the socket and port to be used for VPN
+
+        @rtype: tuple (str, str) (host, port)
+        """
+
+        # TODO: make this properly multiplatform
+        host = os.path.join(tempfile.mkdtemp(prefix="leap-tmp"),
+                            'openvpn.socket')
+        port = "unix"
+
+        return host, port
+
     def _start_eip(self):
         try:
+            host, port = self._get_socket_host()
             self._vpn.start(eipconfig=self._eip_config,
                             providerconfig=self._provider_config,
-                            socket_host="localhost",
-                            socket_port=str(random.randint(1000, 9999)))
+                            socket_host=host,
+                            socket_port=port)
             self._vpn_systray.setVisible(True)
             self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
             self.ui.btnEipStartStop.disconnect(self)
