@@ -22,7 +22,6 @@ EIP bootstrapping
 import requests
 import logging
 import os
-import errno
 
 from PySide import QtGui, QtCore
 
@@ -31,7 +30,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
-from leap.util.files import check_and_fix_urw_only, get_mtime
+from leap.util.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.util.request_helpers import get_content
 
 logger = logging.getLogger(__name__)
@@ -184,14 +183,7 @@ class EIPBootstrapper(QtCore.QObject):
 
             # TODO: check certificate validity
 
-            try:
-                os.makedirs(os.path.dirname(client_cert_path))
-            except OSError as e:
-                if e.errno == errno.EEXIST and \
-                        os.path.isdir(os.path.dirname(client_cert_path)):
-                    pass
-                else:
-                    raise
+            mkdir_p(os.path.dirname(client_cert_path))
 
             with open(client_cert_path, "w") as f:
                 f.write(client_cert)

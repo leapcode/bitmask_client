@@ -31,7 +31,7 @@ from PySide import QtGui, QtCore
 from leap.config.providerconfig import ProviderConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
-from leap.util.files import check_and_fix_urw_only, get_mtime
+from leap.util.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.util.request_helpers import get_content
 
 logger = logging.getLogger(__name__)
@@ -271,13 +271,7 @@ class ProviderBootstrapper(QtCore.QObject):
 
             cert_dir = os.path.dirname(cert_path)
 
-            try:
-                os.makedirs(cert_dir)
-            except OSError as e:
-                if e.errno == errno.EEXIST and os.path.isdir(cert_dir):
-                    pass
-                else:
-                    raise
+            mkdir_p(cert_dir)
 
             with open(cert_path, "w") as f:
                 f.write(res.content)

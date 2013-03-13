@@ -22,7 +22,6 @@ Implements the abstract base class for configuration
 import logging
 import functools
 import os
-import errno
 import copy
 
 from abc import ABCMeta, abstractmethod
@@ -30,6 +29,7 @@ from abc import ABCMeta, abstractmethod
 from leap.config.prefixers import get_platform_prefixer
 from leap.config.pluggableconfig import PluggableConfig
 from leap.util.check import leap_assert
+from leap.util.files import mkdir_p
 
 logger = logging.getLogger(__name__)
 
@@ -92,13 +92,7 @@ class BaseConfig:
         @return: True if saved to disk correctly, False otherwise
         """
         config_path = os.path.join(self.get_path_prefix(), *(path_list[:-1]))
-        try:
-            os.makedirs(config_path)
-        except OSError as e:
-            if e.errno == errno.EEXIST and os.path.isdir(config_path):
-                pass
-            else:
-                raise
+        mkdir_p(config_path)
 
         try:
             self._config_checker.serialize(os.path.join(config_path,
