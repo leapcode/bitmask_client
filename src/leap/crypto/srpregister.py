@@ -72,6 +72,8 @@ class SRPRegister(QtCore.QObject):
         parsed_url = urlparse(provider_config.get_api_uri())
         self._provider = parsed_url.hostname
         self._port = parsed_url.port
+        if self._port is None:
+            self._port = "443"
 
         self._register_path = register_path
 
@@ -85,17 +87,11 @@ class SRPRegister(QtCore.QObject):
         @rtype: str
         """
 
-        if self._port:
-            uri = "https://%s:%s/%s/%s" % (
-                self._provider,
-                self._port,
-                self._provider_config.get_api_version(),
-                self._register_path)
-        else:
-            uri = "https://%s/%s/%s" % (
-                self._provider,
-                self._provider_config.get_api_version(),
-                self._register_path)
+        uri = "https://%s:%s/%s/%s" % (
+            self._provider,
+            self._port,
+            self._provider_config.get_api_version(),
+            self._register_path)
 
         return uri
 
