@@ -18,18 +18,19 @@
 """
 Platform dependant VPN launchers
 """
-import os
-import platform
-import logging
 import commands
+import logging
 import getpass
 import grp
+import os
+import platform
 
 from abc import ABCMeta, abstractmethod
 
+from leap.common.check import leap_assert, leap_assert_type
+from leap.common.files import which
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig
-from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 
@@ -84,48 +85,6 @@ def get_platform_launcher():
     leap_assert(launcher, "Unimplemented platform launcher: %s" %
                 (platform.system(),))
     return launcher()
-
-
-# Twisted implementation of which
-def which(name, flags=os.X_OK, path_extension="/usr/sbin:/sbin"):
-    """
-    Search PATH for executable files with the given name.
-
-    On newer versions of MS-Windows, the PATHEXT environment variable will be
-    set to the list of file extensions for files considered executable. This
-    will normally include things like ".EXE". This fuction will also find files
-    with the given name ending with any of these extensions.
-
-    On MS-Windows the only flag that has any meaning is os.F_OK. Any other
-    flags will be ignored.
-
-    @type name: C{str}
-    @param name: The name for which to search.
-
-    @type flags: C{int}
-    @param flags: Arguments to L{os.access}.
-
-    @rtype: C{list}
-    @param: A list of the full paths to files found, in the
-    order in which they were found.
-    """
-
-    result = []
-    exts = filter(None, os.environ.get('PATHEXT', '').split(os.pathsep))
-    path = os.environ.get('PATH', None)
-    path += ":" + path_extension
-    if path is None:
-        return []
-    parts = path.split(os.pathsep)
-    for p in parts:
-        p = os.path.join(p, name)
-        if os.access(p, flags):
-            result.append(p)
-        for e in exts:
-            pext = p + e
-            if os.access(pext, flags):
-                result.append(pext)
-    return result
 
 
 def _is_pkexec_in_system():

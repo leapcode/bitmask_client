@@ -26,7 +26,7 @@ from urlparse import urlparse
 
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.constants import SIGNUP_TIMEOUT
-from leap.util.check import leap_assert, leap_assert_type
+from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 

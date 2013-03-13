@@ -21,10 +21,10 @@ Provider configuration
 import os
 import logging
 
+from leap.common.check import leap_assert, leap_assert_type
 from leap.config.baseconfig import BaseConfig
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipspec import eipservice_config_spec
-from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 

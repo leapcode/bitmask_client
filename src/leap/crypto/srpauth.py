@@ -23,8 +23,8 @@ import srp
 
 from PySide import QtCore, QtGui
 
+from leap.common.check import leap_assert
 from leap.config.providerconfig import ProviderConfig
-from leap.util.check import leap_assert
 from leap.util.checkerthread import CheckerThread
 
 logger = logging.getLogger(__name__)

@@ -18,13 +18,13 @@
 """
 Platform dependant configuration path prefixers
 """
+from abc import ABCMeta, abstractmethod
 import os
 import platform
 
-from abc import ABCMeta, abstractmethod
 from xdg import BaseDirectory
 
-from leap.util.check import leap_assert
+from leap.common.check import leap_assert
 
 
 class Prefixer:

@@ -76,6 +76,7 @@ setup(
     packages=find_packages(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
+    namespace_packages=["leap"],
     include_package_data=True,
     zip_safe=False,
 

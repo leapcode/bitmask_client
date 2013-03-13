@@ -27,6 +27,7 @@ from PySide import QtCore, QtGui
 from functools import partial
 
 from ui_mainwindow import Ui_MainWindow
+from leap.common.check import leap_assert
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.vpn import VPN
@@ -38,9 +39,8 @@ from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.gui.wizard import Wizard
-from leap.util.check import leap_assert
 from leap.util.checkerthread import CheckerThread
-from leap import __version__ as VERSION
+from leap.util import __version__ as VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -325,13 +325,14 @@ class MainWindow(QtGui.QMainWindow):
         """
         QtGui.QMessageBox.about(
             self, self.tr("About LEAP - %s") % (VERSION,),
-            self.tr("LEAP is a non-profit dedicated to giving "
+            self.tr("version: <b>%s</b><br>"
+                    "LEAP is a non-profit dedicated to giving "
                     "all internet users access to secure "
                     "communication. Our focus is on adapting "
                     "encryption technology to make it easy to use "
                     "and widely available. "
                     "<a href=\"https://leap.se\">More about LEAP"
-                    "</a>"))
+                    "</a>") % (VERSION,))
 
     def quit(self):
         self._really_quit = True

@@ -23,7 +23,7 @@ import logging
 
 from PySide import QtCore
 
-from leap.util.check import leap_assert_type
+from leap.common.check import leap_assert_type
 
 logger = logging.getLogger(__name__)
 

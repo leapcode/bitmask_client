@@ -28,7 +28,7 @@ import urlparse
 import jsonschema
 
 #from leap.base.util.translations import LEAPTranslatable
-from leap.util.check import leap_assert
+from leap.common.check import leap_assert
 
 
 logger = logging.getLogger(__name__)

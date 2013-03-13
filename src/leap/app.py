@@ -22,8 +22,7 @@ import sys
 from functools import partial
 from PySide import QtCore, QtGui
 
-from leap import __version__ as VERSION
-
+from leap.util import __version__ as VERSION
 from leap.util import leap_argparse
 from leap.gui import locale_rc
 from leap.gui.mainwindow import MainWindow

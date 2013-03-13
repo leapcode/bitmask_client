@@ -19,20 +19,21 @@
 EIP bootstrapping
 """
 
-import requests
 import logging
 import os
 
+import requests
+
 from PySide import QtGui, QtCore
 
-from leap.crypto.srpauth import SRPAuth
+from leap.common.check import leap_assert, leap_assert_type
+from leap.common.certs import is_valid_pemfile, should_redownload
+from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.config.providerconfig import ProviderConfig
+from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.eipconfig import EIPConfig
-from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
-from leap.util.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.util.request_helpers import get_content
-from leap.util.certs import is_valid_pemfile, should_redownload
 
 logger = logging.getLogger(__name__)
 

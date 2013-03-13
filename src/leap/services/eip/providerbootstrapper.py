@@ -18,20 +18,20 @@
 """
 Provider bootstrapping
 """
-
-import requests
 import logging
 import socket
 import os
 
+import requests
+
 from PySide import QtGui, QtCore
 
+from leap.common.certs import get_digest
+from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
+from leap.common.check import leap_assert, leap_assert_type
 from leap.config.providerconfig import ProviderConfig
-from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
-from leap.util.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.util.request_helpers import get_content
-from leap.util.certs import get_digest
 
 logger = logging.getLogger(__name__)
 

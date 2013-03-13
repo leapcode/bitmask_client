@@ -19,17 +19,17 @@
 Implements the abstract base class for configuration
 """
 
+import copy
 import logging
 import functools
 import os
-import copy
 
 from abc import ABCMeta, abstractmethod
 
-from leap.config.prefixers import get_platform_prefixer
+from leap.common.check import leap_assert
+from leap.common.files import mkdir_p
 from leap.config.pluggableconfig import PluggableConfig
-from leap.util.check import leap_assert
-from leap.util.files import mkdir_p
+from leap.config.prefixers import get_platform_prefixer
 
 logger = logging.getLogger(__name__)
 

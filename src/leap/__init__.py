@@ -1,29 +1,6 @@
-"""
-LEAP Encryption Access Project
-website: U{https://leap.se/}
-"""
-
-__version__ = "unknown"
+# See http://peak.telecommunity.com/DevCenter/setuptools#namespace-packages
 try:
-    from ._version import get_versions
-    __version__ = get_versions()['version']
-    del get_versions
+    __import__('pkg_resources').declare_namespace(__name__)
 except ImportError:
-    #running on a tree that has not run
-    #the setup.py setver
-    pass
-
-__appname__ = "unknown"
-try:
-    from leap._appname import __appname__
-except ImportError:
-    #running on a tree that has not run
-    #the setup.py setver
-    pass
-
-__full_version__ = __appname__ + '/' + str(__version__)
-
-# try:
-#     from leap._branding import BRANDING as __branding
-# except ImportError:
-#     __branding = {}
+    from pkgutil import extend_path
+    __path__ = extend_path(__path__, __name__)

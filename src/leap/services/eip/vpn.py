@@ -26,11 +26,11 @@ import psutil
 from PySide import QtCore, QtGui
 from functools import partial
 
+from leap.common.check import leap_assert, leap_assert_type
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.vpnlaunchers import get_platform_launcher
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.udstelnet import UDSTelnet
-from leap.util.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
 

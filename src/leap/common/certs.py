@@ -26,7 +26,7 @@ import logging
 from OpenSSL import crypto
 from dateutil.parser import parse as dateparse
 
-from leap.util.check import leap_assert
+from leap.common.check import leap_assert
 
 logger = logging.getLogger(__name__)
 
