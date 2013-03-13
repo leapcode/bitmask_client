@@ -38,6 +38,18 @@ class VPNLauncherException(Exception):
     pass
 
 
+class OpenVPNNotFoundException(VPNLauncherException):
+    pass
+
+
+class EIPNoPolkitAuthAgentAvailable(VPNLauncherException):
+    pass
+
+
+class EIPNoPkexecAvailable(VPNLauncherException):
+    pass
+
+
 class VPNLauncher:
     """
     Abstract launcher class
@@ -45,7 +57,6 @@ class VPNLauncher:
 
     __metaclass__ = ABCMeta
 
-    # TODO: document parameters
     @abstractmethod
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port=None):
@@ -137,9 +148,9 @@ def _has_updown_scripts(path):
 
 
 def _is_auth_agent_running():
-    return bool(
+    return len(
         commands.getoutput(
-            'ps aux | grep polkit-[g]nome-authentication-agent-1'))
+            'ps aux | grep polkit-[g]nome-authentication-agent-1')) > 0
 
 
 class LinuxVPNLauncher(VPNLauncher):
@@ -181,7 +192,7 @@ class LinuxVPNLauncher(VPNLauncher):
 
         openvpn_possibilities = which(self.OPENVPN_BIN)
         if len(openvpn_possibilities) == 0:
-            raise VPNLauncherException("We couldn't find openvpn")
+            raise OpenVPNNotFoundException()
 
         openvpn = openvpn_possibilities[0]
         args = []
@@ -196,8 +207,10 @@ class LinuxVPNLauncher(VPNLauncher):
             else:
                 logger.warning("No polkit auth agent found. pkexec " +
                                "will use its own auth agent.")
+                raise EIPNoPolkitAuthAgentAvailable()
         else:
             logger.warning("System has no pkexec")
+            raise EIPNoPkexecAvailable()
 
         # TODO: handle verbosity
 

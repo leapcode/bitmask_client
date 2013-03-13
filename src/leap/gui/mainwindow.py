@@ -30,7 +30,10 @@ from ui_mainwindow import Ui_MainWindow
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.vpn import VPN
-from leap.services.eip.vpnlaunchers import VPNLauncherException
+from leap.services.eip.vpnlaunchers import (VPNLauncherException,
+                                            OpenVPNNotFoundException,
+                                            EIPNoPkexecAvailable,
+                                            EIPNoPolkitAuthAgentAvailable)
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
@@ -605,8 +608,25 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.btnEipStartStop.disconnect(self)
             self.ui.btnEipStartStop.clicked.connect(
                 self._stop_eip)
+        except EIPNoPolkitAuthAgentAvailable:
+            self._set_eip_status(self.tr("We could not find any "
+                                         "authentication "
+                                         "agent in your system.<br/>"
+                                         "Make sure you have "
+                                         "<b>polkit-gnome-authentication-"
+                                         "agent-1</b> "
+                                         "running and try again."),
+                                 error=True)
+        except EIPNoPkexecAvailable:
+            self._set_eip_status(self.tr("We could not find <b>pkexec</b> "
+                                         "in your system."),
+                                 error=True)
+        except OpenVPNNotFoundException:
+            self._set_eip_status(self.tr("We couldn't find openvpn"),
+                                 error=True)
         except VPNLauncherException as e:
             self._set_eip_status("%s" % (e,), error=True)
+
         self.ui.btnEipStartStop.setEnabled(True)
 
     def _stop_eip(self):
