@@ -351,8 +351,8 @@ class Wizard(QtGui.QWizard):
         status = ""
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         if not passed:
-            status = self.tr("<font color='red'><b>Provider does not "
-                             "support HTTPS</b></font>")
+            status = self.tr("<font color='red'><b>%s</b></font>") \
+                % (data[self._provider_bootstrapper.ERROR_KEY])
             self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)

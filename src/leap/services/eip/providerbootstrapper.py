@@ -127,8 +127,14 @@ class ProviderBootstrapper(QtCore.QObject):
             res = self._session.get("https://%s" % (self._domain,))
             res.raise_for_status()
             https_data[self.PASSED_KEY] = True
+        except requests.exceptions.SSLError as e:
+            logger.error("%s" % (e,))
+            https_data[self.ERROR_KEY] = self.tr("Provider certificate could "
+                                                 "not verify")
         except Exception as e:
-            https_data[self.ERROR_KEY] = "%s" % (e,)
+            logger.error("%s" % (e,))
+            https_data[self.ERROR_KEY] = self.tr("Provider does not support "
+                                                 "HTTPS")
 
         logger.debug("Emitting https_connection %s" % (https_data,))
         self.https_connection.emit(https_data)
