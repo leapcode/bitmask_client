@@ -318,9 +318,10 @@ class VPN(QtCore.QThread):
 
 
 if __name__ == "__main__":
-    app = QtGui.QApplication(sys.argv)
-
+    import os
     import signal
+
+    app = QtGui.QApplication(sys.argv)
 
     def sigint_handler(*args, **kwargs):
         logger.debug('SIGINT catched. shutting down...')
@@ -352,7 +353,7 @@ if __name__ == "__main__":
         if provider.load("leap/providers/bitmask.net/provider.json"):
             vpn_thread.start(eipconfig=eipconfig,
                              providerconfig=provider,
-                             socket_host="/home/chiiph/vpnsock",
+                             socket_host=os.path.expanduser("~/vpnsock"),
                              socket_port="unix")
 
     timer = QtCore.QTimer()
