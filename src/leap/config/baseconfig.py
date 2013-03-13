@@ -84,9 +84,10 @@ class BaseConfig:
         """
         Saves the current configuration to disk
 
-        @param path: relative path to configuration. The absolute path
-        will be calculated depending on the platform.
-        @type path: list
+        @param path_list: list of components that form the relative
+        path to configuration. The absolute path will be calculated
+        depending on the platform.
+        @type path_list: list
 
         @return: True if saved to disk correctly, False otherwise
         """
