@@ -508,7 +508,10 @@ class MainWindow(QtGui.QMainWindow):
         settings = QtCore.QSettings()
         self._enabled_services = settings.value(
             "%s/Services" %
-            (self.ui.cmbProviders.currentText(),), "").split(",")
+            (self.ui.cmbProviders.currentText(),), "")
+
+        if isinstance(self._enabled_services, (str, unicode)):
+            self._enabled_services = self._enabled_services.split(",")
 
         if len(provider) == 0:
             self._set_status(self.tr("Please select a valid provider"))
