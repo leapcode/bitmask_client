@@ -9,3 +9,4 @@ keyring
 pyxdg
 argparse
 PySide
+python-dateutil

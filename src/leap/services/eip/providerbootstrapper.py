@@ -32,6 +32,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
 from leap.util.files import check_and_fix_urw_only, get_mtime
+from leap.util.request_helpers import get_content
 
 logger = logging.getLogger(__name__)
 
@@ -172,10 +173,10 @@ class ProviderBootstrapper(QtCore.QObject):
             if res.status_code == 304:
                 logger.debug("Provider definition has not been modified")
             else:
-                provider_definition = res.content
+                provider_definition, mtime = get_content(res)
 
                 provider_config = ProviderConfig()
-                provider_config.load(data=provider_definition)
+                provider_config.load(data=provider_definition, mtime=mtime)
                 provider_config.save(["leap",
                                       "providers",
                                       self._domain,

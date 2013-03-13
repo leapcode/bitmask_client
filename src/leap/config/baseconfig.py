@@ -107,7 +107,7 @@ class BaseConfig:
             raise
         return True
 
-    def load(self, path="", data=None):
+    def load(self, path="", data=None, mtime=None):
         """
         Loads the configuration from disk
 
@@ -127,9 +127,9 @@ class BaseConfig:
 
         try:
             if data is None:
-                self._config_checker.load(fromfile=config_path)
+                self._config_checker.load(fromfile=config_path, mtime=mtime)
             else:
-                self._config_checker.load(data)
+                self._config_checker.load(data, mtime=mtime)
         except Exception as e:
             logger.warning("Something went wrong while loading " +
                            "the config from %s\n%s" % (config_path, e))

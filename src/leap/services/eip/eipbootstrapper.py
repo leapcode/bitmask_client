@@ -32,6 +32,7 @@ from leap.services.eip.eipconfig import EIPConfig
 from leap.util.check import leap_assert, leap_assert_type
 from leap.util.checkerthread import CheckerThread
 from leap.util.files import check_and_fix_urw_only, get_mtime
+from leap.util.request_helpers import get_content
 
 logger = logging.getLogger(__name__)
 
@@ -114,9 +115,9 @@ class EIPBootstrapper(QtCore.QObject):
             if res.status_code == 304:
                 logger.debug("EIP definition has not been modified")
             else:
-                eip_definition = res.content
+                eip_definition, mtime = get_content(res)
 
-                self._eip_config.load(data=eip_definition)
+                self._eip_config.load(data=eip_definition, mtime=mtime)
                 self._eip_config.save(["leap",
                                        "providers",
                                        self._provider_config.get_domain(),
