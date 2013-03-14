@@ -1,0 +1,2 @@
+  o Turn "leap" into namespace package, move common files to leap_common package
+    that can be shared by other LEAP projects.
