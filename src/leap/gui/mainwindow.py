@@ -29,6 +29,7 @@ from functools import partial
 from ui_mainwindow import Ui_MainWindow
 from leap.common.check import leap_assert
 from leap.config.providerconfig import ProviderConfig
+from leap.config.leapsettings import LeapSettings
 from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
@@ -54,17 +55,17 @@ class MainWindow(QtGui.QMainWindow):
     LOGIN_INDEX = 0
     EIP_STATUS_INDEX = 1
 
-    # Settings
-    GEOMETRY_KEY = "Geometry"
-    WINDOWSTATE_KEY = "WindowState"
-    USER_KEY = "User"
-    AUTOLOGIN_KEY = "AutoLogin"
-    PROPER_PROVIDER = "ProperProvider"
-
     # Keyring
     KEYRING_KEY = "leap_client"
 
-    def __init__(self):
+    def __init__(self, standalone=False):
+        """
+        Constructor for the client main window
+
+        @param standalone: Set to true if the app should use configs
+        inside its pwd
+        @type standalone: bool
+        """
         QtGui.QMainWindow.__init__(self)
 
         self.CONNECTING_ICON = QtGui.QPixmap(":/images/conn_connecting.png")
@@ -91,6 +92,9 @@ class MainWindow(QtGui.QMainWindow):
 
         # This is loaded only once, there's a bug when doing that more
         # than once
+        ProviderConfig.standalone = standalone
+        EIPConfig.standalone = standalone
+        self._standalone = standalone
         self._provider_config = ProviderConfig()
         self._eip_config = EIPConfig()
         # This is created once we have a valid provider config
@@ -185,6 +189,7 @@ class MainWindow(QtGui.QMainWindow):
         self._action_visible.triggered.connect(self._toggle_visible)
 
         self._enabled_services = []
+        self._settings = LeapSettings(standalone)
 
         self._center_window()
         self._wizard = None
@@ -201,8 +206,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _rejected_wizard(self):
         if self._wizard_firstrun:
-            settings = QtCore.QSettings()
-            settings.setValue(self.PROPER_PROVIDER, False)
+            self._settings.set_properprovider(False)
             self.quit()
         else:
             self._finish_init()
@@ -217,7 +221,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.chkAutoLogin.setEnabled(state == QtCore.Qt.Checked)
 
     def _finish_init(self):
-        settings = QtCore.QSettings()
         self.ui.cmbProviders.addItems(self._configured_providers())
         self._show_systray()
         self.show()
@@ -227,9 +230,9 @@ class MainWindow(QtGui.QMainWindow):
             possible_password = self._wizard.get_password()
             self.ui.chkRemember.setChecked(self._wizard.get_remember())
             self._enabled_services = list(self._wizard.get_services())
-            settings.setValue("%s/Services" %
-                              (self.ui.cmbProviders.currentText(),),
-                              self._enabled_services)
+            self._settings.set_enabled_services(
+                self.ui.cmbProviders.currentText(),
+                self._enabled_services)
             if possible_username is not None:
                 self.ui.lnUser.setText(possible_username)
                 self._focus_password()
@@ -238,10 +241,10 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.chkRemember.setChecked(True)
                 self._login()
             self._wizard = None
-            settings.setValue(self.PROPER_PROVIDER, True)
+            self._settings.set_properprovider(True)
         else:
-            saved_user = settings.value(self.USER_KEY, None)
-            auto_login = settings.value(self.AUTOLOGIN_KEY, "false") != "false"
+            saved_user = self._settings.get_user()
+            auto_login = self._settings.get_autologin()
 
             if saved_user is not None:
                 self.ui.lnUser.setText(saved_user)
@@ -301,9 +304,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         Centers the mainwindow based on the desktop geometry
         """
-        settings = QtCore.QSettings()
-        geometry = settings.value(self.GEOMETRY_KEY, None)
-        state = settings.value(self.WINDOWSTATE_KEY, None)
+        geometry = self._settings.get_geometry()
+        state = self._settings.get_windowstate()
+
         if geometry is None:
             app = QtGui.QApplication.instance()
             width = app.desktop().width()
@@ -361,10 +364,11 @@ class MainWindow(QtGui.QMainWindow):
             self._toggle_visible()
             e.ignore()
             return
-        settings = QtCore.QSettings()
-        settings.setValue(self.GEOMETRY_KEY, self.saveGeometry())
-        settings.setValue(self.WINDOWSTATE_KEY, self.saveState())
-        settings.setValue(self.AUTOLOGIN_KEY, self.ui.chkAutoLogin.isChecked())
+
+        self._settings.set_geometry(self.saveGeometry())
+        self._settings.set_windowstate(self.saveState())
+        self._settings.set_autologin(self.ui.chkAutoLogin.isChecked())
+
         QtGui.QMainWindow.closeEvent(self, e)
 
     def _configured_providers(self):
@@ -394,10 +398,8 @@ class MainWindow(QtGui.QMainWindow):
 
         @rtype: bool
         """
-        settings = QtCore.QSettings()
         has_provider_on_disk = len(self._configured_providers()) != 0
-        is_proper_provider = settings.value(self.PROPER_PROVIDER,
-                                            "false") != "false"
+        is_proper_provider = self._settings.get_properprovider()
         return not (has_provider_on_disk and is_proper_provider)
 
     def _focus_password(self):
@@ -507,13 +509,8 @@ class MainWindow(QtGui.QMainWindow):
         password = self.ui.lnPassword.text()
         provider = self.ui.cmbProviders.currentText()
 
-        settings = QtCore.QSettings()
-        self._enabled_services = settings.value(
-            "%s/Services" %
-            (self.ui.cmbProviders.currentText(),), "")
-
-        if isinstance(self._enabled_services, (str, unicode)):
-            self._enabled_services = self._enabled_services.split(",")
+        self._enabled_services = self._settings.get_enabled_services(
+            self.ui.cmbProviders.currentText())
 
         if len(provider) == 0:
             self._set_status(self.tr("Please select a valid provider"))
@@ -530,8 +527,6 @@ class MainWindow(QtGui.QMainWindow):
         self._set_status(self.tr("Logging in..."), error=False)
         self._login_set_enabled(False)
 
-        settings = QtCore.QSettings()
-
         if self.ui.chkRemember.isChecked():
             try:
                 keyring.set_password(self.KEYRING_KEY,
@@ -539,7 +534,7 @@ class MainWindow(QtGui.QMainWindow):
                                      password.encode("utf8"))
                 # Only save the username if it was saved correctly in
                 # the keyring
-                settings.setValue(self.USER_KEY, username)
+                self._settings.set_user(username)
             except Exception as e:
                 logger.error("Problem saving data to keyring. %r"
                              % (e,))

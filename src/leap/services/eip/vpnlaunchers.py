@@ -79,6 +79,20 @@ class VPNLauncher:
         """
         return []
 
+    @abstractmethod
+    def get_vpn_env(self, providerconfig):
+        """
+        Returns a dictionary with the custom env for the platform.
+        This is mainly used for setting LD_LIBRARY_PATH to the correct
+        path when distributing a standalone client
+
+        @param providerconfig: provider specific configuration
+        @type providerconfig: ProviderConfig
+
+        @rtype: dict
+        """
+        return {}
+
 
 def get_platform_launcher():
     launcher = globals()[platform.system() + "VPNLauncher"]
@@ -125,7 +139,9 @@ class LinuxVPNLauncher(VPNLauncher):
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="unix"):
         """
-        Returns the platform dependant vpn launching command
+        Returns the platform dependant vpn launching command. It will
+        look for openvpn in the regular paths and algo in
+        path_prefix/apps/eip/ (in case standalone is set)
 
         Might raise VPNException.
 
@@ -149,7 +165,11 @@ class LinuxVPNLauncher(VPNLauncher):
         leap_assert(socket_host, "We need a socket host!")
         leap_assert(socket_port, "We need a socket port!")
 
-        openvpn_possibilities = which(self.OPENVPN_BIN)
+        openvpn_possibilities = which(
+            self.OPENVPN_BIN,
+            path_extension=os.path.join(providerconfig.get_path_prefix(),
+                                        "..", "apps", "eip"))
+
         if len(openvpn_possibilities) == 0:
             raise OpenVPNNotFoundException()
 
@@ -227,6 +247,20 @@ class LinuxVPNLauncher(VPNLauncher):
 
         return [openvpn] + args
 
+    def get_vpn_env(self, providerconfig):
+        """
+        Returns a dictionary with the custom env for the platform.
+        This is mainly used for setting LD_LIBRARY_PATH to the correct
+        path when distributing a standalone client
+
+        @rtype: dict
+        """
+        leap_assert(providerconfig, "We need a provider config")
+        leap_assert_type(providerconfig, ProviderConfig)
+
+        return {"LD_LIBRARY_PATH": os.path.join(
+                providerconfig.get_path_prefix(),
+                "..", "lib")}
 
 if __name__ == "__main__":
     logger = logging.getLogger(name='leap')

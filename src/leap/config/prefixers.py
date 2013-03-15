@@ -74,7 +74,7 @@ class LinuxPrefixer(Prefixer):
         config_dir = BaseDirectory.xdg_config_home
         if not standalone:
             return config_dir
-        return os.getenv("LEAP_CLIENT_PATH", config_dir)
+        return os.path.join(os.getcwd(), "config")
 
 
 if __name__ == "__main__":

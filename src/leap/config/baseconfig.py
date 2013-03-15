@@ -41,6 +41,16 @@ class BaseConfig:
 
     __metaclass__ = ABCMeta
 
+    """
+    Standalone is a class wide parameter
+
+    @param standalone: if True it will return the prefix for a
+    standalone application. Otherwise, it will return the system
+    default for configuration storage.
+    @type standalone: bool
+    """
+    standalone = False
+
     def __init__(self):
         self._data = {}
         self._config_checker = None
@@ -62,16 +72,13 @@ class BaseConfig:
         leap_assert(self._config_checker, "Load the config first")
         return self._config_checker.config[key]
 
-    def get_path_prefix(self, standalone=False):
+    def get_path_prefix(self):
         """
         Returns the platform dependant path prefixer
 
-        @param standalone: if True it will return the prefix for a
-        standalone application. Otherwise, it will return the system
-        default for configuration storage.
-        @type standalone: bool
         """
-        return get_platform_prefixer().get_path_prefix(standalone=standalone)
+        return get_platform_prefixer().get_path_prefix(
+            standalone=self.standalone)
 
     def loaded(self):
         """
@@ -113,7 +120,6 @@ class BaseConfig:
         @return: True if loaded from disk correctly, False otherwise
         """
 
-        # TODO: retrieve standalone option from app-level config
         config_path = os.path.join(self.get_path_prefix(),
                                    path)
 

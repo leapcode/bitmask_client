@@ -42,6 +42,7 @@ def main():
 
     _, opts = leap_argparse.init_leapc_args()
     debug = opts.debug
+    standalone = opts.standalone
 
     # TODO: get severity from command line args
     if debug:
@@ -93,7 +94,7 @@ def main():
     # TODO: check if the leap-client is already running and quit
     # gracefully in that case.
 
-    window = MainWindow()
+    window = MainWindow(standalone)
     window.show()
 
     # This dummy timer ensures that control is given to the outside

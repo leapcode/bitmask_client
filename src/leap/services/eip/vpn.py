@@ -157,7 +157,14 @@ class VPN(QtCore.QThread):
                                                  socket_host=socket_host,
                                                  socket_port=socket_port)
         try:
+            env = QtCore.QProcessEnvironment.systemEnvironment()
+            for key, val in self._launcher.get_vpn_env(providerconfig).items():
+                env.insert(key, val)
+
             self._subp = QtCore.QProcess()
+
+            self._subp.setProcessEnvironment(env)
+
             self._subp.finished.connect(self.process_finished)
             self._subp.start(command[:1][0], command[1:])
             logger.debug("Waiting for started...")
