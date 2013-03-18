@@ -18,9 +18,10 @@
 """
 Platform dependant configuration path prefixers
 """
-from abc import ABCMeta, abstractmethod
 import os
 import platform
+
+from abc import ABCMeta, abstractmethod
 
 from xdg import BaseDirectory
 
