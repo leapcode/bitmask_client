@@ -235,14 +235,17 @@ class DarwinVPNLauncher(VPNLauncher):
     VPN launcher for the Darwin Platform
     """
 
-    OSASCRIPT_BIN = 'osascript'
-    OSX_ASADMIN = 'do shell script "%s" with administrator privileges'
+    OSASCRIPT_BIN = '/usr/bin/osascript'
+    OSX_ASADMIN = "do shell script \"%s\" with administrator privileges"
     OPENVPN_BIN = 'openvpn.leap'
     INSTALL_PATH = "/Applications/LEAPClient.app/"
     # OPENVPN_BIN = "/%s/Contents/Resources/openvpn.leap" % (
     #   self.INSTALL_PATH,)
-    UP_DOWN_SCRIPT = "/etc/leap/resolv-update"
-    OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-down-root.so"
+    UP_SCRIPT = "/%s/client.up.sh" % (INSTALL_PATH,)
+    DOWN_SCRIPT = "/%s/client.down.sh" % (INSTALL_PATH,)
+
+    # TODO: Add
+    # OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-down-root.so"
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="unix"):
@@ -276,12 +279,11 @@ class DarwinVPNLauncher(VPNLauncher):
             raise OpenVPNNotFoundException()
 
         openvpn = openvpn_possibilities[0]
-        args = []
+        args = [openvpn]
 
         # TODO: handle verbosity
 
         gateway_ip = str(eipconfig.get_gateway_ip(0))
-
         logger.debug("Using gateway ip %s" % (gateway_ip,))
 
         args += [
@@ -317,12 +319,16 @@ class DarwinVPNLauncher(VPNLauncher):
             '--script-security', '2'
         ]
 
-        if _has_updown_scripts(self.UP_DOWN_SCRIPT):
+        if _has_updown_scripts(self.UP_SCRIPT):
             args += [
-                '--up', self.UP_DOWN_SCRIPT,
-                '--down', self.UP_DOWN_SCRIPT,
-                '--plugin', self.OPENVPN_DOWN_ROOT,
-                '\'script_type=down %s\'' % self.UP_DOWN_SCRIPT
+                '--up', self.UP_SCRIPT,
+            ]
+        if _has_updown_scripts(self.DOWN_SCRIPT):
+            args += [
+                '--down', self.DOWN_SCRIPT,
+                # FIXME add down-plugin
+                # '--plugin', self.OPENVPN_DOWN_ROOT,
+                # '\'script_type=down %s\'' % self.DOWN_SCRIPT
             ]
 
         args += [
@@ -331,11 +337,13 @@ class DarwinVPNLauncher(VPNLauncher):
             '--ca', providerconfig.get_ca_cert_path()
         ]
 
-        logger.debug("Running VPN with command:")
-        logger.debug("%s %s" % (openvpn, " ".join(args)))
+        command = self.OSASCRIPT_BIN
+        cmd_args = ["-e", self.OSX_ASADMIN % (' '.join(args),)]
 
-        # return [self.OSASCRIPT_BIN, ["-e", self.OSX_ASADMIN % ' '.join(args)]]
-        return [openvpn] + args
+        logger.debug("Running VPN with command:")
+        logger.debug("%s %s" % (command, " ".join(cmd_args)))
+
+        return [command] + cmd_args
 
 
 if __name__ == "__main__":
