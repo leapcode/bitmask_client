@@ -1,0 +1,9 @@
+# -- external requirements --
+# ---------------------------
+# temporary, move to official repo and then
+# to pypi
+# NOTE: you have to run pip install -r pkg/requirements.pip for pip
+#       to install it. (do it after python setup.py develop and it
+#       will only install this)
+
+-e git+git://github.com/kalikaneko/leap_common.git@develop#egg=leap_common
