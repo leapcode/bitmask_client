@@ -699,7 +699,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         selected_pixmap = self.ERROR_ICON
         tray_message = self.tr("Encryption is OFF")
-        if status in ("WAIT", "AUTH", "GET_CONFIG", "RECONNECTING"):
+        if status in ("WAIT", "AUTH", "GET_CONFIG",
+                      "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
         elif status in ("CONNECTED"):
             tray_message = self.tr("Encryption is ON")
@@ -727,6 +728,8 @@ class MainWindow(QtGui.QMainWindow):
             self._set_eip_status(self.tr("VPN: Connected!"))
         elif status == "WAIT":
             self._set_eip_status(self.tr("VPN: Waiting to start..."))
+        elif status == "ASSIGN_IP":
+            self._set_eip_status(self.tr("VPN: Assigning IP"))
         elif status == "ALREADYRUNNING":
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
