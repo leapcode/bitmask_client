@@ -189,6 +189,8 @@ class LinuxVPNLauncher(VPNLauncher):
         ]
 
         openvpn_configuration = eipconfig.get_openvpn_configuration()
+
+        # FIXME: sanitize this! --
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
 
@@ -225,6 +227,114 @@ class LinuxVPNLauncher(VPNLauncher):
         logger.debug("Running VPN with command:")
         logger.debug("%s %s" % (openvpn, " ".join(args)))
 
+        return [openvpn] + args
+
+
+class DarwinVPNLauncher(VPNLauncher):
+    """
+    VPN launcher for the Darwin Platform
+    """
+
+    OSASCRIPT_BIN = 'osascript'
+    OSX_ASADMIN = 'do shell script "%s" with administrator privileges'
+    OPENVPN_BIN = 'openvpn.leap'
+    INSTALL_PATH = "/Applications/LEAPClient.app/"
+    # OPENVPN_BIN = "/%s/Contents/Resources/openvpn.leap" % (
+    #   self.INSTALL_PATH,)
+    UP_DOWN_SCRIPT = "/etc/leap/resolv-update"
+    OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-down-root.so"
+
+    def get_vpn_command(self, eipconfig=None, providerconfig=None,
+                        socket_host=None, socket_port="unix"):
+        """
+        Returns the platform dependant vpn launching command
+
+        Might raise VPNException.
+
+        @param eipconfig: eip configuration object
+        @type eipconfig: EIPConfig
+        @param providerconfig: provider specific configuration
+        @type providerconfig: ProviderConfig
+        @param socket_host: either socket path (unix) or socket IP
+        @type socket_host: str
+        @param socket_port: either string "unix" if it's a unix
+        socket, or port otherwise
+        @type socket_port: str
+
+        @return: A VPN command ready to be launched
+        @rtype: list
+        """
+        leap_assert(eipconfig, "We need an eip config")
+        leap_assert_type(eipconfig, EIPConfig)
+        leap_assert(providerconfig, "We need a provider config")
+        leap_assert_type(providerconfig, ProviderConfig)
+        leap_assert(socket_host, "We need a socket host!")
+        leap_assert(socket_port, "We need a socket port!")
+
+        openvpn_possibilities = which(self.OPENVPN_BIN)
+        if len(openvpn_possibilities) == 0:
+            raise OpenVPNNotFoundException()
+
+        openvpn = openvpn_possibilities[0]
+        args = []
+
+        # TODO: handle verbosity
+
+        gateway_ip = str(eipconfig.get_gateway_ip(0))
+
+        logger.debug("Using gateway ip %s" % (gateway_ip,))
+
+        args += [
+            '--client',
+            '--dev', 'tun',
+            '--persist-tun',
+            '--persist-key',
+            '--remote', gateway_ip, '1194', 'udp',
+            '--tls-client',
+            '--remote-cert-tls',
+            'server'
+        ]
+
+        # FIXME: sanitize this! --
+
+        openvpn_configuration = eipconfig.get_openvpn_configuration()
+        for key, value in openvpn_configuration.items():
+            args += ['--%s' % (key,), value]
+
+        args += [
+            '--user', getpass.getuser(),
+            '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
+        ]
+
+        if socket_port == "unix":
+            args += [
+                '--management-client-user', getpass.getuser()
+            ]
+
+        args += [
+            '--management-signal',
+            '--management', socket_host, socket_port,
+            '--script-security', '2'
+        ]
+
+        if _has_updown_scripts(self.UP_DOWN_SCRIPT):
+            args += [
+                '--up', self.UP_DOWN_SCRIPT,
+                '--down', self.UP_DOWN_SCRIPT,
+                '--plugin', self.OPENVPN_DOWN_ROOT,
+                '\'script_type=down %s\'' % self.UP_DOWN_SCRIPT
+            ]
+
+        args += [
+            '--cert', eipconfig.get_client_cert_path(providerconfig),
+            '--key', eipconfig.get_client_cert_path(providerconfig),
+            '--ca', providerconfig.get_ca_cert_path()
+        ]
+
+        logger.debug("Running VPN with command:")
+        logger.debug("%s %s" % (openvpn, " ".join(args)))
+
+        # return [self.OSASCRIPT_BIN, ["-e", self.OSX_ASADMIN % ' '.join(args)]]
         return [openvpn] + args
 
 
