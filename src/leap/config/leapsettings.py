@@ -29,6 +29,28 @@ from leap.config.prefixers import get_platform_prefixer
 logger = logging.getLogger(__name__)
 
 
+def to_bool(val):
+    """
+    Returns the boolean value corresponding to val. Will return False
+    in case val is not a string or something that behaves like one.
+
+    @param val: value to cast
+    @type val: either bool already or str
+
+    @rtype: bool
+    """
+    if isinstance(val, bool):
+        return val
+
+    bool_val = False
+    try:
+        bool_val = val.lower() == "true"
+    except:
+        pass
+
+    return bool_val
+
+
 class LeapSettings(object):
     """
     Leap client QSettings wrapper
@@ -153,7 +175,7 @@ class LeapSettings(object):
 
         @rtype: bool
         """
-        return self._settings.value(self.AUTOLOGIN_KEY, "false") != "false"
+        return to_bool(self._settings.value(self.AUTOLOGIN_KEY, False))
 
     def set_autologin(self, autologin):
         """
@@ -173,8 +195,7 @@ class LeapSettings(object):
 
         @rtype: bool
         """
-        return self._settings.value(self.PROPERPROVIDER_KEY,
-                                    "false") != "false"
+        return to_bool(self._settings.value(self.PROPERPROVIDER_KEY, False))
 
     def set_properprovider(self, properprovider):
         """
