@@ -99,6 +99,28 @@ class DarwinPrefixer(Prefixer):
         return os.getenv("LEAP_CLIENT_PATH", config_dir)
 
 
+class WindowsPrefixer(Prefixer):
+    """
+    Config prefixer for the Windows platform
+    """
+
+    def get_path_prefix(self, standalone=False):
+        """
+        Returns the platform dependant path prefixer.
+        This method expects an env variable named LEAP_CLIENT_PATH if
+        standalone is used.
+
+        @param standalone: if True it will return the prefix for a
+        standalone application. Otherwise, it will return the system
+        default for configuration storage.
+        @type standalone: bool
+        """
+        config_dir = BaseDirectory.xdg_config_home
+
+        if not standalone:
+            return config_dir
+        return os.path.join(os.getcwd(), "config")
+
 if __name__ == "__main__":
     try:
         abs_prefixer = Prefixer()
