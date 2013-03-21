@@ -20,6 +20,7 @@ Main window for the leap client
 """
 import os
 import logging
+import platform
 import tempfile
 import keyring
 
@@ -605,9 +606,14 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         # TODO: make this properly multiplatform
-        host = os.path.join(tempfile.mkdtemp(prefix="leap-tmp"),
-                            'openvpn.socket')
-        port = "unix"
+
+        if platform.system() == "Windows":
+            host = "localhost"
+            port = "9876"
+        else:
+            host = os.path.join(tempfile.mkdtemp(prefix="leap-tmp"),
+                                'openvpn.socket')
+            port = "unix"
 
         return host, port
 
