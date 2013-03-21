@@ -435,10 +435,10 @@ class Wizard(QtGui.QWizard):
         """
         if state == QtCore.Qt.Checked:
             self._selected_services = \
-                self._selected_services.union({service})
+                self._selected_services.union(set([service]))
         else:
             self._selected_services = \
-                self._selected_services.difference({service})
+                self._selected_services.difference(set([service]))
 
     def _populate_services(self):
         """

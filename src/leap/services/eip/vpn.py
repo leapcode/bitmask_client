@@ -166,6 +166,7 @@ class VPN(QtCore.QThread):
             self._subp.setProcessEnvironment(env)
 
             self._subp.finished.connect(self.process_finished)
+            self._subp.finished.connect(self._dump_exitinfo)
             self._subp.start(command[:1][0], command[1:])
             logger.debug("Waiting for started...")
             self._subp.waitForStarted()
@@ -180,6 +181,16 @@ class VPN(QtCore.QThread):
         except Exception as e:
             logger.warning("Something went wrong while starting OpenVPN: %r" %
                            (e,))
+
+    def _dump_exitinfo(self):
+        """
+        SLOT
+        TRIGGER: self._subp.finished
+
+        Prints debug info when quitting the process
+        """
+        logger.debug("stdout: %s", self._subp.readAllStandardOutput())
+        logger.debug("stderr: %s", self._subp.readAllStandardError())
 
     def _get_openvpn_process(self):
         """
