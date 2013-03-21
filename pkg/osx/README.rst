@@ -16,10 +16,17 @@ basically you need this to setup your environment:
 # port install py26-virtualenv
 # port install git-core
 # port install platypus
+# port install upx
 
 Requirements
 ============
-pyinstaller (in ~/pyinstaller)
+pyinstaller
+-----------
+Expected in ~/pyinstaller
+
+You need the development version.
+Tested with: 2.0.373
+
 platypus (tested with latest macports)
 
 ... + install environment as usual,

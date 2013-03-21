@@ -4,7 +4,7 @@ DMG = "dist/leap-client-$(GITC).dmg"
 INST = "dist/LEAP Client installer.app"
 INSTR = "dist/LEAP Client installer.app/Contents/Resources"
 
-pkg :  check-env dist trim tuntap installer dmg
+pkg :  check-env dist tuntap installer dmg
 
 dist :
 	~/pyinstaller/pyinstaller.py -w -s leap-client.spec
@@ -14,6 +14,7 @@ dist :
 
 trim:
 	#XXX this should go properly in pyinstaller spec excludes, but going quick'n'dirty
+	#XXX adapt to PySide
 	rm $(OSX)QtSvg $(OSX)QtXml $(OSX)QtNetwork $(OSX)QtOpenGL $(OSX)Qt3Support $(OSX)QtSql
 
 tuntap:
