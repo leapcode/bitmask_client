@@ -27,6 +27,10 @@ from leap.util import leap_argparse
 from leap.gui import locale_rc
 from leap.gui.mainwindow import MainWindow
 
+import codecs
+codecs.register(lambda name: codecs.lookup('utf-8')
+                if name == 'cp65001' else None)
+
 
 def sigint_handler(*args, **kwargs):
     logger = kwargs.get('logger', None)
