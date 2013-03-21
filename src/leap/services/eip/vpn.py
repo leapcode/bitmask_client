@@ -178,9 +178,9 @@ class VPN(QtCore.QThread):
     def _dump_exitinfo(self):
         """
         SLOT
-        Prints debug info when quitting the process
-
         TRIGGER: self._subp.finished
+
+        Prints debug info when quitting the process
         """
         logger.debug("stdout: %s", self._subp.readAllStandardOutput())
         logger.debug("stderr: %s", self._subp.readAllStandardError())
