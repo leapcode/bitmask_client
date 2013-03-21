@@ -1,9 +1,14 @@
-# -- external requirements --
 # ---------------------------
-# temporary, move to official repo and then
-# to pypi
+# -- external requirements --
+# -- during development    --
+# ---------------------------
+#
+# For temporary work, you can point this to your developer repo.
+# consolidated changes will be pushed to pypi and then added
+# to the main requirements.pip
+#
 # NOTE: you have to run pip install -r pkg/requirements.pip for pip
 #       to install it. (do it after python setup.py develop and it
 #       will only install this)
 
--e git+git://github.com/kalikaneko/leap_common.git@develop#egg=leap_common
+-e git+git://github.com/leapcode/leap_pycommon.git@develop#egg=leap.common
