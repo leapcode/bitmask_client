@@ -272,6 +272,7 @@ class LinuxVPNLauncher(VPNLauncher):
                 providerconfig.get_path_prefix(),
                 "..", "lib")}
 
+
 class DarwinVPNLauncher(VPNLauncher):
     """
     VPN launcher for the Darwin Platform
@@ -386,6 +387,112 @@ class DarwinVPNLauncher(VPNLauncher):
         logger.debug("%s %s" % (command, " ".join(cmd_args)))
 
         return [command] + cmd_args
+
+
+class WindowsVPNLauncher(VPNLauncher):
+    """
+    VPN launcher for the Windows platform
+    """
+
+    OPENVPN_BIN = 'openvpn.exe'
+
+    def get_vpn_command(self, eipconfig=None, providerconfig=None,
+                        socket_host=None, socket_port="9876"):
+        """
+        Returns the platform dependant vpn launching command. It will
+        look for openvpn in the regular paths and algo in
+        path_prefix/apps/eip/ (in case standalone is set)
+
+        Might raise VPNException.
+
+        @param eipconfig: eip configuration object
+        @type eipconfig: EIPConfig
+        @param providerconfig: provider specific configuration
+        @type providerconfig: ProviderConfig
+        @param socket_host: either socket path (unix) or socket IP
+        @type socket_host: str
+        @param socket_port: either string "unix" if it's a unix
+        socket, or port otherwise
+        @type socket_port: str
+
+        @return: A VPN command ready to be launched
+        @rtype: list
+        """
+        leap_assert(eipconfig, "We need an eip config")
+        leap_assert_type(eipconfig, EIPConfig)
+        leap_assert(providerconfig, "We need a provider config")
+        leap_assert_type(providerconfig, ProviderConfig)
+        leap_assert(socket_host, "We need a socket host!")
+        leap_assert(socket_port, "We need a socket port!")
+        leap_assert(socket_port != "unix",
+                    "We cannot use unix sockets in windows!")
+
+        openvpn_possibilities = which(
+            self.OPENVPN_BIN,
+            path_extension=os.path.join(providerconfig.get_path_prefix(),
+                                        "..", "apps", "eip"))
+
+        if len(openvpn_possibilities) == 0:
+            raise OpenVPNNotFoundException()
+
+        openvpn = openvpn_possibilities[0]
+        args = []
+
+        # TODO: handle verbosity
+
+        gateway_ip = str(eipconfig.get_gateway_ip(0))
+
+        logger.debug("Using gateway ip %s" % (gateway_ip,))
+
+        args += [
+            '--client',
+            '--dev', 'tun',
+            '--persist-tun',
+            '--persist-key',
+            '--remote', gateway_ip, '1194', 'udp',
+            '--tls-client',
+            '--remote-cert-tls',
+            'server'
+        ]
+
+        openvpn_configuration = eipconfig.get_openvpn_configuration()
+        for key, value in openvpn_configuration.items():
+            args += ['--%s' % (key,), value]
+
+        args += [
+            '--user', getpass.getuser(),
+            #'--group', grp.getgrgid(os.getgroups()[-1]).gr_name
+        ]
+
+        args += [
+            '--management-signal',
+            '--management', socket_host, socket_port,
+            '--script-security', '2'
+        ]
+
+        args += [
+            '--cert', eipconfig.get_client_cert_path(providerconfig),
+            '--key', eipconfig.get_client_cert_path(providerconfig),
+            '--ca', providerconfig.get_ca_cert_path()
+        ]
+
+        logger.debug("Running VPN with command:")
+        logger.debug("%s %s" % (openvpn, " ".join(args)))
+
+        return [openvpn] + args
+
+    def get_vpn_env(self, providerconfig):
+        """
+        Returns a dictionary with the custom env for the platform.
+        This is mainly used for setting LD_LIBRARY_PATH to the correct
+        path when distributing a standalone client
+
+        @param providerconfig: provider specific configuration
+        @type providerconfig: ProviderConfig
+
+        @rtype: dict
+        """
+        return {}
 
 
 if __name__ == "__main__":
