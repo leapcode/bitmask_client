@@ -23,8 +23,8 @@ import logging
 
 from PySide import QtCore
 
-from leap.config.prefixers import get_platform_prefixer
 from leap.common.check import leap_assert, leap_assert_type
+from leap.config.prefixers import get_platform_prefixer
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ class LeapSettings(object):
 
         settings_path = os.path.join(get_platform_prefixer()
                                      .get_path_prefix(standalone=standalone),
+                                     "leap",
                                      self.CONFIG_NAME)
         self._settings = QtCore.QSettings(settings_path,
                                           QtCore.QSettings.IniFormat)
@@ -156,7 +157,7 @@ class LeapSettings(object):
 
     def set_autologin(self, autologin):
         """
-        Sets wether the app should automatically login
+        Sets whether the app should automatically login
 
         @param autologin: True if the app should autologin, False otherwise
         @type autologin: bool
@@ -179,8 +180,9 @@ class LeapSettings(object):
         """
         Sets wether the app should automatically login
 
-        @param autologin: True if the app should autologin, False otherwise
-        @type autologin: bool
+        @param properprovider: True if the provider is properly
+        configured, False otherwise
+        @type properprovider: bool
         """
         leap_assert_type(properprovider, bool)
         self._settings.setValue(self.PROPERPROVIDER_KEY, properprovider)

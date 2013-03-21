@@ -37,7 +37,7 @@ Launches the LEAP Client""", epilog=epilog)
                         type=int,
                         action="store", dest="openvpn_verb",
                         help='verbosity level for openvpn logs [1-6]')
-    parser.add_argument('--standalone', action="store_true",
+    parser.add_argument('-s', '--standalone', action="store_true",
                         help='Makes the client use standalone'
                         'directories for configuration and binary'
                         'searching')

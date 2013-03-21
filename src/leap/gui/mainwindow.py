@@ -28,8 +28,8 @@ from functools import partial
 
 from ui_mainwindow import Ui_MainWindow
 from leap.common.check import leap_assert
-from leap.config.providerconfig import ProviderConfig
 from leap.config.leapsettings import LeapSettings
+from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,

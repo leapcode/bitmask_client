@@ -165,10 +165,15 @@ class LinuxVPNLauncher(VPNLauncher):
         leap_assert(socket_host, "We need a socket host!")
         leap_assert(socket_port, "We need a socket port!")
 
+        kwargs = {}
+        if ProviderConfig.standalone:
+            kwargs['path_extension'] = os.path.join(
+                providerconfig.get_path_prefix(),
+                "..", "apps", "eip")
+
         openvpn_possibilities = which(
             self.OPENVPN_BIN,
-            path_extension=os.path.join(providerconfig.get_path_prefix(),
-                                        "..", "apps", "eip"))
+            **kwargs)
 
         if len(openvpn_possibilities) == 0:
             raise OpenVPNNotFoundException()
@@ -252,6 +257,9 @@ class LinuxVPNLauncher(VPNLauncher):
         Returns a dictionary with the custom env for the platform.
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
+
+        @param providerconfig: provider specific configuration
+        @type providerconfig: ProviderConfig
 
         @rtype: dict
         """
