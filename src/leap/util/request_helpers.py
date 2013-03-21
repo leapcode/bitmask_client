@@ -19,6 +19,8 @@
 Request helpers for backward compatible "parsing" of requests
 """
 
+import time
+
 import json
 
 from dateutil import parser as dateparser
@@ -50,6 +52,7 @@ def get_content(request):
     mtime = None
     last_modified = request.headers.get('last-modified', None)
     if last_modified:
-        mtime = int(dateparser.parse(last_modified).strftime("%s"))
+        dt = dateparser.parse(unicode(last_modified))
+        mtime = int(time.mktime(dt.timetuple()) + dt.microsecond / 1000000.0)
 
     return contents, mtime
