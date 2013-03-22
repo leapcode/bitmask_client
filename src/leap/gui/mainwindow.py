@@ -287,18 +287,19 @@ class MainWindow(QtGui.QMainWindow):
         self._vpn_systray.setIcon(QtGui.QIcon(self.ERROR_ICON))
         self._vpn_systray.setVisible(False)
 
-    def _toggle_visible(self):
+    def _toggle_visible(self, reason=None):
         """
         SLOT
         TRIGGER: self._systray.activated
 
         Toggles the window visibility
         """
-        self.setVisible(not self.isVisible())
-        action_visible_text = self.tr("Hide")
-        if not self.isVisible():
-            action_visible_text = self.tr("Show")
-        self._action_visible.setText(action_visible_text)
+        if reason != QtGui.QSystemTrayIcon.Context:
+            self.setVisible(not self.isVisible())
+            action_visible_text = self.tr("Hide")
+            if not self.isVisible():
+                action_visible_text = self.tr("Show")
+            self._action_visible.setText(action_visible_text)
 
     def _center_window(self):
         """
