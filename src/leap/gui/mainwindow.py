@@ -31,6 +31,7 @@ from leap.common.check import leap_assert
 from leap.config.leapsettings import LeapSettings
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
+from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             OpenVPNNotFoundException,
@@ -192,6 +193,9 @@ class MainWindow(QtGui.QMainWindow):
         self._settings = LeapSettings(standalone)
 
         self._center_window()
+
+        init_platform()
+
         self._wizard = None
         self._wizard_firstrun = False
         if self._first_run():
