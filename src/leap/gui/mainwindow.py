@@ -18,31 +18,32 @@
 """
 Main window for the leap client
 """
-import os
 import logging
+import os
 import platform
 import tempfile
-import keyring
-
-from PySide import QtCore, QtGui
 from functools import partial
 
-from ui_mainwindow import Ui_MainWindow
+import keyring
+from PySide import QtCore, QtGui
 from leap.common.check import leap_assert
 from leap.config.leapsettings import LeapSettings
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
+from leap.gui.wizard import Wizard
+from leap.services.eip.eipbootstrapper import EIPBootstrapper
+from leap.services.eip.eipconfig import EIPConfig
+from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             OpenVPNNotFoundException,
                                             EIPNoPkexecAvailable,
                                             EIPNoPolkitAuthAgentAvailable)
-from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.services.eip.eipbootstrapper import EIPBootstrapper
-from leap.services.eip.eipconfig import EIPConfig
-from leap.gui.wizard import Wizard
-from leap.util.checkerthread import CheckerThread
 from leap.util import __version__ as VERSION
+from leap.util.checkerthread import CheckerThread
+
+from ui_mainwindow import Ui_MainWindow
+
 
 logger = logging.getLogger(__name__)
 
