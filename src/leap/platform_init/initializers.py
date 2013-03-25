@@ -69,7 +69,7 @@ def WindowsInitializer():
                            "proceed?"))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
                                       "needs a TAP device installed and none "
-                                      "have been found"))
+                                      "has been found"))
         msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         msg.setDefaultButton(QtGui.QMessageBox.Yes)
         ret = msg.exec_()
