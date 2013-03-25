@@ -30,7 +30,11 @@ logger = logging.getLogger(__name__)
 
 
 def init_platform():
-    initializer = globals()[platform.system() + "Initializer"]
+    initializer = None
+    try:
+        initializer = globals()[platform.system() + "Initializer"]
+    except:
+        pass
     if initializer:
         logger.debug("Running initializer for %s" % (platform.system(),))
         initializer()
