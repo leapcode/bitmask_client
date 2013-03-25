@@ -456,6 +456,7 @@ class WindowsVPNLauncher(VPNLauncher):
         ]
 
         openvpn_configuration = eipconfig.get_openvpn_configuration()
+        # XXX sanitize this
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
 
