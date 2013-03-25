@@ -55,7 +55,7 @@ class SRPRegister(QtCore.QObject):
         @type register_path; str
         """
         QtCore.QObject.__init__(self)
-        leap_assert(provider_config, "Please provider a provider")
+        leap_assert(provider_config, "Please provide a provider")
         leap_assert_type(provider_config, ProviderConfig)
 
         self._provider_config = provider_config
@@ -125,15 +125,24 @@ class SRPRegister(QtCore.QObject):
         logger.debug("Will try to register user = %s" % (username,))
         logger.debug("user_data => %r" % (user_data,))
 
-        req = self._session.post(uri,
-                                 data=user_data,
-                                 timeout=SIGNUP_TIMEOUT,
-                                 verify=self._provider_config.
-                                 get_ca_cert_path())
+        try:
+            req = self._session.post(uri,
+                                    data=user_data,
+                                    timeout=SIGNUP_TIMEOUT,
+                                    verify=self._provider_config.
+                                    get_ca_cert_path())
 
-        self.registration_finished.emit(req.ok, req)
+        except requests.exceptions.SSLError as exc:
+            logger.error("SSLError: %s" % exc.message)
+            _ok = False
+            req = None
 
-        return req.ok
+        else:
+            _ok = req.ok
+
+        self.registration_finished.emit(_ok, req)
+
+        return _ok
 
 
 if __name__ == "__main__":
