@@ -21,9 +21,12 @@ Platform dependant VPN launchers
 import commands
 import logging
 import getpass
-import grp
 import os
 import platform
+try:
+    import grp
+except ImportError:
+    pass  # ignore, probably windows
 
 from abc import ABCMeta, abstractmethod
 

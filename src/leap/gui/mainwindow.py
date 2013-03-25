@@ -34,6 +34,7 @@ from leap.gui.wizard import Wizard
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
+from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             OpenVPNNotFoundException,
@@ -194,6 +195,9 @@ class MainWindow(QtGui.QMainWindow):
         self._settings = LeapSettings(standalone)
 
         self._center_window()
+
+        init_platform()
+
         self._wizard = None
         self._wizard_firstrun = False
         if self._first_run():
