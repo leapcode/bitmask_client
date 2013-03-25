@@ -394,7 +394,7 @@ class WindowsVPNLauncher(VPNLauncher):
     VPN launcher for the Windows platform
     """
 
-    OPENVPN_BIN = 'openvpn.exe'
+    OPENVPN_BIN = 'openvpn_leap.exe'
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="9876"):
