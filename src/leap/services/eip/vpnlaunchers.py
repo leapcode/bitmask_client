@@ -320,7 +320,15 @@ class DarwinVPNLauncher(VPNLauncher):
         leap_assert(socket_host, "We need a socket host!")
         leap_assert(socket_port, "We need a socket port!")
 
-        openvpn_possibilities = which(self.OPENVPN_BIN)
+        kwargs = {}
+        if ProviderConfig.standalone:
+            kwargs['path_extension'] = os.path.join(
+                providerconfig.get_path_prefix(),
+                "..", "apps", "eip")
+
+        openvpn_possibilities = which(
+            self.OPENVPN_BIN,
+            **kwargs)
         if len(openvpn_possibilities) == 0:
             raise OpenVPNNotFoundException()
 
@@ -390,6 +398,21 @@ class DarwinVPNLauncher(VPNLauncher):
         logger.debug("%s %s" % (command, " ".join(cmd_args)))
 
         return [command] + cmd_args
+
+    def get_vpn_env(self, providerconfig):
+        """
+        Returns a dictionary with the custom env for the platform.
+        This is mainly used for setting LD_LIBRARY_PATH to the correct
+        path when distributing a standalone client
+
+        @param providerconfig: provider specific configuration
+        @type providerconfig: ProviderConfig
+
+        @rtype: dict
+        """
+        return {"LD_LIBRARY_PATH": os.path.join(
+                providerconfig.get_path_prefix(),
+                "..", "lib")}
 
 
 class WindowsVPNLauncher(VPNLauncher):
