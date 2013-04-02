@@ -85,7 +85,8 @@ def WindowsInitializer():
                            "proceed?"))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
                                       "needs a TAP device installed and none "
-                                      "has been found"))
+                                      "has been found. This will ask for "
+                                      "administrative privileges."))
         msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         msg.setDefaultButton(QtGui.QMessageBox.Yes)
         ret = msg.exec_()
@@ -102,6 +103,7 @@ def WindowsInitializer():
                 inf_path = os.path.join(driver_path,
                                         "OemWin2k.inf")
                 cmd = [dev_installer, "install", inf_path, "tap0901"]
+                # XXX should avoid shell expansion.
                 ret = subprocess.call(cmd, stdout=subprocess.PIPE, shell=True)
             else:
                 logger.error("Tried to install TAP driver, but the installer "
@@ -114,15 +116,23 @@ def _darwin_has_tun_kext():
     containing a kext named tun.kext, AND we found a startup item named 'tun'
     """
     # XXX we should be smarter here and use kextstats output.
+
     has_kext = lambda: os.path.isdir("/System/Library/Extensions/tun.kext")
     has_startup = lambda: os.path.isdir("/System/Library/StartupItems/tun")
-    return has_kext() and has_startup()
+    has_tun_and_startup = has_kext() and has_startup()
+    logger.debug('platform initializer check: has tun_and_startup = %s' %
+            (has_tun_and_startup,))
+    return has_tun_and_startup
 
 def DarwinInitializer():
     """
     Raises a dialog in case that the osx tuntap driver has not been found
     in the registry, asking the user for permission to install the driver
     """
+    NOTFOUND_MSG = ("Tried to install tuntaposx kext, but the installer "
+                    "is not found inside this bundle.")
+    BADEXEC_MSG = ("Tried to install tuntaposx kext, but the installer "
+                   "failed to be launched.")
     if not _darwin_has_tun_kext():
         msg = QtGui.QMessageBox()
         msg.setWindowTitle(msg.tr("TUN Driver"))
@@ -131,8 +141,9 @@ def DarwinInitializer():
                            "proceed?"))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
                                       "needs a kernel extension for a TUN "
-                                      "device installed and none "
-                                      "has been found"))
+                                      "device installed, and none "
+                                      "has been found. This will ask for "
+                                      "administrative privileges."))
         msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         msg.setDefaultButton(QtGui.QMessageBox.Yes)
         ret = msg.exec_()
@@ -142,10 +153,14 @@ def DarwinInitializer():
                                        "..",
                                        "Resources",
                                        "tuntap-installer.app")
-            if os.path.isfile(installer_path) and \
-                    os.access(installer_path, os.X_OK):
-                cmd = ["open", installer_path]
-                ret = subprocess.call(cmd, stdout=subprocess.PIPE, shell=True)
+            if os.path.isdir(installer_path):
+                cmd = ["open %s" % (installer_path,)]
+                try:
+                    # XXX should avoid shell expansion
+                    ret = subprocess.call(
+                        cmd, stdout=subprocess.PIPE,
+                        shell=True)
+                except:
+                    logger.error(BADEXEC_MSG)
             else:
-                logger.error("Tried to install tuntaposx kext, but the installer "
-                             "is not found inside this bundle, or it is not executable")
+                logger.error(NOTFOUND_MSG)
