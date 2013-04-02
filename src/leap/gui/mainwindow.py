@@ -225,6 +225,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _remember_state_changed(self, state):
         self.ui.chkAutoLogin.setEnabled(state == QtCore.Qt.Checked)
+        self._settings.set_remember(bool(state))
 
     def _finish_init(self):
         self.ui.cmbProviders.addItems(self._configured_providers())
@@ -249,6 +250,10 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = None
             self._settings.set_properprovider(True)
         else:
+            if not self._settings.get_remember():
+                # nothing to do here
+                return
+
             saved_user = self._settings.get_user()
             auto_login = self._settings.get_autologin()
 
