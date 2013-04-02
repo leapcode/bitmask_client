@@ -181,11 +181,11 @@ class MainWindow(QtGui.QMainWindow):
             self._stop_eip)
         self._action_eip_write = QtGui.QAction(
             QtGui.QIcon(":/images/Arrow-Up-32.png"),
-            "0.0 Kb", self)
+            "%12.2f Kb" % (0.0,), self)
         self._action_eip_write.setEnabled(False)
         self._action_eip_read = QtGui.QAction(
             QtGui.QIcon(":/images/Arrow-Down-32.png"),
-            "0.0 Kb", self)
+            "%12.2f Kb" % (0.0,), self)
         self._action_eip_read.setEnabled(False)
 
         self._action_visible = QtGui.QAction(self.tr("Hide"), self)
@@ -758,12 +758,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         upload = float(data[self._vpn.TUNTAP_WRITE_KEY])
         upload = upload / 1000.0
-        upload_str = "%s Kb" % (upload,)
+        upload_str = "%12.2f Kb" % (upload,)
         self.ui.lblUpload.setText(upload_str)
         self._action_eip_write.setText(upload_str)
         download = float(data[self._vpn.TUNTAP_READ_KEY])
         download = download / 1000.0
-        download_str = "%s Kb" % (download,)
+        download_str = "%12.2f Kb" % (download,)
         self.ui.lblDownload.setText(download_str)
         self._action_eip_read.setText(download_str)
 
