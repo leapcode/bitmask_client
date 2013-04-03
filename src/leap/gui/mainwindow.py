@@ -26,7 +26,10 @@ from functools import partial
 
 import keyring
 from PySide import QtCore, QtGui
+
 from leap.common.check import leap_assert
+from leap.common.events import register
+from leap.common.events import events_pb2 as proto
 from leap.config.leapsettings import LeapSettings
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
@@ -34,6 +37,7 @@ from leap.gui.wizard import Wizard
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
+from leap.platform_init import IS_WIN
 from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
@@ -42,13 +46,8 @@ from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             EIPNoPolkitAuthAgentAvailable)
 from leap.util import __version__ as VERSION
 from leap.util.checkerthread import CheckerThread
-from leap.common.events import (
-    register,
-    events_pb2 as proto,
-)
 
 from ui_mainwindow import Ui_MainWindow
-
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +64,9 @@ class MainWindow(QtGui.QMainWindow):
     # Keyring
     KEYRING_KEY = "leap_client"
 
+    # Signals
     new_updates = QtCore.Signal(object)
+    raise_window = QtCore.Signal([])
 
     def __init__(self, standalone=False):
         """
@@ -77,8 +78,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         QtGui.QMainWindow.__init__(self)
 
+        # register leap events
         register(signal=proto.UPDATER_NEW_UPDATES,
                  callback=self._new_updates_available)
+        register(signal=proto.RAISE_WINDOW,
+                 callback=self._on_raise_window_event)
+
         self._updates_content = ""
 
         self.CONNECTING_ICON = QtGui.QPixmap(":/images/conn_connecting.png")
@@ -110,6 +115,7 @@ class MainWindow(QtGui.QMainWindow):
         self._standalone = standalone
         self._provider_config = ProviderConfig()
         self._eip_config = EIPConfig()
+
         # This is created once we have a valid provider config
         self._srp_auth = None
 
@@ -166,6 +172,10 @@ class MainWindow(QtGui.QMainWindow):
             QtCore.QCoreApplication.instance(),
             QtCore.SIGNAL("aboutToQuit()"),
             self._checker_thread.wait)
+        QtCore.QCoreApplication.instance().connect(
+            QtCore.QCoreApplication.instance(),
+            QtCore.SIGNAL("aboutToQuit()"),
+            self._cleanup_pidfiles)
 
         self.ui.chkRemember.stateChanged.connect(
             self._remember_state_changed)
@@ -176,6 +186,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
+        self.raise_window.connect(self._do_raise_mainwindow)
 
         # Used to differentiate between real quits and close to tray
         self._really_quit = False
@@ -919,6 +930,39 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug("Finished VPN with exitCode %s" % (exitCode,))
         self._stop_eip()
+
+    def _on_raise_window_event(self, req):
+        """
+        Callback for the raise window event
+        """
+        self.raise_window.emit()
+
+    def _do_raise_mainwindow(self):
+        """
+        SLOT
+        TRIGGERS:
+            self._on_raise_window_event
+
+        Triggered when we receive a RAISE_WINDOW event.
+        """
+        TOPFLAG = QtCore.Qt.WindowStaysOnTopHint
+        self.setWindowFlags(self.windowFlags() | TOPFLAG)
+        self.show()
+        self.setWindowFlags(self.windowFlags() & ~TOPFLAG)
+        self.show()
+
+    def _cleanup_pidfiles(self):
+        """
+        SLOT
+        TRIGGERS:
+            self.aboutToQuit
+
+        Triggered on about to quit signal, removes lockfiles on a clean
+        shutdown
+        """
+        if IS_WIN:
+            lockfile = WindowsLock()
+            lockfile.release_lock()
 
 if __name__ == "__main__":
     import signal

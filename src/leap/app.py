@@ -17,16 +17,20 @@
 
 import logging
 import signal
+import socket
 import sys
 
 from functools import partial
+
 from PySide import QtCore, QtGui
 
-from leap.common.events import server
+from leap.common.events import server as event_server
 from leap.util import __version__ as VERSION
 from leap.util import leap_argparse
 from leap.gui import locale_rc
 from leap.gui.mainwindow import MainWindow
+from leap.platform_init import IS_MAC
+from leap.platform_init.locks import we_are_the_one_and_only
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
@@ -34,8 +38,12 @@ codecs.register(lambda name: codecs.lookup('utf-8')
 
 
 def sigint_handler(*args, **kwargs):
+    """
+    Signal handler for SIGINT
+    """
     logger = kwargs.get('logger', None)
-    logger.debug('SIGINT catched. shutting down...')
+    if logger:
+        logger.debug("SIGINT catched. shutting down...")
     mainwindow = args[0]
     mainwindow.quit()
 
@@ -44,8 +52,7 @@ def main():
     """
     Launches the main event loop
     """
-
-    server.ensure_server(port=8090)
+    event_server.ensure_server(event_server.SERVER_PORT)
 
     _, opts = leap_argparse.init_leapc_args()
     debug = opts.debug
@@ -66,6 +73,15 @@ def main():
         '- %(name)s - %(levelname)s - %(message)s')
     console.setFormatter(formatter)
     logger.addHandler(console)
+
+    if we_are_the_one_and_only():
+        event_server.ensure_server(event_server.SERVER_PORT)
+    else:
+        # leap-client is already running
+        logger.warning("Tried to launch more than one instance "
+                       "of leap-client. Raising the existing "
+                       "one instead.")
+        sys.exit(1)
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('LEAP client version %s', VERSION)
@@ -98,22 +114,19 @@ def main():
     app.setApplicationName("leap")
     app.setOrganizationDomain("leap.se")
 
-    # TODO: check if the leap-client is already running and quit
-    # gracefully in that case.
-
-    window = MainWindow(standalone)
-    window.show()
-
     # This dummy timer ensures that control is given to the outside
     # loop, so we can hook our sigint handler.
     timer = QtCore.QTimer()
     timer.start(500)
     timer.timeout.connect(lambda: None)
 
+    window = MainWindow(standalone)
+    window.show()
+
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
 
-    if sys.platform == "darwin":
+    if IS_MAC:
         window.raise_()
 
     # Run main loop
