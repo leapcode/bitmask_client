@@ -202,7 +202,7 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard_firstrun = False
         if self._first_run():
             self._wizard_firstrun = True
-            self._wizard = Wizard(self._checker_thread)
+            self._wizard = Wizard(self._checker_thread, standalone=standalone)
             # Give this window time to finish init and then show the wizard
             QtCore.QTimer.singleShot(1, self._launch_wizard)
             self._wizard.accepted.connect(self._finish_init)

@@ -1,0 +1,5 @@
+  o Rewording of setup steps in wizard, to make them more meaningful to the non-technical user. Closes: #2061
+  o Fix typo in wizard
+  o Fix multiple drawing of services if going back
+  o Make registration errors show in red
+  o Add a warning if EIP service needs admin password. Addresses part of #2062

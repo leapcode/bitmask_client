@@ -27,6 +27,7 @@ from functools import partial
 from ui_wizard import Ui_Wizard
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpregister import SRPRegister
+from leap.util.privilege_policies import is_missing_policy_permissions
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 
 logger = logging.getLogger(__name__)
@@ -50,8 +51,10 @@ class Wizard(QtGui.QWizard):
 
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
-    def __init__(self, checker):
+    def __init__(self, checker, standalone=False):
         QtGui.QWizard.__init__(self)
+
+        self.standalone = standalone
 
         self.ui = Ui_Wizard()
         self.ui.setupUi(self)
@@ -64,14 +67,23 @@ class Wizard(QtGui.QWizard):
         self.OK_ICON = QtGui.QPixmap(":/images/Dialog-accept.png")
 
         # Correspondence for services and their name to display
+        # XXX need to add a note about "requires admin pass" if
+        # no polkit found.
+        EIP_LABEL = self.tr("Encrypted Internet")
+
+        if self._is_need_eip_password_warning():
+            EIP_LABEL += " " + self.tr(
+                "(will need admin pass to start)")
+
         self.SERVICE_DISPLAY = [
-            self.tr("Encrypted Internet")
+            EIP_LABEL
         ]
         self.SERVICE_CONFIG = [
             "openvpn"
         ]
 
         self._selected_services = set()
+        self._shown_services = set()
 
         self._show_register = False
 
@@ -235,7 +247,7 @@ class Wizard(QtGui.QWizard):
                 error_msg = req.json().get("errors").get("login")[0]
                 if not error_msg.istitle():
                     error_msg = "%s %s" % (old_username, error_msg)
-                self._set_register_status(error_msg)
+                self._set_register_status(error_msg, error=True)
             except:
                 logger.error("Unknown error: %r" % (req.content,))
             self.ui.btnRegister.setEnabled(True)
@@ -451,13 +463,15 @@ class Wizard(QtGui.QWizard):
 
         for service in self._provider_config.get_services():
             try:
-                checkbox = QtGui.QCheckBox(self)
-                service_index = self.SERVICE_CONFIG.index(service)
-                checkbox.setText(self.SERVICE_DISPLAY[service_index])
-                self.ui.serviceListLayout.addWidget(checkbox)
-                checkbox.stateChanged.connect(
-                    partial(self._service_selection_changed, service))
-                checkbox.setChecked(True)
+                if service not in self._shown_services:
+                    checkbox = QtGui.QCheckBox(self)
+                    service_index = self.SERVICE_CONFIG.index(service)
+                    checkbox.setText(self.SERVICE_DISPLAY[service_index])
+                    self.ui.serviceListLayout.addWidget(checkbox)
+                    checkbox.stateChanged.connect(
+                        partial(self._service_selection_changed, service))
+                    checkbox.setChecked(True)
+                    self._shown_services.add(service)
             except ValueError:
                 logger.error(
                     self.tr("Something went wrong while trying to "
@@ -486,7 +500,8 @@ class Wizard(QtGui.QWizard):
                                           self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
-            self.page(pageId).setSubTitle(self.tr("Services offered by %s") %
+            self.page(pageId).setSubTitle(self.tr("Description of services "
+                                                  "offered by %s") %
                                           (self._provider_config
                                            .get_name(),))
 
@@ -499,6 +514,9 @@ class Wizard(QtGui.QWizard):
             self.ui.lblProviderDesc.setText(
                 "<i>%s</i>" %
                 (self._provider_config.get_description(lang=lang),))
+
+            self.ui.lblServicesOffered.setText(self._provider_config
+                                               .get_services_string())
             self.ui.lblProviderPolicy.setText(self._provider_config
                                               .get_enrollment_policy())
 
@@ -510,6 +528,15 @@ class Wizard(QtGui.QWizard):
 
         if pageId == self.SERVICES_PAGE:
             self._populate_services()
+
+    def _is_need_eip_password_warning(self):
+        """
+        Returns True if we need to add a warning about eip needing
+        administrative permissions to start. That can be either
+        because we are running in standalone mode, or because we could
+        not find the needed privilege escalation mechanisms being operative.
+        """
+        return self.standalone or is_missing_policy_permissions()
 
     def nextId(self):
         """
