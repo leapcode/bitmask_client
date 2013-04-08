@@ -52,6 +52,15 @@ class Wizard(QtGui.QWizard):
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
     def __init__(self, checker, standalone=False):
+        """
+        Constructor for the main Wizard.
+
+        @param checker: Checker thread that the wizard should use.
+        @type checker: CheckerThread
+        @param standalone: If True, the application is running as standalone
+            and the wizard should display some messages according to this.
+        @type standalone: bool
+        """
         QtGui.QWizard.__init__(self)
 
         self.standalone = standalone
@@ -67,13 +76,11 @@ class Wizard(QtGui.QWizard):
         self.OK_ICON = QtGui.QPixmap(":/images/Dialog-accept.png")
 
         # Correspondence for services and their name to display
-        # XXX need to add a note about "requires admin pass" if
-        # no polkit found.
         EIP_LABEL = self.tr("Encrypted Internet")
 
         if self._is_need_eip_password_warning():
             EIP_LABEL += " " + self.tr(
-                "(will need admin pass to start)")
+                "(<br>will need admin password to start</br>)")
 
         self.SERVICE_DISPLAY = [
             EIP_LABEL

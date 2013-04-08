@@ -32,6 +32,8 @@ def is_missing_policy_permissions():
     Returns True if we do not have implemented a policy checker for this
     platform, or if the policy checker exists but it cannot find the
     appropriate policy mechanisms in place.
+
+    @rtype: bool
     """
     _system = platform.system()
     platform_checker = _system + "PolicyChecker"
@@ -74,5 +76,7 @@ class LinuxPolicyChecker(PolicyChecker):
         """
         Returns True if we could not find the appropriate policykit file
         in place
+
+        @rtype: bool
         """
         return not os.path.isfile(self.LINUX_POLKIT_FILE)
