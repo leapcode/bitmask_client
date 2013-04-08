@@ -50,6 +50,7 @@ class SRPAuth(QtCore.QObject):
         LOGIN_KEY = "login"
         A_KEY = "A"
         CLIENT_AUTH_KEY = "client_auth"
+        SESSION_ID_KEY = "_session_id"
 
         def __init__(self, provider_config):
             """
@@ -272,7 +273,13 @@ class SRPAuth(QtCore.QObject):
                                                      "failed"))
             logger.debug("Session verified.")
 
-            self.set_session_id(self._session.cookies["_session_id"])
+            session_id = self._session.cookies.get(self.SESSION_ID_KEY, None)
+            if not session_id:
+                logger.error("Bad cookie from server (missing _session_id)")
+                raise SRPAuthenticationError(self.tr("Session cookie "
+                                                     "verification "
+                                                     "failed"))
+            self.set_session_id(session_id)
 
         def authenticate(self, username, password):
             """
@@ -409,11 +416,18 @@ class SRPAuth(QtCore.QObject):
 
 
 if __name__ == "__main__":
+    import signal
     import sys
+
     from functools import partial
     app = QtGui.QApplication(sys.argv)
 
-    import signal
+    if not len(sys.argv) == 3:
+        print 'Usage: srpauth.py <user> <pass>'
+        sys.exit(0)
+
+    _user = sys.argv[1]
+    _pass = sys.argv[2]
 
     def sigint_handler(*args, **kwargs):
         logger.debug('SIGINT catched. shutting down...')
@@ -452,20 +466,9 @@ if __name__ == "__main__":
 
     provider = ProviderConfig()
     if provider.load("leap/providers/bitmask.net/provider.json"):
-        # url = "%s/tickets" % (provider.get_api_uri(),)
-        # print url
-        # res = requests.session().get(url, verify=provider.get_ca_cert_path())
-        # print res.content
-        # res.raise_for_status()
         auth = SRPAuth(provider)
-        auth_instantiated = partial(auth.authenticate, "test2", "sarasaaaa")
+        auth_instantiated = partial(auth.authenticate, _user, _pass)
 
         checker.add_checks([auth_instantiated, auth.logout])
-
-        #auth.authenticate("test2", "sarasaaaa")
-        #res = requests.session().get("%s/cert" % (provider.get_api_uri(),),
-                                     #verify=provider.get_ca_cert_path())
-        #print res.content
-        #auth.logout()
 
     sys.exit(app.exec_())

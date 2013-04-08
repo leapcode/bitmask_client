@@ -1,0 +1,13 @@
+nose
+nose-exclude
+nose-progressive
+mock
+unittest2  # TODO we should include this dep only for python2.6
+coverage
+pep8==1.1
+
+#sphinx>=1.1.2
+#tox
+
+twisted
+zope.interface
