@@ -20,7 +20,7 @@ Tests for:
     * leap/crypto/srpauth.py
 """
 try:
-    import unittest
+    import unittest2 as unittest
 except ImportError:
     import unittest
 import os

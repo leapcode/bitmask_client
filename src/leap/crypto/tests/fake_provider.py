@@ -78,6 +78,9 @@ safe_unhexlify = lambda x: binascii.unhexlify(x) \
 
 
 class IUser(Interface):
+    """
+    Defines the User Interface
+    """
     login = Attribute("User login.")
     salt = Attribute("Password salt.")
     verifier = Attribute("Password verifier.")
@@ -86,6 +89,10 @@ class IUser(Interface):
 
 
 class User(object):
+    """
+    User object.
+    We store it in our simple session mocks
+    """
 
     implements(IUser)
 
@@ -94,20 +101,37 @@ class User(object):
         self.salt = salt
         self.verifier = verifier
         self.session = None
+        self.svr = None
 
     def set_server_verifier(self, svr):
+        """
+        Adds a svr verifier object to this
+        User instance
+        """
         self.svr = svr
 
     def set_session(self, session):
+        """
+        Adds this instance of User to the
+        global session dict
+        """
         _SESSIONDB[session] = self
         self.session = session
 
 
 class FakeUsers(Resource):
+    """
+    Resource that handles user registration.
+    """
+
     def __init__(self, name):
         self.name = name
 
     def render_POST(self, request):
+        """
+        Handles POST to the users api resource
+        Simulates a login.
+        """
         args = request.args
 
         login = args['user[login]'][0]
@@ -268,11 +292,14 @@ class FakeSession(Resource):
 
 
 class API_Sessions(Resource):
+    """
+    Top resource for the API v1
+    """
     def getChild(self, name, request):
         return FakeSession(name)
 
 
-class OpenSSLServerContextFactory:
+class OpenSSLServerContextFactory(object):
 
     def getContext(self):
         """

@@ -50,6 +50,7 @@ class SRPAuth(QtCore.QObject):
         LOGIN_KEY = "login"
         A_KEY = "A"
         CLIENT_AUTH_KEY = "client_auth"
+        SESSION_ID_KEY = "_session_id"
 
         def __init__(self, provider_config):
             """
@@ -272,8 +273,7 @@ class SRPAuth(QtCore.QObject):
                                                      "failed"))
             logger.debug("Session verified.")
 
-            SESSION_ID_KEY = "_session_id"
-            session_id = self._session.cookies.get(SESSION_ID_KEY, None)
+            session_id = self._session.cookies.get(self.SESSION_ID_KEY, None)
             if not session_id:
                 logger.error("Bad cookie from server (missing _session_id)")
                 raise SRPAuthenticationError(self.tr("Session cookie "

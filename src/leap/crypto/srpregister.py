@@ -125,6 +125,7 @@ class SRPRegister(QtCore.QObject):
         logger.debug("Will try to register user = %s" % (username,))
         logger.debug("user_data => %r" % (user_data,))
 
+        ok = None
         try:
             req = self._session.post(uri,
                                     data=user_data,
@@ -134,15 +135,12 @@ class SRPRegister(QtCore.QObject):
 
         except requests.exceptions.SSLError as exc:
             logger.error("SSLError: %s" % exc.message)
-            _ok = False
             req = None
-
+            ok = False
         else:
-            _ok = req.ok
-
-        self.registration_finished.emit(_ok, req)
-
-        return _ok
+            ok = req.ok
+        self.registration_finished.emit(ok, req)
+        return ok
 
 
 if __name__ == "__main__":
