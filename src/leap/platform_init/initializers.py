@@ -124,6 +124,7 @@ def _darwin_has_tun_kext():
             (has_tun_and_startup,))
     return has_tun_and_startup
 
+
 def DarwinInitializer():
     """
     Raises a dialog in case that the osx tuntap driver has not been found
@@ -133,6 +134,11 @@ def DarwinInitializer():
                     "is not found inside this bundle.")
     BADEXEC_MSG = ("Tried to install tuntaposx kext, but the installer "
                    "failed to be launched.")
+
+    # TODO DRY this with other cases, and
+    # factor out to _should_install() function.
+    # Leave the dialog as a more generic thing.
+
     if not _darwin_has_tun_kext():
         msg = QtGui.QMessageBox()
         msg.setWindowTitle(msg.tr("TUN Driver"))
