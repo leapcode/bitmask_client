@@ -42,6 +42,11 @@ from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             EIPNoPolkitAuthAgentAvailable)
 from leap.util import __version__ as VERSION
 from leap.util.checkerthread import CheckerThread
+from leap.common.events import server
+from leap.common.events import (
+    register,
+    events_pb2 as proto,
+)
 
 from ui_mainwindow import Ui_MainWindow
 
@@ -61,6 +66,8 @@ class MainWindow(QtGui.QMainWindow):
     # Keyring
     KEYRING_KEY = "leap_client"
 
+    new_updates = QtCore.Signal(object)
+
     def __init__(self, standalone=False):
         """
         Constructor for the client main window
@@ -70,6 +77,12 @@ class MainWindow(QtGui.QMainWindow):
         @type standalone: bool
         """
         QtGui.QMainWindow.__init__(self)
+
+        server.ensure_server(port=8090)
+
+        register(signal=proto.UPDATER_NEW_UPDATES,
+                 callback=self._new_updates_available)
+        self._updates_content = ""
 
         self.CONNECTING_ICON = QtGui.QPixmap(":/images/conn_connecting.png")
         self.CONNECTED_ICON = QtGui.QPixmap(":/images/conn_connected.png")
@@ -196,6 +209,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self._center_window()
 
+        self.ui.lblNewUpdates.setVisible(False)
+        self.ui.btnMore.setVisible(False)
+        self.ui.btnMore.clicked.connect(self._updates_details)
+        self.new_updates.connect(self._react_to_new_updates)
+
         init_platform()
 
         self._wizard = None
@@ -227,6 +245,53 @@ class MainWindow(QtGui.QMainWindow):
         enable = True if state == QtCore.Qt.Checked else False
         self.ui.chkAutoLogin.setEnabled(enable)
         self._settings.set_remember(enable)
+
+    def _new_updates_available(self, req):
+        """
+        Callback for the new updates event
+
+        @param req: Request type
+        @type req: leap.common.events.events_pb2.SignalRequest
+        """
+        self.new_updates.emit(req)
+
+    def _react_to_new_updates(self, req):
+        """
+        SLOT
+        TRIGGER: self._new_updates_available
+
+        Displays the new updates label and sets the updates_content
+        """
+        self.moveToThread(QtCore.QCoreApplication.instance().thread())
+        self.ui.lblNewUpdates.setVisible(True)
+        self.ui.btnMore.setVisible(True)
+        self._updates_content = req.content
+
+    def _updates_details(self):
+        """
+        Parses and displays the updates details
+        """
+        msg = ""
+        if len(self._updates_content) == 0:
+            # We assume that if there is nothing in the contents, then
+            # the LEAPClient bundle is what needs updating.
+            msg = self.tr("The LEAPClient app is ready to update, please"
+                          " restart the application.")
+        else:
+            files = self._updates_content.split(", ")
+            files_str = ""
+            for f in files:
+                final_name = f.replace("/data/", "")
+                final_name = final_name.replace(".thp", "")
+                files_str += final_name
+                files_str += "\n"
+            msg = self.tr("The LEAPClient app is ready to update, please"
+                          " restart the application so the following "
+                          "components get updated:\n%s") % (files_str,)
+
+        QtGui.QMessageBox.information(self,
+                                      self.tr("Updates available"),
+                                      msg)
 
     def _finish_init(self):
         self.ui.cmbProviders.addItems(self._configured_providers())
