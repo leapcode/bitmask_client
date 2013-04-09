@@ -65,6 +65,11 @@ class ProviderConfig(BaseConfig):
         return self._safe_get_value("domain")
 
     def get_enrollment_policy(self):
+        """
+        Returns the enrollment policy
+
+        @rtype: string
+        """
         return self._safe_get_value("enrollment_policy")
 
     def get_languages(self):
@@ -75,7 +80,20 @@ class ProviderConfig(BaseConfig):
         return self._safe_get_value("name")
 
     def get_services(self):
+        """
+        Returns a list with the services supported by the
+        current provider
+
+        @rtype: list
+        """
         return self._safe_get_value("services")
+
+    def get_services_string(self):
+        """
+        Returns a string with the services supported by the current provider,
+        ready to be shown to the user
+        """
+        return ", ".join(self.get_services())
 
     def get_ca_cert_path(self, about_to_download=False):
         """
