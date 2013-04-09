@@ -64,6 +64,7 @@ class LeapSettings(object):
     USER_KEY = "User"
     AUTOLOGIN_KEY = "AutoLogin"
     PROPERPROVIDER_KEY = "ProperProvider"
+    REMEMBER_KEY = "RememberUserAndPass"
 
     def __init__(self, standalone=False):
         """
@@ -168,6 +169,25 @@ class LeapSettings(object):
         """
         leap_assert(len(user) > 0, "We cannot save an empty user")
         self._settings.setValue(self.USER_KEY, user)
+
+    def get_remember(self):
+        """
+        Returns the value of the remember selection.
+
+        @rtype: bool
+        """
+        return to_bool(self._settings.value(self.REMEMBER_KEY, False))
+
+    def set_remember(self, remember):
+        """
+        Sets wheter the app should remember username and password
+
+        @param remember: True if the app should remember username and
+            password, False otherwise
+        @rtype: bool
+        """
+        leap_assert_type(remember, bool)
+        self._settings.setValue(self.REMEMBER_KEY, remember)
 
     def get_autologin(self):
         """
