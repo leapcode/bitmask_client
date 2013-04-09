@@ -410,7 +410,7 @@ class DarwinVPNLauncher(VPNLauncher):
 
         @rtype: dict
         """
-        return {"LD_LIBRARY_PATH": os.path.join(
+        return {"DYLD_LIBRARY_PATH": os.path.join(
                 providerconfig.get_path_prefix(),
                 "..", "lib")}
 

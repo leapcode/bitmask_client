@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 
 
 def init_platform():
+    """
+    Returns the right initializer for the platform we are running in, or
+    None if no proper initializer is found
+    """
     initializer = None
     try:
         initializer = globals()[platform.system() + "Initializer"]
@@ -43,6 +47,10 @@ def init_platform():
 
 
 def _windows_has_tap_device():
+    """
+    Loops over the windows registry trying to find if the tap0901 tap driver
+    has been installed on this machine.
+    """
     import _winreg as reg
 
     adapter_key = 'SYSTEM\CurrentControlSet\Control\Class' \
@@ -65,6 +73,10 @@ def _windows_has_tap_device():
 
 
 def WindowsInitializer():
+    """
+    Raises a dialog in case that the windows tap driver has not been found
+    in the registry, asking the user for permission to install the driver
+    """
     if not _windows_has_tap_device():
         msg = QtGui.QMessageBox()
         msg.setWindowTitle(msg.tr("TAP Driver"))
@@ -73,7 +85,8 @@ def WindowsInitializer():
                            "proceed?"))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
                                       "needs a TAP device installed and none "
-                                      "has been found"))
+                                      "has been found. This will ask for "
+                                      "administrative privileges."))
         msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
         msg.setDefaultButton(QtGui.QMessageBox.Yes)
         ret = msg.exec_()
@@ -90,7 +103,70 @@ def WindowsInitializer():
                 inf_path = os.path.join(driver_path,
                                         "OemWin2k.inf")
                 cmd = [dev_installer, "install", inf_path, "tap0901"]
+                # XXX should avoid shell expansion.
                 ret = subprocess.call(cmd, stdout=subprocess.PIPE, shell=True)
             else:
                 logger.error("Tried to install TAP driver, but the installer "
                              "is not found or not executable")
+
+
+def _darwin_has_tun_kext():
+    """
+    Returns True only if we found a directory under the system kext folder
+    containing a kext named tun.kext, AND we found a startup item named 'tun'
+    """
+    # XXX we should be smarter here and use kextstats output.
+
+    has_kext = lambda: os.path.isdir("/System/Library/Extensions/tun.kext")
+    has_startup = lambda: os.path.isdir("/System/Library/StartupItems/tun")
+    has_tun_and_startup = has_kext() and has_startup()
+    logger.debug('platform initializer check: has tun_and_startup = %s' %
+            (has_tun_and_startup,))
+    return has_tun_and_startup
+
+
+def DarwinInitializer():
+    """
+    Raises a dialog in case that the osx tuntap driver has not been found
+    in the registry, asking the user for permission to install the driver
+    """
+    NOTFOUND_MSG = ("Tried to install tuntaposx kext, but the installer "
+                    "is not found inside this bundle.")
+    BADEXEC_MSG = ("Tried to install tuntaposx kext, but the installer "
+                   "failed to be launched.")
+
+    # TODO DRY this with other cases, and
+    # factor out to _should_install() function.
+    # Leave the dialog as a more generic thing.
+
+    if not _darwin_has_tun_kext():
+        msg = QtGui.QMessageBox()
+        msg.setWindowTitle(msg.tr("TUN Driver"))
+        msg.setText(msg.tr("LEAPClient needs to install the necessary drivers "
+                           "for Encrypted Internet to work. Would you like to "
+                           "proceed?"))
+        msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
+                                      "needs a kernel extension for a TUN "
+                                      "device installed, and none "
+                                      "has been found. This will ask for "
+                                      "administrative privileges."))
+        msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+        msg.setDefaultButton(QtGui.QMessageBox.Yes)
+        ret = msg.exec_()
+
+        if ret == QtGui.QMessageBox.Yes:
+            installer_path = os.path.join(os.getcwd(),
+                                       "..",
+                                       "Resources",
+                                       "tuntap-installer.app")
+            if os.path.isdir(installer_path):
+                cmd = ["open %s" % (installer_path,)]
+                try:
+                    # XXX should avoid shell expansion
+                    ret = subprocess.call(
+                        cmd, stdout=subprocess.PIPE,
+                        shell=True)
+                except:
+                    logger.error(BADEXEC_MSG)
+            else:
+                logger.error(NOTFOUND_MSG)
