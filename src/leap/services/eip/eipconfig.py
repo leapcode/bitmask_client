@@ -22,7 +22,7 @@ import os
 import logging
 
 from leap.common.check import leap_assert, leap_assert_type
-from leap.config.baseconfig import BaseConfig
+from leap.common.config.baseconfig import BaseConfig
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipspec import eipservice_config_spec
 

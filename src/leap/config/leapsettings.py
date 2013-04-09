@@ -24,7 +24,7 @@ import logging
 from PySide import QtCore
 
 from leap.common.check import leap_assert, leap_assert_type
-from leap.config.prefixers import get_platform_prefixer
+from leap.common.config.prefixers import get_platform_prefixer
 
 logger = logging.getLogger(__name__)
 

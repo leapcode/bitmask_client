@@ -1,16 +1,15 @@
 # in order of addition to the project.
 # do not change the ordering.
 #
+argparse
+#
 PySide
 # Use LEAP_VENV_SKIP_PYSIDE to avoid installing it!
 
-jsonschema<=0.8
 requests
 srp>=1.0.2
 pyopenssl
 keyring
-pyxdg
-argparse
 python-dateutil
 psutil
 
