@@ -1,0 +1,2 @@
+  o Emit events notifying of the session_id and uid after
+    authentication so other services can make use of it. Closes #1957

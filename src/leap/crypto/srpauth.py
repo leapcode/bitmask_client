@@ -26,6 +26,8 @@ from PySide import QtCore, QtGui
 from leap.common.check import leap_assert
 from leap.config.providerconfig import ProviderConfig
 from leap.util.checkerthread import CheckerThread
+from leap.common.events import signal as events_signal
+from leap.common.events import events_pb2 as proto
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +239,11 @@ class SRPAuth(QtCore.QObject):
                                              (auth_result.status_code,))
 
             M2 = auth_result.json().get("M2", None)
-            self.set_uid(auth_result.json().get("id", None))
+            uid = auth_result.json().get("id", None)
+
+            events_signal(proto.CLIENT_UID, content=uid)
+
+            self.set_uid(uid)
 
             if M2 is None or self.get_uid() is None:
                 logger.error("Something went wrong. Content = %r" %
@@ -279,6 +285,9 @@ class SRPAuth(QtCore.QObject):
                 raise SRPAuthenticationError(self.tr("Session cookie "
                                                      "verification "
                                                      "failed"))
+
+            events_signal(proto.CLIENT_SESSION_ID, content=session_id)
+
             self.set_session_id(session_id)
 
         def authenticate(self, username, password):
