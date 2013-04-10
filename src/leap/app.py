@@ -74,9 +74,7 @@ def main():
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    if we_are_the_one_and_only():
-        event_server.ensure_server(event_server.SERVER_PORT)
-    else:
+    if not we_are_the_one_and_only():
         # leap-client is already running
         logger.warning("Tried to launch more than one instance "
                        "of leap-client. Raising the existing "
