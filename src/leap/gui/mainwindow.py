@@ -42,7 +42,6 @@ from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             EIPNoPolkitAuthAgentAvailable)
 from leap.util import __version__ as VERSION
 from leap.util.checkerthread import CheckerThread
-from leap.common.events import server
 from leap.common.events import (
     register,
     events_pb2 as proto,
@@ -77,8 +76,6 @@ class MainWindow(QtGui.QMainWindow):
         @type standalone: bool
         """
         QtGui.QMainWindow.__init__(self)
-
-        server.ensure_server(port=8090)
 
         register(signal=proto.UPDATER_NEW_UPDATES,
                  callback=self._new_updates_available)
@@ -269,15 +266,17 @@ class MainWindow(QtGui.QMainWindow):
 
     def _updates_details(self):
         """
+        SLOT
+        TRIGGER: self.ui.btnMore.clicked
+
         Parses and displays the updates details
         """
-        msg = ""
-        if len(self._updates_content) == 0:
-            # We assume that if there is nothing in the contents, then
-            # the LEAPClient bundle is what needs updating.
-            msg = self.tr("The LEAPClient app is ready to update, please"
-                          " restart the application.")
-        else:
+        msg = self.tr("The LEAPClient app is ready to update, please"
+                      " restart the application.")
+
+        # We assume that if there is nothing in the contents, then
+        # the LEAPClient bundle is what needs updating.
+        if len(self._updates_content) > 0:
             files = self._updates_content.split(", ")
             files_str = ""
             for f in files:
@@ -285,9 +284,8 @@ class MainWindow(QtGui.QMainWindow):
                 final_name = final_name.replace(".thp", "")
                 files_str += final_name
                 files_str += "\n"
-            msg = self.tr("The LEAPClient app is ready to update, please"
-                          " restart the application so the following "
-                          "components get updated:\n%s") % (files_str,)
+            msg += self.tr(" The following components will be updated:\n%s") \
+                % (files_str,)
 
         QtGui.QMessageBox.information(self,
                                       self.tr("Updates available"),
