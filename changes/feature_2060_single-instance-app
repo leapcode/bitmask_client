@@ -1,0 +1,2 @@
+  o Avoids multiple instances of leap-client. Each new one just raises
+    the existing instance and quits.
