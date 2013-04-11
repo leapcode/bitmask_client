@@ -4,12 +4,15 @@
     <file>../images/leap-gray-big.png</file>
     <file>../images/Blue-Arrow-Right-32.png</file>
     <file>../images/Globe.png</file>
-    <file>../images/conn_error.png</file>
     <file>../images/leap-color-big.png</file>
     <file>../images/Arrow-Down-32.png</file>
     <file>../images/Arrow-Up-32.png</file>
     <file>../images/conn_connecting.png</file>
     <file>../images/conn_connected.png</file>
+    <file>../images/conn_error.png</file>
+    <file>../images/conn_connecting-light.png</file>
+    <file>../images/conn_connected-light.png</file>
+    <file>../images/conn_error-light.png</file>
     <file>../images/leap-color-small.png</file>
     <file>../images/Dialog-accept.png</file>
     <file>../images/Dialog-error.png</file>

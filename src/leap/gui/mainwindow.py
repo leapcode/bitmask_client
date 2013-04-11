@@ -34,6 +34,7 @@ from leap.gui.wizard import Wizard
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
+from leap.platform_init import IS_MAC
 from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
@@ -81,9 +82,20 @@ class MainWindow(QtGui.QMainWindow):
                  callback=self._new_updates_available)
         self._updates_content = ""
 
-        self.CONNECTING_ICON = QtGui.QPixmap(":/images/conn_connecting.png")
-        self.CONNECTED_ICON = QtGui.QPixmap(":/images/conn_connected.png")
-        self.ERROR_ICON = QtGui.QPixmap(":/images/conn_error.png")
+        if IS_MAC:
+            EIP_ICONS = (
+                ":/images/conn_connecting-light.png"
+                ":/images/conn_connected-light.png",
+                ":/images/conn_error-light.png")
+        else:
+            EIP_ICONS = (
+                ":/images/conn_connecting.png"
+                ":/images/conn_connected.png",
+                ":/images/conn_error.png")
+
+        self.CONNECTING_ICON = QtGui.QPixmap(EIP_ICONS[0])
+        self.CONNECTED_ICON = QtGui.QPixmap(EIP_ICONS[1])
+        self.ERROR_ICON = QtGui.QPixmap(EIP_ICONS[2])
 
         self.LOGGED_OUT_ICON = QtGui.QPixmap(":/images/leap-gray-big.png")
         self.LOGGED_IN_ICON = QtGui.QPixmap(":/images/leap-color-big.png")
