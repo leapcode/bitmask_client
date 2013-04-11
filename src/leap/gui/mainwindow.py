@@ -84,12 +84,12 @@ class MainWindow(QtGui.QMainWindow):
 
         if IS_MAC:
             EIP_ICONS = (
-                ":/images/conn_connecting-light.png"
+                ":/images/conn_connecting-light.png",
                 ":/images/conn_connected-light.png",
                 ":/images/conn_error-light.png")
         else:
             EIP_ICONS = (
-                ":/images/conn_connecting.png"
+                ":/images/conn_connecting.png",
                 ":/images/conn_connected.png",
                 ":/images/conn_error.png")
 
