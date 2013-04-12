@@ -70,6 +70,36 @@ leap_provider_spec = {
         'languages': {
             'type': list,
             'default': ['en']
+        },
+        'service': {
+            'levels': {
+                'type': list
+            },
+            'default_service_level': {
+                'type': int,
+                'default': 1
+            },
+            'allow_free': {
+                'type': unicode
+            },
+            'allow_paid': {
+                'type': unicode
+            },
+            'allow_anonymous': {
+                'type': unicode
+            },
+            'allow_registration': {
+                'type': unicode
+            },
+            'bandwidth_limit': {
+                'type': int
+            },
+            'allow_limited_bandwidth': {
+                'type': unicode
+            },
+            'allow_unlimited_bandwidth': {
+                'type': unicode
+            }
         }
     }
 }
