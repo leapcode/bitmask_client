@@ -51,7 +51,7 @@ class Wizard(QtGui.QWizard):
 
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
-    def __init__(self, checker, standalone=False):
+    def __init__(self, checker, standalone=False, bypass_checks=False):
         """
         Constructor for the main Wizard.
 
@@ -60,6 +60,9 @@ class Wizard(QtGui.QWizard):
         @param standalone: If True, the application is running as standalone
             and the wizard should display some messages according to this.
         @type standalone: bool
+        @param bypass_checks: Set to true if the app should bypass
+        first round of checks for CA certificates at bootstrap
+        @type bypass_checks: bool
         """
         QtGui.QWizard.__init__(self)
 
@@ -98,7 +101,7 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.clicked.connect(self._check_provider)
         self.ui.lnProvider.returnPressed.connect(self._check_provider)
 
-        self._provider_bootstrapper = ProviderBootstrapper()
+        self._provider_bootstrapper = ProviderBootstrapper(bypass_checks)
         self._provider_bootstrapper.name_resolution.connect(
             self._name_resolution)
         self._provider_bootstrapper.https_connection.connect(

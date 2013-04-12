@@ -29,6 +29,8 @@ Launches the LEAP Client""", epilog=epilog)
     parser.add_argument('-d', '--debug', action="store_true",
                         help=("Launches client in debug mode, writing debug"
                               "info to stdout"))
+    parser.add_argument('--danger', action="store_true",
+                        help=("Bypasses the certificate check for bootstrap"))
     parser.add_argument('-l', '--logfile', metavar="LOG FILE", nargs='?',
                         action="store", dest="log_file",
                         #type=argparse.FileType('w'),

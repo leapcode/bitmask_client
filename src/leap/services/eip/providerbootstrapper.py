@@ -58,7 +58,14 @@ class ProviderBootstrapper(QtCore.QObject):
     check_ca_fingerprint = QtCore.Signal(dict)
     check_api_certificate = QtCore.Signal(dict)
 
-    def __init__(self):
+    def __init__(self, bypass_checks=False):
+        """
+        Constructor for provider bootstrapper object
+
+        @param bypass_checks: Set to true if the app should bypass
+        first round of checks for CA certificates at bootstrap
+        @type bypass_checks: bool
+        """
         QtCore.QObject.__init__(self)
 
         # **************************************************** #
@@ -71,6 +78,7 @@ class ProviderBootstrapper(QtCore.QObject):
         self._domain = None
         self._provider_config = None
         self._download_if_needed = False
+        self._bypass_checks = bypass_checks
 
     def _check_name_resolution(self):
         """
@@ -124,7 +132,8 @@ class ProviderBootstrapper(QtCore.QObject):
         # system to work
 
         try:
-            res = self._session.get("https://%s" % (self._domain,))
+            res = self._session.get("https://%s" % (self._domain,),
+                                    verify=not self._bypass_checks)
             res.raise_for_status()
             https_data[self.PASSED_KEY] = True
         except requests.exceptions.SSLError as e:
@@ -171,7 +180,8 @@ class ProviderBootstrapper(QtCore.QObject):
 
             res = self._session.get("https://%s/%s" % (self._domain,
                                                        "provider.json"),
-                                    headers=headers)
+                                    headers=headers,
+                                    verify=not self._bypass_checks)
             res.raise_for_status()
 
             # Not modified
@@ -270,7 +280,8 @@ class ProviderBootstrapper(QtCore.QObject):
             return download_ca_cert_data[self.PASSED_KEY]
 
         try:
-            res = self._session.get(self._provider_config.get_ca_cert_uri())
+            res = self._session.get(self._provider_config.get_ca_cert_uri(),
+                                    verify=not self._bypass_checks)
             res.raise_for_status()
 
             cert_path = self._provider_config.get_ca_cert_path(

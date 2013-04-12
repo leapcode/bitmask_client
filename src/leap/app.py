@@ -57,6 +57,7 @@ def main():
     _, opts = leap_argparse.init_leapc_args()
     debug = opts.debug
     standalone = opts.standalone
+    bypass_checks = opts.danger
 
     # TODO: get severity from command line args
     if debug:
@@ -118,7 +119,7 @@ def main():
     timer.start(500)
     timer.timeout.connect(lambda: None)
 
-    window = MainWindow(standalone)
+    window = MainWindow(standalone, bypass_checks)
     window.show()
 
     sigint_window = partial(sigint_handler, window, logger=logger)

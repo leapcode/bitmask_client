@@ -68,13 +68,16 @@ class MainWindow(QtGui.QMainWindow):
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
 
-    def __init__(self, standalone=False):
+    def __init__(self, standalone=False, bypass_checks=False):
         """
         Constructor for the client main window
 
         @param standalone: Set to true if the app should use configs
         inside its pwd
         @type standalone: bool
+        @param bypass_checks: Set to true if the app should bypass
+        first round of checks for CA certificates at bootstrap
+        @type bypass_checks: bool
         """
         QtGui.QMainWindow.__init__(self)
 
@@ -136,7 +139,7 @@ class MainWindow(QtGui.QMainWindow):
         # This thread is always running, although it's quite
         # lightweight when it's done setting up provider
         # configuration and certificate.
-        self._provider_bootstrapper = ProviderBootstrapper()
+        self._provider_bootstrapper = ProviderBootstrapper(bypass_checks)
 
         # Intermediate stages, only do something if there was an error
         self._provider_bootstrapper.name_resolution.connect(
@@ -237,9 +240,14 @@ class MainWindow(QtGui.QMainWindow):
 
         self._wizard = None
         self._wizard_firstrun = False
+
+        self._bypass_checks = bypass_checks
+
         if self._first_run():
             self._wizard_firstrun = True
-            self._wizard = Wizard(self._checker_thread, standalone=standalone)
+            self._wizard = Wizard(self._checker_thread,
+                                  standalone=standalone,
+                                  bypass_checks=bypass_checks)
             # Give this window time to finish init and then show the wizard
             QtCore.QTimer.singleShot(1, self._launch_wizard)
             self._wizard.accepted.connect(self._finish_init)
@@ -256,7 +264,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def _launch_wizard(self):
         if self._wizard is None:
-            self._wizard = Wizard(self._checker_thread)
+            self._wizard = Wizard(self._checker_thread,
+                                  bypass_checks=self._bypass_checks)
         self._wizard.exec_()
         self._wizard = None
 
