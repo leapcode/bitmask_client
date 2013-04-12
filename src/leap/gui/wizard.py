@@ -80,7 +80,7 @@ class Wizard(QtGui.QWizard):
 
         if self._is_need_eip_password_warning():
             EIP_LABEL += " " + self.tr(
-                "(<b>will need admin password to start</b>)")
+                "(will need admin password to start)")
 
         self.SERVICE_DISPLAY = [
             EIP_LABEL
