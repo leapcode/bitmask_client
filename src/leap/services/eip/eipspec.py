@@ -50,6 +50,10 @@ eipservice_config_spec = {
                  "host": "location.example.org",
                  "ip_address": "127.0.0.1"}]
         },
+        'locations': {
+            'type': dict,
+            'default': {}
+        },
         'openvpn_configuration': {
             'type': dict,
             'default': {
