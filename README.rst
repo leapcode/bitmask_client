@@ -4,19 +4,6 @@ The LEAP Encryption Access Project Client
 
 *your internet encryption toolkit*
 
-Read the docs!
-==============
-
-You can read the documentation online at `http://leap-client.readthedocs.org <http://leap-client.readthedocs.org/en/latest/>`_. If you prefer to build it locally, run::
-
-    $ cd docs
-    $ make html
-
-Quick Start
-==============
-
-At the current development stage we still do not have any versioned release. Instead, you might want to have a look at the `testers guide <http://leap-client.readthedocs.org/en/latest/testers/howto.html>`_ for a quick howto on fetching and testing latest development code.
-
 Dependencies
 ------------------
 
@@ -24,7 +11,7 @@ LEAP Client depends on these libraries:
 
 * ``python 2.6`` or ``2.7``
 * ``qt4 libraries``
-* ``libgnutls``
+* ``libopenssl``
 * ``openvpn``
 
 Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requirements.pip``
@@ -32,34 +19,31 @@ Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requiremen
 Debian
 ^^^^^^
 
-Under a debian-based system, you can run::
+With a Debian based system, to be able to run leap-client you need to run the following command::
 
-  $ apt-get install openvpn python-qt4 python-crypto python-requests python-gnutls
-
-For *testing*::
-
-  $ apt-get install python-nose python-mock python-coverage
-
-For *building* the package you will need to install also::
-
-  $ apt-get install pyqt4-dev-tools libgnutls-dev python-setuptools python-all-dev
-
+  $ sudo apt-get install openvpn python-pyside pyside-tools python-setuptools python-crypto python-requests python-openssl python-all-dev
 
 pip
 ^^^
 
 Use pip to install the required python packages::
 
-  $ apt-get install python-pip python-dev libgnutls-dev
+  $ sudo apt-get install python-pip python-dev python-openssl
   $ pip install -r pkg/requirements.pip
 
 
 Installing
 -----------
 
+For the leap-client to run, you need to install the leap.common package first, if you used pip, you can skip this step::
+
+  $ git clone git://leap.se/leap_pycommon.git
+  $ cd leap_pycommon
+  $ sudo python setup.py install
+
 After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
 
-  $ python setup.py install
+  $ sudo python setup.py install
 
 
 Running
@@ -69,15 +53,18 @@ After a successful installation, there should be a launcher called ``leap-client
 
   $ leap-client
 
+If you are testing a new provider and do not have a CA certificate chain tied to your SSL certificate, you should execute leap-client in the following way::
+
+  $ leap-client --danger
+
+Beware this is only for testing, its usage is *highly* discouraged.
 
 Hacking
 =======
 
-See the `hackers guide <http://leap-client.readthedocs.org/en/latest/dev/environment.html>`_.
-
 The LEAP client git repository is available at::
 
-  git://leap.se/leap_client 
+  git://leap.se/leap_client
 
 Some steps need to be run when setting a development environment for the first time.
 
@@ -96,10 +83,10 @@ Symlink your global pyqt libraries::
 
 And make your working tree available to your pythonpath::
 
-  (leap_client)$ python setup.py develop  
+  (leap_client)$ python setup.py develop
 
 
-Testing 
+Testing
 =======
 
 Have a look at ``pkg/test-requirements.pip`` for the tests dependencies.
@@ -107,7 +94,7 @@ Have a look at ``pkg/test-requirements.pip`` for the tests dependencies.
 To run the test suite::
 
     $ ./run_tests.sh
-    
+
 which the first time should automagically install all the needed dependencies in your virtualenv for you.
 
 License
