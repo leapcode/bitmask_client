@@ -21,28 +21,17 @@ Debian
 
 With a Debian based system, to be able to run leap-client you need to run the following command::
 
-  $ sudo apt-get install openvpn python-pyside pyside-tools python-setuptools python-crypto python-requests python-openssl python-all-dev
-
-pip
-^^^
-
-Use pip to install the required python packages::
-
-  $ sudo apt-get install python-pip python-dev python-openssl
-  $ pip install -r pkg/requirements.pip
-
+  $ sudo apt-get install openvpn python-pyside pyside-tools python-setuptools python-all-dev python-pip python-dev python-openssl
 
 Installing
 -----------
 
-For the leap-client to run, you need to install the leap.common package first, if you used pip, you can skip this step::
-
-  $ sudo pip install leap.common
-
 After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
 
-  $ sudo python setup.py install
+  $ make
+  $ LEAP_VENV_SKIP_PYSIDE=1 sudo python setup.py install
 
+LEAP_VENV_SKIP_PYSIDE is used to avoid compiling PySide in the installation since it's already installed through the package manager.
 
 Running
 -------
