@@ -62,7 +62,7 @@ Make sure you are in the development branch::
 
   (leap_client)$ git checkout develop
 
-Symlink your global pyqt libraries::
+Symlink your global pyside libraries::
 
   (leap_client)$ pkg/postmkvenv.sh
 
