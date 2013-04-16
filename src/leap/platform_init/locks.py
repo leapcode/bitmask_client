@@ -19,6 +19,7 @@ Utilities for handling multi-platform file locking mechanisms
 """
 import commands
 import logging
+import errno
 import os
 import platform
 
@@ -81,7 +82,10 @@ if platform_init.IS_UNIX:
                 flock(self._fd, LOCK_EX | LOCK_NB)
             except IOError as exc:
                 # could not get the lock
-                if exc.args[0] == 11:
+                #import ipdb; ipdb.set_trace()
+
+                if exc.args[0] in (errno.EDEADLK, errno.EAGAIN):
+                    # errno 11 or 35
                     # Resource temporarily unavailable
                     return False
                 else:
