@@ -37,9 +37,7 @@ Installing
 
 For the leap-client to run, you need to install the leap.common package first, if you used pip, you can skip this step::
 
-  $ git clone git://leap.se/leap_pycommon.git
-  $ cd leap_pycommon
-  $ sudo python setup.py install
+  $ sudo pip install leap.common
 
 After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
 
