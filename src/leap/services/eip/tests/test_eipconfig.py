@@ -114,9 +114,9 @@ class EIPConfigTest(BaseLeapTest):
         self.assertEqual(
             config.get_clusters(), None)
 
-    def test_openvpnoptions(self):
+    def test_sanitize_config(self):
         """
-        check the sanitization of openvpn options
+        check the sanitization of options
         """
         # extra parameters
         data = copy.deepcopy(sample_config)
@@ -169,6 +169,24 @@ class EIPConfigTest(BaseLeapTest):
             {'cipher': 'AES-128-CBC',
              'tls-cipher': 'DHE-RSA-AES128-SHA'})
 
+        # bad_ip
+        data = copy.deepcopy(sample_config)
+        data['gateways'][0]["ip_address"] = "11.22.33.44;"
+        self.write_config(data)
+        config = EIPConfig()
+        config.load(self.configfile)
+        self.assertEqual(
+            config.get_gateway_ip(),
+            None)
+
+        data = copy.deepcopy(sample_config)
+        data['gateways'][0]["ip_address"] = "11.22.33.44`"
+        self.write_config(data)
+        config = EIPConfig()
+        config.load(self.configfile)
+        self.assertEqual(
+            config.get_gateway_ip(),
+            None)
 
 if __name__ == "__main__":
     unittest.main()

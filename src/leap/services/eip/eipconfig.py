@@ -36,6 +36,7 @@ class EIPConfig(BaseConfig):
     """
     OPENVPN_ALLOWED_KEYS = ("auth", "cipher", "tls-cipher")
     OPENVPN_CIPHERS_REGEX = re.compile("[A-Z0-9\-]+")
+    IP_REGEX = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 
     def __init__(self):
         BaseConfig.__init__(self)
@@ -90,7 +91,9 @@ class EIPConfig(BaseConfig):
             index = 0
             logger.warning("Provided an unknown gateway index %s, " +
                            "defaulting to 0")
-        return gateways[0]["ip_address"]
+        ip_addr = gateways[0]["ip_address"]
+        if self.IP_REGEX.search(ip_addr):
+            return ip_addr
 
     def get_client_cert_path(self,
                              providerconfig=None,
