@@ -103,7 +103,6 @@ def WindowsInitializer():
                 inf_path = os.path.join(driver_path,
                                         "OemWin2k.inf")
                 cmd = [dev_installer, "install", inf_path, "tap0901"]
-                # XXX should avoid shell expansion.
                 ret = subprocess.call(cmd, stdout=subprocess.PIPE, shell=True)
             else:
                 logger.error("Tried to install TAP driver, but the installer "
@@ -164,7 +163,6 @@ def DarwinInitializer():
             if os.path.isdir(installer_path):
                 cmd = ["open %s" % (installer_path,)]
                 try:
-                    # XXX should avoid shell expansion
                     ret = subprocess.call(
                         cmd, stdout=subprocess.PIPE,
                         shell=True)
