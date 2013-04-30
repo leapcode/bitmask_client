@@ -120,8 +120,9 @@ def _darwin_has_tun_kext():
     has_kext = os.path.isdir("/System/Library/Extensions/tun.kext")
     has_startup = os.path.isdir("/System/Library/StartupItems/tun")
     has_tun_and_startup = has_kext and has_startup
-    logger.debug('platform initializer check: has tun_and_startup = %s' %
-            (has_tun_and_startup,))
+    logger.debug(
+        'platform initializer check: has tun_and_startup = %s' %
+        (has_tun_and_startup,))
     return has_tun_and_startup
 
 
@@ -155,10 +156,11 @@ def DarwinInitializer():
         ret = msg.exec_()
 
         if ret == QtGui.QMessageBox.Yes:
-            installer_path = os.path.join(os.getcwd(),
-                                       "..",
-                                       "Resources",
-                                       "tuntap-installer.app")
+            installer_path = os.path.join(
+                os.getcwd(),
+                "..",
+                "Resources",
+                "tuntap-installer.app")
             if os.path.isdir(installer_path):
                 cmd = ["open %s" % (installer_path,)]
                 try:
