@@ -62,9 +62,9 @@ class ProviderBootstrapper(QtCore.QObject):
         """
         Constructor for provider bootstrapper object
 
-        @param bypass_checks: Set to true if the app should bypass
+        :param bypass_checks: Set to true if the app should bypass
         first round of checks for CA certificates at bootstrap
-        @type bypass_checks: bool
+        :type bypass_checks: bool
         """
         QtCore.QObject.__init__(self)
 
@@ -84,8 +84,8 @@ class ProviderBootstrapper(QtCore.QObject):
         """
         Checks that the name resolution for the provider name works
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
 
         leap_assert(self._domain, "Cannot check DNS without a domain")
@@ -115,8 +115,8 @@ class ProviderBootstrapper(QtCore.QObject):
         Checks that https is working and that the provided certificate
         checks out
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
 
         leap_assert(self._domain, "Cannot check HTTPS without a domain")
@@ -154,8 +154,8 @@ class ProviderBootstrapper(QtCore.QObject):
         """
         Downloads the provider.json defition
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
         leap_assert(self._domain,
                     "Cannot download provider info without a domain")
@@ -211,16 +211,15 @@ class ProviderBootstrapper(QtCore.QObject):
         """
         Populates the check queue
 
-        @param checker: checker thread to be used to run this check
-        @type checker: CheckerThread
-        @param domain: domain to check
-        @type domain: str
-        @param download_if_needed: if True, makes the checks do not
-        overwrite already downloaded data
-        @type download_if_needed: bool
+        :param checker: checker thread to be used to run this check
+        :type checker: CheckerThread
+        :param domain: domain to check
+        :type domain: str
+        :param download_if_needed: if True, makes the checks do not overwrite already downloaded data
+        :type download_if_needed: bool
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
         leap_assert(domain and len(domain) > 0, "We need a domain!")
 
@@ -238,7 +237,7 @@ class ProviderBootstrapper(QtCore.QObject):
         Returns False if the certificate already exists for the given
         provider. True otherwise
 
-        @rtype: bool
+        :rtype: bool
         """
         leap_assert(self._provider_config, "We need a provider config!")
 
@@ -252,8 +251,8 @@ class ProviderBootstrapper(QtCore.QObject):
         """
         Downloads the CA cert that is going to be used for the api URL
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
 
         leap_assert(self._provider_config, "Cannot download the ca cert "
@@ -310,8 +309,8 @@ class ProviderBootstrapper(QtCore.QObject):
         Checks the CA cert fingerprint against the one provided in the
         json definition
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
         leap_assert(self._provider_config, "Cannot check the ca cert "
                     "without a provider config!")
@@ -362,8 +361,8 @@ class ProviderBootstrapper(QtCore.QObject):
         Tries to make an API call with the downloaded cert and checks
         if it validates against it
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
         leap_assert(self._provider_config, "Cannot check the ca cert "
                     "without a provider config!")
@@ -403,13 +402,13 @@ class ProviderBootstrapper(QtCore.QObject):
                                   provider_config,
                                   download_if_needed=False):
         """
-        Starts the checks needed for a new provider setup
+        Starts the checks needed for a new provider setup.
 
-        @param provider_config: Provider configuration
-        @type provider_config: ProviderConfig
-        @param download_if_needed: if True, makes the checks do not
-        overwrite already downloaded data
-        @type download_if_needed: bool
+        :param provider_config: Provider configuration
+        :type provider_config: ProviderConfig
+
+        :param download_if_needed: if True, makes the checks do not overwrite already downloaded data.
+        :type download_if_needed: bool
         """
         leap_assert(provider_config, "We need a provider config!")
         leap_assert_type(provider_config, ProviderConfig)

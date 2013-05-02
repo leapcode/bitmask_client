@@ -12,3 +12,4 @@
 #       will only install this)
 
 -e git+git://github.com/leapcode/leap_pycommon.git@develop#egg=leap.common
+sphinx

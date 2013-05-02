@@ -33,7 +33,7 @@ def is_missing_policy_permissions():
     platform, or if the policy checker exists but it cannot find the
     appropriate policy mechanisms in place.
 
-    @rtype: bool
+    :rtype: bool
     """
     _system = platform.system()
     platform_checker = _system + "PolicyChecker"
@@ -60,7 +60,7 @@ class PolicyChecker:
         Returns True if we could not find any policy mechanisms that
         are defined to be in used for this particular platform.
 
-        @rtype: bool
+        :rtype: bool
         """
         return True
 
@@ -77,6 +77,6 @@ class LinuxPolicyChecker(PolicyChecker):
         Returns True if we could not find the appropriate policykit file
         in place
 
-        @rtype: bool
+        :rtype: bool
         """
         return not os.path.isfile(self.LINUX_POLKIT_FILE)

@@ -48,11 +48,11 @@ class SRPRegister(QtCore.QObject):
         """
         Constructor
 
-        @param provider_config: provider configuration instance,
+        :param provider_config: provider configuration instance,
         properly loaded
-        @type privider_config: ProviderConfig
-        @param register_path: webapp path for registering users
-        @type register_path; str
+        :type privider_config: ProviderConfig
+        :param register_path: webapp path for registering users
+        :type register_path; str
         """
         QtCore.QObject.__init__(self)
         leap_assert(provider_config, "Please provide a provider")
@@ -84,7 +84,7 @@ class SRPRegister(QtCore.QObject):
         Returns the URI where the register request should be made for
         the provider
 
-        @rtype: str
+        :rtype: str
         """
 
         uri = "https://%s:%s/%s/%s" % (
@@ -99,13 +99,13 @@ class SRPRegister(QtCore.QObject):
         """
         Registers a user with the validator based on the password provider
 
-        @param username: username to register
-        @type username: str
-        @param password: password for this username
-        @type password: str
+        :param username: username to register
+        :type username: str
+        :param password: password for this username
+        :type password: str
 
-        @rtype: tuple
-        @rparam: (ok, request)
+        :rtype: tuple
+        :rparam: (ok, request)
         """
         salt, verifier = self._srp.create_salted_verification_key(
             username,

@@ -73,8 +73,8 @@ class EIPBootstrapper(QtCore.QObject):
         """
         Downloads the EIP config for the given provider
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
 
         leap_assert(self._provider_config,
@@ -140,8 +140,8 @@ class EIPBootstrapper(QtCore.QObject):
         """
         Downloads the EIP client certificate for the given provider
 
-        @return: True if the checks passed, False otherwise
-        @rtype: bool
+        :return: True if the checks passed, False otherwise
+        :rtype: bool
         """
         leap_assert(self._provider_config, "We need a provider configuration!")
         leap_assert(self._eip_config, "We need an eip configuration!")
@@ -219,8 +219,8 @@ class EIPBootstrapper(QtCore.QObject):
         """
         Starts the checks needed for a new eip setup
 
-        @param provider_config: Provider configuration
-        @type provider_config: ProviderConfig
+        :param provider_config: Provider configuration
+        :type provider_config: ProviderConfig
         """
         leap_assert(provider_config, "We need a provider config!")
         leap_assert_type(provider_config, ProviderConfig)
