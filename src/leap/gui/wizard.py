@@ -55,14 +55,14 @@ class Wizard(QtGui.QWizard):
         """
         Constructor for the main Wizard.
 
-        @param checker: Checker thread that the wizard should use.
-        @type checker: CheckerThread
-        @param standalone: If True, the application is running as standalone
+        :param checker: Checker thread that the wizard should use.
+        :type checker: CheckerThread
+        :param standalone: If True, the application is running as standalone
             and the wizard should display some messages according to this.
-        @type standalone: bool
-        @param bypass_checks: Set to true if the app should bypass
+        :type standalone: bool
+        :param bypass_checks: Set to true if the app should bypass
         first round of checks for CA certificates at bootstrap
-        @type bypass_checks: bool
+        :type bypass_checks: bool
         """
         QtGui.QWizard.__init__(self)
 
@@ -184,15 +184,15 @@ class Wizard(QtGui.QWizard):
         """
         Performs basic password checks to avoid really easy passwords.
 
-        @param username: username provided at the registrarion form
-        @type username: str
-        @param password: password from the registration form
-        @type password: str
-        @param password2: second password from the registration form
-        @type password: str
+        :param username: username provided at the registrarion form
+        :type username: str
+        :param password: password from the registration form
+        :type password: str
+        :param password2: second password from the registration form
+        :type password: str
 
-        @return: returns True if all the checks pass, False otherwise
-        @rtype: bool
+        :return: returns True if all the checks pass, False otherwise
+        :rtype: bool
         """
         message = None
 
@@ -266,8 +266,8 @@ class Wizard(QtGui.QWizard):
         """
         Sets the status label in the registration page to status
 
-        @param status: status message to display, can be HTML
-        @type status: str
+        :param status: status message to display, can be HTML
+        :type status: str
         """
         if error:
             status = "<font color='red'><b>%s</b></font>" % (status,)
@@ -321,17 +321,17 @@ class Wizard(QtGui.QWizard):
         """
         Checks a task and completes a page if specified
 
-        @param data: data as it comes from the bootstrapper thread for
+        :param data: data as it comes from the bootstrapper thread for
         a specific check
-        @type data: dict
-        @param label: label that displays the status icon for a
+        :type data: dict
+        :param label: label that displays the status icon for a
         specific check that corresponds to the data
-        @type label: QtGui.QLabel
-        @param complete: if True, it completes the page specified,
+        :type label: QtGui.QLabel
+        :param complete: if True, it completes the page specified,
         which must be of type WizardPage
-        @type complete: bool
-        @param complete_page: page id to complete
-        @type complete_page: int
+        :type complete: bool
+        :param complete_page: page id to complete
+        :type complete_page: int
         """
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         error = data[self._provider_bootstrapper.ERROR_KEY]
@@ -450,10 +450,10 @@ class Wizard(QtGui.QWizard):
         Adds the service to the state if the state is checked, removes
         it otherwise
 
-        @param service: service to handle
-        @type service: str
-        @param state: state of the checkbox
-        @type state: int
+        :param service: service to handle
+        :type service: str
+        :param state: state of the checkbox
+        :type state: int
         """
         if state == QtCore.Qt.Checked:
             self._selected_services = \

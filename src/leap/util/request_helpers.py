@@ -32,10 +32,10 @@ def get_content(request):
     property/function or from content, in that order.
     Also returns the mtime for that content if available
 
-    @param request: request as it is given by requests
-    @type request: Response
+    :param request: request as it is given by requests
+    :type request: Response
 
-    @rtype: tuple (contents, mtime)
+    :rtype: tuple (contents, mtime)
     """
 
     contents = ""

@@ -72,12 +72,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         Constructor for the client main window
 
-        @param standalone: Set to true if the app should use configs
+        :param standalone: Set to true if the app should use configs
         inside its pwd
-        @type standalone: bool
-        @param bypass_checks: Set to true if the app should bypass
+        :type standalone: bool
+        :param bypass_checks: Set to true if the app should bypass
         first round of checks for CA certificates at bootstrap
-        @type bypass_checks: bool
+        :type bypass_checks: bool
         """
         QtGui.QMainWindow.__init__(self)
 
@@ -278,8 +278,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         Callback for the new updates event
 
-        @param req: Request type
-        @type req: leap.common.events.events_pb2.SignalRequest
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
         """
         self.new_updates.emit(req)
 
@@ -482,7 +482,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         Returns the available providers based on the file structure
 
-        @rtype: list
+        :rtype: list
         """
 
         # TODO: check which providers have a valid certificate among
@@ -503,7 +503,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         Returns True if there are no configured providers. False otherwise
 
-        @rtype: bool
+        :rtype: bool
         """
         has_provider_on_disk = len(self._configured_providers()) != 0
         is_proper_provider = self._settings.get_properprovider()
@@ -519,8 +519,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         Sets the status label at the login stage to status
 
-        @param status: status message
-        @type status: str
+        :param status: status message
+        :type status: str
         """
         if error:
             status = "<font color='red'><b>%s</b></font>" % (status,)
@@ -530,8 +530,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         Sets the status label at the VPN stage to status
 
-        @param status: status message
-        @type status: str
+        :param status: status message
+        :type status: str
         """
         self._vpn_systray.setToolTip(status)
         if error:
@@ -542,8 +542,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         Enables or disables all the login widgets
 
-        @param enabled: wether they should be enabled or not
-        @type enabled: bool
+        :param enabled: wether they should be enabled or not
+        :type enabled: bool
         """
         self.ui.lnUser.setEnabled(enabled)
         self.ui.lnPassword.setEnabled(enabled)
@@ -575,9 +575,9 @@ class MainWindow(QtGui.QMainWindow):
         self._provider_config instance with it and starts the second
         part of the bootstrapping sequence
 
-        @param data: result from the last stage of the
+        :param data: result from the last stage of the
         run_provider_select_checks
-        @type data: dict
+        :type data: dict
         """
         if data[self._provider_bootstrapper.PASSED_KEY]:
             provider = self.ui.cmbProviders.currentText()
@@ -708,7 +708,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         Returns the socket and port to be used for VPN
 
-        @rtype: tuple (str, str) (host, port)
+        :rtype: tuple (str, str) (host, port)
         """
 
         # TODO: make this properly multiplatform
@@ -801,8 +801,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         Given a status step from the VPN thread, set the icon properly
 
-        @param status: status step
-        @type status: str
+        :param status: status step
+        :type status: str
         """
         selected_pixmap = self.ERROR_ICON
         tray_message = self.tr("Encryption is OFF")

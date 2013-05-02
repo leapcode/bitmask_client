@@ -40,7 +40,6 @@ class UDSTelnet(telnetlib.Telnet):
 
         The optional second argument is the port number, which
         defaults to the standard telnet port (23).
-
         Don't try to reopen an already connected instance.
         """
         self.eof = 0

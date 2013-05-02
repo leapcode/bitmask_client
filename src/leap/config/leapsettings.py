@@ -34,10 +34,10 @@ def to_bool(val):
     Returns the boolean value corresponding to val. Will return False
     in case val is not a string or something that behaves like one.
 
-    @param val: value to cast
-    @type val: either bool already or str
+    :param val: value to cast
+    :type val: either bool already or str
 
-    @rtype: bool
+    :rtype: bool
     """
     if isinstance(val, bool):
         return val
@@ -70,9 +70,9 @@ class LeapSettings(object):
         """
         Constructor
 
-        @param standalone: parameter used to define the location of
+        :param standalone: parameter used to define the location of
         the config
-        @type standalone: bool
+        :type standalone: bool
         """
 
         settings_path = os.path.join(get_platform_prefixer()
@@ -86,7 +86,7 @@ class LeapSettings(object):
         """
         Returns the saved geometry or None if it wasn't saved
 
-        @rtype: bytearray or None
+        :rtype: bytearray or None
         """
         return self._settings.value(self.GEOMETRY_KEY, None)
 
@@ -94,8 +94,8 @@ class LeapSettings(object):
         """
         Saves the geometry to the settings
 
-        @param geometry: bytearray representing the geometry
-        @type geometry: bytearray
+        :param geometry: bytearray representing the geometry
+        :type geometry: bytearray
         """
         leap_assert(geometry, "We need a geometry")
         self._settings.setValue(self.GEOMETRY_KEY, geometry)
@@ -104,7 +104,7 @@ class LeapSettings(object):
         """
         Returns the window state or None if it wasn't saved
 
-        @rtype: bytearray or None
+        :rtype: bytearray or None
         """
         return self._settings.value(self.WINDOWSTATE_KEY, None)
 
@@ -112,8 +112,8 @@ class LeapSettings(object):
         """
         Saves the window state to the settings
 
-        @param windowstate: bytearray representing the window state
-        @type windowstate: bytearray
+        :param windowstate: bytearray representing the window state
+        :type windowstate: bytearray
         """
         leap_assert(windowstate, "We need a window state")
         self._settings.setValue(self.WINDOWSTATE_KEY, windowstate)
@@ -122,10 +122,10 @@ class LeapSettings(object):
         """
         Returns a list of enabled services for the given provider
 
-        @param provider: provider domain
-        @type provider: str
+        :param provider: provider domain
+        :type provider: str
 
-        @rtype: list of str
+        :rtype: list of str
         """
 
         leap_assert(len(provider) > 0, "We need a nonempty provider")
@@ -140,10 +140,11 @@ class LeapSettings(object):
         """
         Saves the list of enabled services for the given provider
 
-        @param provider: provider domain
-        @type provider: str
-        @param services: list of services to save
-        @type services: list of str
+        :param provider: provider domain
+        :type provider: str
+
+        :param services: list of services to save
+        :type services: list of str
         """
 
         leap_assert(len(provider) > 0, "We need a nonempty provider")
@@ -156,7 +157,7 @@ class LeapSettings(object):
         """
         Returns the configured user to remember, None if there isn't one
 
-        @rtype: str or None
+        :rtype: str or None
         """
         return self._settings.value(self.USER_KEY, None)
 
@@ -164,8 +165,8 @@ class LeapSettings(object):
         """
         Saves the user to remember
 
-        @param user: user name to remember
-        @type user: str
+        :param user: user name to remember
+        :type user: str
         """
         leap_assert(len(user) > 0, "We cannot save an empty user")
         self._settings.setValue(self.USER_KEY, user)
@@ -174,7 +175,7 @@ class LeapSettings(object):
         """
         Returns the value of the remember selection.
 
-        @rtype: bool
+        :rtype: bool
         """
         return to_bool(self._settings.value(self.REMEMBER_KEY, False))
 
@@ -182,9 +183,9 @@ class LeapSettings(object):
         """
         Sets wheter the app should remember username and password
 
-        @param remember: True if the app should remember username and
+        :param remember: True if the app should remember username and
             password, False otherwise
-        @rtype: bool
+        :rtype: bool
         """
         leap_assert_type(remember, bool)
         self._settings.setValue(self.REMEMBER_KEY, remember)
@@ -193,7 +194,7 @@ class LeapSettings(object):
         """
         Returns True if the app should automatically login, False otherwise
 
-        @rtype: bool
+        :rtype: bool
         """
         return to_bool(self._settings.value(self.AUTOLOGIN_KEY, False))
 
@@ -201,8 +202,8 @@ class LeapSettings(object):
         """
         Sets whether the app should automatically login
 
-        @param autologin: True if the app should autologin, False otherwise
-        @type autologin: bool
+        :param autologin: True if the app should autologin, False otherwise
+        :type autologin: bool
         """
         leap_assert_type(autologin, bool)
         self._settings.setValue(self.AUTOLOGIN_KEY, autologin)
@@ -211,19 +212,21 @@ class LeapSettings(object):
     # just one for now
     def get_properprovider(self):
         """
-        Returns True if there is a properly configured provider
+        Returns True if there is a properly configured provider.
 
-        @rtype: bool
+        .. note:: this assumes only one provider for now.
+
+        :rtype: bool
         """
         return to_bool(self._settings.value(self.PROPERPROVIDER_KEY, False))
 
     def set_properprovider(self, properprovider):
         """
-        Sets wether the app should automatically login
+        Sets whether the app should automatically login.
 
-        @param properprovider: True if the provider is properly
-        configured, False otherwise
-        @type properprovider: bool
+        :param properprovider: True if the provider is properly configured,
+            False otherwise.
+        :type properprovider: bool
         """
         leap_assert_type(properprovider, bool)
         self._settings.setValue(self.PROPERPROVIDER_KEY, properprovider)

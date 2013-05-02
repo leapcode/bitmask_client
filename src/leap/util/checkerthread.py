@@ -48,10 +48,10 @@ class CheckerThread(QtCore.QThread):
 
     def get_should_quit(self):
         """
-        Returns wether this thread should quit
+        Returns whether this thread should quit
 
-        @rtype: bool
-        @return: True if the thread should terminate itself, Flase otherwise
+        :return: True if the thread should terminate itself, Flase otherwise
+        :rtype: bool
         """
 
         QtCore.QMutexLocker(self._should_quit_lock)
@@ -78,8 +78,8 @@ class CheckerThread(QtCore.QThread):
         """
         Adds a list of checks to the ones being executed
 
-        @param checks: check functions to perform
-        @type checkes: list
+        :param checks: check functions to perform
+        :type checkes: list
         """
         with QtCore.QMutexLocker(self._checks_lock):
             self._checks += checks
