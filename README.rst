@@ -28,6 +28,7 @@ Installing
 After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
 
   $ make
+  $ export LEAP_VENV_SKIP_PYSIDE=1 # This will avoid building PySide from source
   $ sudo python setup.py install
 
 Running
