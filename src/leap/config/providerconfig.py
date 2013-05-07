@@ -68,7 +68,7 @@ class ProviderConfig(BaseConfig):
         """
         Returns the enrollment policy
 
-        @rtype: string
+        :rtype: string
         """
         return self._safe_get_value("enrollment_policy")
 
@@ -82,27 +82,28 @@ class ProviderConfig(BaseConfig):
     def get_services(self):
         """
         Returns a list with the services supported by the
-        current provider
+        current provider.
 
-        @rtype: list
+        :rtype: list
         """
         return self._safe_get_value("services")
 
     def get_services_string(self):
         """
-        Returns a string with the services supported by the current provider,
-        ready to be shown to the user
+        Returns a string with the services supported by the current
+        provider, ready to be shown to the user.
         """
         return ", ".join(self.get_services())
 
     def get_ca_cert_path(self, about_to_download=False):
         """
-        Returns the path to the certificate for the current provider
+        Returns the path to the certificate for the current provider.
 
-        @param about_to_download: defines wether we want the path to
-        download the cert or not. This helps avoid checking if the
-        cert exists because we are about to write it.
-        @type about_to_download: bool
+        :param about_to_download: defines wether we want the path to
+                                  download the cert or not. This helps avoid
+                                  checking if the cert exists because we
+                                  are about to write it.
+        :type about_to_download: bool
         """
 
         cert_path = os.path.join(self.get_path_prefix(),
@@ -122,8 +123,10 @@ class ProviderConfig(BaseConfig):
 
     def provides_eip(self):
         """
-        Returns True if this particular provider has the EIP
-        service. False otherwise
+        Returns True if this particular provider has the EIP service,
+        False otherwise.
+
+        :rtype: bool
         """
         return "openvpn" in self.get_services()
 

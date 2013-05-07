@@ -85,8 +85,8 @@ class VPN(QtCore.QThread):
         """
         Returns wether this thread should quit
 
-        @rtype: bool
-        @return: True if the thread should terminate itself, Flase otherwise
+        :rtype: bool
+        :return: True if the thread should terminate itself, Flase otherwise
         """
         QtCore.QMutexLocker(self._should_quit_lock)
         return self._should_quit
@@ -117,15 +117,15 @@ class VPN(QtCore.QThread):
         """
         Launches OpenVPN and starts the thread to watch its output
 
-        @param eipconfig: eip configuration object
-        @type eipconfig: EIPConfig
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
-        @param socket_host: either socket path (unix) or socket IP
-        @type socket_host: str
-        @param socket_port: either string "unix" if it's a unix
+        :param eipconfig: eip configuration object
+        :type eipconfig: EIPConfig
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
+        :param socket_host: either socket path (unix) or socket IP
+        :type socket_host: str
+        :param socket_port: either string "unix" if it's a unix
         socket, or port otherwise
-        @type socket_port: str
+        :type socket_port: str
         """
         leap_assert(eipconfig, "We need an eip config")
         leap_assert_type(eipconfig, EIPConfig)
@@ -196,7 +196,7 @@ class VPN(QtCore.QThread):
         """
         Looks for openvpn instances running
 
-        @rtype: process
+        :rtype: process
         """
         openvpn_process = None
         for p in psutil.process_iter():
@@ -217,7 +217,7 @@ class VPN(QtCore.QThread):
         """
         Checks if VPN is already running and tries to stop it
 
-        @return: True if stopped, False otherwise
+        :return: True if stopped, False otherwise
         """
 
         process = self._get_openvpn_process()
@@ -253,11 +253,11 @@ class VPN(QtCore.QThread):
     def _connect(self, socket_host, socket_port):
         """
         Connects to the specified socket_host socket_port
-        @param socket_host: either socket path (unix) or socket IP
-        @type socket_host: str
-        @param socket_port: either string "unix" if it's a unix
+        :param socket_host: either socket path (unix) or socket IP
+        :type socket_host: str
+        :param socket_port: either string "unix" if it's a unix
         socket, or port otherwise
-        @type socket_port: str
+        :type socket_port: str
         """
         try:
             self._tn = UDSTelnet(socket_host, socket_port)
@@ -291,12 +291,12 @@ class VPN(QtCore.QThread):
         Sends a command to the telnet connection and reads until END
         is reached
 
-        @param command: command to send
-        @type command: str
-        @param until: byte delimiter string for reading command output
-        @type until: byte str
-        @return: response read
-        @rtype: list
+        :param command: command to send
+        :type command: str
+        :param until: byte delimiter string for reading command output
+        :type until: byte str
+        :return: response read
+        :rtype: list
         """
         leap_assert(self._tn, "We need a tn connection!")
         try:
@@ -315,9 +315,9 @@ class VPN(QtCore.QThread):
         Parses the output of the state command and emits state_changed
         signal when the state changes
 
-        @param output: list of lines that the state command printed as
+        :param output: list of lines that the state command printed as
         its output
-        @type output: list
+        :type output: list
         """
         for line in output:
             stripped = line.strip()
@@ -345,9 +345,9 @@ class VPN(QtCore.QThread):
         Parses the output of the status command and emits
         status_changed signal when the status changes
 
-        @param output: list of lines that the status command printed
+        :param output: list of lines that the status command printed
         as its output
-        @type output: list
+        :type output: list
         """
         tun_tap_read = ""
         tun_tap_write = ""

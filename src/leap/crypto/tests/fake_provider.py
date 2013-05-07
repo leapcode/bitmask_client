@@ -321,8 +321,8 @@ def get_provider_factory():
     * port 8000 for http connections
     * port 8443 for https connections
 
-    @rparam: factory for a site
-    @rtype: Site instance
+    :rparam: factory for a site
+    :rtype: Site instance
     """
     root = Resource()
     root.putChild("provider.json", File(

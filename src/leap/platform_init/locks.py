@@ -74,7 +74,7 @@ if platform_init.IS_UNIX:
             """
             Tries to get a lock, returning True if successful
 
-            @rtype: bool
+            :rtype: bool
             """
             self._fd = os.open(self.path, os.O_CREAT | os.O_RDWR)
 
@@ -98,7 +98,7 @@ if platform_init.IS_UNIX:
             Returns True if the pid in the pidfile
             is ours.
 
-            @rtype: bool
+            :rtype: bool
             """
             gotit, pid = self._get_lock_and_pid()
             return pid == os.getpid()
@@ -108,7 +108,7 @@ if platform_init.IS_UNIX:
             Tries to get a lock over the file.
             Returns (locked, pid) tuple.
 
-            @rtype: tuple
+            :rtype: tuple
             """
 
             if self._get_lock():
@@ -192,7 +192,7 @@ if platform_init.IS_WIN:
             Returns True, pid if there is only one pidfile with the expected
             base path
 
-            @rtype: tuple
+            :rtype: tuple
             """
             pidfiles = glob.glob(self.LOCKBASE + '-*')
             if len(pidfiles) == 1:
@@ -205,7 +205,7 @@ if platform_init.IS_WIN:
             """
             Returns the pid of the locking process
 
-            @rtype: int
+            :rtype: int
             """
             # XXX assert there is only one?
             _, pid = self._is_one_pidfile()
@@ -238,7 +238,7 @@ if platform_init.IS_WIN:
             Returns True if the pid in the pidfile
             is ours.
 
-            @rtype: bool
+            :rtype: bool
             """
             _, pid = self._is_one_pidfile()
             return pid == self.pid
@@ -248,7 +248,7 @@ if platform_init.IS_WIN:
             Writes the port for windows control to the pidfile folder
             Returns True if successful.
 
-            @rtype: bool
+            :rtype: bool
             """
             if not self.locked_by_us:
                 logger.warning("Tried to write control port to a "
@@ -264,7 +264,7 @@ if platform_init.IS_WIN:
             Reads control port of the main instance from the port file
             in the pidfile dir
 
-            @rtype: int
+            :rtype: int
             """
             pid = self.get_pid()
             port_file = os.path.join(self.LOCKBASE + "-%s" % pid, "port")
@@ -288,7 +288,7 @@ def we_are_the_one_and_only():
     If we came later, send a raise signal to the main instance of the
     application
 
-    @rtype: bool
+    :rtype: bool
     """
     _sys = platform.system()
 

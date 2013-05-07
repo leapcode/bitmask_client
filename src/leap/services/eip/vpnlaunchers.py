@@ -67,18 +67,18 @@ class VPNLauncher:
         """
         Returns the platform dependant vpn launching command
 
-        @param eipconfig: eip configuration object
-        @type eipconfig: EIPConfig
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
-        @param socket_host: either socket path (unix) or socket IP
-        @type socket_host: str
-        @param socket_port: either string "unix" if it's a unix
+        :param eipconfig: eip configuration object
+        :type eipconfig: EIPConfig
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
+        :param socket_host: either socket path (unix) or socket IP
+        :type socket_host: str
+        :param socket_port: either string "unix" if it's a unix
         socket, or port otherwise
-        @type socket_port: str
+        :type socket_port: str
 
-        @return: A VPN command ready to be launched
-        @rtype: list
+        :return: A VPN command ready to be launched
+        :rtype: list
         """
         return []
 
@@ -89,10 +89,10 @@ class VPNLauncher:
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
 
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
 
-        @rtype: dict
+        :rtype: dict
         """
         return {}
 
@@ -148,18 +148,21 @@ class LinuxVPNLauncher(VPNLauncher):
 
         Might raise VPNException.
 
-        @param eipconfig: eip configuration object
-        @type eipconfig: EIPConfig
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
-        @param socket_host: either socket path (unix) or socket IP
-        @type socket_host: str
-        @param socket_port: either string "unix" if it's a unix
-        socket, or port otherwise
-        @type socket_port: str
+        :param eipconfig: eip configuration object
+        :type eipconfig: EIPConfig
 
-        @return: A VPN command ready to be launched
-        @rtype: list
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
+
+        :param socket_host: either socket path (unix) or socket IP
+        :type socket_host: str
+
+        :param socket_port: either string "unix" if it's a unix
+                            socket, or port otherwise
+        :type socket_port: str
+
+        :return: A VPN command ready to be launched
+        :rtype: list
         """
         leap_assert(eipconfig, "We need an eip config")
         leap_assert_type(eipconfig, EIPConfig)
@@ -263,10 +266,10 @@ class LinuxVPNLauncher(VPNLauncher):
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
 
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
 
-        @rtype: dict
+        :rtype: dict
         """
         leap_assert(providerconfig, "We need a provider config")
         leap_assert_type(providerconfig, ProviderConfig)
@@ -300,18 +303,21 @@ class DarwinVPNLauncher(VPNLauncher):
 
         Might raise VPNException.
 
-        @param eipconfig: eip configuration object
-        @type eipconfig: EIPConfig
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
-        @param socket_host: either socket path (unix) or socket IP
-        @type socket_host: str
-        @param socket_port: either string "unix" if it's a unix
-        socket, or port otherwise
-        @type socket_port: str
+        :param eipconfig: eip configuration object
+        :type eipconfig: EIPConfig
 
-        @return: A VPN command ready to be launched
-        @rtype: list
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
+
+        :param socket_host: either socket path (unix) or socket IP
+        :type socket_host: str
+
+        :param socket_port: either string "unix" if it's a unix
+                            socket, or port otherwise
+        :type socket_port: str
+
+        :return: A VPN command ready to be launched
+        :rtype: list
         """
         leap_assert(eipconfig, "We need an eip config")
         leap_assert_type(eipconfig, EIPConfig)
@@ -405,10 +411,10 @@ class DarwinVPNLauncher(VPNLauncher):
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
 
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
 
-        @rtype: dict
+        :rtype: dict
         """
         return {"DYLD_LIBRARY_PATH": os.path.join(
                 providerconfig.get_path_prefix(),
@@ -431,18 +437,18 @@ class WindowsVPNLauncher(VPNLauncher):
 
         Might raise VPNException.
 
-        @param eipconfig: eip configuration object
-        @type eipconfig: EIPConfig
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
-        @param socket_host: either socket path (unix) or socket IP
-        @type socket_host: str
-        @param socket_port: either string "unix" if it's a unix
+        :param eipconfig: eip configuration object
+        :type eipconfig: EIPConfig
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
+        :param socket_host: either socket path (unix) or socket IP
+        :type socket_host: str
+        :param socket_port: either string "unix" if it's a unix
         socket, or port otherwise
-        @type socket_port: str
+        :type socket_port: str
 
-        @return: A VPN command ready to be launched
-        @rtype: list
+        :return: A VPN command ready to be launched
+        :rtype: list
         """
         leap_assert(eipconfig, "We need an eip config")
         leap_assert_type(eipconfig, EIPConfig)
@@ -514,10 +520,10 @@ class WindowsVPNLauncher(VPNLauncher):
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
 
-        @param providerconfig: provider specific configuration
-        @type providerconfig: ProviderConfig
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
 
-        @rtype: dict
+        :rtype: dict
         """
         return {}
 

@@ -58,8 +58,8 @@ class SRPAuth(QtCore.QObject):
             """
             Constructor for SRPAuth implementation
 
-            @param server: Server to which we will authenticate
-            @type server: str
+            :param server: Server to which we will authenticate
+            :type server: str
             """
             QtCore.QObject.__init__(self)
 
@@ -91,11 +91,11 @@ class SRPAuth(QtCore.QObject):
             Rounds the val to a multiple of 2 and returns the
             unhexlified value
 
-            @param val: hexlified value
-            @type val: str
+            :param val: hexlified value
+            :type val: str
 
-            @rtype: binary hex data
-            @return: unhexlified val
+            :rtype: binary hex data
+            :return: unhexlified val
             """
             return binascii.unhexlify(val) \
                 if (len(val) % 2 == 0) else binascii.unhexlify('0' + val)
@@ -104,10 +104,10 @@ class SRPAuth(QtCore.QObject):
             """
             Generates the SRP.User to get the A SRP parameter
 
-            @param username: username to login
-            @type username: str
-            @param password: password for the username
-            @type password: str
+            :param username: username to login
+            :type username: str
+            :param password: password for the username
+            :type password: str
             """
             logger.debug("Authentication preprocessing...")
             self._srp_user = self._srp.User(username,
@@ -125,13 +125,13 @@ class SRPAuth(QtCore.QObject):
 
             Might raise SRPAuthenticationError
 
-            @param username: username to login
-            @type username: str
-            @param password: password for the username
-            @type password: str
+            :param username: username to login
+            :type username: str
+            :param password: password for the username
+            :type password: str
 
-            @return: salt and B parameters
-            @rtype: tuple
+            :return: salt and B parameters
+            :rtype: tuple
             """
             logger.debug("Starting authentication process...")
             try:
@@ -184,15 +184,15 @@ class SRPAuth(QtCore.QObject):
 
             Might throw SRPAuthenticationError
 
-            @param salt: salt for the username
-            @type salt: str
-            @param B: B SRP parameter
-            @type B: str
-            @param username: username for this session
-            @type username: str
+            :param salt: salt for the username
+            :type salt: str
+            :param B: B SRP parameter
+            :type B: str
+            :param username: username for this session
+            :type username: str
 
-            @return: the M2 SRP parameter
-            @rtype: str
+            :return: the M2 SRP parameter
+            :rtype: str
             """
             logger.debug("Processing challenge...")
             try:
@@ -261,8 +261,8 @@ class SRPAuth(QtCore.QObject):
 
             Might throw SRPAuthenticationError
 
-            @param M2: M2 SRP parameter
-            @type M2: str
+            :param M2: M2 SRP parameter
+            :type M2: str
             """
             logger.debug("Verifying session...")
             try:
@@ -296,10 +296,10 @@ class SRPAuth(QtCore.QObject):
 
             Might raise SRPAuthenticationError
 
-            @param username: username for this session
-            @type username: str
-            @param password: password for this user
-            @type password: str
+            :param username: username for this session
+            :type username: str
+            :param password: password for this user
+            :type password: str
             """
             leap_assert(self.get_session_id() is None, "Already logged in")
 
@@ -390,10 +390,10 @@ class SRPAuth(QtCore.QObject):
 
         Might raise SRPAuthenticationError
 
-        @param username: username for this session
-        @type username: str
-        @param password: password for this user
-        @type password: str
+        :param username: username for this session
+        :type username: str
+        :param password: password for this user
+        :type password: str
         """
 
         try:
