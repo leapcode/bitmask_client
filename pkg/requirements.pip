@@ -12,5 +12,6 @@ pyopenssl
 keyring
 python-dateutil
 psutil
+ipaddr
 
 leap.common>=0.2.1-dev
