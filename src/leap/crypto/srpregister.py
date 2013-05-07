@@ -128,10 +128,10 @@ class SRPRegister(QtCore.QObject):
         ok = None
         try:
             req = self._session.post(uri,
-                                    data=user_data,
-                                    timeout=SIGNUP_TIMEOUT,
-                                    verify=self._provider_config.
-                                    get_ca_cert_path())
+                                     data=user_data,
+                                     timeout=SIGNUP_TIMEOUT,
+                                     verify=self._provider_config.
+                                     get_ca_cert_path())
 
         except requests.exceptions.SSLError as exc:
             logger.error("SSLError: %s" % exc.message)

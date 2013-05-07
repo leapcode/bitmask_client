@@ -102,11 +102,14 @@ class EIPBootstrapper(QtCore.QObject):
             if self._download_if_needed and mtime:
                 headers['if-modified-since'] = mtime
 
-            res = self._session.get("%s/%s/%s/%s" %
-                                    (self._provider_config.get_api_uri(),
-                                     self._provider_config.get_api_version(),
-                                     "config",
-                                     "eip-service.json"),
+            # there is some confusion with this uri,
+            # it's in 1/config/eip, config/eip and config/1/eip...
+            config_uri = "%s/%s/config/eip-service.json" % (
+                self._provider_config.get_api_uri(),
+                self._provider_config.get_api_version())
+            logger.debug('Downloading eip config from: %s' % config_uri)
+
+            res = self._session.get(config_uri,
                                     verify=self._provider_config
                                     .get_ca_cert_path(),
                                     headers=headers)
@@ -176,15 +179,15 @@ class EIPBootstrapper(QtCore.QObject):
             cookies = None
             if session_id:
                 cookies = {"_session_id": session_id}
-            res = self._session.get("%s/%s/%s/" %
-                                    (self._provider_config.get_api_uri(),
-                                     self._provider_config.get_api_version(),
-                                     "cert"),
+            cert_uri = "%s/%s/cert" % (
+                self._provider_config.get_api_uri(),
+                self._provider_config.get_api_version())
+            logger.debug('getting cert from uri: %s' % cert_uri)
+            res = self._session.get(cert_uri,
                                     verify=self._provider_config
                                     .get_ca_cert_path(),
                                     cookies=cookies)
             res.raise_for_status()
-
             client_cert = res.content
 
             # TODO: check certificate validity
