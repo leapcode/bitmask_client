@@ -4,7 +4,7 @@
     * [ ] all rc-critical closed!
     * [ ] all bbots green
     * [ ] uploaded translations: make translations
-    * [ ] re-generate pyqt resources
+    * [ ] re-generate pyside resources
     
   * [ ] update docs
     * [ ] CREDITS

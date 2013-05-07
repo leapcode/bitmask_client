@@ -10,9 +10,9 @@ Dependencies
 ------------
 
 * ``openvpn``
-* ``python-qt4``
+* ``python-pyside``
 * ``python-crypto``
-* ``python setuptools``
+* ``python-setuptools``
 * ``python-requests``
 * ``python-openssl``
 
