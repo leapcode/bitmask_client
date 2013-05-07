@@ -38,7 +38,7 @@ pip install -e 'git://leap.se/leap_client@develop#egg=leap-client'
 
 cd leap-client-testbuild
 
-# symlink the pyqt libraries to the system libs
+# symlink the pyside libraries to the system libs
 ./src/leap-client/pkg/postmkvenv.sh
 
 echo "${cc_green}leap-client installed! =)"
