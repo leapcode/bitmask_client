@@ -82,6 +82,8 @@ class SRPAuth(QtCore.QObject):
             self._session_id_lock = QtCore.QMutex()
             self._uid = None
             self._uid_lock = QtCore.QMutex()
+            self._token = None
+            self._token_lock = QtCore.QMutex()
 
             self._srp_user = None
             self._srp_a = None
@@ -240,10 +242,12 @@ class SRPAuth(QtCore.QObject):
 
             M2 = auth_result.json().get("M2", None)
             uid = auth_result.json().get("id", None)
+            token = auth_result.json().get("token", None)
 
             events_signal(proto.CLIENT_UID, content=uid)
 
             self.set_uid(uid)
+            self.set_token(token)
 
             if M2 is None or self.get_uid() is None:
                 logger.error("Something went wrong. Content = %r" %
@@ -355,6 +359,14 @@ class SRPAuth(QtCore.QObject):
         def get_uid(self):
             QtCore.QMutexLocker(self._uid_lock)
             return self._uid
+
+        def set_token(self, token):
+            QtCore.QMutexLocker(self._token_lock)
+            self._token = token
+
+        def get_token(self, token):
+            QtCore.QMutexLocker(self._token_lock)
+            return self._token
 
     __instance = None
 
