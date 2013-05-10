@@ -38,7 +38,6 @@ from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.platform_init import IS_MAC, IS_WIN
-from leap.platform_init.locks import WindowsLock
 from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpn import VPN
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
@@ -47,6 +46,9 @@ from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             EIPNoPolkitAuthAgentAvailable)
 from leap.util import __version__ as VERSION
 from leap.util.checkerthread import CheckerThread
+
+if IS_WIN:
+    from leap.platform_init.locks import WindowsLock
 
 from ui_mainwindow import Ui_MainWindow
 
