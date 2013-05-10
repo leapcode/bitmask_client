@@ -17,7 +17,6 @@
 """
 Utilities for handling multi-platform file locking mechanisms
 """
-import commands
 import logging
 import errno
 import os
@@ -30,10 +29,8 @@ from leap import platform_init
 if platform_init.IS_UNIX:
     from fcntl import flock, LOCK_EX, LOCK_NB
 else:
-    import errno
     import glob
     import shutil
-    import socket
 
     from tempfile import gettempdir
 
@@ -177,7 +174,7 @@ if platform_init.IS_WIN:
             """
             try:
                 self._fd = os.makedirs(self.name)
-            except WindowsError as exc:
+            except OSError as exc:
                 # could not create the dir
                 if exc.args[0] == 183:
                     logger.debug('cannot create dir')
@@ -218,8 +215,7 @@ if platform_init.IS_WIN:
             try:
                 shutil.rmtree(self.name)
                 return True
-
-            except WindowsError as exc:
+            except shutil.WindowsError as exc:
                 if exc.errno in (errno.EPIPE, errno.ENOENT,
                                  errno.ESRCH, errno.EACCES):
                     logger.warning(
