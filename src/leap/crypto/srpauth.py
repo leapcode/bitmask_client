@@ -20,12 +20,14 @@ import logging
 
 import requests
 import srp
+import json
 
 from PySide import QtCore, QtGui
 
 from leap.common.check import leap_assert
 from leap.config.providerconfig import ProviderConfig
 from leap.util.checkerthread import CheckerThread
+from leap.util.request_helpers import get_content
 from leap.common.events import signal as events_signal
 from leap.common.events import events_pb2 as proto
 
@@ -159,14 +161,18 @@ class SRPAuth(QtCore.QObject):
                 raise SRPAuthenticationError("Unknown error: %r" %
                                              (e,))
 
+            content, mtime = get_content(init_session)
+
             if init_session.status_code not in (200,):
                 logger.error("No valid response (salt): "
                              "Status code = %r. Content: %r" %
-                             (init_session.status_code, init_session.content))
+                             (init_session.status_code, content))
                 if init_session.status_code == 422:
                     raise SRPAuthenticationError(self.tr("Unknown user"))
-            salt = init_session.json().get("salt", None)
-            B = init_session.json().get("B", None)
+
+            json_content = json.loads(content)
+            salt = json_content.get("salt", None)
+            B = json_content.get("B", None)
 
             if salt is None:
                 logger.error("No salt parameter sent")
@@ -226,22 +232,25 @@ class SRPAuth(QtCore.QObject):
                 raise SRPAuthenticationError(self.tr("Could not connect to "
                                                      "the server"))
 
+            content, mtime = get_content(auth_result)
+
             if auth_result.status_code == 422:
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
                              (auth_result.status_code,
-                              auth_result.json().
+                              content.
                               get("errors", "")))
                 raise SRPAuthenticationError(self.tr("Wrong password"))
 
             if auth_result.status_code not in (200,):
                 logger.error("No valid response (HAMK): "
                              "Status code = %s. Content = %r" %
-                             (auth_result.status_code, auth_result.content))
+                             (auth_result.status_code, content))
                 raise SRPAuthenticationError(self.tr("Unknown error (%s)") %
                                              (auth_result.status_code,))
 
-            M2 = auth_result.json().get("M2", None)
-            uid = auth_result.json().get("id", None)
+            json_content = json.loads(content)
+            M2 = json_content.get("M2", None)
+            uid = json_content.get("id", None)
             token = auth_result.json().get("token", None)
 
             events_signal(proto.CLIENT_UID, content=uid)
@@ -251,7 +260,7 @@ class SRPAuth(QtCore.QObject):
 
             if M2 is None or self.get_uid() is None:
                 logger.error("Something went wrong. Content = %r" %
-                             (auth_result.content,))
+                             (content,))
                 raise SRPAuthenticationError(self.tr("Problem getting data "
                                                      "from server"))
 

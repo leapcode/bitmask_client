@@ -20,6 +20,7 @@ First run wizard
 """
 import os
 import logging
+import json
 
 from PySide import QtCore, QtGui
 from functools import partial
@@ -28,6 +29,7 @@ from ui_wizard import Ui_Wizard
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpregister import SRPRegister
 from leap.util.privilege_policies import is_missing_policy_permissions
+from leap.util.request_helpers import get_content
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 
 logger = logging.getLogger(__name__)
@@ -254,7 +256,9 @@ class Wizard(QtGui.QWizard):
             self._password = None
             error_msg = self.tr("Unknown error")
             try:
-                error_msg = req.json().get("errors").get("login")[0]
+                content, _ = get_content(req)
+                json_content = json.loads(content)
+                error_msg = json_content.get("errors").get("login")[0]
                 if not error_msg.istitle():
                     error_msg = "%s %s" % (old_username, error_msg)
                 self._set_register_status(error_msg, error=True)
