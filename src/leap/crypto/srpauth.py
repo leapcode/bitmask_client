@@ -251,7 +251,7 @@ class SRPAuth(QtCore.QObject):
             json_content = json.loads(content)
             M2 = json_content.get("M2", None)
             uid = json_content.get("id", None)
-            token = auth_result.json().get("token", None)
+            token = json_content.get("token", None)
 
             events_signal(proto.CLIENT_UID, content=uid)
 
