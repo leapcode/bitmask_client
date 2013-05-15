@@ -37,6 +37,7 @@ from leap.gui.wizard import Wizard
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
+from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.platform_init import IS_MAC, IS_WIN
 from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpn import VPN
@@ -175,6 +176,10 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_bootstrapper.download_client_certificate.connect(
             self._finish_eip_bootstrap)
 
+        self._soledad_bootstrapper = SoledadBootstrapper()
+        self._soledad_bootstrapper.download_config.connect(
+            self._soledad_bootstrapped_stage)
+
         self._vpn = VPN()
         self._vpn.state_changed.connect(self._update_vpn_state)
         self._vpn.status_changed.connect(self._update_vpn_status)
@@ -232,6 +237,8 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard_firstrun = False
 
         self._bypass_checks = bypass_checks
+
+        self._soledad = None
 
         if self._first_run():
             self._wizard_firstrun = True
@@ -686,7 +693,34 @@ class MainWindow(QtGui.QMainWindow):
         """
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
         self._systray.setIcon(self.LOGGED_IN_ICON)
+
+        self._soledad_bootstrapper.run_soledad_setup_checks(
+            self._checker_thread,
+            self._provider_config,
+            self.ui.lnUser.text(),
+            self.ui.lnPassword.text(),
+            download_if_needed=True)
+
         self._download_eip_config()
+
+    def _soledad_bootstrapped_stage(self, data):
+        """
+        SLOT
+        TRIGGERS:
+          self._soledad_bootstrapper.download_config
+
+        If there was a problem, displays it, otherwise it does nothing.
+        This is used for intermediate bootstrapping stages, in case
+        they fail.
+
+        :param data: result from the bootstrapping stage for Soledad
+        :type data: dict
+        """
+        passed = data[self._soledad_bootstrapper.PASSED_KEY]
+        if not passed:
+            logger.error(data[self._soledad_bootstrapper.ERROR_KEY])
+        else:
+            logger.debug("Done bootstrapping Soledad")
 
     def _get_socket_host(self):
         """

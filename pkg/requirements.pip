@@ -16,4 +16,8 @@ ipaddr
 twisted
 qt4reactor
 
-leap.common>=0.2.3-dev
+leap.common>=0.2.4
+# TODO: add soledad dependency
+
+# Remove this when nickserver is online
+mock

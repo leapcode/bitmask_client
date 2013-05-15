@@ -373,7 +373,7 @@ class SRPAuth(QtCore.QObject):
             QtCore.QMutexLocker(self._token_lock)
             self._token = token
 
-        def get_token(self, token):
+        def get_token(self):
             QtCore.QMutexLocker(self._token_lock)
             return self._token
 
@@ -430,6 +430,12 @@ class SRPAuth(QtCore.QObject):
 
     def get_session_id(self):
         return self.__instance.get_session_id()
+
+    def get_uid(self):
+        return self.__instance.get_uid()
+
+    def get_token(self):
+        return self.__instance.get_token()
 
     def logout(self):
         """
