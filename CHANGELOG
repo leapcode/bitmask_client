@@ -1,0 +1,39 @@
+0.2.1 May 15:
+  o Rewrite most of the client based on the insight gained so far.
+  o Deselecting the remember checkbox makes the app not populate
+    user/password values on the login widget. Closes #2059
+  o Rewording of setup steps in wizard, to make them more meaningful
+    to the non-technical user. Closes #2061
+  o Fix typo in wizard.
+  o Fix multiple drawing of services if going back.
+  o Make registration errors show in red.
+  o Add a warning if EIP service needs admin password. Addresses part
+    of #2062
+  o Make traffic indicators display fixed precision. Closes #2114
+  o Do not hide the application if the user right clicked the system
+    tray icon.
+  o Sanitize network-fetched content that is used to build openvpn
+    command.
+  o Avoids multiple instances of leap-client. Each new one just raises
+    the existing instance and quits.
+  o Use dark eip icons os osx. Closes #2130
+  o Moves BaseConfig to leap.common.config. Closes #2164
+  o Add handling for ASSIGN_IP state from OpenVPN in the mainwindow.
+  o Emit events notifying of the session_id and uid after
+    authentication so other services can make use of it. Closes #1957
+  o Working packaging workflow with rewritten client, using
+    pyinstaller and platypus.
+  o Remove network checks temporarily until we find a good way of
+    doing it, and a good way to deal with them.
+  o Saves the token to allow token authenticated queries.
+  o Turn "leap" into namespace package, move common files to
+    leap_common package that can be shared by other LEAP projects.
+  o Support standalone configurations for distribution in thumbdrives
+    and the like.
+  o Add support for requests < 1.0.0
+  o Tests infrastructure, and tests for crypto/srpauth and crypto/srpregister.
+  o Documentation updated for 0.2.1 release.
+  o Docstrings style changed to fit sphinx autodoc format.
+  o Add a simple UI to notify of pending updates.
+  o Add Windows support.
+  o Try to install TAP driver on Windows if no tap device is preset.

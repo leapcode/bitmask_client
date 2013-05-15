@@ -1,3 +1,0 @@
-  o Rewrite most of the client based on the insight gained so far.
-  o Remove network checks temporarily until we find a good way of
-    doing it, and a good way to deal with them.
