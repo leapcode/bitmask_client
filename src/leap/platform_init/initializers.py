@@ -28,6 +28,9 @@ from PySide import QtGui
 
 logger = logging.getLogger(__name__)
 
+# NOTE we could use a deferToThread here, but should
+# be aware of this bug: http://www.themacaque.com/?p=1067
+
 
 def init_platform():
     """
