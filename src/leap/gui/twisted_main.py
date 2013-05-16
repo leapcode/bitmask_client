@@ -19,6 +19,8 @@ Main functions for integration of twisted reactor
 """
 import logging
 
+from twisted.internet import error
+
 # Resist the temptation of putting the import reactor here,
 # it will raise an "reactor already imported" error.
 
@@ -46,4 +48,7 @@ def quit(app):
     """
     from twisted.internet import reactor
     logger.debug('stopping twisted reactor')
-    reactor.stop()
+    try:
+        reactor.stop()
+    except error.ReactorNotRunning:
+        logger.debug('reactor not running')
