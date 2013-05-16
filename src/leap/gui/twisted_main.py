@@ -36,7 +36,13 @@ def start(app):
     """
     from twisted.internet import reactor
     logger.debug('starting twisted reactor')
-    reactor.run()
+
+    # this seems to be troublesome under some
+    # unidentified settings.
+    #reactor.run()
+
+    reactor.runReturn()
+    app.exec_()
 
 
 def quit(app):
