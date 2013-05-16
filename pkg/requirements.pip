@@ -13,5 +13,7 @@ keyring
 python-dateutil
 psutil
 ipaddr
+twisted
+qt4reactor
 
-leap.common>=0.2.1-dev
+leap.common>=0.2.3-dev

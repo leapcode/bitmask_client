@@ -71,15 +71,22 @@ class MainWindow(QtGui.QMainWindow):
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
 
-    def __init__(self, standalone=False, bypass_checks=False):
+    def __init__(self, quit_callback,
+                 standalone=False, bypass_checks=False):
         """
         Constructor for the client main window
 
+        :param quit_callback: Function to be called when closing
+                              the application.
+        :type quit_callback: callable
+
         :param standalone: Set to true if the app should use configs
-        inside its pwd
+                           inside its pwd
         :type standalone: bool
+
         :param bypass_checks: Set to true if the app should bypass
-        first round of checks for CA certificates at bootstrap
+                              first round of checks for CA
+                              certificates at bootstrap
         :type bypass_checks: bool
         """
         QtGui.QMainWindow.__init__(self)
@@ -89,6 +96,7 @@ class MainWindow(QtGui.QMainWindow):
                  callback=self._new_updates_available)
         register(signal=proto.RAISE_WINDOW,
                  callback=self._on_raise_window_event)
+        self._quit_callback = quit_callback
 
         self._updates_content = ""
 
@@ -172,27 +180,6 @@ class MainWindow(QtGui.QMainWindow):
         self._vpn.status_changed.connect(self._update_vpn_status)
         self._vpn.process_finished.connect(
             self._eip_finished)
-
-        QtCore.QCoreApplication.instance().connect(
-            QtCore.QCoreApplication.instance(),
-            QtCore.SIGNAL("aboutToQuit()"),
-            self._vpn.set_should_quit)
-        QtCore.QCoreApplication.instance().connect(
-            QtCore.QCoreApplication.instance(),
-            QtCore.SIGNAL("aboutToQuit()"),
-            self._vpn.wait)
-        QtCore.QCoreApplication.instance().connect(
-            QtCore.QCoreApplication.instance(),
-            QtCore.SIGNAL("aboutToQuit()"),
-            self._checker_thread.set_should_quit)
-        QtCore.QCoreApplication.instance().connect(
-            QtCore.QCoreApplication.instance(),
-            QtCore.SIGNAL("aboutToQuit()"),
-            self._checker_thread.wait)
-        QtCore.QCoreApplication.instance().connect(
-            QtCore.QCoreApplication.instance(),
-            QtCore.SIGNAL("aboutToQuit()"),
-            self._cleanup_pidfiles)
 
         self.ui.chkRemember.stateChanged.connect(
             self._remember_state_changed)
@@ -446,12 +433,6 @@ class MainWindow(QtGui.QMainWindow):
                     "and widely available. "
                     "<a href=\"https://leap.se\">More about LEAP"
                     "</a>") % (VERSION,))
-
-    def quit(self):
-        self._really_quit = True
-        if self._wizard:
-            self._wizard.close()
-        self.close()
 
     def changeEvent(self, e):
         """
@@ -976,16 +957,41 @@ class MainWindow(QtGui.QMainWindow):
 
     def _cleanup_pidfiles(self):
         """
-        SLOT
-        TRIGGERS:
-            self.aboutToQuit
+        Removes lockfiles on a clean shutdown.
 
-        Triggered on about to quit signal, removes lockfiles on a clean
-        shutdown
+        Triggered after aboutToQuit signal.
         """
         if IS_WIN:
             lockfile = WindowsLock()
             lockfile.release_lock()
+
+    def _cleanup_and_quit(self):
+        """
+        Call all the cleanup actions in a serialized way.
+        Should be called from the quit function.
+        """
+        logger.debug('About to quit, doing cleanup...')
+        self._vpn.set_should_quit()
+        self._vpn.wait()
+        self._checker_thread.set_should_quit()
+        self._checker_thread.wait()
+        self._cleanup_pidfiles()
+
+    def quit(self):
+        """
+        Cleanup and tidely close the main window before quitting.
+        """
+        self._cleanup_and_quit()
+
+        self._really_quit = True
+        if self._wizard:
+            self._wizard.close()
+        self.close()
+
+        if self._quit_callback:
+            self._quit_callback()
+        logger.debug('Bye.')
+
 
 if __name__ == "__main__":
     import signal

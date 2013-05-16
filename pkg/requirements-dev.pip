@@ -11,5 +11,6 @@
 #       to install it. (do it after python setup.py develop and it
 #       will only install this)
 
--e git+git://github.com/leapcode/leap_pycommon.git@develop#egg=leap.common
 sphinx
+
+-e git+git://github.com/leapcode/leap_pycommon.git@develop#egg=leap.common

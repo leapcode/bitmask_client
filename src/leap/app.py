@@ -17,7 +17,6 @@
 
 import logging
 import signal
-import socket
 import sys
 
 from functools import partial
@@ -28,13 +27,18 @@ from leap.common.events import server as event_server
 from leap.util import __version__ as VERSION
 from leap.util import leap_argparse
 from leap.gui import locale_rc
+from leap.gui import twisted_main
 from leap.gui.mainwindow import MainWindow
 from leap.platform_init import IS_MAC
 from leap.platform_init.locks import we_are_the_one_and_only
+from leap.services.tx import leap_services
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
+
+# pylint: avoid unused import
+assert(locale_rc)
 
 
 def sigint_handler(*args, **kwargs):
@@ -48,9 +52,15 @@ def sigint_handler(*args, **kwargs):
     mainwindow.quit()
 
 
+def install_qtreactor(logger):
+    import qt4reactor
+    qt4reactor.install()
+    logger.debug("Qt4 reactor installed")
+
+
 def main():
     """
-    Launches the main event loop
+    Starts the main event loop and launches the main window.
     """
     event_server.ensure_server(event_server.SERVER_PORT)
 
@@ -96,6 +106,9 @@ def main():
     logger.info('Starting app')
     app = QtGui.QApplication(sys.argv)
 
+    # install the qt4reactor.
+    install_qtreactor(logger)
+
     # To test:
     # $ LANG=es ./app.py
     locale = QtCore.QLocale.system().name()
@@ -119,7 +132,10 @@ def main():
     timer.start(500)
     timer.timeout.connect(lambda: None)
 
-    window = MainWindow(standalone, bypass_checks)
+    window = MainWindow(
+        lambda: twisted_main.quit(app),
+        standalone=standalone,
+        bypass_checks=bypass_checks)
     window.show()
 
     sigint_window = partial(sigint_handler, window, logger=logger)
@@ -128,8 +144,11 @@ def main():
     if IS_MAC:
         window.raise_()
 
+    tx_app = leap_services()
+    assert(tx_app)
+
     # Run main loop
-    sys.exit(app.exec_())
+    twisted_main.start(app)
 
 if __name__ == "__main__":
     main()
