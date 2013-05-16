@@ -14,3 +14,4 @@
 sphinx
 
 -e git+git://github.com/leapcode/leap_pycommon.git@develop#egg=leap.common
+-e git+git://github.com/leapcode/soledad.git@develop#egg=leap.soledad

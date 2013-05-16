@@ -17,7 +17,7 @@ twisted
 qt4reactor
 
 leap.common>=0.2.4
-# TODO: add soledad dependency
+leap.soledad>=0.1.0
 
 # Remove this when nickserver is online
 mock
