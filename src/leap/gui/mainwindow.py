@@ -25,7 +25,9 @@ import tempfile
 from functools import partial
 
 import keyring
+
 from PySide import QtCore, QtGui
+from mock import Mock
 
 from leap.common.check import leap_assert
 from leap.common.events import register
@@ -38,6 +40,7 @@ from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
+from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
 from leap.platform_init import IS_MAC, IS_WIN
 from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpn import VPN
@@ -47,6 +50,8 @@ from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             EIPNoPolkitAuthAgentAvailable)
 from leap.util import __version__ as VERSION
 from leap.util.checkerthread import CheckerThread
+
+from leap.services.mail.smtpconfig import SMTPConfig
 
 if IS_WIN:
     from leap.platform_init.locks import WindowsLock
@@ -67,6 +72,10 @@ class MainWindow(QtGui.QMainWindow):
 
     # Keyring
     KEYRING_KEY = "leap_client"
+
+    # SMTP
+    PORT_KEY = "port"
+    IP_KEY = "ip_address"
 
     # Signals
     new_updates = QtCore.Signal(object)
@@ -177,8 +186,12 @@ class MainWindow(QtGui.QMainWindow):
             self._finish_eip_bootstrap)
 
         self._soledad_bootstrapper = SoledadBootstrapper()
-        self._soledad_bootstrapper.download_config.connect(
+        self._soledad_bootstrapper.gen_key.connect(
             self._soledad_bootstrapped_stage)
+
+        self._smtp_bootstrapper = SMTPBootstrapper()
+        self._smtp_bootstrapper.download_config.connect(
+            self._smtp_bootstrapped_stage)
 
         self._vpn = VPN()
         self._vpn.state_changed.connect(self._update_vpn_state)
@@ -239,6 +252,9 @@ class MainWindow(QtGui.QMainWindow):
         self._bypass_checks = bypass_checks
 
         self._soledad = None
+        self._keymanager = None
+
+        self._smtp_config = SMTPConfig()
 
         if self._first_run():
             self._wizard_firstrun = True
@@ -707,7 +723,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self._soledad_bootstrapper.download_config
+          self._soledad_bootstrapper.gen_key
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
@@ -721,6 +737,55 @@ class MainWindow(QtGui.QMainWindow):
             logger.error(data[self._soledad_bootstrapper.ERROR_KEY])
         else:
             logger.debug("Done bootstrapping Soledad")
+
+            self._soledad = data[self._soledad_bootstrapper.SOLEDAD_KEY]
+            self._keymanager = data[self._soledad_bootstrapper.KEYMANAGER_KEY]
+
+            self._smtp_bootstrapper.run_smtp_setup_checks(
+                self._checker_thread,
+                self._provider_config,
+                self._smtp_config,
+                True)
+
+    def _smtp_bootstrapped_stage(self, data):
+        """
+        SLOT
+        TRIGGERS:
+          self._smtp_bootstrapper.download_config
+
+        If there was a problem, displays it, otherwise it does nothing.
+        This is used for intermediate bootstrapping stages, in case
+        they fail.
+
+        :param data: result from the bootstrapping stage for Soledad
+        :type data: dict
+        """
+        passed = data[self._smtp_bootstrapper.PASSED_KEY]
+        if not passed:
+            logger.error(data[self._smtp_bootstrapper.ERROR_KEY])
+        else:
+            logger.debug("Done bootstrapping SMTP")
+
+            hosts = self._smtp_config.get_hosts()
+            # TODO: handle more than one host and define how to choose
+            if len(hosts) > 0:
+                hostname = hosts.keys()[0]
+                logger.debug("Using hostname %s for SMTP" % (hostname,))
+                host = hosts[hostname][self.IP_KEY].encode("utf-8")
+                port = hosts[hostname][self.PORT_KEY]
+                # TODO: pick local smtp port in a better way
+                # TODO: Make the encrypted_only configurable
+
+                # TODO: Remove mocking!!!
+                self._keymanager.fetch_keys_from_server = Mock(return_value=[])
+                from leap.mail.smtp import setup_smtp_relay
+                setup_smtp_relay(port=1234,
+                                 keymanager=self._keymanager,
+                                 smtp_host=host,
+                                 smtp_port=port,
+                                 smtp_username=".",
+                                 smtp_password=".",
+                                 encrypted_only=False)
 
     def _get_socket_host(self):
         """

@@ -47,6 +47,8 @@ class SoledadBootstrapper(QtCore.QObject):
 
     PASSED_KEY = "passed"
     ERROR_KEY = "error"
+    SOLEDAD_KEY = "soledad"
+    KEYMANAGER_KEY = "keymanager"
 
     PUBKEY_KEY = "user[public_key]"
 
@@ -199,7 +201,9 @@ class SoledadBootstrapper(QtCore.QObject):
 
         genkey_data = {
             self.PASSED_KEY: False,
-            self.ERROR_KEY: ""
+            self.ERROR_KEY: "",
+            self.SOLEDAD_KEY: None,
+            self.KEYMANAGER_KEY: None
         }
 
         try:
@@ -245,6 +249,8 @@ class SoledadBootstrapper(QtCore.QObject):
                                            cookies=cookies)
             key_result.raise_for_status()
             genkey_data[self.PASSED_KEY] = True
+            genkey_data[self.SOLEDAD_KEY] = self._soledad
+            genkey_data[self.KEYMANAGER_KEY] = self._keymanager
         except Exception as e:
             genkey_data[self.PASSED_KEY] = False
             genkey_data[self.ERROR_KEY] = "%s" % (e,)
