@@ -41,7 +41,11 @@ If you are testing a new provider and do not have a CA certificate chain tied to
 
   $ leap-client --danger
 
-Beware this is only for testing, its usage is *highly* discouraged.
+But **DO NOT use it on a regular bases**.
+
+**WARNING**: If you use the --danger flag you may be victim to a MITM_ attack without noticing. Use at your own risk.
+
+.. _MITM: http://en.wikipedia.org/wiki/Man-in-the-middle_attack
 
 Hacking
 =======
@@ -69,6 +73,16 @@ And make your working tree available to your pythonpath::
 
   (leap_client)$ python setup.py develop
 
+Run the client::
+
+  (leap_client)$ python src/leap/app.py -d
+
+
+If you are testing a new provider that doesn't have the proper certificates yet, you can use --danger flag, but **DO NOT use it on a regular bases**.
+
+**WARNING**: If you use the --danger flag you may be victim to a MITM_ attack without noticing. Use at your own risk.
+
+.. _MITM: http://en.wikipedia.org/wiki/Man-in-the-middle_attack
 
 Testing
 =======
