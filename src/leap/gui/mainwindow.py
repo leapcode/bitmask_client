@@ -370,15 +370,22 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.chkRemember.setChecked(True)
                 self.ui.chkAutoLogin.setEnabled(self.ui.chkRemember
                                                 .isEnabled())
-                saved_password = keyring.get_password(self.KEYRING_KEY,
-                                                      saved_user
-                                                      .encode("utf8"))
+
+                saved_password = None
+                try:
+                    saved_password = keyring.get_password(self.KEYRING_KEY,
+                                                          saved_user
+                                                          .encode("utf8"))
+                except ValueError, e:
+                    logger.debug("Incorrect Password. %r." % (e,))
+
                 if saved_password is not None:
                     self.ui.lnPassword.setText(saved_password.decode("utf8"))
 
                 # Only automatically login if there is a saved user
+                # and the password was retrieved right
                 self.ui.chkAutoLogin.setChecked(auto_login)
-                if auto_login:
+                if auto_login and saved_password:
                     self._login()
 
     def _show_systray(self):
