@@ -124,9 +124,16 @@ def _has_updown_scripts(path):
 
 
 def _is_auth_agent_running():
-    return len(
-        commands.getoutput(
-            'ps aux | grep polkit-[g]nome-authentication-agent-1')) > 0
+    """
+    Checks if a polkit daemon is running.
+
+    :return: True if it's running, False if it's not.
+    :rtype: boolean
+    """
+    polkit_gnome = 'ps aux | grep polkit-[g]nome-authentication-agent-1'
+    polkit_kde = 'ps aux | grep polkit-[k]de-authentication-agent-1'
+    return (len(commands.getoutput(polkit_gnome) > 0) or
+            len(commands.getoutput(polkit_kde)) > 0)
 
 
 class LinuxVPNLauncher(VPNLauncher):
