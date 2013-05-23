@@ -420,12 +420,21 @@ class MainWindow(QtGui.QMainWindow):
 
         Toggles the window visibility
         """
+        get_action = lambda visible: (
+            self.tr("Show"),
+            self.tr("Hide"))[int(visible)]
+
+        minimized = self.isMinimized()
+
         if reason != QtGui.QSystemTrayIcon.Context:
+            # do show
+            if minimized:
+                self.showNormal()
             self.setVisible(not self.isVisible())
-            action_visible_text = self.tr("Hide")
-            if not self.isVisible():
-                action_visible_text = self.tr("Show")
-            self._action_visible.setText(action_visible_text)
+
+            # set labels
+            visible = self.isVisible()
+            self._action_visible.setText(get_action(visible))
 
     def _center_window(self):
         """
