@@ -3,6 +3,9 @@ The LEAP Encryption Access Project Client
 
 *your internet encryption toolkit*
 
+.. image:: https://pypip.in/v/leap-client/badge.png
+        :target: https://crate.io/packages/leap.client
+
 Dependencies
 ------------------
 
