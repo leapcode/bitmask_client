@@ -35,6 +35,7 @@ from leap.common.events import events_pb2 as proto
 from leap.config.leapsettings import LeapSettings
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
+from leap.gui.loggerwindow import LoggerWindow
 from leap.gui.wizard import Wizard
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
@@ -208,6 +209,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
+        self.ui.action_show_logs.triggered.connect(self._show_logger_window)
         self.raise_window.connect(self._do_raise_mainwindow)
 
         # Used to differentiate between real quits and close to tray
@@ -249,6 +251,8 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard = None
         self._wizard_firstrun = False
 
+        self._logger_window = None
+
         self._bypass_checks = bypass_checks
 
         self._soledad = None
@@ -281,6 +285,35 @@ class MainWindow(QtGui.QMainWindow):
                                   bypass_checks=self._bypass_checks)
         self._wizard.exec_()
         self._wizard = None
+
+    def _get_leap_logging_handler(self):
+        """
+        Gets the leap handler from the top level logger
+
+        :return: a logging handler or None
+        :rtype: LeapLogHandler or None
+        """
+        from leap.util.leap_log_handler import LeapLogHandler
+        leap_logger = logging.getLogger('leap')
+        for h in leap_logger.handlers:
+            if isinstance(h, LeapLogHandler):
+                return h
+        return None
+
+    def _show_logger_window(self):
+        """
+        Displays the window with the history of messages logged until now
+        and displays the new ones on arrival.
+        """
+        if self._logger_window is None:
+            leap_log_handler = self._get_leap_logging_handler()
+            if leap_log_handler is None:
+                logger.error('Leap logger handler not found')
+            else:
+                self._logger_window = LoggerWindow(handler=leap_log_handler)
+                self._logger_window.show()
+        else:
+            self._logger_window.show()
 
     def _remember_state_changed(self, state):
         enable = True if state == QtCore.Qt.Checked else False
@@ -1101,6 +1134,10 @@ class MainWindow(QtGui.QMainWindow):
         self._really_quit = True
         if self._wizard:
             self._wizard.close()
+
+        if self._logger_window:
+            self._logger_window.close()
+
         self.close()
 
         if self._quit_callback:

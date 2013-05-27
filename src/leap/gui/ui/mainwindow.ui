@@ -396,7 +396,7 @@
      <x>0</x>
      <y>0</y>
      <width>415</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSession">
@@ -417,9 +417,10 @@
    </widget>
    <widget class="QMenu" name="menuSettings">
     <property name="title">
-     <string>S&amp;ettings</string>
+     <string>&amp;Utils</string>
     </property>
     <addaction name="action_wizard"/>
+    <addaction name="action_show_logs"/>
    </widget>
    <addaction name="menuSession"/>
    <addaction name="menuSettings"/>
@@ -449,6 +450,11 @@
   <action name="action_wizard">
    <property name="text">
     <string>&amp;Wizard</string>
+   </property>
+  </action>
+  <action name="action_show_logs">
+   <property name="text">
+    <string>Show &amp;logs</string>
    </property>
   </action>
  </widget>
