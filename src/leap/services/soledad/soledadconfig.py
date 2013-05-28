@@ -45,4 +45,3 @@ class SoledadConfig(BaseConfig):
 
     def get_locations(self):
         return self._safe_get_value("locations")
-

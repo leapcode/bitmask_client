@@ -22,6 +22,9 @@ import requests
 import srp
 import json
 
+#this error is raised from requests
+from simplejson.decoder import JSONDecodeError
+
 from PySide import QtCore, QtGui
 
 from leap.common.check import leap_assert
@@ -232,7 +235,10 @@ class SRPAuth(QtCore.QObject):
                 raise SRPAuthenticationError(self.tr("Could not connect to "
                                                      "the server"))
 
-            content, mtime = get_content(auth_result)
+            try:
+                content, mtime = get_content(auth_result)
+            except JSONDecodeError:
+                raise SRPAuthenticationError("Bad JSON content in auth result")
 
             if auth_result.status_code == 422:
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
@@ -319,6 +325,7 @@ class SRPAuth(QtCore.QObject):
             self._authentication_preprocessing(username, password)
             salt, B = self._start_authentication(username, password)
             M2 = self._process_challenge(salt, B, username)
+
             self._verify_session(M2)
 
             leap_assert(self.get_session_id(), "Something went wrong because"

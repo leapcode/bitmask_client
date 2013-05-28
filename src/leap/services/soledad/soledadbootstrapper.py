@@ -218,7 +218,8 @@ class SoledadBootstrapper(QtCore.QObject):
                 self._keymanager.get_key(address, openpgp.OpenPGPKey,
                                          private=True, fetch_remote=False)
             except KeyNotFound:
-                logger.debug("Key not found. Generating key for %s" % (address,))
+                logger.debug(
+                    "Key not found. Generating key for %s" % (address,))
                 self._keymanager.gen_key(openpgp.OpenPGPKey)
 
                 logger.debug("Key generated successfully.")
@@ -235,8 +236,9 @@ class SoledadBootstrapper(QtCore.QObject):
 
             logger.debug("Uploading public key to %s" % (key_uri,))
 
-            pubkey = self._keymanager.get_key(address, openpgp.OpenPGPKey,
-                                              private=False, fetch_remote=False)
+            pubkey = self._keymanager.get_key(
+                address, openpgp.OpenPGPKey,
+                private=False, fetch_remote=False)
             key_data = {
                 self.PUBKEY_KEY: pubkey.key_data,
             }
