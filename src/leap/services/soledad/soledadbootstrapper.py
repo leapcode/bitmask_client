@@ -29,8 +29,8 @@ from mock import Mock
 
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
-from leap.common.keymanager import KeyManager, openpgp
-from leap.common.keymanager.errors import KeyNotFound
+from leap.keymanager import KeyManager, openpgp
+from leap.keymanager.errors import KeyNotFound
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
 from leap.services.soledad.soledadconfig import SoledadConfig

@@ -21,6 +21,11 @@ versioneer.versionfile_build = 'leap/_version.py'
 versioneer.tag_prefix = ''  # tags are like 1.2.0
 versioneer.parentdir_prefix = 'leap_client-'
 
+# The following import avoids the premature unloading of the `util` submodule
+# when running tests, which would cause an error when nose finishes tests and
+# calls the exit function of the multiprocessing module.
+from multiprocessing import util
+
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
 
@@ -64,10 +69,9 @@ setup(
     ),
     classifiers=trove_classifiers,
     install_requires=utils.parse_requirements(),
-    # Uncomment when tests are done
-    # test_suite='nose.collector',
-    # test_requires=utils.parse_requirements(
-    #     reqfiles=['pkg/test-requirements.pip']),
+    test_suite='nose.collector',
+    tests_require=utils.parse_requirements(
+        reqfiles=['pkg/requirements-testing.pip']),
     keywords='LEAP, client, qt, encryption, proxy, openvpn',
     author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
