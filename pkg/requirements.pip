@@ -1,11 +1,11 @@
 # in order of addition to the project.
-# do not change the ordering.
+# try not to change the ordering.
 #
-argparse
-#
-PySide
+# PySide -- It's a requirement indeed, but
+# it gives troubles when operating inside virtualenvs.
 # Use LEAP_VENV_SKIP_PYSIDE to avoid installing it!
 
+argparse
 requests
 srp>=1.0.2
 pyopenssl
@@ -16,7 +16,7 @@ ipaddr
 twisted
 qt4reactor
 
-leap.common>=0.2.4
+leap.common>=0.2.5
 leap.soledad>=0.1.0
 
 # Remove this when nickserver is online

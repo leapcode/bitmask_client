@@ -116,10 +116,10 @@ class SMTPBootstrapper(QtCore.QObject):
             # Not modified
             if res.status_code == 304:
                 logger.debug("SMTP definition has not been modified")
-                self._smtp_config.load(os.path.join("leap",
-                                                    "providers",
-                                                    self._provider_config.get_domain(),
-                                                    "smtp-service.json"))
+                self._smtp_config.load(os.path.join(
+                    "leap", "providers",
+                    self._provider_config.get_domain(),
+                    "smtp-service.json"))
             else:
                 smtp_definition, mtime = get_content(res)
 

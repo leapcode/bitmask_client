@@ -64,7 +64,7 @@ done
 
 # If enabled, tell nose to collect coverage data
 if [ $coverage -eq 1 ]; then
-    noseopts="$noseopts --with-coverage --cover-package=leap-client"
+    noseopts="$noseopts --with-coverage --cover-package=leap"
 fi
 
 if [ $no_site_packages -eq 1 ]; then
@@ -74,7 +74,7 @@ fi
 # If alltests flag is not set, let's exclude some dirs that are troublesome.
 if [ $alltests -eq 0 ]; then
   echo "[+] Running ALL tests..."
-    #noseopts="$noseopts --exclude-dir=src/leap/exclude-me"
+  #noseopts="$noseopts --exclude-dir=leap/soledad"
 fi
 
 # If progressive flag enabled, run with this nice plugin :)
@@ -84,7 +84,9 @@ fi
 
 
 function run_tests {
+  echo "running tests..."
   # Just run the test suites in current environment
+  echo "NOSETESTS=$NOSETESTS"
   ${wrapper} $NOSETESTS
   # If we get some short import error right away, print the error log directly
   RESULT=$?
@@ -103,7 +105,9 @@ function run_pep8 {
 # in the current debhelper build process,
 # so I exclude the topmost tests
 
-NOSETESTS="nosetests leap $noseopts $noseargs"
+#NOSETESTS="nosetests leap --exclude=soledad* $noseopts $noseargs"
+NOSETESTS="$VIRTUAL_ENV/bin/nosetests . $noseopts $noseargs"
+#--with-coverage --cover-package=leap"
 
 if [ $never_venv -eq 0 ]
 then
@@ -150,9 +154,11 @@ if [ -z "$noseargs" ]; then
 fi
 
 function run_coverage {
-    cov_opts="--omit=`pwd`/src/leap/base/tests/*,`pwd`/src/leap/eip/tests/*,`pwd`/src/leap/gui/tests/*"
-    cov_opts="$cov_opts,`pwd`/src/leap/util/tests/* "
-    cov_opts="$cov_opts --include=`pwd`/src/leap/*" #,`pwd`/src/leap/eip/*"
+    cov_opts="--include=`pwd`/src/leap/*" #,`pwd`/src/leap/eip/*"
+    cov_opts="$cov_opts --omit=`pwd`/src/leap/gui/ui_*,`pwd`/src/leap/gui/*_rc.py*"
+    #cov_opts="--omit=`pwd`/src/leap/base/tests/*,`pwd`/src/leap/eip/tests/*,`pwd`/src/leap/gui/tests/*"
+    #cov_opts="$cov_opts,`pwd`/src/leap/util/tests/* "
+    #cov_opts="$cov_opts --include=`pwd`/src/leap/*" #,`pwd`/src/leap/eip/*"
     ${wrapper} coverage html -d docs/covhtml -i $cov_opts
     echo "now point your browser at docs/covhtml/index.html"
 }

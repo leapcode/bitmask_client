@@ -65,10 +65,10 @@ setup(
     classifiers=trove_classifiers,
     install_requires=utils.parse_requirements(),
     # Uncomment when tests are done
-    # test_suite='nose.collector',
-    # test_requires=utils.parse_requirements(
-    #     reqfiles=['pkg/test-requirements.pip']),
-    keywords='LEAP, client, qt, encryption, proxy, openvpn',
+    test_suite='nose.collector',
+    test_requires=utils.parse_requirements(
+        reqfiles=['pkg/requirements-testing.pip']),
+    keywords='LEAP, client, qt, encryption, proxy, openvpn, imap, smtp',
     author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',

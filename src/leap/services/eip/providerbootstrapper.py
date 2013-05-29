@@ -209,13 +209,16 @@ class ProviderBootstrapper(QtCore.QObject):
     def run_provider_select_checks(self, checker,
                                    domain, download_if_needed=False):
         """
-        Populates the check queue
+        Populates the check queue.
 
         :param checker: checker thread to be used to run this check
         :type checker: CheckerThread
+
         :param domain: domain to check
         :type domain: str
-        :param download_if_needed: if True, makes the checks do not overwrite already downloaded data
+
+        :param download_if_needed: if True, makes the checks do not
+                                   overwrite already downloaded data
         :type download_if_needed: bool
 
         :return: True if the checks passed, False otherwise
@@ -407,7 +410,8 @@ class ProviderBootstrapper(QtCore.QObject):
         :param provider_config: Provider configuration
         :type provider_config: ProviderConfig
 
-        :param download_if_needed: if True, makes the checks do not overwrite already downloaded data.
+        :param download_if_needed: if True, makes the checks do not
+                                   overwrite already downloaded data.
         :type download_if_needed: bool
         """
         leap_assert(provider_config, "We need a provider config!")
