@@ -26,12 +26,14 @@ from PySide import QtCore, QtGui
 from leap.common.events import server as event_server
 from leap.util import __version__ as VERSION
 from leap.util import leap_argparse
+from leap.util.leap_log_handler import LeapLogHandler
 from leap.gui import locale_rc
 from leap.gui import twisted_main
 from leap.gui.mainwindow import MainWindow
 from leap.platform_init import IS_MAC
 from leap.platform_init.locks import we_are_the_one_and_only
 from leap.services.tx import leap_services
+
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
@@ -75,15 +77,22 @@ def main():
     else:
         level = logging.WARNING
 
+    # Console logger
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
     console = logging.StreamHandler()
     console.setLevel(level)
-    formatter = logging.Formatter(
-        '%(asctime)s '
-        '- %(name)s - %(levelname)s - %(message)s')
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(log_format)
     console.setFormatter(formatter)
     logger.addHandler(console)
+
+    # LEAP custom handler
+    leap_handler = LeapLogHandler()
+    leap_handler.setLevel(level)
+    logger.addHandler(leap_handler)
+
+    logger.debug('Leap handler plugged!')
 
     if not we_are_the_one_and_only():
         # leap-client is already running

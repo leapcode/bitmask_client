@@ -20,9 +20,9 @@ TRANSLAT_DIR = data/translations
 PROJFILE = data/leap_client.pro
 
 #UI files to compile
-UI_FILES = mainwindow.ui wizard.ui
+UI_FILES = loggerwindow.ui mainwindow.ui wizard.ui
 #Qt resource files to compile
-RESOURCES = mainwindow.qrc locale.qrc
+RESOURCES = locale.qrc loggerwindow.qrc mainwindow.qrc
 
 #pyuic4 and pyrcc4 binaries
 PYUIC = pyside-uic
