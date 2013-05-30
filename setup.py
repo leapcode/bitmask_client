@@ -21,10 +21,13 @@ versioneer.versionfile_build = 'leap/_version.py'
 versioneer.tag_prefix = ''  # tags are like 1.2.0
 versioneer.parentdir_prefix = 'leap_client-'
 
+from setuptools import Command
+
 # The following import avoids the premature unloading of the `util` submodule
 # when running tests, which would cause an error when nose finishes tests and
 # calls the exit function of the multiprocessing module.
 from multiprocessing import util
+assert(util)
 
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
@@ -46,8 +49,61 @@ trove_classifiers = [
 ]
 
 
+parsed_reqs = utils.parse_requirements()
+
 cmdclass = versioneer.get_cmdclass()
 leap_launcher = 'leap-client=leap.app:main'
+
+from distutils.command.build import build as _build
+from distutils.command.sdist import sdist as _sdist
+
+
+def copy_reqs(path, withsrc=False):
+    # add a copy of the processed requirements to the package
+    _reqpath = ('leap', 'util', 'reqs.txt')
+    if withsrc:
+        reqsfile = os.path.join(path, 'src', *_reqpath)
+    else:
+        reqsfile = os.path.join(path, *_reqpath)
+
+    print("UPDATING %s" % reqsfile)
+
+    if os.path.isfile(reqsfile):
+        os.unlink(reqsfile)
+    f = open(reqsfile, "w")
+    f.write('\n'.join(parsed_reqs))
+    f.close()
+
+
+class cmd_build(_build):
+    def run(self):
+        # versioneer:
+        versions = versioneer.get_versions(verbose=True)
+        self._versioneer_generated_versions = versions
+        # unless we update this, the command will keep using the old version
+        self.distribution.metadata.version = versions["version"]
+
+        _build.run(self)
+        copy_reqs(self.build_lib)
+
+
+class cmd_sdist(_sdist):
+    def run(self):
+        # versioneer:
+        versions = versioneer.get_versions(verbose=True)
+        self._versioneer_generated_versions = versions
+        # unless we update this, the command will keep using the old version
+        self.distribution.metadata.version = versions["version"]
+        return _sdist.run(self)
+
+    def make_release_tree(self, base_dir, files):
+        _sdist.make_release_tree(self, base_dir, files)
+        copy_reqs(base_dir, withsrc=True)
+
+
+#cmdclass["build"] = cmd_build
+#cmdclass["sdist"] = cmd_sdist
+
 
 setup(
     name="leap-client",
@@ -68,9 +124,9 @@ setup(
         "and has an enhanced level of security."
     ),
     classifiers=trove_classifiers,
-    install_requires=utils.parse_requirements(),
+    install_requires=parsed_reqs,
     test_suite='nose.collector',
-    test_requires=utils.parse_requirements(
+    tests_require=utils.parse_requirements(
         reqfiles=['pkg/requirements-testing.pip']),
     keywords='LEAP, client, qt, encryption, proxy, openvpn, imap, smtp',
     author='The LEAP Encryption Access Project',
@@ -81,17 +137,17 @@ setup(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
     namespace_packages=["leap"],
+    package_data={'': ['util/*.txt']},
     include_package_data=True,
-    zip_safe=False,
-
-    # not being used since setuptools does not like it.
+    # not being used? -- setuptools does not like it.
     # looks like debhelper is honoring it...
     data_files=[
     #    ("share/man/man1",
     #        ["docs/man/leap-client.1"]),
         ("share/polkit-1/actions",
-            ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
+            ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
     ],
+    zip_safe=False,
     platforms="all",
     entry_points={
         'console_scripts': [leap_launcher]
