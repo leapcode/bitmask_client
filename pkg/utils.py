@@ -1,6 +1,24 @@
+# -*- coding: utf-8 -*-
+# utils.py
+# Copyright (C) 2013 LEAP
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 Utils to help in the setup process
 """
+
 import os
 import re
 import sys
@@ -56,9 +74,11 @@ def parse_requirements(reqfiles=['requirements.txt',
             pass
         elif line == 'PySide' and skip_pyside:
             pass
+        # do not include comments
+        elif line.lstrip().startswith('#'):
+            pass
         else:
             if line != '':
                 requirements.append(line)
 
-    #print 'REQUIREMENTS', requirements
     return requirements
