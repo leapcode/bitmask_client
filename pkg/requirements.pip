@@ -15,9 +15,13 @@ psutil
 ipaddr
 twisted
 qt4reactor
+python-gnupg
 
 leap.common>=0.2.5
 leap.soledad>=0.1.0
 
 # Remove this when nickserver is online
 mock
+
+# Remove this when u1db fixes its dependency on oauth
+oauth
