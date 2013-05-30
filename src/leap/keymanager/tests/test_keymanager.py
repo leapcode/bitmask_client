@@ -337,7 +337,7 @@ class KeyManagerKeyManagementTestCase(KeyManagerWithSoledadTestCase):
         self.assertTrue(key is not None)
         self.assertEqual(key.address, ADDRESS)
         self.assertEqual(
-            key.fingerprint.lower(),  KEY_FINGERPRINT.lower())
+            key.fingerprint.lower(), KEY_FINGERPRINT.lower())
         self.assertFalse(key.private)
 
     def test_get_private_key(self):
