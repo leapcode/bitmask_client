@@ -1,4 +1,7 @@
 include pkg/*
 include docs/*
+recursive-include docs api/* config/* dev/* man/* pkg/* testers/* user/*
+prune docs/_build
+prune docs/covhtml
 include versioneer.py
 include src/leap/util/reqs.txt

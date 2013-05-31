@@ -101,8 +101,8 @@ class cmd_sdist(_sdist):
         copy_reqs(base_dir, withsrc=True)
 
 
-#cmdclass["build"] = cmd_build
-#cmdclass["sdist"] = cmd_sdist
+cmdclass["build"] = cmd_build
+cmdclass["sdist"] = cmd_sdist
 
 
 setup(
