@@ -27,6 +27,7 @@ from leap.common.events import server as event_server
 from leap.util import __version__ as VERSION
 from leap.util import leap_argparse
 from leap.util.leap_log_handler import LeapLogHandler
+from leap.util.requirement_checker import check_requirements
 from leap.gui import locale_rc
 from leap.gui import twisted_main
 from leap.gui.mainwindow import MainWindow
@@ -100,6 +101,8 @@ def main():
                        "of leap-client. Raising the existing "
                        "one instead.")
         sys.exit(1)
+
+    check_requirements()
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('LEAP client version %s', VERSION)
