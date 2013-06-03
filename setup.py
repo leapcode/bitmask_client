@@ -56,6 +56,7 @@ leap_launcher = 'leap-client=leap.app:main'
 
 from distutils.command.build import build as _build
 from distutils.command.sdist import sdist as _sdist
+from setuptools.command.develop import develop as _develop
 
 
 def copy_reqs(path, withsrc=False):
@@ -87,6 +88,18 @@ class cmd_build(_build):
         copy_reqs(self.build_lib)
 
 
+class cmd_develop(_develop):
+    def run(self):
+        # versioneer:
+        versions = versioneer.get_versions(verbose=True)
+        self._versioneer_generated_versions = versions
+        # unless we update this, the command will keep using the old version
+        self.distribution.metadata.version = versions["version"]
+
+        _develop.run(self)
+        copy_reqs(self.egg_path)
+
+
 class cmd_sdist(_sdist):
     def run(self):
         # versioneer:
@@ -103,6 +116,7 @@ class cmd_sdist(_sdist):
 
 cmdclass["build"] = cmd_build
 cmdclass["sdist"] = cmd_sdist
+cmdclass["develop"] = cmd_develop
 
 
 setup(
