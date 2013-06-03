@@ -22,10 +22,7 @@ Soledad bootstrapping
 import logging
 import os
 
-import requests
-
 from PySide import QtCore
-from mock import Mock
 
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
@@ -36,23 +33,20 @@ from leap.crypto.srpauth import SRPAuth
 from leap.services.soledad.soledadconfig import SoledadConfig
 from leap.util.request_helpers import get_content
 from leap.soledad import Soledad
+from leap.services.abstractbootstrapper import AbstractBootstrapper
 
 logger = logging.getLogger(__name__)
 
 
-class SoledadBootstrapper(QtCore.QObject):
+class SoledadBootstrapper(AbstractBootstrapper):
     """
     Soledad init procedure
     """
 
-    PASSED_KEY = "passed"
-    ERROR_KEY = "error"
     SOLEDAD_KEY = "soledad"
     KEYMANAGER_KEY = "keymanager"
 
     PUBKEY_KEY = "user[public_key]"
-
-    IDLE_SLEEP_INTERVAL = 100
 
     # All dicts returned are of the form
     # {"passed": bool, "error": str}
@@ -60,21 +54,22 @@ class SoledadBootstrapper(QtCore.QObject):
     gen_key = QtCore.Signal(dict)
 
     def __init__(self):
-        QtCore.QObject.__init__(self)
+        AbstractBootstrapper.__init__(self)
 
-        # **************************************************** #
-        # Dependency injection helpers, override this for more
-        # granular testing
-        self._fetcher = requests
-        # **************************************************** #
-
-        self._session = self._fetcher.session()
         self._provider_config = None
         self._soledad_config = None
         self._keymanager = None
         self._download_if_needed = False
         self._user = ""
         self._password = ""
+
+    @property
+    def keymanager(self):
+        return self._keymanager
+
+    @property
+    def soledad(self):
+        return self._soledad
 
     def _load_and_sync_soledad(self, srp_auth):
         """
@@ -92,7 +87,8 @@ class SoledadBootstrapper(QtCore.QObject):
         local_db_path = "%s/%s.db" % (prefix, uuid)
 
         # TODO: use the proper URL
-        server_url = 'https://mole.dev.bitmask.net:2424/user-%s' % (uuid,)
+        #server_url = 'https://mole.dev.bitmask.net:2424/user-%s' % (uuid,)
+        server_url = 'https://gadwall.dev.bitmask.net:1111/user-%s' % (uuid,)
         # server_url = self._soledad_config.get_hosts(...)
 
         cert_file = self._provider_config.get_ca_cert_path()
@@ -109,9 +105,6 @@ class SoledadBootstrapper(QtCore.QObject):
     def _download_config(self):
         """
         Downloads the Soledad config for the given provider
-
-        :return: True if everything went as expected, False otherwise
-        :rtype: bool
         """
 
         leap_assert(self._provider_config,
@@ -120,150 +113,84 @@ class SoledadBootstrapper(QtCore.QObject):
         logger.debug("Downloading Soledad config for %s" %
                      (self._provider_config.get_domain(),))
 
-        download_config_data = {
-            self.PASSED_KEY: False,
-            self.ERROR_KEY: ""
-        }
-
         self._soledad_config = SoledadConfig()
 
-        try:
-            headers = {}
-            mtime = get_mtime(os.path.join(self._soledad_config
-                                           .get_path_prefix(),
-                                           "leap",
-                                           "providers",
-                                           self._provider_config.get_domain(),
-                                           "soledad-service.json"))
+        headers = {}
+        mtime = get_mtime(os.path.join(self._soledad_config
+                                       .get_path_prefix(),
+                                       "leap",
+                                       "providers",
+                                       self._provider_config.get_domain(),
+                                       "soledad-service.json"))
 
-            if self._download_if_needed and mtime:
-                headers['if-modified-since'] = mtime
+        if self._download_if_needed and mtime:
+            headers['if-modified-since'] = mtime
 
-            # there is some confusion with this uri,
-            config_uri = "%s/%s/config/soledad-service.json" % (
-                self._provider_config.get_api_uri(),
-                self._provider_config.get_api_version())
-            logger.debug('Downloading soledad config from: %s' % config_uri)
+        # there is some confusion with this uri,
+        config_uri = "%s/%s/config/soledad-service.json" % (
+            self._provider_config.get_api_uri(),
+            self._provider_config.get_api_version())
+        logger.debug('Downloading soledad config from: %s' % config_uri)
 
-            srp_auth = SRPAuth(self._provider_config)
-            session_id = srp_auth.get_session_id()
-            cookies = None
-            if session_id:
-                cookies = {"_session_id": session_id}
+        srp_auth = SRPAuth(self._provider_config)
+        session_id = srp_auth.get_session_id()
+        cookies = None
+        if session_id:
+            cookies = {"_session_id": session_id}
 
-            res = self._session.get(config_uri,
-                                    verify=self._provider_config
-                                    .get_ca_cert_path(),
-                                    headers=headers,
-                                    cookies=cookies)
-            res.raise_for_status()
+        res = self._session.get(config_uri,
+                                verify=self._provider_config
+                                .get_ca_cert_path(),
+                                headers=headers,
+                                cookies=cookies)
+        res.raise_for_status()
 
-            # Not modified
-            if res.status_code == 304:
-                logger.debug("Soledad definition has not been modified")
-            else:
-                soledad_definition, mtime = get_content(res)
+        # Not modified
+        if res.status_code == 304:
+            logger.debug("Soledad definition has not been modified")
+        else:
+            soledad_definition, mtime = get_content(res)
 
-                self._soledad_config.load(data=soledad_definition, mtime=mtime)
-                self._soledad_config.save(["leap",
-                                           "providers",
-                                           self._provider_config.get_domain(),
-                                           "soledad-service.json"])
+            self._soledad_config.load(data=soledad_definition, mtime=mtime)
+            self._soledad_config.save(["leap",
+                                       "providers",
+                                       self._provider_config.get_domain(),
+                                       "soledad-service.json"])
 
-            self._load_and_sync_soledad(srp_auth)
-
-            download_config_data[self.PASSED_KEY] = True
-        except Exception as e:
-            download_config_data[self.PASSED_KEY] = False
-            download_config_data[self.ERROR_KEY] = "%s" % (e,)
-
-        logger.debug("Emitting download_config %s" % (download_config_data,))
-        self.download_config.emit(download_config_data)
-
-        return download_config_data[self.PASSED_KEY]
+        self._load_and_sync_soledad(srp_auth)
 
     def _gen_key(self):
         """
         Generates the key pair if needed, uploads it to the webapp and
         nickserver
-
-        :return: True if everything is done successfully, False
-        otherwise
-        :rtype: bool
         """
         leap_assert(self._provider_config,
                     "We need a provider configuration!")
 
-        # XXX Sanitize this
         address = "%s@%s" % (self._user, self._provider_config.get_domain())
 
         logger.debug("Retrieving key for %s" % (address,))
 
-        genkey_data = {
-            self.PASSED_KEY: False,
-            self.ERROR_KEY: "",
-            self.SOLEDAD_KEY: None,
-            self.KEYMANAGER_KEY: None
-        }
-
+        srp_auth = SRPAuth(self._provider_config)
+        self._keymanager = KeyManager(
+            address,
+            "https://%s:6425" % (self._provider_config.get_domain()),
+            self._soledad,
+            #token=srp_auth.get_token(), # TODO: enable token usage
+            session_id=srp_auth.get_session_id(),
+            ca_cert_path=self._provider_config.get_ca_cert_path(),
+            api_uri=self._provider_config.get_api_uri(),
+            api_version=self._provider_config.get_api_version(),
+            uid=srp_auth.get_uid())
         try:
-            srp_auth = SRPAuth(self._provider_config)
-            self._keymanager = KeyManager(
-                address,
-                "https://nickserver",  # TODO: nickserver url, none for now
-                self._soledad,
-                token=srp_auth.get_token())
-            self._keymanager._fetcher.put = Mock()
-            try:
-                self._keymanager.get_key(address, openpgp.OpenPGPKey,
-                                         private=True, fetch_remote=False)
-            except KeyNotFound:
-                logger.debug(
-                    "Key not found. Generating key for %s" % (address,))
-                self._keymanager.gen_key(openpgp.OpenPGPKey)
-
-                logger.debug("Key generated successfully.")
-
-            cookies = None
-            session_id = srp_auth.get_session_id()
-            if session_id:
-                cookies = {"_session_id": session_id}
-
-            key_uri = "%s/%s/users/%s.json" % (
-                self._provider_config.get_api_uri(),
-                self._provider_config.get_api_version(),
-                srp_auth.get_uid())
-
-            logger.debug("Uploading public key to %s" % (key_uri,))
-
-            pubkey = self._keymanager.get_key(
-                address, openpgp.OpenPGPKey,
-                private=False, fetch_remote=False)
-            key_data = {
-                self.PUBKEY_KEY: pubkey.key_data,
-            }
-
-            # TODO: check if uploaded before uploading it
-            key_result = self._session.put(key_uri,
-                                           data=key_data,
-                                           verify=self._provider_config
-                                           .get_ca_cert_path(),
-                                           cookies=cookies)
-            key_result.raise_for_status()
-            genkey_data[self.PASSED_KEY] = True
-            genkey_data[self.SOLEDAD_KEY] = self._soledad
-            genkey_data[self.KEYMANAGER_KEY] = self._keymanager
-        except Exception as e:
-            genkey_data[self.PASSED_KEY] = False
-            genkey_data[self.ERROR_KEY] = "%s" % (e,)
-
-        logger.debug("Emitting gen_key %s" % (genkey_data,))
-        self.gen_key.emit(genkey_data)
-
-        return genkey_data[self.PASSED_KEY]
+            self._keymanager.get_key(address, openpgp.OpenPGPKey,
+                                     private=True, fetch_remote=False)
+        except KeyNotFound:
+            logger.debug("Key not found. Generating key for %s" % (address,))
+            self._keymanager.gen_key(openpgp.OpenPGPKey)
+            logger.debug("Key generated successfully.")
 
     def run_soledad_setup_checks(self,
-                                 checker,
                                  provider_config,
                                  user,
                                  password,
@@ -273,6 +200,10 @@ class SoledadBootstrapper(QtCore.QObject):
 
         :param provider_config: Provider configuration
         :type provider_config: ProviderConfig
+        :param user: User's login
+        :type user: str
+        :param password: User's password
+        :type password: str
         """
         leap_assert_type(provider_config, ProviderConfig)
 
@@ -281,7 +212,9 @@ class SoledadBootstrapper(QtCore.QObject):
         self._user = user
         self._password = password
 
-        checker.add_checks([
-            self._download_config,
-            self._gen_key
-        ])
+        cb_chain = [
+            (self._download_config, self.download_config),
+            (self._gen_key, self.gen_key)
+        ]
+
+        self.addCallbackChain(cb_chain)

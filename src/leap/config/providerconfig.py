@@ -130,6 +130,15 @@ class ProviderConfig(BaseConfig):
         """
         return "openvpn" in self.get_services()
 
+    def provides_mx(self):
+        """
+        Returns True if this particular provider has the MX service,
+        False otherwise.
+
+        :rtype: bool
+        """
+        return "mx" in self.get_services()
+
 
 if __name__ == "__main__":
     logger = logging.getLogger(name='leap')

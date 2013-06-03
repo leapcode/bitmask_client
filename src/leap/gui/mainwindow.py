@@ -27,7 +27,7 @@ from functools import partial
 import keyring
 
 from PySide import QtCore, QtGui
-from mock import Mock
+from twisted.internet import threads
 
 from leap.common.check import leap_assert
 from leap.common.events import register
@@ -50,7 +50,6 @@ from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             EIPNoPkexecAvailable,
                                             EIPNoPolkitAuthAgentAvailable)
 from leap.util import __version__ as VERSION
-from leap.util.checkerthread import CheckerThread
 
 from leap.services.mail.smtpconfig import SMTPConfig
 
@@ -77,6 +76,9 @@ class MainWindow(QtGui.QMainWindow):
     # SMTP
     PORT_KEY = "port"
     IP_KEY = "ip_address"
+
+    OPENVPN_SERVICE = "openvpn"
+    MX_SERVICE = "mx"
 
     # Signals
     new_updates = QtCore.Signal(object)
@@ -155,9 +157,6 @@ class MainWindow(QtGui.QMainWindow):
         # This is created once we have a valid provider config
         self._srp_auth = None
 
-        self._checker_thread = CheckerThread()
-        self._checker_thread.start()
-
         # This thread is always running, although it's quite
         # lightweight when it's done setting up provider
         # configuration and certificate.
@@ -187,6 +186,8 @@ class MainWindow(QtGui.QMainWindow):
             self._finish_eip_bootstrap)
 
         self._soledad_bootstrapper = SoledadBootstrapper()
+        self._soledad_bootstrapper.download_config.connect(
+            self._soledad_intermediate_stage)
         self._soledad_bootstrapper.gen_key.connect(
             self._soledad_bootstrapped_stage)
 
@@ -262,8 +263,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._first_run():
             self._wizard_firstrun = True
-            self._wizard = Wizard(self._checker_thread,
-                                  standalone=standalone,
+            self._wizard = Wizard(standalone=standalone,
                                   bypass_checks=bypass_checks)
             # Give this window time to finish init and then show the wizard
             QtCore.QTimer.singleShot(1, self._launch_wizard)
@@ -281,8 +281,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def _launch_wizard(self):
         if self._wizard is None:
-            self._wizard = Wizard(self._checker_thread,
-                                  bypass_checks=self._bypass_checks)
+            self._wizard = Wizard(bypass_checks=self._bypass_checks)
+        self._wizard.accepted.connect(self._finish_init)
         self._wizard.exec_()
         self._wizard = None
 
@@ -369,6 +369,7 @@ class MainWindow(QtGui.QMainWindow):
                                       msg)
 
     def _finish_init(self):
+        self.ui.cmbProviders.clear()
         self.ui.cmbProviders.addItems(self._configured_providers())
         self._show_systray()
         self.show()
@@ -425,6 +426,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         Sets up the systray icon
         """
+        if self._systray is not None:
+            self._systray.setVisible(True)
+            return
         systrayMenu = QtGui.QMenu(self)
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addAction(self.ui.action_sign_out)
@@ -618,7 +622,6 @@ class MainWindow(QtGui.QMainWindow):
         provider = self.ui.cmbProviders.currentText()
 
         self._provider_bootstrapper.run_provider_select_checks(
-            self._checker_thread,
             provider,
             download_if_needed=True)
 
@@ -643,7 +646,6 @@ class MainWindow(QtGui.QMainWindow):
                                                             provider,
                                                             "provider.json")):
                 self._provider_bootstrapper.run_provider_setup_checks(
-                    self._checker_thread,
                     self._provider_config,
                     download_if_needed=True)
             else:
@@ -728,7 +730,7 @@ class MainWindow(QtGui.QMainWindow):
             auth_partial = partial(self._srp_auth.authenticate,
                                    username,
                                    password)
-            self._checker_thread.add_checks([auth_partial])
+            threads.deferToThread(auth_partial)
         else:
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
             self._login_set_enabled(True)
@@ -760,13 +762,28 @@ class MainWindow(QtGui.QMainWindow):
         self._systray.setIcon(self.LOGGED_IN_ICON)
 
         self._soledad_bootstrapper.run_soledad_setup_checks(
-            self._checker_thread,
             self._provider_config,
             self.ui.lnUser.text(),
             self.ui.lnPassword.text(),
             download_if_needed=True)
 
         self._download_eip_config()
+
+    def _soledad_intermediate_stage(self, data):
+        """
+        SLOT
+        TRIGGERS:
+          self._soledad_bootstrapper.download_config
+
+        If there was a problem, displays it, otherwise it does nothing.
+        This is used for intermediate bootstrapping stages, in case
+        they fail.
+        """
+        passed = data[self._soledad_bootstrapper.PASSED_KEY]
+        if not passed:
+            # TODO: display in the GUI
+            logger.error("Soledad failed to start: %s" %
+                         (data[self._soledad_bootstrapper.ERROR_KEY],))
 
     def _soledad_bootstrapped_stage(self, data):
         """
@@ -787,14 +804,24 @@ class MainWindow(QtGui.QMainWindow):
         else:
             logger.debug("Done bootstrapping Soledad")
 
-            self._soledad = data[self._soledad_bootstrapper.SOLEDAD_KEY]
-            self._keymanager = data[self._soledad_bootstrapper.KEYMANAGER_KEY]
+            self._soledad = self._soledad_bootstrapper.soledad
+            self._keymanager = self._soledad_bootstrapper.keymanager
 
-            self._smtp_bootstrapper.run_smtp_setup_checks(
-                self._checker_thread,
-                self._provider_config,
-                self._smtp_config,
-                True)
+            if self._provider_config.provides_mx() and \
+                    self._enabled_services.count(self.MX_SERVICE) > 0:
+                self._smtp_bootstrapper.run_smtp_setup_checks(
+                    self._provider_config,
+                    self._smtp_config,
+                    True)
+            else:
+                if self._enabled_services.count(self.MX_SERVICE) > 0:
+                    pass # TODO: show MX status
+                    #self._set_eip_status(self.tr("%s does not support MX") %
+                    #                     (self._provider_config.get_domain(),),
+                    #                     error=True)
+                else:
+                    pass # TODO: show MX status
+                    #self._set_eip_status(self.tr("MX is disabled"))
 
     def _smtp_bootstrapped_stage(self, data):
         """
@@ -914,14 +941,13 @@ class MainWindow(QtGui.QMainWindow):
         self._set_eip_status(self.tr("Checking configuration, please wait..."))
 
         if self._provider_config.provides_eip() and \
-                self._enabled_services.count("openvpn") > 0:
+                self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
             self._vpn_systray.setVisible(True)
             self._eip_bootstrapper.run_eip_setup_checks(
-                self._checker_thread,
                 self._provider_config,
                 download_if_needed=True)
         else:
-            if self._enabled_services.count("openvpn") > 0:
+            if self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
                 self._set_eip_status(self.tr("%s does not support EIP") %
                                      (self._provider_config.get_domain(),),
                                      error=True)
@@ -1035,7 +1061,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._set_eip_status_icon("error")
         self._set_eip_status(self.tr("Signing out..."))
-        self._checker_thread.add_checks([self._srp_auth.logout])
+        # XXX: If other defers are doing authenticated stuff, this
+        # might conflict with those. CHECK!
+        threads.deferToThread(self._srp_auth.logout)
 
     def _done_logging_out(self, ok, message):
         """
@@ -1121,8 +1149,6 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('About to quit, doing cleanup...')
         self._vpn.set_should_quit()
         self._vpn.wait()
-        self._checker_thread.set_should_quit()
-        self._checker_thread.wait()
         self._cleanup_pidfiles()
 
     def quit(self):

@@ -24,6 +24,7 @@ import json
 
 from PySide import QtCore, QtGui
 from functools import partial
+from twisted.internet import threads
 
 from ui_wizard import Ui_Wizard
 from leap.config.providerconfig import ProviderConfig
@@ -53,12 +54,10 @@ class Wizard(QtGui.QWizard):
 
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
-    def __init__(self, checker, standalone=False, bypass_checks=False):
+    def __init__(self, standalone=False, bypass_checks=False):
         """
         Constructor for the main Wizard.
 
-        :param checker: Checker thread that the wizard should use.
-        :type checker: CheckerThread
         :param standalone: If True, the application is running as standalone
             and the wizard should display some messages according to this.
         :type standalone: bool
@@ -82,16 +81,19 @@ class Wizard(QtGui.QWizard):
 
         # Correspondence for services and their name to display
         EIP_LABEL = self.tr("Encrypted Internet")
+        MX_LABEL = self.tr("Encrypted Mail")
 
         if self._is_need_eip_password_warning():
             EIP_LABEL += " " + self.tr(
                 "(will need admin password to start)")
 
         self.SERVICE_DISPLAY = [
-            EIP_LABEL
+            EIP_LABEL,
+            MX_LABEL
         ]
         self.SERVICE_CONFIG = [
-            "openvpn"
+            "openvpn",
+            "mx"
         ]
 
         self._selected_services = set()
@@ -146,8 +148,6 @@ class Wizard(QtGui.QWizard):
 
         self._username = None
         self._password = None
-
-        self._checker_thread = checker
 
         self.page(self.REGISTER_USER_PAGE).setButtonText(
             QtGui.QWizard.CommitButton, self.tr("&Next >"))
@@ -231,10 +231,12 @@ class Wizard(QtGui.QWizard):
             register = SRPRegister(provider_config=self._provider_config)
             register.registration_finished.connect(
                 self._registration_finished)
-            self._checker_thread.add_checks(
-                [partial(register.register_user,
-                         username.encode("utf8"),
-                         password.encode("utf8"))])
+
+            threads.deferToThread(
+                partial(register.register_user,
+                        username.encode("utf8"),
+                        password.encode("utf8")))
+
             self._username = username
             self._password = password
             self._set_register_status(self.tr("Starting registration..."))
@@ -318,7 +320,6 @@ class Wizard(QtGui.QWizard):
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_bootstrapper.run_provider_select_checks(
-            self._checker_thread,
             self._domain)
 
     def _complete_task(self, data, label, complete=False, complete_page=-1):
@@ -510,8 +511,7 @@ class Wizard(QtGui.QWizard):
                                            .get_name(),))
             self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
             self._provider_bootstrapper.\
-                run_provider_setup_checks(self._checker_thread,
-                                          self._provider_config)
+                run_provider_setup_checks(self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             self.page(pageId).setSubTitle(self.tr("Description of services "
