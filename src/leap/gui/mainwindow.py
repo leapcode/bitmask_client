@@ -815,12 +815,12 @@ class MainWindow(QtGui.QMainWindow):
                     True)
             else:
                 if self._enabled_services.count(self.MX_SERVICE) > 0:
-                    pass # TODO: show MX status
+                    pass  # TODO: show MX status
                     #self._set_eip_status(self.tr("%s does not support MX") %
-                    #                     (self._provider_config.get_domain(),),
+                    #                    (self._provider_config.get_domain(),),
                     #                     error=True)
                 else:
-                    pass # TODO: show MX status
+                    pass  # TODO: show MX status
                     #self._set_eip_status(self.tr("MX is disabled"))
 
     def _smtp_bootstrapped_stage(self, data):
