@@ -132,7 +132,7 @@ def _is_auth_agent_running():
     """
     polkit_gnome = 'ps aux | grep polkit-[g]nome-authentication-agent-1'
     polkit_kde = 'ps aux | grep polkit-[k]de-authentication-agent-1'
-    return (len(commands.getoutput(polkit_gnome) > 0) or
+    return (len(commands.getoutput(polkit_gnome)) > 0 or
             len(commands.getoutput(polkit_kde)) > 0)
 
 
