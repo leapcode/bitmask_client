@@ -22,12 +22,12 @@ smtp_config_spec = {
         'serial': {
             'type': int,
             'default': 1,
-            'required': True
+            'required': ["True"]
         },
         'version': {
             'type': int,
             'default': 1,
-            'required': True
+            'required': ["True"]
         },
         'hosts': {
             'type': dict,

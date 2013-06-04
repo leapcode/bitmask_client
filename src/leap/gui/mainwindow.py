@@ -44,7 +44,8 @@ from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
 from leap.platform_init import IS_MAC, IS_WIN
 from leap.platform_init.initializers import init_platform
-from leap.services.eip.vpn import VPN
+from leap.services.eip.vpnprocess import VPN, VPNManager
+
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             OpenVPNNotFoundException,
                                             EIPNoPkexecAvailable,
@@ -196,9 +197,9 @@ class MainWindow(QtGui.QMainWindow):
             self._smtp_bootstrapped_stage)
 
         self._vpn = VPN()
-        self._vpn.state_changed.connect(self._update_vpn_state)
-        self._vpn.status_changed.connect(self._update_vpn_status)
-        self._vpn.process_finished.connect(
+        self._vpn.qtsigs.state_changed.connect(self._update_vpn_state)
+        self._vpn.qtsigs.status_changed.connect(self._update_vpn_status)
+        self._vpn.qtsigs.process_finished.connect(
             self._eip_finished)
 
         self.ui.chkRemember.stateChanged.connect(
@@ -816,8 +817,9 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 if self._enabled_services.count(self.MX_SERVICE) > 0:
                     pass  # TODO: show MX status
-                    #self._set_eip_status(self.tr("%s does not support MX") %
-                    #                    (self._provider_config.get_domain(),),
+                    #self._set_eip_status(
+                    #    self.tr("%s does not support MX") %
+                    #    (self._provider_config.get_domain(),),
                     #                     error=True)
                 else:
                     pass  # TODO: show MX status
@@ -852,8 +854,6 @@ class MainWindow(QtGui.QMainWindow):
                 # TODO: pick local smtp port in a better way
                 # TODO: Make the encrypted_only configurable
 
-                # TODO: Remove mocking!!!
-                self._keymanager.fetch_keys_from_server = Mock(return_value=[])
                 from leap.mail.smtp import setup_smtp_relay
                 setup_smtp_relay(port=1234,
                                  keymanager=self._keymanager,
@@ -919,7 +919,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.btnEipStartStop.setEnabled(True)
 
     def _stop_eip(self):
-        self._vpn.set_should_quit()
+        self._vpn.terminate()
         self._set_eip_status(self.tr("EIP has stopped"))
         self._set_eip_status_icon("error")
         self.ui.btnEipStartStop.setText(self.tr("Start EIP"))
@@ -983,7 +983,7 @@ class MainWindow(QtGui.QMainWindow):
         Updates the displayed VPN state based on the data provided by
         the VPN thread
         """
-        status = data[self._vpn.STATUS_STEP_KEY]
+        status = data[VPNManager.STATUS_STEP_KEY]
         self._set_eip_status_icon(status)
         if status == "AUTH":
             self._set_eip_status(self.tr("VPN: Authenticating..."))
@@ -1014,12 +1014,12 @@ class MainWindow(QtGui.QMainWindow):
         Updates the download/upload labels based on the data provided
         by the VPN thread
         """
-        upload = float(data[self._vpn.TUNTAP_WRITE_KEY])
+        upload = float(data[VPNManager.TUNTAP_WRITE_KEY])
         upload = upload / 1000.0
         upload_str = "%12.2f Kb" % (upload,)
         self.ui.lblUpload.setText(upload_str)
         self._action_eip_write.setText(upload_str)
-        download = float(data[self._vpn.TUNTAP_READ_KEY])
+        download = float(data[VPNManager.TUNTAP_READ_KEY])
         download = download / 1000.0
         download_str = "%12.2f Kb" % (download,)
         self.ui.lblDownload.setText(download_str)
@@ -1079,7 +1079,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.lnPassword.setText("")
         self._login_set_enabled(True)
         self._set_status("")
-        self._vpn.set_should_quit()
+        self._vpn.terminate()
 
     def _intermediate_stage(self, data):
         """
@@ -1147,8 +1147,11 @@ class MainWindow(QtGui.QMainWindow):
         Should be called from the quit function.
         """
         logger.debug('About to quit, doing cleanup...')
-        self._vpn.set_should_quit()
-        self._vpn.wait()
+
+        logger.debug('Killing vpn')
+        self._vpn.terminate()
+
+        logger.debug('Cleaning pidfiles')
         self._cleanup_pidfiles()
 
     def quit(self):
