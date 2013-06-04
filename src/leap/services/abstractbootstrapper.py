@@ -152,4 +152,3 @@ class AbstractBootstrapper(QtCore.QObject):
             d.addErrback(self._errback, signal=sig)
             d.addCallback(self._gui_notify, signal=sig)
         d.addErrback(self._gui_errback)
-

@@ -29,7 +29,6 @@ from PySide import QtCore, QtGui
 
 from leap.common.check import leap_assert
 from leap.config.providerconfig import ProviderConfig
-from leap.util.checkerthread import CheckerThread
 from leap.util.request_helpers import get_content
 from leap.common.events import signal as events_signal
 from leap.common.events import events_pb2 as proto
@@ -456,62 +455,3 @@ class SRPAuth(QtCore.QObject):
         except Exception as e:
             self.logout_finished.emit(False, "%s" % (e,))
         return False
-
-
-if __name__ == "__main__":
-    import signal
-    import sys
-
-    from functools import partial
-    app = QtGui.QApplication(sys.argv)
-
-    if not len(sys.argv) == 3:
-        print 'Usage: srpauth.py <user> <pass>'
-        sys.exit(0)
-
-    _user = sys.argv[1]
-    _pass = sys.argv[2]
-
-    def sigint_handler(*args, **kwargs):
-        logger.debug('SIGINT catched. shutting down...')
-        checker = args[0]
-        checker.set_should_quit()
-        QtGui.QApplication.quit()
-
-    def signal_tester(d):
-        print d
-
-    logger = logging.getLogger(name='leap')
-    logger.setLevel(logging.DEBUG)
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        '%(asctime)s '
-        '- %(name)s - %(levelname)s - %(message)s')
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    checker = CheckerThread()
-
-    sigint = partial(sigint_handler, checker)
-    signal.signal(signal.SIGINT, sigint)
-
-    timer = QtCore.QTimer()
-    timer.start(500)
-    timer.timeout.connect(lambda: None)
-    app.connect(app, QtCore.SIGNAL("aboutToQuit()"),
-                checker.set_should_quit)
-    w = QtGui.QWidget()
-    w.resize(100, 100)
-    w.show()
-
-    checker.start()
-
-    provider = ProviderConfig()
-    if provider.load("leap/providers/bitmask.net/provider.json"):
-        auth = SRPAuth(provider)
-        auth_instantiated = partial(auth.authenticate, _user, _pass)
-
-        checker.add_checks([auth_instantiated, auth.logout])
-
-    sys.exit(app.exec_())

@@ -96,7 +96,8 @@ class SMTPBootstrapper(AbstractBootstrapper):
             logger.debug("SMTP definition has not been modified")
             self._smtp_config.load(os.path.join("leap",
                                                 "providers",
-                                                self._provider_config.get_domain(),
+                                                self._provider_config.\
+                                                    get_domain(),
                                                 "smtp-service.json"))
         else:
             smtp_definition, mtime = get_content(res)
