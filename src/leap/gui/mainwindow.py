@@ -377,6 +377,12 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard:
             possible_username = self._wizard.get_username()
             possible_password = self._wizard.get_password()
+
+            # select the configured provider in the combo box
+            domain = self._wizard.get_domain()
+            provider_index = self.ui.cmbProviders.findText(domain)
+            self.ui.cmbProviders.setCurrentIndex(provider_index)
+
             self.ui.chkRemember.setChecked(self._wizard.get_remember())
             self._enabled_services = list(self._wizard.get_services())
             self._settings.set_enabled_services(
