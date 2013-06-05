@@ -389,10 +389,11 @@ class Wizard(QtGui.QWizard):
         if not passed:
             status = self.tr("<font color='red'><b>Non-existent "
                              "provider</b></font>")
+        else:
+            self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
         self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
-        self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
 
     def _https_connection(self, data):
         """
@@ -408,9 +409,10 @@ class Wizard(QtGui.QWizard):
             status = self.tr("<font color='red'><b>%s</b></font>") \
                 % (data[self._provider_bootstrapper.ERROR_KEY])
             self.ui.lblProviderSelectStatus.setText(status)
+        else:
+            self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
-        self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
 
     def _download_provider_info(self, data):
         """
@@ -451,7 +453,9 @@ class Wizard(QtGui.QWizard):
         Sets the status for the download of the CA certificate check
         """
         self._complete_task(data, self.ui.lblDownloadCaCert)
-        self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
+        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        if passed:
+            self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
 
     def _check_ca_fingerprint(self, data):
         """
@@ -461,7 +465,9 @@ class Wizard(QtGui.QWizard):
         Sets the status for the CA fingerprint check
         """
         self._complete_task(data, self.ui.lblCheckCaFpr)
-        self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
+        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        if passed:
+            self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 
     def _check_api_certificate(self, data):
         """
