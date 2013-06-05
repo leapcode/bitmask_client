@@ -243,15 +243,42 @@ class Wizard(QtGui.QWizard):
         else:
             self.ui.btnRegister.setEnabled(True)
 
+    def _set_registration_fields_visibility(self, visible):
+        """
+        This method hides the username and password labels and inputboxes.
+
+        :param visible: sets the visibility of the widgets
+            True: widgets are visible or False: are not
+        :type visible: bool
+        """
+        # username and password inputs
+        self.ui.lblUser.setVisible(visible)
+        self.ui.lblPassword.setVisible(visible)
+        self.ui.lblPassword2.setVisible(visible)
+
+        # username and password labels
+        self.ui.label_15.setVisible(visible)
+        self.ui.label_16.setVisible(visible)
+        self.ui.label_17.setVisible(visible)
+
+        # register button
+        self.ui.btnRegister.setVisible(visible)
+
     def _registration_finished(self, ok, req):
         if ok:
-            self._set_register_status(self.tr("<font color='green'>"
-                                              "<b>User registration OK. "
-                                              "</b></font>"))
+            user_domain = self._username + "@" + self._domain
+            message = "<font color='green'><h3>"
+            message += self.tr("User %s successfully registered.") % (
+                user_domain, )
+            message += "</h3></font>"
+            self._set_register_status(message)
+
             self.ui.lblPassword2.clearFocus()
+            self._set_registration_fields_visibility(False)
             self.ui.chkRemember.setEnabled(True)
 
             self.page(self.REGISTER_USER_PAGE).set_completed()
+            self.button(QtGui.QWizard.BackButton).setEnabled(False)
         else:
             old_username = self._username
             self._username = None
