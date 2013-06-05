@@ -58,7 +58,7 @@ def get_requirements():
             with resource_stream(dist_name, requires_file_name) as stream:
                 requirements = [line.strip() for line in stream]
         except Exception, e:
-            logger.error("Requirements file not found. %e", (e, ))
+            logger.error("Requirements file not found. %r" % (e, ))
 
     return requirements
 
