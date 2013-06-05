@@ -154,6 +154,9 @@ class Wizard(QtGui.QWizard):
         self.page(self.FINISH_PAGE).setButtonText(
             QtGui.QWizard.FinishButton, self.tr("Connect"))
 
+    def get_domain(self):
+        return self._domain
+
     def get_username(self):
         return self._username
 
