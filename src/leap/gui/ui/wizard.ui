@@ -597,6 +597,12 @@
     <string notr="true">4</string>
    </attribute>
    <layout class="QGridLayout" name="gridLayout_7">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetDefaultConstraint</enum>
+    </property>
+    <property name="leftMargin">
+     <number>4</number>
+    </property>
     <item row="3" column="0">
      <widget class="QLabel" name="label_16">
       <property name="text">
@@ -646,19 +652,6 @@
       </property>
      </spacer>
     </item>
-    <item row="1" column="0" colspan="3">
-     <widget class="QLabel" name="lblRegisterStatus">
-      <property name="text">
-       <string/>
-      </property>
-      <property name="textFormat">
-       <enum>Qt::AutoText</enum>
-      </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
-      </property>
-     </widget>
-    </item>
     <item row="7" column="1">
      <spacer name="verticalSpacer_7">
       <property name="orientation">
@@ -689,6 +682,19 @@
       </property>
       <property name="text">
        <string>Remember my username and password</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1" colspan="2">
+     <widget class="QLabel" name="lblRegisterStatus">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::AutoText</enum>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
       </property>
      </widget>
     </item>
