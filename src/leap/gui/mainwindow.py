@@ -259,6 +259,8 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad = None
         self._keymanager = None
 
+        self._login_defer = None
+
         self._smtp_config = SMTPConfig()
 
         if self._first_run():
@@ -733,10 +735,7 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth.logout_finished.connect(
                     self._done_logging_out)
 
-            auth_partial = partial(self._srp_auth.authenticate,
-                                   username,
-                                   password)
-            threads.deferToThread(auth_partial)
+            self._login_defer = self._srp_auth.authenticate(username,password)
         else:
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
             self._login_set_enabled(True)
@@ -756,6 +755,7 @@ class MainWindow(QtGui.QMainWindow):
             # "Succeeded" message and then we switch to the EIP status
             # panel
             QtCore.QTimer.singleShot(1000, self._switch_to_status)
+            self._login_defer = None
         else:
             self._login_set_enabled(True)
 
@@ -1171,6 +1171,9 @@ class MainWindow(QtGui.QMainWindow):
             self._logger_window.close()
 
         self.close()
+
+        if self._login_defer:
+            self._login_defer.cancel()
 
         if self._quit_callback:
             self._quit_callback()
