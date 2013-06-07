@@ -278,6 +278,9 @@ class Wizard(QtGui.QWizard):
 
             self.ui.lblPassword2.clearFocus()
             self._set_registration_fields_visibility(False)
+
+            # Allow the user to remember his password
+            self.ui.chkRemember.setVisible(True)
             self.ui.chkRemember.setEnabled(True)
 
             self.page(self.REGISTER_USER_PAGE).set_completed()
@@ -575,6 +578,7 @@ class Wizard(QtGui.QWizard):
                                                   "%s") %
                                           (self._provider_config
                                            .get_name(),))
+            self.ui.chkRemember.setVisible(False)
 
         if pageId == self.SERVICES_PAGE:
             self._populate_services()
