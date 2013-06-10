@@ -25,10 +25,10 @@ import json
 #this error is raised from requests
 from simplejson.decoder import JSONDecodeError
 
-from PySide import QtCore, QtGui
+from PySide import QtCore
+from twisted.internet import threads
 
 from leap.common.check import leap_assert
-from leap.config.providerconfig import ProviderConfig
 from leap.util.request_helpers import get_content
 from leap.common.events import signal as events_signal
 from leap.common.events import events_pb2 as proto
@@ -124,13 +124,15 @@ class SRPAuth(QtCore.QObject):
 
             self._srp_a = A
 
-        def _start_authentication(self, username, password):
+        def _start_authentication(self, _, username, password):
             """
             Sends the first request for authentication to retrieve the
             salt and B parameter
 
             Might raise SRPAuthenticationError
 
+            :param _: IGNORED, output from the previous callback (None)
+            :type _: IGNORED
             :param username: username to login
             :type username: str
             :param password: password for the username
@@ -187,17 +189,15 @@ class SRPAuth(QtCore.QObject):
 
             return salt, B
 
-        def _process_challenge(self, salt, B, username):
+        def _process_challenge(self, salt_B, username):
             """
             Given the salt and B processes the auth challenge and
             generates the M2 parameter
 
             Might throw SRPAuthenticationError
 
-            :param salt: salt for the username
-            :type salt: str
-            :param B: B SRP parameter
-            :type B: str
+            :param salt_B: salt and B parameters for the username
+            :type salt_B: tuple
             :param username: username for this session
             :type username: str
 
@@ -206,6 +206,7 @@ class SRPAuth(QtCore.QObject):
             """
             logger.debug("Processing challenge...")
             try:
+                salt, B = salt_B
                 unhex_salt = self._safe_unhexlify(salt)
                 unhex_B = self._safe_unhexlify(B)
             except TypeError as e:
@@ -318,17 +319,22 @@ class SRPAuth(QtCore.QObject):
             :type username: str
             :param password: password for this user
             :type password: str
+
+            :returns: A defer on a different thread
+            :rtype: twisted.internet.defer.Deferred
             """
             leap_assert(self.get_session_id() is None, "Already logged in")
 
-            self._authentication_preprocessing(username, password)
-            salt, B = self._start_authentication(username, password)
-            M2 = self._process_challenge(salt, B, username)
+            d = threads.deferToThread(self._authentication_preprocessing,
+                                      username=username,
+                                      password=password)
 
-            self._verify_session(M2)
+            d.addCallback(self._start_authentication, username=username,
+                          password=password)
+            d.addCallback(self._process_challenge, username=username)
+            d.addCallback(self._verify_session)
 
-            leap_assert(self.get_session_id(), "Something went wrong because"
-                        " we don't have the auth cookie afterwards")
+            return d
 
         def logout(self):
             """
@@ -388,10 +394,6 @@ class SRPAuth(QtCore.QObject):
     authentication_finished = QtCore.Signal(bool, str)
     logout_finished = QtCore.Signal(bool, str)
 
-    DO_NOTHING = 0
-    DO_LOGIN = 1
-    DO_LOGOUT = 2
-
     def __init__(self, provider_config):
         """
         Creates a singleton instance if needed
@@ -406,8 +408,6 @@ class SRPAuth(QtCore.QObject):
         # Store instance reference as the only member in the handle
         self.__dict__['_SRPAuth__instance'] = SRPAuth.__instance
 
-        self._should_login = self.DO_NOTHING
-        self._should_login_lock = QtCore.QMutex()
         self._username = None
         self._password = None
 
@@ -423,16 +423,31 @@ class SRPAuth(QtCore.QObject):
         :type password: str
         """
 
-        try:
-            self.__instance.authenticate(username, password)
+        d = self.__instance.authenticate(username, password)
+        d.addCallback(self._gui_notify)
+        d.addErrback(self._errback)
+        return d
 
-            logger.debug("Successful login!")
-            self.authentication_finished.emit(True, self.tr("Succeeded"))
-            return True
-        except Exception as e:
-            logger.error("Error logging in %s" % (e,))
-            self.authentication_finished.emit(False, "%s" % (e,))
-        return False
+    def _gui_notify(self, _):
+        """
+        Callback that notifies the UI with the proper signal.
+
+        :param _: IGNORED, output from the previous callback (None)
+        :type _: IGNORED
+        """
+        logger.debug("Successful login!")
+        self.authentication_finished.emit(True, self.tr("Succeeded"))
+
+    def _errback(self, failure):
+        """
+        General errback for the whole login process. Will notify the
+        UI with the proper signal.
+
+        :param failure: Failure object captured from a callback.
+        :type failure: twisted.python.failure.Failure
+        """
+        logger.error("Error logging in %s" % (failure,))
+        self.authentication_finished.emit(False, "%s" % (failure,))
 
     def get_session_id(self):
         return self.__instance.get_session_id()
