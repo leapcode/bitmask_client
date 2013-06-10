@@ -735,7 +735,7 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth.logout_finished.connect(
                     self._done_logging_out)
 
-            self._login_defer = self._srp_auth.authenticate(username,password)
+            self._login_defer = self._srp_auth.authenticate(username, password)
         else:
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
             self._login_set_enabled(True)
