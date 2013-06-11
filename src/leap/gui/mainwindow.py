@@ -217,12 +217,11 @@ class MainWindow(QtGui.QMainWindow):
         self._really_quit = False
 
         self._systray = None
-        self._vpn_systray = None
 
-        self._action_eip_status = QtGui.QAction(self.tr("Encryption is OFF"),
+        self._action_eip_status = QtGui.QAction(self.tr("Encrypted internet is OFF"),
                                                 self)
         self._action_eip_status.setEnabled(False)
-        self._action_eip_startstop = QtGui.QAction(self.tr("Stop"), self)
+        self._action_eip_startstop = QtGui.QAction(self.tr("Turn encryption ON"), self)
         self._action_eip_startstop.triggered.connect(
             self._stop_eip)
         self._action_eip_write = QtGui.QAction(
@@ -234,7 +233,7 @@ class MainWindow(QtGui.QMainWindow):
             "%12.2f Kb" % (0.0,), self)
         self._action_eip_read.setEnabled(False)
 
-        self._action_visible = QtGui.QAction(self.tr("Hide"), self)
+        self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
 
         self._enabled_services = []
@@ -442,21 +441,14 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self.ui.action_sign_out)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_quit)
+        systrayMenu.addSeparator()
+        systrayMenu.addAction(self._action_eip_status)
+        systrayMenu.addAction(self._action_eip_startstop)
         self._systray = QtGui.QSystemTrayIcon(self)
         self._systray.setContextMenu(systrayMenu)
-        self._systray.setIcon(QtGui.QIcon(self.LOGGED_OUT_ICON))
+        self._systray.setIcon(QtGui.QIcon(self.ERROR_ICON))
         self._systray.setVisible(True)
         self._systray.activated.connect(self._toggle_visible)
-
-        vpn_systrayMenu = QtGui.QMenu(self)
-        vpn_systrayMenu.addAction(self._action_eip_status)
-        vpn_systrayMenu.addAction(self._action_eip_startstop)
-        vpn_systrayMenu.addAction(self._action_eip_read)
-        vpn_systrayMenu.addAction(self._action_eip_write)
-        self._vpn_systray = QtGui.QSystemTrayIcon(self)
-        self._vpn_systray.setContextMenu(vpn_systrayMenu)
-        self._vpn_systray.setIcon(QtGui.QIcon(self.ERROR_ICON))
-        self._vpn_systray.setVisible(False)
 
     def _toggle_visible(self, reason=None):
         """
@@ -601,7 +593,7 @@ class MainWindow(QtGui.QMainWindow):
         :param status: status message
         :type status: str
         """
-        self._vpn_systray.setToolTip(status)
+        self._systray.setToolTip(status)
         if error:
             status = "<font color='red'><b>%s</b></font>" % (status,)
         self.ui.lblEIPStatus.setText(status)
@@ -765,7 +757,6 @@ class MainWindow(QtGui.QMainWindow):
         triggers the eip bootstrapping
         """
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
-        self._systray.setIcon(self.LOGGED_IN_ICON)
 
         self._soledad_bootstrapper.run_soledad_setup_checks(
             self._provider_config,
@@ -905,13 +896,13 @@ class MainWindow(QtGui.QMainWindow):
                             socket_host=host,
                             socket_port=port)
 
-            self._settings.set_defaultprovider(self._provider_config.get_domain())
-
-            self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
+            self._settings.set_defaultprovider(
+                self._provider_config.get_domain())
+            self.ui.btnEipStartStop.setText(self.tr("Turn Encryption OFF"))
             self.ui.btnEipStartStop.disconnect(self)
             self.ui.btnEipStartStop.clicked.connect(
                 self._stop_eip)
-            self._action_eip_startstop.setText(self.tr("Stop"))
+            self._action_eip_startstop.setText(self.tr("Turn Encryption OFF"))
             self._action_eip_startstop.disconnect(self)
             self._action_eip_startstop.triggered.connect(
                 self._stop_eip)
@@ -940,11 +931,11 @@ class MainWindow(QtGui.QMainWindow):
         self._vpn.set_should_quit()
         self._set_eip_status(self.tr("EIP has stopped"))
         self._set_eip_status_icon("error")
-        self.ui.btnEipStartStop.setText(self.tr("Start EIP"))
+        self.ui.btnEipStartStop.setText(self.tr("Turn Encryption ON"))
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
             self._start_eip)
-        self._action_eip_startstop.setText(self.tr("Start"))
+        self._action_eip_startstop.setText(self.tr("Turn Encryption ON"))
         self._action_eip_startstop.disconnect(self)
         self._action_eip_startstop.triggered.connect(
             self._start_eip)
@@ -960,7 +951,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._provider_config.provides_eip() and \
                 self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
-            self._vpn_systray.setVisible(True)
             self._eip_bootstrapper.run_eip_setup_checks(
                 self._provider_config,
                 download_if_needed=True)
@@ -985,12 +975,13 @@ class MainWindow(QtGui.QMainWindow):
         if status in ("WAIT", "AUTH", "GET_CONFIG",
                       "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
+            tray_message = self.tr("Turning Encryption ON")
         elif status in ("CONNECTED"):
             tray_message = self.tr("Encryption is ON")
             selected_pixmap = self.CONNECTED_ICON
 
         self.ui.lblVPNStatusIcon.setPixmap(selected_pixmap)
-        self._vpn_systray.setIcon(QtGui.QIcon(selected_pixmap))
+        self._systray.setIcon(QtGui.QIcon(selected_pixmap))
         self._action_eip_status.setText(tray_message)
 
     def _update_vpn_state(self, data):
@@ -1091,7 +1082,6 @@ class MainWindow(QtGui.QMainWindow):
         Switches the stackedWidget back to the login stage after
         logging out
         """
-        self._systray.setIcon(self.LOGGED_OUT_ICON)
         self.ui.action_sign_out.setEnabled(False)
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
         self.ui.lnPassword.setText("")

@@ -255,9 +255,14 @@ class SRPAuth(QtCore.QObject):
                                              (auth_result.status_code,))
 
             json_content = json.loads(content)
-            M2 = json_content.get("M2", None)
-            uid = json_content.get("id", None)
-            token = json_content.get("token", None)
+
+            try:
+                M2 = json_content.get("M2", None)
+                uid = json_content.get("id", None)
+                token = json_content.get("token", None)
+            except Exception as e:
+                logger.error(e)
+                raise Exception("Something went wrong with the login")
 
             events_signal(proto.CLIENT_UID, content=uid)
 
