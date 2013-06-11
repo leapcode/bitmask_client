@@ -32,8 +32,17 @@ from leap.common.check import leap_assert, leap_assert_type
 from leap.config.providerconfig import ProviderConfig
 from leap.util.request_helpers import get_content
 from leap.services.abstractbootstrapper import AbstractBootstrapper
+from leap.provider.supportedapis import SupportedAPIs
+
 
 logger = logging.getLogger(__name__)
+
+
+class UnsupportedProviderAPI(Exception):
+    """
+    Raised when attempting to use a provider with an incompatible API.
+    """
+    pass
 
 
 class ProviderBootstrapper(AbstractBootstrapper):
@@ -141,6 +150,18 @@ class ProviderBootstrapper(AbstractBootstrapper):
                                   "providers",
                                   self._domain,
                                   "provider.json"])
+
+            api_version = provider_config.get_api_version()
+            if SupportedAPIs.supports(api_version):
+                logger.debug("Provider definition has been modified")
+            else:
+                api_supported = ', '.join(self._supported_api_versions)
+                error = ('Unsupported provider API version. '
+                         'Supported versions are: {}. '
+                         'Found: {}.').format(api_supported, api_version)
+
+                logger.error(error)
+                raise UnsupportedProviderAPI(error)
 
     def run_provider_select_checks(self, domain, download_if_needed=False):
         """
