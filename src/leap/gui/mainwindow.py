@@ -1084,8 +1084,6 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts the logout sequence
         """
-        self._set_eip_status_icon("error")
-        self._set_eip_status(self.tr("Signing out..."))
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
         threads.deferToThread(self._srp_auth.logout)
@@ -1103,7 +1101,6 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.lnPassword.setText("")
         self._login_set_enabled(True)
         self._set_status("")
-        self._vpn.terminate()
 
     def _intermediate_stage(self, data):
         """
