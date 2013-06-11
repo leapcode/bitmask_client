@@ -9,18 +9,18 @@ util Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`checkerthread` Module
----------------------------
-
-.. automodule:: leap.util.checkerthread
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`leap_argparse` Module
 ---------------------------
 
 .. automodule:: leap.util.leap_argparse
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`leap_log_handler` Module
+------------------------------
+
+.. automodule:: leap.util.leap_log_handler
     :members:
     :undoc-members:
     :show-inheritance:
@@ -37,6 +37,14 @@ util Package
 -----------------------------
 
 .. automodule:: leap.util.request_helpers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`requirement_checker` Module
+---------------------------------
+
+.. automodule:: leap.util.requirement_checker
     :members:
     :undoc-members:
     :show-inheritance:

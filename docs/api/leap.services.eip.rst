@@ -41,14 +41,6 @@ eip Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`vpn` Module
------------------
-
-.. automodule:: leap.services.eip.vpn
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`vpnlaunchers` Module
 --------------------------
 
@@ -56,4 +48,19 @@ eip Package
     :members:
     :undoc-members:
     :show-inheritance:
+
+:mod:`vpnprocess` Module
+------------------------
+
+.. automodule:: leap.services.eip.vpnprocess
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Subpackages
+-----------
+
+.. toctree::
+
+    leap.services.eip.tests
 
