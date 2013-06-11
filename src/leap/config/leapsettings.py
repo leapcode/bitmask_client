@@ -65,6 +65,7 @@ class LeapSettings(object):
     AUTOLOGIN_KEY = "AutoLogin"
     PROPERPROVIDER_KEY = "ProperProvider"
     REMEMBER_KEY = "RememberUserAndPass"
+    DEFAULTPROVIDER_KEY = "DefaultProvider"
 
     def __init__(self, standalone=False):
         """
@@ -230,3 +231,21 @@ class LeapSettings(object):
         """
         leap_assert_type(properprovider, bool)
         self._settings.setValue(self.PROPERPROVIDER_KEY, properprovider)
+
+    def get_defaultprovider(self):
+        """
+        Returns the default provider to be used for autostarting EIP
+
+        :rtype: str or None
+        """
+        return self._settings.value(self.DEFAULTPROVIDER_KEY, None)
+
+    def set_defaultprovider(self, provider):
+        """
+        Sets the default provider to be used for autostarting EIP
+
+        :param provider: provider to use
+        :type provider: str
+        """
+        leap_assert(len(provider) > 0, "We cannot save an empty provider")
+        self._settings.setValue(self.DEFAULTPROVIDER_KEY, provider)

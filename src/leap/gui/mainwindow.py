@@ -889,12 +889,24 @@ class MainWindow(QtGui.QMainWindow):
         return host, port
 
     def _start_eip(self):
+        """
+        SLOT
+        TRIGGERS:
+          self.ui.btnEipStartStop.clicked
+          self._action_eip_startstop.triggered
+        or called from _finish_eip_bootstrap
+
+        Starts EIP
+        """
         try:
             host, port = self._get_socket_host()
             self._vpn.start(eipconfig=self._eip_config,
                             providerconfig=self._provider_config,
                             socket_host=host,
                             socket_port=port)
+
+            self._settings.set_defaultprovider(self._provider_config.get_domain())
+
             self.ui.btnEipStartStop.setText(self.tr("Stop EIP"))
             self.ui.btnEipStartStop.disconnect(self)
             self.ui.btnEipStartStop.clicked.connect(
