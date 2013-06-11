@@ -406,8 +406,21 @@ class MainWindow(QtGui.QMainWindow):
             saved_user = self._settings.get_user()
             auto_login = self._settings.get_autologin()
 
+            try:
+                username, domain = saved_user.split('@')
+            except (ValueError, AttributeError) as e:
+                # if the saved_user does not contain an '@' or its None
+                logger.error('Username@provider malformed. %r' % (e, ))
+                saved_user = None
+
             if saved_user is not None:
-                self.ui.lnUser.setText(saved_user)
+                # fill the username
+                self.ui.lnUser.setText(username)
+
+                # select the configured provider in the combo box
+                provider_index = self.ui.cmbProviders.findText(domain)
+                self.ui.cmbProviders.setCurrentIndex(provider_index)
+
                 self.ui.chkRemember.setChecked(True)
                 self.ui.chkAutoLogin.setEnabled(self.ui.chkRemember
                                                 .isEnabled())
@@ -693,13 +706,16 @@ class MainWindow(QtGui.QMainWindow):
         self._login_set_enabled(False)
 
         if self.ui.chkRemember.isChecked():
+            # in the keyring and in the settings
+            # we store the value 'usename@provider'
+            username_domain = (username + '@' + provider).encode("utf8")
             try:
                 keyring.set_password(self.KEYRING_KEY,
-                                     username.encode("utf8"),
+                                     username_domain,
                                      password.encode("utf8"))
                 # Only save the username if it was saved correctly in
                 # the keyring
-                self._settings.set_user(username)
+                self._settings.set_user(username_domain)
             except Exception as e:
                 logger.error("Problem saving data to keyring. %r"
                              % (e,))
