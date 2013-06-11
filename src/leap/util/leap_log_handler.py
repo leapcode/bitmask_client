@@ -14,32 +14,30 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Custom handler for the logger window.
 """
 import logging
+from functools import partial
 
 from PySide import QtCore
 
-
-class LeapLogHandler(logging.Handler, QtCore.QObject):
+class LogHandler(logging.Handler):
     """
-    Custom logging handler. It emits Qt signals so it can be plugged to a gui.
-    Also stores an history of logs that can be fetched after connect to a gui.
+    This is the custom handler that implements our desired formatting
+    and also keeps a history of all the logged events.
     """
-    # All dicts returned are of the form
-    # {'record': LogRecord, 'message': str}
-    new_log = QtCore.Signal(dict)
 
     MESSAGE_KEY = 'message'
     RECORD_KEY = 'record'
 
-    def __init__(self):
-        logging.Handler.__init__(self)
-        QtCore.QObject.__init__(self)
+    # TODO This is going to eat lots of memory after some time.
+    # Should be pruned at some moment.
+    _log_history = []
 
-        self._log_history = []
+    def __init__(self, qtsignal):
+        logging.Handler.__init__(self)
+        self._qtsignal = qtsignal
 
     def _set_format(self, logging_level):
         """
@@ -66,6 +64,7 @@ class LeapLogHandler(logging.Handler, QtCore.QObject):
         format_attrs = [time, name, level, message]
         log_format = ' - '.join(format_attrs)
         formatter = logging.Formatter(log_format)
+
         self.setFormatter(formatter)
 
     def emit(self, logRecord):
@@ -74,8 +73,6 @@ class LeapLogHandler(logging.Handler, QtCore.QObject):
         logging module.
         This method reimplements logging.Handler.emit that is fired
         in every logged message.
-        QObject.emit gets in the way on the PySide signal model but we
-        workarouded that issue.
 
         :param logRecord: the record emitted by the logging module.
         :type logRecord: logging.LogRecord.
@@ -83,17 +80,60 @@ class LeapLogHandler(logging.Handler, QtCore.QObject):
         self._set_format(logRecord.levelname)
         log = self.format(logRecord)
         log_item = {self.RECORD_KEY: logRecord, self.MESSAGE_KEY: log}
-        self._log_history.append(log_item)
+        self._qtsignal(log_item)
 
+
+class HandlerAdapter(object):
+    """
+    New style class that accesses all attributes from the LogHandler.
+
+    Used as a workaround for a problem with multiple inheritance with Pyside
+    that surfaced under OSX with pyside 1.1.0.
+    """
+    MESSAGE_KEY = 'message'
+    RECORD_KEY = 'record'
+
+    def __init__(self, qtsignal):
+        self._handler = LogHandler(qtsignal=qtsignal)
+
+    def setLevel(self, *args, **kwargs):
+        return self._handler.setLevel(*args, **kwargs)
+
+    def handle(self, *args, **kwargs):
+        return self._handler.handle(*args, **kwargs)
+
+    @property
+    def level(self):
+        return self._handler.level
+
+
+class LeapLogHandler(QtCore.QObject, HandlerAdapter):
+    """
+    Custom logging handler. It emits Qt signals so it can be plugged to a gui.
+
+    Its inner handler also stores an history of logs that can be fetched after
+    having been connected to a gui.
+    """
+    # All dicts returned are of the form
+    # {'record': LogRecord, 'message': str}
+    new_log = QtCore.Signal(dict)
+
+    def __init__(self):
+        QtCore.QObject.__init__(self)
+        HandlerAdapter.__init__(self, qtsignal=self.qtsignal)
+
+    def qtsignal(self, log_item):
         # WARNING: the new-style connection does NOT work because PySide
         # translates the emit method to self.emit, and that collides with
         # the emit method for logging.Handler
         # self.new_log.emit(log_item)
-        QtCore.QObject.emit(self, QtCore.SIGNAL('new_log(PyObject)'), log_item)
+        QtCore.QObject.emit(
+            self,
+            QtCore.SIGNAL('new_log(PyObject)'), log_item)
 
     @property
     def log_history(self):
         """
         Returns the history of the logged messages.
         """
-        return self._log_history
+        return self._handler._log_history
