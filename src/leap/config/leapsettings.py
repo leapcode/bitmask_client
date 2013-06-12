@@ -62,7 +62,6 @@ class LeapSettings(object):
     GEOMETRY_KEY = "Geometry"
     WINDOWSTATE_KEY = "WindowState"
     USER_KEY = "User"
-    AUTOLOGIN_KEY = "AutoLogin"
     PROPERPROVIDER_KEY = "ProperProvider"
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
@@ -191,24 +190,6 @@ class LeapSettings(object):
         """
         leap_assert_type(remember, bool)
         self._settings.setValue(self.REMEMBER_KEY, remember)
-
-    def get_autologin(self):
-        """
-        Returns True if the app should automatically login, False otherwise
-
-        :rtype: bool
-        """
-        return to_bool(self._settings.value(self.AUTOLOGIN_KEY, False))
-
-    def set_autologin(self, autologin):
-        """
-        Sets whether the app should automatically login
-
-        :param autologin: True if the app should autologin, False otherwise
-        :type autologin: bool
-        """
-        leap_assert_type(autologin, bool)
-        self._settings.setValue(self.AUTOLOGIN_KEY, autologin)
 
     # TODO: make this scale with multiple providers, we are assuming
     # just one for now

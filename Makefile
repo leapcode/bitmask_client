@@ -20,7 +20,7 @@ TRANSLAT_DIR = data/translations
 PROJFILE = data/leap_client.pro
 
 #UI files to compile
-UI_FILES = loggerwindow.ui mainwindow.ui wizard.ui
+UI_FILES = loggerwindow.ui mainwindow.ui wizard.ui login.ui
 #Qt resource files to compile
 RESOURCES = locale.qrc loggerwindow.qrc mainwindow.qrc
 

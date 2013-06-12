@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>415</width>
+    <width>429</width>
     <height>579</height>
    </rect>
   </property>
@@ -28,19 +28,6 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="15" column="2">
-     <spacer name="verticalSpacer_2">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
     <item row="6" column="2">
      <spacer name="verticalSpacer">
       <property name="orientation">
@@ -54,18 +41,21 @@
       </property>
      </spacer>
     </item>
-    <item row="7" column="3" colspan="2">
-     <spacer name="horizontalSpacer_2">
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+    <item row="7" column="2">
+     <widget class="QLabel" name="label">
+      <property name="autoFillBackground">
+       <bool>false</bool>
       </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>40</width>
-        <height>20</height>
-       </size>
+      <property name="text">
+       <string/>
       </property>
-     </spacer>
+      <property name="pixmap">
+       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/leap-color-big.png</pixmap>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
     </item>
     <item row="7" column="0" colspan="2">
      <spacer name="horizontalSpacer">
@@ -80,44 +70,17 @@
       </property>
      </spacer>
     </item>
-    <item row="8" column="0" colspan="5">
+    <item row="10" column="0" colspan="5">
      <widget class="QStackedWidget" name="stackedWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
-      <widget class="QWidget" name="page">
+      <widget class="QWidget" name="loginPage">
        <layout class="QGridLayout" name="gridLayout_2">
-        <item row="4" column="2">
-         <widget class="QCheckBox" name="chkRemember">
-          <property name="text">
-           <string>Remember</string>
-          </property>
-         </widget>
+        <item row="0" column="1">
+         <layout class="QHBoxLayout" name="loginLayout"/>
         </item>
-        <item row="2" column="2" colspan="2">
-         <widget class="QLineEdit" name="lnUser"/>
-        </item>
-        <item row="2" column="0">
-         <spacer name="horizontalSpacer_3">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>40</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="6" column="2">
-         <widget class="QPushButton" name="btnLogin">
-          <property name="text">
-           <string>Login</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="4">
+        <item row="0" column="2">
          <spacer name="horizontalSpacer_4">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -130,65 +93,18 @@
           </property>
          </spacer>
         </item>
-        <item row="1" column="1">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>&lt;b&gt;Provider:&lt;/b&gt;</string>
+        <item row="0" column="0">
+         <spacer name="horizontalSpacer_3">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
           </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>&lt;b&gt;Password:&lt;/b&gt;</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2" colspan="2">
-         <widget class="QComboBox" name="cmbProviders"/>
-        </item>
-        <item row="3" column="2" colspan="2">
-         <widget class="QLineEdit" name="lnPassword">
-          <property name="inputMask">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>&lt;b&gt;User:&lt;/b&gt;</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="0" colspan="5">
-         <widget class="QLabel" name="lblStatus">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="2" colspan="2">
-         <widget class="QCheckBox" name="chkAutoLogin">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Automatically login</string>
-          </property>
-         </widget>
+         </spacer>
         </item>
        </layout>
       </widget>
@@ -303,21 +219,31 @@
       </widget>
      </widget>
     </item>
-    <item row="7" column="2">
-     <widget class="QLabel" name="label">
-      <property name="autoFillBackground">
-       <bool>false</bool>
+    <item row="7" column="3" colspan="2">
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
-      <property name="text">
-       <string/>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
       </property>
-      <property name="pixmap">
-       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/leap-color-big.png</pixmap>
+     </spacer>
+    </item>
+    <item row="17" column="2">
+     <spacer name="verticalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
       </property>
-      <property name="alignment">
-       <set>Qt::AlignCenter</set>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
       </property>
-     </widget>
+     </spacer>
     </item>
     <item row="0" column="0" colspan="5">
      <layout class="QGridLayout" name="gridLayout_4">
@@ -388,6 +314,39 @@
       </item>
      </layout>
     </item>
+    <item row="9" column="2" colspan="3">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <spacer name="horizontalSpacer_10">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnShowLog">
+        <property name="text">
+         <string>Show Log</string>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <property name="flat">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -395,8 +354,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>415</width>
-     <height>21</height>
+     <width>429</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSession">
@@ -415,15 +374,7 @@
     <addaction name="separator"/>
     <addaction name="action_about_leap"/>
    </widget>
-   <widget class="QMenu" name="menuSettings">
-    <property name="title">
-     <string>&amp;Utils</string>
-    </property>
-    <addaction name="action_wizard"/>
-    <addaction name="action_show_logs"/>
-   </widget>
    <addaction name="menuSession"/>
-   <addaction name="menuSettings"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -458,13 +409,6 @@
    </property>
   </action>
  </widget>
- <tabstops>
-  <tabstop>lnUser</tabstop>
-  <tabstop>lnPassword</tabstop>
-  <tabstop>chkRemember</tabstop>
-  <tabstop>btnLogin</tabstop>
-  <tabstop>cmbProviders</tabstop>
- </tabstops>
  <resources>
   <include location="../../../../data/resources/mainwindow.qrc"/>
   <include location="../../../../data/resources/locale.qrc"/>
