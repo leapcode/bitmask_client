@@ -153,7 +153,11 @@ class MainWindow(QtGui.QMainWindow):
         EIPConfig.standalone = standalone
         self._standalone = standalone
         self._provider_config = ProviderConfig()
+        # Used for automatic start of EIP
+        self._provisional_provider_config = ProviderConfig()
         self._eip_config = EIPConfig()
+
+        self._already_started_eip = False
 
         # This is created once we have a valid provider config
         self._srp_auth = None
@@ -219,10 +223,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self._systray = None
 
-        self._action_eip_status = QtGui.QAction(self.tr("Encrypted internet is OFF"),
-                                                self)
+        self._action_eip_status = QtGui.QAction(
+            self.tr("Encrypted internet is OFF"), self)
         self._action_eip_status.setEnabled(False)
-        self._action_eip_startstop = QtGui.QAction(self.tr("Turn encryption ON"), self)
+        self._action_eip_startstop = QtGui.QAction(
+            self.tr("Turn encryption ON"), self)
         self._action_eip_startstop.triggered.connect(
             self._stop_eip)
         self._action_eip_write = QtGui.QAction(
@@ -400,6 +405,7 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = None
             self._settings.set_properprovider(True)
         else:
+            self._try_autostart_eip()
             if not self._settings.get_remember():
                 # nothing to do here
                 return
@@ -442,6 +448,31 @@ class MainWindow(QtGui.QMainWindow):
                 self.ui.chkAutoLogin.setChecked(auto_login)
                 if auto_login and saved_password:
                     self._login()
+
+    def _try_autostart_eip(self):
+        """
+        Tries to autostart EIP
+        """
+        default_provider = self._settings.get_defaultprovider()
+
+        if default_provider is None:
+            logger.info("Cannot autostart EIP because there's no default "
+                        "provider configured")
+            return
+
+        self._enabled_services = self._settings.get_enabled_services(
+            default_provider)
+
+        if self._provisional_provider_config.load(
+            os.path.join("leap",
+                         "providers",
+                         default_provider,
+                         "provider.json")):
+            self._download_eip_config()
+        else:
+            # XXX: Display a proper message to the user
+            logger.error("Unable to load %s config, cannot autostart." %
+                         (default_provider,))
 
     def _show_systray(self):
         """
@@ -744,6 +775,7 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth.logout_finished.connect(
                     self._done_logging_out)
 
+            # TODO: Add errback!
             self._login_defer = self._srp_auth.authenticate(username, password)
         else:
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
@@ -905,15 +937,17 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts EIP
         """
+        provider_config = self._get_best_provider_config()
+
         try:
             host, port = self._get_socket_host()
             self._vpn.start(eipconfig=self._eip_config,
-                            providerconfig=self._provider_config,
+                            providerconfig=provider_config,
                             socket_host=host,
                             socket_port=port)
 
             self._settings.set_defaultprovider(
-                self._provider_config.get_domain())
+                provider_config.get_domain())
             self.ui.btnEipStartStop.setText(self.tr("Turn Encryption OFF"))
             self.ui.btnEipStartStop.disconnect(self)
             self.ui.btnEipStartStop.clicked.connect(
@@ -955,25 +989,53 @@ class MainWindow(QtGui.QMainWindow):
         self._action_eip_startstop.disconnect(self)
         self._action_eip_startstop.triggered.connect(
             self._start_eip)
+        self._already_started_eip = False
+
+    def _get_best_provider_config(self):
+        """
+        Returns the best ProviderConfig to use at a moment. We may
+        have to use self._provider_config or
+        self._provisional_provider_config depending on the start
+        status.
+
+        :rtype: ProviderConfig
+        """
+        leap_assert(self._provider_config is not None or
+                    self._provisional_provider_config is not None,
+                    "We need a provider config")
+
+        provider_config = None
+        if self._provider_config.loaded():
+            provider_config = self._provider_config
+        elif self._provisional_provider_config.loaded():
+            provider_config = self._provisional_provider_config
+        else:
+            leap_assert(False, "We couldn't find any usable ProviderConfig")
+
+        return provider_config
 
     def _download_eip_config(self):
         """
         Starts the EIP bootstrapping sequence
         """
         leap_assert(self._eip_bootstrapper, "We need an eip bootstrapper!")
-        leap_assert(self._provider_config, "We need a provider config")
 
-        self._set_eip_status(self.tr("Checking configuration, please wait..."))
+        provider_config = self._get_best_provider_config()
 
-        if self._provider_config.provides_eip() and \
-                self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
+        if provider_config.provides_eip() and \
+                self._enabled_services.count(self.OPENVPN_SERVICE) > 0 and \
+                not self._already_started_eip:
+
+            self._set_eip_status(
+                self.tr("Checking configuration, please wait..."))
             self._eip_bootstrapper.run_eip_setup_checks(
-                self._provider_config,
+                provider_config,
                 download_if_needed=True)
-        else:
+            self._already_started_eip = True
+        elif not self._already_started_eip:
             if self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
                 self._set_eip_status(self.tr("%s does not support EIP") %
-                                     (self._provider_config.get_domain(),),
+                                     (provider_config.get_domain(),),
                                      error=True)
             else:
                 self._set_eip_status(self.tr("EIP is disabled"))
@@ -1059,14 +1121,16 @@ class MainWindow(QtGui.QMainWindow):
         loaded
         """
         leap_assert(self._eip_config, "We need an eip config!")
-        leap_assert(self._provider_config, "We need a provider config!")
+
+        provider_config = self._get_best_provider_config()
+
+        domain = provider_config.get_domain()
 
         if data[self._eip_bootstrapper.PASSED_KEY] and \
                 (self._eip_config.loaded() or
                  self._eip_config.load(os.path.join("leap",
                                                     "providers",
-                                                    self._provider_config
-                                                    .get_domain(),
+                                                    domain,
                                                     "eip-service.json"))):
                 self._start_eip()
         else:
