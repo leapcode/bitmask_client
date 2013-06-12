@@ -241,10 +241,17 @@ class SRPAuth(QtCore.QObject):
                 raise SRPAuthenticationError("Bad JSON content in auth result")
 
             if auth_result.status_code == 422:
+                error = ""
+                try:
+                    error = json.loads(content).get("errors", "")
+                except ValueError:
+                    logger.error("Problem parsing the received response: %s"
+                                 % (content,))
+                except AttributeError:
+                    logger.error("Expecting a dict but something else was "
+                                 "received: %s", (content,))
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
-                             (auth_result.status_code,
-                              content.
-                              get("errors", "")))
+                             (auth_result.status_code, error))
                 raise SRPAuthenticationError(self.tr("Wrong password"))
 
             if auth_result.status_code not in (200,):
