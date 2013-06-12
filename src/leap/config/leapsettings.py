@@ -66,6 +66,7 @@ class LeapSettings(object):
     PROPERPROVIDER_KEY = "ProperProvider"
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
+    ALERTMISSING_KEY = "AlertMissingScripts"
 
     def __init__(self, standalone=False):
         """
@@ -249,3 +250,21 @@ class LeapSettings(object):
         """
         leap_assert(len(provider) > 0, "We cannot save an empty provider")
         self._settings.setValue(self.DEFAULTPROVIDER_KEY, provider)
+
+    def get_alert_missing_scripts(self):
+        """
+        Returns the setting for alerting of missing up/down scripts.
+
+        :rtype: bool
+        """
+        return to_bool(self._settings.value(self.ALERTMISSING_KEY, True))
+
+    def set_alert_missing_scripts(self, value):
+        """
+        Sets the setting for alerting of missing up/down scripts.
+
+        :param value: the value to set
+        :type value: bool
+        """
+        leap_assert_type(value, bool)
+        self._settings.setValue(self.ALERTMISSING_KEY, value)

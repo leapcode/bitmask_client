@@ -18,9 +18,9 @@
 Custom handler for the logger window.
 """
 import logging
-from functools import partial
 
 from PySide import QtCore
+
 
 class LogHandler(logging.Handler):
     """
@@ -36,6 +36,11 @@ class LogHandler(logging.Handler):
     _log_history = []
 
     def __init__(self, qtsignal):
+        """
+        LogHander initialization.
+        Calls parent method and keeps a reference to the qtsignal
+        that will be used to fire the gui update.
+        """
         logging.Handler.__init__(self)
         self._qtsignal = qtsignal
 
@@ -119,6 +124,10 @@ class LeapLogHandler(QtCore.QObject, HandlerAdapter):
     new_log = QtCore.Signal(dict)
 
     def __init__(self):
+        """
+        LeapLogHandler initialization.
+        Initializes parent classes.
+        """
         QtCore.QObject.__init__(self)
         HandlerAdapter.__init__(self, qtsignal=self.qtsignal)
 
