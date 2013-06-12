@@ -1,0 +1,3 @@
+  o Clicking in the tray icon will always show the context menu
+    instead of activating the window under certain
+    circumstances. Closes #2788
