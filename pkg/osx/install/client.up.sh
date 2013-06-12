@@ -2,7 +2,8 @@
 # Note: must be bash; uses bash-specific tricks
 #
 # ******************************************************************************************************************
-# This Tunnelblick script does everything! It handles TUN and TAP interfaces, 
+# Taken from the Tunnelblick script that "just does everything!"
+# It handles TUN and TAP interfaces, 
 # pushed configurations, DHCP with DNS and WINS, and renewed DHCP leases. :)
 # 
 # This is the "Up" version of the script, executed after the interface is 
@@ -11,6 +12,7 @@
 # Created by: Nick Williams (using original code and parts of old Tblk scripts)
 # 
 # ******************************************************************************************************************
+# TODO: review and adapt revision 3 of the clientX-up.sh instead
 
 trap "" TSTP
 trap "" HUP
@@ -19,7 +21,7 @@ export PATH="/bin:/sbin:/usr/sbin:/usr/bin"
 
 # Process optional arguments (if any) for the script
 # Each one begins with a "-"
-# They come from Tunnelblick, and come first, before the OpenVPN arguments
+# They come from the leap-client invocation, and come first, before the OpenVPN arguments
 # So we set ARG_ script variables to their values and shift them out of the argument list
 # When we're done, only the OpenVPN arguments remain for the rest of the script to use
 ARG_MONITOR_NETWORK_CONFIGURATION="false"
@@ -63,24 +65,25 @@ readonly ARG_MONITOR_NETWORK_CONFIGURATION ARG_RESTORE_ON_DNS_RESET ARG_RESTORE_
 # then convert to regular config     /Users/Jonathan/Library/Application Support/Tunnelblick/Configurations/Folder/Subfolder/config.ovpn
 #      to get the script log path
 # Note: "/Users/..." works even if the home directory has a different path; it is used in the name of the log file, and is not used as a path to get to anything.
-readonly TBALTPREFIX="/Library/Application Support/Tunnelblick/Users/"
+readonly TBALTPREFIX="/Library/Application Support/LEAP Client/Users/"
 readonly TBALTPREFIXLEN="${#TBALTPREFIX}"
 readonly TBCONFIGSTART="${config:0:$TBALTPREFIXLEN}"
 if [ "$TBCONFIGSTART" = "$TBALTPREFIX" ] ; then
 	readonly TBBASE="${config:$TBALTPREFIXLEN}"
 	readonly TBSUFFIX="${TBBASE#*/}"
 	readonly TBUSERNAME="${TBBASE%%/*}"
-	readonly TBCONFIG="/Users/$TBUSERNAME/Library/Application Support/Tunnelblick/Configurations/$TBSUFFIX"
+	readonly TBCONFIG="/Users/$TBUSERNAME/Library/Application Support/LEAP Client/Configurations/$TBSUFFIX"
 else
     readonly TBCONFIG="${config}"
 fi
 
 readonly CONFIG_PATH_DASHES_SLASHES="$(echo "${TBCONFIG}" | sed -e 's/-/--/g' | sed -e 's/\//-S/g')"
-readonly SCRIPT_LOG_FILE="/Library/Application Support/Tunnelblick/Logs/${CONFIG_PATH_DASHES_SLASHES}.script.log"
 
+# XXX PUT LOGS SOMEWHERE BETTER
+readonly SCRIPT_LOG_FILE="/Users/$LEAPUSER/.config/leap/logs/${CONFIG_PATH_DASHES_SLASHES}.script.log"
 readonly TB_RESOURCE_PATH=$(dirname "${0}")
 
-LEASEWATCHER_PLIST_PATH="/Library/Application Support/Tunnelblick/LeaseWatch.plist"
+LEASEWATCHER_PLIST_PATH="/Users/$LEAPUSER/.config/leap/logs/LeaseWatch.plist"
 
 readonly OSVER="$(sw_vers | grep 'ProductVersion:' | grep -o '10\.[0-9]*')"
 
@@ -92,7 +95,7 @@ bRouteGatewayIsDhcp="false"
 readonly LOG_MESSAGE_COMMAND=$(basename "${0}")
 logMessage()
 {
-	echo "$(date '+%a %b %e %T %Y') *Tunnelblick $LOG_MESSAGE_COMMAND: "${@} >> "${SCRIPT_LOG_FILE}"
+	echo "$(date '+%a %b %e %T %Y') *LEAP Client $LOG_MESSAGE_COMMAND: "${@} >> "${SCRIPT_LOG_FILE}"
 }
 
 # @param String string - Content to trim
@@ -270,7 +273,7 @@ EOF )"
 	fi
 	
 	# Now, do the aggregation
-	# Save the openvpn process ID and the Network Primary Service ID, leasewather.plist path, logfile path, and optional arguments from Tunnelblick,
+	# Save the openvpn process ID and the Network Primary Service ID, leasewather.plist path, logfile path, and optional arguments from LEAP Client,
 	# then save old and new DNS and WINS settings
 	# PPID is a bash-script variable that contains the process ID of the parent of the process running the script (i.e., OpenVPN's process ID)
 	# config is an environmental variable set to the configuration path by OpenVPN prior to running this up script
@@ -290,7 +293,7 @@ EOF )"
 		CORRECT_OLD_WINS_KEY="State:"
 	fi
 	
-    # If we are not expecting any WINS value, add <TunnelblickNoSuchKey : true> to the expected WINS setup
+    # If we are not expecting any WINS value, add <LEAPClientNoSuchKey : true> to the expected WINS setup
     NO_NOSUCH_KEY_WINS="#"
     if [ "${NO_NB}" = "#" -a "${AGG_WINS}" = "#" -a "${NO_WG}" = "#" ] ; then
         NO_NOSUCH_KEY_WINS=""
@@ -315,14 +318,14 @@ EOF )"
 		set State:/Network/OpenVPN
 		
 		# First, back up the device's current DNS and WINS configurations
-		# Indicate 'no such key' by a dictionary with a single entry: "TunnelblickNoSuchKey : true"
+		# Indicate 'no such key' by a dictionary with a single entry: "LEAPClientNoSuchKey : true"
 		d.init
-		d.add TunnelblickNoSuchKey true
+		d.add LEAPClientNoSuchKey true
 		get ${CORRECT_OLD_DNS_KEY}/Network/Service/${PSID}/DNS
 		set State:/Network/OpenVPN/OldDNS
 		
 		d.init
-		d.add TunnelblickNoSuchKey true
+		d.add LEAPClientNoSuchKey true
 		get ${CORRECT_OLD_WINS_KEY}/Network/Service/${PSID}/SMB
 		set State:/Network/OpenVPN/OldSMB
 		
@@ -353,7 +356,7 @@ EOF )"
 		${NO_NB}d.add NetBIOSName ${STATIC_NETBIOSNAME}
 		${AGG_WINS}d.add WINSAddresses * ${ALL_WINS_SERVERS}
 		${NO_WG}d.add Workgroup ${STATIC_WORKGROUP}
-        ${NO_NOSUCH_KEY_WINS}d.add TunnelblickNoSuchKey true
+        ${NO_NOSUCH_KEY_WINS}d.add LEAPClientNoSuchKey true
 		set State:/Network/OpenVPN/SMB
 		
 		# We are done
