@@ -805,7 +805,7 @@ class MainWindow(QtGui.QMainWindow):
         if not self._already_started_eip:
             self._status_panel.set_provider(
                 "%s@%s" % (self._login_widget.get_user(),
-                           self._provider_config.get_domain()))
+                           self._get_best_provider_config().get_domain()))
 
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
 
@@ -952,7 +952,7 @@ class MainWindow(QtGui.QMainWindow):
             self._settings.set_defaultprovider(
                 provider_config.get_domain())
 
-            provider = self._provider_config.get_domain()
+            provider = provider_config.get_domain()
             if self._logged_user is not None:
                 provider = "%s@%s" % (self._logged_user, provider)
 
@@ -1005,6 +1005,11 @@ class MainWindow(QtGui.QMainWindow):
             self._start_eip)
         self._already_started_eip = False
         self._settings.set_defaultprovider(None)
+
+        if self._logged_user:
+            self._status_panel.set_provider(
+                "%s@%s" % (self._logged_user,
+                           self._get_best_provider_config().get_domain()))
 
     def _get_best_provider_config(self):
         """
