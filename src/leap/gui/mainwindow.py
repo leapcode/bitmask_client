@@ -227,6 +227,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self._systray = None
 
+        self._action_eip_provider = QtGui.QAction(
+            self.tr("No default provider"), self)
+        self._action_eip_provider.setEnabled(False)
         self._action_eip_status = QtGui.QAction(
             self.tr("Encrypted internet is OFF"),
             self)
@@ -490,6 +493,8 @@ class MainWindow(QtGui.QMainWindow):
                         "provider configured")
             return
 
+        self._action_eip_provider.setText(default_provider)
+
         self._enabled_services = self._settings.get_enabled_services(
             default_provider)
 
@@ -517,6 +522,7 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_quit)
         systrayMenu.addSeparator()
+        systrayMenu.addAction(self._action_eip_provider)
         systrayMenu.addAction(self._action_eip_status)
         systrayMenu.addAction(self._action_eip_startstop)
         self._systray = QtGui.QSystemTrayIcon(self)
@@ -963,6 +969,7 @@ class MainWindow(QtGui.QMainWindow):
 
             self._settings.set_defaultprovider(
                 provider_config.get_domain())
+            self._action_eip_provider.setText(provider_config.get_domain())
             self.ui.btnEipStartStop.setText(self.tr("Turn Encryption OFF"))
             self.ui.btnEipStartStop.disconnect(self)
             self.ui.btnEipStartStop.clicked.connect(
