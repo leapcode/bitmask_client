@@ -34,7 +34,7 @@ from functools import partial
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import which
 from leap.config.providerconfig import ProviderConfig
-from leap.services.eip.eipconfig import EIPConfig
+from leap.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 
 logger = logging.getLogger(__name__)
 
@@ -228,7 +228,8 @@ class LinuxVPNLauncher(VPNLauncher):
 
         # TODO: handle verbosity
 
-        gateway_ip = str(eipconfig.get_gateway_ip(0))
+        gateway_selector = VPNGatewaySelector(eipconfig)
+        gateway_ip = gateway_selector.get_best_gateway_ip()
 
         logger.debug("Using gateway ip %s" % (gateway_ip,))
 
@@ -391,7 +392,9 @@ class DarwinVPNLauncher(VPNLauncher):
 
         # TODO: handle verbosity
 
-        gateway_ip = str(eipconfig.get_gateway_ip(0))
+        gateway_selector = VPNGatewaySelector(eipconfig)
+        gateway_ip = gateway_selector.get_best_gateway_ip()
+
         logger.debug("Using gateway ip %s" % (gateway_ip,))
 
         args += [
@@ -530,7 +533,8 @@ class WindowsVPNLauncher(VPNLauncher):
 
         # TODO: handle verbosity
 
-        gateway_ip = str(eipconfig.get_gateway_ip(0))
+        gateway_selector = VPNGatewaySelector(eipconfig)
+        gateway_ip = gateway_selector.get_best_gateway_ip()
 
         logger.debug("Using gateway ip %s" % (gateway_ip,))
 
