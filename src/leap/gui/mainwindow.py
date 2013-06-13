@@ -186,7 +186,7 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_bootstrapper = EIPBootstrapper()
 
         self._eip_bootstrapper.download_config.connect(
-            self._intermediate_stage)
+            self._eip_intermediate_stage)
         self._eip_bootstrapper.download_client_certificate.connect(
             self._finish_eip_bootstrap)
 
@@ -1140,6 +1140,7 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 self._set_eip_status(data[self._eip_bootstrapper.ERROR_KEY],
                                      error=True)
+            self._already_started_eip = False
 
     def _logout(self):
         """
@@ -1183,6 +1184,21 @@ class MainWindow(QtGui.QMainWindow):
         if not passed:
             self._login_set_enabled(True)
             self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
+
+    def _eip_intermediate_stage(self, data):
+        """
+        SLOT
+        TRIGGERS:
+          self._eip_bootstrapper.download_config
+
+        If there was a problem, displays it, otherwise it does nothing.
+        This is used for intermediate bootstrapping stages, in case
+        they fail.
+        """
+        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        if not passed:
+            self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
+            self._already_started_eip = False
 
     def _eip_finished(self, exitCode):
         """
