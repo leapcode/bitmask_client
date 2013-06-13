@@ -185,11 +185,11 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_bootstrapper.download_client_certificate.connect(
             self._finish_eip_bootstrap)
 
-        self._soledad_bootstrapper = SoledadBootstrapper()
-        self._soledad_bootstrapper.download_config.connect(
-            self._soledad_intermediate_stage)
-        self._soledad_bootstrapper.gen_key.connect(
-            self._soledad_bootstrapped_stage)
+        #self._soledad_bootstrapper = SoledadBootstrapper()
+        #self._soledad_bootstrapper.download_config.connect(
+            #self._soledad_intermediate_stage)
+        #self._soledad_bootstrapper.gen_key.connect(
+            #self._soledad_bootstrapped_stage)
 
         self._smtp_bootstrapper = SMTPBootstrapper()
         self._smtp_bootstrapper.download_config.connect(
@@ -809,11 +809,12 @@ class MainWindow(QtGui.QMainWindow):
 
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
 
-        self._soledad_bootstrapper.run_soledad_setup_checks(
-            self._provider_config,
-            self._login_widget.get_user(),
-            self._login_widget.get_password(),
-            download_if_needed=True)
+        # XXX disabling soledad for now
+        #self._soledad_bootstrapper.run_soledad_setup_checks(
+            #self._provider_config,
+            #self._login_widget.get_user(),
+            #self._login_widget.get_password(),
+            #download_if_needed=True)
 
         self._download_eip_config()
 
