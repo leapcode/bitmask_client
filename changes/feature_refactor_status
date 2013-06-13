@@ -1,0 +1,2 @@
+  o Refactor the status bits out of the MainWindow to its own
+    StatusPanelWidget. Closes #2792
