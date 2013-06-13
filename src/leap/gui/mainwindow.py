@@ -347,7 +347,8 @@ class MainWindow(QtGui.QMainWindow):
                 logger.error('Leap logger handler not found')
             else:
                 self._logger_window = LoggerWindow(handler=leap_log_handler)
-                self._logger_window.setVisible(not self._logger_window.isVisible())
+                self._logger_window.setVisible(
+                    not self._logger_window.isVisible())
                 self.ui.btnShowLog.setChecked(self._logger_window.isVisible())
         else:
             self._logger_window.setVisible(not self._logger_window.isVisible())
@@ -474,7 +475,8 @@ class MainWindow(QtGui.QMainWindow):
                     logger.debug("Incorrect Password. %r." % (e,))
 
                 if saved_password is not None:
-                    self._login_widget.set_password(saved_password.decode("utf8"))
+                    self._login_widget.set_password(
+                        saved_password.decode("utf8"))
                     self._login()
 
     def _try_autostart_eip(self):
@@ -696,7 +698,8 @@ class MainWindow(QtGui.QMainWindow):
                     self.tr("Could not load provider configuration"))
                 self._login_widget.set_enabled(True)
         else:
-            self._login_widget.set_status(data[self._provider_bootstrapper.ERROR_KEY])
+            self._login_widget.set_status(
+                data[self._provider_bootstrapper.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
     def _login(self):
@@ -721,15 +724,18 @@ class MainWindow(QtGui.QMainWindow):
             self._login_widget.get_selected_provider())
 
         if len(provider) == 0:
-            self._login_widget.set_status(self.tr("Please select a valid provider"))
+            self._login_widget.set_status(
+                self.tr("Please select a valid provider"))
             return
 
         if len(username) == 0:
-            self._login_widget.set_status(self.tr("Please provide a valid username"))
+            self._login_widget.set_status(
+                self.tr("Please provide a valid username"))
             return
 
         if len(password) == 0:
-            self._login_widget.set_status(self.tr("Please provide a valid Password"))
+            self._login_widget.set_status(
+                self.tr("Please provide a valid Password"))
             return
 
         self._login_widget.set_status(self.tr("Logging in..."), error=False)
@@ -776,7 +782,8 @@ class MainWindow(QtGui.QMainWindow):
             # TODO: Add errback!
             self._login_defer = self._srp_auth.authenticate(username, password)
         else:
-            self._login_widget.set_status(data[self._provider_bootstrapper.ERROR_KEY])
+            self._login_widget.set_status(
+                data[self._provider_bootstrapper.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
     def _authentication_finished(self, ok, message):
@@ -1180,7 +1187,8 @@ class MainWindow(QtGui.QMainWindow):
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         if not passed:
             self._login_widget.set_enabled(True)
-            self._login_widget.set_status(data[self._provider_bootstrapper.ERROR_KEY])
+            self._login_widget.set_status(
+                data[self._provider_bootstrapper.ERROR_KEY])
 
     def _eip_finished(self, exitCode):
         """

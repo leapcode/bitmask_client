@@ -210,4 +210,3 @@ class LoginWidget(QtGui.QWidget):
             self.ui.cmbProviders.blockSignals(False)
         else:
             self._selected_provider_index = param
-
