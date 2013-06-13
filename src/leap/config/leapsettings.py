@@ -227,10 +227,12 @@ class LeapSettings(object):
         Sets the default provider to be used for autostarting EIP
 
         :param provider: provider to use
-        :type provider: str
+        :type provider: str or None
         """
-        leap_assert(len(provider) > 0, "We cannot save an empty provider")
-        self._settings.setValue(self.DEFAULTPROVIDER_KEY, provider)
+        if provider is None:
+            self._settings.remove(self.DEFAULTPROVIDER_KEY)
+        else:
+            self._settings.setValue(self.DEFAULTPROVIDER_KEY, provider)
 
     def get_alert_missing_scripts(self):
         """

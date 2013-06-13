@@ -1012,6 +1012,7 @@ class MainWindow(QtGui.QMainWindow):
         self._action_eip_startstop.triggered.connect(
             self._start_eip)
         self._already_started_eip = False
+        self._settings.set_defaultprovider(None)
 
     def _get_best_provider_config(self):
         """
