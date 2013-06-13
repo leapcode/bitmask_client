@@ -38,14 +38,15 @@ from leap.crypto.srpauth import SRPAuth
 from leap.gui.loggerwindow import LoggerWindow
 from leap.gui.wizard import Wizard
 from leap.gui.login import LoginWidget
+from leap.gui.statuspanel import StatusPanelWidget
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
-from leap.platform_init import IS_MAC, IS_WIN
+from leap.platform_init import IS_WIN
 from leap.platform_init.initializers import init_platform
-from leap.services.eip.vpnprocess import VPN, VPNManager
+from leap.services.eip.vpnprocess import VPN
 
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             OpenVPNNotFoundException,
@@ -115,24 +116,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._updates_content = ""
 
-        if IS_MAC:
-            EIP_ICONS = (
-                ":/images/conn_connecting-light.png",
-                ":/images/conn_connected-light.png",
-                ":/images/conn_error-light.png")
-        else:
-            EIP_ICONS = (
-                ":/images/conn_connecting.png",
-                ":/images/conn_connected.png",
-                ":/images/conn_error.png")
-
-        self.CONNECTING_ICON = QtGui.QPixmap(EIP_ICONS[0])
-        self.CONNECTED_ICON = QtGui.QPixmap(EIP_ICONS[1])
-        self.ERROR_ICON = QtGui.QPixmap(EIP_ICONS[2])
-
-        self.LOGGED_OUT_ICON = QtGui.QPixmap(":/images/leap-gray-big.png")
-        self.LOGGED_IN_ICON = QtGui.QPixmap(":/images/leap-color-big.png")
-
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
@@ -149,11 +132,14 @@ class MainWindow(QtGui.QMainWindow):
 
         self.ui.btnShowLog.clicked.connect(self._show_logger_window)
 
+        self._status_panel = StatusPanelWidget(
+            self.ui.stackedWidget.widget(self.EIP_STATUS_INDEX))
+        self.ui.statusLayout.addWidget(self._status_panel)
+
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
 
-        self.ui.btnEipStartStop.setEnabled(False)
-        self.ui.btnEipStartStop.clicked.connect(
-            self._start_eip)
+        self._status_panel.start_eip.connect(self._start_eip)
+        self._status_panel.stop_eip.connect(self._stop_eip)
 
         # This is loaded only once, there's a bug when doing that more
         # than once
@@ -169,6 +155,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # This is created once we have a valid provider config
         self._srp_auth = None
+        self._logged_user = None
 
         # This thread is always running, although it's quite
         # lightweight when it's done setting up provider
@@ -209,8 +196,10 @@ class MainWindow(QtGui.QMainWindow):
             self._smtp_bootstrapped_stage)
 
         self._vpn = VPN()
-        self._vpn.qtsigs.state_changed.connect(self._update_vpn_state)
-        self._vpn.qtsigs.status_changed.connect(self._update_vpn_status)
+        self._vpn.qtsigs.state_changed.connect(
+            self._status_panel.update_vpn_state)
+        self._vpn.qtsigs.status_changed.connect(
+            self._status_panel.update_vpn_status)
         self._vpn.qtsigs.process_finished.connect(
             self._eip_finished)
 
@@ -234,18 +223,14 @@ class MainWindow(QtGui.QMainWindow):
             self.tr("Encrypted internet is OFF"),
             self)
         self._action_eip_status.setEnabled(False)
+
+        self._status_panel.set_action_eip_status(
+            self._action_eip_status)
+
         self._action_eip_startstop = QtGui.QAction(
-            self.tr("Turn encryption ON"), self)
+            self.tr("Turn ON"), self)
         self._action_eip_startstop.triggered.connect(
             self._stop_eip)
-        self._action_eip_write = QtGui.QAction(
-            QtGui.QIcon(":/images/Arrow-Up-32.png"),
-            "%12.2f Kb" % (0.0,), self)
-        self._action_eip_write.setEnabled(False)
-        self._action_eip_read = QtGui.QAction(
-            QtGui.QIcon(":/images/Arrow-Down-32.png"),
-            "%12.2f Kb" % (0.0,), self)
-        self._action_eip_read.setEnabled(False)
 
         self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
@@ -527,9 +512,11 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_eip_startstop)
         self._systray = QtGui.QSystemTrayIcon(self)
         self._systray.setContextMenu(systrayMenu)
-        self._systray.setIcon(QtGui.QIcon(self.ERROR_ICON))
+        self._systray.setIcon(self._status_panel.ERROR_ICON)
         self._systray.setVisible(True)
         self._systray.activated.connect(self._tray_activated)
+
+        self._status_panel.set_systray(self._systray)
 
     def _tray_activated(self, reason=None):
         """
@@ -661,18 +648,6 @@ class MainWindow(QtGui.QMainWindow):
         has_provider_on_disk = len(self._configured_providers()) != 0
         is_proper_provider = self._settings.get_properprovider()
         return not (has_provider_on_disk and is_proper_provider)
-
-    def _set_eip_status(self, status, error=False):
-        """
-        Sets the status label at the VPN stage to status
-
-        :param status: status message
-        :type status: str
-        """
-        self._systray.setToolTip(status)
-        if error:
-            status = "<font color='red'><b>%s</b></font>" % (status,)
-        self.ui.lblEIPStatus.setText(status)
 
     def _download_provider_config(self):
         """
@@ -812,6 +787,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._login_widget.set_status(message, error=not ok)
         if ok:
+            self._logged_user = self._login_widget.get_user()
             self.ui.action_sign_out.setEnabled(True)
             # We leave a bit of room for the user to see the
             # "Succeeded" message and then we switch to the EIP status
@@ -826,6 +802,11 @@ class MainWindow(QtGui.QMainWindow):
         Changes the stackedWidget index to the EIP status one and
         triggers the eip bootstrapping
         """
+        if not self._already_started_eip:
+            self._status_panel.set_provider(
+                "%s@%s" % (self._login_widget.get_user(),
+                           self._provider_config.get_domain()))
+
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
 
         self._soledad_bootstrapper.run_soledad_setup_checks(
@@ -883,13 +864,14 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 if self._enabled_services.count(self.MX_SERVICE) > 0:
                     pass  # TODO: show MX status
-                    #self._set_eip_status(
+                    #self._status_panel.set_eip_status(
                     #    self.tr("%s does not support MX") %
                     #    (self._provider_config.get_domain(),),
                     #                     error=True)
                 else:
                     pass  # TODO: show MX status
-                    #self._set_eip_status(self.tr("MX is disabled"))
+                    #self._status_panel.set_eip_status(
+                    #    self.tr("MX is disabled"))
 
     def _smtp_bootstrapped_stage(self, data):
         """
@@ -969,45 +951,55 @@ class MainWindow(QtGui.QMainWindow):
 
             self._settings.set_defaultprovider(
                 provider_config.get_domain())
+
+            provider = self._provider_config.get_domain()
+            if self._logged_user is not None:
+                provider = "%s@%s" % (self._logged_user, provider)
+
+            self._status_panel.set_provider(provider)
+
             self._action_eip_provider.setText(provider_config.get_domain())
-            self.ui.btnEipStartStop.setText(self.tr("Turn Encryption OFF"))
-            self.ui.btnEipStartStop.disconnect(self)
-            self.ui.btnEipStartStop.clicked.connect(
-                self._stop_eip)
-            self._action_eip_startstop.setText(self.tr("Turn Encryption OFF"))
+
+            self._status_panel.eip_started()
+
+            self._action_eip_startstop.setText(self.tr("Turn OFF"))
             self._action_eip_startstop.disconnect(self)
             self._action_eip_startstop.triggered.connect(
                 self._stop_eip)
         except EIPNoPolkitAuthAgentAvailable:
-            self._set_eip_status(self.tr("We could not find any "
-                                         "authentication "
-                                         "agent in your system.<br/>"
-                                         "Make sure you have "
-                                         "<b>polkit-gnome-authentication-"
-                                         "agent-1</b> "
-                                         "running and try again."),
-                                 error=True)
+            self._status_panel.set_eip_status(
+                self.tr("We could not find any "
+                        "authentication "
+                        "agent in your system.<br/>"
+                        "Make sure you have "
+                        "<b>polkit-gnome-authentication-"
+                        "agent-1</b> "
+                        "running and try again."),
+                error=True)
         except EIPNoPkexecAvailable:
-            self._set_eip_status(self.tr("We could not find <b>pkexec</b> "
-                                         "in your system."),
-                                 error=True)
+            self._status_panel.set_eip_status(
+                self.tr("We could not find <b>pkexec</b> "
+                        "in your system."),
+                error=True)
         except OpenVPNNotFoundException:
-            self._set_eip_status(self.tr("We couldn't find openvpn"),
-                                 error=True)
+            self._status_panel.set_eip_status(
+                self.tr("We couldn't find openvpn"),
+                error=True)
         except VPNLauncherException as e:
-            self._set_eip_status("%s" % (e,), error=True)
+            self._status_panel.set_eip_status("%s" % (e,), error=True)
+        else:
+            self._already_started_eip = True
 
-        self.ui.btnEipStartStop.setEnabled(True)
+        self._status_panel.set_startstop_enabled(True)
 
     def _stop_eip(self):
         self._vpn.terminate()
-        self._set_eip_status(self.tr("EIP has stopped"))
-        self._set_eip_status_icon("error")
-        self.ui.btnEipStartStop.setText(self.tr("Turn Encryption ON"))
-        self.ui.btnEipStartStop.disconnect(self)
-        self.ui.btnEipStartStop.clicked.connect(
-            self._start_eip)
-        self._action_eip_startstop.setText(self.tr("Turn Encryption ON"))
+        self._status_panel.set_eip_status(self.tr("Off"))
+        self._status_panel.set_eip_status_icon("error")
+
+        self._status_panel.eip_stopped()
+
+        self._action_eip_startstop.setText(self.tr("Turn ON"))
         self._action_eip_startstop.disconnect(self)
         self._action_eip_startstop.triggered.connect(
             self._start_eip)
@@ -1048,91 +1040,20 @@ class MainWindow(QtGui.QMainWindow):
                 self._enabled_services.count(self.OPENVPN_SERVICE) > 0 and \
                 not self._already_started_eip:
 
-            self._set_eip_status(
-                self.tr("Checking configuration, please wait..."))
+            self._status_panel.set_eip_status(
+                self.tr("Starting..."))
             self._eip_bootstrapper.run_eip_setup_checks(
                 provider_config,
                 download_if_needed=True)
             self._already_started_eip = True
         elif not self._already_started_eip:
             if self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
-                self._set_eip_status(self.tr("%s does not support EIP") %
-                                     (provider_config.get_domain(),),
-                                     error=True)
+                self._status_panel.set_eip_status(
+                    self.tr("Not supported"),
+                    error=True)
             else:
-                self._set_eip_status(self.tr("EIP is disabled"))
+                self._status_panel.set_eip_status(self.tr("Disabled"))
             self.ui.btnEipStartStop.setEnabled(False)
-
-    def _set_eip_status_icon(self, status):
-        """
-        Given a status step from the VPN thread, set the icon properly
-
-        :param status: status step
-        :type status: str
-        """
-        selected_pixmap = self.ERROR_ICON
-        tray_message = self.tr("Encryption is OFF")
-        if status in ("WAIT", "AUTH", "GET_CONFIG",
-                      "RECONNECTING", "ASSIGN_IP"):
-            selected_pixmap = self.CONNECTING_ICON
-            tray_message = self.tr("Turning Encryption ON")
-        elif status in ("CONNECTED"):
-            tray_message = self.tr("Encryption is ON")
-            selected_pixmap = self.CONNECTED_ICON
-
-        self.ui.lblVPNStatusIcon.setPixmap(selected_pixmap)
-        self._systray.setIcon(QtGui.QIcon(selected_pixmap))
-        self._action_eip_status.setText(tray_message)
-
-    def _update_vpn_state(self, data):
-        """
-        SLOT
-        TRIGGER: self._vpn.state_changed
-
-        Updates the displayed VPN state based on the data provided by
-        the VPN thread
-        """
-        status = data[VPNManager.STATUS_STEP_KEY]
-        self._set_eip_status_icon(status)
-        if status == "AUTH":
-            self._set_eip_status(self.tr("VPN: Authenticating..."))
-        elif status == "GET_CONFIG":
-            self._set_eip_status(self.tr("VPN: Retrieving configuration..."))
-        elif status == "CONNECTED":
-            self._set_eip_status(self.tr("VPN: Connected!"))
-        elif status == "WAIT":
-            self._set_eip_status(self.tr("VPN: Waiting to start..."))
-        elif status == "ASSIGN_IP":
-            self._set_eip_status(self.tr("VPN: Assigning IP"))
-        elif status == "ALREADYRUNNING":
-            # Put the following calls in Qt's event queue, otherwise
-            # the UI won't update properly
-            QtCore.QTimer.singleShot(0, self._stop_eip)
-            QtCore.QTimer.singleShot(0, partial(self._set_eip_status,
-                                                self.tr("Unable to start VPN, "
-                                                        "it's already "
-                                                        "running.")))
-        else:
-            self._set_eip_status(status)
-
-    def _update_vpn_status(self, data):
-        """
-        SLOT
-        TRIGGER: self._vpn.status_changed
-
-        Updates the download/upload labels based on the data provided
-        by the VPN thread
-        """
-        upload = float(data[VPNManager.TUNTAP_WRITE_KEY])
-        upload = upload / 1000.0
-        upload_str = "%12.2f Kb" % (upload,)
-        self.ui.lblUpload.setText(upload_str)
-        self._action_eip_write.setText(upload_str)
-        download = float(data[VPNManager.TUNTAP_READ_KEY])
-        download = download / 1000.0
-        download_str = "%12.2f Kb" % (download,)
-        self.ui.lblDownload.setText(download_str)
-        self._action_eip_read.setText(download_str)
 
     def _finish_eip_bootstrap(self, data):
         """
@@ -1157,11 +1078,13 @@ class MainWindow(QtGui.QMainWindow):
                 self._start_eip()
         else:
             if data[self._eip_bootstrapper.PASSED_KEY]:
-                self._set_eip_status(self.tr("Could not load EIP "
-                                             "Configuration"), error=True)
+                self._status_panel.set_eip_status(
+                    self.tr("Could not load EIP Configuration"),
+                    error=True)
             else:
-                self._set_eip_status(data[self._eip_bootstrapper.ERROR_KEY],
-                                     error=True)
+                self._status_panel.set_eip_status(
+                    data[self._eip_bootstrapper.ERROR_KEY],
+                    error=True)
             self._already_started_eip = False
 
     def _logout(self):
@@ -1183,6 +1106,7 @@ class MainWindow(QtGui.QMainWindow):
         Switches the stackedWidget back to the login stage after
         logging out
         """
+        self._logged_user = None
         self.ui.action_sign_out.setEnabled(False)
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
         self._login_widget.set_password("")
