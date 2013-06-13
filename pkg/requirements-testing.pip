@@ -5,7 +5,7 @@ nose-progressive
 
 unittest2  # TODO we should include this dep only for python2.6
 coverage
-pep8==1.1
+pep8>=1.1
 tox
 
 #sphinx>=1.1.2

@@ -2,7 +2,8 @@
 # Note: must be bash; uses bash-specific tricks
 #
 # ******************************************************************************************************************
-# This Tunnelblick script does everything! It handles TUN and TAP interfaces, 
+# Based on the Tunnelblick script that just "does everything!"
+# It handles TUN and TAP interfaces, 
 # pushed configurations and DHCP leases. :)
 # 
 # This is the "Down" version of the script, executed after the connection is 
@@ -11,6 +12,7 @@
 # Created by: Nick Williams (using original code and parts of old Tblk scripts)
 # 
 # ******************************************************************************************************************
+# TODO: review and adapt version 3 of the clientX.down.sh
 
 trap "" TSTP
 trap "" HUP
@@ -26,30 +28,30 @@ if ! scutil -w State:/Network/OpenVPN &>/dev/null -t 1 ; then
 	exit 0
 fi
 
-# NOTE: This script does not use any arguments passed to it by OpenVPN, so it doesn't shift Tunnelblick options out of the argument list
+# NOTE: This script does not use any arguments passed to it by OpenVPN, so it doesn't shift LEAPClient options out of the argument list
 
 # Get info saved by the up script
-TUNNELBLICK_CONFIG="$(/usr/sbin/scutil <<-EOF
+LEAPCLIENT_CONFIG="$(/usr/sbin/scutil <<-EOF
 	open
 	show State:/Network/OpenVPN
 	quit
 EOF)"
 
-ARG_MONITOR_NETWORK_CONFIGURATION="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*MonitorNetwork :' | sed -e 's/^.*: //g')"
-LEASEWATCHER_PLIST_PATH="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*LeaseWatcherPlistPath :' | sed -e 's/^.*: //g')"
-PSID="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*Service :' | sed -e 's/^.*: //g')"
-SCRIPT_LOG_FILE="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*ScriptLogFile :' | sed -e 's/^.*: //g')"
-# Don't need: ARG_RESTORE_ON_DNS_RESET="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*RestoreOnDNSReset :' | sed -e 's/^.*: //g')"
-# Don't need: ARG_RESTORE_ON_WINS_RESET="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*RestoreOnWINSReset :' | sed -e 's/^.*: //g')"
-# Don't need: PROCESS="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*PID :' | sed -e 's/^.*: //g')"
-# Don't need: ARG_IGNORE_OPTION_FLAGS="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*IgnoreOptionFlags :' | sed -e 's/^.*: //g')"
-ARG_TAP="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*IsTapInterface :' | sed -e 's/^.*: //g')"
-bRouteGatewayIsDhcp="$(echo "${TUNNELBLICK_CONFIG}" | grep -i '^[[:space:]]*RouteGatewayIsDhcp :' | sed -e 's/^.*: //g')"
+ARG_MONITOR_NETWORK_CONFIGURATION="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*MonitorNetwork :' | sed -e 's/^.*: //g')"
+LEASEWATCHER_PLIST_PATH="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*LeaseWatcherPlistPath :' | sed -e 's/^.*: //g')"
+PSID="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*Service :' | sed -e 's/^.*: //g')"
+SCRIPT_LOG_FILE="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*ScriptLogFile :' | sed -e 's/^.*: //g')"
+# Don't need: ARG_RESTORE_ON_DNS_RESET="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*RestoreOnDNSReset :' | sed -e 's/^.*: //g')"
+# Don't need: ARG_RESTORE_ON_WINS_RESET="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*RestoreOnWINSReset :' | sed -e 's/^.*: //g')"
+# Don't need: PROCESS="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*PID :' | sed -e 's/^.*: //g')"
+# Don't need: ARG_IGNORE_OPTION_FLAGS="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*IgnoreOptionFlags :' | sed -e 's/^.*: //g')"
+ARG_TAP="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*IsTapInterface :' | sed -e 's/^.*: //g')"
+bRouteGatewayIsDhcp="$(echo "${LEAPCLIENT_CONFIG}" | grep -i '^[[:space:]]*RouteGatewayIsDhcp :' | sed -e 's/^.*: //g')"
 
 # @param String message - The message to log
 logMessage()
 {
-	echo "$(date '+%a %b %e %T %Y') *Tunnelblick $LOG_MESSAGE_COMMAND: "${@} >> "${SCRIPT_LOG_FILE}"
+	echo "$(date '+%a %b %e %T %Y') *LEAP CLient $LOG_MESSAGE_COMMAND: "${@} >> "${SCRIPT_LOG_FILE}"
 }
 
 trim()
@@ -97,7 +99,7 @@ WINS_OLD="$(/usr/sbin/scutil <<-EOF
 	quit
 EOF)"
 TB_NO_SUCH_KEY="<dictionary> {
-  TunnelblickNoSuchKey : true
+  LEAPClientNoSuchKey : true
 }"
 
 if [ "${DNS_OLD}" = "${TB_NO_SUCH_KEY}" ] ; then

@@ -29,6 +29,7 @@ except ImportError:
     pass  # ignore, probably windows
 
 from abc import ABCMeta, abstractmethod
+from functools import partial
 
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import which
@@ -105,22 +106,37 @@ def get_platform_launcher():
 
 
 def _is_pkexec_in_system():
+    """
+    Checks the existence of the pkexec binary in system.
+    """
     pkexec_path = which('pkexec')
     if len(pkexec_path) == 0:
         return False
     return True
 
 
-def _has_updown_scripts(path):
+def _has_updown_scripts(path, warn=True):
     """
-    Checks the existence of the up/down scripts
+    Checks the existence of the up/down scripts.
+
+    :param path: the path to be checked
+    :type path: str
+
+    :param warn: whether we should log the absence
+    :type warn: bool
+
+    :rtype: bool
     """
-    # XXX should check permissions too
     is_file = os.path.isfile(path)
-    if not is_file:
-        logger.error("Could not find up/down scripts. " +
-                     "Might produce DNS leaks.")
-    return is_file
+    if warn and not is_file:
+        logger.error("Could not find up/down script %s. "
+                     "Might produce DNS leaks." % (path,))
+
+    is_exe = os.access(path, os.X_OK)
+    if warn and not is_exe:
+        logger.error("Up/down script %s is not executable. "
+                     "Might produce DNS leaks." % (path,))
+    return is_file and is_exe
 
 
 def _is_auth_agent_running():
@@ -229,7 +245,6 @@ class LinuxVPNLauncher(VPNLauncher):
 
         openvpn_configuration = eipconfig.get_openvpn_configuration()
 
-        # FIXME: sanitize this! --
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
 
@@ -294,15 +309,40 @@ class DarwinVPNLauncher(VPNLauncher):
 
     OSASCRIPT_BIN = '/usr/bin/osascript'
     OSX_ASADMIN = "do shell script \"%s\" with administrator privileges"
-    OPENVPN_BIN = 'openvpn.leap'
-    INSTALL_PATH = "/Applications/LEAPClient.app/"
+
+    INSTALL_PATH = "/Applications/LEAP\ Client.app"
     # OPENVPN_BIN = "/%s/Contents/Resources/openvpn.leap" % (
     #   self.INSTALL_PATH,)
-    UP_SCRIPT = "/%s/client.up.sh" % (INSTALL_PATH,)
-    DOWN_SCRIPT = "/%s/client.down.sh" % (INSTALL_PATH,)
+    OPENVPN_BIN = 'openvpn.leap'
+    OPENVPN_PATH = "%s/Contents/Resources/openvpn" % (INSTALL_PATH,)
 
-    # TODO: Add
-    # OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-down-root.so"
+    UP_SCRIPT = "%s/client.up.sh" % (OPENVPN_PATH,)
+    DOWN_SCRIPT = "%s/client.down.sh" % (OPENVPN_PATH,)
+    OPENVPN_DOWN_PLUGIN = '%s/openvpn-down-root.so' % (OPENVPN_PATH,)
+
+    UPDOWN_FILES = (UP_SCRIPT, DOWN_SCRIPT, OPENVPN_DOWN_PLUGIN)
+
+    @classmethod
+    def missing_updown_scripts(kls):
+        """
+        Returns what updown scripts are missing.
+        :rtype: list
+        """
+        file_exist = partial(_has_updown_scripts, warn=False)
+        zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
+        missing = filter(lambda (path, exists): exists is False, zipped)
+        return [path for path, exists in missing]
+
+    @classmethod
+    def cmd_for_missing_scripts(kls, frompath):
+        """
+        Returns a command that can copy the missing scripts.
+        :rtype: str
+        """
+        to = kls.OPENVPN_PATH
+        cmd = "#!/bin/sh\nmkdir -p %s\ncp \"%s/\"* %s" % (to, frompath, to)
+        #return kls.OSX_ASADMIN % cmd
+        return cmd
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="unix"):
@@ -365,20 +405,19 @@ class DarwinVPNLauncher(VPNLauncher):
             'server'
         ]
 
-        # FIXME: sanitize this! --
-
         openvpn_configuration = eipconfig.get_openvpn_configuration()
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
 
+        user = getpass.getuser()
         args += [
-            '--user', getpass.getuser(),
+            '--user', user,
             '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
         ]
 
         if socket_port == "unix":
             args += [
-                '--management-client-user', getpass.getuser()
+                '--management-client-user', user
             ]
 
         args += [
@@ -391,19 +430,30 @@ class DarwinVPNLauncher(VPNLauncher):
             args += [
                 '--up', self.UP_SCRIPT,
             ]
+
         if _has_updown_scripts(self.DOWN_SCRIPT):
             args += [
-                '--down', self.DOWN_SCRIPT,
-                # FIXME add down-plugin
-                # '--plugin', self.OPENVPN_DOWN_ROOT,
-                # '\'script_type=down %s\'' % self.DOWN_SCRIPT
-            ]
+                '--down', self.DOWN_SCRIPT]
+
+            # should have the down script too
+            if _has_updown_scripts(self.OPENVPN_DOWN_PLUGIN):
+                args += [
+                    '--plugin', self.OPENVPN_DOWN_PLUGIN,
+                    '\'%s\'' % self.DOWN_SCRIPT
+                ]
+
+        # we set user to be passed to the up/down scripts
+        args += [
+            '--setenv', "LEAPUSER", "%s" % (user,)]
 
         args += [
             '--cert', eipconfig.get_client_cert_path(providerconfig),
             '--key', eipconfig.get_client_cert_path(providerconfig),
             '--ca', providerconfig.get_ca_cert_path()
         ]
+
+        # We are using osascript until we can write a proper wrapper
+        # for privilege escalation.
 
         command = self.OSASCRIPT_BIN
         cmd_args = ["-e", self.OSX_ASADMIN % (' '.join(args),)]

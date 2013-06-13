@@ -48,14 +48,14 @@ class AbstractBootstrapper(QtCore.QObject):
         """
         QtCore.QObject.__init__(self)
 
-        leap_assert(self._gui_errback.im_func == \
-                        AbstractBootstrapper._gui_errback.im_func,
+        leap_assert(self._gui_errback.im_func ==
+                    AbstractBootstrapper._gui_errback.im_func,
                     "Cannot redefine _gui_errback")
-        leap_assert(self._errback.im_func == \
-                        AbstractBootstrapper._errback.im_func,
+        leap_assert(self._errback.im_func ==
+                    AbstractBootstrapper._errback.im_func,
                     "Cannot redefine _errback")
-        leap_assert(self._gui_notify.im_func == \
-                        AbstractBootstrapper._gui_notify.im_func,
+        leap_assert(self._gui_notify.im_func ==
+                    AbstractBootstrapper._gui_notify.im_func,
                     "Cannot redefine _gui_notify")
 
         # **************************************************** #
@@ -87,9 +87,9 @@ class AbstractBootstrapper(QtCore.QObject):
                 if self._err_msg is not None \
                 else str(failure.value)
             self._signal_to_emit.emit({
-                    self.PASSED_KEY: False,
-                    self.ERROR_KEY: err_msg
-                    })
+                self.PASSED_KEY: False,
+                self.ERROR_KEY: err_msg
+            })
             failure.trap(Exception)
 
     def _errback(self, failure, signal=None):

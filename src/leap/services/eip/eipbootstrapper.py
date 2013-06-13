@@ -173,8 +173,8 @@ class EIPBootstrapper(AbstractBootstrapper):
 
         cb_chain = [
             (self._download_config, self.download_config),
-            (self._download_client_certificates, \
-                 self.download_client_certificate)
+            (self._download_client_certificates,
+             self.download_client_certificate)
         ]
 
         self.addCallbackChain(cb_chain)
