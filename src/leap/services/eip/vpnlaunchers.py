@@ -319,7 +319,7 @@ class DarwinVPNLauncher(VPNLauncher):
     UP_SCRIPT = "%s/client.up.sh" % (OPENVPN_PATH,)
     DOWN_SCRIPT = "%s/client.down.sh" % (OPENVPN_PATH,)
     OPENVPN_DOWN_PLUGIN = '%s/openvpn-down-root.so' % (OPENVPN_PATH,)
-    
+
     UPDOWN_FILES = (UP_SCRIPT, DOWN_SCRIPT, OPENVPN_DOWN_PLUGIN)
 
     @classmethod

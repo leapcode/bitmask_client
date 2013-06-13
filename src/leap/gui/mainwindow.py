@@ -219,10 +219,12 @@ class MainWindow(QtGui.QMainWindow):
 
         self._systray = None
 
-        self._action_eip_status = QtGui.QAction(self.tr("Encrypted internet is OFF"),
-                                                self)
+        self._action_eip_status = QtGui.QAction(
+            self.tr("Encrypted internet is OFF"),
+            self)
         self._action_eip_status.setEnabled(False)
-        self._action_eip_startstop = QtGui.QAction(self.tr("Turn encryption ON"), self)
+        self._action_eip_startstop = QtGui.QAction(
+            self.tr("Turn encryption ON"), self)
         self._action_eip_startstop.triggered.connect(
             self._stop_eip)
         self._action_eip_write = QtGui.QAction(

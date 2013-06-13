@@ -79,6 +79,7 @@ def _windows_has_tap_device():
             pass
     return False
 
+
 def _get_missing_updown_dialog():
     """
     Creates a dialog for notifying of missing updown scripts.
@@ -101,6 +102,7 @@ def _get_missing_updown_dialog():
     msg.addButton("No, don't ask again", QtGui.QMessageBox.RejectRole)
     msg.setDefaultButton(QtGui.QMessageBox.Yes)
     return msg
+
 
 def WindowsInitializer():
     """
