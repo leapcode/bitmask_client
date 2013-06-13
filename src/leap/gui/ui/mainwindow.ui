@@ -211,7 +211,7 @@
         <item row="2" column="1" colspan="4">
          <widget class="QPushButton" name="btnEipStartStop">
           <property name="text">
-           <string>Start EIP</string>
+           <string>Turn Encryption ON</string>
           </property>
          </widget>
         </item>
