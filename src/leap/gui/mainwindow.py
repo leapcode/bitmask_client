@@ -523,30 +523,40 @@ class MainWindow(QtGui.QMainWindow):
         self._systray.setContextMenu(systrayMenu)
         self._systray.setIcon(QtGui.QIcon(self.ERROR_ICON))
         self._systray.setVisible(True)
-        self._systray.activated.connect(self._toggle_visible)
+        self._systray.activated.connect(self._tray_activated)
 
-    def _toggle_visible(self, reason=None):
+    def _tray_activated(self, reason=None):
         """
         SLOT
         TRIGGER: self._systray.activated
 
-        Toggles the window visibility
+        Displays the context menu from the tray icon
         """
         get_action = lambda visible: (
-            self.tr("Show"),
-            self.tr("Hide"))[int(visible)]
-
-        minimized = self.isMinimized()
+            self.tr("Show Main Window"),
+            self.tr("Hide Main Window"))[int(visible)]
 
         if reason != QtGui.QSystemTrayIcon.Context:
-            # do show
-            if minimized:
-                self.showNormal()
-            self.setVisible(not self.isVisible())
-
             # set labels
             visible = self.isVisible()
             self._action_visible.setText(get_action(visible))
+
+            context_menu = self._systray.contextMenu()
+            # for some reason, context_menu.show()
+            # is failing in a way beyond my understanding.
+            # (not working the first time it's clicked).
+            # this works however.
+            # XXX in osx it shows some glitches.
+            context_menu.exec_(self._systray.geometry().center())
+
+    def _toggle_visible(self):
+        """
+        SLOT
+        TRIGGER: self._action_visible.triggered
+
+        Toggles the window visibility
+        """
+        self.setVisible(not self.isVisible())
 
     def _center_window(self):
         """
