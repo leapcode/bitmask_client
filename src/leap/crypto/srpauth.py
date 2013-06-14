@@ -24,6 +24,7 @@ import json
 
 #this error is raised from requests
 from simplejson.decoder import JSONDecodeError
+from functools import partial
 
 from PySide import QtCore
 from twisted.internet import threads
@@ -321,6 +322,9 @@ class SRPAuth(QtCore.QObject):
 
             self.set_session_id(session_id)
 
+        def _threader(self, cb, res, *args, **kwargs):
+            return threads.deferToThread(cb, res, *args, **kwargs)
+
         def authenticate(self, username, password):
             """
             Executes the whole authentication process for a user
@@ -341,10 +345,17 @@ class SRPAuth(QtCore.QObject):
                                       username=username,
                                       password=password)
 
-            d.addCallback(self._start_authentication, username=username,
-                          password=password)
-            d.addCallback(self._process_challenge, username=username)
-            d.addCallback(self._verify_session)
+            d.addCallback(
+                partial(self._threader,
+                        self._start_authentication),
+                username=username,
+                password=password)
+            d.addCallback(
+                partial(self._threader,
+                        self._process_challenge),
+                username=username)
+            d.addCallback(partial(self._threader,
+                                  self._verify_session))
 
             return d
 
