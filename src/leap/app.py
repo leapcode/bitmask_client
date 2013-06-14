@@ -138,11 +138,14 @@ def main():
     app.setApplicationName("leap")
     app.setOrganizationDomain("leap.se")
 
+    # XXX ---------------------------------------------------------
+    # In quarantine, looks like we don't need it anymore.
     # This dummy timer ensures that control is given to the outside
     # loop, so we can hook our sigint handler.
-    timer = QtCore.QTimer()
-    timer.start(500)
-    timer.timeout.connect(lambda: None)
+    #timer = QtCore.QTimer()
+    #timer.start(500)
+    #timer.timeout.connect(lambda: None)
+    # XXX ---------------------------------------------------------
 
     window = MainWindow(
         lambda: twisted_main.quit(app),

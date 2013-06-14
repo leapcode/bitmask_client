@@ -20,6 +20,8 @@ VPN Manager, spawned in a custom processProtocol.
 import logging
 import os
 import psutil
+import socket
+import time
 
 from PySide import QtCore
 
@@ -63,6 +65,9 @@ class VPN(object):
     opened by the openvpn process, executing commands over that interface on
     demand.
     """
+    TERMINATE_MAXTRIES = 10
+    TERMINATE_WAIT = 1  # secs
+
     def __init__(self):
         """
         Instantiate empty attributes and get a copy
@@ -94,6 +99,10 @@ class VPN(object):
         # start the main vpn subprocess
         vpnproc = VPNProcess(*args, **kwargs)
 
+        # XXX Should stop if already running -------
+        if vpnproc.get_openvpn_process():
+            logger.warning("Another vpnprocess is running!")
+
         cmd = vpnproc.getCommand()
         env = os.environ
         for key, val in vpnproc.vpn_env.items():
@@ -103,7 +112,7 @@ class VPN(object):
         self._vpnproc = vpnproc
 
         # add pollers for status and state
-        # XXX this could be extended to a collection of
+        # this could be extended to a collection of
         # generic watchers
 
         poll_list = [LoopingCall(vpnproc.pollStatus),
@@ -111,15 +120,50 @@ class VPN(object):
         self._pollers.extend(poll_list)
         self._start_pollers()
 
+    def _kill_if_left_alive(self, tries=0):
+        """
+        Check if the process is still alive, and sends a
+        SIGKILL after a timeout period.
+
+        :param tries: counter of tries, used in recursion
+        :type tries: int
+        """
+        from twisted.internet import reactor
+        while tries < self.TERMINATE_MAXTRIES:
+            if self._vpnproc.transport.pid is None:
+                logger.debug("Process has been happily terminated.")
+                return
+            else:
+                logger.debug("Process did not die, waiting...")
+            tries += 1
+            reactor.callLater(self.TERMINATE_WAIT,
+                              self._kill_if_left_alive, tries)
+
+        # after running out of patience, we try a killProcess
+        logger.debug("Process did not died. Sending a SIGKILL.")
+        self._vpnproc.killProcess()
+
     def terminate(self):
         """
         Stops the openvpn subprocess.
+
+        Attempts to send a SIGTERM first, and after a timeout
+        it sends a SIGKILL.
         """
+        from twisted.internet import reactor
         self._stop_pollers()
-        # XXX we should leave a KILL as a last resort.
-        # First we should try to send a SIGTERM
+
+        # First we try to be polite and send a SIGTERM...
         if self._vpnproc:
-            self._vpnproc.killProcess()
+            self._sentterm = True
+            self._vpnproc.terminate_openvpn()
+
+            # ...but we also trigger a countdown to be unpolite
+            # if strictly needed.
+            reactor.callLater(
+                self.TERMINATE_WAIT, self._kill_if_left_alive)
+
+    # TODO: should also cleanup tempfiles!!!
 
     def _start_pollers(self):
         """
@@ -148,6 +192,10 @@ class VPNManager(object):
 
     A copy of a QObject containing signals as attributes is passed along
     upon initialization, and we use that object to emit signals to qt-land.
+
+    For more info about management methods::
+
+      zcat `dpkg -L openvpn | grep management`
     """
 
     # Timers, in secs
@@ -183,15 +231,15 @@ class VPNManager(object):
     def qtsigs(self):
         return self._qtsigs
 
-    def _disconnect(self):
+    def _seek_to_eof(self):
         """
-        Disconnects the telnet connection to the openvpn process.
+        Read as much as available. Position seek pointer to end of stream
         """
-        logger.debug('Closing socket')
-        self._tn.write("quit\n")
-        self._tn.read_all()
-        self._tn.close()
-        self._tn = None
+        try:
+            self._tn.read_eager()
+        except EOFError:
+            logger.debug("Could not read from socket. Assuming it died.")
+            return
 
     def _send_command(self, command, until=b"END"):
         """
@@ -208,12 +256,24 @@ class VPNManager(object):
         :rtype: list
         """
         leap_assert(self._tn, "We need a tn connection!")
+
         try:
             self._tn.write("%s\n" % (command,))
             buf = self._tn.read_until(until, 2)
-            self._tn.read_eager()
-            lines = buf.split("\n")
-            return lines
+            self._seek_to_eof()
+            blist = buf.split('\r\n')
+            if blist[-1].startswith(until):
+                del blist[-1]
+                return blist
+            else:
+                return []
+
+        except socket.error:
+            # XXX should get a counter and repeat only
+            # after mod X times.
+            logger.warning('socket error')
+            self._close_management_socket(announce=False)
+            return []
 
         # XXX should move this to a errBack!
         except Exception as e:
@@ -221,9 +281,21 @@ class VPNManager(object):
                            (command, e))
         return []
 
-    def _connect(self, socket_host, socket_port):
+    def _close_management_socket(self, announce=True):
         """
-        Connects to the specified socket_host socket_port.
+        Close connection to openvpn management interface.
+        """
+        logger.debug('closing socket')
+        if announce:
+            self._tn.write("quit\n")
+            self._tn.read_all()
+        self._tn.get_socket().close()
+        del self._tn
+
+    def _connect_management(self, socket_host, socket_port):
+        """
+        Connects to the management interface on the specified
+        socket_host socket_port.
 
         :param socket_host: either socket path (unix) or socket IP
         :type socket_host: str
@@ -232,6 +304,9 @@ class VPNManager(object):
                             socket, or port otherwise
         :type socket_port: str
         """
+        if self.is_connected():
+            self._close_management_socket()
+
         try:
             self._tn = UDSTelnet(socket_host, socket_port)
 
@@ -268,7 +343,7 @@ class VPNManager(object):
         """
         logger.warning(failure)
 
-    def connect(self, host, port):
+    def connect_to_management(self, host, port):
         """
         Connect to a management interface.
 
@@ -280,7 +355,8 @@ class VPNManager(object):
 
         :returns: a deferred
         """
-        self.connectd = defer.maybeDeferred(self._connect, host, port)
+        self.connectd = defer.maybeDeferred(
+            self._connect_management, host, port)
         self.connectd.addCallbacks(self._connectCb, self._connectErr)
         return self.connectd
 
@@ -293,7 +369,7 @@ class VPNManager(object):
         """
         return True if self._tn else False
 
-    def try_to_connect(self, retry=0):
+    def try_to_connect_to_management(self, retry=0):
         """
         Attempts to connect to a management interface, and retries
         after CONNECTION_RETRY_TIME if not successful.
@@ -304,9 +380,10 @@ class VPNManager(object):
         # TODO decide about putting a max_lim to retries and signaling
         # an error.
         if not self.is_connected():
-            self.connect(self._socket_host, self._socket_port)
+            self.connect_to_management(self._socket_host, self._socket_port)
             self._reactor.callLater(
-                self.CONNECTION_RETRY_TIME, self.try_to_connect, retry + 1)
+                self.CONNECTION_RETRY_TIME,
+                self.try_to_connect_to_management, retry + 1)
 
     def _parse_state_and_notify(self, output):
         """
@@ -405,9 +482,17 @@ class VPNManager(object):
         """
         return self._launcher.get_vpn_env(self._providerconfig)
 
+    def terminate_openvpn(self):
+        """
+        Attempts to terminate openvpn by sending a SIGTERM.
+        """
+        if self.is_connected():
+            self._send_command("signal SIGTERM")
+
+    # ---------------------------------------------------
     # XXX old methods, not adapted to twisted process yet
 
-    def _get_openvpn_process(self):
+    def get_openvpn_process(self):
         """
         Looks for openvpn instances running.
 
@@ -421,7 +506,7 @@ class VPNManager(object):
                 # we should check that cmdline BEGINS
                 # with openvpn or with our wrapper
                 # (pkexec / osascript / whatever)
-                if self._launcher.OPENVPN_BIN in ' '.join(p.cmdline):
+                if "openvpn" in ' '.join(p.cmdline):
                     openvpn_process = p
                     break
             except psutil.error.AccessDenied:
@@ -434,10 +519,10 @@ class VPNManager(object):
 
         :return: True if stopped, False otherwise
         """
-
+        # TODO cleanup this
         process = self._get_openvpn_process()
         if process:
-            logger.debug("OpenVPN is already running, trying to stop it")
+            logger.debug("OpenVPN is already running, trying to stop it...")
             cmdline = process.cmdline
 
             manag_flag = "--management"
@@ -448,11 +533,11 @@ class VPNManager(object):
                     port = cmdline[index + 2]
                     logger.debug("Trying to connect to %s:%s"
                                  % (host, port))
-                    self._connect(host, port)
+                    self._connect_to_management(host, port)
                     self._send_command("signal SIGTERM")
                     self._tn.close()
                     self._tn = None
-                    #self._disconnect()
+                    #self._disconnect_management()
                 except Exception as e:
                     logger.warning("Problem trying to terminate OpenVPN: %r"
                                    % (e,))
@@ -518,7 +603,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
 
         .. seeAlso: `http://twistedmatrix.com/documents/13.0.0/api/twisted.internet.protocol.ProcessProtocol.html` # noqa
         """
-        self.try_to_connect()
+        self.try_to_connect_to_management()
 
     def outReceived(self, data):
         """
