@@ -529,18 +529,17 @@ class MainWindow(QtGui.QMainWindow):
             self.tr("Show Main Window"),
             self.tr("Hide Main Window"))[int(visible)]
 
-        if reason != QtGui.QSystemTrayIcon.Context:
-            # set labels
-            visible = self.isVisible()
-            self._action_visible.setText(get_action(visible))
+        # set labels
+        visible = self.isVisible()
+        self._action_visible.setText(get_action(visible))
 
-            context_menu = self._systray.contextMenu()
-            # for some reason, context_menu.show()
-            # is failing in a way beyond my understanding.
-            # (not working the first time it's clicked).
-            # this works however.
-            # XXX in osx it shows some glitches.
-            context_menu.exec_(self._systray.geometry().center())
+        context_menu = self._systray.contextMenu()
+        # for some reason, context_menu.show()
+        # is failing in a way beyond my understanding.
+        # (not working the first time it's clicked).
+        # this works however.
+        # XXX in osx it shows some glitches.
+        context_menu.exec_(self._systray.geometry().center())
 
     def _toggle_visible(self):
         """
