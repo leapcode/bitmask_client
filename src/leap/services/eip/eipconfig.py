@@ -21,6 +21,8 @@ Provider configuration
 import logging
 import os
 import re
+import datetime
+import time
 
 import ipaddr
 
@@ -30,6 +32,79 @@ from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipspec import eipservice_config_spec
 
 logger = logging.getLogger(__name__)
+
+
+class VPNGatewaySelector(object):
+    """
+    VPN Gateway selector.
+    """
+
+    def __init__(self, eipconfig):
+        '''
+        Constructor for VPNGatewaySelector.
+
+        :param eipconfig: a valid EIP Configuration.
+        :type eipconfig: EIPConfig
+        '''
+        leap_assert_type(eipconfig, EIPConfig)
+        self._local_offset = 0  # defaults to GMT
+        self._local_timezone = None
+        self._set_local_offset()
+        self._eipconfig = eipconfig
+
+    def _get_best_gateway(self):
+        """
+        Returns index of the closest gateway, using timezones offsets.
+
+        :rtype: int
+        """
+        best_gateway = (-1, 99)  # gateway, distance
+        locations = self._eipconfig.get_locations()
+        gateways = self._eipconfig.get_gateways()
+        for idx, gateway in enumerate(gateways):
+            gateway_offset = int(locations[gateway['location']]['timezone'])
+            gateway_distance = self._get_timezone_distance(gateway_offset)
+            if gateway_distance < best_gateway[1]:
+                best_gateway = (idx, gateway_distance)
+
+        return best_gateway[0]
+
+    def get_best_gateway_ip(self):
+        """
+        Returns the ip of the best possible gateway.
+
+        :rtype: An IPv4Address or IPv6Address object.
+        """
+        best_gateway = self._get_best_gateway()
+        gateway_ip = self._eipconfig.get_gateway_ip(best_gateway)
+
+        return gateway_ip
+
+    def _get_timezone_distance(self, offset):
+        '''
+        Returns the distance between the local timezone and
+        the one with offset 'offset'.
+
+        :param offset: the distance of a timezone to GMT.
+        :type offset: int
+        :returns: distance between local offset and param offset.
+        :rtype: int
+        '''
+        delta1 = datetime.timedelta(hours=offset)
+        delta2 = self._local_offset
+        diff = abs(delta1 - delta2)
+        hours = diff.seconds / (60 * 60)
+        return hours
+
+    def _set_local_offset(self):
+        '''
+        Sets the distance between GMT and the local timezone.
+        '''
+        local_offset = time.timezone
+        if time.daylight:
+            local_offset = time.altzone
+
+        self._local_offset = datetime.timedelta(seconds=-local_offset)
 
 
 class EIPConfig(BaseConfig):
@@ -56,6 +131,14 @@ class EIPConfig(BaseConfig):
         # TODO: create an abstraction for gateways
         return self._safe_get_value("gateways")
 
+    def get_locations(self):
+        '''
+        Returns a list of locations
+
+        :rtype: dict
+        '''
+        return self._safe_get_value("locations")
+
     def get_openvpn_configuration(self):
         """
         Returns a dictionary containing the openvpn configuration
@@ -63,8 +146,8 @@ class EIPConfig(BaseConfig):
 
         These are sanitized with alphanumeric whitelist.
 
-        @returns: openvpn configuration dict
-        @rtype: C{dict}
+        :returns: openvpn configuration dict
+        :rtype: C{dict}
         """
         ovpncfg = self._safe_get_value("openvpn_configuration")
         config = {}
@@ -84,7 +167,9 @@ class EIPConfig(BaseConfig):
 
     def get_gateway_ip(self, index=0):
         """
-        Returns the ip of the gateway
+        Returns the ip of the gateway.
+
+        :rtype: An IPv4Address or IPv6Address object.
         """
         gateways = self.get_gateways()
         leap_assert(len(gateways) > 0, "We don't have any gateway!")
