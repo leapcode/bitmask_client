@@ -1150,7 +1150,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         if not passed:
-            self._set_status(data[self._provider_bootstrapper.ERROR_KEY])
+            self._login_widget.set_status(
+                data[self._provider_bootstrapper.ERROR_KEY])
             self._already_started_eip = False
 
     def _eip_finished(self, exitCode):

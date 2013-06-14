@@ -22,6 +22,8 @@ import logging
 
 import requests
 
+from functools import partial
+
 from PySide import QtCore
 from twisted.internet import threads
 from leap.common.check import leap_assert, leap_assert_type
@@ -128,6 +130,9 @@ class AbstractBootstrapper(QtCore.QObject):
             logger.debug("Emitting %s" % (signal,))
             signal.emit({self.PASSED_KEY: True, self.ERROR_KEY: ""})
 
+    def _callback_threader(self, cb, res, *args, **kwargs):
+        return threads.deferToThread(cb, res, *args, **kwargs)
+
     def addCallbackChain(self, callbacks):
         """
         Creates a callback/errback chain on another thread using
@@ -148,7 +153,7 @@ class AbstractBootstrapper(QtCore.QObject):
             if d is None:
                 d = threads.deferToThread(cb)
             else:
-                d.addCallback(cb)
+                d.addCallback(partial(self._callback_threader, cb))
             d.addErrback(self._errback, signal=sig)
             d.addCallback(self._gui_notify, signal=sig)
         d.addErrback(self._gui_errback)
