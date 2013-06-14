@@ -189,7 +189,7 @@ class StatusPanelWidget(QtGui.QWidget):
                                                         "it's already "
                                                         "running.")))
         else:
-            self._set_eip_status(status)
+            self.set_eip_status(status)
 
     def set_eip_status_icon(self, status):
         """
