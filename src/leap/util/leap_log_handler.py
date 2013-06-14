@@ -31,16 +31,16 @@ class LogHandler(logging.Handler):
     MESSAGE_KEY = 'message'
     RECORD_KEY = 'record'
 
-    # TODO This is going to eat lots of memory after some time.
-    # Should be pruned at some moment.
-    _log_history = []
-
     def __init__(self, qtsignal):
         """
         LogHander initialization.
         Calls parent method and keeps a reference to the qtsignal
         that will be used to fire the gui update.
         """
+        # TODO This is going to eat lots of memory after some time.
+        # Should be pruned at some moment.
+        self._log_history = []
+
         logging.Handler.__init__(self)
         self._qtsignal = qtsignal
 
@@ -85,6 +85,7 @@ class LogHandler(logging.Handler):
         self._set_format(logRecord.levelname)
         log = self.format(logRecord)
         log_item = {self.RECORD_KEY: logRecord, self.MESSAGE_KEY: log}
+        self._log_history.append(log_item)
         self._qtsignal(log_item)
 
 
