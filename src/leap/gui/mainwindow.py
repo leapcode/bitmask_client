@@ -994,19 +994,21 @@ class MainWindow(QtGui.QMainWindow):
         self._status_panel.set_startstop_enabled(True)
 
     def _stop_eip(self):
+        """
+        Stops vpn process and makes gui adjustments to reflect
+        the change of state.
+        """
         self._vpn.terminate()
+
         self._status_panel.set_eip_status(self.tr("Off"))
         self._status_panel.set_eip_status_icon("error")
-
         self._status_panel.eip_stopped()
-
         self._action_eip_startstop.setText(self.tr("Turn ON"))
         self._action_eip_startstop.disconnect(self)
         self._action_eip_startstop.triggered.connect(
             self._start_eip)
         self._already_started_eip = False
         self._settings.set_defaultprovider(None)
-
         if self._logged_user:
             self._status_panel.set_provider(
                 "%s@%s" % (self._logged_user,
@@ -1204,11 +1206,11 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('About to quit, doing cleanup...')
 
-        logger.debug('Killing vpn')
-        self._vpn.terminate()
-
         logger.debug('Cleaning pidfiles')
         self._cleanup_pidfiles()
+
+        logger.debug('Terminating vpn')
+        self._vpn.terminate()
 
     def quit(self):
         """
@@ -1223,13 +1225,14 @@ class MainWindow(QtGui.QMainWindow):
         if self._logger_window:
             self._logger_window.close()
 
-        self.close()
-
         if self._login_defer:
             self._login_defer.cancel()
 
+        self.close()
+
         if self._quit_callback:
             self._quit_callback()
+
         logger.debug('Bye.')
 
 
