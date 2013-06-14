@@ -459,7 +459,8 @@ class SRPAuth(QtCore.QObject):
         :type failure: twisted.python.failure.Failure
         """
         logger.error("Error logging in %s" % (failure,))
-        self.authentication_finished.emit(False, "%s" % (failure,))
+        self.authentication_finished.emit(False, "%s" % (failure.value,))
+        failure.trap(Exception)
 
     def get_session_id(self):
         return self.__instance.get_session_id()
