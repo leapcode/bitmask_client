@@ -25,7 +25,7 @@ from PySide import QtCore, QtGui
 
 from ui_statuspanel import Ui_StatusPanel
 from leap.services.eip.vpnprocess import VPNManager
-from leap.platform_init import IS_MAC
+from leap.platform_init import IS_WIN, IS_LINUX
 from leap.common.check import leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -52,13 +52,35 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui.btnEipStartStop.clicked.connect(
             self.start_eip)
 
-        if IS_MAC:
-            EIP_ICONS = (
-                ":/images/conn_connecting-light.png",
-                ":/images/conn_connected-light.png",
-                ":/images/conn_error-light.png")
-        else:
-            EIP_ICONS = (
+        # Set the EIP status icons
+        self.CONNECTING_ICON = None
+        self.CONNECTED_ICON = None
+        self.ERROR_ICON = None
+        self.CONNECTING_ICON_TRAY = None
+        self.CONNECTED_ICON_TRAY = None
+        self.ERROR_ICON_TRAY = None
+        self._set_eip_icons()
+
+    def _set_eip_icons(self):
+        """
+        Sets the EIP status icons for the main window and for the tray
+
+        MAC   : dark icons
+        LINUX : dark icons in window, light icons in tray
+        WIN   : light icons
+        """
+        EIP_ICONS = EIP_ICONS_TRAY = (
+            ":/images/conn_connecting-light.png",
+            ":/images/conn_connected-light.png",
+            ":/images/conn_error-light.png")
+
+        if IS_LINUX:
+            EIP_ICONS_TRAY = (
+                ":/images/conn_connecting.png",
+                ":/images/conn_connected.png",
+                ":/images/conn_error.png")
+        elif IS_WIN:
+            EIP_ICONS = EIP_ICONS_TRAY = (
                 ":/images/conn_connecting.png",
                 ":/images/conn_connected.png",
                 ":/images/conn_error.png")
@@ -66,6 +88,10 @@ class StatusPanelWidget(QtGui.QWidget):
         self.CONNECTING_ICON = QtGui.QPixmap(EIP_ICONS[0])
         self.CONNECTED_ICON = QtGui.QPixmap(EIP_ICONS[1])
         self.ERROR_ICON = QtGui.QPixmap(EIP_ICONS[2])
+
+        self.CONNECTING_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[0])
+        self.CONNECTED_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[1])
+        self.ERROR_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[2])
 
     def set_systray(self, systray):
         """
@@ -199,17 +225,20 @@ class StatusPanelWidget(QtGui.QWidget):
         :type status: str
         """
         selected_pixmap = self.ERROR_ICON
+        selected_pixmap_tray = self.ERROR_ICON_TRAY
         tray_message = self.tr("Encryption is OFF")
         if status in ("WAIT", "AUTH", "GET_CONFIG",
                       "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
+            selected_pixmap_tray = self.CONNECTING_ICON_TRAY
             tray_message = self.tr("Turning ON")
         elif status in ("CONNECTED"):
             tray_message = self.tr("Encryption is ON")
             selected_pixmap = self.CONNECTED_ICON
+            selected_pixmap_tray = self.CONNECTED_ICON_TRAY
 
         self.set_icon(selected_pixmap)
-        self._systray.setIcon(QtGui.QIcon(selected_pixmap))
+        self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
         self._action_eip_status.setText(tray_message)
 
     def set_provider(self, provider):
