@@ -20,8 +20,8 @@ VPN Manager, spawned in a custom processProtocol.
 import logging
 import os
 import psutil
+import shutil
 import socket
-import time
 
 from PySide import QtCore
 
@@ -143,7 +143,7 @@ class VPN(object):
         logger.debug("Process did not died. Sending a SIGKILL.")
         self._vpnproc.killProcess()
 
-    def terminate(self):
+    def terminate(self, shutdown=False):
         """
         Stops the openvpn subprocess.
 
@@ -156,14 +156,12 @@ class VPN(object):
         # First we try to be polite and send a SIGTERM...
         if self._vpnproc:
             self._sentterm = True
-            self._vpnproc.terminate_openvpn()
+            self._vpnproc.terminate_openvpn(shutdown=shutdown)
 
             # ...but we also trigger a countdown to be unpolite
             # if strictly needed.
             reactor.callLater(
                 self.TERMINATE_WAIT, self._kill_if_left_alive)
-
-    # TODO: should also cleanup tempfiles!!!
 
     def _start_pollers(self):
         """
@@ -482,12 +480,30 @@ class VPNManager(object):
         """
         return self._launcher.get_vpn_env(self._providerconfig)
 
-    def terminate_openvpn(self):
+    def terminate_openvpn(self, shutdown=False):
         """
         Attempts to terminate openvpn by sending a SIGTERM.
         """
         if self.is_connected():
             self._send_command("signal SIGTERM")
+        if shutdown:
+            self._cleanup_tempfiles()
+
+    def _cleanup_tempfiles(self):
+        """
+        Remove all temporal files we might have left behind.
+
+        Iif self.port is 'unix', we have created a temporal socket path that,
+        under normal circumstances, we should be able to delete.
+        """
+        if self._socket_port == "unix":
+            logger.debug('cleaning socket file temp folder')
+            tempfolder = os.path.split(self._socket_host)[0]  # XXX use `first`
+            if os.path.isdir(tempfolder):
+                try:
+                    shutil.rmtree(tempfolder)
+                except OSError:
+                    logger.error('could not delete tmpfolder %s' % tempfolder)
 
     # ---------------------------------------------------
     # XXX old methods, not adapted to twisted process yet
