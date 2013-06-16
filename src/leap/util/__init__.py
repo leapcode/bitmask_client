@@ -37,3 +37,13 @@ except ImportError:
     pass
 
 __full_version__ = __appname__ + '/' + str(__version__)
+
+
+def first(things):
+    """
+    Return the head of a collection.
+    """
+    try:
+        return things[0]
+    except TypeError:
+        return None
