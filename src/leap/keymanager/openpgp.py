@@ -604,7 +604,7 @@ class OpenPGPScheme(EncryptionScheme):
         :param private: Whether to look for a private key.
         :type private: bool
         :return: The document with the key or None if it does not exist.
-        :rtype: leap.soledad.backends.leap_backend.LeapDocument
+        :rtype: leap.soledad.document.SoledadDocument
         """
         doclist = self._soledad.get_from_index(
             TAGS_ADDRESS_PRIVATE_INDEX,
