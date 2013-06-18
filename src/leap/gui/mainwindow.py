@@ -299,9 +299,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         if self._wizard is None:
             self._wizard = Wizard(bypass_checks=self._bypass_checks)
-        self._wizard.accepted.connect(self._finish_init)
+            self._wizard.accepted.connect(self._finish_init)
+
         self.setVisible(False)
         self._wizard.exec_()
+        # We need this to process any wizard related event
+        QtCore.QCoreApplication.processEvents()
         self._wizard = None
         self.setVisible(True)
 
