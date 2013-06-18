@@ -52,33 +52,32 @@ class VPNGatewaySelector(object):
         self._set_local_offset()
         self._eipconfig = eipconfig
 
-    def _get_best_gateway(self):
+    def get_gateways(self):
         """
-        Returns index of the closest gateway, using timezones offsets.
+        Returns the 4 best gateways, sorted by timezone proximity.
 
-        :rtype: int
+        :rtype: list of IPv4Address or IPv6Address object.
         """
-        best_gateway = (-1, 99)  # gateway, distance
+        gateways_timezones = []
         locations = self._eipconfig.get_locations()
         gateways = self._eipconfig.get_gateways()
+
         for idx, gateway in enumerate(gateways):
-            gateway_offset = int(locations[gateway['location']]['timezone'])
-            gateway_distance = self._get_timezone_distance(gateway_offset)
-            if gateway_distance < best_gateway[1]:
-                best_gateway = (idx, gateway_distance)
+            gateway_location = gateway.get('location')
+            gateway_distance = 99  # if hasn't location -> should go last
 
-        return best_gateway[0]
+            if gateway_location is not None:
+                gw_offset = int(locations[gateway['location']]['timezone'])
+                gateway_distance = self._get_timezone_distance(gw_offset)
 
-    def get_best_gateway_ip(self):
-        """
-        Returns the ip of the best possible gateway.
+            ip = self._eipconfig.get_gateway_ip(idx)
+            gateways_timezones.append((ip, gateway_distance))
 
-        :rtype: An IPv4Address or IPv6Address object.
-        """
-        best_gateway = self._get_best_gateway()
-        gateway_ip = self._eipconfig.get_gateway_ip(best_gateway)
+        gateways_timezones = sorted(gateways_timezones,
+                                    key=lambda gw: gw[1])[:4]
 
-        return gateway_ip
+        gateways = [ip for ip, dist in gateways_timezones]
+        return gateways
 
     def _get_timezone_distance(self, offset):
         '''
