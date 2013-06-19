@@ -154,6 +154,11 @@ class Wizard(QtGui.QWizard):
         self.page(self.FINISH_PAGE).setButtonText(
             QtGui.QWizard.FinishButton, self.tr("Connect"))
 
+        # XXX: Temporary removal for enrollment policy
+        # https://leap.se/code/issues/2922
+        self.ui.label_12.setVisible(False)
+        self.ui.lblProviderPolicy.setVisible(False)
+
     def get_domain(self):
         return self._domain
 
