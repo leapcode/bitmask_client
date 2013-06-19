@@ -42,7 +42,8 @@ from leap.gui.statuspanel import StatusPanelWidget
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
+# XXX: comment out soledad temporarily to avoid problem in Windows, issue #2932
+# from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
 from leap.platform_init import IS_WIN
 from leap.platform_init.initializers import init_platform
