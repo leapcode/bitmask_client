@@ -477,8 +477,8 @@ class MainWindow(QtGui.QMainWindow):
         default_provider = self._settings.get_defaultprovider()
 
         if default_provider is None:
-            logger.info("Cannot autostart EIP because there's no default "
-                        "provider configured")
+            logger.info("Cannot autostart Encrypted Internet because there is "
+                        "no default provider configured")
             return
 
         self._action_eip_provider.setText(default_provider)
@@ -986,7 +986,7 @@ class MainWindow(QtGui.QMainWindow):
                 error=True)
         except OpenVPNNotFoundException:
             self._status_panel.set_eip_status(
-                self.tr("We couldn't find openvpn"),
+                self.tr("We couldn't find openvpn binary"),
                 error=True)
         except VPNLauncherException as e:
             self._status_panel.set_eip_status("%s" % (e,), error=True)
@@ -1090,7 +1090,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             if data[self._eip_bootstrapper.PASSED_KEY]:
                 self._status_panel.set_eip_status(
-                    self.tr("Could not load EIP Configuration"),
+                    self.tr("Could not load Encrypted Internet Configuration"),
                     error=True)
             else:
                 self._status_panel.set_eip_status(

@@ -93,7 +93,10 @@ class ProviderConfig(BaseConfig):
         Returns a string with the services supported by the current
         provider, ready to be shown to the user.
         """
-        return ", ".join(self.get_services())
+        services_str = ", ".join(self.get_services())
+        services_str = services_str.replace(
+            "openvpn", "Encrypted Internet")
+        return services_str
 
     def get_ca_cert_path(self, about_to_download=False):
         """
