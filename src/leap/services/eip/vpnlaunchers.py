@@ -229,16 +229,18 @@ class LinuxVPNLauncher(VPNLauncher):
         # TODO: handle verbosity
 
         gateway_selector = VPNGatewaySelector(eipconfig)
-        gateway_ip = gateway_selector.get_best_gateway_ip()
+        gateways = gateway_selector.get_gateways()
 
-        logger.debug("Using gateway ip %s" % (gateway_ip,))
+        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+
+        for gw in gateways:
+            args += ['--remote', gw, '1194', 'udp']
 
         args += [
             '--client',
             '--dev', 'tun',
             '--persist-tun',
             '--persist-key',
-            '--remote', gateway_ip, '1194', 'udp',
             '--tls-client',
             '--remote-cert-tls',
             'server'
@@ -393,16 +395,18 @@ class DarwinVPNLauncher(VPNLauncher):
         # TODO: handle verbosity
 
         gateway_selector = VPNGatewaySelector(eipconfig)
-        gateway_ip = gateway_selector.get_best_gateway_ip()
+        gateways = gateway_selector.get_gateways()
 
-        logger.debug("Using gateway ip %s" % (gateway_ip,))
+        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+
+        for gw in gateways:
+            args += ['--remote', gw, '1194', 'udp']
 
         args += [
             '--client',
             '--dev', 'tun',
             '--persist-tun',
             '--persist-key',
-            '--remote', gateway_ip, '1194', 'udp',
             '--tls-client',
             '--remote-cert-tls',
             'server'
@@ -534,16 +538,18 @@ class WindowsVPNLauncher(VPNLauncher):
         # TODO: handle verbosity
 
         gateway_selector = VPNGatewaySelector(eipconfig)
-        gateway_ip = gateway_selector.get_best_gateway_ip()
+        gateways = gateway_selector.get_gateways()
 
-        logger.debug("Using gateway ip %s" % (gateway_ip,))
+        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+
+        for gw in gateways:
+            args += ['--remote', gw, '1194', 'udp']
 
         args += [
             '--client',
             '--dev', 'tun',
             '--persist-tun',
             '--persist-key',
-            '--remote', gateway_ip, '1194', 'udp',
             '--tls-client',
             '--remote-cert-tls',
             'server'
