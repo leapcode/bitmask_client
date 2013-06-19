@@ -20,6 +20,7 @@ VPN Manager, spawned in a custom processProtocol.
 import logging
 import os
 import psutil
+import psutil.error
 import shutil
 import socket
 
