@@ -458,12 +458,12 @@ class DarwinVPNLauncher(VPNLauncher):
     VPN launcher for the Darwin Platform
     """
 
-    OSASCRIPT_BIN = '/usr/bin/osascript'
-    OSX_ASADMIN = "do shell script \"%s\" with administrator privileges"
+    COCOASUDO = "cocoasudo"
+    # XXX need magic translate for this string
+    SUDO_MSG = ("LEAP needs administrative privileges to run "
+                "Encrypted Internet.")
 
     INSTALL_PATH = "/Applications/LEAP\ Client.app"
-    # OPENVPN_BIN = "/%s/Contents/Resources/openvpn.leap" % (
-    #   self.INSTALL_PATH,)
     OPENVPN_BIN = 'openvpn.leap'
     OPENVPN_PATH = "%s/Contents/Resources/openvpn" % (INSTALL_PATH,)
 
@@ -481,8 +481,24 @@ class DarwinVPNLauncher(VPNLauncher):
         """
         to = kls.OPENVPN_PATH
         cmd = "#!/bin/sh\nmkdir -p %s\ncp \"%s/\"* %s" % (to, frompath, to)
-        #return kls.OSX_ASADMIN % cmd
         return cmd
+
+    def get_cocoasudo_cmd(self):
+        """
+        Returns a string with the cocoasudo command needed to run openvpn
+        as admin with a nice password prompt. The actual command needs to be
+        appended.
+
+        :rtype: (str, list)
+        """
+        iconpath = os.path.abspath(os.path.join(
+            os.getcwd(),
+            "../../../Resources/leap-client.tiff"))
+        has_icon = os.path.isfile(iconpath)
+        args = ["--icon=%s" % iconpath] if has_icon else []
+        args.append("--prompt=%s" % (self.SUDO_MSG,))
+
+        return self.COCOASUDO, args
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="unix"):
@@ -597,11 +613,8 @@ class DarwinVPNLauncher(VPNLauncher):
             '--ca', providerconfig.get_ca_cert_path()
         ]
 
-        # We are using osascript until we can write a proper wrapper
-        # for privilege escalation.
-
-        command = self.OSASCRIPT_BIN
-        cmd_args = ["-e", self.OSX_ASADMIN % (' '.join(args),)]
+        command, cargs = self.get_cocoasudo_cmd()
+        cmd_args = cargs + args
 
         logger.debug("Running VPN with command:")
         logger.debug("%s %s" % (command, " ".join(cmd_args)))
