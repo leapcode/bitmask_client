@@ -1209,7 +1209,7 @@ class MainWindow(QtGui.QMainWindow):
         self._cleanup_pidfiles()
 
         logger.debug('Terminating vpn')
-        self._vpn.terminate()
+        self._vpn.terminate(shutdown=True)
 
     def quit(self):
         """
