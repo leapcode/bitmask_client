@@ -478,7 +478,8 @@ class DarwinVPNLauncher(VPNLauncher):
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()
 
-        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+        logger.debug("Using gateways ips: {gw}".format(
+            gw=', '.join(gateways)))
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']
