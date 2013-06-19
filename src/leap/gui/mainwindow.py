@@ -39,6 +39,7 @@ from leap.gui.loggerwindow import LoggerWindow
 from leap.gui.wizard import Wizard
 from leap.gui.login import LoginWidget
 from leap.gui.statuspanel import StatusPanelWidget
+from leap.platform_init import IS_MAC
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
@@ -538,12 +539,12 @@ class MainWindow(QtGui.QMainWindow):
         self._action_visible.setText(get_action(visible))
 
         context_menu = self._systray.contextMenu()
-        # for some reason, context_menu.show()
-        # is failing in a way beyond my understanding.
-        # (not working the first time it's clicked).
-        # this works however.
-        # XXX in osx it shows some glitches.
-        context_menu.exec_(self._systray.geometry().center())
+        if not IS_MAC:
+            # for some reason, context_menu.show()
+            # is failing in a way beyond my understanding.
+            # (not working the first time it's clicked).
+            # this works however.
+            context_menu.exec_(self._systray.geometry().center())
 
     def _toggle_visible(self):
         """
