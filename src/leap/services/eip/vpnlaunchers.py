@@ -35,6 +35,7 @@ from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import which
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
+from leap.util import first
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +60,10 @@ class VPNLauncher:
     """
     Abstract launcher class
     """
-
     __metaclass__ = ABCMeta
+
+    UPDOWN_FILES = None
+    OTHER_FILES = None
 
     @abstractmethod
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
@@ -97,6 +100,35 @@ class VPNLauncher:
         """
         return {}
 
+    @classmethod
+    def missing_updown_scripts(kls):
+        """
+        Returns what updown scripts are missing.
+        :rtype: list
+        """
+        leap_assert(kls.UPDOWN_FILES is not None,
+                    "Need to define UPDOWN_FILES for this particular "
+                    "auncher before calling this method")
+        file_exist = partial(_has_updown_scripts, warn=False)
+        zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
+        missing = filter(lambda (path, exists): exists is False, zipped)
+        return [path for path, exists in missing]
+
+    @classmethod
+    def missing_other_files(kls):
+        """
+        Returns what other important files are missing during startup.
+        Same as missing_updown_scripts but does not check for exec bit.
+        :rtype: list
+        """
+        leap_assert(kls.UPDOWN_FILES is not None,
+                    "Need to define OTHER_FILES for this particular "
+                    "auncher before calling this method")
+        file_exist = partial(_has_other_files, warn=False)
+        zipped = zip(kls.OTHER_FILES, map(file_exist, kls.OTHER_FILES))
+        missing = filter(lambda (path, exists): exists is False, zipped)
+        return [path for path, exists in missing]
+
 
 def get_platform_launcher():
     launcher = globals()[platform.system() + "VPNLauncher"]
@@ -117,7 +149,8 @@ def _is_pkexec_in_system():
 
 def _has_updown_scripts(path, warn=True):
     """
-    Checks the existence of the up/down scripts.
+    Checks the existence of the up/down scripts and its
+    exec bit if applicable.
 
     :param path: the path to be checked
     :type path: str
@@ -132,11 +165,31 @@ def _has_updown_scripts(path, warn=True):
         logger.error("Could not find up/down script %s. "
                      "Might produce DNS leaks." % (path,))
 
+    # XXX check if applies in win
     is_exe = os.access(path, os.X_OK)
     if warn and not is_exe:
         logger.error("Up/down script %s is not executable. "
                      "Might produce DNS leaks." % (path,))
     return is_file and is_exe
+
+
+def _has_other_files(path, warn=True):
+    """
+    Checks the existence of other important files.
+
+    :param path: the path to be checked
+    :type path: str
+
+    :param warn: whether we should log the absence
+    :type warn: bool
+
+    :rtype: bool
+    """
+    is_file = os.path.isfile(path)
+    if warn and not is_file:
+        logger.warning("Could not find file during checks: %s. " % (
+            path,))
+    return is_file
 
 
 def _is_auth_agent_running():
@@ -160,8 +213,59 @@ class LinuxVPNLauncher(VPNLauncher):
 
     PKEXEC_BIN = 'pkexec'
     OPENVPN_BIN = 'openvpn'
-    UP_DOWN_SCRIPT = "/etc/leap/resolv-update"
-    OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-down-root.so"
+    SYSTEM_CONFIG = "/etc/leap"
+    UP_DOWN_FILE = "resolv-update"
+    UP_DOWN_PATH = "%s/%s" % (SYSTEM_CONFIG, UP_DOWN_FILE)
+
+    # We assume this is there by our openvpn dependency, and
+    # we will put it there on the bundle too.
+    # TODO adapt to the bundle path.
+    OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-plugin-down-root.so"
+
+    POLKIT_BASE = "/usr/share/polkit-1/actions"
+    POLKIT_FILE = "net.openvpn.gui.leap.policy"
+    POLKIT_PATH = "%s/%s" % (POLKIT_BASE, POLKIT_FILE)
+
+    UPDOWN_FILES = (UP_DOWN_PATH,)
+    OTHER_FILES = (POLKIT_PATH,)
+
+    @classmethod
+    def cmd_for_missing_scripts(kls, frompath):
+        """
+        Returns a command that can copy the missing scripts.
+        :rtype: str
+        """
+        to = kls.SYSTEM_CONFIG
+        cmd = "#!/bin/sh\nset -e\nmkdir -p %s\ncp %s/%s %s\ncp %s/%s %s" % (
+            to,
+            frompath, kls.UP_DOWN_FILE, to,
+            frompath, kls.POLKIT_FILE, kls.POLKIT_PATH)
+        return cmd
+
+    @classmethod
+    def maybe_pkexec(kls):
+        """
+        Checks whether pkexec is available in the system, and
+        returns the path if found.
+
+        Might raise EIPNoPkexecAvailable or EIPNoPolkitAuthAgentAvailable
+
+        :returns: a list of the paths where pkexec is to be found
+        :rtype: list
+        """
+        if _is_pkexec_in_system():
+            if _is_auth_agent_running():
+                pkexec_possibilities = which(kls.PKEXEC_BIN)
+                leap_assert(len(pkexec_possibilities) > 0,
+                            "We couldn't find pkexec")
+                return pkexec_possibilities
+            else:
+                logger.warning("No polkit auth agent found. pkexec " +
+                               "will use its own auth agent.")
+                raise EIPNoPolkitAuthAgentAvailable()
+        else:
+            logger.warning("System has no pkexec")
+            raise EIPNoPkexecAvailable()
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="unix"):
@@ -201,30 +305,18 @@ class LinuxVPNLauncher(VPNLauncher):
                 providerconfig.get_path_prefix(),
                 "..", "apps", "eip")
 
-        openvpn_possibilities = which(
-            self.OPENVPN_BIN,
-            **kwargs)
+        openvpn_possibilities = which(self.OPENVPN_BIN, **kwargs)
 
         if len(openvpn_possibilities) == 0:
             raise OpenVPNNotFoundException()
 
-        openvpn = openvpn_possibilities[0]
+        openvpn = first(openvpn_possibilities)
         args = []
 
-        if _is_pkexec_in_system():
-            if _is_auth_agent_running():
-                pkexec_possibilities = which(self.PKEXEC_BIN)
-                leap_assert(len(pkexec_possibilities) > 0,
-                            "We couldn't find pkexec")
-                args.append(openvpn)
-                openvpn = pkexec_possibilities[0]
-            else:
-                logger.warning("No polkit auth agent found. pkexec " +
-                               "will use its own auth agent.")
-                raise EIPNoPolkitAuthAgentAvailable()
-        else:
-            logger.warning("System has no pkexec")
-            raise EIPNoPkexecAvailable()
+        pkexec = self.maybe_pkexec()
+        if pkexec:
+            args.append(openvpn)
+            openvpn = first(pkexec)
 
         # TODO: handle verbosity
 
@@ -267,12 +359,12 @@ class LinuxVPNLauncher(VPNLauncher):
             '--script-security', '2'
         ]
 
-        if _has_updown_scripts(self.UP_DOWN_SCRIPT):
+        if _has_updown_scripts(self.UP_DOWN_PATH):
             args += [
-                '--up', self.UP_DOWN_SCRIPT,
-                '--down', self.UP_DOWN_SCRIPT,
+                '--up', self.UP_DOWN_PATH,
+                '--down', self.UP_DOWN_PATH,
                 '--plugin', self.OPENVPN_DOWN_ROOT,
-                '\'script_type=down %s\'' % self.UP_DOWN_SCRIPT
+                '\'script_type=down %s\'' % self.UP_DOWN_PATH
             ]
 
         args += [
@@ -324,17 +416,6 @@ class DarwinVPNLauncher(VPNLauncher):
     OPENVPN_DOWN_PLUGIN = '%s/openvpn-down-root.so' % (OPENVPN_PATH,)
 
     UPDOWN_FILES = (UP_SCRIPT, DOWN_SCRIPT, OPENVPN_DOWN_PLUGIN)
-
-    @classmethod
-    def missing_updown_scripts(kls):
-        """
-        Returns what updown scripts are missing.
-        :rtype: list
-        """
-        file_exist = partial(_has_updown_scripts, warn=False)
-        zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
-        missing = filter(lambda (path, exists): exists is False, zipped)
-        return [path for path, exists in missing]
 
     @classmethod
     def cmd_for_missing_scripts(kls, frompath):
@@ -389,7 +470,7 @@ class DarwinVPNLauncher(VPNLauncher):
         if len(openvpn_possibilities) == 0:
             raise OpenVPNNotFoundException()
 
-        openvpn = openvpn_possibilities[0]
+        openvpn = first(openvpn_possibilities)
         args = [openvpn]
 
         # TODO: handle verbosity
@@ -493,6 +574,8 @@ class WindowsVPNLauncher(VPNLauncher):
 
     OPENVPN_BIN = 'openvpn_leap.exe'
 
+    # XXX UPDOWN_FILES ... we do not have updown files defined yet!
+
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="9876"):
         """
@@ -532,7 +615,7 @@ class WindowsVPNLauncher(VPNLauncher):
         if len(openvpn_possibilities) == 0:
             raise OpenVPNNotFoundException()
 
-        openvpn = openvpn_possibilities[0]
+        openvpn = first(openvpn_possibilities)
         args = []
 
         # TODO: handle verbosity
@@ -556,7 +639,6 @@ class WindowsVPNLauncher(VPNLauncher):
         ]
 
         openvpn_configuration = eipconfig.get_openvpn_configuration()
-        # XXX sanitize this
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
 
@@ -564,13 +646,11 @@ class WindowsVPNLauncher(VPNLauncher):
             '--user', getpass.getuser(),
             #'--group', grp.getgrgid(os.getgroups()[-1]).gr_name
         ]
-
         args += [
             '--management-signal',
             '--management', socket_host, socket_port,
             '--script-security', '2'
         ]
-
         args += [
             '--cert', eipconfig.get_client_cert_path(providerconfig),
             '--key', eipconfig.get_client_cert_path(providerconfig),

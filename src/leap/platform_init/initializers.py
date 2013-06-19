@@ -30,11 +30,16 @@ from PySide import QtGui
 
 from leap.config.leapsettings import LeapSettings
 from leap.services.eip import vpnlaunchers
+from leap.util import first
 
 logger = logging.getLogger(__name__)
 
 # NOTE we could use a deferToThread here, but should
 # be aware of this bug: http://www.themacaque.com/?p=1067
+
+__all__ = ["init_platform"]
+
+_system = platform.system()
 
 
 def init_platform():
@@ -44,7 +49,7 @@ def init_platform():
     """
     initializer = None
     try:
-        initializer = globals()[platform.system() + "Initializer"]
+        initializer = globals()[_system + "Initializer"]
     except:
         pass
     if initializer:
@@ -52,6 +57,86 @@ def init_platform():
         initializer()
     else:
         logger.debug("Initializer not found for %s" % (platform.system(),))
+
+
+#
+# common utils
+#
+
+NOTFOUND_MSG = ("Tried to install %s, but %s "
+                "not found inside this bundle.")
+BADEXEC_MSG = ("Tried to install %s, but %s "
+               "failed to %s.")
+
+UPDOWN_NOTFOUND_MSG = NOTFOUND_MSG % (
+    "updown scripts", "those were")
+UPDOWN_BADEXEC_MSG = BADEXEC_MSG % (
+    "updown scripts", "they", "be copied")
+
+
+def get_missing_updown_dialog():
+    """
+    Creates a dialog for notifying of missing updown scripts.
+    Returns that dialog.
+
+    :rtype: QtGui.QMessageBox instance
+    """
+    WE_NEED_POWERS = ("To better protect your privacy, "
+                      "LEAP needs administrative privileges "
+                      "to install helper files. "
+                      "Do you want to proceed?")
+    msg = QtGui.QMessageBox()
+    msg.setWindowTitle(msg.tr("Missing up/down scripts"))
+    msg.setText(msg.tr(WE_NEED_POWERS))
+    # but maybe the user really deserve to know more
+    #msg.setInformativeText(msg.tr(BECAUSE))
+    msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+    msg.addButton("No, don't ask again", QtGui.QMessageBox.RejectRole)
+    msg.setDefaultButton(QtGui.QMessageBox.Yes)
+    return msg
+
+
+def check_missing():
+    """
+    Checks for the need of installing missing scripts, and
+    raises a dialog to ask user for permission to do it.
+    """
+    config = LeapSettings()
+    alert_missing = config.get_alert_missing_scripts()
+
+    launcher = vpnlaunchers.get_platform_launcher()
+    missing_scripts = launcher.missing_updown_scripts
+    missing_other = launcher.missing_other_files
+
+    if alert_missing and (missing_scripts() or missing_other()):
+        msg = get_missing_updown_dialog()
+        ret = msg.exec_()
+
+        if ret == QtGui.QMessageBox.Yes:
+            install_missing_fun = globals().get(
+                "_%s_install_missing_scripts" % (_system.lower(),),
+                None)
+            if not install_missing_fun:
+                logger.warning(
+                    "Installer not found for platform %s." % (_system,))
+                return
+            install_missing_fun(
+                # XXX maybe move constants to fun
+                UPDOWN_BADEXEC_MSG,
+                UPDOWN_NOTFOUND_MSG)
+
+        elif ret == QtGui.QMessageBox.No:
+            logger.debug("Not installing missing scripts, "
+                         "user decided to ignore our warning.")
+
+        elif ret == QtGui.QMessageBox.Rejected:
+            logger.debug(
+                "Setting alert_missing_scripts to False, we will not "
+                "ask again")
+            config.set_alert_missing_scripts(False)
+#
+# windows initializers
+#
 
 
 def _windows_has_tap_device():
@@ -80,30 +165,6 @@ def _windows_has_tap_device():
     return False
 
 
-def _get_missing_updown_dialog():
-    """
-    Creates a dialog for notifying of missing updown scripts.
-    Returns that dialog.
-
-    :rtype: QtGui.QMessageBox instance
-    """
-    msg = QtGui.QMessageBox()
-    msg.setWindowTitle(msg.tr("Missing up/down scripts"))
-    msg.setText(msg.tr(
-        "LEAPClient needs to install up/down scripts "
-        "for Encrypted Internet to work properly. "
-        "Would you like to proceed?"))
-    msg.setInformativeText(msg.tr(
-        "It looks like either you have not installed "
-        "LEAP Client in a permanent location or you have an "
-        "incomplete installation. This will ask for "
-        "administrative privileges."))
-    msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-    msg.addButton("No, don't ask again", QtGui.QMessageBox.RejectRole)
-    msg.setDefaultButton(QtGui.QMessageBox.Yes)
-    return msg
-
-
 def WindowsInitializer():
     """
     Raises a dialog in case that the windows tap driver has not been found
@@ -124,6 +185,9 @@ def WindowsInitializer():
         ret = msg.exec_()
 
         if ret == QtGui.QMessageBox.Yes:
+            # XXX should do this only if executed inside bundle.
+            # Let's assume it's the only way it's gonna be executed under win
+            # by now.
             driver_path = os.path.join(os.getcwd(),
                                        "apps",
                                        "eip",
@@ -139,6 +203,10 @@ def WindowsInitializer():
             else:
                 logger.error("Tried to install TAP driver, but the installer "
                              "is not found or not executable")
+
+#
+# Darwin initializer functions
+#
 
 
 def _darwin_has_tun_kext():
@@ -174,12 +242,15 @@ def _darwin_install_missing_scripts(badexec, notfound):
         "Resources",
         "openvpn")
     launcher = vpnlaunchers.DarwinVPNLauncher
+
+    # TODO should change osascript by use of the proper
+    # os authorization api.
     if os.path.isdir(installer_path):
-        tempscript = tempfile.mktemp()
+        fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
         try:
             cmd = launcher.OSASCRIPT_BIN
             scriptlines = launcher.cmd_for_missing_scripts(installer_path)
-            with open(tempscript, 'w') as f:
+            with os.fdopen(fd, 'w') as f:
                 f.write(scriptlines)
             st = os.stat(tempscript)
             os.chmod(tempscript, st.st_mode | stat.S_IEXEC | stat.S_IXUSR |
@@ -190,14 +261,15 @@ def _darwin_install_missing_scripts(badexec, notfound):
             ret = subprocess.call(
                 cmdline, stdout=subprocess.PIPE,
                 shell=True)
-            assert(ret)
+            assert([ret])  # happy flakes
         except Exception as exc:
             logger.error(badexec)
             logger.error("Error was: %r" % (exc,))
-            f.close()
         finally:
-            # XXX remove file
-            pass
+            try:
+                os.remove(tempscript)
+            except OSError as exc:
+                logger.error("%r" % (exc,))
     else:
         logger.error(notfound)
         logger.debug('path searched: %s' % (installer_path,))
@@ -210,20 +282,10 @@ def DarwinInitializer():
     """
     # XXX split this function into several
 
-    NOTFOUND_MSG = ("Tried to install %s, but %s "
-                    "not found inside this bundle.")
-    BADEXEC_MSG = ("Tried to install %s, but %s "
-                   "failed to %s.")
-
     TUNTAP_NOTFOUND_MSG = NOTFOUND_MSG % (
         "tuntaposx kext", "the installer")
     TUNTAP_BADEXEC_MSG = BADEXEC_MSG % (
         "tuntaposx kext", "the installer", "be launched")
-
-    UPDOWN_NOTFOUND_MSG = NOTFOUND_MSG % (
-        "updown scripts", "those were")
-    UPDOWN_BADEXEC_MSG = BADEXEC_MSG % (
-        "updown scripts", "they", "be copied")
 
     # TODO DRY this with other cases, and
     # factor out to _should_install() function.
@@ -261,24 +323,61 @@ def DarwinInitializer():
             else:
                 logger.error(TUNTAP_NOTFOUND_MSG)
 
-    config = LeapSettings()
-    alert_missing = config.get_alert_missing_scripts()
-    missing_scripts = vpnlaunchers.DarwinVPNLauncher.missing_updown_scripts
-    if alert_missing and missing_scripts():
-        msg = _get_missing_updown_dialog()
-        ret = msg.exec_()
+    # Second check, for missing scripts.
+    check_missing()
 
-        if ret == QtGui.QMessageBox.Yes:
-            _darwin_install_missing_scripts(
-                UPDOWN_BADEXEC_MSG,
-                UPDOWN_NOTFOUND_MSG)
 
-        elif ret == QtGui.QMessageBox.No:
-            logger.debug("Not installing missing scripts, "
-                         "user decided to ignore our warning.")
+#
+# Linux initializers
+#
 
-        elif ret == QtGui.QMessageBox.Rejected:
-            logger.debug(
-                "Setting alert_missing_scripts to False, we will not "
-                "ask again")
-            config.set_alert_missing_scripts(False)
+def _linux_install_missing_scripts(badexec, notfound):
+    """
+    Tries to install the missing up/down scripts.
+
+    :param badexec: error for notifying execution error during command.
+    :type badexec: str
+    :param notfound: error for notifying missing path.
+    :type notfound: str
+    """
+    installer_path = os.path.join(
+        os.getcwd(),
+        "apps", "eip", "files")
+    launcher = vpnlaunchers.LinuxVPNLauncher
+
+    # XXX refactor with darwin, same block.
+
+    if os.path.isdir(installer_path):
+        fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
+        try:
+            pkexec = first(launcher.maybe_pkexec())
+            scriptlines = launcher.cmd_for_missing_scripts(installer_path)
+            with os.fdopen(fd, 'w') as f:
+                f.write(scriptlines)
+            st = os.stat(tempscript)
+            os.chmod(tempscript, st.st_mode | stat.S_IEXEC | stat.S_IXUSR |
+                     stat.S_IXGRP | stat.S_IXOTH)
+            cmdline = ["%s %s" % (pkexec, tempscript)]
+            ret = subprocess.call(
+                cmdline, stdout=subprocess.PIPE,
+                shell=True)
+            assert([ret])  # happy flakes
+        except Exception as exc:
+            logger.error(badexec)
+            logger.error("Error was: %r" % (exc,))
+        finally:
+            try:
+                os.remove(tempscript)
+            except OSError as exc:
+                logger.error("%r" % (exc,))
+    else:
+        logger.error(notfound)
+        logger.debug('path searched: %s' % (installer_path,))
+
+
+def LinuxInitializer():
+    """
+    Raises a dialog in case that either updown scripts or policykit file
+    are missing or they have incorrect permissions.
+    """
+    check_missing()
