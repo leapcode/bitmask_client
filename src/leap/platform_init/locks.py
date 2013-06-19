@@ -215,7 +215,7 @@ if platform_init.IS_WIN:
             try:
                 shutil.rmtree(self.name)
                 return True
-            except shutil.WindowsError as exc:
+            except WindowsError as exc:
                 if exc.errno in (errno.EPIPE, errno.ENOENT,
                                  errno.ESRCH, errno.EACCES):
                     logger.warning(
