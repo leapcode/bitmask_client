@@ -288,7 +288,7 @@ class VPNManager(object):
             self._tn.write("quit\n")
             self._tn.read_all()
         self._tn.get_socket().close()
-        del self._tn
+        self._tn = None
 
     def _connect_management(self, socket_host, socket_port):
         """
