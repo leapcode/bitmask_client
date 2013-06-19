@@ -177,11 +177,11 @@ class StatusPanelWidget(QtGui.QWidget):
         Updates the download/upload labels based on the data provided
         by the VPN thread
         """
-        upload = float(data[VPNManager.TUNTAP_WRITE_KEY])
+        upload = float(data[VPNManager.TUNTAP_WRITE_KEY] or "0")
         upload = upload / 1000.0
         upload_str = "%12.2f Kb" % (upload,)
         self.ui.lblUpload.setText(upload_str)
-        download = float(data[VPNManager.TUNTAP_READ_KEY])
+        download = float(data[VPNManager.TUNTAP_READ_KEY] or "0")
         download = download / 1000.0
         download_str = "%12.2f Kb" % (download,)
         self.ui.lblDownload.setText(download_str)
