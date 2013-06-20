@@ -109,10 +109,14 @@ class MainWindow(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
 
         # register leap events
+
+        # XXX ------- this is blocking -----------
         register(signal=proto.UPDATER_NEW_UPDATES,
                  callback=self._new_updates_available)
         register(signal=proto.RAISE_WINDOW,
                  callback=self._on_raise_window_event)
+        # XXX ------- this is blocking -----------
+
         self._quit_callback = quit_callback
 
         self._updates_content = ""
