@@ -220,7 +220,11 @@ class LinuxVPNLauncher(VPNLauncher):
     # We assume this is there by our openvpn dependency, and
     # we will put it there on the bundle too.
     # TODO adapt to the bundle path.
-    OPENVPN_DOWN_ROOT = "/usr/lib/openvpn/openvpn-plugin-down-root.so"
+    OPENVPN_DOWN_ROOT_BASE = "/usr/lib/openvpn/"
+    OPENVPN_DOWN_ROOT_FILE = "openvpn-plugin-down-root.so"
+    OPENVPN_DOWN_ROOT_PATH = "%s/%s" % (
+        OPENVPN_DOWN_ROOT_BASE,
+        OPENVPN_DOWN_ROOT_FILE)
 
     POLKIT_BASE = "/usr/share/polkit-1/actions"
     POLKIT_FILE = "net.openvpn.gui.leap.policy"
@@ -266,6 +270,30 @@ class LinuxVPNLauncher(VPNLauncher):
         else:
             logger.warning("System has no pkexec")
             raise EIPNoPkexecAvailable()
+
+    @classmethod
+    def maybe_down_plugin(kls):
+        """
+        Returns the path of the openvpn down-root-plugin, searching first
+        in the relative path for the standalone bundle, and then in the system
+        path where the debian package puts it.
+
+        :returns: the path where the plugin was found, or None
+        :rtype: str or None
+        """
+        cwd = os.getcwd()
+        rel_path_in_bundle = os.path.join(
+            'apps', 'eip', 'files', kls.OPENVPN_DOWN_ROOT_FILE)
+        abs_path_in_bundle = os.path.join(cwd, rel_path_in_bundle)
+        if os.path.isfile(abs_path_in_bundle):
+            return abs_path_in_bundle
+        abs_path_in_system = kls.OPENVPN_DOWN_ROOT_FILE
+        if os.path.isfile(abs_path_in_system):
+            return abs_path_in_system
+
+        logger.warning("We could not find the down-root-plugin, so no updown "
+                       "scripts will be run. DNS leaks are likely!")
+        return None
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
                         socket_host=None, socket_port="unix"):
@@ -348,7 +376,7 @@ class LinuxVPNLauncher(VPNLauncher):
             '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
         ]
 
-        if socket_port == "unix":
+        if socket_port == "unix":  # that's always the case for linux
             args += [
                 '--management-client-user', getpass.getuser()
             ]
@@ -359,11 +387,17 @@ class LinuxVPNLauncher(VPNLauncher):
             '--script-security', '2'
         ]
 
-        if _has_updown_scripts(self.UP_DOWN_PATH):
+        plugin_path = self.maybe_down_plugin()
+        # If we do not have the down plugin neither in the bundle
+        # nor in the system, we do not do updown scripts. The alternative
+        # is leaving the user without the ability to restore dns and routes
+        # to its original state.
+
+        if plugin_path and _has_updown_scripts(self.UP_DOWN_PATH):
             args += [
                 '--up', self.UP_DOWN_PATH,
                 '--down', self.UP_DOWN_PATH,
-                '--plugin', self.OPENVPN_DOWN_ROOT,
+                '--plugin', plugin_path,
                 '\'script_type=down %s\'' % self.UP_DOWN_PATH
             ]
 
