@@ -32,6 +32,7 @@ from leap.crypto.srpregister import SRPRegister
 from leap.util.privilege_policies import is_missing_policy_permissions
 from leap.util.request_helpers import get_content
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
+from leap.services import get_available
 
 logger = logging.getLogger(__name__)
 
@@ -514,13 +515,16 @@ class Wizard(QtGui.QWizard):
     def _populate_services(self):
         """
         Loads the services that the provider provides into the UI for
-        the user to enable or disable
+        the user to enable or disable.
         """
         self.ui.grpServices.setTitle(
             self.tr("Services by %s") %
             (self._provider_config.get_name(),))
 
-        for service in self._provider_config.get_services():
+        services = get_available(
+            self._provider_config.get_services())
+
+        for service in services:
             try:
                 if service not in self._shown_services:
                     checkbox = QtGui.QCheckBox(self)
