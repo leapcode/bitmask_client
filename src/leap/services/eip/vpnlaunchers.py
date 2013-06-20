@@ -23,6 +23,7 @@ import logging
 import getpass
 import os
 import platform
+import subprocess
 try:
     import grp
 except ImportError:
@@ -199,11 +200,25 @@ def _is_auth_agent_running():
     :return: True if it's running, False if it's not.
     :rtype: boolean
     """
-    polkit_gnome = 'ps aux | grep polkit-[g]nome-authentication-agent-1'
-    polkit_kde = 'ps aux | grep polkit-[k]de-authentication-agent-1'
+    ps = 'ps aux | grep polkit-%s-authentication-agent-1'
+    opts = (ps % case for case in ['[g]nome', '[k]de'])
+    is_running = map(lambda l: commands.getoutput(l), opts)
+    return any(is_running)
 
-    return (len(commands.getoutput(polkit_gnome)) > 0 or
-            len(commands.getoutput(polkit_kde)) > 0)
+
+def _try_to_launch_agent():
+    """
+    Tries to launch a polkit daemon.
+    """
+    opts = [
+        "/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1&",
+        # XXX add kde thing here
+    ]
+    for cmd in opts:
+        try:
+            subprocess.Popen([cmd], shell=True)
+        except:
+            pass
 
 
 class LinuxVPNLauncher(VPNLauncher):
@@ -258,6 +273,8 @@ class LinuxVPNLauncher(VPNLauncher):
         :rtype: list
         """
         if _is_pkexec_in_system():
+            if not _is_auth_agent_running():
+                _try_to_launch_agent()
             if _is_auth_agent_running():
                 pkexec_possibilities = which(kls.PKEXEC_BIN)
                 leap_assert(len(pkexec_possibilities) > 0,
