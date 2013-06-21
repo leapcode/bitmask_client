@@ -54,8 +54,6 @@ parsed_reqs = utils.parse_requirements()
 cmdclass = versioneer.get_cmdclass()
 leap_launcher = 'leap-client=leap.app:main'
 
-from distutils.command.build import build as _build
-from distutils.command.sdist import sdist as _sdist
 from setuptools.command.develop import develop as _develop
 
 
@@ -66,27 +64,11 @@ def copy_reqs(path, withsrc=False):
         reqsfile = os.path.join(path, 'src', *_reqpath)
     else:
         reqsfile = os.path.join(path, *_reqpath)
-
     print("UPDATING %s" % reqsfile)
-
     if os.path.isfile(reqsfile):
         os.unlink(reqsfile)
-    f = open(reqsfile, "w")
-    f.write('\n'.join(parsed_reqs))
-    f.close()
-
-
-class cmd_build(_build):
-    def run(self):
-        # versioneer:
-        versions = versioneer.get_versions(verbose=True)
-        self._versioneer_generated_versions = versions
-        # unless we update this, the command will keep using the old version
-        self.distribution.metadata.version = versions["version"]
-
-        _build.run(self)
-        copy_reqs(self.build_lib)
-
+    with open(reqsfile, "w") as f:
+        f.write('\n'.join(parsed_reqs))
 
 class cmd_develop(_develop):
     def run(self):
@@ -99,24 +81,31 @@ class cmd_develop(_develop):
         _develop.run(self)
         copy_reqs(self.egg_path)
 
+cmdclass["develop"] = cmd_develop
 
-class cmd_sdist(_sdist):
+# next two classes need to augment the versioneer modified ones
+
+versioneer_build = cmdclass['build']
+versioneer_sdist = cmdclass['sdist']
+
+
+class cmd_build(versioneer_build):
     def run(self):
-        # versioneer:
-        versions = versioneer.get_versions(verbose=True)
-        self._versioneer_generated_versions = versions
-        # unless we update this, the command will keep using the old version
-        self.distribution.metadata.version = versions["version"]
-        return _sdist.run(self)
+        versioneer_build.run(self)
+        copy_reqs(self.build_lib)
+
+
+class cmd_sdist(versioneer_sdist):
+    def run(self):
+        return versioneer_sdist.run(self)
 
     def make_release_tree(self, base_dir, files):
-        _sdist.make_release_tree(self, base_dir, files)
+        versioneer_sdist.make_release_tree(self, base_dir, files)
         copy_reqs(base_dir, withsrc=True)
 
 
 cmdclass["build"] = cmd_build
 cmdclass["sdist"] = cmd_sdist
-cmdclass["develop"] = cmd_develop
 
 
 setup(
