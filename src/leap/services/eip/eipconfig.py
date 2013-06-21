@@ -39,17 +39,21 @@ class VPNGatewaySelector(object):
     VPN Gateway selector.
     """
 
-    def __init__(self, eipconfig):
+    def __init__(self, eipconfig, tz_offset=None):
         '''
         Constructor for VPNGatewaySelector.
 
         :param eipconfig: a valid EIP Configuration.
         :type eipconfig: EIPConfig
+        :param tz_offset: use this offset as a local distance to GMT.
+        :type tz_offset: datetime.timedelta
         '''
         leap_assert_type(eipconfig, EIPConfig)
-        self._local_offset = 0  # defaults to GMT
-        self._local_timezone = None
-        self._set_local_offset()
+
+        self._local_offset = tz_offset
+        if tz_offset is None:
+            self._local_offset = self._get_local_offset()
+
         self._eipconfig = eipconfig
 
     def get_gateways(self):
@@ -95,15 +99,17 @@ class VPNGatewaySelector(object):
         hours = diff.seconds / (60 * 60)
         return hours
 
-    def _set_local_offset(self):
+    def _get_local_offset(self):
         '''
-        Sets the distance between GMT and the local timezone.
+        Returns the distance between GMT and the local timezone.
+
+        :rtype: datetime.timedelta
         '''
         local_offset = time.timezone
         if time.daylight:
             local_offset = time.altzone
 
-        self._local_offset = datetime.timedelta(seconds=-local_offset)
+        return datetime.timedelta(seconds=-local_offset)
 
 
 class EIPConfig(BaseConfig):
@@ -233,6 +239,7 @@ if __name__ == "__main__":
     if eipconfig.load("leap/providers/bitmask.net/eip-service.json"):
         print eipconfig.get_clusters()
         print eipconfig.get_gateways()
+        print eipconfig.get_locations()
         print eipconfig.get_openvpn_configuration()
         print eipconfig.get_serial()
         print eipconfig.get_version()
