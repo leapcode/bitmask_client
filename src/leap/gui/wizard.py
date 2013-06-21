@@ -31,6 +31,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpregister import SRPRegister
 from leap.util.privilege_policies import is_missing_policy_permissions
 from leap.util.request_helpers import get_content
+from leap.util.keyring_helpers import has_keyring
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services import get_available
 
@@ -170,7 +171,7 @@ class Wizard(QtGui.QWizard):
         return self._password
 
     def get_remember(self):
-        return self.ui.chkRemember.isChecked()
+        return has_keyring() and self.ui.chkRemember.isChecked()
 
     def get_services(self):
         return self._selected_services
@@ -286,8 +287,9 @@ class Wizard(QtGui.QWizard):
             self._set_registration_fields_visibility(False)
 
             # Allow the user to remember his password
-            self.ui.chkRemember.setVisible(True)
-            self.ui.chkRemember.setEnabled(True)
+            if has_keyring():
+                self.ui.chkRemember.setVisible(True)
+                self.ui.chkRemember.setEnabled(True)
 
             self.page(self.REGISTER_USER_PAGE).set_completed()
             self.button(QtGui.QWizard.BackButton).setEnabled(False)

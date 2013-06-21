@@ -55,6 +55,7 @@ from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             EIPNoPkexecAvailable,
                                             EIPNoPolkitAuthAgentAvailable)
 from leap.util import __version__ as VERSION
+from leap.util.keyring_helpers import has_keyring
 
 from leap.services.mail.smtpconfig import SMTPConfig
 
@@ -435,7 +436,7 @@ class MainWindow(QtGui.QMainWindow):
                 self._login_widget.set_user(possible_username)
             if possible_password is not None:
                 self._login_widget.set_password(possible_password)
-                self._login_widget.set_remember(True)
+                self._login_widget.set_remember(has_keyring())
                 self._login()
             self._wizard = None
             self._settings.set_properprovider(True)
@@ -454,7 +455,7 @@ class MainWindow(QtGui.QMainWindow):
                 logger.error('Username@provider malformed. %r' % (e, ))
                 saved_user = None
 
-            if saved_user is not None:
+            if saved_user is not None and has_keyring():
                 # fill the username
                 self._login_widget.set_user(username)
 
@@ -740,7 +741,7 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.set_status(self.tr("Logging in..."), error=False)
         self._login_widget.set_enabled(False)
 
-        if self._login_widget.get_remember():
+        if self._login_widget.get_remember() and has_keyring():
             # in the keyring and in the settings
             # we store the value 'usename@provider'
             username_domain = (username + '@' + provider).encode("utf8")

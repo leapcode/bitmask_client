@@ -24,6 +24,8 @@ import keyring
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
+from leap.util.keyring_helpers import has_keyring
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +60,7 @@ class LoginWidget(QtGui.QWidget):
 
         self.ui.chkRemember.stateChanged.connect(
             self._remember_state_changed)
-        self.ui.chkRemember.setEnabled(keyring.get_keyring() is not None)
+        self.ui.chkRemember.setEnabled(has_keyring())
 
         self.ui.lnPassword.setEchoMode(QtGui.QLineEdit.Password)
 

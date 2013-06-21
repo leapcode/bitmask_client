@@ -1,0 +1,2 @@
+  o Only use the Keyring with it's using a known good backend. Closes
+    #2960
