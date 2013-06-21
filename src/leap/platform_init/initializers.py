@@ -195,7 +195,7 @@ def WindowsInitializer():
             dev_installer = os.path.join(driver_path,
                                          "devcon.exe")
             if os.path.isfile(dev_installer) and \
-                    os.access(dev_installer, os.X_OK):
+                    stat.S_IXUSR & os.stat(dev_installer)[stat.ST_MODE] != 0:
                 inf_path = os.path.join(driver_path,
                                         "OemWin2k.inf")
                 cmd = [dev_installer, "install", inf_path, "tap0901"]

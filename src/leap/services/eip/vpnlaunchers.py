@@ -24,6 +24,7 @@ import getpass
 import os
 import platform
 import subprocess
+import stat
 try:
     import grp
 except ImportError:
@@ -167,7 +168,7 @@ def _has_updown_scripts(path, warn=True):
                      "Might produce DNS leaks." % (path,))
 
     # XXX check if applies in win
-    is_exe = os.access(path, os.X_OK)
+    is_exe = (stat.S_IXUSR & os.stat(path)[stat.ST_MODE] != 0)
     if warn and not is_exe:
         logger.error("Up/down script %s is not executable. "
                      "Might produce DNS leaks." % (path,))
