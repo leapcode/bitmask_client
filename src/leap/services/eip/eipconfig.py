@@ -176,7 +176,7 @@ class EIPConfig(BaseConfig):
             index = 0
             logger.warning("Provided an unknown gateway index %s, " +
                            "defaulting to 0")
-        ip_addr_str = gateways[0]["ip_address"]
+        ip_addr_str = gateways[index]["ip_address"]
 
         try:
             ipaddr.IPAddress(ip_addr_str)
