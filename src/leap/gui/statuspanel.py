@@ -171,7 +171,6 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         self.hide_status_box()
         self.set_startstop_enabled(False)
-        logger.debug('disabling buton.....................')
 
     def eip_started(self):
         """

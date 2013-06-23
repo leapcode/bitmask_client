@@ -90,6 +90,9 @@ class MainWindow(QtGui.QMainWindow):
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
 
+    # We use this flag to detect abnormal terminations
+    user_stopped_eip = False
+
     def __init__(self, quit_callback,
                  standalone=False, bypass_checks=False):
         """
@@ -951,6 +954,7 @@ class MainWindow(QtGui.QMainWindow):
         Starts EIP
         """
         self._status_panel.eip_pre_up()
+        self.user_stopped_eip = False
         provider_config = self._get_best_provider_config()
 
         try:
@@ -1007,8 +1011,6 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._already_started_eip = True
 
-        #self._status_panel.set_startstop_enabled(True)
-
     def _set_eipstatus_off(self):
         """
         Sets eip status to off
@@ -1016,11 +1018,16 @@ class MainWindow(QtGui.QMainWindow):
         self._status_panel.set_eip_status(self.tr("OFF"), error=True)
         self._status_panel.set_startstop_enabled(True)
 
-    def _stop_eip(self):
+    def _stop_eip(self, abnormal=False):
         """
         Stops vpn process and makes gui adjustments to reflect
         the change of state.
+
+        :param abnormal: whether this was an abnormal termination.
+        :type abnormal: bool
+        ""
         """
+        self.user_stopped_eip = True
         self._vpn.terminate()
 
         self._status_panel.set_eip_status(self.tr("OFF"))
@@ -1036,6 +1043,8 @@ class MainWindow(QtGui.QMainWindow):
             self._status_panel.set_provider(
                 "%s@%s" % (self._logged_user,
                            self._get_best_provider_config().get_domain()))
+        if abnormal:
+            self._status_panel.set_startstop_enabled(True)
 
     def _get_best_provider_config(self):
         """
@@ -1188,10 +1197,43 @@ class MainWindow(QtGui.QMainWindow):
           self._vpn.process_finished
 
         Triggered when the EIP/VPN process finishes to set the UI
-        accordingly
+        accordingly.
         """
-        logger.debug("Finished VPN with exitCode %s" % (exitCode,))
-        self._stop_eip()
+        logger.info("VPN process finished with exitCode %s..."
+                    % (exitCode,))
+
+        # Ideally we would have the right exit code here,
+        # but the use of different wrappers (pkexec, cocoasudo) swallows
+        # the openvpn exit code so we get zero exit in some cases  where we
+        # shouldn't. As a workaround we just use a flag to indicate
+        # a purposeful switch off, and mark everything else as unexpected.
+
+        # In the near future we should trigger a native notification from here,
+        # since the user really really wants to know she is unprotected asap.
+        # And the right thing to do will be to fail-close.
+
+        # TODO we should have a way of parsing the latest lines in the vpn
+        # log buffer so we can have a more precise idea of which type
+        # of error did we have (server side, local problem, etc)
+        abnormal = True
+
+        # XXX check if these exitCodes are pkexec/cocoasudo specific
+        if exitCode in (126, 127):
+            self._status_panel.set_global_status(
+                self.tr("Encrypted Internet could not be launched "
+                        "because you did not authenticate properly."),
+                error=True)
+            self._vpn.killit()
+        elif exitCode != 0 or not self.user_stopped_eip:
+            self._status_panel.set_global_status(
+                self.tr("Encrypted Internet finished in an "
+                        "unexpected manner!"), error=True)
+        else:
+            abnormal = False
+        if exitCode == 0:
+            # XXX remove this warning after I fix cocoasudo.
+            logger.warning("The above exit code MIGHT BE WRONG.")
+        self._stop_eip(abnormal)
 
     def _on_raise_window_event(self, req):
         """
