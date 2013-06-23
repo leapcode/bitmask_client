@@ -52,6 +52,8 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui.btnEipStartStop.clicked.connect(
             self.start_eip)
 
+        self.hide_status_box()
+
         # Set the EIP status icons
         self.CONNECTING_ICON = None
         self.CONNECTED_ICON = None
@@ -95,7 +97,7 @@ class StatusPanelWidget(QtGui.QWidget):
 
     def set_systray(self, systray):
         """
-        Sets the systray object to use
+        Sets the systray object to use.
 
         :param systray: Systray object
         :type systray: QtGui.QSystemTrayIcon
@@ -105,13 +107,35 @@ class StatusPanelWidget(QtGui.QWidget):
 
     def set_action_eip_status(self, action_eip_status):
         """
-        Sets the action_eip_status to use
+        Sets the action_eip_status to use.
 
         :param action_eip_status: action_eip_status to be used
         :type action_eip_status: QtGui.QAction
         """
         leap_assert_type(action_eip_status, QtGui.QAction)
         self._action_eip_status = action_eip_status
+
+    def set_global_status(self, status, error=False):
+        """
+        Sets the global status label.
+
+        :param status: status message
+        :type status: str or unicode
+        :param error: if the status is an erroneous one, then set this
+                      to True
+        :type error: bool
+        """
+        leap_assert_type(error, bool)
+        if error:
+            status = "<font color='red'><b>%s</b></font>" % (status,)
+        self.ui.lblGlobalStatus.setText(status)
+        self.ui.globalStatusBox.show()
+
+    def hide_status_box(self):
+        """
+        Hide global status box.
+        """
+        self.ui.globalStatusBox.hide()
 
     def set_eip_status(self, status, error=False):
         """
@@ -139,6 +163,15 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         leap_assert_type(value, bool)
         self.ui.btnEipStartStop.setEnabled(value)
+
+    def eip_pre_up(self):
+        """
+        Triggered when the app activates eip.
+        Hides the status box and disables the start/stop button.
+        """
+        self.hide_status_box()
+        self.set_startstop_enabled(False)
+        logger.debug('disabling buton.....................')
 
     def eip_started(self):
         """
@@ -196,12 +229,14 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         status = data[VPNManager.STATUS_STEP_KEY]
         self.set_eip_status_icon(status)
-        if status == "AUTH":
+        if status == "CONNECTED":
+            self.set_eip_status(self.tr("ON"))
+            # Only now we can properly enable the button.
+            self.set_startstop_enabled(True)
+        elif status == "AUTH":
             self.set_eip_status(self.tr("Authenticating..."))
         elif status == "GET_CONFIG":
             self.set_eip_status(self.tr("Retrieving configuration..."))
-        elif status == "CONNECTED":
-            self.set_eip_status(self.tr("On"))
         elif status == "WAIT":
             self.set_eip_status(self.tr("Waiting to start..."))
         elif status == "ASSIGN_IP":
@@ -210,7 +245,7 @@ class StatusPanelWidget(QtGui.QWidget):
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
             QtCore.QTimer.singleShot(0, self.stop_eip)
-            QtCore.QTimer.singleShot(0, partial(self.set_eip_status,
+            QtCore.QTimer.singleShot(0, partial(self.set_global_status,
                                                 self.tr("Unable to start VPN, "
                                                         "it's already "
                                                         "running.")))

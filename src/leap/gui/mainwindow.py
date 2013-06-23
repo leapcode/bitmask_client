@@ -695,7 +695,7 @@ class MainWindow(QtGui.QMainWindow):
                     download_if_needed=True)
             else:
                 self._login_widget.set_status(
-                    self.tr("Could not load provider configuration"))
+                    self.tr("Could not load provider configuration."))
                 self._login_widget.set_enabled(True)
         else:
             self._login_widget.set_status(
@@ -950,6 +950,7 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts EIP
         """
+        self._status_panel.eip_pre_up()
         provider_config = self._get_best_provider_config()
 
         try:
@@ -977,7 +978,9 @@ class MainWindow(QtGui.QMainWindow):
             self._action_eip_startstop.triggered.connect(
                 self._stop_eip)
         except EIPNoPolkitAuthAgentAvailable:
-            self._status_panel.set_eip_status(
+            self._status_panel.set_global_status(
+                # XXX this should change to polkit-kde where
+                # applicable.
                 self.tr("We could not find any "
                         "authentication "
                         "agent in your system.<br/>"
@@ -986,20 +989,31 @@ class MainWindow(QtGui.QMainWindow):
                         "agent-1</b> "
                         "running and try again."),
                 error=True)
+            self._set_eipstatus_off()
         except EIPNoPkexecAvailable:
-            self._status_panel.set_eip_status(
+            self._status_panel.set_global_status(
                 self.tr("We could not find <b>pkexec</b> "
                         "in your system."),
                 error=True)
+            self._set_eipstatus_off()
         except OpenVPNNotFoundException:
-            self._status_panel.set_eip_status(
-                self.tr("We couldn't find openvpn binary"),
+            self._status_panel.set_global_status(
+                self.tr("We could not find openvpn binary."),
                 error=True)
+            self._set_eipstatus_off()
         except VPNLauncherException as e:
-            self._status_panel.set_eip_status("%s" % (e,), error=True)
+            self._status_panel.set_gloal_status("%s" % (e,), error=True)
+            self._set_eipstatus_off()
         else:
             self._already_started_eip = True
 
+        #self._status_panel.set_startstop_enabled(True)
+
+    def _set_eipstatus_off(self):
+        """
+        Sets eip status to off
+        """
+        self._status_panel.set_eip_status(self.tr("OFF"), error=True)
         self._status_panel.set_startstop_enabled(True)
 
     def _stop_eip(self):
@@ -1009,7 +1023,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._vpn.terminate()
 
-        self._status_panel.set_eip_status(self.tr("Off"))
+        self._status_panel.set_eip_status(self.tr("OFF"))
         self._status_panel.set_eip_status_icon("error")
         self._status_panel.eip_stopped()
         self._action_eip_startstop.setText(self.tr("Turn ON"))
@@ -1042,7 +1056,7 @@ class MainWindow(QtGui.QMainWindow):
         elif self._provisional_provider_config.loaded():
             provider_config = self._provisional_provider_config
         else:
-            leap_assert(False, "We couldn't find any usable ProviderConfig")
+            leap_assert(False, "We could not find any usable ProviderConfig.")
 
         return provider_config
 
@@ -1097,7 +1111,8 @@ class MainWindow(QtGui.QMainWindow):
         else:
             if data[self._eip_bootstrapper.PASSED_KEY]:
                 self._status_panel.set_eip_status(
-                    self.tr("Could not load Encrypted Internet Configuration"),
+                    self.tr("Could not load Encrypted Internet "
+                            "Configuration."),
                     error=True)
             else:
                 self._status_panel.set_eip_status(
