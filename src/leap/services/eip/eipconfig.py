@@ -21,7 +21,6 @@ Provider configuration
 import logging
 import os
 import re
-import datetime
 import time
 
 import ipaddr
@@ -46,7 +45,7 @@ class VPNGatewaySelector(object):
         :param eipconfig: a valid EIP Configuration.
         :type eipconfig: EIPConfig
         :param tz_offset: use this offset as a local distance to GMT.
-        :type tz_offset: datetime.timedelta
+        :type tz_offset: int
         '''
         leap_assert_type(eipconfig, EIPConfig)
 
@@ -93,23 +92,29 @@ class VPNGatewaySelector(object):
         :returns: distance between local offset and param offset.
         :rtype: int
         '''
-        delta1 = datetime.timedelta(hours=offset)
-        delta2 = self._local_offset
-        diff = abs(delta1 - delta2)
-        hours = diff.seconds / (60 * 60)
-        return hours
+        timezones = range(-11, 13)
+        tz1 = offset
+        tz2 = self._local_offset
+        distance = abs(timezones.index(tz1) - timezones.index(tz2))
+        if distance > 12:
+            if tz1 < 0:
+                distance = timezones.index(tz1) + timezones[::-1].index(tz2)
+            else:
+                distance = timezones[::-1].index(tz1) + timezones.index(tz2)
+
+        return distance
 
     def _get_local_offset(self):
         '''
         Returns the distance between GMT and the local timezone.
 
-        :rtype: datetime.timedelta
+        :rtype: int
         '''
         local_offset = time.timezone
         if time.daylight:
             local_offset = time.altzone
 
-        return datetime.timedelta(seconds=-local_offset)
+        return local_offset / 3600
 
 
 class EIPConfig(BaseConfig):
