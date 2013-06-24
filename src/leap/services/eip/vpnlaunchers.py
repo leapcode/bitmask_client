@@ -216,7 +216,7 @@ def _try_to_launch_agent():
     Tries to launch a polkit daemon.
     """
     opts = [
-        "/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1&",
+        "/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1",
         # XXX add kde thing here
     ]
     for cmd in opts:

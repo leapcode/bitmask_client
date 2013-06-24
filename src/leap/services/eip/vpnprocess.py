@@ -142,6 +142,14 @@ class VPN(object):
 
         # after running out of patience, we try a killProcess
         logger.debug("Process did not died. Sending a SIGKILL.")
+        self.killit()
+
+    def killit(self):
+        """
+        Sends a kill signal to the process.
+        """
+        self._stop_pollers()
+        self._vpnproc.aborted = True
         self._vpnproc.killProcess()
 
     def terminate(self, shutdown=False):
@@ -225,10 +233,19 @@ class VPNManager(object):
         self._reactor = reactor
         self._tn = None
         self._qtsigs = qtsigs
+        self._aborted = False
 
     @property
     def qtsigs(self):
         return self._qtsigs
+
+    @property
+    def aborted(self):
+        return self._aborted
+
+    @aborted.setter
+    def aborted(self, value):
+        self._aborted = value
 
     def _seek_to_eof(self):
         """
@@ -378,7 +395,7 @@ class VPNManager(object):
         """
         # TODO decide about putting a max_lim to retries and signaling
         # an error.
-        if not self.is_connected():
+        if not self.aborted and not self.is_connected():
             self.connect_to_management(self._socket_host, self._socket_port)
             self._reactor.callLater(
                 self.CONNECTION_RETRY_TIME,
@@ -611,6 +628,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
 
         self._last_state = None
         self._last_status = None
+        self._alive = False
 
     # processProtocol methods
 
@@ -620,6 +638,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
 
         .. seeAlso: `http://twistedmatrix.com/documents/13.0.0/api/twisted.internet.protocol.ProcessProtocol.html` # noqa
         """
+        self._alive = True
+        self.aborted = False
         self.try_to_connect_to_management()
 
     def outReceived(self, data):
@@ -643,6 +663,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         exit_code = reason.value.exitCode
         if isinstance(exit_code, int):
             logger.debug("processExited, status %d" % (exit_code,))
+        self.qtsigs.process_finished.emit(exit_code)
+        self._alive = False
 
     def processEnded(self, reason):
         """
@@ -661,13 +683,15 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         """
         Polls connection status.
         """
-        self.get_status()
+        if self._alive:
+            self.get_status()
 
     def pollState(self):
         """
         Polls connection state.
         """
-        self.get_state()
+        if self._alive:
+            self.get_state()
 
     # launcher
 
