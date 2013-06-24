@@ -168,7 +168,11 @@ def _has_updown_scripts(path, warn=True):
                      "Might produce DNS leaks." % (path,))
 
     # XXX check if applies in win
-    is_exe = (stat.S_IXUSR & os.stat(path)[stat.ST_MODE] != 0)
+    is_exe = False
+    try:
+        is_exe = (stat.S_IXUSR & os.stat(path)[stat.ST_MODE] != 0)
+    except OSError as e:
+        logger.warn("%s" % (e,))
     if warn and not is_exe:
         logger.error("Up/down script %s is not executable. "
                      "Might produce DNS leaks." % (path,))
