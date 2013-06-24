@@ -21,7 +21,6 @@ Provider configuration
 import logging
 import os
 import re
-import datetime
 import time
 
 import ipaddr
@@ -39,17 +38,21 @@ class VPNGatewaySelector(object):
     VPN Gateway selector.
     """
 
-    def __init__(self, eipconfig):
+    def __init__(self, eipconfig, tz_offset=None):
         '''
         Constructor for VPNGatewaySelector.
 
         :param eipconfig: a valid EIP Configuration.
         :type eipconfig: EIPConfig
+        :param tz_offset: use this offset as a local distance to GMT.
+        :type tz_offset: int
         '''
         leap_assert_type(eipconfig, EIPConfig)
-        self._local_offset = 0  # defaults to GMT
-        self._local_timezone = None
-        self._set_local_offset()
+
+        self._local_offset = tz_offset
+        if tz_offset is None:
+            self._local_offset = self._get_local_offset()
+
         self._eipconfig = eipconfig
 
     def get_gateways(self):
@@ -89,21 +92,29 @@ class VPNGatewaySelector(object):
         :returns: distance between local offset and param offset.
         :rtype: int
         '''
-        delta1 = datetime.timedelta(hours=offset)
-        delta2 = self._local_offset
-        diff = abs(delta1 - delta2)
-        hours = diff.seconds / (60 * 60)
-        return hours
+        timezones = range(-11, 13)
+        tz1 = offset
+        tz2 = self._local_offset
+        distance = abs(timezones.index(tz1) - timezones.index(tz2))
+        if distance > 12:
+            if tz1 < 0:
+                distance = timezones.index(tz1) + timezones[::-1].index(tz2)
+            else:
+                distance = timezones[::-1].index(tz1) + timezones.index(tz2)
 
-    def _set_local_offset(self):
+        return distance
+
+    def _get_local_offset(self):
         '''
-        Sets the distance between GMT and the local timezone.
+        Returns the distance between GMT and the local timezone.
+
+        :rtype: int
         '''
         local_offset = time.timezone
         if time.daylight:
             local_offset = time.altzone
 
-        self._local_offset = datetime.timedelta(seconds=-local_offset)
+        return local_offset / 3600
 
 
 class EIPConfig(BaseConfig):
@@ -176,7 +187,7 @@ class EIPConfig(BaseConfig):
             index = 0
             logger.warning("Provided an unknown gateway index %s, " +
                            "defaulting to 0")
-        ip_addr_str = gateways[0]["ip_address"]
+        ip_addr_str = gateways[index]["ip_address"]
 
         try:
             ipaddr.IPAddress(ip_addr_str)
@@ -233,6 +244,7 @@ if __name__ == "__main__":
     if eipconfig.load("leap/providers/bitmask.net/eip-service.json"):
         print eipconfig.get_clusters()
         print eipconfig.get_gateways()
+        print eipconfig.get_locations()
         print eipconfig.get_openvpn_configuration()
         print eipconfig.get_serial()
         print eipconfig.get_version()
