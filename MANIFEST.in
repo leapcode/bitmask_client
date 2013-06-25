@@ -5,3 +5,4 @@ prune docs/_build
 prune docs/covhtml
 include versioneer.py
 include src/leap/util/reqs.txt
+include src/leap/crypto/tests/wrongcert.pem
