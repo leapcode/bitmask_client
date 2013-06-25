@@ -139,6 +139,7 @@ class FakeUsers(Resource):
         verifier = args['user[password_verifier]'][0]
 
         if login in _USERDB:
+            request.setResponseCode(422)
             return "%s\n" % json.dumps(
                 {'errors': {'login': 'already taken!'}})
 
