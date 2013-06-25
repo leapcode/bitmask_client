@@ -44,7 +44,7 @@ class LogHandler(logging.Handler):
         logging.Handler.__init__(self)
         self._qtsignal = qtsignal
 
-    def _set_format(self, logging_level):
+    def _get_format(self, logging_level):
         """
         Sets the log format depending on the parameter.
         It uses html and css to set the colors for the logs.
@@ -70,7 +70,7 @@ class LogHandler(logging.Handler):
         log_format = ' - '.join(format_attrs)
         formatter = logging.Formatter(log_format)
 
-        self.setFormatter(formatter)
+        return formatter
 
     def emit(self, logRecord):
         """
@@ -82,7 +82,7 @@ class LogHandler(logging.Handler):
         :param logRecord: the record emitted by the logging module.
         :type logRecord: logging.LogRecord.
         """
-        self._set_format(logRecord.levelname)
+        self.setFormatter(self._get_format(logRecord.levelname))
         log = self.format(logRecord)
         log_item = {self.RECORD_KEY: logRecord, self.MESSAGE_KEY: log}
         self._log_history.append(log_item)
