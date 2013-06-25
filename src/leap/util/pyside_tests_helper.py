@@ -15,13 +15,16 @@ except ImportError:
 else:
     has_gui = True
 
+
 def adjust_filename(filename, orig_mod_filename):
     dirpath = os.path.dirname(os.path.abspath(orig_mod_filename))
     return os.path.join(dirpath, filename)
 
+
 class NoQtGuiError(Exception):
     def __init__(self):
         Exception.__init__(self, 'No QtGui found')
+
 
 class BasicPySlotCase(object):
     '''Base class that tests python slots and signal emissions.
@@ -75,7 +78,6 @@ if has_gui:
             del self.app
             super(UsesQApplication, self).tearDown()
 
-
     class TimedQApplication(unittest.TestCase):
         '''Helper class with timed QApplication exec loop'''
 
@@ -97,12 +99,13 @@ else:
     class UsesQApplication(unittest.TestCase):
         def setUp(self):
             raise NoQtGuiError()
+
     class TimedQapplication(unittest.TestCase):
         def setUp(self):
             raise NoQtGuiError()
 
-
 _core_instance = None
+
 
 class UsesQCoreApplication(unittest.TestCase):
     '''Helper class for test cases that require an QCoreApplication
