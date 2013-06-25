@@ -26,6 +26,7 @@ OBSOLETE_KEYRINGS = [
     keyring.backends.file.PlaintextKeyring
 ]
 
+
 def has_keyring():
     """
 
