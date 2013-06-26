@@ -37,6 +37,8 @@ class VPNGatewaySelector(object):
     """
     VPN Gateway selector.
     """
+    # http://www.timeanddate.com/time/map/
+    equivalent_timezones = {13: -11, 14: -10}
 
     def __init__(self, eipconfig, tz_offset=None):
         '''
@@ -51,7 +53,12 @@ class VPNGatewaySelector(object):
 
         self._local_offset = tz_offset
         if tz_offset is None:
-            self._local_offset = self._get_local_offset()
+            tz_offset = self._get_local_offset()
+
+        if tz_offset in self.equivalent_timezones:
+            tz_offset = self.equivalent_timezones[tz_offset]
+
+        self._local_offset = tz_offset
 
         self._eipconfig = eipconfig
 
@@ -71,6 +78,9 @@ class VPNGatewaySelector(object):
 
             if gateway_location is not None:
                 gw_offset = int(locations[gateway['location']]['timezone'])
+                if gw_offset in self.equivalent_timezones:
+                    gw_offset = self.equivalent_timezones[gw_offset]
+
                 gateway_distance = self._get_timezone_distance(gw_offset)
 
             ip = self._eipconfig.get_gateway_ip(idx)
