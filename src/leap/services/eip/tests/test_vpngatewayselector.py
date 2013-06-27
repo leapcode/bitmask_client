@@ -34,14 +34,30 @@ sample_gateways = [
      u'location': u'location2'},
     {u'host': u'gateway3.com',
      u'ip_address': u'3.4.5.6',
-     u'location': u'location3'}
+     u'location': u'location3'},
+    {u'host': u'gateway4.com',
+     u'ip_address': u'4.5.6.7',
+     u'location': u'location4'}
+]
+
+sample_gateways_no_location = [
+    {u'host': u'gateway1.com',
+     u'ip_address': u'1.2.3.4'},
+    {u'host': u'gateway2.com',
+     u'ip_address': u'2.3.4.5'},
+    {u'host': u'gateway3.com',
+     u'ip_address': u'3.4.5.6'}
 ]
 
 sample_locations = {
     u'location1': {u'timezone': u'2'},
     u'location2': {u'timezone': u'-7'},
-    u'location3': {u'timezone': u'-4'}
+    u'location3': {u'timezone': u'-4'},
+    u'location4': {u'timezone': u'+13'}
 }
+
+# 0 is not used, only for indexing from 1 in tests
+ips = (0, u'1.2.3.4', u'2.3.4.5', u'3.4.5.6', u'4.5.6.7')
 
 
 class VPNGatewaySelectorTest(BaseLeapTest):
@@ -56,30 +72,59 @@ class VPNGatewaySelectorTest(BaseLeapTest):
     def tearDown(self):
         pass
 
+    def test_get_no_gateways(self):
+        gateway_selector = VPNGatewaySelector(self.eipconfig)
+        self.eipconfig.get_gateways = Mock(return_value=[])
+        gateways = gateway_selector.get_gateways()
+        self.assertEqual(gateways, [])
+
+    def test_get_gateway_with_no_locations(self):
+        gateway_selector = VPNGatewaySelector(self.eipconfig)
+        self.eipconfig.get_gateways = Mock(
+            return_value=sample_gateways_no_location)
+        self.eipconfig.get_locations = Mock(return_value=[])
+        gateways = gateway_selector.get_gateways()
+        gateways_default_order = [
+            sample_gateways[0]['ip_address'],
+            sample_gateways[1]['ip_address'],
+            sample_gateways[2]['ip_address']
+        ]
+        self.assertEqual(gateways, gateways_default_order)
+
     def test_correct_order_gmt(self):
         gateway_selector = VPNGatewaySelector(self.eipconfig, 0)
         gateways = gateway_selector.get_gateways()
-        self.assertEqual(gateways, [u'1.2.3.4', u'3.4.5.6', u'2.3.4.5'])
+        self.assertEqual(gateways, [ips[1], ips[3], ips[2], ips[4]])
 
     def test_correct_order_gmt_minus_3(self):
         gateway_selector = VPNGatewaySelector(self.eipconfig, -3)
         gateways = gateway_selector.get_gateways()
-        self.assertEqual(gateways, [u'3.4.5.6', u'2.3.4.5', u'1.2.3.4'])
+        self.assertEqual(gateways, [ips[3], ips[2], ips[1], ips[4]])
 
     def test_correct_order_gmt_minus_7(self):
         gateway_selector = VPNGatewaySelector(self.eipconfig, -7)
         gateways = gateway_selector.get_gateways()
-        self.assertEqual(gateways, [u'2.3.4.5', u'3.4.5.6', u'1.2.3.4'])
+        self.assertEqual(gateways, [ips[2], ips[3], ips[4], ips[1]])
 
     def test_correct_order_gmt_plus_5(self):
         gateway_selector = VPNGatewaySelector(self.eipconfig, 5)
         gateways = gateway_selector.get_gateways()
-        self.assertEqual(gateways, [u'1.2.3.4', u'3.4.5.6', u'2.3.4.5'])
+        self.assertEqual(gateways, [ips[1], ips[4], ips[3], ips[2]])
 
-    def test_correct_order_gmt_plus_10(self):
-        gateway_selector = VPNGatewaySelector(self.eipconfig, 10)
+    def test_correct_order_gmt_plus_12(self):
+        gateway_selector = VPNGatewaySelector(self.eipconfig, 12)
         gateways = gateway_selector.get_gateways()
-        self.assertEqual(gateways, [u'2.3.4.5', u'1.2.3.4', u'3.4.5.6'])
+        self.assertEqual(gateways, [ips[4], ips[2], ips[3], ips[1]])
+
+    def test_correct_order_gmt_minus_11(self):
+        gateway_selector = VPNGatewaySelector(self.eipconfig, -11)
+        gateways = gateway_selector.get_gateways()
+        self.assertEqual(gateways, [ips[4], ips[2], ips[3], ips[1]])
+
+    def test_correct_order_gmt_plus_14(self):
+        gateway_selector = VPNGatewaySelector(self.eipconfig, 14)
+        gateways = gateway_selector.get_gateways()
+        self.assertEqual(gateways, [ips[4], ips[2], ips[3], ips[1]])
 
 
 if __name__ == "__main__":
