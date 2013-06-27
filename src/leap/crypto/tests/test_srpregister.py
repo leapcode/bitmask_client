@@ -123,7 +123,7 @@ class SRPTestCase(unittest.TestCase):
         provider.get_ca_cert_path = MagicMock()
         provider.get_ca_cert_path.return_value = os.path.join(
             _here,
-            "wrongcacert.pem")
+            "wrongcert.pem")
         provider.get_api_uri = MagicMock()
         provider.get_api_uri.return_value = self._get_https_uri()
         if not loaded:
