@@ -25,7 +25,7 @@ import os
 from PySide import QtCore
 
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.certs import is_valid_pemfile, should_redownload
+from leap.common import certs
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
@@ -120,7 +120,7 @@ class EIPBootstrapper(AbstractBootstrapper):
 
         # For re-download if something is wrong with the cert
         self._download_if_needed = self._download_if_needed and \
-            not should_redownload(client_cert_path)
+            not certs.should_redownload(client_cert_path)
 
         if self._download_if_needed and \
                 os.path.exists(client_cert_path):
@@ -143,9 +143,7 @@ class EIPBootstrapper(AbstractBootstrapper):
         res.raise_for_status()
         client_cert = res.content
 
-        # TODO: check certificate validity
-
-        if not is_valid_pemfile(client_cert):
+        if not certs.is_valid_pemfile(client_cert):
             raise Exception(self.tr("The downloaded certificate is not a "
                                     "valid PEM file"))
 
@@ -177,4 +175,4 @@ class EIPBootstrapper(AbstractBootstrapper):
              self.download_client_certificate)
         ]
 
-        self.addCallbackChain(cb_chain)
+        return self.addCallbackChain(cb_chain)
