@@ -155,7 +155,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
             if SupportedAPIs.supports(api_version):
                 logger.debug("Provider definition has been modified")
             else:
-                api_supported = ', '.join(self._supported_api_versions)
+                api_supported = ', '.join(SupportedAPIs.SUPPORTED_APIS)
                 error = ('Unsupported provider API version. '
                          'Supported versions are: {}. '
                          'Found: {}.').format(api_supported, api_version)
@@ -185,7 +185,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
             (self._download_provider_info, self.download_provider_info)
         ]
 
-        self.addCallbackChain(cb_chain)
+        return self.addCallbackChain(cb_chain)
 
     def _should_proceed_cert(self):
         """
@@ -217,6 +217,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
             check_and_fix_urw_only(
                 self._provider_config
                 .get_ca_cert_path(about_to_download=True))
+            return
 
         res = self._session.get(self._provider_config.get_ca_cert_uri(),
                                 verify=not self._bypass_checks)
@@ -307,4 +308,4 @@ class ProviderBootstrapper(AbstractBootstrapper):
             (self._check_api_certificate, self.check_api_certificate)
         ]
 
-        self.addCallbackChain(cb_chain)
+        return self.addCallbackChain(cb_chain)

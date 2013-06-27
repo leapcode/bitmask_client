@@ -31,6 +31,7 @@ import binascii
 import json
 import os
 import sys
+import time
 
 import srp
 
@@ -39,7 +40,7 @@ from OpenSSL import SSL
 from zope.interface import Interface, Attribute, implements
 
 from twisted.web.server import Site, Request
-from twisted.web.static import File
+from twisted.web.static import File, Data
 from twisted.web.resource import Resource
 from twisted.internet import reactor
 
@@ -300,6 +301,22 @@ class API_Sessions(Resource):
         return FakeSession(name)
 
 
+class FileModified(File):
+    def render_GET(self, request):
+        since = request.getHeader('if-modified-since')
+        if since:
+            tsince = time.strptime(since.replace(" GMT", ""))
+            tfrom = time.strptime(time.ctime(os.path.getmtime(
+                os.path.join(_here,
+                             "test_provider.json"))))
+            if tfrom > tsince:
+                return File.render_GET(self, request)
+            else:
+                request.setResponseCode(304)
+                return ""
+        return File.render_GET(self, request)
+
+
 class OpenSSLServerContextFactory(object):
 
     def getContext(self):
@@ -325,8 +342,9 @@ def get_provider_factory():
     :rparam: factory for a site
     :rtype: Site instance
     """
-    root = Resource()
-    root.putChild("provider.json", File(
+    root = Data("", "")
+    root.putChild("", root)
+    root.putChild("provider.json", FileModified(
         os.path.join(_here,
                      "test_provider.json")))
     config = Resource()
