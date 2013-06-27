@@ -306,9 +306,7 @@ class FileModified(File):
         since = request.getHeader('if-modified-since')
         if since:
             tsince = time.strptime(since.replace(" GMT", ""))
-            tfrom = time.strptime(time.ctime(os.path.getmtime(
-                os.path.join(_here,
-                             "test_provider.json"))))
+            tfrom = time.strptime(time.ctime(os.path.getmtime(self.path)))
             if tfrom > tsince:
                 return File.render_GET(self, request)
             else:
@@ -350,12 +348,13 @@ def get_provider_factory():
     config = Resource()
     config.putChild(
         "eip-service.json",
-        File("./eip-service.json"))
+        FileModified(
+            os.path.join(_here, "eip-service.json")))
     apiv1 = Resource()
     apiv1.putChild("config", config)
     apiv1.putChild("sessions", API_Sessions())
     apiv1.putChild("users", FakeUsers(None))
-    apiv1.putChild("cert", File(
+    apiv1.putChild("cert", FileModified(
         os.path.join(_here,
                      'openvpn.pem')))
     root.putChild("1", apiv1)
