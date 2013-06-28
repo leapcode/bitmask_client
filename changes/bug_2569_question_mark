@@ -1,2 +1,0 @@
-  o Only show the question mark for a check being done if the previous
-    one passed. Fixes #2569.

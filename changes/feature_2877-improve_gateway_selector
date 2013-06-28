@@ -1,1 +1,0 @@
-  o Improve gateway selector based on timezone. It allows to use multiple gateways in openvpn for redundancy. Closes #2894.

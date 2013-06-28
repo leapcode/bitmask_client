@@ -1,2 +1,0 @@
-  o Save the default provider to be used for autostart EIP as
-    DefaultProvider in leap.conf. Closes #2793

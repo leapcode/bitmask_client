@@ -1,3 +1,0 @@
-  o OSX: Add dialog with suggestion to install up/down scripts if these not found.
-    Closes: #1264, #2759, #2249
-  o Workaround for pyside breaking with multiple inheritance. Closes #2827
