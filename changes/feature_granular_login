@@ -1,2 +1,0 @@
-  o Make the login steps be a chain of defers in order to be able to
-    have more cancel points for the whole procedure. Closes #2571

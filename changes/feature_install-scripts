@@ -1,2 +1,0 @@
-  o linux: check for up/down scripts and policy files and ask user for permission to install them
-    in a root-writeable location. Used from within bundle or for broken installations.

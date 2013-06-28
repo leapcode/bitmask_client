@@ -1,2 +1,0 @@
-  o Cleanly terminate openvpn process, sending SIGTERM and SIGKILL after a while.
-    Closes #2753

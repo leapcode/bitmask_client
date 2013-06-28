@@ -1,1 +1,0 @@
-  o Use cocoasudo in place of osascript for osx privilege escalation during openvpn launch.
