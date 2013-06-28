@@ -24,7 +24,6 @@ import os
 from leap.common.check import leap_assert
 from leap.common.config.baseconfig import BaseConfig, LocalizedKey
 from leap.config.provider_spec import leap_provider_spec
-from leap.services import get_available
 
 logger = logging.getLogger(__name__)
 
@@ -81,17 +80,16 @@ class ProviderConfig(BaseConfig):
 
     def get_services(self):
         """
-        Returns a list with the services supported by the
-        current provider.
+        Returns a list with the available services in the current provider.
 
         :rtype: list
         """
-        services = get_available(self._safe_get_value("services"))
+        services = self._safe_get_value("services")
         return services
 
     def get_services_string(self):
         """
-        Returns a string with the services supported by the current
+        Returns a string with the available services in the current
         provider, ready to be shown to the user.
         """
         services_str = ", ".join(self.get_services())
