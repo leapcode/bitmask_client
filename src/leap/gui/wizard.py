@@ -33,7 +33,7 @@ from leap.util.privilege_policies import is_missing_policy_permissions
 from leap.util.request_helpers import get_content
 from leap.util.keyring_helpers import has_keyring
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.services import get_available
+from leap.services import get_supported
 
 logger = logging.getLogger(__name__)
 
@@ -523,7 +523,7 @@ class Wizard(QtGui.QWizard):
             self.tr("Services by %s") %
             (self._provider_config.get_name(),))
 
-        services = get_available(
+        services = get_supported(
             self._provider_config.get_services())
 
         for service in services:

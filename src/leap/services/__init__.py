@@ -17,10 +17,10 @@
 """
 Services module.
 """
-NOT_YET_DEPLOYED = ["mx"]  # for 0.2.2 release
+DEPLOYED = ["openvpn"]  # for 0.2.2 release
 
 
-def get_available(services):
+def get_supported(services):
     """
     Returns a list of the available services.
 
@@ -30,4 +30,4 @@ def get_available(services):
     :returns: a list of the available services
     :rtype: list of str
     """
-    return filter(lambda s: s not in NOT_YET_DEPLOYED, services)
+    return filter(lambda s: s in DEPLOYED, services)
