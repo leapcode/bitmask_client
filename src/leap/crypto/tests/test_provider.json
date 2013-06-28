@@ -1,0 +1,15 @@
+{
+  "api_uri": "https://localhost:8443", 
+  "api_version": "1", 
+  "ca_cert_fingerprint": "SHA256: 0f17c033115f6b76ff67871872303ff65034efe7dd1b910062ca323eb4da5c7e", 
+  "ca_cert_uri": "https://bitmask.net/ca.crt", 
+  "default_language": "en", 
+  "domain": "example.com", 
+  "enrollment_policy": "open", 
+  "name": {
+    "en": "Bitmask"
+  }, 
+  "services": [
+    "openvpn"
+  ]
+}

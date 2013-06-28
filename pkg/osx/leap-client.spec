@@ -2,8 +2,8 @@
 a = Analysis(['../../src/leap/app.py'], 
              pathex=[
 		'../../src/leap',
-		'/Users/kaliy/leap/leap-client-testbuild/src/leap-client/pkg/osx'],
-             hiddenimports=['atexit'],
+		'/Users/kaliy/leap/leap_client/src/leap-client/pkg/osx'],
+             hiddenimports=['atexit', 'leap.common'],
              hookspath=None)
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
@@ -18,7 +18,7 @@ coll = COLLECT(exe,
                a.binaries +
 	       # this will easitly break if we setup the venv
 	       # somewhere else. FIXME
-	       [('cacert.pem', '../../../../lib/python2.6/site-packages/requests/cacert.pem', 'DATA'),
+	       [('cacert.pem', '/Users/kaliy/.Virtualenvs/leap-client/lib/python2.6/site-packages/requests-1.1.0-py2.6.egg/requests/cacert.pem', 'DATA'),
 		],
                a.zipfiles,
                a.datas,

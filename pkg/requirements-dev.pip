@@ -1,0 +1,17 @@
+# ---------------------------
+# -- external requirements --
+# -- during development    --
+# ---------------------------
+#
+# For temporary work, you can point this to your developer repo.
+# consolidated changes will be pushed to pypi and then added
+# to the main requirements.pip
+#
+# NOTE: you have to run pip install -r pkg/requirements.pip for pip
+#       to install it. (do it after python setup.py develop and it
+#       will only install this)
+
+sphinx
+
+-e git+git://github.com/leapcode/leap_pycommon.git@develop#egg=leap.common
+-e git+git://github.com/leapcode/soledad.git@develop#egg=leap.soledad

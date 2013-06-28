@@ -1,21 +1,10 @@
-=========================================
 The LEAP Encryption Access Project Client
 =========================================
 
 *your internet encryption toolkit*
 
-Read the docs!
-==============
-
-You can read the documentation online at `http://leap-client.readthedocs.org <http://leap-client.readthedocs.org/en/latest/>`_. If you prefer to build it locally, run::
-
-    $ cd docs
-    $ make html
-
-Quick Start
-==============
-
-At the current development stage we still do not have any versioned release. Instead, you might want to have a look at the `testers guide <http://leap-client.readthedocs.org/en/latest/testers/howto.html>`_ for a quick howto on fetching and testing latest development code.
+.. image:: https://pypip.in/v/leap-client/badge.png
+        :target: https://crate.io/packages/leap.client
 
 Dependencies
 ------------------
@@ -24,6 +13,7 @@ LEAP Client depends on these libraries:
 
 * ``python 2.6`` or ``2.7``
 * ``qt4 libraries``
+* ``libopenssl``
 * ``openvpn``
 
 Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requirements.pip``
@@ -31,35 +21,17 @@ Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requiremen
 Debian
 ^^^^^^
 
-Under a debian-based system, you can run::
+With a Debian based system, to be able to run leap-client you need to run the following command::
 
-  $ apt-get install openvpn python-qt4 python-crypto python-requests python-gnutls
-
-For *testing*::
-
-  $ apt-get install python-nose python-mock python-coverage
-
-For *building* the package you will need to install also::
-
-  $ apt-get install pyqt4-dev-tools libgnutls-dev python-setuptools python-all-dev
-
-
-pip
-^^^
-
-Use pip to install the required python packages::
-
-  $ apt-get install python-pip python-dev libgnutls-dev
-  $ pip install -r pkg/requirements.pip
-
+  $ sudo apt-get install openvpn python-pyside pyside-tools python-setuptools python-all-dev python-pip python-dev python-openssl
 
 Installing
 -----------
 
 After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
 
-  $ python setup.py install
-
+  $ make
+  $ sudo LEAP_VENV_SKIP_PYSIDE=1 python setup.py install
 
 Running
 -------
@@ -68,15 +40,22 @@ After a successful installation, there should be a launcher called ``leap-client
 
   $ leap-client
 
+If you are testing a new provider and do not have a CA certificate chain tied to your SSL certificate, you should execute leap-client in the following way::
+
+  $ leap-client --danger
+
+But **DO NOT use it on a regular bases**.
+
+**WARNING**: If you use the --danger flag you may be victim to a MITM_ attack without noticing. Use at your own risk.
+
+.. _MITM: http://en.wikipedia.org/wiki/Man-in-the-middle_attack
 
 Hacking
 =======
 
-See the `hackers guide <http://leap-client.readthedocs.org/en/latest/dev/environment.html>`_.
-
 The LEAP client git repository is available at::
 
-  git://leap.se/leap_client 
+  git://leap.se/leap_client
 
 Some steps need to be run when setting a development environment for the first time.
 
@@ -89,16 +68,26 @@ Make sure you are in the development branch::
 
   (leap_client)$ git checkout develop
 
-Symlink your global pyqt libraries::
+Symlink your global pyside libraries::
 
   (leap_client)$ pkg/postmkvenv.sh
 
 And make your working tree available to your pythonpath::
 
-  (leap_client)$ python setup.py develop  
+  (leap_client)$ python setup.py develop
+
+Run the client::
+
+  (leap_client)$ python src/leap/app.py -d
 
 
-Testing 
+If you are testing a new provider that doesn't have the proper certificates yet, you can use --danger flag, but **DO NOT use it on a regular bases**.
+
+**WARNING**: If you use the --danger flag you may be victim to a MITM_ attack without noticing. Use at your own risk.
+
+.. _MITM: http://en.wikipedia.org/wiki/Man-in-the-middle_attack
+
+Testing
 =======
 
 Have a look at ``pkg/test-requirements.pip`` for the tests dependencies.
@@ -106,7 +95,7 @@ Have a look at ``pkg/test-requirements.pip`` for the tests dependencies.
 To run the test suite::
 
     $ ./run_tests.sh
-    
+
 which the first time should automagically install all the needed dependencies in your virtualenv for you.
 
 License

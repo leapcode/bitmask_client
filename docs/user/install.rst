@@ -6,42 +6,56 @@ Installation
 This part of the documentation covers the installation of the LEAP Client.
 We assume that you want to get it properly installed before being able to use it.
 
-Debian package
---------------
+.. note::
 
-.. warning::
-
-   No updated debian package yet.
-
-Once we have a release candidate, probably the easiest way of having the LEAP Client installed will be to install a .deb package under debian or ubuntu systems.
+   The recommended way of installing in the near future will be the standalone bundles, but those are not quite ready yet. Methods described in this page assume you are familiar with python code, and you can find your way through the process of dependencies install. You can refer to the sections :ref:`setting up a working environment <environment>` or :ref:`fetching latest code for testing <fetchinglatest>`.
 
 
 Distribute & Pip
 ----------------
 
-.. warning::
+.. warning:: The package in the cheese shop is from the stable, `0.2.0` release, which is now outdated. You are encouraged to install the development version instead.
 
-   This does not work yet, since we have not released an initial version yet to the cheese shop.
-
-Installing LEAP Client will be as simple as using `pip <http://www.pip-installer.org/>`_ once we have a release candidate::
+Installing LEAP Client is as simple as using `pip <http://www.pip-installer.org/>`_ for the already released versions ::
 
     $ pip install leap-client
 
-Get the code
-------------
+Debian package
+--------------
 
 .. warning::
 
-   This... won't work either, as-is. This should be the third optional way to install stable releases from master branch. Right now that does not work because there is *nothing* updated in the master branch. Leaving this here since this is what we will be doing, but if you really intend to have a working tree, refer to the sections :ref:`setting up a working environment <environment>` or :ref:`fetching latest code for testing <fetchinglatest>`.
+   The debian package in the leap repositories is from the stable, `0.2.0` release, which is now outdated. You are encouraged to install the development version instead,
+
+First, you need to bootstrap your apt-key::
+
+   # gpg --recv-key 0x1E34A1828E207901 0x485B12FA218E81EB
+   # gpg --list-sigs 0x1E34A1828E207901
+   # gpg --list-sigs 0x485B12FA218E81EB
+   # gpg -a --export 0x1E34A1828E207901  | sudo apt-key add - 
+
+Add the archive to your sources.list::
+
+   # echo "deb http://deb.leap.se/debian unstable main" >> /etc/apt/sources.list
+   # apt-get update
+   # apt-get install leap-keyring
+
+And  then you can happily install leap-client::
+
+   apt-get install leap-client
+
+Show me the code!
+-----------------
 
 You can get the code from LEAP public git repository ::
 
-    git clone git://leap.se/leap_client
+   $ git clone git://leap.se/leap_client
 
 Or from the github mirror ::
 
-    git clone git://github.com/leapcode/leap_client.git
+   $ git clone git://github.com/leapcode/leap_client.git
 
 Once you have grabbed a copy of the sources, you can install it into your site-packages easily ::
 
    $ pyton setup.py install
+

@@ -1,72 +1,125 @@
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-from functools import partial
+# -*- coding: utf-8 -*-
+# app.py
+# Copyright (C) 2013 LEAP
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import logging
-import platform
 import signal
+import sys
 
-# This is only needed for Python v2 but is harmless for Python v3.
-import sip
-sip.setapi('QVariant', 2)
-sip.setapi('QString', 2)
-from PyQt4.QtGui import (QApplication, QSystemTrayIcon, QMessageBox)
-from PyQt4 import QtCore
+from functools import partial
 
-from leap import __version__ as VERSION
-from leap.baseapp.mainwindow import LeapWindow
-from leap.util import polkit
+from PySide import QtCore, QtGui
+
+from leap.common.events import server as event_server
+from leap.util import __version__ as VERSION
+from leap.util import leap_argparse
+from leap.util.leap_log_handler import LeapLogHandler
+from leap.util.requirement_checker import check_requirements
 from leap.gui import locale_rc
+from leap.gui import twisted_main
+from leap.gui.mainwindow import MainWindow
+from leap.platform_init import IS_MAC
+from leap.platform_init.locks import we_are_the_one_and_only
+from leap.services.tx import leap_services
+
+
+import codecs
+codecs.register(lambda name: codecs.lookup('utf-8')
+                if name == 'cp65001' else None)
+
+# pylint: avoid unused import
+assert(locale_rc)
 
 
 def sigint_handler(*args, **kwargs):
+    """
+    Signal handler for SIGINT
+    """
     logger = kwargs.get('logger', None)
-    logger.debug('SIGINT catched. shutting down...')
+    if logger:
+        logger.debug("SIGINT catched. shutting down...")
     mainwindow = args[0]
-    mainwindow.shutdownSignal.emit()
+    mainwindow.quit()
+
+
+def install_qtreactor(logger):
+    import qt4reactor
+    qt4reactor.install()
+    logger.debug("Qt4 reactor installed")
 
 
 def main():
     """
-    launches the main event loop
-    long live to the (hidden) leap window!
+    Starts the main event loop and launches the main window.
     """
-    import sys
-    from leap.util import leap_argparse
-    parser, opts = leap_argparse.init_leapc_args()
-    debug = getattr(opts, 'debug', False)
+    event_server.ensure_server(event_server.SERVER_PORT)
 
-    # XXX get severity from command line args
+    _, opts = leap_argparse.init_leapc_args()
+    debug = opts.debug
+    standalone = opts.standalone
+    bypass_checks = opts.danger
+
+    # TODO: get severity from command line args
     if debug:
         level = logging.DEBUG
     else:
         level = logging.WARNING
 
+    # Console logger
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
     console = logging.StreamHandler()
     console.setLevel(level)
-    formatter = logging.Formatter(
-        '%(asctime)s '
-        '- %(name)s - %(levelname)s - %(message)s')
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(log_format)
     console.setFormatter(formatter)
     logger.addHandler(console)
+
+    # LEAP custom handler
+    leap_handler = LeapLogHandler()
+    leap_handler.setLevel(level)
+    logger.addHandler(leap_handler)
+
+    logger.debug('Leap handler plugged!')
+
+    if not we_are_the_one_and_only():
+        # leap-client is already running
+        logger.warning("Tried to launch more than one instance "
+                       "of leap-client. Raising the existing "
+                       "one instead.")
+        sys.exit(1)
+
+    check_requirements()
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('LEAP client version %s', VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    logfile = getattr(opts, 'log_file', False)
-    if logfile:
-        logger.debug('setting logfile to %s ', logfile)
+    logfile = opts.log_file
+    if logfile is not None:
+        logger.debug('Setting logfile to %s ', logfile)
         fileh = logging.FileHandler(logfile)
         fileh.setLevel(logging.DEBUG)
         fileh.setFormatter(formatter)
         logger.addHandler(fileh)
 
     logger.info('Starting app')
-    app = QApplication(sys.argv)
+    app = QtGui.QApplication(sys.argv)
 
-    # launch polkit-auth agent if needed
-    if platform.system() == "Linux":
-        polkit.check_if_running_polkit_auth()
+    # install the qt4reactor.
+    install_qtreactor(logger)
 
     # To test:
     # $ LANG=es ./app.py
@@ -75,52 +128,42 @@ def main():
     if qtTranslator.load("qt_%s" % locale, ":/translations"):
         app.installTranslator(qtTranslator)
     appTranslator = QtCore.QTranslator()
-    if appTranslator.load("leap_client_%s" % locale, ":/translations"):
+    if appTranslator.load("%s.qm" % locale[:2], ":/translations"):
         app.installTranslator(appTranslator)
 
-    # needed for initializing qsettings
-    # it will write .config/leap/leap.conf
-    # top level app settings
-    # in a platform independent way
+    # Needed for initializing qsettings it will write
+    # .config/leap/leap.conf top level app settings in a platform
+    # independent way
     app.setOrganizationName("leap")
     app.setApplicationName("leap")
     app.setOrganizationDomain("leap.se")
 
-    # XXX we could check here
-    # if leap-client is already running, and abort
-    # gracefully in that case.
+    # XXX ---------------------------------------------------------
+    # In quarantine, looks like we don't need it anymore.
+    # This dummy timer ensures that control is given to the outside
+    # loop, so we can hook our sigint handler.
+    #timer = QtCore.QTimer()
+    #timer.start(500)
+    #timer.timeout.connect(lambda: None)
+    # XXX ---------------------------------------------------------
 
-    if not QSystemTrayIcon.isSystemTrayAvailable():
-        QMessageBox.critical(None, "Systray",
-                             "I couldn't detect"
-                             "any system tray on this system.")
-        sys.exit(1)
-    if not debug:
-        QApplication.setQuitOnLastWindowClosed(False)
-
-    window = LeapWindow(opts)
-
-    # this dummy timer ensures that
-    # control is given to the outside loop, so we
-    # can hook our sigint handler.
-    timer = QtCore.QTimer()
-    timer.start(500)
-    timer.timeout.connect(lambda: None)
+    window = MainWindow(
+        lambda: twisted_main.quit(app),
+        standalone=standalone,
+        bypass_checks=bypass_checks)
+    window.show()
 
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
 
-    if debug:
-        # we only show the main window
-        # if debug mode active.
-        # if not, it will be set visible
-        # from the systray menu.
-        window.show()
-        if sys.platform == "darwin":
-            window.raise_()
+    if IS_MAC:
+        window.raise_()
 
-    # run main loop
-    sys.exit(app.exec_())
+    tx_app = leap_services()
+    assert(tx_app)
+
+    # Run main loop
+    twisted_main.start(app)
 
 if __name__ == "__main__":
     main()

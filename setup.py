@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 from __future__ import print_function
+
 import sys
 
 try:
@@ -12,17 +14,20 @@ except ImportError:
 import os
 
 from pkg import utils
-from pkg import branding
+
 import versioneer
 versioneer.versionfile_source = 'src/leap/_version.py'
 versioneer.versionfile_build = 'leap/_version.py'
 versioneer.tag_prefix = ''  # tags are like 1.2.0
-#versioneer.parentdir_prefix = 'leap_client-'
-versioneer.parentdir_prefix = branding.APP_PREFIX
+versioneer.parentdir_prefix = 'leap_client-'
 
-branding.brandingfile = 'src/leap/_branding.py'
-branding.brandingfile_build = 'leap/_branding.py'
-branding.cert_path = 'src/leap/certs'
+from setuptools import Command
+
+# The following import avoids the premature unloading of the `util` submodule
+# when running tests, which would cause an error when nose finishes tests and
+# calls the exit function of the multiprocessing module.
+from multiprocessing import util
+assert(util)
 
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
@@ -43,98 +48,29 @@ trove_classifiers = [
     "Topic :: Utilities"
 ]
 
-BRANDING_OPTS = """
-# Do NOT manually edit this file!
-# This file has been written from pkg/branding/config.py data by leap setup.py
-# script.
 
-BRANDING = {
-    'short_name': "%(short_name)s",
-    'provider_domain': "%(provider_domain)s",
-    'provider_ca_file': "%(provider_ca_file)s"}
-"""
+parsed_reqs = utils.parse_requirements()
+
+cmdclass = versioneer.get_cmdclass()
+leap_launcher = 'leap-client=leap.app:main'
+
+from setuptools.command.develop import develop as _develop
 
 
-def write_to_branding_file(filename, branding_dict):
-    f = open(filename, "w")
-    f.write(BRANDING_OPTS % branding_dict)
-    f.close()
-
-
-def copy_pemfile_to_certdir(frompath, topath):
-    with open(frompath, "r") as cert_f:
-        cert_s = cert_f.read()
-    with open(topath, "w") as f:
-        f.write(cert_s)
-
-
-def do_branding(targetfile=branding.brandingfile):
-    if branding.BRANDED_BUILD:
-        opts = branding.BRANDED_OPTS
-        print("DOING BRANDING FOR LEAP")
-        certpath = opts['provider_ca_path']
-        shortname = opts['short_name']
-        tocertfile = shortname + '-cacert.pem'
-        topath = os.path.join(
-            branding.cert_path,
-            tocertfile)
-        copy_pemfile_to_certdir(
-            certpath,
-            topath)
-        opts['provider_ca_file'] = tocertfile
-        write_to_branding_file(
-            targetfile,
-            opts)
+def copy_reqs(path, withsrc=False):
+    # add a copy of the processed requirements to the package
+    _reqpath = ('leap', 'util', 'reqs.txt')
+    if withsrc:
+        reqsfile = os.path.join(path, 'src', *_reqpath)
     else:
-        print('not running branding because BRANDED_BUILD set to False')
+        reqsfile = os.path.join(path, *_reqpath)
+    print("UPDATING %s" % reqsfile)
+    if os.path.isfile(reqsfile):
+        os.unlink(reqsfile)
+    with open(reqsfile, "w") as f:
+        f.write('\n'.join(parsed_reqs))
 
-
-from setuptools import Command
-
-
-class DoBranding(Command):
-    description = "copy the branding info the the top level package"
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        do_branding()
-
-from distutils.command.build import build as _build
-from distutils.command.sdist import sdist as _sdist
-
-
-class cmd_build(_build):
-    def run(self):
-        #versioneer.cmd_build(self)
-        _build.run(self)
-
-        # versioneer
-        versions = versioneer.get_versions(verbose=True)
-        # now locate _version.py in the new build/ directory and replace it
-        # with an updated value
-        target_versionfile = os.path.join(
-            self.build_lib,
-            versioneer.versionfile_build)
-        print("UPDATING %s" % target_versionfile)
-        os.unlink(target_versionfile)
-        f = open(target_versionfile, "w")
-        f.write(versioneer.SHORT_VERSION_PY % versions)
-        f.close()
-
-        # branding
-        target_brandingfile = os.path.join(
-            self.build_lib,
-            branding.brandingfile_build)
-        do_branding(targetfile=target_brandingfile)
-
-
-class cmd_sdist(_sdist):
+class cmd_develop(_develop):
     def run(self):
         # versioneer:
         versions = versioneer.get_versions(verbose=True)
@@ -142,43 +78,42 @@ class cmd_sdist(_sdist):
         # unless we update this, the command will keep using the old version
         self.distribution.metadata.version = versions["version"]
 
-        # branding:
-        do_branding()
-        return _sdist.run(self)
+        _develop.run(self)
+        copy_reqs(self.egg_path)
+
+cmdclass["develop"] = cmd_develop
+
+# next two classes need to augment the versioneer modified ones
+
+versioneer_build = cmdclass['build']
+versioneer_sdist = cmdclass['sdist']
+
+
+class cmd_build(versioneer_build):
+    def run(self):
+        versioneer_build.run(self)
+        copy_reqs(self.build_lib)
+
+
+class cmd_sdist(versioneer_sdist):
+    def run(self):
+        return versioneer_sdist.run(self)
 
     def make_release_tree(self, base_dir, files):
-        _sdist.make_release_tree(self, base_dir, files)
-        # now locate _version.py in the new base_dir directory (remembering
-        # that it may be a hardlink) and replace it with an updated value
-        target_versionfile = os.path.join(
-            base_dir, versioneer.versionfile_source)
-        print("UPDATING %s" % target_versionfile)
-        os.unlink(target_versionfile)
-        f = open(target_versionfile, "w")
-        f.write(
-            versioneer.SHORT_VERSION_PY % self._versioneer_generated_versions)
-        f.close()
+        versioneer_sdist.make_release_tree(self, base_dir, files)
+        copy_reqs(base_dir, withsrc=True)
 
-cmdclass = versioneer.get_cmdclass()
-cmdclass["branding"] = DoBranding
 
-# Uncomment this to have the branding command run automatically
-# on the build and sdist commands.
-#cmdclass["build"] = cmd_build
-#cmdclass["sdist"] = cmd_sdist
+cmdclass["build"] = cmd_build
+cmdclass["sdist"] = cmd_sdist
 
-launcher_name = branding.get_shortname()
-if launcher_name:
-    leap_launcher = 'leap-%s-client=leap.app:main' % launcher_name
-else:
-    leap_launcher = 'leap-client=leap.app:main'
 
 setup(
-    name=branding.get_name(),
+    name="leap-client",
     package_dir={"": "src"},
     version=versioneer.get_version(),
     cmdclass=cmdclass,
-    description="the internet encryption toolkit",
+    description="The Internet Encryption Toolkit",
     long_description=(
         "Desktop Client for the LEAP Platform."
         "\n"
@@ -192,11 +127,11 @@ setup(
         "and has an enhanced level of security."
     ),
     classifiers=trove_classifiers,
-    install_requires=utils.parse_requirements(),
+    install_requires=parsed_reqs,
     test_suite='nose.collector',
-    test_requires=utils.parse_requirements(
-        reqfiles=['pkg/test-requirements.pip']),
-    keywords='LEAP, client, qt, encryption, proxy, openvpn',
+    tests_require=utils.parse_requirements(
+        reqfiles=['pkg/requirements-testing.pip']),
+    keywords='LEAP, client, qt, encryption, proxy, openvpn, imap, smtp',
     author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',
@@ -204,17 +139,18 @@ setup(
     packages=find_packages(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
+    namespace_packages=["leap"],
+    package_data={'': ['util/*.txt']},
     include_package_data=True,
-    zip_safe=False,
-
-    # not being used since setuptools does not like it.
+    # not being used? -- setuptools does not like it.
     # looks like debhelper is honoring it...
     data_files=[
     #    ("share/man/man1",
     #        ["docs/man/leap-client.1"]),
         ("share/polkit-1/actions",
-            ["pkg/linux/polkit/net.openvpn.gui.leap.policy"])
+            ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
     ],
+    zip_safe=False,
     platforms="all",
     entry_points={
         'console_scripts': [leap_launcher]

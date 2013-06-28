@@ -17,6 +17,10 @@ Fetching latest development code
 
 To allow rapid testing in different platforms, we have put together a quick script that is able to fetch latest development code. It more or less does all the steps covered in the :ref:`Setting up a Work Enviroment <environment>` section, only that in a more compact way suitable (ahem) also for non developers. 
 
+.. note::
+
+   In the near future, we will be using ``standalone bundles`` with the ability to self-update.
+
 Install dependencies
 ^^^^^^^^^^^^^^^^^^^^
 First, install all the base dependencies plus git, virtualenv and development files needed to compile several extensions::
