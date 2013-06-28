@@ -29,6 +29,7 @@ import copy
 
 from leap.common.testing.basetest import BaseLeapTest
 from leap.config.providerconfig import ProviderConfig
+from leap.services import get_supported
 
 from mock import Mock
 
@@ -235,8 +236,7 @@ class ProviderConfigTest(BaseLeapTest):
         config['services'] = ['mx', 'other_service']
         json_string = json.dumps(config)
         pc.load(data=json_string)
-        # TODO: we do not support mx yet
-        self.assertFalse(pc.provides_mx())
+        self.assertTrue(pc.provides_mx())
 
         # It does not provides
         config['services'] = ['test_service', 'other_service']
@@ -244,14 +244,35 @@ class ProviderConfigTest(BaseLeapTest):
         pc.load(data=json_string)
         self.assertFalse(pc.provides_mx())
 
+    def test_supports_unknown_service(self):
+        pc = self._provider_config
+        config = copy.deepcopy(sample_config)
+
+        config['services'] = ['unknown']
+        json_string = json.dumps(config)
+        pc.load(data=json_string)
+        self.assertFalse('unknown' in get_supported(pc.get_services()))
+
+    def test_provides_unknown_service(self):
+        pc = self._provider_config
+        config = copy.deepcopy(sample_config)
+
+        config['services'] = ['unknown']
+        json_string = json.dumps(config)
+        pc.load(data=json_string)
+        self.assertTrue('unknown' in pc.get_services())
+
     def test_get_services_string(self):
         pc = self._provider_config
         config = copy.deepcopy(sample_config)
-        config['services'] = ['test01', 'test02']
+        config['services'] = [
+            'openvpn', 'asdf', 'openvpn', 'not_supported_service']
         json_string = json.dumps(config)
         pc.load(data=json_string)
 
-        self.assertEqual(pc.get_services_string(), "test01, test02")
+        self.assertEqual(pc.get_services_string(),
+                         "Encrypted Internet, asdf, Encrypted Internet,"
+                         " not_supported_service")
 
 
 if __name__ == "__main__":
