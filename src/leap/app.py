@@ -151,7 +151,6 @@ def main():
         lambda: twisted_main.quit(app),
         standalone=standalone,
         bypass_checks=bypass_checks)
-    window.show()
 
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
