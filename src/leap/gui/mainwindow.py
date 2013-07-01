@@ -514,15 +514,26 @@ class MainWindow(QtGui.QMainWindow):
         if self._systray is not None:
             self._systray.setVisible(True)
             return
+
+        # Placeholder actions
+        # They are temporary to display the tray as designed
+        preferences_action = QtGui.QAction(self.tr("Preferences"), self)
+        preferences_action.setEnabled(False)
+        help_action = QtGui.QAction(self.tr("Help"), self)
+        help_action.setEnabled(False)
+
         systrayMenu = QtGui.QMenu(self)
         systrayMenu.addAction(self._action_visible)
-        systrayMenu.addAction(self.ui.action_sign_out)
-        systrayMenu.addSeparator()
-        systrayMenu.addAction(self.ui.action_quit)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self._action_eip_provider)
         systrayMenu.addAction(self._action_eip_status)
         systrayMenu.addAction(self._action_eip_startstop)
+        systrayMenu.addSeparator()
+        systrayMenu.addAction(preferences_action)
+        systrayMenu.addAction(help_action)
+        systrayMenu.addSeparator()
+        systrayMenu.addAction(self.ui.action_sign_out)
+        systrayMenu.addAction(self.ui.action_quit)
         self._systray = QtGui.QSystemTrayIcon(self)
         self._systray.setContextMenu(systrayMenu)
         self._systray.setIcon(self._status_panel.ERROR_ICON)
