@@ -698,6 +698,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
     def getCommand(self):
         """
         Gets the vpn command from the aproppriate launcher.
+
+        Might throw: VPNLauncherException, OpenVPNNotFoundException.
         """
         cmd = self._launcher.get_vpn_command(
             eipconfig=self._eipconfig,

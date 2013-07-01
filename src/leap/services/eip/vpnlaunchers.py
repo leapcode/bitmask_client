@@ -324,7 +324,9 @@ class LinuxVPNLauncher(VPNLauncher):
         look for openvpn in the regular paths and algo in
         path_prefix/apps/eip/ (in case standalone is set)
 
-        Might raise VPNException.
+        Might raise:
+            VPNLauncherException,
+            OpenVPNNotFoundException.
 
         :param eipconfig: eip configuration object
         :type eipconfig: EIPConfig
@@ -372,6 +374,10 @@ class LinuxVPNLauncher(VPNLauncher):
 
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()
+
+        if not gateways:
+            logger.error('No gateway was found!')
+            raise VPNLauncherException(self.tr('No gateway was found!'))
 
         logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
 
