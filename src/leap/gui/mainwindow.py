@@ -439,7 +439,6 @@ class MainWindow(QtGui.QMainWindow):
                 self._login_widget.set_user(possible_username)
             if possible_password is not None:
                 self._login_widget.set_password(possible_password)
-                self._login_widget.set_remember(has_keyring())
                 self._login()
             self._wizard = None
             self._settings.set_properprovider(True)

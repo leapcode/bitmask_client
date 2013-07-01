@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# privilege_policies.py
+# keyring_helpers.py
 # Copyright (C) 2013 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-
+Keyring helpers.
 """
 
 import keyring
@@ -29,7 +29,9 @@ OBSOLETE_KEYRINGS = [
 
 def has_keyring():
     """
+    Returns whether we have an useful keyring to use.
 
+    :rtype: bool
     """
     kr = keyring.get_keyring()
     return kr is not None and kr.__class__ not in OBSOLETE_KEYRINGS
