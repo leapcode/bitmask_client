@@ -4,7 +4,7 @@
     * [ ] all rc-critical closed!
     * [ ] all bbots green
     * [ ] uploaded translations: make translations
-    * [ ] re-generate pyqt resources
+    * [ ] re-generate pyside resources
     
   * [ ] update docs
     * [ ] CREDITS
@@ -34,9 +34,6 @@
   * [ ] wait ...?
 
   * [ ] PYPI UPLOAD: with "python ./setup.py sdist upload register"
-      * [ ] login to pypi
-      * [ ] from Edit, add new release
-      * [ ] upload .tar.gz, .asc
 
   * [ ] make an "announcement of new release" on leap.se
   * [ ] close the Milestone on the chili Roadmap

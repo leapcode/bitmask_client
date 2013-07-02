@@ -2,7 +2,10 @@
 *.swo
 *.pyc
 *.log
+*.*~
 .*
+*_rc.py
+ui_*.py
 !.coveragerc
 !.tx
 bin/
@@ -16,12 +19,16 @@ include/
 lib/
 local/
 share/
+src/leap/util/reqs.txt
 src/leap.egg-info/
 src/leap_client.egg-info
 src/leap/_branding.py
 src/leap/certs/*.pem
 src/*.egg-info
+src/pysqlcipher
 pkg/osx/dist
 pkg/osx/build
 MANIFEST
 _trial_temp*
+config/*
+CHANGELOG~

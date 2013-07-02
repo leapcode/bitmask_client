@@ -1,0 +1,109 @@
+0.2.2 Jun 28:
+  o Add support for the kde polkit daemon
+  o Handle 'Incorrect Password' exception (keyring)
+  o Select the configured domain in the providers combo box. Closes
+    #2693.
+  o Remember provider along with the username and password. Closes
+    #2755.
+  o Close the app on rejected wizard. Closes bug #2905.
+  o Only use the Keyring when it's using a known good backend. Closes
+    #2960
+  o Update implementation and semantics of the supported and available
+    services by a provider. Closes bug #3032.
+  o Only show the question mark for a check being done if the previous
+    one passed. Fixes #2569.
+  o Fix main client window not restoring after minimized into
+    systray. Closes #2574
+  o Set EIP different status icons depending on OS. Closes #2643.
+  o Reimplement openvpn invocation to use twisted ProcessProtocol
+  o Add runtime requirements checker, verifies that the requirements
+    are installed and in its correct versions. Closes #2563
+  o Add centraliced logging facility, log history in a window. Closes
+    #2566
+  o Improve wizard, hide registration widgets (labels, inputs, button)
+    and only display a message. Closes #2694
+  o Clarify labels through the app (use of EIP)
+  o Check if the provider api version is supported. Closes feature
+    #2774.
+  o Autoselect VPN gateway based on timezone. Closes #2790.
+  o Disable vpn disconnect on logout. Closes #2795.
+  o Improve gateway selector based on timezone. It allows to use
+    multiple gateways in openvpn for redundancy. Closes #2894.
+  o Use cocoasudo in place of osascript for osx privilege escalation
+    during openvpn launch.
+  o Clicking in the tray icon will always show the context menu
+    instead of activating the window under certain
+    circumstances. Closes #2788
+  o Autostart EIP whenever possible. Closes #2815
+  o Update test suite, run_scripts and requirements to run smoothly
+    with buildbot.
+  o Add a copy of the processed requirements to util/
+  o Display the default provider configured in the systray menu. Close
+    #2813
+  o Make the login steps be a chain of defers in order to be able to
+    have more cancel points for the whole procedure. Closes #2571
+  o Linux: check for up/down scripts and policy files and ask user for
+    permission to install them in a root-writeable location. Used from
+    within bundle or for broken installations.
+  o Integrate SMTP-Relay into the client.
+  o Integrate Soledad and KeyManager.
+  o Move the KeyManager from leap.common to leap-client.
+  o Only use one systray icon, repesenting the status for EIP. Closes
+    #2762
+  o Properly set the binary manifest to the windows openvpn
+    binary. Closes #203
+  o OSX: Add dialog with suggestion to install up/down scripts if
+    these not found. Closes: #1264, #2759, #2249
+  o Workaround for PySide breaking with multiple inheritance. Closes
+    #2827
+  o Refactor login to its own widget and remove Utils menu. Closes
+    #2789
+  o Refactor the status bits out of the MainWindow to its own
+    StatusPanelWidget. Closes #2792
+  o Save the default provider to be used for autostart EIP as
+    DefaultProvider in leap.conf. Closes #2793
+  o Cleanly terminate openvpn process, sending SIGTERM and SIGKILL
+    after a while. Closes #2753
+  o Use twisted's deferToThread and Deferreds to handle parallel tasks
+  o Use a qt4 reactor for twisted, for launching leap twisted
+    services.
+
+0.2.1 May 15:
+  o Rewrite most of the client based on the insight gained so far.
+  o Deselecting the remember checkbox makes the app not populate
+    user/password values on the login widget. Closes #2059
+  o Rewording of setup steps in wizard, to make them more meaningful
+    to the non-technical user. Closes #2061
+  o Fix typo in wizard.
+  o Fix multiple drawing of services if going back.
+  o Make registration errors show in red.
+  o Add a warning if EIP service needs admin password. Addresses part
+    of #2062
+  o Make traffic indicators display fixed precision. Closes #2114
+  o Do not hide the application if the user right clicked the system
+    tray icon.
+  o Sanitize network-fetched content that is used to build openvpn
+    command.
+  o Avoids multiple instances of leap-client. Each new one just raises
+    the existing instance and quits.
+  o Use dark eip icons os osx. Closes #2130
+  o Moves BaseConfig to leap.common.config. Closes #2164
+  o Add handling for ASSIGN_IP state from OpenVPN in the mainwindow.
+  o Emit events notifying of the session_id and uid after
+    authentication so other services can make use of it. Closes #1957
+  o Working packaging workflow with rewritten client, using
+    pyinstaller and platypus.
+  o Remove network checks temporarily until we find a good way of
+    doing it, and a good way to deal with them.
+  o Saves the token to allow token authenticated queries.
+  o Turn "leap" into namespace package, move common files to
+    leap_common package that can be shared by other LEAP projects.
+  o Support standalone configurations for distribution in thumbdrives
+    and the like.
+  o Add support for requests < 1.0.0
+  o Tests infrastructure, and tests for crypto/srpauth and crypto/srpregister.
+  o Documentation updated for 0.2.1 release.
+  o Docstrings style changed to fit sphinx autodoc format.
+  o Add a simple UI to notify of pending updates.
+  o Add Windows support.
+  o Try to install TAP driver on Windows if no tap device is preset.

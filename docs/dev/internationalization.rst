@@ -6,7 +6,7 @@ Internationalization
 This part of the documentation covers the localization and translation of LEAP Client.
 Because we want to *bring fire to the people*, in as many countries and languages as possible.
 
-Translating the LEAP Client PyQt Application
+Translating the LEAP Client PySide Application
 --------------------------------------------
 
 .. raw:: html
@@ -32,7 +32,7 @@ For devs: i18n conventions
 .. note::
    should say something about our special cases (provider labels and exceptions) when we get decision about it.
 
-Refer to `pyqt documentation <http://www.riverbankcomputing.co.uk/static/Docs/PyQt4/html/i18n.html>`_.
+Refer to `pyside documentation <http://qt-project.org/wiki/PySide_Internationalization>`_.
 
 tl;dr;::
 
@@ -40,15 +40,11 @@ tl;dr;::
 
 for any string that you want to be translated, as long as the instance derives from ``QObject``.
 
-If you have to translate something that it is not a ``QObject``, use the magic leap ``translate`` method:
-
-
-.. code-block:: python
-
-   from leap.util.translations import translate
-
-   class Foo(object):
-        bar = translate(<Context>, <string>, <comment>)
+.. If you have to translate something that it is not a ``QObject``, use the magic leap ``translate`` method:
+.. .. code-block:: python
+..    from leap.util.translations import translate
+..   class Foo(object):
+..        bar = translate(<Context>, <string>, <comment>)
 
 
 .. Note about this: there seems to be some problems with the .tr method
@@ -59,9 +55,9 @@ If you have to translate something that it is not a ``QObject``, use the magic l
 For i18n maintainers
 ^^^^^^^^^^^^^^^^^^^^
 
-You need ``pylupdate4`` and ``lrelease`` for these steps. To get it, in debian::
+You need ``pyside-lupdate`` and ``lrelease`` for these steps. To get it, in debian::
 
-   $ apt-get install pyqt4-dev-tools qt4-linguist-tools
+   $ apt-get install pyside-tools qt4-linguist-tools
 
 If you do not already have it, install the ``transifex-client`` from the cheese shop::
 

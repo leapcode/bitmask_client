@@ -6,7 +6,7 @@ Introduction
 The LEAP Client
 ---------------
 .. if yoy change this, change it also in the index.rst
-The **LEAP Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PyQt4, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
+The **LEAP Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PySide, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
 
 Features
 ^^^^^^^^

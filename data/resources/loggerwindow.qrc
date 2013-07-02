@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="/">
+    <file>../images/oxygen-icons/edit-bomb.png</file>
+    <file>../images/oxygen-icons/document-save-as.png</file>
+    <file>../images/oxygen-icons/dialog-information.png</file>
+    <file>../images/oxygen-icons/script-error.png</file>
+    <file>../images/oxygen-icons/dialog-error.png</file>
+    <file>../images/oxygen-icons/dialog-information.png</file>
+    <file>../images/oxygen-icons/dialog-warning.png</file>
+  </qresource>
+</RCC>

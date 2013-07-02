@@ -16,6 +16,7 @@ function usage {
   echo "  -c, --coverage           Generate coverage report"
   echo "  -h, --help               Print this usage message"
   echo "  -A, --all		   Run all tests, without excluding any"
+  echo "  -i, --progressive	   Run with nose-progressive plugin"
   echo "  --hide-elapsed           Don't print the elapsed time for each test along with slow test list"
   echo ""
   echo "Note: with no options specified, the script will try to run the tests in a virtual environment,"
@@ -35,6 +36,7 @@ function process_option {
     -P|--no-pep8) no_pep8=1;;
     -c|--coverage) coverage=1;;
     -A|--all) alltests=1;;
+    -i|--progressive) progressive=1;;
     -*) noseopts="$noseopts $1";;
     *) noseargs="$noseargs $1"
   esac
@@ -54,6 +56,7 @@ just_pep8=0
 no_pep8=0
 coverage=0
 alltests=0
+progressive=0
 
 for arg in "$@"; do
   process_option $arg
@@ -61,7 +64,7 @@ done
 
 # If enabled, tell nose to collect coverage data
 if [ $coverage -eq 1 ]; then
-    noseopts="$noseopts --with-coverage --cover-package=leap-client"
+    noseopts="$noseopts --with-coverage --cover-package=leap"
 fi
 
 if [ $no_site_packages -eq 1 ]; then
@@ -70,11 +73,20 @@ fi
 
 # If alltests flag is not set, let's exclude some dirs that are troublesome.
 if [ $alltests -eq 0 ]; then
-    noseopts="$noseopts --exclude-dir=src/leap/soledad"
+  echo "[+] Running ALL tests..."
+  #noseopts="$noseopts --exclude-dir=leap/soledad"
 fi
 
+# If progressive flag enabled, run with this nice plugin :)
+if [ $progressive -eq 1 ]; then
+    noseopts="$noseopts --with-progressive"
+fi
+
+
 function run_tests {
+  echo "running tests..."
   # Just run the test suites in current environment
+  echo "NOSETESTS=$NOSETESTS"
   ${wrapper} $NOSETESTS
   # If we get some short import error right away, print the error log directly
   RESULT=$?
@@ -83,9 +95,9 @@ function run_tests {
 
 function run_pep8 {
   echo "Running pep8 ..."
-  srcfiles="src/leap tests"
+  srcfiles="src/leap"
   # Just run PEP8 in current environment
-  pep8_opts="--ignore=E202,W602 --exclude=*_rc.py,_version.py --repeat"
+  pep8_opts="--ignore=E202,W602 --exclude=*_rc.py,ui_*,_version.py --repeat"
   ${wrapper} pep8 ${pep8_opts} ${srcfiles}
 }
 
@@ -93,7 +105,9 @@ function run_pep8 {
 # in the current debhelper build process,
 # so I exclude the topmost tests
 
-NOSETESTS="nosetests leap $noseopts $noseargs"
+#NOSETESTS="nosetests leap --exclude=soledad* $noseopts $noseargs"
+NOSETESTS="$VIRTUAL_ENV/bin/nosetests . $noseopts $noseargs"
+#--with-coverage --cover-package=leap"
 
 if [ $never_venv -eq 0 ]
 then
@@ -140,9 +154,11 @@ if [ -z "$noseargs" ]; then
 fi
 
 function run_coverage {
-    cov_opts="--omit=`pwd`/src/leap/base/tests/*,`pwd`/src/leap/eip/tests/*,`pwd`/src/leap/gui/tests/*"
-    cov_opts="$cov_opts,`pwd`/src/leap/util/tests/* "
-    cov_opts="$cov_opts --include=`pwd`/src/leap/*" #,`pwd`/src/leap/eip/*"
+    cov_opts="--include=`pwd`/src/leap/*" #,`pwd`/src/leap/eip/*"
+    cov_opts="$cov_opts --omit=`pwd`/src/leap/gui/ui_*,`pwd`/src/leap/gui/*_rc.py*"
+    #cov_opts="--omit=`pwd`/src/leap/base/tests/*,`pwd`/src/leap/eip/tests/*,`pwd`/src/leap/gui/tests/*"
+    #cov_opts="$cov_opts,`pwd`/src/leap/util/tests/* "
+    #cov_opts="$cov_opts --include=`pwd`/src/leap/*" #,`pwd`/src/leap/eip/*"
     ${wrapper} coverage html -d docs/covhtml -i $cov_opts
     echo "now point your browser at docs/covhtml/index.html"
 }

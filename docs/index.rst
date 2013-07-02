@@ -9,7 +9,7 @@ LEAP Client
 Release v\ |version|. (`Impatient? jump to the` :ref:`Installation <install>` `section!`)
 
 .. if you change this paragraph, change it in user/intro too
-The **LEAP Encryption Access Project Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PyQt4, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
+The **LEAP Encryption Access Project Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PySide, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
 
 User Guide
 ----------
@@ -77,14 +77,11 @@ Different directories and files used for the configuration of the client.
 API Documentation
 -----------------
 
-If you are looking for a reference to specific classes or functions, you are likely to find it here
+If you are looking for a reference to specific classes or functions, you are likely to find it here.
 
 .. I should investigate a bit more how to skip some things, and how to give nice format
    to the docstrings.
    Maybe we should not have sphinx-apidocs building everything, but a minimal index of our own.
-
-.. note::
-   when it's a bit more polished, that's it :)
 
 .. toctree::
    :maxdepth: 2

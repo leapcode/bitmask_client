@@ -3,14 +3,19 @@
 Running
 ==================
 
-This document dovers how to launch the LEAP Client.
+This document covers how to launch the LEAP Client.
 
 Launching the client
 --------------------
-After a successful installation, there should be a launcher called leap-client somewhere in your path::
+After a successful installation, there should be a launcher called `leap-client` somewhere in your path::
 
   % leap-client
 
+The first time you launch it, it should launch the first run wizard that will guide you through the setup of the LEAP Services.
+
+.. note::
+
+   You will need to enter a valid test provider running the LEAP Platform. You can use the LEAP test service, *https://bitmask.net*
 
 .. _debugmode:
 
@@ -24,14 +29,13 @@ If you ask for it, you can also have all that debug info in a beautiful file rea
 
   $ leap-client --debug --logfile /tmp/leap.log
 
-.. warning::
-   the following is broken since it will clutter your stdout with all the commands sent to the management interface.
+.. warning 
+.. the following is broken since it will clutter your stdout with all the commands sent to the management interface.
    See bug #1232
 
-If you want to increment the level of verbosity passed to openvpn, you can do::
-
-
-  $ leap-client --openvpn-verbosity 4
+.. not working...
+.. If you want to increment the level of verbosity passed to openvpn, you can do::
+.. $ leap-client --openvpn-verbosity 4
 
 Options
 ------------
