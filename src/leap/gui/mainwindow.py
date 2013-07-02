@@ -1006,7 +1006,7 @@ class MainWindow(QtGui.QMainWindow):
                 error=True)
             self._set_eipstatus_off()
         except VPNLauncherException as e:
-            self._status_panel.set_gloal_status("%s" % (e,), error=True)
+            self._status_panel.set_global_status("%s" % (e,), error=True)
             self._set_eipstatus_off()
         else:
             self._already_started_eip = True
