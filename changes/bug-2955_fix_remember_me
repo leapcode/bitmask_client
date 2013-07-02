@@ -1,0 +1,1 @@
+  o Bugfix: Remember should not be automatically set to checked. Closes #2955.
