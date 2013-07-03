@@ -1,6 +1,11 @@
 # qmake file
 
 # is not there a f*** way of expanding this? other to template with python I mean...
+
+# to get a list of python files we can use:
+# find . -iname "*.py" | grep -Ev "__init__.py|/build/|/docs/|/gui/ui_[a-z]*.py|/gui/[a-z]*_rc.py|./.venv/|/tests/"
+# and remove by hand the few files that we do not want.
+
 SOURCES += ../src/leap/app.py \
            ../src/leap/config/leapsettings.py \
            ../src/leap/config/providerconfig.py \
