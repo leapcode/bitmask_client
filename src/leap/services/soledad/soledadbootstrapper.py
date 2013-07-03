@@ -95,11 +95,11 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         self._soledad = Soledad(uuid,
                                 self._password.encode("utf-8"),
-                                secrets_path,
-                                local_db_path,
-                                server_url,
-                                cert_file,
-                                srp_auth.get_token())
+                                secrets_path=secrets_path,
+                                local_db_path=local_db_path,
+                                server_url=server_url,
+                                cert_file=cert_file,
+                                auth_token=srp_auth.get_token())
         self._soledad.sync()
 
     def _download_config(self):
