@@ -177,6 +177,9 @@ class SRPAuth(QtCore.QObject):
                 if init_session.status_code == 422:
                     raise SRPAuthenticationError(self.tr("Unknown user"))
 
+                raise SRPAuthenticationError(self.tr("There was a problem with"
+                                                     " authentication"))
+
             json_content = json.loads(content)
             salt = json_content.get("salt", None)
             B = json_content.get("B", None)
