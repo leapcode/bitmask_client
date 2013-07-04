@@ -268,26 +268,28 @@ class SRPAuth(QtCore.QObject):
                 raise SRPAuthenticationError(self.tr("Unknown error (%s)") %
                                              (auth_result.status_code,))
 
-            json_content = json.loads(content)
+            return json.loads(content)
 
+        def _extract_data(self, json_content):
             try:
                 M2 = json_content.get("M2", None)
                 uid = json_content.get("id", None)
                 token = json_content.get("token", None)
             except Exception as e:
                 logger.error(e)
-                raise Exception("Something went wrong with the login")
-
-            events_signal(proto.CLIENT_UID, content=uid)
+                raise SRPAuthenticationError("Something went wrong with the "
+                                             "login")
 
             self.set_uid(uid)
             self.set_token(token)
 
             if M2 is None or self.get_uid() is None:
                 logger.error("Something went wrong. Content = %r" %
-                             (content,))
+                             (json_content,))
                 raise SRPAuthenticationError(self.tr("Problem getting data "
                                                      "from server"))
+
+            events_signal(proto.CLIENT_UID, content=uid)
 
             return M2
 
@@ -358,6 +360,10 @@ class SRPAuth(QtCore.QObject):
             d.addCallback(
                 partial(self._threader,
                         self._process_challenge),
+                username=username)
+            d.addCallback(
+                partial(self._threader,
+                        self._extract_data),
                 username=username)
             d.addCallback(partial(self._threader,
                                   self._verify_session))
