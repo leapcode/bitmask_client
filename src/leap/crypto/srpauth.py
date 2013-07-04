@@ -215,7 +215,7 @@ class SRPAuth(QtCore.QObject):
                 salt, B = salt_B
                 unhex_salt = self._safe_unhexlify(salt)
                 unhex_B = self._safe_unhexlify(B)
-            except TypeError as e:
+            except (TypeError, ValueError) as e:
                 logger.error("Bad data from server: %r" % (e,))
                 raise SRPAuthenticationError(self.tr("The data sent from "
                                                      "the server had errors"))
