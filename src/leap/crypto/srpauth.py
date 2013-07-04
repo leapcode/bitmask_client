@@ -443,9 +443,6 @@ class SRPAuth(QtCore.QObject):
         # Store instance reference as the only member in the handle
         self.__dict__['_SRPAuth__instance'] = SRPAuth.__instance
 
-        self._username = None
-        self._password = None
-
     def authenticate(self, username, password):
         """
         Executes the whole authentication process for a user
