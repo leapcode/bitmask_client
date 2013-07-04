@@ -156,6 +156,8 @@ class SRPAuth(QtCore.QObject):
                                                   verify=self._provider_config.
                                                   get_ca_cert_path(),
                                                   timeout=REQUEST_TIMEOUT)
+                # Clean up A value, we don't need it anymore
+                self._srp_a = None
             except requests.exceptions.ConnectionError as e:
                 logger.error("No connection made (salt): %r" %
                              (e,))
