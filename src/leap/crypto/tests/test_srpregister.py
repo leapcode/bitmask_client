@@ -17,7 +17,6 @@
 """
 Tests for:
     * leap/crypto/srpregister.py
-    * leap/crypto/srpauth.py
 """
 try:
     import unittest2 as unittest
@@ -53,9 +52,9 @@ class ImproperlyConfiguredError(Exception):
 
 class SRPTestCase(unittest.TestCase):
     """
-    Tests for the SRP Register and Auth classes
+    Tests for the SRPRegister class
     """
-    __name__ = "SRPRegister and SRPAuth tests"
+    __name__ = "SRPRegister tests"
 
     @classmethod
     def setUpClass(cls):
