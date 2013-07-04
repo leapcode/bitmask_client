@@ -126,7 +126,7 @@ class SRPAuth(QtCore.QObject):
 
             self._srp_a = A
 
-        def _start_authentication(self, _, username, password):
+        def _start_authentication(self, _, username):
             """
             Sends the first request for authentication to retrieve the
             salt and B parameter
@@ -137,8 +137,6 @@ class SRPAuth(QtCore.QObject):
             :type _: IGNORED
             :param username: username to login
             :type username: str
-            :param password: password for the username
-            :type password: str
 
             :return: salt and B parameters
             :rtype: tuple
@@ -351,8 +349,7 @@ class SRPAuth(QtCore.QObject):
             d.addCallback(
                 partial(self._threader,
                         self._start_authentication),
-                username=username,
-                password=password)
+                username=username)
             d.addCallback(
                 partial(self._threader,
                         self._process_challenge),
