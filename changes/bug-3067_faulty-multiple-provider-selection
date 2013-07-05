@@ -1,0 +1,1 @@
+  o Bugfix: reload config if switching to a different provider. Closes #3067.

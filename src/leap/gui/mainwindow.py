@@ -698,11 +698,16 @@ class MainWindow(QtGui.QMainWindow):
         """
         if data[self._provider_bootstrapper.PASSED_KEY]:
             provider = self._login_widget.get_selected_provider()
-            if self._provider_config.loaded() or \
-                    self._provider_config.load(os.path.join("leap",
-                                                            "providers",
-                                                            provider,
-                                                            "provider.json")):
+
+            # If there's no loaded provider or
+            # we want to connect to other provider...
+            if (not self._provider_config.loaded() or
+                    self._provider_config.get_domain() != provider):
+                self._provider_config.load(
+                    os.path.join("leap", "providers",
+                                 provider, "provider.json"))
+
+            if self._provider_config.loaded():
                 self._provider_bootstrapper.run_provider_setup_checks(
                     self._provider_config,
                     download_if_needed=True)
