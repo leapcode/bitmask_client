@@ -31,6 +31,7 @@ from twisted.internet import threads
 
 from leap.common.check import leap_assert
 from leap.util.request_helpers import get_content
+from leap.util.constants import REQUEST_TIMEOUT
 from leap.common.events import signal as events_signal
 from leap.common.events import events_pb2 as proto
 
@@ -155,7 +156,8 @@ class SRPAuth(QtCore.QObject):
                 init_session = self._session.post(sessions_url,
                                                   data=auth_data,
                                                   verify=self._provider_config.
-                                                  get_ca_cert_path())
+                                                  get_ca_cert_path(),
+                                                  timeout=REQUEST_TIMEOUT)
             except requests.exceptions.ConnectionError as e:
                 logger.error("No connection made (salt): %r" %
                              (e,))
@@ -230,7 +232,8 @@ class SRPAuth(QtCore.QObject):
                 auth_result = self._session.put(auth_url,
                                                 data=auth_data,
                                                 verify=self._provider_config.
-                                                get_ca_cert_path())
+                                                get_ca_cert_path(),
+                                                timeout=REQUEST_TIMEOUT)
             except requests.exceptions.ConnectionError as e:
                 logger.error("No connection made (HAMK): %r" % (e,))
                 raise SRPAuthenticationError(self.tr("Could not connect to "
@@ -377,7 +380,8 @@ class SRPAuth(QtCore.QObject):
                 self._session.delete(logout_url,
                                      data=self.get_session_id(),
                                      verify=self._provider_config.
-                                     get_ca_cert_path())
+                                     get_ca_cert_path(),
+                                     timeout=REQUEST_TIMEOUT)
             except Exception as e:
                 logger.warning("Something went wrong with the logout: %r" %
                                (e,))

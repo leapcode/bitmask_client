@@ -31,6 +31,7 @@ from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.common.check import leap_assert, leap_assert_type
 from leap.config.providerconfig import ProviderConfig
 from leap.util.request_helpers import get_content
+from leap.util.constants import REQUEST_TIMEOUT
 from leap.services.abstractbootstrapper import AbstractBootstrapper
 from leap.provider.supportedapis import SupportedAPIs
 
@@ -103,7 +104,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
 
         try:
             res = self._session.get("https://%s" % (self._domain,),
-                                    verify=not self._bypass_checks)
+                                    verify=not self._bypass_checks,
+                                    timeout=REQUEST_TIMEOUT)
             res.raise_for_status()
         except requests.exceptions.SSLError:
             self._err_msg = self.tr("Provider certificate could "
@@ -135,7 +137,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         res = self._session.get("https://%s/%s" % (self._domain,
                                                    "provider.json"),
                                 headers=headers,
-                                verify=not self._bypass_checks)
+                                verify=not self._bypass_checks,
+                                timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
 
         # Not modified
@@ -220,7 +223,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
             return
 
         res = self._session.get(self._provider_config.get_ca_cert_uri(),
-                                verify=not self._bypass_checks)
+                                verify=not self._bypass_checks,
+                                timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
 
         cert_path = self._provider_config.get_ca_cert_path(
@@ -280,7 +284,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
                                    self._provider_config.get_api_version())
         res = self._session.get(test_uri,
                                 verify=self._provider_config
-                                .get_ca_cert_path())
+                                .get_ca_cert_path(),
+                                timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
 
     def run_provider_setup_checks(self,
