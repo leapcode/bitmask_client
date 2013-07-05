@@ -31,6 +31,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.crypto.srpauth import SRPAuth
 from leap.services.eip.eipconfig import EIPConfig
 from leap.util.request_helpers import get_content
+from leap.util.constants import REQUEST_TIMEOUT
 from leap.services.abstractbootstrapper import AbstractBootstrapper
 
 logger = logging.getLogger(__name__)
@@ -89,7 +90,8 @@ class EIPBootstrapper(AbstractBootstrapper):
         res = self._session.get(config_uri,
                                 verify=self._provider_config
                                 .get_ca_cert_path(),
-                                headers=headers)
+                                headers=headers,
+                                timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
 
         # Not modified
@@ -139,7 +141,8 @@ class EIPBootstrapper(AbstractBootstrapper):
         res = self._session.get(cert_uri,
                                 verify=self._provider_config
                                 .get_ca_cert_path(),
-                                cookies=cookies)
+                                cookies=cookies,
+                                timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         client_cert = res.content
 

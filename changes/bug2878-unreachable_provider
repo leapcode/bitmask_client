@@ -1,0 +1,2 @@
+  o Set timeout for requests to 10 seconds globally, configurable from
+    leap.util.constants. Fixes #2878.
