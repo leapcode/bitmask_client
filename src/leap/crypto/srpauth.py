@@ -30,8 +30,8 @@ from PySide import QtCore
 from twisted.internet import threads
 
 from leap.common.check import leap_assert
-from leap.util.request_helpers import get_content
 from leap.util.constants import REQUEST_TIMEOUT
+from leap.util import request_helpers as reqhelper
 from leap.common.events import signal as events_signal
 from leap.common.events import events_pb2 as proto
 
@@ -44,6 +44,71 @@ class SRPAuthenticationError(Exception):
     """
     pass
 
+
+class SRPAuthConnectionError(SRPAuthenticationError):
+    """
+    Exception raised when there's a connection error
+    """
+    pass
+
+class SRPAuthUnknownUser(SRPAuthenticationError):
+    """
+    Exception raised when trying to authenticate an unknown user
+    """
+    pass
+
+class SRPAuthBadStatusCode(SRPAuthenticationError):
+    """
+    Exception raised when we received an unknown bad status code
+    """
+    pass
+
+class SRPAuthNoSalt(SRPAuthenticationError):
+    """
+    Exception raised when we don't receive the salt param at a
+    specific point in the auth process
+    """
+    pass
+
+class SRPAuthNoB(SRPAuthenticationError):
+    """
+    Exception raised when we don't receive the B param at a specific
+    point in the auth process
+    """
+    pass
+
+class SRPAuthBadDataFromServer(SRPAuthenticationError):
+    """
+    Generic exception when we receive bad data from the server.
+    """
+    pass
+
+class SRPAuthJSONDecodeError(SRPAuthenticationError):
+    """
+    Exception raised when there's a problem decoding the JSON content
+    parsed as received from th e server.
+    """
+    pass
+
+class SRPAuthBadPassword(SRPAuthenticationError):
+    """
+    Exception raised when the user provided a bad password to auth.
+    """
+    pass
+
+class SRPAuthVerificationFailed(SRPAuthenticationError):
+    """
+    Exception raised when we can't verify the SRP data received from
+    the server.
+    """
+    pass
+
+class SRPAuthNoSessionId(SRPAuthenticationError):
+    """
+    Exception raised when we don't receive a session id from the
+    server.
+    """
+    pass
 
 class SRPAuth(QtCore.QObject):
     """
@@ -126,19 +191,23 @@ class SRPAuth(QtCore.QObject):
 
             self._srp_a = A
 
-        def _start_authentication(self, _, username, password):
+        def _start_authentication(self, _, username):
             """
             Sends the first request for authentication to retrieve the
             salt and B parameter
 
-            Might raise SRPAuthenticationError
+            Might raise all SRPAuthenticationError based:
+              SRPAuthenticationError
+              SRPAuthConnectionError
+              SRPAuthUnknownUser
+              SRPAuthBadStatusCode
+              SRPAuthNoSalt
+              SRPAuthNoB
 
             :param _: IGNORED, output from the previous callback (None)
             :type _: IGNORED
             :param username: username to login
             :type username: str
-            :param password: password for the username
-            :type password: str
 
             :return: salt and B parameters
             :rtype: tuple
@@ -158,24 +227,29 @@ class SRPAuth(QtCore.QObject):
                                                   verify=self._provider_config.
                                                   get_ca_cert_path(),
                                                   timeout=REQUEST_TIMEOUT)
+                # Clean up A value, we don't need it anymore
+                self._srp_a = None
             except requests.exceptions.ConnectionError as e:
                 logger.error("No connection made (salt): %r" %
                              (e,))
-                raise SRPAuthenticationError("Could not establish a "
+                raise SRPAuthConnectionError("Could not establish a "
                                              "connection")
             except Exception as e:
                 logger.error("Unknown error: %r" % (e,))
                 raise SRPAuthenticationError("Unknown error: %r" %
                                              (e,))
 
-            content, mtime = get_content(init_session)
+            content, mtime = reqhelper.get_content(init_session)
 
             if init_session.status_code not in (200,):
                 logger.error("No valid response (salt): "
                              "Status code = %r. Content: %r" %
                              (init_session.status_code, content))
                 if init_session.status_code == 422:
-                    raise SRPAuthenticationError(self.tr("Unknown user"))
+                    raise SRPAuthUnknownUser(self.tr("Unknown user"))
+
+                raise SRPAuthBadStatusCode(self.tr("There was a problem with"
+                                                   " authentication"))
 
             json_content = json.loads(content)
             salt = json_content.get("salt", None)
@@ -183,12 +257,12 @@ class SRPAuth(QtCore.QObject):
 
             if salt is None:
                 logger.error("No salt parameter sent")
-                raise SRPAuthenticationError(self.tr("The server did not send "
-                                                     "the salt parameter"))
+                raise SRPAuthNoSalt(self.tr("The server did not send "
+                                            "the salt parameter"))
             if B is None:
                 logger.error("No B parameter sent")
-                raise SRPAuthenticationError(self.tr("The server did not send "
-                                                     "the B parameter"))
+                raise SRPAuthNoB(self.tr("The server did not send "
+                                         "the B parameter"))
 
             return salt, B
 
@@ -197,7 +271,12 @@ class SRPAuth(QtCore.QObject):
             Given the salt and B processes the auth challenge and
             generates the M2 parameter
 
-            Might throw SRPAuthenticationError
+            Might raise SRPAuthenticationError based:
+              SRPAuthenticationError
+              SRPAuthBadDataFromServer
+              SRPAuthConnectionError
+              SRPAuthJSONDecodeError
+              SRPAuthBadPassword
 
             :param salt_B: salt and B parameters for the username
             :type salt_B: tuple
@@ -212,10 +291,10 @@ class SRPAuth(QtCore.QObject):
                 salt, B = salt_B
                 unhex_salt = self._safe_unhexlify(salt)
                 unhex_B = self._safe_unhexlify(B)
-            except TypeError as e:
+            except (TypeError, ValueError) as e:
                 logger.error("Bad data from server: %r" % (e,))
-                raise SRPAuthenticationError(self.tr("The data sent from "
-                                                     "the server had errors"))
+                raise SRPAuthBadDataFromServer(
+                    self.tr("The data sent from the server had errors"))
             M = self._srp_user.process_challenge(unhex_salt, unhex_B)
 
             auth_url = "%s/%s/%s/%s" % (self._provider_config.get_api_uri(),
@@ -236,13 +315,13 @@ class SRPAuth(QtCore.QObject):
                                                 timeout=REQUEST_TIMEOUT)
             except requests.exceptions.ConnectionError as e:
                 logger.error("No connection made (HAMK): %r" % (e,))
-                raise SRPAuthenticationError(self.tr("Could not connect to "
+                raise SRPAuthConnectionError(self.tr("Could not connect to "
                                                      "the server"))
 
             try:
-                content, mtime = get_content(auth_result)
+                content, mtime = reqhelper.get_content(auth_result)
             except JSONDecodeError:
-                raise SRPAuthenticationError("Bad JSON content in auth result")
+                raise SRPAuthJSONDecodeError("Bad JSON content in auth result")
 
             if auth_result.status_code == 422:
                 error = ""
@@ -256,35 +335,47 @@ class SRPAuth(QtCore.QObject):
                                  "received: %s", (content,))
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
                              (auth_result.status_code, error))
-                raise SRPAuthenticationError(self.tr("Wrong password"))
+                raise SRPAuthBadPassword(self.tr("Wrong password"))
 
             if auth_result.status_code not in (200,):
                 logger.error("No valid response (HAMK): "
                              "Status code = %s. Content = %r" %
                              (auth_result.status_code, content))
-                raise SRPAuthenticationError(self.tr("Unknown error (%s)") %
-                                             (auth_result.status_code,))
+                raise SRPAuthBadStatusCode(self.tr("Unknown error (%s)") %
+                                           (auth_result.status_code,))
 
-            json_content = json.loads(content)
+            return json.loads(content)
 
+        def _extract_data(self, json_content):
+            """
+            Extracts the necessary parameters from json_content (M2,
+            id, token)
+
+            Might raise SRPAuthenticationError based:
+              SRPBadDataFromServer
+
+            :param json_content: Data received from the server
+            :type json_content: dict
+            """
             try:
                 M2 = json_content.get("M2", None)
                 uid = json_content.get("id", None)
                 token = json_content.get("token", None)
             except Exception as e:
                 logger.error(e)
-                raise Exception("Something went wrong with the login")
-
-            events_signal(proto.CLIENT_UID, content=uid)
+                raise SRPAuthBadDataFromServer("Something went wrong with the "
+                                               "login")
 
             self.set_uid(uid)
             self.set_token(token)
 
             if M2 is None or self.get_uid() is None:
                 logger.error("Something went wrong. Content = %r" %
-                             (content,))
-                raise SRPAuthenticationError(self.tr("Problem getting data "
-                                                     "from server"))
+                             (json_content,))
+                raise SRPAuthBadDataFromServer(self.tr("Problem getting data "
+                                                       "from server"))
+
+            events_signal(proto.CLIENT_UID, content=uid)
 
             return M2
 
@@ -294,7 +385,9 @@ class SRPAuth(QtCore.QObject):
             verification succeeds, it sets the session_id for this
             session
 
-            Might throw SRPAuthenticationError
+            Might raise SRPAuthenticationError based:
+              SRPAuthBadDataFromServer
+              SRPAuthVerificationFailed
 
             :param M2: M2 SRP parameter
             :type M2: str
@@ -304,22 +397,22 @@ class SRPAuth(QtCore.QObject):
                 unhex_M2 = self._safe_unhexlify(M2)
             except TypeError:
                 logger.error("Bad data from server (HAWK)")
-                raise SRPAuthenticationError(self.tr("Bad data from server"))
+                raise SRPAuthBadDataFromServer(self.tr("Bad data from server"))
 
             self._srp_user.verify_session(unhex_M2)
 
             if not self._srp_user.authenticated():
                 logger.error("Auth verification failed")
-                raise SRPAuthenticationError(self.tr("Auth verification "
-                                                     "failed"))
+                raise SRPAuthVerificationFailed(self.tr("Auth verification "
+                                                        "failed"))
             logger.debug("Session verified.")
 
             session_id = self._session.cookies.get(self.SESSION_ID_KEY, None)
             if not session_id:
                 logger.error("Bad cookie from server (missing _session_id)")
-                raise SRPAuthenticationError(self.tr("Session cookie "
-                                                     "verification "
-                                                     "failed"))
+                raise SRPAuthNoSessionId(self.tr("Session cookie "
+                                                 "verification "
+                                                 "failed"))
 
             events_signal(proto.CLIENT_SESSION_ID, content=session_id)
 
@@ -351,11 +444,14 @@ class SRPAuth(QtCore.QObject):
             d.addCallback(
                 partial(self._threader,
                         self._start_authentication),
-                username=username,
-                password=password)
+                username=username)
             d.addCallback(
                 partial(self._threader,
                         self._process_challenge),
+                username=username)
+            d.addCallback(
+                partial(self._threader,
+                        self._extract_data),
                 username=username)
             d.addCallback(partial(self._threader,
                                   self._verify_session))
@@ -435,14 +531,11 @@ class SRPAuth(QtCore.QObject):
         # Store instance reference as the only member in the handle
         self.__dict__['_SRPAuth__instance'] = SRPAuth.__instance
 
-        self._username = None
-        self._password = None
-
     def authenticate(self, username, password):
         """
         Executes the whole authentication process for a user
 
-        Might raise SRPAuthenticationError
+        Might raise SRPAuthenticationError based
 
         :param username: username for this session
         :type username: str
