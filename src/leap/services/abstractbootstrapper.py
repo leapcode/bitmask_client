@@ -142,6 +142,9 @@ class AbstractBootstrapper(QtCore.QObject):
         :param callbacks: List of tuples of callbacks and the signal
                           associated to that callback
         :type callbacks: list(tuple(func, func))
+
+        :returns: the defer with the callback chain
+        :rtype: deferred
         """
         leap_assert_type(callbacks, list)
 

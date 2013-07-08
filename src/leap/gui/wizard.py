@@ -125,6 +125,11 @@ class Wizard(QtGui.QWizard):
         self._domain = None
         self._provider_config = ProviderConfig()
 
+        # We will store a reference to the defers for eventual use
+        # (eg, to cancel them) but not doing anything with them right now.
+        self._provider_select_defer = None
+        self._provider_setup_defer = None
+
         self.currentIdChanged.connect(self._current_id_changed)
 
         self.ui.lblPassword.setEchoMode(QtGui.QLineEdit.Password)
@@ -361,8 +366,8 @@ class Wizard(QtGui.QWizard):
         self._domain = self.ui.lnProvider.text()
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
-        self._provider_bootstrapper.run_provider_select_checks(
-            self._domain)
+        self._provider_select_defer = self._provider_bootstrapper.\
+            run_provider_select_checks(self._domain)
 
     def _complete_task(self, data, label, complete=False, complete_page=-1):
         """
@@ -561,7 +566,7 @@ class Wizard(QtGui.QWizard):
                                           (self._provider_config
                                            .get_name(),))
             self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
-            self._provider_bootstrapper.\
+            self._provider_setup_defer = self._provider_bootstrapper.\
                 run_provider_setup_checks(self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
