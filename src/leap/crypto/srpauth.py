@@ -461,8 +461,7 @@ class SRPAuth(QtCore.QObject):
                 username=username)
             d.addCallback(
                 partial(self._threader,
-                        self._extract_data),
-                username=username)
+                        self._extract_data))
             d.addCallback(partial(self._threader,
                                   self._verify_session))
 
