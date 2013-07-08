@@ -310,12 +310,22 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard is None:
             self._wizard = Wizard(bypass_checks=self._bypass_checks)
             self._wizard.accepted.connect(self._finish_init)
+            self._wizard.rejected.connect(self._wizard.close)
 
         self.setVisible(False)
-        self._wizard.exec_()
-        # We need this to process any wizard related event
-        QtCore.QCoreApplication.processEvents()
-        self._wizard = None
+        # Do NOT use exec_, it will use a child event loop!
+        # Refer to http://www.themacaque.com/?p=1067 for funny details.
+        self._wizard.show()
+        self._wizard.finished.connect(self._wizard_finished)
+
+    def _wizard_finished(self):
+        """
+        SLOT
+        TRIGGERS
+          self._wizard.finished
+
+        Called when the wizard has finished.
+        """
         self.setVisible(True)
 
     def _get_leap_logging_handler(self):
