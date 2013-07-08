@@ -27,7 +27,7 @@ RESOURCES = locale.qrc loggerwindow.qrc mainwindow.qrc icons.qrc
 #pyuic4 and pyrcc4 binaries
 PYUIC = pyside-uic
 PYRCC = pyside-rcc
-PYLUP = pylupdate4
+PYLUP = pyside-lupdate
 LRELE = lrelease
 
 
