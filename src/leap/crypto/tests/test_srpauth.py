@@ -40,6 +40,7 @@ from leap.common.testing.https_server import where
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto import srpregister, srpauth
 from leap.crypto.tests import fake_provider
+from leap.util.request_helpers import get_content
 
 log.startLogging(sys.stdout)
 
@@ -80,10 +81,12 @@ class SRPAuthTestCase(unittest.TestCase):
         self.https_port = get_port(https)
 
         provider = ProviderConfig()
-        provider.get_ca_cert_path = MagicMock()
+        provider.get_ca_cert_path = mock.create_autospec(
+            provider.get_ca_cert_path)
         provider.get_ca_cert_path.return_value = _get_capath()
 
-        provider.get_api_uri = MagicMock()
+        provider.get_api_uri = mock.create_autospec(
+            provider.get_api_uri)
         provider.get_api_uri.return_value = self._get_https_uri()
 
         loaded = provider.load(path=os.path.join(
@@ -154,8 +157,10 @@ class SRPAuthTestCase(unittest.TestCase):
         """
         res = Response()
         res.status_code = code
-        self.auth_backend._session.post = MagicMock(return_value=res,
-                                                    side_effect=side_effect)
+        self.auth_backend._session.post = mock.create_autospec(
+            self.auth_backend._session.post,
+            return_value=res,
+            side_effect=side_effect)
 
         d = threads.deferToThread(self.register.register_user,
                                   self.TEST_USER,
@@ -242,7 +247,7 @@ class SRPAuthTestCase(unittest.TestCase):
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthUnknownUser):
                 with mock.patch('leap.util.request_helpers.get_content',
-                                new_callable=MagicMock()) as \
+                                new=mock.create_autospec(get_content)) as \
                         content:
                     content.return_value = ("{}", 0)
 
@@ -259,7 +264,7 @@ class SRPAuthTestCase(unittest.TestCase):
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthBadStatusCode):
                 with mock.patch('leap.util.request_helpers.get_content',
-                                new_callable=MagicMock()) as \
+                                new=mock.create_autospec(get_content)) as \
                         content:
                     content.return_value = ("{}", 0)
 
@@ -276,7 +281,7 @@ class SRPAuthTestCase(unittest.TestCase):
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthNoSalt):
                 with mock.patch('leap.util.request_helpers.get_content',
-                                new_callable=MagicMock()) as \
+                                new=mock.create_autospec(get_content)) as \
                         content:
                     content.return_value = ("{}", 0)
 
@@ -293,7 +298,7 @@ class SRPAuthTestCase(unittest.TestCase):
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthNoB):
                 with mock.patch('leap.util.request_helpers.get_content',
-                                new_callable=MagicMock()) as \
+                                new=mock.create_autospec(get_content)) as \
                         content:
                     content.return_value = ('{"salt": ""}', 0)
 
@@ -312,7 +317,7 @@ class SRPAuthTestCase(unittest.TestCase):
 
         def wrapper(_):
             with mock.patch('leap.util.request_helpers.get_content',
-                            new_callable=MagicMock()) as \
+                            new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ('{"salt":"%s", "B":"%s"}' % (test_salt,
                                                                      test_B),
@@ -371,7 +376,8 @@ class SRPAuthTestCase(unittest.TestCase):
     def test_process_challenge_requests_problem_raises(self):
         d = self._prepare_auth_challenge()
 
-        self.auth_backend._session.put = MagicMock(
+        self.auth_backend._session.put = mock.create_autospec(
+            self.auth_backend._session.put,
             side_effect=requests.exceptions.ConnectionError())
 
         def wrapper(salt_B):
@@ -389,7 +395,7 @@ class SRPAuthTestCase(unittest.TestCase):
 
         def wrapper(salt_B):
             with mock.patch('leap.util.request_helpers.get_content',
-                            new_callable=MagicMock()) as \
+                            new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("{", 0)
                 content.side_effect = JSONDecodeError("", "", 0)
@@ -409,11 +415,13 @@ class SRPAuthTestCase(unittest.TestCase):
 
         res = Response()
         res.status_code = 422
-        self.auth_backend._session.put = MagicMock(return_value=res)
+        self.auth_backend._session.put = mock.create_autospec(
+            self.auth_backend._session.put,
+            return_value=res)
 
         def wrapper(salt_B):
             with mock.patch('leap.util.request_helpers.get_content',
-                            new_callable=MagicMock()) as \
+                            new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("", 0)
                 with self.assertRaises(srpauth.SRPAuthBadPassword):
@@ -431,11 +439,13 @@ class SRPAuthTestCase(unittest.TestCase):
 
         res = Response()
         res.status_code = 422
-        self.auth_backend._session.put = MagicMock(return_value=res)
+        self.auth_backend._session.put = mock.create_autospec(
+            self.auth_backend._session.put,
+            return_value=res)
 
         def wrapper(salt_B):
             with mock.patch('leap.util.request_helpers.get_content',
-                            new_callable=MagicMock()) as \
+                            new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("[]", 0)
                 with self.assertRaises(srpauth.SRPAuthBadPassword):
@@ -453,11 +463,13 @@ class SRPAuthTestCase(unittest.TestCase):
 
         res = Response()
         res.status_code = 300
-        self.auth_backend._session.put = MagicMock(return_value=res)
+        self.auth_backend._session.put = mock.create_autospec(
+            self.auth_backend._session.put,
+            return_value=res)
 
         def wrapper(salt_B):
             with mock.patch('leap.util.request_helpers.get_content',
-                            new_callable=MagicMock()) as \
+                            new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("{}", 0)
                 with self.assertRaises(srpauth.SRPAuthBadStatusCode):
@@ -568,7 +580,8 @@ class SRPAuthTestCase(unittest.TestCase):
         d = self._prepare_verify_session()
 
         def wrapper(M2):
-            self.auth_backend._session.cookies.get = MagicMock(
+            self.auth_backend._session.cookies.get = mock.create_autospec(
+                self.auth_backend._session.cookies.get,
                 return_value=None)
             with self.assertRaises(srpauth.SRPAuthNoSessionId):
                 self.auth_backend._verify_session(M2)
@@ -584,7 +597,8 @@ class SRPAuthTestCase(unittest.TestCase):
         test_session_id = "12345"
 
         def wrapper(M2):
-            self.auth_backend._session.cookies.get = MagicMock(
+            self.auth_backend._session.cookies.get = mock.create_autospec(
+                self.auth_backend._session.cookies.get,
                 return_value=test_session_id)
             self.auth_backend._verify_session(M2)
             self.assertEqual(self.auth_backend.get_session_id(),
@@ -609,12 +623,21 @@ class SRPAuthTestCase(unittest.TestCase):
 
     @deferred()
     def test_authenticate(self):
-        self.auth_backend._authentication_preprocessing = MagicMock(
+        self.auth_backend._authentication_preprocessing = mock.create_autospec(
+            self.auth_backend._authentication_preprocessing,
             return_value=None)
-        self.auth_backend._start_authentication = MagicMock(return_value=None)
-        self.auth_backend._process_challenge = MagicMock(return_value=None)
-        self.auth_backend._extract_data = MagicMock(return_value=None)
-        self.auth_backend._verify_session = MagicMock(return_value=None)
+        self.auth_backend._start_authentication = mock.create_autospec(
+            self.auth_backend._start_authentication,
+            return_value=None)
+        self.auth_backend._process_challenge = mock.create_autospec(
+            self.auth_backend._process_challenge,
+            return_value=None)
+        self.auth_backend._extract_data = mock.create_autospec(
+            self.auth_backend._extract_data,
+            return_value=None)
+        self.auth_backend._verify_session = mock.create_autospec(
+            self.auth_backend._verify_session,
+            return_value=None)
 
         d = self.auth_backend.authenticate(self.TEST_USER, self.TEST_PASS)
 
@@ -631,8 +654,7 @@ class SRPAuthTestCase(unittest.TestCase):
                 None,
                 username=self.TEST_USER)
             self.auth_backend._extract_data.assert_called_once_with(
-                None,
-                username=self.TEST_USER)
+                None)
             self.auth_backend._verify_session.assert_called_once_with(None)
 
         d.addCallback(check)
@@ -651,8 +673,12 @@ class SRPAuthTestCase(unittest.TestCase):
 
     @deferred()
     def test_logout_traps_delete(self):
-        self.auth_backend.get_session_id = MagicMock(return_value="1234")
-        self.auth_backend._session.delete = MagicMock(side_effect=Exception())
+        self.auth_backend.get_session_id = mock.create_autospec(
+            self.auth_backend.get_session_id,
+            return_value="1234")
+        self.auth_backend._session.delete = mock.create_autospec(
+            self.auth_backend._session.delete,
+            side_effect=Exception())
 
         def wrapper(*args):
             self.auth_backend.logout()
@@ -690,9 +716,11 @@ class SRPAuthSingletonTestCase(unittest.TestCase):
     @deferred()
     def test_authenticate_notifies_gui(self):
         auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.authenticate = MagicMock(
+        auth._SRPAuth__instance.authenticate = mock.create_autospec(
+            auth._SRPAuth__instance.authenticate,
             return_value=threads.deferToThread(lambda: None))
-        auth._gui_notify = MagicMock()
+        auth._gui_notify = mock.create_autospec(
+            auth._gui_notify)
 
         d = auth.authenticate("", "")
 
@@ -705,11 +733,14 @@ class SRPAuthSingletonTestCase(unittest.TestCase):
     @deferred()
     def test_authenticate_errsback(self):
         auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.authenticate = MagicMock(
+        auth._SRPAuth__instance.authenticate = mock.create_autospec(
+            auth._SRPAuth__instance.authenticate,
             return_value=threads.deferToThread(MagicMock(
                 side_effect=Exception())))
-        auth._gui_notify = MagicMock()
-        auth._errback = MagicMock()
+        auth._gui_notify = mock.create_autospec(
+            auth._gui_notify)
+        auth._errback = mock.create_autospec(
+            auth._errback)
 
         d = auth.authenticate("", "")
 
@@ -723,7 +754,8 @@ class SRPAuthSingletonTestCase(unittest.TestCase):
     @deferred()
     def test_authenticate_runs_cleanly_when_raises(self):
         auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.authenticate = MagicMock(
+        auth._SRPAuth__instance.authenticate = mock.create_autospec(
+            auth._SRPAuth__instance.authenticate,
             return_value=threads.deferToThread(MagicMock(
                 side_effect=Exception())))
 
@@ -734,7 +766,8 @@ class SRPAuthSingletonTestCase(unittest.TestCase):
     @deferred()
     def test_authenticate_runs_cleanly(self):
         auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.authenticate = MagicMock(
+        auth._SRPAuth__instance.authenticate = mock.create_autospec(
+            auth._SRPAuth__instance.authenticate,
             return_value=threads.deferToThread(MagicMock()))
 
         d = auth.authenticate("", "")
@@ -743,13 +776,15 @@ class SRPAuthSingletonTestCase(unittest.TestCase):
 
     def test_logout(self):
         auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.logout = MagicMock()
+        auth._SRPAuth__instance.logout = mock.create_autospec(
+            auth._SRPAuth__instance.logout)
 
         self.assertTrue(auth.logout())
 
     def test_logout_rets_false_when_raises(self):
         auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.logout = MagicMock(
+        auth._SRPAuth__instance.logout = mock.create_autospec(
+            auth._SRPAuth__instance.logout,
             side_effect=Exception())
 
         self.assertFalse(auth.logout())
