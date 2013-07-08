@@ -51,17 +51,20 @@ class SRPAuthConnectionError(SRPAuthenticationError):
     """
     pass
 
+
 class SRPAuthUnknownUser(SRPAuthenticationError):
     """
     Exception raised when trying to authenticate an unknown user
     """
     pass
 
+
 class SRPAuthBadStatusCode(SRPAuthenticationError):
     """
     Exception raised when we received an unknown bad status code
     """
     pass
+
 
 class SRPAuthNoSalt(SRPAuthenticationError):
     """
@@ -70,6 +73,7 @@ class SRPAuthNoSalt(SRPAuthenticationError):
     """
     pass
 
+
 class SRPAuthNoB(SRPAuthenticationError):
     """
     Exception raised when we don't receive the B param at a specific
@@ -77,11 +81,13 @@ class SRPAuthNoB(SRPAuthenticationError):
     """
     pass
 
+
 class SRPAuthBadDataFromServer(SRPAuthenticationError):
     """
     Generic exception when we receive bad data from the server.
     """
     pass
+
 
 class SRPAuthJSONDecodeError(SRPAuthenticationError):
     """
@@ -90,11 +96,13 @@ class SRPAuthJSONDecodeError(SRPAuthenticationError):
     """
     pass
 
+
 class SRPAuthBadPassword(SRPAuthenticationError):
     """
     Exception raised when the user provided a bad password to auth.
     """
     pass
+
 
 class SRPAuthVerificationFailed(SRPAuthenticationError):
     """
@@ -103,12 +111,14 @@ class SRPAuthVerificationFailed(SRPAuthenticationError):
     """
     pass
 
+
 class SRPAuthNoSessionId(SRPAuthenticationError):
     """
     Exception raised when we don't receive a session id from the
     server.
     """
     pass
+
 
 class SRPAuth(QtCore.QObject):
     """
@@ -451,8 +461,7 @@ class SRPAuth(QtCore.QObject):
                 username=username)
             d.addCallback(
                 partial(self._threader,
-                        self._extract_data),
-                username=username)
+                        self._extract_data))
             d.addCallback(partial(self._threader,
                                   self._verify_session))
 
