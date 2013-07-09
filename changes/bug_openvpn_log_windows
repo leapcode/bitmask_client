@@ -1,0 +1,2 @@
+  o Add --log-append eip.log to windows EIP launcher options to save
+    the logs in case of any problems. Fixes #2054.

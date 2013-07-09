@@ -735,6 +735,10 @@ class WindowsVPNLauncher(VPNLauncher):
             '--persist-tun',
             '--persist-key',
             '--tls-client',
+            # We make it log to a file because we cannot attach to the
+            # openvpn process' stdout since it's a process with more
+            # privileges than we are
+            '--log-append', 'eip.log',
             '--remote-cert-tls',
             'server'
         ]
