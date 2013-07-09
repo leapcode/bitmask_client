@@ -401,9 +401,9 @@ class SRPAuthTestCase(unittest.TestCase):
                 content.side_effect = JSONDecodeError("", "", 0)
 
                 with self.assertRaises(srpauth.SRPAuthJSONDecodeError):
-                   self.auth_backend._process_challenge(
-                       salt_B,
-                       username=self.TEST_USER)
+                    self.auth_backend._process_challenge(
+                        salt_B,
+                        username=self.TEST_USER)
 
         d.addCallback(partial(threads.deferToThread, wrapper))
 
