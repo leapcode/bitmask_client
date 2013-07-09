@@ -243,12 +243,9 @@ def _darwin_install_missing_scripts(badexec, notfound):
         "openvpn")
     launcher = vpnlaunchers.DarwinVPNLauncher
 
-    # TODO should change osascript by use of the proper
-    # os authorization api.
     if os.path.isdir(installer_path):
         fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
         try:
-            cmd = launcher.OSASCRIPT_BIN
             scriptlines = launcher.cmd_for_missing_scripts(installer_path)
             with os.fdopen(fd, 'w') as f:
                 f.write(scriptlines)
@@ -256,8 +253,9 @@ def _darwin_install_missing_scripts(badexec, notfound):
             os.chmod(tempscript, st.st_mode | stat.S_IEXEC | stat.S_IXUSR |
                      stat.S_IXGRP | stat.S_IXOTH)
 
-            osascript = launcher.OSX_ASADMIN % ("/bin/sh %s" % (tempscript,),)
-            cmdline = ["%s -e '%s'" % (cmd, osascript)]
+            cmd, args = launcher().get_cocoasudo_installmissing_cmd()
+            args.append(tempscript)
+            cmdline = " ".join([cmd] + args)
             ret = subprocess.call(
                 cmdline, stdout=subprocess.PIPE,
                 shell=True)
