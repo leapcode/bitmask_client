@@ -305,13 +305,14 @@ def DarwinInitializer():
         ret = msg.exec_()
 
         if ret == QtGui.QMessageBox.Yes:
-            installer_path = os.path.join(
-                os.getcwd(),
-                "..",
-                "Resources",
-                "tuntap-installer.app")
+            installer_path = os.path.abspath(
+                os.path.join(
+                    os.getcwd(),
+                    "..",
+                    "Resources",
+                    "tuntap-installer.app"))
             if os.path.isdir(installer_path):
-                cmd = ["open %s" % (installer_path,)]
+                cmd = ["open '%s'" % (installer_path,)]
                 try:
                     ret = subprocess.call(
                         cmd, stdout=subprocess.PIPE,
