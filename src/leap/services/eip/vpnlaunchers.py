@@ -465,19 +465,26 @@ class DarwinVPNLauncher(VPNLauncher):
     """
 
     COCOASUDO = "cocoasudo"
-    # XXX need magic translate for this string
+    # XXX need the good old magic translate for these strings
+    # (look for magic in 0.2.0 release)
     SUDO_MSG = ("LEAP needs administrative privileges to run "
                 "Encrypted Internet.")
+    INSTALL_MSG = ("\"LEAP needs administrative privileges to install "
+                   "missing scripts and fix permissions.\"")
 
-    INSTALL_PATH = "/Applications/LEAP\ Client.app"
+    INSTALL_PATH = "/Applications/LEAP Client.app"
+    INSTALL_PATH_ESCAPED = "/Applications/LEAP\ Client.app" 
     OPENVPN_BIN = 'openvpn.leap'
     OPENVPN_PATH = "%s/Contents/Resources/openvpn" % (INSTALL_PATH,)
+    OPENVPN_PATH_ESCAPED = "%s/Contents/Resources/openvpn" % (
+        INSTALL_PATH_ESCAPED,)
 
     UP_SCRIPT = "%s/client.up.sh" % (OPENVPN_PATH,)
     DOWN_SCRIPT = "%s/client.down.sh" % (OPENVPN_PATH,)
     OPENVPN_DOWN_PLUGIN = '%s/openvpn-down-root.so' % (OPENVPN_PATH,)
 
     UPDOWN_FILES = (UP_SCRIPT, DOWN_SCRIPT, OPENVPN_DOWN_PLUGIN)
+    OTHER_FILES = []
 
     @classmethod
     def cmd_for_missing_scripts(kls, frompath):
@@ -485,11 +492,12 @@ class DarwinVPNLauncher(VPNLauncher):
         Returns a command that can copy the missing scripts.
         :rtype: str
         """
-        to = kls.OPENVPN_PATH
-        cmd = "#!/bin/sh\nmkdir -p %s\ncp \"%s/\"* %s" % (to, frompath, to)
+        to = kls.OPENVPN_PATH_ESCAPED
+        cmd = "#!/bin/sh\nmkdir -p %s\ncp \"%s/\"* %s\nchmod 744 %s/*" % (
+            to, frompath, to, to)
         return cmd
 
-    def get_cocoasudo_cmd(self):
+    def get_cocoasudo_ovpn_cmd(self):
         """
         Returns a string with the cocoasudo command needed to run openvpn
         as admin with a nice password prompt. The actual command needs to be
@@ -503,6 +511,23 @@ class DarwinVPNLauncher(VPNLauncher):
         has_icon = os.path.isfile(iconpath)
         args = ["--icon=%s" % iconpath] if has_icon else []
         args.append("--prompt=%s" % (self.SUDO_MSG,))
+
+        return self.COCOASUDO, args
+
+    def get_cocoasudo_installmissing_cmd(self):
+        """
+        Returns a string with the cocoasudo command needed to install missing
+        files as admin with a nice password prompt. The actual command needs to be
+        appended.
+
+        :rtype: (str, list)
+        """
+        iconpath = os.path.abspath(os.path.join(
+            os.getcwd(),
+            "../../../Resources/leap-client.tiff"))
+        has_icon = os.path.isfile(iconpath)
+        args = ["--icon=%s" % iconpath] if has_icon else []
+        args.append("--prompt=%s" % (self.INSTALL_MSG,))
 
         return self.COCOASUDO, args
 
@@ -619,7 +644,7 @@ class DarwinVPNLauncher(VPNLauncher):
             '--ca', providerconfig.get_ca_cert_path()
         ]
 
-        command, cargs = self.get_cocoasudo_cmd()
+        command, cargs = self.get_cocoasudo_ovpn_cmd()
         cmd_args = cargs + args
 
         logger.debug("Running VPN with command:")
