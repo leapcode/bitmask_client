@@ -972,7 +972,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self.ui.btnEipStartStop.clicked
+          self._status_panel.start_eip
           self._action_eip_startstop.triggered
         or called from _finish_eip_bootstrap
 
@@ -1045,12 +1045,17 @@ class MainWindow(QtGui.QMainWindow):
 
     def _stop_eip(self, abnormal=False):
         """
+        SLOT
+        TRIGGERS:
+          self._status_panel.stop_eip
+          self._action_eip_startstop.triggered
+        or called from _eip_finished
+
         Stops vpn process and makes gui adjustments to reflect
         the change of state.
 
         :param abnormal: whether this was an abnormal termination.
         :type abnormal: bool
-        ""
         """
         self.user_stopped_eip = True
         self._vpn.terminate()
@@ -1119,7 +1124,7 @@ class MainWindow(QtGui.QMainWindow):
                     error=True)
             else:
                 self._status_panel.set_eip_status(self.tr("Disabled"))
-            self.ui.btnEipStartStop.setEnabled(False)
+            self._status_panel.set_startstop_enabled(False)
 
     def _finish_eip_bootstrap(self, data):
         """
