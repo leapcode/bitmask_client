@@ -545,7 +545,7 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self.ui.action_quit)
         self._systray = QtGui.QSystemTrayIcon(self)
         self._systray.setContextMenu(systrayMenu)
-        self._systray.setIcon(self._status_panel.ERROR_ICON)
+        self._systray.setIcon(self._status_panel.ERROR_ICON_TRAY)
         self._systray.setVisible(True)
         self._systray.activated.connect(self._tray_activated)
 
