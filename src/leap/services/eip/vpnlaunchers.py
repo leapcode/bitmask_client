@@ -472,8 +472,8 @@ class DarwinVPNLauncher(VPNLauncher):
     INSTALL_MSG = ("\"LEAP needs administrative privileges to install "
                    "missing scripts and fix permissions.\"")
 
-    INSTALL_PATH = "/Applications/LEAP Client.app"
-    INSTALL_PATH_ESCAPED = "/Applications/LEAP\ Client.app" 
+    INSTALL_PATH = os.path.realpath(os.getcwd() + "/../../")
+    INSTALL_PATH_ESCAPED = os.path.realpath(os.getcwd() + "/../../")
     OPENVPN_BIN = 'openvpn.leap'
     OPENVPN_PATH = "%s/Contents/Resources/openvpn" % (INSTALL_PATH,)
     OPENVPN_PATH_ESCAPED = "%s/Contents/Resources/openvpn" % (
@@ -620,12 +620,13 @@ class DarwinVPNLauncher(VPNLauncher):
 
         if _has_updown_scripts(self.UP_SCRIPT):
             args += [
-                '--up', self.UP_SCRIPT,
+                '--up', '\"%s\"' % (self.UP_SCRIPT,),
             ]
 
         if _has_updown_scripts(self.DOWN_SCRIPT):
             args += [
-                '--down', self.DOWN_SCRIPT]
+                '--down', '\"%s\"' % (self.DOWN_SCRIPT,)
+            ]
 
             # should have the down script too
             if _has_updown_scripts(self.OPENVPN_DOWN_PLUGIN):
