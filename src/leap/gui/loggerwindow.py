@@ -78,6 +78,7 @@ class LoggerWindow(QtGui.QWidget):
         """
         level = log[LeapLogHandler.RECORD_KEY].levelname
         message = log[LeapLogHandler.MESSAGE_KEY]
+        message = message.replace('\n', '<br>\n')
 
         if self._logs_to_display[level]:
             self.ui.txtLogHistory.append(message)
