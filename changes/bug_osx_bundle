@@ -1,0 +1,2 @@
+  o OSX: Make the install_path relative to the launcher path instead
+    of absolute.
