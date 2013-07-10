@@ -238,9 +238,12 @@ class MainWindow(QtGui.QMainWindow):
             self._action_eip_status)
 
         self._action_eip_startstop = QtGui.QAction(
-            self.tr("Turn ON"), self)
+            self.tr("Turn OFF"), self)
         self._action_eip_startstop.triggered.connect(
             self._stop_eip)
+        self._action_eip_startstop.setEnabled(False)
+        self._status_panel.set_action_eip_startstop(
+            self._action_eip_startstop)
 
         self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
         self._action_visible.triggered.connect(self._toggle_visible)

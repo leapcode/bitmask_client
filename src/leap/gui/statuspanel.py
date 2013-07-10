@@ -105,6 +105,15 @@ class StatusPanelWidget(QtGui.QWidget):
         leap_assert_type(systray, QtGui.QSystemTrayIcon)
         self._systray = systray
 
+    def set_action_eip_startstop(self, action_eip_startstop):
+        """
+        Sets the action_eip_startstop to use.
+
+        :param action_eip_startstop: action_eip_status to be used
+        :type action_eip_startstop: QtGui.QAction
+        """
+        self._action_eip_startstop = action_eip_startstop
+
     def set_action_eip_status(self, action_eip_status):
         """
         Sets the action_eip_status to use.
@@ -156,13 +165,15 @@ class StatusPanelWidget(QtGui.QWidget):
 
     def set_startstop_enabled(self, value):
         """
-        Enable or disable btnEipStartStop based on value
+        Enable or disable btnEipStartStop and _action_eip_startstop
+        based on value
 
         :param value: True for enabled, False otherwise
         :type value: bool
         """
         leap_assert_type(value, bool)
         self.ui.btnEipStartStop.setEnabled(value)
+        self._action_eip_startstop.setEnabled(value)
 
     def eip_pre_up(self):
         """

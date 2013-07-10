@@ -1,0 +1,1 @@
+  o Bugfix: Systray Turn ON action fails because is not correctly enabled/disabled. Closes #3125.
