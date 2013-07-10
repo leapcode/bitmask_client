@@ -76,11 +76,23 @@ class LoggerWindow(QtGui.QDialog):
             the record contains the LogRecord of the logging module,
             the message contains the formatted message for the log.
         """
-        level = log[LeapLogHandler.RECORD_KEY].levelname
+        html_style = {
+            logging.DEBUG: "background: #CDFFFF;",
+            logging.INFO: "background: white;",
+            logging.WARNING: "background: #FFFF66;",
+            logging.ERROR: "background: red; color: white;",
+            logging.CRITICAL: "background: red; color: white; font: bold;"
+        }
+        level = log[LeapLogHandler.RECORD_KEY].levelno
         message = log[LeapLogHandler.MESSAGE_KEY]
         message = message.replace('\n', '<br>\n')
 
         if self._logs_to_display[level]:
+            open_tag = "<tr style='" + html_style[level] + "'>"
+            open_tag += "<td width='100%' style='padding: 5px;'>"
+            close_tag = "</td></tr>"
+            message = open_tag + message + close_tag
+
             self.ui.txtLogHistory.append(message)
 
     def _load_history(self):
@@ -99,11 +111,11 @@ class LoggerWindow(QtGui.QDialog):
         Sets the logs_to_display dict getting the toggled options from the ui
         """
         self._logs_to_display = {
-            'DEBUG': self.ui.btnDebug.isChecked(),
-            'INFO': self.ui.btnInfo.isChecked(),
-            'WARNING': self.ui.btnWarning.isChecked(),
-            'ERROR': self.ui.btnError.isChecked(),
-            'CRITICAL': self.ui.btnCritical.isChecked()
+            logging.DEBUG: self.ui.btnDebug.isChecked(),
+            logging.INFO: self.ui.btnInfo.isChecked(),
+            logging.WARNING: self.ui.btnWarning.isChecked(),
+            logging.ERROR: self.ui.btnError.isChecked(),
+            logging.CRITICAL: self.ui.btnCritical.isChecked()
         }
 
     def _save_log_to_file(self):
