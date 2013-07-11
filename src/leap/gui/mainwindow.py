@@ -39,14 +39,13 @@ from leap.gui.loggerwindow import LoggerWindow
 from leap.gui.wizard import Wizard
 from leap.gui.login import LoginWidget
 from leap.gui.statuspanel import StatusPanelWidget
-from leap.platform_init import IS_MAC
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 # XXX: comment out soledad temporarily to avoid problem in Windows, issue #2932
 # from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
-from leap.platform_init import IS_WIN
+from leap.platform_init import IS_WIN, IS_MAC
 from leap.platform_init.initializers import init_platform
 from leap.services.eip.vpnprocess import VPN
 
@@ -319,6 +318,8 @@ class MainWindow(QtGui.QMainWindow):
         # Do NOT use exec_, it will use a child event loop!
         # Refer to http://www.themacaque.com/?p=1067 for funny details.
         self._wizard.show()
+        if IS_MAC:
+            self._wizard._raise()
         self._wizard.finished.connect(self._wizard_finished)
 
     def _wizard_finished(self):
@@ -434,6 +435,8 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.set_providers(self._configured_providers())
         self._show_systray()
         self.show()
+        if IS_MAC:
+            self.raise_()
 
         if self._wizard:
             possible_username = self._wizard.get_username()
@@ -1287,6 +1290,8 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         self.setWindowFlags(self.windowFlags() & ~TOPFLAG)
         self.show()
+        if IS_MAC:
+            self._raise()
 
     def _cleanup_pidfiles(self):
         """
