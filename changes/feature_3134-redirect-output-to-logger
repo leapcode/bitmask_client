@@ -1,0 +1,1 @@
+  o Redirect stdout/stderr and twisted log to the logger. Closes #3134.

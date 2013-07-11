@@ -27,6 +27,7 @@ from leap.common.events import server as event_server
 from leap.util import __version__ as VERSION
 from leap.util import leap_argparse
 from leap.util.leap_log_handler import LeapLogHandler
+from leap.util.streamtologger import StreamToLogger
 from leap.util.requirement_checker import check_requirements
 from leap.gui import locale_rc
 from leap.gui import twisted_main
@@ -61,6 +62,70 @@ def install_qtreactor(logger):
     logger.debug("Qt4 reactor installed")
 
 
+def add_logger_handlers(debug=False, logfile=None):
+    """
+    Create the logger and attach the handlers.
+
+    :param debug: the level of the messages that we should log
+    :type debug: bool
+    :param logfile: the file name of where we should to save the logs
+    :type logfile: str
+    :return: the new logger with the attached handlers.
+    :rtype: logging.Logger
+    """
+    # TODO: get severity from command line args
+    if debug:
+        level = logging.DEBUG
+    else:
+        level = logging.WARNING
+
+    # Create logger and formatter
+    logger = logging.getLogger(name='leap')
+    logger.setLevel(level)
+    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(log_format)
+
+    # Console handler
+    console = logging.StreamHandler()
+    console.setLevel(level)
+    console.setFormatter(formatter)
+    logger.addHandler(console)
+    logger.debug('Console handler plugged!')
+
+    # LEAP custom handler
+    leap_handler = LeapLogHandler()
+    leap_handler.setLevel(level)
+    logger.addHandler(leap_handler)
+    logger.debug('Leap handler plugged!')
+
+    # File handler
+    if logfile is not None:
+        logger.debug('Setting logfile to %s ', logfile)
+        fileh = logging.FileHandler(logfile)
+        fileh.setLevel(logging.DEBUG)
+        fileh.setFormatter(formatter)
+        logger.addHandler(fileh)
+        logger.debug('File handler plugged!')
+
+    return logger
+
+
+def replace_stdout_stderr_with_logging(logger):
+    """
+    Replace:
+        - the standard output
+        - the standard error
+        - the twisted log output
+    with a custom one that writes to the logger.
+    """
+    sys.stdout = StreamToLogger(logger, logging.DEBUG)
+    sys.stderr = StreamToLogger(logger, logging.ERROR)
+
+    # Replace twisted's logger to use our custom output.
+    from twisted.python import log
+    log.startLogging(sys.stdout)
+
+
 def main():
     """
     Starts the main event loop and launches the main window.
@@ -68,32 +133,13 @@ def main():
     event_server.ensure_server(event_server.SERVER_PORT)
 
     _, opts = leap_argparse.init_leapc_args()
-    debug = opts.debug
     standalone = opts.standalone
     bypass_checks = opts.danger
+    debug = opts.debug
+    logfile = opts.log_file
 
-    # TODO: get severity from command line args
-    if debug:
-        level = logging.DEBUG
-    else:
-        level = logging.WARNING
-
-    # Console logger
-    logger = logging.getLogger(name='leap')
-    logger.setLevel(level)
-    console = logging.StreamHandler()
-    console.setLevel(level)
-    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    formatter = logging.Formatter(log_format)
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    # LEAP custom handler
-    leap_handler = LeapLogHandler()
-    leap_handler.setLevel(level)
-    logger.addHandler(leap_handler)
-
-    logger.debug('Leap handler plugged!')
+    logger = add_logger_handlers(debug, logfile)
+    replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
         # leap-client is already running
@@ -107,13 +153,6 @@ def main():
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('LEAP client version %s', VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    logfile = opts.log_file
-    if logfile is not None:
-        logger.debug('Setting logfile to %s ', logfile)
-        fileh = logging.FileHandler(logfile)
-        fileh.setLevel(logging.DEBUG)
-        fileh.setFormatter(formatter)
-        logger.addHandler(fileh)
 
     logger.info('Starting app')
     app = QtGui.QApplication(sys.argv)
