@@ -497,6 +497,26 @@ class DarwinVPNLauncher(VPNLauncher):
             to, frompath, to, to)
         return cmd
 
+    def _get_resource_path(self):
+        """
+        Returns the absolute path to the app resources directory
+
+        :rtype: str
+        """
+        return os.path.abspath(
+            os.path.join(
+                os.getcwd(),
+                "../../Contents/Resources"))
+
+    def _get_icon_path(self):
+        """
+        Returns the absolute path to the app icon
+
+        :rtype: str
+        """
+        return os.path.join(self._get_resource_path(),
+                            "leap-client.tiff")
+
     def get_cocoasudo_ovpn_cmd(self):
         """
         Returns a string with the cocoasudo command needed to run openvpn
@@ -505,9 +525,7 @@ class DarwinVPNLauncher(VPNLauncher):
 
         :rtype: (str, list)
         """
-        iconpath = os.path.abspath(os.path.join(
-            os.getcwd(),
-            "../../../Resources/leap-client.tiff"))
+        iconpath = self._get_icon_path()
         has_icon = os.path.isfile(iconpath)
         args = ["--icon=%s" % iconpath] if has_icon else []
         args.append("--prompt=%s" % (self.SUDO_MSG,))
@@ -522,9 +540,7 @@ class DarwinVPNLauncher(VPNLauncher):
 
         :rtype: (str, list)
         """
-        iconpath = os.path.abspath(os.path.join(
-            os.getcwd(),
-            "../../../Resources/leap-client.tiff"))
+        iconpath = self._get_icon_path()
         has_icon = os.path.isfile(iconpath)
         args = ["--icon=%s" % iconpath] if has_icon else []
         args.append("--prompt=%s" % (self.INSTALL_MSG,))
