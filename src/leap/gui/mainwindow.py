@@ -369,6 +369,15 @@ class MainWindow(QtGui.QMainWindow):
             self._logger_window.setVisible(not self._logger_window.isVisible())
             self.ui.btnShowLog.setChecked(self._logger_window.isVisible())
 
+        self._logger_window.finished.connect(self._uncheck_logger_button)
+
+    def _uncheck_logger_button(self):
+        """
+        SLOT
+        Sets the checked state of the loggerwindow button to false.
+        """
+        self.ui.btnShowLog.setChecked(False)
+
     def _new_updates_available(self, req):
         """
         Callback for the new updates event
