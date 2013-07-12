@@ -1,1 +1,0 @@
-  o Make wizard use the main event loop, ensuring clean termination.
