@@ -52,22 +52,7 @@ class LogHandler(logging.Handler):
         :param logging_level: the debug level to define the color.
         :type logging_level: str.
         """
-        html_style = {
-            'DEBUG': "color: blue",
-            'INFO': "color: black",
-            'WARNING': "color: black; background: yellow;",
-            'ERROR': "color: red",
-            'CRITICAL': "color: red; font-weight: bold;"
-        }
-
-        style_open = "<span style='" + html_style[logging_level] + "'>"
-        style_close = "</span>"
-        time = "%(asctime)s"
-        name = style_open + "%(name)s"
-        level = "%(levelname)s"
-        message = "%(message)s" + style_close
-        format_attrs = [time, name, level, message]
-        log_format = ' - '.join(format_attrs)
+        log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         formatter = logging.Formatter(log_format)
 
         return formatter

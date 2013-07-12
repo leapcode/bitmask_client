@@ -123,7 +123,6 @@ class SRPRegister(QtCore.QObject):
 
         logger.debug('Post to uri: %s' % uri)
         logger.debug("Will try to register user = %s" % (username,))
-        logger.debug("user_data => %r" % (user_data,))
 
         ok = None
         try:
