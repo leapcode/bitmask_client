@@ -28,7 +28,7 @@ from leap.util.leap_log_handler import LeapLogHandler
 logger = logging.getLogger(__name__)
 
 
-class LoggerWindow(QtGui.QWidget):
+class LoggerWindow(QtGui.QDialog):
     """
     Window that displays a history of the logged messages in the app.
     """
@@ -39,7 +39,7 @@ class LoggerWindow(QtGui.QWidget):
         :param handler: Custom handler that supports history and signal.
         :type handler: LeapLogHandler.
         """
-        QtGui.QWidget.__init__(self)
+        QtGui.QDialog.__init__(self)
         leap_assert(handler, "We need a handler for the logger window")
         leap_assert_type(handler, LeapLogHandler)
 
