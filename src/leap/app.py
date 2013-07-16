@@ -18,6 +18,7 @@
 import logging
 import signal
 import sys
+import os
 
 from functools import partial
 
@@ -155,6 +156,14 @@ def main():
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')
+
+    # We force the style if on KDE so that it doesn't load all the kde
+    # libs, which causes a compatibility issue in some systems.
+    # For more info, see issue #3194
+    if os.environ.get("KDE_SESSION_UID") is not None:
+        sys.argv.append("-style")
+        sys.argv.append("Cleanlooks")
+
     app = QtGui.QApplication(sys.argv)
 
     # install the qt4reactor.

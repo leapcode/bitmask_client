@@ -1,0 +1,3 @@
+  o Force Cleanlooks style if we are running in a KDE environment, so
+    that it doesn't load potentially incompatible Qt libs. Fixes
+    #3194.
