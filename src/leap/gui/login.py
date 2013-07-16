@@ -41,6 +41,8 @@ class LoginWidget(QtGui.QWidget):
     # combobox or click "Create Account"
     show_wizard = QtCore.Signal()
 
+    MAX_STATUS_WIDTH = 40
+
     def __init__(self, settings, parent=None):
         """
         Constructs the LoginWidget.
@@ -173,6 +175,8 @@ class LoginWidget(QtGui.QWidget):
         :param status: status message
         :type status: str
         """
+        if len(status) > self.MAX_STATUS_WIDTH:
+            status = status[:self.MAX_STATUS_WIDTH] + "..."
         if error:
             status = "<font color='red'><b>%s</b></font>" % (status,)
         self.ui.lblStatus.setText(status)
