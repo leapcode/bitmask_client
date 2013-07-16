@@ -15,8 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Initializes version and app info
+Initializes version and app info, plus some small and handy functions.
 """
+import datetime
+import os
 
 __version__ = "unknown"
 try:
@@ -47,3 +49,29 @@ def first(things):
         return things[0]
     except TypeError:
         return None
+
+
+def get_modification_ts(path):
+    """
+    Gets modification time of a file.
+
+    :param path: the path to get ts from
+    :type path: str
+    :returns: modification time
+    :rtype: datetime object
+    """
+    ts = os.path.getmtime(path)
+    return datetime.datetime.fromtimestamp(ts)
+
+
+def update_modification_ts(path):
+    """
+    Sets modification time of a file to current time.
+
+    :param path: the path to set ts to.
+    :type path: str
+    :returns: modification time
+    :rtype: datetime object
+    """
+    os.utime(path, None)
+    return get_modification_ts(path)
