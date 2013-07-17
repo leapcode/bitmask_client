@@ -31,6 +31,8 @@ from PySide import QtGui
 from leap.config.leapsettings import LeapSettings
 from leap.services.eip import vpnlaunchers
 from leap.util import first
+from leap.config.providerconfig import ProviderConfig
+
 
 logger = logging.getLogger(__name__)
 
@@ -330,6 +332,35 @@ def DarwinInitializer():
 # Linux initializers
 #
 
+POLICY_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>LEAP Project</vendor>
+  <vendor_url>http://leap.se/</vendor_url>
+
+  <action id="net.openvpn.gui.leap.run-openvpn">
+    <description>Runs the openvpn binary</description>
+    <description xml:lang="es">Ejecuta el binario openvpn</description>
+    <message>OpenVPN needs that you authenticate to start</message>
+    <message xml:lang="es">
+      OpenVPN necesita autorizacion para comenzar
+    </message>
+    <icon_name>package-x-generic</icon_name>
+    <defaults>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">{path}</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>
+"""
+
+
 def _linux_install_missing_scripts(badexec, notfound):
     """
     Tries to install the missing up/down scripts.
@@ -348,11 +379,26 @@ def _linux_install_missing_scripts(badexec, notfound):
 
     if os.path.isdir(installer_path):
         fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
+        polfd, pol_tempfile = tempfile.mkstemp(prefix="leap_installer-")
         try:
+            # We need to do the config/../apps/openvpn otherwise the
+            # policy file won't work
+            openvpn_path = os.path.join(
+                ProviderConfig().get_path_prefix(),
+                "..", "apps", "eip",
+                launcher.OPENVPN_BIN)
+
+            policy_contents = POLICY_TEMPLATE.format(path=openvpn_path)
+
+            with os.fdopen(polfd, 'w') as f:
+                f.write(policy_contents)
+
             pkexec = first(launcher.maybe_pkexec())
-            scriptlines = launcher.cmd_for_missing_scripts(installer_path)
+            scriptlines = launcher.cmd_for_missing_scripts(installer_path,
+                                                           pol_tempfile)
             with os.fdopen(fd, 'w') as f:
                 f.write(scriptlines)
+
             st = os.stat(tempscript)
             os.chmod(tempscript, st.st_mode | stat.S_IEXEC | stat.S_IXUSR |
                      stat.S_IXGRP | stat.S_IXOTH)

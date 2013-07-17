@@ -254,16 +254,24 @@ class LinuxVPNLauncher(VPNLauncher):
     OTHER_FILES = (POLKIT_PATH,)
 
     @classmethod
-    def cmd_for_missing_scripts(kls, frompath):
+    def cmd_for_missing_scripts(kls, frompath, pol_file):
         """
-        Returns a command that can copy the missing scripts.
+        Returns a sh script that can copy the missing files.
+
+        :param frompath: The path where the up/down scripts live
+        :type frompath: str
+        :param pol_file: The path where the dynamically generated
+                         policy file lives
+        :type pol_file: str
+
         :rtype: str
         """
         to = kls.SYSTEM_CONFIG
-        cmd = "#!/bin/sh\nset -e\nmkdir -p %s\ncp %s/%s %s\ncp %s/%s %s" % (
+        cmd = "#!/bin/sh\nset -e\nmkdir -p %s\n"
+        cmd += "cp %s/%s %s\ncp \"%s\" \"%s\"" % (
             to,
             frompath, kls.UP_DOWN_FILE, to,
-            frompath, kls.POLKIT_FILE, kls.POLKIT_PATH)
+            pol_file, kls.POLKIT_PATH)
         return cmd
 
     @classmethod
