@@ -535,8 +535,8 @@ class DarwinVPNLauncher(VPNLauncher):
     def get_cocoasudo_installmissing_cmd(self):
         """
         Returns a string with the cocoasudo command needed to install missing
-        files as admin with a nice password prompt. The actual command needs to be
-        appended.
+        files as admin with a nice password prompt. The actual command needs to
+        be appended.
 
         :rtype: (str, list)
         """

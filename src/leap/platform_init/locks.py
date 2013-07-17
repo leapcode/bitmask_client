@@ -28,11 +28,15 @@ from leap import platform_init
 
 if platform_init.IS_UNIX:
     from fcntl import flock, LOCK_EX, LOCK_NB
-else:
+else:  # WINDOWS
+    import datetime
     import glob
     import shutil
+    import time
 
     from tempfile import gettempdir
+
+    from leap.util import get_modification_ts, update_modification_ts
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +148,38 @@ if platform_init.IS_UNIX:
 
 if platform_init.IS_WIN:
 
+    # Time to wait (in secs) before assuming a raise window signal has not been
+    # ack-ed.
+
+    RAISE_WINDOW_TIMEOUT = 2
+
+    # How many steps to do while checking lockfile ts update.
+
+    RAISE_WINDOW_WAIT_STEPS = 10
+
+    def _release_lock(name):
+        """
+        Tries to remove a folder path.
+
+        :param name: folder lock to remove
+        :type name: str
+        """
+        try:
+            shutil.rmtree(name)
+            return True
+        except WindowsError as exc:
+            if exc.errno in (errno.EPIPE, errno.ENOENT,
+                             errno.ESRCH, errno.EACCES):
+                logger.warning(
+                    'exception while trying to remove the lockfile dir')
+                logger.warning('errno %s: %s' % (exc.errno, exc.args[1]))
+                # path does not exist
+                return False
+            else:
+                logger.debug('errno = %s' % (exc.errno,))
+                # we did not foresee this error, better add it explicitely
+                raise
+
     class WindowsLock(object):
         """
         Creates a lock based on the atomic nature of mkdir on Windows
@@ -200,7 +236,7 @@ if platform_init.IS_WIN:
 
         def get_pid(self):
             """
-            Returns the pid of the locking process
+            Returns the pid of the locking process.
 
             :rtype: int
             """
@@ -208,25 +244,31 @@ if platform_init.IS_WIN:
             _, pid = self._is_one_pidfile()
             return pid
 
-        def release_lock(self):
+        def get_locking_path(self):
+            """
+            Returns the pid path of the locking process.
+
+            :rtype: str
+            """
+            pid = self.get_pid()
+            if pid:
+                return "%s-%s" % (self.LOCKBASE, pid)
+
+        def release_lock(self, name=None):
             """
             Releases the pidfile dir for this process, by removing it.
             """
-            try:
-                shutil.rmtree(self.name)
-                return True
-            except WindowsError as exc:
-                if exc.errno in (errno.EPIPE, errno.ENOENT,
-                                 errno.ESRCH, errno.EACCES):
-                    logger.warning(
-                        'exception while trying to remove the lockfile dir')
-                    logger.warning('errno %s: %s' % (exc.errno, exc.args[1]))
-                    # path does not exist
-                    return False
-                else:
-                    logger.debug('errno = %s' % (exc.errno,))
-                    # we did not foresee this error, better add it explicitely
-                    raise
+            if not name:
+                name = self.name
+            _release_lock(name)
+
+        @classmethod
+        def release_all_locks(self):
+            """
+            Releases all locks. Used for clean shutdown.
+            """
+            for lockdir in glob.glob("%s-%s" % (self.LOCKBASE, '*')):
+                _release_lock(lockdir)
 
         @property
         def locked_by_us(self):
@@ -238,6 +280,13 @@ if platform_init.IS_WIN:
             """
             _, pid = self._is_one_pidfile()
             return pid == self.pid
+
+        def update_ts(self):
+            """
+            Updates the timestamp of the lock.
+            """
+            if self.locked_by_us:
+                update_modification_ts(self.name)
 
         def write_port(self, port):
             """
@@ -277,12 +326,27 @@ if platform_init.IS_WIN:
                     raise
             return port
 
+    def raise_window_ack():
+        """
+        This function is called from the windows callback that is registered
+        with the raise_window event. It just updates the modification time
+        of the lock file so we can signal an ack to the instance that tried
+        to raise the window.
+        """
+        lock = WindowsLock()
+        lock.update_ts()
+
 
 def we_are_the_one_and_only():
     """
     Returns True if we are the only instance running, False otherwise.
     If we came later, send a raise signal to the main instance of the
-    application
+    application.
+
+    Under windows we are not using flock magic, so we wait during
+    RAISE_WINDOW_TIMEOUT time, if not ack is
+    received, we assume it was a stalled lock, so we remove it and continue
+    with initialization.
 
     :rtype: bool
     """
@@ -300,9 +364,38 @@ def we_are_the_one_and_only():
         locker = WindowsLock()
         locker.get_lock()
         we_are_the_one = locker.locked_by_us
+
         if not we_are_the_one:
             locker.release_lock()
-            signal_event(proto.RAISE_WINDOW)
+        lock_path = locker.get_locking_path()
+        ts = get_modification_ts(lock_path)
+
+        nowfun = datetime.datetime.now
+        t0 = nowfun()
+        pause = RAISE_WINDOW_TIMEOUT / float(RAISE_WINDOW_WAIT_STEPS)
+        timeout_delta = datetime.timedelta(0, RAISE_WINDOW_TIMEOUT)
+        check_interval = lambda: nowfun() - t0 < timeout_delta
+
+        # let's assume it's a stalled lock
+        we_are_the_one = True
+        signal_event(proto.RAISE_WINDOW)
+
+        while check_interval():
+            if get_modification_ts(lock_path) > ts:
+                # yay! someone claimed their control over the lock.
+                # so the lock is alive
+                logger.debug('Raise window ACK-ed')
+                we_are_the_one = False
+                break
+            else:
+                time.sleep(pause)
+
+        if we_are_the_one:
+            # ok, it really was a stalled lock. let's remove all
+            # that is left, and put only ours there.
+            WindowsLock.release_all_locks()
+            WindowsLock().get_lock()
+
         return we_are_the_one
 
     else:

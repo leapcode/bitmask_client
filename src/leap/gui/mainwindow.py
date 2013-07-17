@@ -47,6 +47,7 @@ from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
 from leap.platform_init import IS_WIN, IS_MAC
 from leap.platform_init.initializers import init_platform
+
 from leap.services.eip.vpnprocess import VPN
 
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
@@ -60,6 +61,7 @@ from leap.services.mail.smtpconfig import SMTPConfig
 
 if IS_WIN:
     from leap.platform_init.locks import WindowsLock
+    from leap.platform_init.locks import raise_window_ack
 
 from ui_mainwindow import Ui_MainWindow
 
@@ -1284,6 +1286,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         Callback for the raise window event
         """
+        if IS_WIN:
+            raise_window_ack()
         self.raise_window.emit()
 
     def _do_raise_mainwindow(self):
@@ -1309,8 +1313,7 @@ class MainWindow(QtGui.QMainWindow):
         Triggered after aboutToQuit signal.
         """
         if IS_WIN:
-            lockfile = WindowsLock()
-            lockfile.release_lock()
+            WindowsLock.release_all_locks()
 
     def _cleanup_and_quit(self):
         """
