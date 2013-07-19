@@ -321,7 +321,7 @@ class MainWindow(QtGui.QMainWindow):
         # Refer to http://www.themacaque.com/?p=1067 for funny details.
         self._wizard.show()
         if IS_MAC:
-            self._wizard._raise()
+            self._wizard.raise_()
         self._wizard.finished.connect(self._wizard_finished)
 
     def _wizard_finished(self):
@@ -1304,7 +1304,7 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowFlags(self.windowFlags() & ~TOPFLAG)
         self.show()
         if IS_MAC:
-            self._raise()
+            self.raise_()
 
     def _cleanup_pidfiles(self):
         """
