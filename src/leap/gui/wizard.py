@@ -309,8 +309,8 @@ class Wizard(QtGui.QWizard):
                 error_msg = json_content.get("errors").get("login")[0]
                 if not error_msg.istitle():
                     error_msg = "%s %s" % (old_username, error_msg)
-            except:
-                logger.error("Unknown error: %r" % (req.content,))
+            except Exception as e:
+                logger.error("Unknown error: %r" % (e,))
 
             self._set_register_status(error_msg, error=True)
             self.ui.btnRegister.setEnabled(True)

@@ -1,0 +1,2 @@
+  o Workaround a segmentation fault when emitting a signal with its
+    last parameter being None. Fixes #3083.

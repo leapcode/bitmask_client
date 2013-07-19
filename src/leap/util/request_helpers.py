@@ -41,7 +41,7 @@ def get_content(request):
     contents = ""
     mtime = None
 
-    if request.content and request.json:
+    if request and request.content and request.json:
         if callable(request.json):
             contents = json.dumps(request.json())
         else:
