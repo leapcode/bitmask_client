@@ -395,7 +395,11 @@ class LinuxVPNLauncher(VPNLauncher):
         args += [
             '--client',
             '--dev', 'tun',
-            '--persist-tun',
+            ##############################################################
+            # persist-tun makes ping-restart fail because it leaves a
+            # broken routing table
+            ##############################################################
+            # '--persist-tun',
             '--persist-key',
             '--tls-client',
             '--remote-cert-tls',
@@ -407,10 +411,14 @@ class LinuxVPNLauncher(VPNLauncher):
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
 
-        args += [
-            '--user', getpass.getuser(),
-            '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
-        ]
+        ##############################################################
+        # The down-root plugin fails in some situations, so we don't
+        # drop privs for the time being
+        ##############################################################
+        # args += [
+        #     '--user', getpass.getuser(),
+        #     '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
+        # ]
 
         if socket_port == "unix":  # that's always the case for linux
             args += [
@@ -433,8 +441,15 @@ class LinuxVPNLauncher(VPNLauncher):
             args += [
                 '--up', self.UP_DOWN_PATH,
                 '--down', self.UP_DOWN_PATH,
-                '--plugin', plugin_path,
-                '\'script_type=down %s\'' % self.UP_DOWN_PATH
+                ##############################################################
+                # For the time being we are disabling the usage of the
+                # down-root plugin, because it doesn't quite work as
+                # expected (i.e. it doesn't run route -del as root
+                # when finishing, so it fails to properly
+                # restart/quit)
+                ##############################################################
+                # '--plugin', plugin_path,
+                # '\'script_type=down %s\'' % self.UP_DOWN_PATH
             ]
 
         args += [
@@ -614,7 +629,11 @@ class DarwinVPNLauncher(VPNLauncher):
         args += [
             '--client',
             '--dev', 'tun',
-            '--persist-tun',
+            ##############################################################
+            # persist-tun makes ping-restart fail because it leaves a
+            # broken routing table
+            ##############################################################
+            # '--persist-tun',
             '--persist-key',
             '--tls-client',
             '--remote-cert-tls',
@@ -626,10 +645,15 @@ class DarwinVPNLauncher(VPNLauncher):
             args += ['--%s' % (key,), value]
 
         user = getpass.getuser()
-        args += [
-            '--user', user,
-            '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
-        ]
+
+        ##############################################################
+        # The down-root plugin fails in some situations, so we don't
+        # drop privs for the time being
+        ##############################################################
+        # args += [
+        #     '--user', user,
+        #     '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
+        # ]
 
         if socket_port == "unix":
             args += [
@@ -655,8 +679,15 @@ class DarwinVPNLauncher(VPNLauncher):
             # should have the down script too
             if _has_updown_scripts(self.OPENVPN_DOWN_PLUGIN):
                 args += [
-                    '--plugin', self.OPENVPN_DOWN_PLUGIN,
-                    '\'%s\'' % self.DOWN_SCRIPT
+                    ###########################################################
+                    # For the time being we are disabling the usage of the
+                    # down-root plugin, because it doesn't quite work as
+                    # expected (i.e. it doesn't run route -del as root
+                    # when finishing, so it fails to properly
+                    # restart/quit)
+                    ###########################################################
+                    # '--plugin', self.OPENVPN_DOWN_PLUGIN,
+                    # '\'%s\'' % self.DOWN_SCRIPT
                 ]
 
         # we set user to be passed to the up/down scripts
@@ -757,7 +788,11 @@ class WindowsVPNLauncher(VPNLauncher):
         args += [
             '--client',
             '--dev', 'tun',
-            '--persist-tun',
+            ##############################################################
+            # persist-tun makes ping-restart fail because it leaves a
+            # broken routing table
+            ##############################################################
+            # '--persist-tun',
             '--persist-key',
             '--tls-client',
             # We make it log to a file because we cannot attach to the
@@ -772,15 +807,21 @@ class WindowsVPNLauncher(VPNLauncher):
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
 
-        args += [
-            '--user', getpass.getuser(),
-            #'--group', grp.getgrgid(os.getgroups()[-1]).gr_name
-        ]
+        ##############################################################
+        # The down-root plugin fails in some situations, so we don't
+        # drop privs for the time being
+        ##############################################################
+        # args += [
+        #     '--user', getpass.getuser(),
+        #     #'--group', grp.getgrgid(os.getgroups()[-1]).gr_name
+        # ]
+
         args += [
             '--management-signal',
             '--management', socket_host, socket_port,
             '--script-security', '2'
         ]
+
         args += [
             '--cert', eipconfig.get_client_cert_path(providerconfig),
             '--key', eipconfig.get_client_cert_path(providerconfig),

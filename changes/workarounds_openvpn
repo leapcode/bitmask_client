@@ -1,0 +1,2 @@
+  o Workaround some OpenVPN problems with priviledge dropping and
+    routing. Fixes #3178 #3135 #3207 #3203
