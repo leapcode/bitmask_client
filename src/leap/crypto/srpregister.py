@@ -124,7 +124,12 @@ class SRPRegister(QtCore.QObject):
         logger.debug('Post to uri: %s' % uri)
         logger.debug("Will try to register user = %s" % (username,))
 
-        ok = None
+        ok = False
+        # This should be None, but we don't like when PySide segfaults,
+        # so it something else.
+        # To reproduce it, just do:
+        # self.registration_finished.emit(False, None)
+        req = []
         try:
             req = self._session.post(uri,
                                      data=user_data,
@@ -132,12 +137,13 @@ class SRPRegister(QtCore.QObject):
                                      verify=self._provider_config.
                                      get_ca_cert_path())
 
-        except requests.exceptions.SSLError as exc:
-            logger.error("SSLError: %s" % exc.message)
-            req = None
+        except (requests.exceptions.SSLError,
+                requests.exceptions.ConnectionError) as exc:
+            logger.error(exc.message)
             ok = False
         else:
             ok = req.ok
+
         self.registration_finished.emit(ok, req)
         return ok
 
