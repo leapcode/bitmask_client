@@ -142,7 +142,7 @@
         <item>
          <widget class="QLabel" name="lblUpload">
           <property name="text">
-           <string>0.0 Kb</string>
+	   <string>0.0 KB/s</string>
           </property>
          </widget>
         </item>
@@ -175,7 +175,7 @@
         <item>
          <widget class="QLabel" name="lblDownload">
           <property name="text">
-           <string>0.0 Kb</string>
+	   <string>0.0 KB/s</string>
           </property>
          </widget>
         </item>
