@@ -31,6 +31,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.vpnlaunchers import get_platform_launcher
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.udstelnet import UDSTelnet
+from leap.util import first
 
 logger = logging.getLogger(__name__)
 vpnlog = logging.getLogger('leap.openvpn')
@@ -54,6 +55,16 @@ class VPNSignals(QtCore.QObject):
 
     def __init__(self):
         QtCore.QObject.__init__(self)
+
+
+class OpenVPNAlreadyRunning(Exception):
+    message = ("Another openvpn instance is already running, and could "
+               "not be stopped.")
+
+
+class AlienOpenVPNAlreadyRunning(Exception):
+    message = ("Another openvpn instance is already running, and could "
+               "not be stopped because it was not launched by LEAP.")
 
 
 class VPN(object):
@@ -95,14 +106,15 @@ class VPN(object):
         :param kwargs: kwargs to be passed to the VPNProcess
         :type kwargs: dict
         """
+        self._stop_pollers()
         kwargs['qtsigs'] = self.qtsigs
 
         # start the main vpn subprocess
         vpnproc = VPNProcess(*args, **kwargs)
 
-        # XXX Should stop if already running -------
         if vpnproc.get_openvpn_process():
-            logger.warning("Another vpnprocess is running!")
+            logger.info("Another vpn process is running. Will try to stop it.")
+            vpnproc.stop_if_already_running()
 
         cmd = vpnproc.getCommand()
         env = os.environ
@@ -169,6 +181,9 @@ class VPN(object):
 
             # ...but we also trigger a countdown to be unpolite
             # if strictly needed.
+
+            # XXX Watch out! This will fail NOW since we are running
+            # openvpn as root as a workaround for some connection issues.
             reactor.callLater(
                 self.TERMINATE_WAIT, self._kill_if_left_alive)
 
@@ -287,8 +302,10 @@ class VPNManager(object):
         except socket.error:
             # XXX should get a counter and repeat only
             # after mod X times.
-            logger.warning('socket error')
+            logger.warning('socket error (command was: "%s")' % (command,))
             self._close_management_socket(announce=False)
+            logger.debug('trying to connect to management again')
+            self.try_to_connect_to_management(max_retries=5)
             return []
 
         # XXX should move this to a errBack!
@@ -349,7 +366,9 @@ class VPNManager(object):
         :param args: not used
         """
         if self._tn:
-            logger.info('connected to management')
+            logger.info('Connected to management')
+        else:
+            logger.debug('Cannot connect to management...')
 
     def _connectErr(self, failure):
         """
@@ -385,7 +404,7 @@ class VPNManager(object):
         """
         return True if self._tn else False
 
-    def try_to_connect_to_management(self, retry=0):
+    def try_to_connect_to_management(self, retry=0, max_retries=None):
         """
         Attempts to connect to a management interface, and retries
         after CONNECTION_RETRY_TIME if not successful.
@@ -393,8 +412,18 @@ class VPNManager(object):
         :param retry: number of the retry
         :type retry: int
         """
-        # TODO decide about putting a max_lim to retries and signaling
-        # an error.
+        if max_retries and retry > max_retries:
+            logger.warning("Max retries reached while attempting to connect "
+                           "to management. Aborting.")
+            self.aborted = True
+            return
+
+        # _alive flag is set in the VPNProcess class.
+        if not self._alive:
+            logger.debug('Tried to connect to management but process is '
+                         'not alive.')
+            return
+        logger.debug('trying to connect to management')
         if not self.aborted and not self.is_connected():
             self.connect_to_management(self._socket_host, self._socket_port)
             self._reactor.callLater(
@@ -516,15 +545,12 @@ class VPNManager(object):
         """
         if self._socket_port == "unix":
             logger.debug('cleaning socket file temp folder')
-            tempfolder = os.path.split(self._socket_host)[0]  # XXX use `first`
-            if os.path.isdir(tempfolder):
+            tempfolder = first(os.path.split(self._socket_host))
+            if tempfolder and os.path.isdir(tempfolder):
                 try:
                     shutil.rmtree(tempfolder)
                 except OSError:
                     logger.error('could not delete tmpfolder %s' % tempfolder)
-
-    # ---------------------------------------------------
-    # XXX old methods, not adapted to twisted process yet
 
     def get_openvpn_process(self):
         """
@@ -547,42 +573,68 @@ class VPNManager(object):
                 pass
         return openvpn_process
 
-    def _stop_if_already_running(self):
+    def stop_if_already_running(self):
         """
         Checks if VPN is already running and tries to stop it.
 
+        Might raise OpenVPNAlreadyRunning.
+
         :return: True if stopped, False otherwise
+
         """
-        # TODO cleanup this
-        process = self._get_openvpn_process()
-        if process:
-            logger.debug("OpenVPN is already running, trying to stop it...")
-            cmdline = process.cmdline
+        process = self.get_openvpn_process()
+        if not process:
+            logger.debug('Could not find openvpn process while '
+                         'trying to stop it.')
+            return
 
-            manag_flag = "--management"
-            if isinstance(cmdline, list) and manag_flag in cmdline:
-                try:
-                    index = cmdline.index(manag_flag)
-                    host = cmdline[index + 1]
-                    port = cmdline[index + 2]
-                    logger.debug("Trying to connect to %s:%s"
-                                 % (host, port))
-                    self._connect_to_management(host, port)
-                    self._send_command("signal SIGTERM")
-                    self._tn.close()
-                    self._tn = None
-                    #self._disconnect_management()
-                except Exception as e:
-                    logger.warning("Problem trying to terminate OpenVPN: %r"
-                                   % (e,))
+        logger.debug("OpenVPN is already running, trying to stop it...")
+        cmdline = process.cmdline
 
-            process = self._get_openvpn_process()
-            if process is None:
-                logger.warning("Unabled to terminate OpenVPN")
-                return True
-            else:
-                return False
-        return True
+        manag_flag = "--management"
+        if isinstance(cmdline, list) and manag_flag in cmdline:
+            # we know that our invocation has this distinctive fragment, so
+            # we use this fingerprint to tell other invocations apart.
+            # this might break if we change the configuration path in the
+            # launchers
+            smellslikeleap = lambda s: "leap" in s and "providers" in s
+
+            if not any(map(smellslikeleap, cmdline)):
+                logger.debug("We cannot stop this instance since we do not "
+                             "recognise it as a leap invocation.")
+                raise AlienOpenVPNAlreadyRunning
+
+            try:
+                index = cmdline.index(manag_flag)
+                host = cmdline[index + 1]
+                port = cmdline[index + 2]
+                logger.debug("Trying to connect to %s:%s"
+                             % (host, port))
+                self.connect_to_management(host, port)
+
+                # XXX this has a problem with connections to different
+                # remotes. So the reconnection will only work when we are
+                # terminating instances left running for the same provider.
+                # If we are killing an openvpn instance configured for another
+                # provider, we will get:
+                # TLS Error: local/remote TLS keys are out of sync
+                # However, that should be a rare case right now.
+                self._send_command("signal SIGTERM")
+                self._close_management_socket(announce=True)
+            except Exception as e:
+                logger.warning("Problem trying to terminate OpenVPN: %r"
+                               % (e,))
+        else:
+            logger.debug("Could not find the expected openvpn command line.")
+
+        process = self.get_openvpn_process()
+        if process is None:
+            logger.debug("Successfully finished already running "
+                         "openvpn process.")
+            return True
+        else:
+            logger.warning("Unable to terminate OpenVPN")
+            raise OpenVPNAlreadyRunning
 
 
 class VPNProcess(protocol.ProcessProtocol, VPNManager):
@@ -640,7 +692,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         """
         self._alive = True
         self.aborted = False
-        self.try_to_connect_to_management()
+        self.try_to_connect_to_management(max_retries=10)
 
     def outReceived(self, data):
         """

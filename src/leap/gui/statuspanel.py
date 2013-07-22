@@ -45,6 +45,9 @@ class RateMovingAverage(object):
         """
         Initializes an empty array of fixed size
         """
+        self.reset()
+
+    def reset(self):
         self._data = [None for i in xrange(self.SAMPLE_SIZE)]
 
     def append(self, x):
