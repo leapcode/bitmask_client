@@ -1,0 +1,1 @@
+  o Added IS_RELEASE_VERSION flag that allows us to use code only in develop versions. Closes #3224.
