@@ -20,15 +20,66 @@ Status Panel widget implementation
 """
 import logging
 
+from datetime import datetime
 from functools import partial
 from PySide import QtCore, QtGui
 
 from ui_statuspanel import Ui_StatusPanel
+
+from leap.common.check import leap_assert_type
 from leap.services.eip.vpnprocess import VPNManager
 from leap.platform_init import IS_WIN, IS_LINUX
-from leap.common.check import leap_assert_type
+from leap.util import first
 
 logger = logging.getLogger(__name__)
+
+
+class RateMovingAverage(object):
+    """
+    Moving window average for calculating
+    upload and download rates.
+    """
+    SAMPLE_SIZE = 5
+
+    def __init__(self):
+        """
+        Initializes an empty array of fixed size
+        """
+        self._data = [None for i in xrange(self.SAMPLE_SIZE)]
+
+    def append(self, x):
+        """
+        Appends a new data point to the collection.
+
+        :param x: A tuple containing timestamp and traffic points
+                  in the form (timestamp, traffic)
+        :type x: tuple
+        """
+        self._data.pop(0)
+        self._data.append(x)
+
+    def get(self):
+        """
+        Gets the collection.
+        """
+        return self._data
+
+    def get_average(self):
+        """
+        Gets the moving average.
+        """
+        data = filter(None, self.get())
+        traff = [traffic for (ts, traffic) in data]
+        times = [ts for (ts, traffic) in data]
+
+        deltatraffic = traff[-1] - first(traff)
+        deltat = (times[-1] - first(times)).seconds
+
+        try:
+            rate = float(deltatraffic) / float(deltat) / 1024
+        except ZeroDivisionError:
+            rate = 0
+        return rate
 
 
 class StatusPanelWidget(QtGui.QWidget):
@@ -62,6 +113,40 @@ class StatusPanelWidget(QtGui.QWidget):
         self.CONNECTED_ICON_TRAY = None
         self.ERROR_ICON_TRAY = None
         self._set_eip_icons()
+
+        self._set_traffic_rates()
+
+    def _set_traffic_rates(self):
+        """
+        Initializes up and download rates.
+        """
+        self._up_rate = RateMovingAverage()
+        self._down_rate = RateMovingAverage()
+
+    def _update_traffic_rates(self, up, down):
+        """
+        Updates up and download rates.
+
+        :param up: upload total.
+        :type up: int
+        :param down: download total.
+        :type down: int
+        """
+        ts = datetime.now()
+        self._up_rate.append((ts, up))
+        self._down_rate.append((ts, down))
+
+    def _get_traffic_rates(self):
+        """
+        Gets the traffic rates.
+
+        :returns: a tuple with the (up, down) rates
+        :rtype: tuple
+        """
+        up = self._up_rate
+        down = self._down_rate
+
+        return (up.get_average(), down.get_average())
 
     def _set_eip_icons(self):
         """
@@ -221,12 +306,14 @@ class StatusPanelWidget(QtGui.QWidget):
         by the VPN thread
         """
         upload = float(data[VPNManager.TUNTAP_WRITE_KEY] or "0")
-        upload = upload / 1000.0
-        upload_str = "%12.2f Kb" % (upload,)
-        self.ui.lblUpload.setText(upload_str)
         download = float(data[VPNManager.TUNTAP_READ_KEY] or "0")
-        download = download / 1000.0
-        download_str = "%12.2f Kb" % (download,)
+        self._update_traffic_rates(upload, download)
+        uprate, downrate = self._get_traffic_rates()
+
+        upload_str = "%14.2f KB/s" % (uprate,)
+        self.ui.lblUpload.setText(upload_str)
+
+        download_str = "%14.2f KB/s" % (downrate,)
         self.ui.lblDownload.setText(download_str)
 
     def update_vpn_state(self, data):
