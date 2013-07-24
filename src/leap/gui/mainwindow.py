@@ -1348,6 +1348,11 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('About to quit, doing cleanup...')
 
+        if self._srp_auth is not None:
+            if self._srp_auth.get_session_id() is not None or \
+               self._srp_auth.get_token() is not None:
+                self._srp_auth.logout()
+
         logger.debug('Cleaning pidfiles')
         self._cleanup_pidfiles()
 
