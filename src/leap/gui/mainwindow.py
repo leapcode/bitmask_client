@@ -49,6 +49,8 @@ from leap.platform_init import IS_WIN, IS_MAC
 from leap.platform_init.initializers import init_platform
 
 from leap.services.eip.vpnprocess import VPN
+from leap.services.eip.vpnprocess import OpenVPNAlreadyRunning
+from leap.services.eip.vpnprocess import AlienOpenVPNAlreadyRunning
 
 from leap.services.eip.vpnlaunchers import (VPNLauncherException,
                                             OpenVPNNotFoundException,
@@ -1047,7 +1049,22 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr("We could not find openvpn binary."),
                 error=True)
             self._set_eipstatus_off()
+        except OpenVPNAlreadyRunning as e:
+            self._status_panel.set_global_status(
+                self.tr("Another openvpn instance is already running, and "
+                        "could not be stopped."),
+                error=True)
+            self._set_eipstatus_off()
+        except AlienOpenVPNAlreadyRunning as e:
+            self._status_panel.set_global_status(
+                self.tr("Another openvpn instance is already running, and "
+                        "could not be stopped because it was not launched by "
+                        "LEAP. Please stop it and try again."),
+                error=True)
+            self._set_eipstatus_off()
         except VPNLauncherException as e:
+            # XXX We should implement again translatable exceptions so
+            # we can pass a translatable string to the panel (usermessage attr)
             self._status_panel.set_global_status("%s" % (e,), error=True)
             self._set_eipstatus_off()
         else:
@@ -1058,7 +1075,20 @@ class MainWindow(QtGui.QMainWindow):
         Sets eip status to off
         """
         self._status_panel.set_eip_status(self.tr("OFF"), error=True)
+        self._status_panel.set_eip_status_icon("error")
         self._status_panel.set_startstop_enabled(True)
+        self._status_panel.eip_stopped()
+
+        self._set_action_eipstart_off()
+
+    def _set_action_eipstart_off(self):
+        """
+        Sets eip startstop action to OFF status.
+        """
+        self._action_eip_startstop.setText(self.tr("Turn ON"))
+        self._action_eip_startstop.disconnect(self)
+        self._action_eip_startstop.triggered.connect(
+            self._start_eip)
 
     def _stop_eip(self, abnormal=False):
         """
@@ -1074,24 +1104,20 @@ class MainWindow(QtGui.QMainWindow):
         :param abnormal: whether this was an abnormal termination.
         :type abnormal: bool
         """
+        if abnormal:
+            logger.warning("Abnormal EIP termination.")
+
         self.user_stopped_eip = True
         self._vpn.terminate()
 
-        self._status_panel.set_eip_status(self.tr("OFF"))
-        self._status_panel.set_eip_status_icon("error")
-        self._status_panel.eip_stopped()
-        self._action_eip_startstop.setText(self.tr("Turn ON"))
-        self._action_eip_startstop.disconnect(self)
-        self._action_eip_startstop.triggered.connect(
-            self._start_eip)
+        self._set_eipstatus_off()
+
         self._already_started_eip = False
         self._settings.set_defaultprovider(None)
         if self._logged_user:
             self._status_panel.set_provider(
                 "%s@%s" % (self._logged_user,
                            self._get_best_provider_config().get_domain()))
-        if abnormal:
-            self._status_panel.set_startstop_enabled(True)
 
     def _get_best_provider_config(self):
         """
@@ -1277,7 +1303,7 @@ class MainWindow(QtGui.QMainWindow):
                         "unexpected manner!"), error=True)
         else:
             abnormal = False
-        if exitCode == 0:
+        if exitCode == 0 and IS_MAC:
             # XXX remove this warning after I fix cocoasudo.
             logger.warning("The above exit code MIGHT BE WRONG.")
         self._stop_eip(abnormal)
