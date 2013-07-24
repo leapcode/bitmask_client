@@ -1,0 +1,2 @@
+  o Always logout when closing the app if the user previously signed
+    in. Fixes #3245.
