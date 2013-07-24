@@ -60,8 +60,26 @@ class ProviderConfig(BaseConfig):
     def get_description(self):
         return self._safe_get_value("description")
 
+    @classmethod
+    def sanitize_path_component(cls, component):
+        """
+        If the provider tries to instrument the component of a path
+        that is controlled by them, this will take care of
+        removing/escaping all the necessary elements.
+
+        :param component: Path component to process
+        :type component: unicode or str
+
+        :returns: The path component properly escaped
+        :rtype: unicode or str
+        """
+        # TODO: Fix for windows, names like "aux" or "con" aren't
+        # allowed.
+        return component.replace(os.path.sep, "")
+
     def get_domain(self):
-        return self._safe_get_value("domain")
+        return ProviderConfig.sanitize_path_component(
+            self._safe_get_value("domain"))
 
     def get_enrollment_policy(self):
         """
