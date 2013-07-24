@@ -179,7 +179,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         """
         leap_assert(domain and len(domain) > 0, "We need a domain!")
 
-        self._domain = domain
+        self._domain = ProviderConfig.sanitize_path_component(domain)
         self._download_if_needed = download_if_needed
 
         cb_chain = [
