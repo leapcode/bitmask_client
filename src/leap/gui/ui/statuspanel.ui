@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>542</width>
+    <width>384</width>
     <height>477</height>
    </rect>
   </property>
@@ -140,9 +140,33 @@
          </widget>
         </item>
         <item>
-         <widget class="QLabel" name="lblUpload">
+         <widget class="QPushButton" name="btnDownload">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
           <property name="text">
-	   <string>0.0 KB/s</string>
+           <string>0.0 KB/s</string>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -172,10 +196,34 @@
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QLabel" name="lblDownload">
+        <item alignment="Qt::AlignLeft">
+         <widget class="QPushButton" name="btnUpload">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>100</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>120</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="cursor">
+           <cursorShape>PointingHandCursor</cursorShape>
+          </property>
           <property name="text">
-	   <string>0.0 KB/s</string>
+           <string>0.0 KB/s</string>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -233,9 +281,6 @@
     </spacer>
    </item>
   </layout>
-  <zorder>lblProvider</zorder>
-  <zorder>status_rows</zorder>
-  <zorder>globalStatusBox</zorder>
  </widget>
  <resources>
   <include location="../../../../data/resources/icons.qrc"/>
