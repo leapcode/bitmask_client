@@ -75,14 +75,27 @@ class RateMovingAverage(object):
         traff = [traffic for (ts, traffic) in data]
         times = [ts for (ts, traffic) in data]
 
-        deltatraffic = traff[-1] - first(traff)
-        deltat = (times[-1] - first(times)).seconds
+        try:
+            deltatraffic = traff[-1] - first(traff)
+            deltat = (times[-1] - first(times)).seconds
+        except IndexError:
+            deltatraffic = 0
+            deltat = 0
 
         try:
             rate = float(deltatraffic) / float(deltat) / 1024
         except ZeroDivisionError:
             rate = 0
         return rate
+
+    def get_total(self):
+        """
+        Gets the total accumulated throughput.
+        """
+        try:
+            return self._data[-1][1] / 1024
+        except TypeError:
+            return 0
 
 
 class StatusPanelWidget(QtGui.QWidget):
@@ -92,6 +105,10 @@ class StatusPanelWidget(QtGui.QWidget):
 
     start_eip = QtCore.Signal()
     stop_eip = QtCore.Signal()
+
+    DISPLAY_TRAFFIC_RATES = True
+    RATE_STR = "%14.2f KB/s"
+    TOTAL_STR = "%14.2f Kb"
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -118,6 +135,27 @@ class StatusPanelWidget(QtGui.QWidget):
         self._set_eip_icons()
 
         self._set_traffic_rates()
+        self._make_status_clickable()
+
+    def _make_status_clickable(self):
+        """
+        Makes upload and download figures clickable.
+        """
+        onclicked = self._on_VPN_status_clicked
+        self.ui.btnUpload.clicked.connect(onclicked)
+        self.ui.btnDownload.clicked.connect(onclicked)
+
+    def _on_VPN_status_clicked(self):
+        """
+        SLOT
+        TRIGGER: self.ui.btnUpload.clicked
+                 self.ui.btnDownload.clicked
+
+        Toggles between rate and total throughput display for vpn
+        status figures.
+        """
+        self.DISPLAY_TRAFFIC_RATES = not self.DISPLAY_TRAFFIC_RATES
+        self.update_vpn_status(None)  # refresh
 
     def _set_traffic_rates(self):
         """
@@ -125,6 +163,17 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         self._up_rate = RateMovingAverage()
         self._down_rate = RateMovingAverage()
+
+        self.ui.btnUpload.setText(self.RATE_STR % (0,))
+        self.ui.btnDownload.setText(self.RATE_STR % (0,))
+
+    def _reset_traffic_rates(self):
+        """
+        Resets up and download rates, and cleans up the labels.
+        """
+        self._up_rate.reset()
+        self._down_rate.reset()
+        self.update_vpn_status(None)
 
     def _update_traffic_rates(self, up, down):
         """
@@ -141,7 +190,7 @@ class StatusPanelWidget(QtGui.QWidget):
 
     def _get_traffic_rates(self):
         """
-        Gets the traffic rates.
+        Gets the traffic rates (in KB/s).
 
         :returns: a tuple with the (up, down) rates
         :rtype: tuple
@@ -150,6 +199,18 @@ class StatusPanelWidget(QtGui.QWidget):
         down = self._down_rate
 
         return (up.get_average(), down.get_average())
+
+    def _get_traffic_totals(self):
+        """
+        Gets the traffic total throughput (in Kb).
+
+        :returns: a tuple with the (up, down) totals
+        :rtype: tuple
+        """
+        up = self._up_rate
+        down = self._down_rate
+
+        return (up.get_total(), down.get_total())
 
     def _set_eip_icons(self):
         """
@@ -286,6 +347,7 @@ class StatusPanelWidget(QtGui.QWidget):
         Sets the state of the widget to how it should look after EIP
         has stopped
         """
+        self._reset_traffic_rates()
         self.ui.btnEipStartStop.setText(self.tr("Turn ON"))
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
@@ -306,18 +368,30 @@ class StatusPanelWidget(QtGui.QWidget):
         TRIGGER: VPN.status_changed
 
         Updates the download/upload labels based on the data provided
-        by the VPN thread
+        by the VPN thread.
+
+        :param data: a dictionary with the tcp/udp write and read totals.
+                     If data is None, we just will refresh the display based
+                     on the previous data.
+        :type data: dict
         """
-        upload = float(data[VPNManager.TUNTAP_WRITE_KEY] or "0")
-        download = float(data[VPNManager.TUNTAP_READ_KEY] or "0")
-        self._update_traffic_rates(upload, download)
-        uprate, downrate = self._get_traffic_rates()
+        if data:
+            upload = float(data[VPNManager.TCPUDP_WRITE_KEY] or "0")
+            download = float(data[VPNManager.TCPUDP_READ_KEY] or "0")
+            self._update_traffic_rates(upload, download)
 
-        upload_str = "%14.2f KB/s" % (uprate,)
-        self.ui.lblUpload.setText(upload_str)
+        if self.DISPLAY_TRAFFIC_RATES:
+            uprate, downrate = self._get_traffic_rates()
+            upload_str = self.RATE_STR % (uprate,)
+            download_str = self.RATE_STR % (downrate,)
 
-        download_str = "%14.2f KB/s" % (downrate,)
-        self.ui.lblDownload.setText(download_str)
+        else:  # display total throughput
+            uptotal, downtotal = self._get_traffic_totals()
+            upload_str = self.TOTAL_STR % (uptotal,)
+            download_str = self.TOTAL_STR % (downtotal,)
+
+        self.ui.btnUpload.setText(upload_str)
+        self.ui.btnDownload.setText(download_str)
 
     def update_vpn_state(self, data):
         """

@@ -1,0 +1,3 @@
+  o Allow to alternate between rates and total throughput for the virtual interface. Closes: #3232
+  o Reset rates/totals when terminating connection. Closes #3249
+  o Fix a bug in the displayed magnitude for the up/down traffic rates and totals.
