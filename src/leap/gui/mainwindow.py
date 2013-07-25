@@ -119,10 +119,10 @@ class MainWindow(QtGui.QMainWindow):
         # register leap events
         register(signal=proto.UPDATER_NEW_UPDATES,
                  callback=self._new_updates_available,
-                 reqcbk=lambda resp: None)  # make rpc call async
+                 reqcbk=lambda req, resp: None)  # make rpc call async
         register(signal=proto.RAISE_WINDOW,
                  callback=self._on_raise_window_event,
-                 reqcbk=lambda resp: None)  # make rpc call async
+                 reqcbk=lambda req, resp: None)  # make rpc call async
 
         self._quit_callback = quit_callback
 

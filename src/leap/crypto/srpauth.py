@@ -387,7 +387,7 @@ class SRPAuth(QtCore.QObject):
 
             events_signal(
                 proto.CLIENT_UID, content=uid,
-                reqckb=lambda resp: None)  # make the rpc call async
+                reqcbk=lambda req, res: None)  # make the rpc call async
 
             return M2
 
@@ -428,7 +428,7 @@ class SRPAuth(QtCore.QObject):
 
             events_signal(
                 proto.CLIENT_SESSION_ID, content=session_id,
-                reqckb=lambda resp: None)  # make the rpc call async
+                reqcbk=lambda req, res: None)  # make the rpc call async
 
             self.set_session_id(session_id)
 
