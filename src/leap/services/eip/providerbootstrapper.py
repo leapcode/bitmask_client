@@ -28,7 +28,7 @@ from PySide import QtCore
 
 from leap.common.certs import get_digest
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
-from leap.common.check import leap_assert, leap_assert_type
+from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.config.providerconfig import ProviderConfig
 from leap.util.request_helpers import get_content
 from leap.util.constants import REQUEST_TIMEOUT
@@ -42,6 +42,13 @@ logger = logging.getLogger(__name__)
 class UnsupportedProviderAPI(Exception):
     """
     Raised when attempting to use a provider with an incompatible API.
+    """
+    pass
+
+
+class WrongFingerprint(Exception):
+    """
+    Raised when a fingerprint comparison does not match.
     """
     pass
 
@@ -252,7 +259,9 @@ class ProviderBootstrapper(AbstractBootstrapper):
             return
 
         parts = self._provider_config.get_ca_cert_fingerprint().split(":")
-        leap_assert(len(parts) == 2, "Wrong fingerprint format")
+
+        error_msg = "Wrong fingerprint format"
+        leap_check(len(parts) == 2, error_msg, WrongFingerprint)
 
         method = parts[0].strip()
         fingerprint = parts[1].strip()
@@ -262,8 +271,9 @@ class ProviderBootstrapper(AbstractBootstrapper):
 
         leap_assert(len(cert_data) > 0, "Could not read certificate data")
         digest = get_digest(cert_data, method)
-        leap_assert(digest == fingerprint,
-                    "Downloaded certificate has a different fingerprint!")
+
+        error_msg = "Downloaded certificate has a different fingerprint!"
+        leap_check(digest == fingerprint, error_msg, WrongFingerprint)
 
     def _check_api_certificate(self, *args):
         """
