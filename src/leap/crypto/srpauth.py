@@ -385,7 +385,9 @@ class SRPAuth(QtCore.QObject):
                 raise SRPAuthBadDataFromServer(self.tr("Problem getting data "
                                                        "from server"))
 
-            events_signal(proto.CLIENT_UID, content=uid)
+            events_signal(
+                proto.CLIENT_UID, content=uid,
+                reqckb=lambda resp: None)  # make the rpc call async
 
             return M2
 
@@ -424,7 +426,9 @@ class SRPAuth(QtCore.QObject):
                                                  "verification "
                                                  "failed"))
 
-            events_signal(proto.CLIENT_SESSION_ID, content=session_id)
+            events_signal(
+                proto.CLIENT_SESSION_ID, content=session_id,
+                reqckb=lambda resp: None)  # make the rpc call async
 
             self.set_session_id(session_id)
 
