@@ -126,6 +126,16 @@ class StatusPanelWidget(QtGui.QWidget):
         self._up_rate = RateMovingAverage()
         self._down_rate = RateMovingAverage()
 
+    def _reset_traffic_rates(self):
+        """
+        Resets up and download rates, and cleans up the labels.
+        """
+        self._up_rate.reset()
+        self._down_rate.reset()
+        zeroed = {VPNManager.TUNTAP_WRITE_KEY: 0,
+                  VPNManager.TUNTAP_READ_KEY: 0}
+        self.update_vpn_status(zeroed)
+
     def _update_traffic_rates(self, up, down):
         """
         Updates up and download rates.
@@ -286,6 +296,7 @@ class StatusPanelWidget(QtGui.QWidget):
         Sets the state of the widget to how it should look after EIP
         has stopped
         """
+        self._reset_traffic_rates()
         self.ui.btnEipStartStop.setText(self.tr("Turn ON"))
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
