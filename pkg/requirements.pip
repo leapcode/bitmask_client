@@ -19,7 +19,7 @@ python-gnupg
 
 leap.common>=0.2.5
 leap.soledad>=0.1.0
-leap.keymanager>=0.2.1
+leap.keymanager>=0.2.0
 
 # Remove this when nickserver is online
 mock
