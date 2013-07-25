@@ -132,21 +132,31 @@ class ProviderBootstrapper(AbstractBootstrapper):
         logger.debug("Downloading provider info for %s" % (self._domain))
 
         headers = {}
-        mtime = get_mtime(os.path.join(ProviderConfig()
-                                       .get_path_prefix(),
-                                       "leap",
-                                       "providers",
-                                       self._domain,
-                                       "provider.json"))
+
+        provider_json = os.path.join(
+            ProviderConfig().get_path_prefix(), "leap", "providers",
+            self._domain, "provider.json")
+        mtime = get_mtime(provider_json)
+
         if self._download_if_needed and mtime:
             headers['if-modified-since'] = mtime
 
-        res = self._session.get("https://%s/%s" % (self._domain,
-                                                   "provider.json"),
-                                headers=headers,
-                                verify=not self._bypass_checks,
-                                timeout=REQUEST_TIMEOUT)
+        uri = "https://%s/%s" % (self._domain, "provider.json")
+        verify = not self._bypass_checks
+
+        if mtime:  # the provider.json exists
+            provider_config = ProviderConfig()
+            provider_config.load(provider_json)
+            uri = provider_config.get_api_uri() + '/provider.json'
+            verify = provider_config.get_ca_cert_path()
+
+        logger.debug("Requesting for provider.json... "
+                     "uri: {0}, verify: {1}, headers: {2}".format(
+                         uri, verify, headers))
+        res = self._session.get(uri, verify=verify,
+                                headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
+        logger.debug("Request status code: {0}".format(res.status_code))
 
         # Not modified
         if res.status_code == 304:
