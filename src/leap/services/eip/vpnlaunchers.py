@@ -268,7 +268,7 @@ class LinuxVPNLauncher(VPNLauncher):
         """
         to = kls.SYSTEM_CONFIG
         cmd = "#!/bin/sh\nset -e\nmkdir -p %s\n"
-        cmd += "cp %s/%s %s\ncp \"%s\" \"%s\"" % (
+        cmd = (cmd + "cp %s/%s %s\ncp \"%s\" \"%s\"") % (
             to,
             frompath, kls.UP_DOWN_FILE, to,
             pol_file, kls.POLKIT_PATH)
