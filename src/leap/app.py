@@ -135,7 +135,7 @@ def main():
 
     _, opts = leap_argparse.init_leapc_args()
     standalone = opts.standalone
-    bypass_checks = opts.danger
+    bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
     logfile = opts.log_file
 
