@@ -58,6 +58,10 @@ class EIPNoPkexecAvailable(VPNLauncherException):
     pass
 
 
+class EIPNoTunKextLoaded(VPNLauncherException):
+    pass
+
+
 class VPNLauncher:
     """
     Abstract launcher class
@@ -520,6 +524,13 @@ class DarwinVPNLauncher(VPNLauncher):
             to, frompath, to, to)
         return cmd
 
+    @classmethod
+    def maybe_kextloaded(kls):
+        """
+        Checks if the needed kext is loaded before launching openvpn.
+        """
+        return bool(commands.getoutput('kextstat | grep "leap.tun"'))
+
     def _get_resource_path(self):
         """
         Returns the absolute path to the app resources directory
@@ -599,6 +610,9 @@ class DarwinVPNLauncher(VPNLauncher):
         leap_assert_type(providerconfig, ProviderConfig)
         leap_assert(socket_host, "We need a socket host!")
         leap_assert(socket_port, "We need a socket port!")
+
+        if not self.maybe_kextloaded():
+            raise EIPNoTunKextLoaded
 
         kwargs = {}
         if ProviderConfig.standalone:
