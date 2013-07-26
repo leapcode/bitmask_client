@@ -1,2 +1,0 @@
-  o Make sure the domain field in provider.json is escaped to avoid
-    potential problems. Fixes #3244.

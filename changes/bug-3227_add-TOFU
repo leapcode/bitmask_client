@@ -1,1 +1,0 @@
-  o Use the provider CA cert for every request once we have it bootstrapped (TOFU). Closes #3227.

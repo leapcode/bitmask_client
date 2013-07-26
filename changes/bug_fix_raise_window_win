@@ -1,2 +1,0 @@
-  o Fix incorrect handling of locks in windows so that stalled locks do not
-    avoid raising the first instance of the app. Closes: #2910
