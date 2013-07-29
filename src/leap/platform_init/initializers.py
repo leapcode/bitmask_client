@@ -351,7 +351,7 @@ def _linux_install_missing_scripts(badexec, notfound):
         fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
         polfd, pol_tempfile = tempfile.mkstemp(prefix="leap_installer-")
         try:
-            path = launcher.get_path_prefix()
+            path = launcher.OPENVPN_BIN_PATH
             policy_contents = privilege_policies.get_policy_contents(path)
 
             with os.fdopen(polfd, 'w') as f:

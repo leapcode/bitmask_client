@@ -87,6 +87,25 @@ def get_policy_contents(openvpn_path):
     return POLICY_TEMPLATE.format(path=openvpn_path)
 
 
+def is_policy_outdated(path):
+    """
+    Returns if the existing polkit file is outdated, comparing if the path
+    is correct.
+
+    :param path: the path that should have the polkit file.
+    :type path: str.
+    :rtype: bool
+    """
+    _system = platform.system()
+    platform_checker = _system + "PolicyChecker"
+    policy_checker = globals().get(platform_checker, None)
+    if policy_checker is None:
+        logger.debug("we could not find a policy checker implementation "
+                     "for %s" % (_system,))
+        return False
+    return policy_checker().is_outdated(path)
+
+
 class PolicyChecker:
     """
     Abstract PolicyChecker class
@@ -129,3 +148,22 @@ class LinuxPolicyChecker(PolicyChecker):
         :rtype: bool
         """
         return not os.path.isfile(self.LINUX_POLKIT_FILE)
+
+    def is_outdated(self, path):
+        """
+        Returns if the existing polkit file is outdated, comparing if the path
+        is correct.
+
+        :param path: the path that should have the polkit file.
+        :type path: str.
+        :rtype: bool
+        """
+        polkit = None
+        try:
+            with open(self.LINUX_POLKIT_FILE) as f:
+                polkit = f.read()
+        except IOError, e:
+            logger.error("Error reading polkit file(%s): %r" % (
+                self.LINUX_POLKIT_FILE, e))
+
+        return get_policy_contents(path) != polkit

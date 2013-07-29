@@ -39,6 +39,7 @@ from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.util import first
 from leap.util.privilege_policies import LinuxPolicyChecker
+from leap.util import privilege_policies
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +239,10 @@ class LinuxVPNLauncher(VPNLauncher):
 
     PKEXEC_BIN = 'pkexec'
     OPENVPN_BIN = 'openvpn'
+    OPENVPN_BIN_PATH = os.path.join(
+        ProviderConfig().get_path_prefix(),
+        "..", "apps", "eip", OPENVPN_BIN)
+
     SYSTEM_CONFIG = "/etc/leap"
     UP_DOWN_FILE = "resolv-update"
     UP_DOWN_PATH = "%s/%s" % (SYSTEM_CONFIG, UP_DOWN_FILE)
@@ -258,13 +263,14 @@ class LinuxVPNLauncher(VPNLauncher):
     def missing_other_files(self):
         """
         'Extend' the VPNLauncher's missing_other_files to check if the polkit
-        files is outdated. If the polkit file is in OTHER_FILES, exists, but is
-        not up to date, it is added to the missing list.
+        files is outdated. If the polkit file that is in OTHER_FILES exists but
+        is not up to date, it is added to the missing list.
 
-        :rtype: list
+        :returns: a list of missing files
+        :rtype: list of str
         """
         missing = VPNLauncher.missing_other_files.im_func(self)
-        polkit_file = LinuxPolicyChecker().get_polkit_path()
+        polkit_file = LinuxPolicyChecker.get_polkit_path()
         if polkit_file not in missing:
             if privilege_policies.is_policy_outdated(self.OPENVPN_BIN_PATH):
                 missing.append(polkit_file)
