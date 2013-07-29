@@ -52,10 +52,12 @@ from leap.services.eip.vpnprocess import VPN
 from leap.services.eip.vpnprocess import OpenVPNAlreadyRunning
 from leap.services.eip.vpnprocess import AlienOpenVPNAlreadyRunning
 
-from leap.services.eip.vpnlaunchers import (VPNLauncherException,
-                                            OpenVPNNotFoundException,
-                                            EIPNoPkexecAvailable,
-                                            EIPNoPolkitAuthAgentAvailable)
+from leap.services.eip.vpnlaunchers import VPNLauncherException
+from leap.services.eip.vpnlaunchers import OpenVPNNotFoundException
+from leap.services.eip.vpnlaunchers import EIPNoPkexecAvailable
+from leap.services.eip.vpnlaunchers import EIPNoPolkitAuthAgentAvailable
+from leap.services.eip.vpnlaunchers import EIPNoTunKextLoaded
+
 from leap.util import __version__ as VERSION
 from leap.util.keyring_helpers import has_keyring
 
@@ -1036,6 +1038,12 @@ class MainWindow(QtGui.QMainWindow):
                         "agent-1</b> "
                         "running and try again."),
                 error=True)
+            self._set_eipstatus_off()
+        except EIPNoTunKextLoaded:
+            self._status_panel.set_global_status(
+                self.tr("Encrypted Internet cannot be started because "
+                        "the tuntap extension is not installed properly "
+                        "in your system."))
             self._set_eipstatus_off()
         except EIPNoPkexecAvailable:
             self._status_panel.set_global_status(

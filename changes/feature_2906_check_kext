@@ -1,0 +1,1 @@
+  o Add check for tuntap kext before launching openvpn. Closes: #2906
