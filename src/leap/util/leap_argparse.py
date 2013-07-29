@@ -31,7 +31,8 @@ Launches the LEAP Client""", epilog=epilog)
     parser.add_argument('-d', '--debug', action="store_true",
                         help=("Launches client in debug mode, writing debug"
                               "info to stdout"))
-    if not IS_RELEASE_VERSION:
+    # TODO: when we are ready to disable the --danger flag remove 'True or '
+    if True or not IS_RELEASE_VERSION:
         help_text = "Bypasses the certificate check for bootstrap"
         parser.add_argument('--danger', action="store_true", help=help_text)
 
