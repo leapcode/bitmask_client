@@ -27,6 +27,35 @@ from abc import ABCMeta, abstractmethod
 logger = logging.getLogger(__name__)
 
 
+POLICY_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>LEAP Project</vendor>
+  <vendor_url>https://leap.se/</vendor_url>
+
+  <action id="net.openvpn.gui.leap.run-openvpn">
+    <description>Runs the openvpn binary</description>
+    <description xml:lang="es">Ejecuta el binario openvpn</description>
+    <message>OpenVPN needs that you authenticate to start</message>
+    <message xml:lang="es">
+      OpenVPN necesita autorizacion para comenzar
+    </message>
+    <icon_name>package-x-generic</icon_name>
+    <defaults>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">{path}</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>
+"""
+
+
 def is_missing_policy_permissions():
     """
     Returns True if we do not have implemented a policy checker for this
@@ -45,6 +74,17 @@ def is_missing_policy_permissions():
                      "for %s" % (_system,))
         return True
     return policy_checker().is_missing_policy_permissions()
+
+
+def get_policy_contents(openvpn_path):
+    """
+    Returns the contents that the policy file should have.
+
+    :param openvpn_path: the openvpn path to use in the polkit file
+    :type openvpn_path: str
+    :rtype: str
+    """
+    return POLICY_TEMPLATE.format(path=openvpn_path)
 
 
 class PolicyChecker:
@@ -71,6 +111,15 @@ class LinuxPolicyChecker(PolicyChecker):
     """
     LINUX_POLKIT_FILE = ("/usr/share/polkit-1/actions/"
                          "net.openvpn.gui.leap.policy")
+
+    @classmethod
+    def get_polkit_path(self):
+        """
+        Returns the polkit file path.
+
+        :rtype: str
+        """
+        return self.LINUX_POLKIT_FILE
 
     def is_missing_policy_permissions(self):
         """
