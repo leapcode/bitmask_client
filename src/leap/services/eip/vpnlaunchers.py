@@ -291,11 +291,13 @@ class LinuxVPNLauncher(VPNLauncher):
         :rtype: str
         """
         to = kls.SYSTEM_CONFIG
-        cmd = "#!/bin/sh\nset -e\nmkdir -p %s\n"
-        cmd = (cmd + "cp %s/%s %s\ncp \"%s\" \"%s\"") % (
-            to,
-            frompath, kls.UP_DOWN_FILE, to,
-            pol_file, kls.POLKIT_PATH)
+
+        cmd = '#!/bin/sh\nset -e\n'
+        cmd += 'mkdir -p "%s"\n' % (to, )
+        cmd += 'cp "%s/%s" "%s"\n' % (frompath, kls.UP_DOWN_FILE, to)
+        cmd += 'cp "%s" "%s"\n' % (pol_file, kls.POLKIT_PATH)
+        cmd += 'chmod 644 "%s"\n' % (kls.POLKIT_PATH, )
+
         return cmd
 
     @classmethod
