@@ -42,8 +42,8 @@ from leap.gui.statuspanel import StatusPanelWidget
 from leap.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.services.eip.eipconfig import EIPConfig
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-# XXX: comment out soledad temporarily to avoid problem in Windows, issue #2932
-# from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
+# XXX: Soledad might not work out of the box in Windows, issue #2932
+from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
 from leap.platform_init import IS_WIN, IS_MAC
 from leap.platform_init.initializers import init_platform
@@ -199,11 +199,11 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_bootstrapper.download_client_certificate.connect(
             self._finish_eip_bootstrap)
 
-        #self._soledad_bootstrapper = SoledadBootstrapper()
-        #self._soledad_bootstrapper.download_config.connect(
-            #self._soledad_intermediate_stage)
-        #self._soledad_bootstrapper.gen_key.connect(
-            #self._soledad_bootstrapped_stage)
+        self._soledad_bootstrapper = SoledadBootstrapper()
+        self._soledad_bootstrapper.download_config.connect(
+            self._soledad_intermediate_stage)
+        self._soledad_bootstrapper.gen_key.connect(
+            self._soledad_bootstrapped_stage)
 
         self._smtp_bootstrapper = SMTPBootstrapper()
         self._smtp_bootstrapper.download_config.connect(
@@ -867,11 +867,11 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
 
         # XXX disabling soledad for now
-        #self._soledad_bootstrapper.run_soledad_setup_checks(
-            #self._provider_config,
-            #self._login_widget.get_user(),
-            #self._login_widget.get_password(),
-            #download_if_needed=True)
+        self._soledad_bootstrapper.run_soledad_setup_checks(
+            self._provider_config,
+            self._login_widget.get_user(),
+            self._login_widget.get_password(),
+            download_if_needed=True)
 
         self._download_eip_config()
 
