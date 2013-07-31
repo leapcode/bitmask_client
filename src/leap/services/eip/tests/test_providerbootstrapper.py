@@ -43,6 +43,7 @@ from leap.common.testing.https_server import where
 from leap.common.testing.basetest import BaseLeapTest
 from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.services.eip.providerbootstrapper import UnsupportedProviderAPI
+from leap.services.eip.providerbootstrapper import WrongFingerprint
 from leap.provider.supportedapis import SupportedAPIs
 from leap.config.providerconfig import ProviderConfig
 from leap.crypto.tests import fake_provider
@@ -194,7 +195,7 @@ class ProviderBootstrapperTest(BaseLeapTest):
 
         self.pb._should_proceed_cert = mock.MagicMock(return_value=True)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(WrongFingerprint):
             self.pb._check_ca_fingerprint()
 
     # This two hashes different in the last byte, but that's good enough
@@ -282,7 +283,7 @@ yV8e
 
         self.pb._should_proceed_cert = mock.MagicMock(return_value=True)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(WrongFingerprint):
             self.pb._check_ca_fingerprint()
 
         os.unlink(cert_path)
@@ -412,6 +413,15 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
             p.write("A")
         return provider_path
 
+    def test_download_provider_info_new_provider(self):
+        self._setup_provider_config_with("1", tempfile.mkdtemp())
+        self._setup_providerbootstrapper(True)
+
+        self.pb._download_provider_info()
+        self.assertTrue(ProviderConfig.save.called)
+
+    @mock.patch('leap.config.providerconfig.ProviderConfig.get_ca_cert_path',
+                lambda x: where('cacert.pem'))
     def test_download_provider_info_not_modified(self):
         self._setup_provider_config_with("1", tempfile.mkdtemp())
         self._setup_providerbootstrapper(True)
@@ -420,12 +430,16 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         # set mtime to something really new
         os.utime(provider_path, (-1, time.time()))
 
-        self.pb._download_provider_info()
-        # we check that it doesn't do anything with the provider
+        with mock.patch.object(
+                ProviderConfig, 'get_api_uri',
+                return_value="https://localhost:%s" % (self.https_port,)):
+            self.pb._download_provider_info()
+        # we check that it doesn't save the provider
         # config, because it's new enough
-        self.assertFalse(ProviderConfig.load.called)
         self.assertFalse(ProviderConfig.save.called)
 
+    @mock.patch('leap.config.providerconfig.ProviderConfig.get_ca_cert_path',
+                lambda x: where('cacert.pem'))
     def test_download_provider_info_modified(self):
         self._setup_provider_config_with("1", tempfile.mkdtemp())
         self._setup_providerbootstrapper(True)
@@ -434,32 +448,45 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         # set mtime to something really old
         os.utime(provider_path, (-1, 100))
 
-        self.pb._download_provider_info()
+        with mock.patch.object(
+                ProviderConfig, 'get_api_uri',
+                return_value="https://localhost:%s" % (self.https_port,)):
+            self.pb._download_provider_info()
         self.assertTrue(ProviderConfig.load.called)
         self.assertTrue(ProviderConfig.save.called)
 
+    @mock.patch('leap.config.providerconfig.ProviderConfig.get_ca_cert_path',
+                lambda x: where('cacert.pem'))
     def test_download_provider_info_unsupported_api_raises(self):
         self._setup_provider_config_with("9999999", tempfile.mkdtemp())
         self._setup_providerbootstrapper(False)
         self._produce_dummy_provider_json()
 
-        with self.assertRaises(UnsupportedProviderAPI):
-            self.pb._download_provider_info()
+        with mock.patch.object(
+                ProviderConfig, 'get_api_uri',
+                return_value="https://localhost:%s" % (self.https_port,)):
+            with self.assertRaises(UnsupportedProviderAPI):
+                self.pb._download_provider_info()
 
+    @mock.patch('leap.config.providerconfig.ProviderConfig.get_ca_cert_path',
+                lambda x: where('cacert.pem'))
     def test_download_provider_info_unsupported_api(self):
         self._setup_provider_config_with(SupportedAPIs.SUPPORTED_APIS[0],
                                          tempfile.mkdtemp())
         self._setup_providerbootstrapper(False)
         self._produce_dummy_provider_json()
 
-        self.pb._download_provider_info()
+        with mock.patch.object(
+                ProviderConfig, 'get_api_uri',
+                return_value="https://localhost:%s" % (self.https_port,)):
+            self.pb._download_provider_info()
 
+    @mock.patch('leap.config.providerconfig.ProviderConfig.get_api_uri',
+                lambda x: 'api.uri')
+    @mock.patch('leap.config.providerconfig.ProviderConfig.get_ca_cert_path',
+                lambda x: '/cert/path')
     def test_check_api_certificate_skips(self):
         self.pb._provider_config = ProviderConfig()
-        self.pb._provider_config.get_api_uri = mock.MagicMock(
-            return_value="api.uri")
-        self.pb._provider_config.get_ca_cert_path = mock.MagicMock(
-            return_value="/cert/path")
         self.pb._session.get = mock.MagicMock(return_value=Response())
 
         self.pb._should_proceed_cert = mock.MagicMock(return_value=False)
