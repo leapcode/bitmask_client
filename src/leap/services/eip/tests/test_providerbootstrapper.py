@@ -413,6 +413,13 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
             p.write("A")
         return provider_path
 
+    def test_download_provider_info_new_provider(self):
+        self._setup_provider_config_with("1", tempfile.mkdtemp())
+        self._setup_providerbootstrapper(True)
+
+        self.pb._download_provider_info()
+        self.assertTrue(ProviderConfig.save.called)
+
     @mock.patch('leap.config.providerconfig.ProviderConfig.get_ca_cert_path',
                 lambda x: where('cacert.pem'))
     def test_download_provider_info_not_modified(self):
