@@ -97,7 +97,7 @@ class LoginWidget(QtGui.QWidget):
         """
         self.ui.cmbProviders.blockSignals(True)
         self.ui.cmbProviders.clear()
-        self.ui.cmbProviders.addItems(provider_list + ["Other..."])
+        self.ui.cmbProviders.addItems(provider_list + [self.tr("Other...")])
         self.ui.cmbProviders.blockSignals(False)
 
     def select_provider_by_name(self, name):
