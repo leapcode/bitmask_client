@@ -128,12 +128,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._soledad_config = SoledadConfig()
 
         headers = {}
-        mtime = get_mtime(os.path.join(self._soledad_config
-                                       .get_path_prefix(),
-                                       "leap",
-                                       "providers",
-                                       self._provider_config.get_domain(),
-                                       "soledad-service.json"))
+        mtime = get_mtime(
+            os.path.join(
+                self._soledad_config.get_path_prefix(),
+                "leap", "providers",
+                self._provider_config.get_domain(),
+                "soledad-service.json"))
 
         if self._download_if_needed and mtime:
             headers['if-modified-since'] = mtime
@@ -160,10 +160,11 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # Not modified
         if res.status_code == 304:
             logger.debug("Soledad definition has not been modified")
-            self._soledad_config.load(os.path.join("leap",
-                                                   "providers",
-                                                   self._provider_config.get_domain(),
-                                                   "soledad-service.json"))
+            self._soledad_config.load(
+                os.path.join(
+                    "leap", "providers",
+                    self._provider_config.get_domain(),
+                    "soledad-service.json"))
         else:
             soledad_definition, mtime = get_content(res)
 
