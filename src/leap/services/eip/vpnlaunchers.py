@@ -38,6 +38,8 @@ from leap.common.files import which
 from leap.config.providerconfig import ProviderConfig
 from leap.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.util import first
+from leap.util.privilege_policies import LinuxPolicyChecker
+from leap.util import privilege_policies
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,7 @@ class EIPNoTunKextLoaded(VPNLauncherException):
     pass
 
 
-class VPNLauncher:
+class VPNLauncher(object):
     """
     Abstract launcher class
     """
@@ -237,6 +239,10 @@ class LinuxVPNLauncher(VPNLauncher):
 
     PKEXEC_BIN = 'pkexec'
     OPENVPN_BIN = 'openvpn'
+    OPENVPN_BIN_PATH = os.path.join(
+        ProviderConfig().get_path_prefix(),
+        "..", "apps", "eip", OPENVPN_BIN)
+
     SYSTEM_CONFIG = "/etc/leap"
     UP_DOWN_FILE = "resolv-update"
     UP_DOWN_PATH = "%s/%s" % (SYSTEM_CONFIG, UP_DOWN_FILE)
@@ -250,12 +256,26 @@ class LinuxVPNLauncher(VPNLauncher):
         OPENVPN_DOWN_ROOT_BASE,
         OPENVPN_DOWN_ROOT_FILE)
 
-    POLKIT_BASE = "/usr/share/polkit-1/actions"
-    POLKIT_FILE = "net.openvpn.gui.leap.policy"
-    POLKIT_PATH = "%s/%s" % (POLKIT_BASE, POLKIT_FILE)
-
     UPDOWN_FILES = (UP_DOWN_PATH,)
-    OTHER_FILES = (POLKIT_PATH,)
+    POLKIT_PATH = LinuxPolicyChecker.get_polkit_path()
+    OTHER_FILES = (POLKIT_PATH, )
+
+    def missing_other_files(self):
+        """
+        'Extend' the VPNLauncher's missing_other_files to check if the polkit
+        files is outdated. If the polkit file that is in OTHER_FILES exists but
+        is not up to date, it is added to the missing list.
+
+        :returns: a list of missing files
+        :rtype: list of str
+        """
+        missing = VPNLauncher.missing_other_files.im_func(self)
+        polkit_file = LinuxPolicyChecker.get_polkit_path()
+        if polkit_file not in missing:
+            if privilege_policies.is_policy_outdated(self.OPENVPN_BIN_PATH):
+                missing.append(polkit_file)
+
+        return missing
 
     @classmethod
     def cmd_for_missing_scripts(kls, frompath, pol_file):
@@ -271,11 +291,13 @@ class LinuxVPNLauncher(VPNLauncher):
         :rtype: str
         """
         to = kls.SYSTEM_CONFIG
-        cmd = "#!/bin/sh\nset -e\nmkdir -p %s\n"
-        cmd = (cmd + "cp %s/%s %s\ncp \"%s\" \"%s\"") % (
-            to,
-            frompath, kls.UP_DOWN_FILE, to,
-            pol_file, kls.POLKIT_PATH)
+
+        cmd = '#!/bin/sh\nset -e\n'
+        cmd += 'mkdir -p "%s"\n' % (to, )
+        cmd += 'cp "%s/%s" "%s"\n' % (frompath, kls.UP_DOWN_FILE, to)
+        cmd += 'cp "%s" "%s"\n' % (pol_file, kls.POLKIT_PATH)
+        cmd += 'chmod 644 "%s"\n' % (kls.POLKIT_PATH, )
+
         return cmd
 
     @classmethod

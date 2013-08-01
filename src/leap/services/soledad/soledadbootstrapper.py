@@ -86,21 +86,32 @@ class SoledadBootstrapper(AbstractBootstrapper):
         secrets_path = "%s/%s.secret" % (prefix, uuid)
         local_db_path = "%s/%s.db" % (prefix, uuid)
 
-        # TODO: use the proper URL
-        #server_url = 'https://mole.dev.bitmask.net:2424/user-%s' % (uuid,)
-        server_url = 'https://gadwall.dev.bitmask.net:1111/user-%s' % (uuid,)
-        # server_url = self._soledad_config.get_hosts(...)
+        # TODO: Select server based on timezone (issue #3308)
+        server_dict = self._soledad_config.get_hosts()
 
-        cert_file = self._provider_config.get_ca_cert_path()
+        if len(server_dict.keys() > 0):
+            selected_server = server_dict[server_dict.keys()[0]]
+            server_url = "https://%s:%s/user-%s" % (selected_server["hostname"],
+                                                    selected_server["port"],
+                                                    uuid)
 
-        self._soledad = Soledad(uuid,
-                                self._password.encode("utf-8"),
-                                secrets_path=secrets_path,
-                                local_db_path=local_db_path,
-                                server_url=server_url,
-                                cert_file=cert_file,
-                                auth_token=srp_auth.get_token())
-        self._soledad.sync()
+            logger.debug("Using soledad server url: %s" % (server_url,))
+
+            cert_file = self._provider_config.get_ca_cert_path()
+
+            # TODO: If selected server fails, retry with another host
+            # (issue #3309)
+            self._soledad = Soledad(uuid,
+                                    self._password.encode("utf-8"),
+                                    secrets_path=secrets_path,
+                                    local_db_path=local_db_path,
+                                    server_url=server_url,
+                                    cert_file=cert_file,
+                                    auth_token=srp_auth.get_token())
+
+            self._soledad.sync()
+        else:
+            raise Exception("No soledad server found")
 
     def _download_config(self):
         """
@@ -148,6 +159,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # Not modified
         if res.status_code == 304:
             logger.debug("Soledad definition has not been modified")
+            self._soledad_config.load(os.path.join("leap",
+                                                   "providers",
+                                                   self._provider_config.get_domain(),
+                                                   "soledad-service.json"))
         else:
             soledad_definition, mtime = get_content(res)
 
@@ -159,7 +174,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         self._load_and_sync_soledad(srp_auth)
 
-    def _gen_key(self):
+    def _gen_key(self, _):
         """
         Generates the key pair if needed, uploads it to the webapp and
         nickserver
@@ -188,6 +203,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         except KeyNotFound:
             logger.debug("Key not found. Generating key for %s" % (address,))
             self._keymanager.gen_key(openpgp.OpenPGPKey)
+            self._keymanager.send_key(openpgp.OpenPGPKey)
             logger.debug("Key generated successfully.")
 
     def run_soledad_setup_checks(self,
