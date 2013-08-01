@@ -28,7 +28,7 @@ import json
 import copy
 
 from leap.common.testing.basetest import BaseLeapTest
-from leap.config.providerconfig import ProviderConfig
+from leap.config.providerconfig import ProviderConfig, MissingCACert
 from leap.services import get_supported
 
 from mock import Mock
@@ -209,7 +209,7 @@ class ProviderConfigTest(BaseLeapTest):
         provider_domain = 'test.provider.com'
         pc.get_domain = Mock(return_value=provider_domain)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(MissingCACert):
             pc.get_ca_cert_path()
 
     def test_provides_eip(self):
