@@ -89,11 +89,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # TODO: Select server based on timezone (issue #3308)
         server_dict = self._soledad_config.get_hosts()
 
-        if len(server_dict.keys() > 0):
+        if server_dict.keys():
             selected_server = server_dict[server_dict.keys()[0]]
-            server_url = "https://%s:%s/user-%s" % (selected_server["hostname"],
-                                                    selected_server["port"],
-                                                    uuid)
+            server_url = "https://%s:%s/user-%s" % (
+                selected_server["hostname"],
+                selected_server["port"],
+                uuid)
 
             logger.debug("Using soledad server url: %s" % (server_url,))
 
