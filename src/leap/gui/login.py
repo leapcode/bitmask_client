@@ -36,6 +36,8 @@ class LoginWidget(QtGui.QWidget):
 
     # Emitted when the login button is clicked
     login = QtCore.Signal()
+    cancel_login = QtCore.Signal()
+
     # Emitted when the user selects "Other..." in the provider
     # combobox or click "Create Account"
     show_wizard = QtCore.Signal()
@@ -192,6 +194,26 @@ class LoginWidget(QtGui.QWidget):
         self.ui.btnLogin.setEnabled(enabled)
         self.ui.chkRemember.setEnabled(enabled)
         self.ui.cmbProviders.setEnabled(enabled)
+
+    def set_cancel(self, enabled=False):
+        """
+        Enables or disables the cancel action in the "log in" process.
+
+        :param enabled: wether it should be enabled or not
+        :type enabled: bool
+        """
+        self.ui.btnLogin.setEnabled(enabled)
+        text = self.tr("Cancel")
+        login_or_cancel = self.cancel_login
+
+        if not enabled:
+            text = self.tr("Log In")
+            login_or_cancel = self.login
+
+        self.ui.btnLogin.setText(text)
+
+        self.ui.btnLogin.clicked.disconnect()
+        self.ui.btnLogin.clicked.connect(login_or_cancel)
 
     def _focus_password(self):
         """
