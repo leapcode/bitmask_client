@@ -141,6 +141,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.loginLayout.addWidget(self._login_widget)
 
         self._login_widget.login.connect(self._login)
+        self._login_widget.cancel_login.connect(self._cancel_login)
         self._login_widget.show_wizard.connect(
             self._launch_wizard)
 
@@ -274,6 +275,7 @@ class MainWindow(QtGui.QMainWindow):
         self._keymanager = None
 
         self._login_defer = None
+        self._download_provider_defer = None
 
         self._smtp_config = SMTPConfig()
 
@@ -709,9 +711,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         provider = self._login_widget.get_selected_provider()
 
-        self._provider_bootstrapper.run_provider_select_checks(
-            provider,
-            download_if_needed=True)
+        pb = self._provider_bootstrapper
+        d = pb.run_provider_select_checks(provider, download_if_needed=True)
+        self._download_provider_defer = d
 
     def _load_provider_config(self, data):
         """
@@ -754,8 +756,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self.ui.btnLogin.clicked
-          self.ui.lnPassword.returnPressed
+          self._login_widget.login
 
         Starts the login sequence. Which involves bootstrapping the
         selected provider if the selection is valid (not empty), then
@@ -788,6 +789,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self._login_widget.set_status(self.tr("Logging in..."), error=False)
         self._login_widget.set_enabled(False)
+        self._login_widget.set_cancel(True)
 
         if self._login_widget.get_remember() and has_keyring():
             # in the keyring and in the settings
@@ -805,6 +807,25 @@ class MainWindow(QtGui.QMainWindow):
                              % (e,))
 
         self._download_provider_config()
+
+    def _cancel_login(self):
+        """
+        SLOT
+        TRIGGERS:
+          self._login_widget.cancel_login
+
+        Stops the login sequence.
+        """
+        logger.debug("Cancelling log in.")
+        self._login_widget.set_cancel(False)
+
+        if self._download_provider_defer:
+            logger.debug("Cancelling download provider defer.")
+            self._download_provider_defer.cancel()
+
+        if self._login_defer:
+            logger.debug("Cancelling login defer.")
+            self._login_defer.cancel()
 
     def _provider_config_loaded(self, data):
         """
@@ -1250,6 +1271,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         if not passed:
+            self._login_widget.set_cancel(False)
             self._login_widget.set_enabled(True)
             self._login_widget.set_status(
                 data[self._provider_bootstrapper.ERROR_KEY])
@@ -1380,7 +1402,12 @@ class MainWindow(QtGui.QMainWindow):
             self._logger_window.close()
 
         if self._login_defer:
+            logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
+
+        if self._download_provider_defer:
+            logger.debug("Cancelling download provider defer.")
+            self._download_provider_defer.cancel()
 
         self.close()
 
