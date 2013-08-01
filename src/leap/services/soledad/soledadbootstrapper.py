@@ -91,9 +91,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         if len(server_dict.keys() > 0):
             selected_server = server_dict[server_dict.keys()[0]]
-            server_url = "https://%s:%s/user-%s" % (selected_server["hostname"],
-                                                    selected_server["port"],
-                                                    uuid)
+            server_url = "https://%s:%s/user-%s" % (
+                selected_server["hostname"], selected_server["port"], uuid)
 
             logger.debug("Using soledad server url: %s" % (server_url,))
 
@@ -159,10 +158,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # Not modified
         if res.status_code == 304:
             logger.debug("Soledad definition has not been modified")
-            self._soledad_config.load(os.path.join("leap",
-                                                   "providers",
-                                                   self._provider_config.get_domain(),
-                                                   "soledad-service.json"))
+            self._soledad_config.load(
+                os.path.join("leap", "providers",
+                             self._provider_config.get_domain(),
+                             "soledad-service.json"))
         else:
             soledad_definition, mtime = get_content(res)
 
