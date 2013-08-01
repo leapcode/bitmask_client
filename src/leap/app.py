@@ -131,7 +131,11 @@ def main():
     """
     Starts the main event loop and launches the main window.
     """
-    event_server.ensure_server(event_server.SERVER_PORT)
+    try:
+        event_server.ensure_server(event_server.SERVER_PORT)
+    except Exception as e:
+        # We don't even have logger configured in here
+        print "Could not ensure server: %r" % (e,)
 
     _, opts = leap_argparse.init_leapc_args()
     standalone = opts.standalone
