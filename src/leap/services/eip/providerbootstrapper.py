@@ -29,7 +29,7 @@ from PySide import QtCore
 from leap.common.certs import get_digest
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.common.check import leap_assert, leap_assert_type, leap_check
-from leap.config.providerconfig import ProviderConfig
+from leap.config.providerconfig import ProviderConfig, MissingCACert
 from leap.util.request_helpers import get_content
 from leap.util.constants import REQUEST_TIMEOUT
 from leap.services.abstractbootstrapper import AbstractBootstrapper
@@ -147,8 +147,12 @@ class ProviderBootstrapper(AbstractBootstrapper):
         if mtime:  # the provider.json exists
             provider_config = ProviderConfig()
             provider_config.load(provider_json)
-            uri = provider_config.get_api_uri() + '/provider.json'
-            verify = provider_config.get_ca_cert_path()
+            try:
+                verify = provider_config.get_ca_cert_path()
+                uri = provider_config.get_api_uri() + '/provider.json'
+            except MissingCACert:
+                # get_ca_cert_path fails if the certificate does not exists.
+                pass
 
         logger.debug("Requesting for provider.json... "
                      "uri: {0}, verify: {1}, headers: {2}".format(
