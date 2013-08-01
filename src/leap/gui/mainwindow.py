@@ -887,7 +887,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
 
-        # XXX disabling soledad for now
         self._soledad_bootstrapper.run_soledad_setup_checks(
             self._provider_config,
             self._login_widget.get_user(),
@@ -908,7 +907,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._soledad_bootstrapper.PASSED_KEY]
         if not passed:
-            # TODO: display in the GUI
+            # TODO: display in the GUI:
+            # should pass signal to a slot in status_panel
+            # that sets the global status
             logger.error("Soledad failed to start: %s" %
                          (data[self._soledad_bootstrapper.ERROR_KEY],))
 
