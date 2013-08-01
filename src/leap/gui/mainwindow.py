@@ -1402,7 +1402,12 @@ class MainWindow(QtGui.QMainWindow):
             self._logger_window.close()
 
         if self._login_defer:
+            logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
+
+        if self._download_provider_defer:
+            logger.debug("Cancelling download provider defer.")
+            self._download_provider_defer.cancel()
 
         self.close()
 
