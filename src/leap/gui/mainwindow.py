@@ -754,8 +754,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self.ui.btnLogin.clicked
-          self.ui.lnPassword.returnPressed
+          self._login_widget.login
 
         Starts the login sequence. Which involves bootstrapping the
         selected provider if the selection is valid (not empty), then

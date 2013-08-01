@@ -19,7 +19,6 @@
 Login widget implementation
 """
 import logging
-import keyring
 
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
