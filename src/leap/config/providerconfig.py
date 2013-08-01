@@ -21,11 +21,18 @@ Provider configuration
 import logging
 import os
 
-from leap.common.check import leap_assert
+from leap.common.check import leap_check
 from leap.common.config.baseconfig import BaseConfig, LocalizedKey
 from leap.config.provider_spec import leap_provider_spec
 
 logger = logging.getLogger(__name__)
+
+
+class MissingCACert(Exception):
+    """
+    Raised when a CA certificate is needed but not found.
+    """
+    pass
 
 
 class ProviderConfig(BaseConfig):
@@ -118,6 +125,8 @@ class ProviderConfig(BaseConfig):
     def get_ca_cert_path(self, about_to_download=False):
         """
         Returns the path to the certificate for the current provider.
+        It may raise MissingCACert if
+        the certificate does not exists and not about_to_download
 
         :param about_to_download: defines wether we want the path to
                                   download the cert or not. This helps avoid
@@ -135,8 +144,9 @@ class ProviderConfig(BaseConfig):
                                  "cacert.pem")
 
         if not about_to_download:
-            leap_assert(os.path.exists(cert_path),
-                        "You need to download the certificate first")
+            cert_exists = os.path.exists(cert_path)
+            error_msg = "You need to download the certificate first"
+            leap_check(cert_exists, error_msg, MissingCACert)
             logger.debug("Going to verify SSL against %s" % (cert_path,))
 
         return cert_path
