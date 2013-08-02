@@ -122,10 +122,15 @@ def check_missing():
                 logger.warning(
                     "Installer not found for platform %s." % (_system,))
                 return
-            install_missing_fun(
-                # XXX maybe move constants to fun
-                UPDOWN_BADEXEC_MSG,
-                UPDOWN_NOTFOUND_MSG)
+
+            # XXX maybe move constants to fun
+            ok = install_missing_fun(UPDOWN_BADEXEC_MSG, UPDOWN_NOTFOUND_MSG)
+            if not ok:
+                msg = QtGui.QMessageBox()
+                msg.setWindowTitle(msg.tr("Problem installing files"))
+                msg.setText(msg.tr('Some of the files could not be copied.'))
+                msg.setIcon(QtGui.QMessageBox.Warning)
+                msg.exec_()
 
         elif ret == QtGui.QMessageBox.No:
             logger.debug("Not installing missing scripts, "
@@ -235,9 +240,12 @@ def _darwin_install_missing_scripts(badexec, notfound):
     :type badexec: str
     :param notfound: error for notifying missing path.
     :type notfound: str
+    :returns: True if the files could be copied successfully.
+    :rtype: bool
     """
     # We expect to execute this from some way of bundle, since
     # the up/down scripts should be put in place by the installer.
+    success = False
     installer_path = os.path.join(
         os.getcwd(),
         "..",
@@ -261,7 +269,9 @@ def _darwin_install_missing_scripts(badexec, notfound):
             ret = subprocess.call(
                 cmdline, stdout=subprocess.PIPE,
                 shell=True)
-            assert([ret])  # happy flakes
+            success = ret == 0
+            if not success:
+                logger.error("Install missing scripts failed.")
         except Exception as exc:
             logger.error(badexec)
             logger.error("Error was: %r" % (exc,))
@@ -273,6 +283,8 @@ def _darwin_install_missing_scripts(badexec, notfound):
     else:
         logger.error(notfound)
         logger.debug('path searched: %s' % (installer_path,))
+
+    return success
 
 
 def DarwinInitializer():
@@ -339,10 +351,11 @@ def _linux_install_missing_scripts(badexec, notfound):
     :type badexec: str
     :param notfound: error for notifying missing path.
     :type notfound: str
+    :returns: True if the files could be copied successfully.
+    :rtype: bool
     """
-    installer_path = os.path.join(
-        os.getcwd(),
-        "apps", "eip", "files")
+    success = False
+    installer_path = os.path.join(os.getcwd(), "apps", "eip", "files")
     launcher = vpnlaunchers.LinuxVPNLauncher
 
     # XXX refactor with darwin, same block.
@@ -370,7 +383,9 @@ def _linux_install_missing_scripts(badexec, notfound):
             ret = subprocess.call(
                 cmdline, stdout=subprocess.PIPE,
                 shell=True)
-            assert([ret])  # happy flakes
+            success = ret == 0
+            if not success:
+                logger.error("Install missing scripts failed.")
         except Exception as exc:
             logger.error(badexec)
             logger.error("Error was: %r" % (exc,))
@@ -382,6 +397,8 @@ def _linux_install_missing_scripts(badexec, notfound):
     else:
         logger.error(notfound)
         logger.debug('path searched: %s' % (installer_path,))
+
+    return success
 
 
 def LinuxInitializer():
