@@ -86,6 +86,11 @@ class RateMovingAverage(object):
             rate = float(deltatraffic) / float(deltat) / 1024
         except ZeroDivisionError:
             rate = 0
+
+        # In some cases we get negative rates
+        if rate < 0:
+            rate = 0
+
         return rate
 
     def get_total(self):
