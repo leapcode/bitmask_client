@@ -1033,11 +1033,10 @@ class MainWindow(QtGui.QMainWindow):
             soledad_ready
         """
         logger.debug('Starting imap service')
-        logger.debug('DEBUG: NOT STARTING IT REALLY ----------------')
 
-        #self._imap_service = imap.start_imap_service(
-            #self._soledad,
-            #self._keymanager)
+        self._imap_service = imap.start_imap_service(
+            self._soledad,
+            self._keymanager)
 
     def _get_socket_host(self):
         """
