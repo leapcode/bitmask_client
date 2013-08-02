@@ -982,12 +982,14 @@ class MainWindow(QtGui.QMainWindow):
                 # TODO: Make the encrypted_only configurable
 
                 from leap.mail.smtp import setup_smtp_relay
+                client_cert = self._eip_config.get_client_cert_path(
+                    self._provider_config)
                 setup_smtp_relay(port=1234,
                                  keymanager=self._keymanager,
                                  smtp_host=host,
                                  smtp_port=port,
-                                 smtp_username=".",
-                                 smtp_password=".",
+                                 smtp_cert=client_cert,
+                                 smtp_key=client_cert,
                                  encrypted_only=False)
 
     def _get_socket_host(self):
