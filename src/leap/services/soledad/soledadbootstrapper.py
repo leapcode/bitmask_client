@@ -62,6 +62,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._download_if_needed = False
         self._user = ""
         self._password = ""
+        self._soledad = None
 
     @property
     def keymanager(self):
@@ -193,7 +194,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
             address,
             "https://%s:6425" % (self._provider_config.get_domain()),
             self._soledad,
-            #token=srp_auth.get_token(), # TODO: enable token usage
+            #token=srp_auth.get_token(),  # TODO: enable token usage
             session_id=srp_auth.get_session_id(),
             ca_cert_path=self._provider_config.get_ca_cert_path(),
             api_uri=self._provider_config.get_api_uri(),
