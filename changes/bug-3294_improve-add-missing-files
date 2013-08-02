@@ -1,0 +1,1 @@
+  o Add missing files does not stop if a command fails, also warns the user if there was an error. Closes #3294.
