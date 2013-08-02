@@ -292,7 +292,7 @@ class LinuxVPNLauncher(VPNLauncher):
         """
         to = kls.SYSTEM_CONFIG
 
-        cmd = '#!/bin/sh\nset -e\n'
+        cmd = '#!/bin/sh\n'
         cmd += 'mkdir -p "%s"\n' % (to, )
         cmd += 'cp "%s/%s" "%s"\n' % (frompath, kls.UP_DOWN_FILE, to)
         cmd += 'cp "%s" "%s"\n' % (pol_file, kls.POLKIT_PATH)
