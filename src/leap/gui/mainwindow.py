@@ -218,8 +218,8 @@ class MainWindow(QtGui.QMainWindow):
         self._vpn.qtsigs.process_finished.connect(
             self._eip_finished)
 
-        self.ui.action_sign_out.setEnabled(False)
-        self.ui.action_sign_out.triggered.connect(self._logout)
+        self.ui.action_log_out.setEnabled(False)
+        self.ui.action_log_out.triggered.connect(self._logout)
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
@@ -563,7 +563,7 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(preferences_action)
         systrayMenu.addAction(help_action)
         systrayMenu.addSeparator()
-        systrayMenu.addAction(self.ui.action_sign_out)
+        systrayMenu.addAction(self.ui.action_log_out)
         systrayMenu.addAction(self.ui.action_quit)
         self._systray = QtGui.QSystemTrayIcon(self)
         self._systray.setContextMenu(systrayMenu)
@@ -866,7 +866,7 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.set_status(message, error=not ok)
         if ok:
             self._logged_user = self._login_widget.get_user()
-            self.ui.action_sign_out.setEnabled(True)
+            self.ui.action_log_out.setEnabled(True)
             # We leave a bit of room for the user to see the
             # "Succeeded" message and then we switch to the EIP status
             # panel
@@ -1233,7 +1233,7 @@ class MainWindow(QtGui.QMainWindow):
     def _logout(self):
         """
         SLOT
-        TRIGGER: self.ui.action_sign_out.triggered
+        TRIGGER: self.ui.action_log_out.triggered
 
         Starts the logout sequence
         """
@@ -1250,7 +1250,7 @@ class MainWindow(QtGui.QMainWindow):
         logging out
         """
         self._logged_user = None
-        self.ui.action_sign_out.setEnabled(False)
+        self.ui.action_log_out.setEnabled(False)
         self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
         self._login_widget.set_password("")
         self._login_widget.set_enabled(True)

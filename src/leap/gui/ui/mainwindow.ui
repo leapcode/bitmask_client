@@ -253,14 +253,14 @@
      <x>0</x>
      <y>0</y>
      <width>429</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuSession">
     <property name="title">
      <string>&amp;Session</string>
     </property>
-    <addaction name="action_sign_out"/>
+    <addaction name="action_log_out"/>
     <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
@@ -276,9 +276,9 @@
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="action_sign_out">
+  <action name="action_log_out">
    <property name="text">
-    <string>&amp;Sign out</string>
+    <string>Log &amp;out</string>
    </property>
   </action>
   <action name="action_quit">

@@ -668,7 +668,7 @@
     <item row="2" column="0">
      <widget class="QLabel" name="label_15">
       <property name="text">
-       <string>&lt;b&gt;User:&lt;/b&gt;</string>
+       <string>&lt;b&gt;Username:&lt;/b&gt;</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
