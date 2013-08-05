@@ -23,6 +23,7 @@ import logging
 import os
 
 from PySide import QtCore
+from u1db import errors as u1db_errors
 
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
@@ -103,15 +104,18 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
             # TODO: If selected server fails, retry with another host
             # (issue #3309)
-            self._soledad = Soledad(uuid,
-                                    self._password.encode("utf-8"),
-                                    secrets_path=secrets_path,
-                                    local_db_path=local_db_path,
-                                    server_url=server_url,
-                                    cert_file=cert_file,
-                                    auth_token=srp_auth.get_token())
-
-            self._soledad.sync()
+            try:
+                self._soledad = Soledad(
+                    uuid,
+                    self._password.encode("utf-8"),
+                    secrets_path=secrets_path,
+                    local_db_path=local_db_path,
+                    server_url=server_url,
+                    cert_file=cert_file,
+                    auth_token=srp_auth.get_token())
+                self._soledad.sync()
+            except u1db_errors.Unauthorized:
+                logger.error("Error while initializing soledad.")
         else:
             raise Exception("No soledad server found")
 
