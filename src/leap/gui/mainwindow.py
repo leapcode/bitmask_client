@@ -745,11 +745,13 @@ class MainWindow(QtGui.QMainWindow):
                     download_if_needed=True)
             else:
                 self._login_widget.set_status(
-                    self.tr("Could not load provider configuration."))
+                    self.tr("Unable to login: Problem with provider"))
+                logger.error("Could not load provider configuration.")
                 self._login_widget.set_enabled(True)
         else:
             self._login_widget.set_status(
-                data[self._provider_bootstrapper.ERROR_KEY])
+                self.tr("Unable to login: Problem with provider"))
+            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
     def _login(self):
@@ -852,7 +854,8 @@ class MainWindow(QtGui.QMainWindow):
             self._login_defer = self._srp_auth.authenticate(username, password)
         else:
             self._login_widget.set_status(
-                data[self._provider_bootstrapper.ERROR_KEY])
+                "Unable to login: Problem with provider")
+            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
     def _authentication_finished(self, ok, message):
@@ -863,7 +866,13 @@ class MainWindow(QtGui.QMainWindow):
         Once the user is properly authenticated, try starting the EIP
         service
         """
+
+        # In general we want to "filter" likely complicated error
+        # messages, but in this case, the messages make more sense as
+        # they come. Since they are "Unknown user" or "Unknown
+        # password"
         self._login_widget.set_status(message, error=not ok)
+
         if ok:
             self._logged_user = self._login_widget.get_user()
             self.ui.action_log_out.setEnabled(True)
@@ -1274,7 +1283,8 @@ class MainWindow(QtGui.QMainWindow):
             self._login_widget.set_cancel(False)
             self._login_widget.set_enabled(True)
             self._login_widget.set_status(
-                data[self._provider_bootstrapper.ERROR_KEY])
+                self.tr("Unable to connect: Problem with provider"))
+            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
 
     def _eip_intermediate_stage(self, data):
         """
@@ -1289,7 +1299,8 @@ class MainWindow(QtGui.QMainWindow):
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         if not passed:
             self._login_widget.set_status(
-                data[self._provider_bootstrapper.ERROR_KEY])
+                self.tr("Unable to connect: Problem with provider"))
+            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
             self._already_started_eip = False
 
     def _eip_finished(self, exitCode):
