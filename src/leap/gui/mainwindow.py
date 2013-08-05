@@ -45,6 +45,7 @@ from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 # XXX: Soledad might not work out of the box in Windows, issue #2932
 from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
+from leap.services.mail import imap
 from leap.platform_init import IS_WIN, IS_MAC
 from leap.platform_init.initializers import init_platform
 
@@ -94,6 +95,7 @@ class MainWindow(QtGui.QMainWindow):
     # Signals
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
+    soledad_ready = QtCore.Signal([])
 
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
@@ -139,6 +141,9 @@ class MainWindow(QtGui.QMainWindow):
             self._settings,
             self.ui.stackedWidget.widget(self.LOGIN_INDEX))
         self.ui.loginLayout.addWidget(self._login_widget)
+
+        # Signals
+        # TODO separate logic from ui signals.
 
         self._login_widget.login.connect(self._login)
         self._login_widget.cancel_login.connect(self._cancel_login)
@@ -260,7 +265,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.lblNewUpdates.setVisible(False)
         self.ui.btnMore.setVisible(False)
         self.ui.btnMore.clicked.connect(self._updates_details)
+
         self.new_updates.connect(self._react_to_new_updates)
+        self.soledad_ready.connect(self._start_imap_service)
 
         init_platform()
 
@@ -273,6 +280,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self._soledad = None
         self._keymanager = None
+        self._imap_service = None
 
         self._login_defer = None
         self._download_provider_defer = None
@@ -949,6 +957,15 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad = self._soledad_bootstrapper.soledad
         self._keymanager = self._soledad_bootstrapper.keymanager
 
+        # Ok, now soledad is ready, so we can allow other things that
+        # depend on soledad to start.
+
+        # this will trigger start_imap_service
+        self.soledad_ready.emit()
+
+        # TODO connect all these activations to the soledad_ready
+        # signal so the logic is clearer to follow.
+
         if self._provider_config.provides_mx() and \
                 self._enabled_services.count(self.MX_SERVICE) > 0:
             self._smtp_bootstrapper.run_smtp_setup_checks(
@@ -967,7 +984,7 @@ class MainWindow(QtGui.QMainWindow):
                 #self._status_panel.set_eip_status(
                 #    self.tr("MX is disabled"))
 
-    # Service control methods: eip
+    # Service control methods: smtp
 
     def _smtp_bootstrapped_stage(self, data):
         """
@@ -1008,6 +1025,19 @@ class MainWindow(QtGui.QMainWindow):
                              smtp_cert=client_cert,
                              smtp_key=client_cert,
                              encrypted_only=False)
+
+    def _start_imap_service(self):
+        """
+        SLOT
+        TRIGGERS:
+            soledad_ready
+        """
+        logger.debug('Starting imap service')
+        logger.debug('DEBUG: NOT STARTING IT REALLY ----------------')
+
+        #self._imap_service = imap.start_imap_service(
+            #self._soledad,
+            #self._keymanager)
 
     def _get_socket_host(self):
         """
@@ -1398,6 +1428,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('About to quit, doing cleanup...')
 
+        if self._imap_service is not None:
+            self._imap_service.stop()
+
         if self._srp_auth is not None:
             if self._srp_auth.get_session_id() is not None or \
                self._srp_auth.get_token() is not None:
@@ -1410,16 +1443,28 @@ class MainWindow(QtGui.QMainWindow):
         else:
             logger.error("No instance of soledad was found.")
 
-        logger.debug('Cleaning pidfiles')
-        self._cleanup_pidfiles()
-
         logger.debug('Terminating vpn')
         self._vpn.terminate(shutdown=True)
+
+        if self._login_defer:
+            logger.debug("Cancelling login defer.")
+            self._login_defer.cancel()
+
+        if self._download_provider_defer:
+            logger.debug("Cancelling download provider defer.")
+            self._download_provider_defer.cancel()
+
+        # TODO missing any more cancels?
+
+        logger.debug('Cleaning pidfiles')
+        self._cleanup_pidfiles()
 
     def quit(self):
         """
         Cleanup and tidely close the main window before quitting.
         """
+        # TODO: separate the shutting down of services from the
+        # UI stuff.
         self._cleanup_and_quit()
 
         self._really_quit = True
@@ -1429,14 +1474,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._logger_window:
             self._logger_window.close()
-
-        if self._login_defer:
-            logger.debug("Cancelling login defer.")
-            self._login_defer.cancel()
-
-        if self._download_provider_defer:
-            logger.debug("Cancelling download provider defer.")
-            self._download_provider_defer.cancel()
 
         self.close()
 

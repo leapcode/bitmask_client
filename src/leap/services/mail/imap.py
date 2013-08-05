@@ -29,6 +29,8 @@ logger = logging.getLogger(__name__)
 def start_imap_service(*args, **kwargs):
     """
     Initializes and run imap service.
+
+    :returns: twisted.internet.task.LoopingCall instance
     """
     logger.debug('Launching imap service')
 
@@ -36,4 +38,4 @@ def start_imap_service(*args, **kwargs):
     log.startLogging(open('/tmp/leap-imap.log', 'w'))
     log.startLogging(sys.stdout)
 
-    imap.run_service(*args, **kwargs)
+    return imap.run_service(*args, **kwargs)
