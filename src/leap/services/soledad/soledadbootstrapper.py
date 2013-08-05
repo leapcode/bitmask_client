@@ -188,7 +188,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         srp_auth = SRPAuth(self._provider_config)
         self._keymanager = KeyManager(
             address,
-            "https://%s:6425" % (self._provider_config.get_domain()),
+            "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
             self._soledad,
             #token=srp_auth.get_token(), # TODO: enable token usage
             session_id=srp_auth.get_session_id(),

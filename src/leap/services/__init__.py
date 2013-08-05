@@ -17,7 +17,7 @@
 """
 Services module.
 """
-DEPLOYED = ["openvpn"]  # for 0.2.2 release
+DEPLOYED = ["openvpn", "mx"]
 
 
 def get_supported(services):
