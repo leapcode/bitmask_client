@@ -44,6 +44,8 @@ class LoginWidget(QtGui.QWidget):
 
     MAX_STATUS_WIDTH = 40
 
+    BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
+
     def __init__(self, settings, parent=None):
         """
         Constructs the LoginWidget.
@@ -76,6 +78,10 @@ class LoginWidget(QtGui.QWidget):
             self._current_provider_changed)
         self.ui.btnCreateAccount.clicked.connect(
             self.show_wizard)
+
+        username_re = QtCore.QRegExp(self.BARE_USERNAME_REGEX)
+        self.ui.lnUser.setValidator(
+            QtGui.QRegExpValidator(username_re, self))
 
     def _remember_state_changed(self, state):
         """
@@ -146,7 +152,7 @@ class LoginWidget(QtGui.QWidget):
 
     def get_user(self):
         """
-        Returns the user that appears in the widget
+        Returns the user that appears in the widget.
 
         :rtype: str
         """
