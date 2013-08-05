@@ -942,29 +942,32 @@ class MainWindow(QtGui.QMainWindow):
         passed = data[self._soledad_bootstrapper.PASSED_KEY]
         if not passed:
             logger.error(data[self._soledad_bootstrapper.ERROR_KEY])
+            return
+
+        logger.debug("Done bootstrapping Soledad")
+
+        self._soledad = self._soledad_bootstrapper.soledad
+        self._keymanager = self._soledad_bootstrapper.keymanager
+
+        if self._provider_config.provides_mx() and \
+                self._enabled_services.count(self.MX_SERVICE) > 0:
+            self._smtp_bootstrapper.run_smtp_setup_checks(
+                self._provider_config,
+                self._smtp_config,
+                True)
         else:
-            logger.debug("Done bootstrapping Soledad")
-
-            self._soledad = self._soledad_bootstrapper.soledad
-            self._keymanager = self._soledad_bootstrapper.keymanager
-
-            if self._provider_config.provides_mx() and \
-                    self._enabled_services.count(self.MX_SERVICE) > 0:
-                self._smtp_bootstrapper.run_smtp_setup_checks(
-                    self._provider_config,
-                    self._smtp_config,
-                    True)
+            if self._enabled_services.count(self.MX_SERVICE) > 0:
+                pass  # TODO: show MX status
+                #self._status_panel.set_eip_status(
+                #    self.tr("%s does not support MX") %
+                #    (self._provider_config.get_domain(),),
+                #                     error=True)
             else:
-                if self._enabled_services.count(self.MX_SERVICE) > 0:
-                    pass  # TODO: show MX status
-                    #self._status_panel.set_eip_status(
-                    #    self.tr("%s does not support MX") %
-                    #    (self._provider_config.get_domain(),),
-                    #                     error=True)
-                else:
-                    pass  # TODO: show MX status
-                    #self._status_panel.set_eip_status(
-                    #    self.tr("MX is disabled"))
+                pass  # TODO: show MX status
+                #self._status_panel.set_eip_status(
+                #    self.tr("MX is disabled"))
+
+    # Service control methods: eip
 
     def _smtp_bootstrapped_stage(self, data):
         """
@@ -982,29 +985,29 @@ class MainWindow(QtGui.QMainWindow):
         passed = data[self._smtp_bootstrapper.PASSED_KEY]
         if not passed:
             logger.error(data[self._smtp_bootstrapper.ERROR_KEY])
-        else:
-            logger.debug("Done bootstrapping SMTP")
+            return
+        logger.debug("Done bootstrapping SMTP")
 
-            hosts = self._smtp_config.get_hosts()
-            # TODO: handle more than one host and define how to choose
-            if len(hosts) > 0:
-                hostname = hosts.keys()[0]
-                logger.debug("Using hostname %s for SMTP" % (hostname,))
-                host = hosts[hostname][self.IP_KEY].encode("utf-8")
-                port = hosts[hostname][self.PORT_KEY]
-                # TODO: pick local smtp port in a better way
-                # TODO: Make the encrypted_only configurable
+        hosts = self._smtp_config.get_hosts()
+        # TODO: handle more than one host and define how to choose
+        if len(hosts) > 0:
+            hostname = hosts.keys()[0]
+            logger.debug("Using hostname %s for SMTP" % (hostname,))
+            host = hosts[hostname][self.IP_KEY].encode("utf-8")
+            port = hosts[hostname][self.PORT_KEY]
+            # TODO: pick local smtp port in a better way
+            # TODO: Make the encrypted_only configurable
 
-                from leap.mail.smtp import setup_smtp_relay
-                client_cert = self._eip_config.get_client_cert_path(
-                    self._provider_config)
-                setup_smtp_relay(port=1234,
-                                 keymanager=self._keymanager,
-                                 smtp_host=host,
-                                 smtp_port=port,
-                                 smtp_cert=client_cert,
-                                 smtp_key=client_cert,
-                                 encrypted_only=False)
+            from leap.mail.smtp import setup_smtp_relay
+            client_cert = self._eip_config.get_client_cert_path(
+                self._provider_config)
+            setup_smtp_relay(port=1234,
+                             keymanager=self._keymanager,
+                             smtp_host=host,
+                             smtp_port=port,
+                             smtp_cert=client_cert,
+                             smtp_key=client_cert,
+                             encrypted_only=False)
 
     def _get_socket_host(self):
         """
