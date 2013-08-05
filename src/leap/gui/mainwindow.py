@@ -603,7 +603,11 @@ class MainWindow(QtGui.QMainWindow):
 
         Toggles the window visibility
         """
-        self.setVisible(not self.isVisible())
+        if not self.isVisible():
+            self.show()
+            self.raise_()
+        else:
+            self.hide()
 
     def _center_window(self):
         """
