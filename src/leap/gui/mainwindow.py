@@ -900,7 +900,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
 
-        # XXX disabling soledad for now
         self._soledad_bootstrapper.run_soledad_setup_checks(
             self._provider_config,
             self._login_widget.get_user(),
@@ -921,9 +920,11 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._soledad_bootstrapper.PASSED_KEY]
         if not passed:
-            # TODO: display in the GUI
-            logger.error("Soledad failed to start: %s" %
-                         (data[self._soledad_bootstrapper.ERROR_KEY],))
+            # TODO: display in the GUI:
+            # should pass signal to a slot in status_panel
+            # that sets the global status
+            logger.warning("Soledad failed to start: %s" %
+                           (data[self._soledad_bootstrapper.ERROR_KEY],))
 
     def _soledad_bootstrapped_stage(self, data):
         """
@@ -1397,7 +1398,14 @@ class MainWindow(QtGui.QMainWindow):
         if self._srp_auth is not None:
             if self._srp_auth.get_session_id() is not None or \
                self._srp_auth.get_token() is not None:
+                # XXX this can timeout after loong time: See #3368
                 self._srp_auth.logout()
+
+        if self._soledad:
+            logger.debug("Closing soledad...")
+            self._soledad.close()
+        else:
+            logger.error("No instance of soledad was found.")
 
         logger.debug('Cleaning pidfiles')
         self._cleanup_pidfiles()
@@ -1412,6 +1420,7 @@ class MainWindow(QtGui.QMainWindow):
         self._cleanup_and_quit()
 
         self._really_quit = True
+
         if self._wizard:
             self._wizard.close()
 

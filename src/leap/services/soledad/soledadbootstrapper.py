@@ -62,6 +62,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._download_if_needed = False
         self._user = ""
         self._password = ""
+        self._soledad = None
 
     @property
     def keymanager(self):
@@ -89,10 +90,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # TODO: Select server based on timezone (issue #3308)
         server_dict = self._soledad_config.get_hosts()
 
-        if len(server_dict.keys() > 0):
+        if server_dict.keys():
             selected_server = server_dict[server_dict.keys()[0]]
             server_url = "https://%s:%s/user-%s" % (
-                selected_server["hostname"], selected_server["port"], uuid)
+                selected_server["hostname"],
+                selected_server["port"],
+                uuid)
 
             logger.debug("Using soledad server url: %s" % (server_url,))
 
@@ -126,12 +129,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._soledad_config = SoledadConfig()
 
         headers = {}
-        mtime = get_mtime(os.path.join(self._soledad_config
-                                       .get_path_prefix(),
-                                       "leap",
-                                       "providers",
-                                       self._provider_config.get_domain(),
-                                       "soledad-service.json"))
+        mtime = get_mtime(
+            os.path.join(
+                self._soledad_config.get_path_prefix(),
+                "leap", "providers",
+                self._provider_config.get_domain(),
+                "soledad-service.json"))
 
         if self._download_if_needed and mtime:
             headers['if-modified-since'] = mtime
@@ -159,9 +162,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if res.status_code == 304:
             logger.debug("Soledad definition has not been modified")
             self._soledad_config.load(
-                os.path.join("leap", "providers",
-                             self._provider_config.get_domain(),
-                             "soledad-service.json"))
+                os.path.join(
+                    "leap", "providers",
+                    self._provider_config.get_domain(),
+                    "soledad-service.json"))
         else:
             soledad_definition, mtime = get_content(res)
 
@@ -190,7 +194,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
             address,
             "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
             self._soledad,
-            #token=srp_auth.get_token(), # TODO: enable token usage
+            #token=srp_auth.get_token(),  # TODO: enable token usage
             session_id=srp_auth.get_session_id(),
             ca_cert_path=self._provider_config.get_ca_cert_path(),
             api_uri=self._provider_config.get_api_uri(),
