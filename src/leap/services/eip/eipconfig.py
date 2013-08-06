@@ -28,7 +28,7 @@ import ipaddr
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.config.baseconfig import BaseConfig
 from leap.config.providerconfig import ProviderConfig
-from leap.services.eip.eipspec import eipservice_config_spec
+from leap.services.eip.eipspec import get_schema
 
 logger = logging.getLogger(__name__)
 
@@ -136,12 +136,27 @@ class EIPConfig(BaseConfig):
 
     def __init__(self):
         BaseConfig.__init__(self)
+        self._api_version = None
 
     def _get_spec(self):
         """
         Returns the spec object for the specific configuration
         """
-        return eipservice_config_spec
+        leap_assert(self._api_version is not None,
+                    "You should set the API version.")
+
+        return get_schema(self._api_version)
+
+    def set_api_version(self, version):
+        """
+        Sets the supported api version.
+
+        :param api_version: the version of the api supported by the provider.
+        :type api_version: str
+        """
+        self._api_version = version
+        leap_assert(get_schema(self._api_version) is not None,
+                    "Version %s is not supported." % (version, ))
 
     def get_clusters(self):
         # TODO: create an abstraction for clusters
@@ -243,7 +258,7 @@ if __name__ == "__main__":
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    eipconfig = EIPConfig()
+    eipconfig = EIPConfig('1')
 
     try:
         eipconfig.get_clusters()

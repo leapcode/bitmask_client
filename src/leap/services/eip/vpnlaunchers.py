@@ -903,6 +903,7 @@ if __name__ == "__main__":
     vpnlauncher = get_platform_launcher()
 
     eipconfig = EIPConfig()
+    eipconfig.set_api_version('1')
     if eipconfig.load("leap/providers/bitmask.net/eip-service.json"):
         provider = ProviderConfig()
         if provider.load("leap/providers/bitmask.net/provider.json"):
