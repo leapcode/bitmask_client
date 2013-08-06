@@ -1,0 +1,2 @@
+  o Update text from the tray menu based on the visibility of the
+    window. Fixes #3400.
