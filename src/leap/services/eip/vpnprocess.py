@@ -80,7 +80,9 @@ class VPN(object):
     TERMINATE_MAXTRIES = 10
     TERMINATE_WAIT = 1  # secs
 
-    def __init__(self):
+    OPENVPN_VERB = "openvpn_verb"
+
+    def __init__(self, **kwargs):
         """
         Instantiate empty attributes and get a copy
         of a QObject containing the QSignals that we will pass along
@@ -91,6 +93,8 @@ class VPN(object):
         self._pollers = []
         self._reactor = reactor
         self._qtsigs = VPNSignals()
+
+        self._openvpn_verb = kwargs.get(self.OPENVPN_VERB, None)
 
     @property
     def qtsigs(self):
@@ -108,9 +112,12 @@ class VPN(object):
         """
         self._stop_pollers()
         kwargs['qtsigs'] = self.qtsigs
+        kwargs['openvpn_verb'] = self._openvpn_verb
 
         # start the main vpn subprocess
         vpnproc = VPNProcess(*args, **kwargs)
+                             #qtsigs=self.qtsigs,
+                             #openvpn_verb=self._openvpn_verb)
 
         if vpnproc.get_openvpn_process():
             logger.info("Another vpn process is running. Will try to stop it.")
@@ -566,7 +573,12 @@ class VPNManager(object):
                 # we should check that cmdline BEGINS
                 # with openvpn or with our wrapper
                 # (pkexec / osascript / whatever)
-                if "openvpn" in ' '.join(p.cmdline):
+
+                # This needs more work, see #3268, but for the moment
+                # we need to be able to filter out arguments in the form
+                # --openvpn-foo, since otherwise we are shooting ourselves
+                # in the feet.
+                if any(map(lambda s: s.startswith("openvpn"), p.cmdline)):
                     openvpn_process = p
                     break
             except psutil.error.AccessDenied:
@@ -645,7 +657,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
     """
 
     def __init__(self, eipconfig, providerconfig, socket_host, socket_port,
-                 qtsigs):
+                 qtsigs, openvpn_verb):
         """
         :param eipconfig: eip configuration object
         :type eipconfig: EIPConfig
@@ -663,6 +675,10 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         :param qtsigs: a QObject containing the Qt signals used to notify the
                        UI.
         :type qtsigs: QObject
+
+        :param openvpn_verb: the desired level of verbosity in the
+                             openvpn invocation
+        :type openvpn_verb: int
         """
         VPNManager.__init__(self, qtsigs=qtsigs)
         leap_assert_type(eipconfig, EIPConfig)
@@ -681,6 +697,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         self._last_state = None
         self._last_status = None
         self._alive = False
+
+        self._openvpn_verb = openvpn_verb
 
     # processProtocol methods
 
@@ -757,7 +775,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
             eipconfig=self._eipconfig,
             providerconfig=self._providerconfig,
             socket_host=self._socket_host,
-            socket_port=self._socket_port)
+            socket_port=self._socket_port,
+            openvpn_verb=self._openvpn_verb)
         return map(str, cmd)
 
     # shutdown
