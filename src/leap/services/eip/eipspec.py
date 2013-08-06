@@ -15,7 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-eipservice_config_spec = {
+
+# Schemas dict
+# To add a schema for a version you should follow the form:
+# { '1': schema_v1, '2': schema_v2, ... etc }
+# so for instance, to add the '2' version, you should do:
+# eipservice_config_spec['2'] = schema_v2
+eipservice_config_spec = {}
+
+eipservice_config_spec['1'] = {
     'description': 'sample eip service config',
     'type': 'object',
     'properties': {
@@ -63,3 +71,15 @@ eipservice_config_spec = {
         }
     }
 }
+
+
+def get_schema(version):
+    """
+    Returns the schema corresponding to the version given.
+
+    :param version: the version of the schema to get.
+    :type version: str
+    :rtype: dict or None if the version is not supported.
+    """
+    schema = eipservice_config_spec.get(version, None)
+    return schema
