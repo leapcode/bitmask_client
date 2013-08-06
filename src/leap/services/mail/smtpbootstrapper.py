@@ -72,10 +72,12 @@ class SMTPBootstrapper(AbstractBootstrapper):
         if self._download_if_needed and mtime:
             headers['if-modified-since'] = mtime
 
+        api_version = self._provider_config.get_api_version()
+
         # there is some confusion with this uri,
         config_uri = "%s/%s/config/smtp-service.json" % (
-            self._provider_config.get_api_uri(),
-            self._provider_config.get_api_version())
+            self._provider_config.get_api_uri(), api_version)
+
         logger.debug('Downloading SMTP config from: %s' % config_uri)
 
         srp_auth = SRPAuth(self._provider_config)
@@ -90,6 +92,8 @@ class SMTPBootstrapper(AbstractBootstrapper):
                                 headers=headers,
                                 cookies=cookies)
         res.raise_for_status()
+
+        self._smtp_config.set_api_version(api_version)
 
         # Not modified
         if res.status_code == 304:

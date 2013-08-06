@@ -21,7 +21,7 @@ SMTP configuration
 import logging
 
 from leap.common.config.baseconfig import BaseConfig
-from leap.services.mail.smtpspec import smtp_config_spec
+from leap.services.mail.smtpspec import get_schema
 
 logger = logging.getLogger(__name__)
 
@@ -33,12 +33,7 @@ class SMTPConfig(BaseConfig):
 
     def __init__(self):
         BaseConfig.__init__(self)
-
-    def _get_spec(self):
-        """
-        Returns the spec object for the specific configuration
-        """
-        return smtp_config_spec
+        self._get_schema = get_schema
 
     def get_hosts(self):
         return self._safe_get_value("hosts")
