@@ -117,18 +117,21 @@ class EIPConfigTest(BaseLeapTest):
         conf.write(json.dumps(data))
         conf.close()
 
-    def _get_eipconfig(self, fromfile=True, data=sample_config):
+    def _get_eipconfig(self, fromfile=True, data=sample_config, api_ver='1'):
         """
         Helper that returns an EIPConfig object using the data parameter
         or a sample data.
 
         :param fromfile: sets if we should use a file or a string
-        :fromfile type: bool
+        :type fromfile: bool
         :param data: sets the data to be used to load in the EIPConfig object
-        :data type: dict (valid json)
+        :type data: dict (valid json)
+        :param api_ver: the api_version schema to use.
+        :type api_ver: str
         :rtype: EIPConfig
         """
         config = EIPConfig()
+        config.set_api_version(api_ver)
 
         loaded = False
         if fromfile:
@@ -308,6 +311,14 @@ class EIPConfigTest(BaseLeapTest):
         with self.assertRaises(AssertionError):
             config.get_client_cert_path(provider_config)
 
+    def test_fails_without_api_set(self):
+        config = EIPConfig()
+        with self.assertRaises(AssertionError):
+            config.load('non-relevant-path')
+
+    def test_fails_with_api_without_schema(self):
+        with self.assertRaises(AssertionError):
+            self._get_eipconfig(api_ver='123')
 
 if __name__ == "__main__":
     unittest.main()

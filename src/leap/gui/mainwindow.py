@@ -1222,29 +1222,34 @@ class MainWindow(QtGui.QMainWindow):
         loaded
         """
         leap_assert(self._eip_config, "We need an eip config!")
+        passed = data[self._eip_bootstrapper.PASSED_KEY]
+
+        if not passed:
+            error_msg = self.tr("There was a problem with the provider")
+            self._status_panel.set_eip_status(error_msg, error=True)
+            logger.error(data[self._eip_bootstrapper.ERROR_KEY])
+            self._already_started_eip = False
+            return
 
         provider_config = self._get_best_provider_config()
 
         domain = provider_config.get_domain()
 
-        if data[self._eip_bootstrapper.PASSED_KEY] and \
-                (self._eip_config.loaded() or
-                 self._eip_config.load(os.path.join("leap",
-                                                    "providers",
-                                                    domain,
-                                                    "eip-service.json"))):
-                self._start_eip()
+        loaded = self._eip_config.loaded()
+        if not loaded:
+            eip_config_path = os.path.join("leap", "providers",
+                                           domain, "eip-service.json")
+            api_version = provider_config.get_api_version()
+            self._eip_config.set_api_version(api_version)
+            loaded = self._eip_config.load(eip_config_path)
+
+        if loaded:
+            self._start_eip()
         else:
-            if data[self._eip_bootstrapper.PASSED_KEY]:
-                self._status_panel.set_eip_status(
-                    self.tr("Could not load Encrypted Internet "
-                            "Configuration."),
-                    error=True)
-            else:
-                self._status_panel.set_eip_status(
-                    data[self._eip_bootstrapper.ERROR_KEY],
-                    error=True)
-            self._already_started_eip = False
+            self._status_panel.set_eip_status(
+                self.tr("Could not load Encrypted Internet "
+                        "Configuration."),
+                error=True)
 
     def _logout(self):
         """

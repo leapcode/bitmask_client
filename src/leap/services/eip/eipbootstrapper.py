@@ -67,7 +67,9 @@ class EIPBootstrapper(AbstractBootstrapper):
         logger.debug("Downloading EIP config for %s" %
                      (self._provider_config.get_domain(),))
 
+        api_version = self._provider_config.get_api_version()
         self._eip_config = EIPConfig()
+        self._eip_config.set_api_version(api_version)
 
         headers = {}
         mtime = get_mtime(os.path.join(self._eip_config
@@ -84,7 +86,7 @@ class EIPBootstrapper(AbstractBootstrapper):
         # it's in 1/config/eip, config/eip and config/1/eip...
         config_uri = "%s/%s/config/eip-service.json" % (
             self._provider_config.get_api_uri(),
-            self._provider_config.get_api_version())
+            api_version)
         logger.debug('Downloading eip config from: %s' % config_uri)
 
         res = self._session.get(config_uri,
