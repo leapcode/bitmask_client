@@ -580,13 +580,7 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the context menu from the tray icon
         """
-        get_action = lambda visible: (
-            self.tr("Show Main Window"),
-            self.tr("Hide Main Window"))[int(visible)]
-
-        # set labels
-        visible = self.isVisible()
-        self._action_visible.setText(get_action(visible))
+        self._update_hideshow_menu()
 
         context_menu = self._systray.contextMenu()
         if not IS_MAC:
@@ -595,6 +589,19 @@ class MainWindow(QtGui.QMainWindow):
             # (not working the first time it's clicked).
             # this works however.
             context_menu.exec_(self._systray.geometry().center())
+
+    def _update_hideshow_menu(self):
+        """
+        Updates the Hide/Show main window menu text based on the
+        visibility of the window.
+        """
+        get_action = lambda visible: (
+            self.tr("Show Main Window"),
+            self.tr("Hide Main Window"))[int(visible)]
+
+        # set labels
+        visible = self.isVisible()
+        self._action_visible.setText(get_action(visible))
 
     def _toggle_visible(self):
         """
@@ -608,6 +615,8 @@ class MainWindow(QtGui.QMainWindow):
             self.raise_()
         else:
             self.hide()
+
+        self._update_hideshow_menu()
 
     def _center_window(self):
         """
