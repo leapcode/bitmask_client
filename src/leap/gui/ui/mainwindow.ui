@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>LEAP</string>
+   <string>Bitmask</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../../../data/resources/mainwindow.qrc">
@@ -288,7 +288,7 @@
   </action>
   <action name="action_about_leap">
    <property name="text">
-    <string>About &amp;LEAP</string>
+    <string>About &amp;Bitmask</string>
    </property>
   </action>
   <action name="action_help">

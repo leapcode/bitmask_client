@@ -148,16 +148,16 @@ def main():
     replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
-        # leap-client is already running
+        # Bitmask is already running
         logger.warning("Tried to launch more than one instance "
-                       "of leap-client. Raising the existing "
+                       "of Bitmask. Raising the existing "
                        "one instead.")
         sys.exit(1)
 
     check_requirements()
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    logger.info('LEAP client version %s', VERSION)
+    logger.info('Bitmask version %s', VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')

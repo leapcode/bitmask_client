@@ -27,9 +27,9 @@ def build_parser():
     """
     epilog = "Copyright 2012 The LEAP Encryption Access Project"
     parser = argparse.ArgumentParser(description="""
-Launches the LEAP Client""", epilog=epilog)
+Launches Bitmask""", epilog=epilog)
     parser.add_argument('-d', '--debug', action="store_true",
-                        help=("Launches client in debug mode, writing debug"
+                        help=("Launches Bitmask in debug mode, writing debug"
                               "info to stdout"))
     # TODO: when we are ready to disable the --danger flag remove 'True or '
     if True or not IS_RELEASE_VERSION:
@@ -45,7 +45,7 @@ Launches the LEAP Client""", epilog=epilog)
                         action="store", dest="openvpn_verb",
                         help='verbosity level for openvpn logs [1-6]')
     parser.add_argument('-s', '--standalone', action="store_true",
-                        help='Makes the client use standalone'
+                        help='Makes Bitmask use standalone'
                         'directories for configuration and binary'
                         'searching')
 

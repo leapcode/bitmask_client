@@ -40,7 +40,7 @@ def leap_services():
     register them.
     """
     logger.debug('starting leap services')
-    application = Application("LEAP Client Local Services")
+    application = Application("Bitmask Local Services")
     #lc = LoopingCall(task)
     #lc.start(5)
     return application

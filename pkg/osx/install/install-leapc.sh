@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# LEAP CLient Installer Script.
+# Bitmask Installer Script.
 #
 # Copyright (C) 2013 LEAP Encryption Access Project
 #
@@ -20,7 +20,7 @@ leapdir=/Applications/LEAP\ Client.app
 leaplibs=${leapdir}/Contents/MacOS
 tunstartup=/Library/StartupItems/tun/tun
 
-echo "Installing LEAP Client in /Applications..."
+echo "Installing Bitmask in /Applications..."
 cp -r "LEAP Client.app" /Applications
 
 echo "Copying openvpn binary..."
