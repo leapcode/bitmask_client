@@ -804,7 +804,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._login_widget.set_status(self.tr("Logging in..."), error=False)
         self._login_widget.set_enabled(False)
-        self._login_widget.set_cancel(True)
 
         if self._login_widget.get_remember() and has_keyring():
             # in the keyring and in the settings
@@ -832,7 +831,6 @@ class MainWindow(QtGui.QMainWindow):
         Stops the login sequence.
         """
         logger.debug("Cancelling log in.")
-        self._login_widget.set_cancel(False)
 
         if self._download_provider_defer:
             logger.debug("Cancelling download provider defer.")
@@ -1301,7 +1299,6 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         if not passed:
-            self._login_widget.set_cancel(False)
             self._login_widget.set_enabled(True)
             self._login_widget.set_status(
                 self.tr("Unable to connect: Problem with provider"))
