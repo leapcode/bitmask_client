@@ -16,7 +16,7 @@ elif [[ "$unamestr" == 'Darwin' ]]; then
    platform='darwin'
 fi
 
-LIBS=( PySide )
+LIBS=( PySide pysideuic )
 
 PYTHON_VERSION=python$(python -c "import sys; print (str(sys.version_info[0])+'.'+str(sys.version_info[1]))")
 VAR=( $(which -a $PYTHON_VERSION) )
