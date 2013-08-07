@@ -42,11 +42,24 @@ class ProviderConfig(BaseConfig):
     def __init__(self):
         BaseConfig.__init__(self)
 
-    def _get_spec(self):
+    def _get_schema(self):
         """
-        Returns the spec object for the specific configuration
+        Returns the schema corresponding to the version given.
+
+        :rtype: dict or None if the version is not supported.
         """
         return leap_provider_spec
+
+    def _get_spec(self):
+        """
+        Returns the spec object for the specific configuration.
+
+        Override the BaseConfig one because we do not support multiple schemas
+        for the provider yet.
+
+        :rtype: dict or None if the version is not supported.
+        """
+        return self._get_schema()
 
     def get_api_uri(self):
         return self._safe_get_value("api_uri")

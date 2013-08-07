@@ -137,7 +137,14 @@ class EIPConfig(BaseConfig):
     def __init__(self):
         BaseConfig.__init__(self)
         self._api_version = None
-        self._get_schema = get_schema
+
+    def _get_schema(self):
+        """
+        Returns the schema corresponding to the version given.
+
+        :rtype: dict or None if the version is not supported.
+        """
+        return get_schema(self._api_version)
 
     def get_clusters(self):
         # TODO: create an abstraction for clusters
