@@ -19,7 +19,7 @@ import versioneer
 versioneer.versionfile_source = 'src/leap/_version.py'
 versioneer.versionfile_build = 'leap/_version.py'
 versioneer.tag_prefix = ''  # tags are like 1.2.0
-versioneer.parentdir_prefix = 'leap_client-'
+versioneer.parentdir_prefix = 'bitmask-'
 
 from setuptools import Command
 
@@ -52,7 +52,7 @@ trove_classifiers = [
 parsed_reqs = utils.parse_requirements()
 
 cmdclass = versioneer.get_cmdclass()
-leap_launcher = 'leap-client=leap.app:main'
+leap_launcher = 'bitmask=leap.app:main'
 
 from setuptools.command.develop import develop as _develop
 
@@ -109,7 +109,7 @@ cmdclass["sdist"] = cmd_sdist
 
 
 setup(
-    name="leap-client",
+    name="bitmask",
     package_dir={"": "src"},
     version=versioneer.get_version(),
     cmdclass=cmdclass,
@@ -131,7 +131,7 @@ setup(
     test_suite='nose.collector',
     tests_require=utils.parse_requirements(
         reqfiles=['pkg/requirements-testing.pip']),
-    keywords='LEAP, client, qt, encryption, proxy, openvpn, imap, smtp',
+    keywords='Bitmask, LEAP, client, qt, encryption, proxy, openvpn, imap, smtp',
     author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',
@@ -146,7 +146,7 @@ setup(
     # looks like debhelper is honoring it...
     data_files=[
     #    ("share/man/man1",
-    #        ["docs/man/leap-client.1"]),
+    #        ["docs/man/bitmask.1"]),
         ("share/polkit-1/actions",
             ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
     ],

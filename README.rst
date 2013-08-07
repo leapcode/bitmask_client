@@ -3,13 +3,13 @@ The LEAP Encryption Access Project Client
 
 *your internet encryption toolkit*
 
-.. image:: https://pypip.in/v/leap-client/badge.png
-        :target: https://crate.io/packages/leap.client
+.. image:: https://pypip.in/v/bitmask/badge.png
+        :target: https://crate.io/packages/bitmask
 
 Dependencies
 ------------------
 
-LEAP Client depends on these libraries:
+Bitmask depends on these libraries:
 
 * ``python 2.6`` or ``2.7``
 * ``qt4 libraries``
@@ -21,14 +21,14 @@ Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requiremen
 Debian
 ^^^^^^
 
-With a Debian based system, to be able to run leap-client you need to run the following command::
+With a Debian based system, to be able to run Bitmask you need to run the following command::
 
   $ sudo apt-get install openvpn python-pyside pyside-tools python-setuptools python-all-dev python-pip python-dev python-openssl
 
 Installing
 -----------
 
-After getting the source and installing all the dependencies, proceed to install ``leap-client`` package::
+After getting the source and installing all the dependencies, proceed to install ``bitmask`` package::
 
   $ make
   $ sudo LEAP_VENV_SKIP_PYSIDE=1 python setup.py install
@@ -36,13 +36,13 @@ After getting the source and installing all the dependencies, proceed to install
 Running
 -------
 
-After a successful installation, there should be a launcher called ``leap-client`` somewhere in your path::
+After a successful installation, there should be a launcher called ``bitmask`` somewhere in your path::
 
-  $ leap-client
+  $ bitmask
 
-If you are testing a new provider and do not have a CA certificate chain tied to your SSL certificate, you should execute leap-client in the following way::
+If you are testing a new provider and do not have a CA certificate chain tied to your SSL certificate, you should execute Bitmask in the following way::
 
-  $ leap-client --danger
+  $ bitmask --danger
 
 But **DO NOT use it on a regular bases**.
 
@@ -53,9 +53,9 @@ But **DO NOT use it on a regular bases**.
 Hacking
 =======
 
-The LEAP client git repository is available at::
+The Bitmask git repository is available at::
 
-  git://leap.se/leap_client
+  git://leap.se/bitmask
 
 Some steps need to be run when setting a development environment for the first time.
 
@@ -66,19 +66,19 @@ Enable a **virtualenv** to isolate your libraries. (Current *.gitignore* knows a
 
 Make sure you are in the development branch::
 
-  (leap_client)$ git checkout develop
+  (bitmask)$ git checkout develop
 
 Symlink your global pyside libraries::
 
-  (leap_client)$ pkg/postmkvenv.sh
+  (bitmask)$ pkg/postmkvenv.sh
 
 And make your working tree available to your pythonpath::
 
-  (leap_client)$ python setup.py develop
+  (bitmask)$ python setup.py develop
 
-Run the client::
+Run Bitmask::
 
-  (leap_client)$ python src/leap/app.py -d
+  (bitmask)$ python src/leap/app.py -d
 
 
 If you are testing a new provider that doesn't have the proper certificates yet, you can use --danger flag, but **DO NOT use it on a regular bases**.
@@ -101,8 +101,8 @@ which the first time should automagically install all the needed dependencies in
 License
 =======
 
-.. image:: https://raw.github.com/leapcode/leap_client/develop/docs/user/gpl.png
+.. image:: https://raw.github.com/leapcode/bitmask/develop/docs/user/gpl.png
 
-The LEAP Client is released under the terms of the `GNU GPL version 3`_ or later.
+Bitmask is released under the terms of the `GNU GPL version 3`_ or later.
 
 .. _`GNU GPL version 3`: http://www.gnu.org/licenses/gpl.txt
