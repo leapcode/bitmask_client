@@ -138,25 +138,13 @@ class EIPConfig(BaseConfig):
         BaseConfig.__init__(self)
         self._api_version = None
 
-    def _get_spec(self):
+    def _get_schema(self):
         """
-        Returns the spec object for the specific configuration
-        """
-        leap_assert(self._api_version is not None,
-                    "You should set the API version.")
+        Returns the schema corresponding to the version given.
 
+        :rtype: dict or None if the version is not supported.
+        """
         return get_schema(self._api_version)
-
-    def set_api_version(self, version):
-        """
-        Sets the supported api version.
-
-        :param api_version: the version of the api supported by the provider.
-        :type api_version: str
-        """
-        self._api_version = version
-        leap_assert(get_schema(self._api_version) is not None,
-                    "Version %s is not supported." % (version, ))
 
     def get_clusters(self):
         # TODO: create an abstraction for clusters
