@@ -34,8 +34,9 @@ def start_imap_service(*args, **kwargs):
     """
     logger.debug('Launching imap service')
 
-    # XXX handle this in a more appropriate manner
-    log.startLogging(open('/tmp/leap-imap.log', 'w'))
-    log.startLogging(sys.stdout)
+    # Uncomment the next two lines to get a separate debugging log
+    # TODO handle this by a separate flag.
+    #log.startLogging(open('/tmp/leap-imap.log', 'w'))
+    #log.startLogging(sys.stdout)
 
     return imap.run_service(*args, **kwargs)
