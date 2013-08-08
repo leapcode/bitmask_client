@@ -99,7 +99,9 @@ class MainWindow(QtGui.QMainWindow):
     user_stopped_eip = False
 
     def __init__(self, quit_callback,
-                 standalone=False, bypass_checks=False):
+                 standalone=False,
+                 openvpn_verb=1,
+                 bypass_checks=False):
         """
         Constructor for the client main window
 
@@ -210,7 +212,7 @@ class MainWindow(QtGui.QMainWindow):
         self._smtp_bootstrapper.download_config.connect(
             self._smtp_bootstrapped_stage)
 
-        self._vpn = VPN()
+        self._vpn = VPN(openvpn_verb=openvpn_verb)
         self._vpn.qtsigs.state_changed.connect(
             self._status_panel.update_vpn_state)
         self._vpn.qtsigs.status_changed.connect(
@@ -1066,6 +1068,7 @@ class MainWindow(QtGui.QMainWindow):
 
             self._status_panel.eip_started()
 
+            # XXX refactor into status_panel method?
             self._action_eip_startstop.setText(self.tr("Turn OFF"))
             self._action_eip_startstop.disconnect(self)
             self._action_eip_startstop.triggered.connect(

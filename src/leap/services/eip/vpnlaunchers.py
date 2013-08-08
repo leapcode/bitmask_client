@@ -352,7 +352,7 @@ class LinuxVPNLauncher(VPNLauncher):
         return None
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
-                        socket_host=None, socket_port="unix"):
+                        socket_host=None, socket_port="unix", openvpn_verb=1):
         """
         Returns the platform dependant vpn launching command. It will
         look for openvpn in the regular paths and algo in
@@ -374,6 +374,9 @@ class LinuxVPNLauncher(VPNLauncher):
         :param socket_port: either string "unix" if it's a unix
                             socket, or port otherwise
         :type socket_port: str
+
+        :param openvpn_verb: openvpn verbosity wanted
+        :type openvpn_verb: int
 
         :return: A VPN command ready to be launched
         :rtype: list
@@ -404,7 +407,7 @@ class LinuxVPNLauncher(VPNLauncher):
             args.append(openvpn)
             openvpn = first(pkexec)
 
-        # TODO: handle verbosity
+        args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()
@@ -604,7 +607,7 @@ class DarwinVPNLauncher(VPNLauncher):
         return self.COCOASUDO, args
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
-                        socket_host=None, socket_port="unix"):
+                        socket_host=None, socket_port="unix", openvpn_verb=1):
         """
         Returns the platform dependant vpn launching command
 
@@ -622,6 +625,9 @@ class DarwinVPNLauncher(VPNLauncher):
         :param socket_port: either string "unix" if it's a unix
                             socket, or port otherwise
         :type socket_port: str
+
+        :param openvpn_verb: openvpn verbosity wanted
+        :type openvpn_verb: int
 
         :return: A VPN command ready to be launched
         :rtype: list
@@ -651,7 +657,7 @@ class DarwinVPNLauncher(VPNLauncher):
         openvpn = first(openvpn_possibilities)
         args = [openvpn]
 
-        # TODO: handle verbosity
+        args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()
@@ -768,9 +774,10 @@ class WindowsVPNLauncher(VPNLauncher):
     OPENVPN_BIN = 'openvpn_leap.exe'
 
     # XXX UPDOWN_FILES ... we do not have updown files defined yet!
+    # (and maybe we won't)
 
     def get_vpn_command(self, eipconfig=None, providerconfig=None,
-                        socket_host=None, socket_port="9876"):
+                        socket_host=None, socket_port="9876", openvpn_verb=1):
         """
         Returns the platform dependant vpn launching command. It will
         look for openvpn in the regular paths and algo in
@@ -780,13 +787,19 @@ class WindowsVPNLauncher(VPNLauncher):
 
         :param eipconfig: eip configuration object
         :type eipconfig: EIPConfig
+
         :param providerconfig: provider specific configuration
         :type providerconfig: ProviderConfig
+
         :param socket_host: either socket path (unix) or socket IP
         :type socket_host: str
+
         :param socket_port: either string "unix" if it's a unix
         socket, or port otherwise
         :type socket_port: str
+
+        :param openvpn_verb: the openvpn verbosity wanted
+        :type openvpn_verb: int
 
         :return: A VPN command ready to be launched
         :rtype: list
@@ -810,8 +823,7 @@ class WindowsVPNLauncher(VPNLauncher):
 
         openvpn = first(openvpn_possibilities)
         args = []
-
-        # TODO: handle verbosity
+        args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()

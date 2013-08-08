@@ -142,6 +142,7 @@ def main():
     bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
     logfile = opts.log_file
+    openvpn_verb = opts.openvpn_verb
 
     logger = add_logger_handlers(debug, logfile)
     replace_stdout_stderr_with_logging(logger)
@@ -202,6 +203,7 @@ def main():
     window = MainWindow(
         lambda: twisted_main.quit(app),
         standalone=standalone,
+        openvpn_verb=openvpn_verb,
         bypass_checks=bypass_checks)
 
     sigint_window = partial(sigint_handler, window, logger=logger)
