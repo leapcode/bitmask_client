@@ -212,8 +212,10 @@ def main():
     if IS_MAC:
         window.raise_()
 
-    tx_app = leap_services()
-    assert(tx_app)
+    # This was a good idea, but for this to work as intended we
+    # should centralize the start of all services in there.
+    #tx_app = leap_services()
+    #assert(tx_app)
 
     # Run main loop
     twisted_main.start(app)
