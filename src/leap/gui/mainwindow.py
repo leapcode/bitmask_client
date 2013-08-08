@@ -927,7 +927,8 @@ class MainWindow(QtGui.QMainWindow):
             self._provider_config,
             self._login_widget.get_user(),
             self._login_widget.get_password(),
-            download_if_needed=True)
+            download_if_needed=True,
+            stanalone=self._standalone)
 
         self._download_eip_config()
 
@@ -1033,7 +1034,7 @@ class MainWindow(QtGui.QMainWindow):
             from leap.mail.smtp import setup_smtp_relay
             client_cert = self._eip_config.get_client_cert_path(
                 self._provider_config)
-            setup_smtp_relay(port=1234,
+            setup_smtp_relay(port=2013,
                              keymanager=self._keymanager,
                              smtp_host=host,
                              smtp_port=port,
