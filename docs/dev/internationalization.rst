@@ -11,7 +11,7 @@ Translating Bitmask PySide Application
 
 .. raw:: html
 
-   <div><a target="_blank" style="text-decoration:none; color:black; font-size:66%" href="https://www.transifex.com/projects/p/leap-client/resource/leap-client/" title="See more information on Transifex.com">Top translations: leap-client » leap-client</a><br/><img border="0" src="https://www.transifex.com/projects/p/leap-client/resource/leap-client/chart/image_png"/><br/><a target="_blank" href="https://www.transifex.com/"><img border="0" src="https://ds0k0en9abmn1.cloudfront.net/static/charts/images/tx-logo-micro.646b0065fce6.png"/></a></div>
+   <div><a target="_blank" style="text-decoration:none; color:black; font-size:66%" href="https://www.transifex.com/projects/p/bitmask/resource/bitmask/" title="See more information on Transifex.com">Top translations: bitmask » bitmask</a><br/><img border="0" src="https://www.transifex.com/projects/p/bitmask/resource/bitmask/chart/image_png"/><br/><a target="_blank" href="https://www.transifex.com/"><img border="0" src="https://ds0k0en9abmn1.cloudfront.net/static/charts/images/tx-logo-micro.646b0065fce6.png"/></a></div>
 
 
 For translators
@@ -21,7 +21,7 @@ For translators
    as internal notes.
 
 
-We are using `transifex <http://transifex.com/projects/p/leap-client>`_ to coordinate translation efforts. If you want to contribute, just sign up there and ...
+We are using `transifex <http://transifex.com/projects/p/bitmask>`_ to coordinate translation efforts. If you want to contribute, just sign up there and ...
 
 .. note::
    ... and what??
@@ -80,7 +80,7 @@ You can learn more about the transifex-client `here <http://help.transifex.com/f
 **5.** *Et voila!* Get updated .ts files for each language from ``Transifex``. For instance, to pull updated spanish translations:: 
 
    $ tx pull -l es
-   Pulling new translations for resource leap-client.leap-client (source: data/ts/en_US.ts)
+   Pulling new translations for resource bitmask.bitmask (source: data/ts/en_US.ts)
    -> es: data/translations/es.ts
    Done.
 
@@ -101,7 +101,7 @@ and yes, it's the same command than in step 2. One less thing to remember :)
 
 If you want to try it, just set your LANG environment variable::
 
-    $ LANG=es_ES leap-client
+    $ LANG=es_ES bitmask
 
 
 Translating the Documentation
