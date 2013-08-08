@@ -70,6 +70,7 @@ def copy_reqs(path, withsrc=False):
     with open(reqsfile, "w") as f:
         f.write('\n'.join(parsed_reqs))
 
+
 class cmd_develop(_develop):
     def run(self):
         # versioneer:
@@ -131,7 +132,8 @@ setup(
     test_suite='nose.collector',
     tests_require=utils.parse_requirements(
         reqfiles=['pkg/requirements-testing.pip']),
-    keywords='Bitmask, LEAP, client, qt, encryption, proxy, openvpn, imap, smtp',
+    keywords=('Bitmask, LEAP, client, qt, encryption, '
+              'proxy, openvpn, imap, smtp'),
     author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
     url='https://leap.se',
@@ -145,10 +147,10 @@ setup(
     # not being used? -- setuptools does not like it.
     # looks like debhelper is honoring it...
     data_files=[
-    #    ("share/man/man1",
-    #        ["docs/man/bitmask.1"]),
+        # ("share/man/man1",
+        #     ["docs/man/bitmask.1"]),
         ("share/polkit-1/actions",
-            ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
+         ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
     ],
     zip_safe=False,
     platforms="all",
