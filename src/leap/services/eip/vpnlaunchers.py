@@ -407,7 +407,8 @@ class LinuxVPNLauncher(VPNLauncher):
             args.append(openvpn)
             openvpn = first(pkexec)
 
-        args += ['--verb', '%d' % (openvpn_verb,)]
+        if openvpn_verb is not None:
+            args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()
@@ -657,7 +658,8 @@ class DarwinVPNLauncher(VPNLauncher):
         openvpn = first(openvpn_possibilities)
         args = [openvpn]
 
-        args += ['--verb', '%d' % (openvpn_verb,)]
+        if openvpn_verb is not None:
+            args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()
@@ -823,7 +825,8 @@ class WindowsVPNLauncher(VPNLauncher):
 
         openvpn = first(openvpn_possibilities)
         args = []
-        args += ['--verb', '%d' % (openvpn_verb,)]
+        if openvpn_verb is not None:
+            args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateway_selector = VPNGatewaySelector(eipconfig)
         gateways = gateway_selector.get_gateways()
