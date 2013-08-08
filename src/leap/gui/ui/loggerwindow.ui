@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset resource="../../../../data/resources/mainwindow.qrc">
-    <normaloff>:/images/leap-color-big.png</normaloff>:/images/leap-color-big.png</iconset>
+    <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="2" column="0" colspan="2">
