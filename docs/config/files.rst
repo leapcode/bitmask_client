@@ -3,7 +3,7 @@
 Configuration Files
 ===================
 
-This document covers the different configuration files used by the LEAP Client.
+This document covers the different configuration files used by Bitmask.
 
 leap.conf
 ---------

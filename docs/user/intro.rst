@@ -3,15 +3,15 @@
 Introduction
 ============
 
-The LEAP Client
----------------
+Bitmask
+-------
 .. if yoy change this, change it also in the index.rst
-The **LEAP Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PySide, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
+**Bitmask** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PySide, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
 
 Features
 ^^^^^^^^
 
-The LEAP Client allows to easily secure communications.
+Bitmask allows to easily secure communications.
 
 - Provider selection
 - User registration
@@ -78,22 +78,22 @@ GPLv3 License
 
 .. image:: gpl.*
 
-The LEAP Client is released under the terms of the `GNU GPL version 3`_ or later.
+Bitmask is released under the terms of the `GNU GPL version 3`_ or later.
 
 ::
 
-    The LEAP Client is free software: you can redistribute it and/or modify
+    Bitmask is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    The LEAP Client is distributed in the hope that it will be useful,
+    Bitmask is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with the LEAP Client.  If not, see http://www.gnu.org/licenses/.
+    along with Bitmask.  If not, see http://www.gnu.org/licenses/.
 
 .. _`GNU GPL version 3`: http://www.gnu.org/licenses/gpl.txt
 

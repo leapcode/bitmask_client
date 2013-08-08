@@ -3,11 +3,11 @@
 Internationalization
 ====================
 
-This part of the documentation covers the localization and translation of LEAP Client.
+This part of the documentation covers the localization and translation of Bitmask.
 Because we want to *bring fire to the people*, in as many countries and languages as possible.
 
-Translating the LEAP Client PySide Application
---------------------------------------------
+Translating Bitmask PySide Application
+--------------------------------------
 
 .. raw:: html
 
@@ -61,7 +61,7 @@ You need ``pyside-lupdate`` and ``lrelease`` for these steps. To get it, in debi
 
 If you do not already have it, install the ``transifex-client`` from the cheese shop::
 
-   pip install  transifex-client
+   pip install transifex-client
 
 You can learn more about the transifex-client `here <http://help.transifex.com/features/client/index.html>`_.
 
@@ -89,7 +89,7 @@ Note that there is a configuration option in ``.tx/config`` for setting the mini
 
 **6.** Generate .qm files from the updated .ts files::
 
-   $ make translations 
+   $ make translations
 
 and yes, it's the same command than in step 2. One less thing to remember :)
 
