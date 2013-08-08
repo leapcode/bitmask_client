@@ -1033,7 +1033,7 @@ class MainWindow(QtGui.QMainWindow):
             from leap.mail.smtp import setup_smtp_relay
             client_cert = self._eip_config.get_client_cert_path(
                 self._provider_config)
-            setup_smtp_relay(port=1234,
+            setup_smtp_relay(port=2013,
                              keymanager=self._keymanager,
                              smtp_host=host,
                              smtp_port=port,
