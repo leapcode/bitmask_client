@@ -3,7 +3,7 @@
 Setting up a development environment
 ====================================
 
-This document covers how to get an enviroment ready to contribute code to the LEAP Client.
+This document covers how to get an enviroment ready to contribute code to Bitmask.
 
 Cloning the repo
 ----------------
@@ -13,12 +13,12 @@ Cloning the repo
 
 ::
 
-    git clone git://leap.se/leap_client 
+    git clone git://leap.se/bitmask
     git checkout develop
 
 Base Dependencies
 ------------------
-Leap client depends on these libraries:
+Bitmask depends on these libraries:
 
 * `python 2.6 or 2.7`
 * `qt4` libraries (see also :ref:`Troubleshooting PySide install <pysidevirtualenv>` about how to install inside your virtualenv)
@@ -100,10 +100,10 @@ You can install python dependencies with ``pip``. If you do it inside your worki
 Copy script files
 -----------------
 
-The openvpn invocation expects some files to be in place. If you have not installed `leap-client` from a debian package, you must copy these files manually by now::
+The openvpn invocation expects some files to be in place. If you have not installed `bitmask` from a debian package, you must copy these files manually by now::
 
     $ sudo mkdir -p /etc/leap
-    $ sudo cp pkg/linux/resolv-update /etc/leap 
+    $ sudo cp pkg/linux/resolv-update /etc/leap
 
 .. _policykit:
 
@@ -111,9 +111,9 @@ Running openvpn without root privileges
 ---------------------------------------
 
 In linux, we are using ``policykit`` to be able to run openvpn without root privileges, and a policy file is needed to be installed for that to be possible.
-The setup script tries to install the policy file when installing the client system-wide, so if you have installed the client in your global site-packages at least once it should have copied this file for you. 
+The setup script tries to install the policy file when installing bitmask system-wide, so if you have installed bitmask in your global site-packages at least once it should have copied this file for you.
 
-If you *only* are running the client from inside a virtualenv, you will need to copy this file by hand::
+If you *only* are running bitmask from inside a virtualenv, you will need to copy this file by hand::
 
     $ sudo cp pkg/linux/polkit/net.openvpn.gui.leap.policy /usr/share/polkit-1/actions/
 

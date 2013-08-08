@@ -520,9 +520,9 @@ class DarwinVPNLauncher(VPNLauncher):
     COCOASUDO = "cocoasudo"
     # XXX need the good old magic translate for these strings
     # (look for magic in 0.2.0 release)
-    SUDO_MSG = ("LEAP needs administrative privileges to run "
+    SUDO_MSG = ("Bitmask needs administrative privileges to run "
                 "Encrypted Internet.")
-    INSTALL_MSG = ("\"LEAP needs administrative privileges to install "
+    INSTALL_MSG = ("\"Bitmask needs administrative privileges to install "
                    "missing scripts and fix permissions.\"")
 
     INSTALL_PATH = os.path.realpath(os.getcwd() + "/../../")

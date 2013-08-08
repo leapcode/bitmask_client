@@ -3,7 +3,7 @@
 Installation
 ============
 
-This part of the documentation covers the installation of the LEAP Client.
+This part of the documentation covers the installation of Bitmask.
 We assume that you want to get it properly installed before being able to use it.
 
 .. note::
@@ -16,9 +16,9 @@ Distribute & Pip
 
 .. warning:: The package in the cheese shop is from the stable, `0.2.0` release, which is now outdated. You are encouraged to install the development version instead.
 
-Installing LEAP Client is as simple as using `pip <http://www.pip-installer.org/>`_ for the already released versions ::
+Installing Bitmask is as simple as using `pip <http://www.pip-installer.org/>`_ for the already released versions ::
 
-    $ pip install leap-client
+    $ pip install bitmask
 
 Debian package
 --------------
@@ -40,20 +40,20 @@ Add the archive to your sources.list::
    # apt-get update
    # apt-get install leap-keyring
 
-And  then you can happily install leap-client::
+And  then you can happily install bitmask::
 
-   apt-get install leap-client
+   apt-get install bitmask
 
 Show me the code!
 -----------------
 
 You can get the code from LEAP public git repository ::
 
-   $ git clone git://leap.se/leap_client
+   $ git clone git://leap.se/bitmask
 
 Or from the github mirror ::
 
-   $ git clone git://github.com/leapcode/leap_client.git
+   $ git clone git://github.com/leapcode/bitmask.git
 
 Once you have grabbed a copy of the sources, you can install it into your site-packages easily ::
 

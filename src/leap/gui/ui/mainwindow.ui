@@ -11,11 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>LEAP</string>
+   <string>Bitmask</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../../../data/resources/mainwindow.qrc">
-    <normaloff>:/images/leap-color-big.png</normaloff>:/images/leap-color-big.png</iconset>
+    <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <property name="inputMethodHints">
    <set>Qt::ImhHiddenText</set>
@@ -166,7 +166,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/leap-color-big.png</pixmap>
+       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/mask-launcher.png</pixmap>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -288,7 +288,7 @@
   </action>
   <action name="action_about_leap">
    <property name="text">
-    <string>About &amp;LEAP</string>
+    <string>About &amp;Bitmask</string>
    </property>
   </action>
   <action name="action_help">

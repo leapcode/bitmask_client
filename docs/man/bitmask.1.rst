@@ -1,6 +1,6 @@
-===========
-leap-client 
-===========
+=======
+bitmask
+=======
 
 ------------------------------------------------------------------------
 graphical client to control LEAP, the encrypted internet access toolkit.
@@ -16,12 +16,12 @@ graphical client to control LEAP, the encrypted internet access toolkit.
 SYNOPSIS
 ========
 
-leap-client [-h] [-d] [-l [LOG FILE]] [--openvpn-verbosity [OPENVPN_VERB]]
+bitmask [-h] [-d] [-l [LOG FILE]] [--openvpn-verbosity [OPENVPN_VERB]]
 
 DESCRIPTION
 ===========
 
-*leap-client* is a graphical client to control LEAP, the encrypted internet access toolkit.
+*bitmask* is a graphical client to control LEAP, the encrypted internet access toolkit.
 
 When launched, it places an icon in the system tray from where the LEAP services can be controlled.
 
@@ -49,14 +49,14 @@ WARNING
 
 This software is still in early alfa testing. So don't trust your life to it! 
 
-At the current time, the LEAP Client is not compatible with ``openresolv``, but it works with ``resolvconf``.
+At the current time, Bitmask is not compatible with ``openresolv``, but it works with ``resolvconf``.
 
 FILES
 =====
 
 /etc/leap/resolv-update
 -----------------------
-Post up/down script passed to openvpn. It writes /etc/resolv.conf to avoid dns leaks, and restores the original resolv.conf on exit.            
+Post up/down script passed to openvpn. It writes /etc/resolv.conf to avoid dns leaks, and restores the original resolv.conf on exit.
 
 /etc/leap/resolv-head
 ---------------------

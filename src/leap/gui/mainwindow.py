@@ -83,7 +83,7 @@ class MainWindow(QtGui.QMainWindow):
     EIP_STATUS_INDEX = 1
 
     # Keyring
-    KEYRING_KEY = "leap_client"
+    KEYRING_KEY = "bitmask"
 
     # SMTP
     PORT_KEY = "port"
@@ -423,11 +423,11 @@ class MainWindow(QtGui.QMainWindow):
 
         Parses and displays the updates details
         """
-        msg = self.tr("The LEAPClient app is ready to update, please"
+        msg = self.tr("The Bitmask app is ready to update, please"
                       " restart the application.")
 
         # We assume that if there is nothing in the contents, then
-        # the LEAPClient bundle is what needs updating.
+        # the Bitmask bundle is what needs updating.
         if len(self._updates_content) > 0:
             files = self._updates_content.split(", ")
             files_str = ""
@@ -655,17 +655,23 @@ class MainWindow(QtGui.QMainWindow):
         SLOT
         TRIGGERS: self.ui.action_about_leap.triggered
 
-        Display the About LEAP dialog
+        Display the About Bitmask dialog
         """
         QtGui.QMessageBox.about(
-            self, self.tr("About LEAP - %s") % (VERSION,),
-            self.tr("version: <b>%s</b><br>"
+            self, self.tr("About Bitmask - %s") % (VERSION,),
+            self.tr("Version: <b>%s</b><br>"
+                    "<br>"
+                    "Bitmask is the Desktop client application for "
+                    "the LEAP platform, supporting encrypted internet "
+                    "proxy, secure email, and secure chat (coming soon).<br>"
+                    "<br>"
                     "LEAP is a non-profit dedicated to giving "
                     "all internet users access to secure "
                     "communication. Our focus is on adapting "
                     "encryption technology to make it easy to use "
-                    "and widely available. "
-                    "<a href=\"https://leap.se\">More about LEAP"
+                    "and widely available. <br>"
+                    "<br>"
+                    "<a href='https://leap.se'>More about LEAP"
                     "</a>") % (VERSION,))
 
     def changeEvent(self, e):
@@ -1145,7 +1151,7 @@ class MainWindow(QtGui.QMainWindow):
             self._status_panel.set_global_status(
                 self.tr("Another openvpn instance is already running, and "
                         "could not be stopped because it was not launched by "
-                        "LEAP. Please stop it and try again."),
+                        "Bitmask. Please stop it and try again."),
                 error=True)
             self._set_eipstatus_off()
         except VPNLauncherException as e:

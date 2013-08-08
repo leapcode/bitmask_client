@@ -84,7 +84,7 @@ def get_missing_updown_dialog():
     :rtype: QtGui.QMessageBox instance
     """
     WE_NEED_POWERS = ("To better protect your privacy, "
-                      "LEAP needs administrative privileges "
+                      "Bitmask needs administrative privileges "
                       "to install helper files. "
                       "Do you want to proceed?")
     msg = QtGui.QMessageBox()
@@ -180,7 +180,7 @@ def WindowsInitializer():
     if not _windows_has_tap_device():
         msg = QtGui.QMessageBox()
         msg.setWindowTitle(msg.tr("TAP Driver"))
-        msg.setText(msg.tr("LEAPClient needs to install the necessary drivers "
+        msg.setText(msg.tr("Bitmask needs to install the necessary drivers "
                            "for Encrypted Internet to work. Would you like to "
                            "proceed?"))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
@@ -306,7 +306,7 @@ def DarwinInitializer():
     if not _darwin_has_tun_kext():
         msg = QtGui.QMessageBox()
         msg.setWindowTitle(msg.tr("TUN Driver"))
-        msg.setText(msg.tr("LEAPClient needs to install the necessary drivers "
+        msg.setText(msg.tr("Bitmask needs to install the necessary drivers "
                            "for Encrypted Internet to work. Would you like to "
                            "proceed?"))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
