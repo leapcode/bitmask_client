@@ -198,6 +198,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
         logger.debug("Retrieving key for %s" % (address,))
 
         srp_auth = SRPAuth(self._provider_config)
+
+        # TODO: Fix for Windows
+        gpgbin = "/usr/bin/gpg"
+
+        if self._standalone:
+            gpgbin = os.path.join(self._provider_config.get_path_prefix(),
+                                  "..", "apps", "mail", "gpg")
+
         self._keymanager = KeyManager(
             address,
             "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
@@ -207,7 +215,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             ca_cert_path=self._provider_config.get_ca_cert_path(),
             api_uri=self._provider_config.get_api_uri(),
             api_version=self._provider_config.get_api_version(),
-            uid=srp_auth.get_uid())
+            uid=srp_auth.get_uid(),
+            gpgbinary=gpgbin)
         try:
             self._keymanager.get_key(address, openpgp.OpenPGPKey,
                                      private=True, fetch_remote=False)
@@ -221,7 +230,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                                  provider_config,
                                  user,
                                  password,
-                                 download_if_needed=False):
+                                 download_if_needed=False,
+                                 standalone=False):
         """
         Starts the checks needed for a new soledad setup
 
@@ -231,6 +241,13 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :type user: str
         :param password: User's password
         :type password: str
+        :param download_if_needed: If True, it will only download
+                                   files if the have changed since the
+                                   time it was previously downloaded.
+        :type download_if_needed: bool
+        :param standalone: If True, it'll look for paths inside the
+                           bundle (like for gpg)
+        :type standalone: bool
         """
         leap_assert_type(provider_config, ProviderConfig)
 
@@ -238,6 +255,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._download_if_needed = download_if_needed
         self._user = user
         self._password = password
+        self._standalone = standalone
 
         cb_chain = [
             (self._download_config, self.download_config),

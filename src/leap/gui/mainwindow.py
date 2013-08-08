@@ -927,7 +927,8 @@ class MainWindow(QtGui.QMainWindow):
             self._provider_config,
             self._login_widget.get_user(),
             self._login_widget.get_password(),
-            download_if_needed=True)
+            download_if_needed=True,
+            stanalone=self._standalone)
 
         self._download_eip_config()
 
