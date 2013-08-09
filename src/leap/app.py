@@ -142,21 +142,22 @@ def main():
     bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
     logfile = opts.log_file
+    openvpn_verb = opts.openvpn_verb
 
     logger = add_logger_handlers(debug, logfile)
     replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
-        # leap-client is already running
+        # Bitmask is already running
         logger.warning("Tried to launch more than one instance "
-                       "of leap-client. Raising the existing "
+                       "of Bitmask. Raising the existing "
                        "one instead.")
         sys.exit(1)
 
     check_requirements()
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    logger.info('LEAP client version %s', VERSION)
+    logger.info('Bitmask version %s', VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')
@@ -202,6 +203,7 @@ def main():
     window = MainWindow(
         lambda: twisted_main.quit(app),
         standalone=standalone,
+        openvpn_verb=openvpn_verb,
         bypass_checks=bypass_checks)
 
     sigint_window = partial(sigint_handler, window, logger=logger)
@@ -210,8 +212,10 @@ def main():
     if IS_MAC:
         window.raise_()
 
-    tx_app = leap_services()
-    assert(tx_app)
+    # This was a good idea, but for this to work as intended we
+    # should centralize the start of all services in there.
+    #tx_app = leap_services()
+    #assert(tx_app)
 
     # Run main loop
     twisted_main.start(app)

@@ -45,6 +45,7 @@ from leap.services.eip.providerbootstrapper import ProviderBootstrapper
 # XXX: Soledad might not work out of the box in Windows, issue #2932
 from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
 from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
+from leap.services.mail import imap
 from leap.platform_init import IS_WIN, IS_MAC
 from leap.platform_init.initializers import init_platform
 
@@ -82,7 +83,7 @@ class MainWindow(QtGui.QMainWindow):
     EIP_STATUS_INDEX = 1
 
     # Keyring
-    KEYRING_KEY = "leap_client"
+    KEYRING_KEY = "bitmask"
 
     # SMTP
     PORT_KEY = "port"
@@ -94,12 +95,15 @@ class MainWindow(QtGui.QMainWindow):
     # Signals
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
+    soledad_ready = QtCore.Signal([])
 
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
 
     def __init__(self, quit_callback,
-                 standalone=False, bypass_checks=False):
+                 standalone=False,
+                 openvpn_verb=1,
+                 bypass_checks=False):
         """
         Constructor for the client main window
 
@@ -139,6 +143,9 @@ class MainWindow(QtGui.QMainWindow):
             self._settings,
             self.ui.stackedWidget.widget(self.LOGIN_INDEX))
         self.ui.loginLayout.addWidget(self._login_widget)
+
+        # Signals
+        # TODO separate logic from ui signals.
 
         self._login_widget.login.connect(self._login)
         self._login_widget.cancel_login.connect(self._cancel_login)
@@ -210,7 +217,7 @@ class MainWindow(QtGui.QMainWindow):
         self._smtp_bootstrapper.download_config.connect(
             self._smtp_bootstrapped_stage)
 
-        self._vpn = VPN()
+        self._vpn = VPN(openvpn_verb=openvpn_verb)
         self._vpn.qtsigs.state_changed.connect(
             self._status_panel.update_vpn_state)
         self._vpn.qtsigs.status_changed.connect(
@@ -260,7 +267,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.lblNewUpdates.setVisible(False)
         self.ui.btnMore.setVisible(False)
         self.ui.btnMore.clicked.connect(self._updates_details)
+
         self.new_updates.connect(self._react_to_new_updates)
+        self.soledad_ready.connect(self._start_imap_service)
 
         init_platform()
 
@@ -273,6 +282,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self._soledad = None
         self._keymanager = None
+        self._imap_service = None
 
         self._login_defer = None
         self._download_provider_defer = None
@@ -413,11 +423,11 @@ class MainWindow(QtGui.QMainWindow):
 
         Parses and displays the updates details
         """
-        msg = self.tr("The LEAPClient app is ready to update, please"
+        msg = self.tr("The Bitmask app is ready to update, please"
                       " restart the application.")
 
         # We assume that if there is nothing in the contents, then
-        # the LEAPClient bundle is what needs updating.
+        # the Bitmask bundle is what needs updating.
         if len(self._updates_content) > 0:
             files = self._updates_content.split(", ")
             files_str = ""
@@ -645,17 +655,23 @@ class MainWindow(QtGui.QMainWindow):
         SLOT
         TRIGGERS: self.ui.action_about_leap.triggered
 
-        Display the About LEAP dialog
+        Display the About Bitmask dialog
         """
         QtGui.QMessageBox.about(
-            self, self.tr("About LEAP - %s") % (VERSION,),
-            self.tr("version: <b>%s</b><br>"
+            self, self.tr("About Bitmask - %s") % (VERSION,),
+            self.tr("Version: <b>%s</b><br>"
+                    "<br>"
+                    "Bitmask is the Desktop client application for "
+                    "the LEAP platform, supporting encrypted internet "
+                    "proxy, secure email, and secure chat (coming soon).<br>"
+                    "<br>"
                     "LEAP is a non-profit dedicated to giving "
                     "all internet users access to secure "
                     "communication. Our focus is on adapting "
                     "encryption technology to make it easy to use "
-                    "and widely available. "
-                    "<a href=\"https://leap.se\">More about LEAP"
+                    "and widely available. <br>"
+                    "<br>"
+                    "<a href='https://leap.se'>More about LEAP"
                     "</a>") % (VERSION,))
 
     def changeEvent(self, e):
@@ -804,7 +820,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._login_widget.set_status(self.tr("Logging in..."), error=False)
         self._login_widget.set_enabled(False)
-        self._login_widget.set_cancel(True)
 
         if self._login_widget.get_remember() and has_keyring():
             # in the keyring and in the settings
@@ -832,7 +847,6 @@ class MainWindow(QtGui.QMainWindow):
         Stops the login sequence.
         """
         logger.debug("Cancelling log in.")
-        self._login_widget.set_cancel(False)
 
         if self._download_provider_defer:
             logger.debug("Cancelling download provider defer.")
@@ -913,7 +927,8 @@ class MainWindow(QtGui.QMainWindow):
             self._provider_config,
             self._login_widget.get_user(),
             self._login_widget.get_password(),
-            download_if_needed=True)
+            download_if_needed=True,
+            standalone=self._standalone)
 
         self._download_eip_config()
 
@@ -951,29 +966,41 @@ class MainWindow(QtGui.QMainWindow):
         passed = data[self._soledad_bootstrapper.PASSED_KEY]
         if not passed:
             logger.error(data[self._soledad_bootstrapper.ERROR_KEY])
+            return
+
+        logger.debug("Done bootstrapping Soledad")
+
+        self._soledad = self._soledad_bootstrapper.soledad
+        self._keymanager = self._soledad_bootstrapper.keymanager
+
+        # Ok, now soledad is ready, so we can allow other things that
+        # depend on soledad to start.
+
+        # this will trigger start_imap_service
+        self.soledad_ready.emit()
+
+        # TODO connect all these activations to the soledad_ready
+        # signal so the logic is clearer to follow.
+
+        if self._provider_config.provides_mx() and \
+                self._enabled_services.count(self.MX_SERVICE) > 0:
+            self._smtp_bootstrapper.run_smtp_setup_checks(
+                self._provider_config,
+                self._smtp_config,
+                True)
         else:
-            logger.debug("Done bootstrapping Soledad")
-
-            self._soledad = self._soledad_bootstrapper.soledad
-            self._keymanager = self._soledad_bootstrapper.keymanager
-
-            if self._provider_config.provides_mx() and \
-                    self._enabled_services.count(self.MX_SERVICE) > 0:
-                self._smtp_bootstrapper.run_smtp_setup_checks(
-                    self._provider_config,
-                    self._smtp_config,
-                    True)
+            if self._enabled_services.count(self.MX_SERVICE) > 0:
+                pass  # TODO: show MX status
+                #self._status_panel.set_eip_status(
+                #    self.tr("%s does not support MX") %
+                #    (self._provider_config.get_domain(),),
+                #                     error=True)
             else:
-                if self._enabled_services.count(self.MX_SERVICE) > 0:
-                    pass  # TODO: show MX status
-                    #self._status_panel.set_eip_status(
-                    #    self.tr("%s does not support MX") %
-                    #    (self._provider_config.get_domain(),),
-                    #                     error=True)
-                else:
-                    pass  # TODO: show MX status
-                    #self._status_panel.set_eip_status(
-                    #    self.tr("MX is disabled"))
+                pass  # TODO: show MX status
+                #self._status_panel.set_eip_status(
+                #    self.tr("MX is disabled"))
+
+    # Service control methods: smtp
 
     def _smtp_bootstrapped_stage(self, data):
         """
@@ -991,29 +1018,41 @@ class MainWindow(QtGui.QMainWindow):
         passed = data[self._smtp_bootstrapper.PASSED_KEY]
         if not passed:
             logger.error(data[self._smtp_bootstrapper.ERROR_KEY])
-        else:
-            logger.debug("Done bootstrapping SMTP")
+            return
+        logger.debug("Done bootstrapping SMTP")
 
-            hosts = self._smtp_config.get_hosts()
-            # TODO: handle more than one host and define how to choose
-            if len(hosts) > 0:
-                hostname = hosts.keys()[0]
-                logger.debug("Using hostname %s for SMTP" % (hostname,))
-                host = hosts[hostname][self.IP_KEY].encode("utf-8")
-                port = hosts[hostname][self.PORT_KEY]
-                # TODO: pick local smtp port in a better way
-                # TODO: Make the encrypted_only configurable
+        hosts = self._smtp_config.get_hosts()
+        # TODO: handle more than one host and define how to choose
+        if len(hosts) > 0:
+            hostname = hosts.keys()[0]
+            logger.debug("Using hostname %s for SMTP" % (hostname,))
+            host = hosts[hostname][self.IP_KEY].encode("utf-8")
+            port = hosts[hostname][self.PORT_KEY]
+            # TODO: pick local smtp port in a better way
+            # TODO: Make the encrypted_only configurable
 
-                from leap.mail.smtp import setup_smtp_relay
-                client_cert = self._eip_config.get_client_cert_path(
-                    self._provider_config)
-                setup_smtp_relay(port=1234,
-                                 keymanager=self._keymanager,
-                                 smtp_host=host,
-                                 smtp_port=port,
-                                 smtp_cert=client_cert,
-                                 smtp_key=client_cert,
-                                 encrypted_only=False)
+            from leap.mail.smtp import setup_smtp_relay
+            client_cert = self._eip_config.get_client_cert_path(
+                self._provider_config)
+            setup_smtp_relay(port=2013,
+                             keymanager=self._keymanager,
+                             smtp_host=host,
+                             smtp_port=port,
+                             smtp_cert=client_cert,
+                             smtp_key=client_cert,
+                             encrypted_only=False)
+
+    def _start_imap_service(self):
+        """
+        SLOT
+        TRIGGERS:
+            soledad_ready
+        """
+        logger.debug('Starting imap service')
+
+        self._imap_service = imap.start_imap_service(
+            self._soledad,
+            self._keymanager)
 
     def _get_socket_host(self):
         """
@@ -1068,6 +1107,7 @@ class MainWindow(QtGui.QMainWindow):
 
             self._status_panel.eip_started()
 
+            # XXX refactor into status_panel method?
             self._action_eip_startstop.setText(self.tr("Turn OFF"))
             self._action_eip_startstop.disconnect(self)
             self._action_eip_startstop.triggered.connect(
@@ -1112,7 +1152,7 @@ class MainWindow(QtGui.QMainWindow):
             self._status_panel.set_global_status(
                 self.tr("Another openvpn instance is already running, and "
                         "could not be stopped because it was not launched by "
-                        "LEAP. Please stop it and try again."),
+                        "Bitmask. Please stop it and try again."),
                 error=True)
             self._set_eipstatus_off()
         except VPNLauncherException as e:
@@ -1301,7 +1341,6 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._provider_bootstrapper.PASSED_KEY]
         if not passed:
-            self._login_widget.set_cancel(False)
             self._login_widget.set_enabled(True)
             self._login_widget.set_status(
                 self.tr("Unable to connect: Problem with provider"))
@@ -1409,6 +1448,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('About to quit, doing cleanup...')
 
+        if self._imap_service is not None:
+            self._imap_service.stop()
+
         if self._srp_auth is not None:
             if self._srp_auth.get_session_id() is not None or \
                self._srp_auth.get_token() is not None:
@@ -1421,16 +1463,28 @@ class MainWindow(QtGui.QMainWindow):
         else:
             logger.error("No instance of soledad was found.")
 
-        logger.debug('Cleaning pidfiles')
-        self._cleanup_pidfiles()
-
         logger.debug('Terminating vpn')
         self._vpn.terminate(shutdown=True)
+
+        if self._login_defer:
+            logger.debug("Cancelling login defer.")
+            self._login_defer.cancel()
+
+        if self._download_provider_defer:
+            logger.debug("Cancelling download provider defer.")
+            self._download_provider_defer.cancel()
+
+        # TODO missing any more cancels?
+
+        logger.debug('Cleaning pidfiles')
+        self._cleanup_pidfiles()
 
     def quit(self):
         """
         Cleanup and tidely close the main window before quitting.
         """
+        # TODO: separate the shutting down of services from the
+        # UI stuff.
         self._cleanup_and_quit()
 
         self._really_quit = True
@@ -1440,14 +1494,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._logger_window:
             self._logger_window.close()
-
-        if self._login_defer:
-            logger.debug("Cancelling login defer.")
-            self._login_defer.cancel()
-
-        if self._download_provider_defer:
-            logger.debug("Cancelling download provider defer.")
-            self._download_provider_defer.cancel()
 
         self.close()
 

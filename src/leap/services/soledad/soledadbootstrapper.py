@@ -23,6 +23,7 @@ import logging
 import os
 
 from PySide import QtCore
+from u1db import errors as u1db_errors
 
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
@@ -103,15 +104,18 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
             # TODO: If selected server fails, retry with another host
             # (issue #3309)
-            self._soledad = Soledad(uuid,
-                                    self._password.encode("utf-8"),
-                                    secrets_path=secrets_path,
-                                    local_db_path=local_db_path,
-                                    server_url=server_url,
-                                    cert_file=cert_file,
-                                    auth_token=srp_auth.get_token())
-
-            self._soledad.sync()
+            try:
+                self._soledad = Soledad(
+                    uuid,
+                    self._password.encode("utf-8"),
+                    secrets_path=secrets_path,
+                    local_db_path=local_db_path,
+                    server_url=server_url,
+                    cert_file=cert_file,
+                    auth_token=srp_auth.get_token())
+                self._soledad.sync()
+            except u1db_errors.Unauthorized:
+                logger.error("Error while initializing soledad.")
         else:
             raise Exception("No soledad server found")
 
@@ -139,10 +143,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if self._download_if_needed and mtime:
             headers['if-modified-since'] = mtime
 
+        api_version = self._provider_config.get_api_version()
+
         # there is some confusion with this uri,
         config_uri = "%s/%s/config/soledad-service.json" % (
             self._provider_config.get_api_uri(),
-            self._provider_config.get_api_version())
+            api_version)
         logger.debug('Downloading soledad config from: %s' % config_uri)
 
         srp_auth = SRPAuth(self._provider_config)
@@ -157,6 +163,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                                 headers=headers,
                                 cookies=cookies)
         res.raise_for_status()
+
+        self._soledad_config.set_api_version(api_version)
 
         # Not modified
         if res.status_code == 304:
@@ -190,6 +198,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
         logger.debug("Retrieving key for %s" % (address,))
 
         srp_auth = SRPAuth(self._provider_config)
+
+        # TODO: Fix for Windows
+        gpgbin = "/usr/bin/gpg"
+
+        if self._standalone:
+            gpgbin = os.path.join(self._provider_config.get_path_prefix(),
+                                  "..", "apps", "mail", "gpg")
+
         self._keymanager = KeyManager(
             address,
             "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
@@ -199,7 +215,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             ca_cert_path=self._provider_config.get_ca_cert_path(),
             api_uri=self._provider_config.get_api_uri(),
             api_version=self._provider_config.get_api_version(),
-            uid=srp_auth.get_uid())
+            uid=srp_auth.get_uid(),
+            gpgbinary=gpgbin)
         try:
             self._keymanager.get_key(address, openpgp.OpenPGPKey,
                                      private=True, fetch_remote=False)
@@ -213,7 +230,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                                  provider_config,
                                  user,
                                  password,
-                                 download_if_needed=False):
+                                 download_if_needed=False,
+                                 standalone=False):
         """
         Starts the checks needed for a new soledad setup
 
@@ -223,6 +241,13 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :type user: str
         :param password: User's password
         :type password: str
+        :param download_if_needed: If True, it will only download
+                                   files if the have changed since the
+                                   time it was previously downloaded.
+        :type download_if_needed: bool
+        :param standalone: If True, it'll look for paths inside the
+                           bundle (like for gpg)
+        :type standalone: bool
         """
         leap_assert_type(provider_config, ProviderConfig)
 
@@ -230,6 +255,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._download_if_needed = download_if_needed
         self._user = user
         self._password = password
+        self._standalone = standalone
 
         cb_chain = [
             (self._download_config, self.download_config),

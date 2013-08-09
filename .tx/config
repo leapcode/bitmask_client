@@ -1,7 +1,7 @@
 [main]
 host = https://www.transifex.com
 
-[leap-client.leap-client]
+[bitmask.bitmask]
 
 file_filter = data/translations/<lang>.ts
 source_file = data/ts/en_US.ts

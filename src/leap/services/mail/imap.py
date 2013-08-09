@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# twisted.py
+# imap.py
 # Copyright (C) 2013 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,32 +15,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Twisted services launched by the client
+Initialization of imap service
 """
 import logging
+import sys
 
-from twisted.application.service import Application
-from twisted.internet.task import LoopingCall
+from leap.mail.imap.service import imap
+from twisted.python import log
 
 logger = logging.getLogger(__name__)
 
 
-def task():
+def start_imap_service(*args, **kwargs):
     """
-    stub periodic task, mainly for tests.
-    DELETE-ME when there's real meat here :)
-    """
-    from datetime import datetime
-    logger.debug("hi there %s", datetime.now())
+    Initializes and run imap service.
 
+    :returns: twisted.internet.task.LoopingCall instance
+    """
+    logger.debug('Launching imap service')
 
-def leap_services():
-    """
-    Check which twisted services are enabled and
-    register them.
-    """
-    logger.debug('starting leap services')
-    application = Application("Bitmask Local Services")
-    #lc = LoopingCall(task)
-    #lc.start(5)
-    return application
+    # Uncomment the next two lines to get a separate debugging log
+    # TODO handle this by a separate flag.
+    #log.startLogging(open('/tmp/leap-imap.log', 'w'))
+    #log.startLogging(sys.stdout)
+
+    return imap.run_service(*args, **kwargs)
