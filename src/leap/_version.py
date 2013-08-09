@@ -16,6 +16,8 @@ git_full = "$Format:%H$"
 
 import subprocess
 import sys
+import re
+import os.path
 
 
 def run_command(args, cwd=None, verbose=False):
@@ -36,11 +38,6 @@ def run_command(args, cwd=None, verbose=False):
             print("unable to run %s (error)" % args[0])
         return None
     return stdout
-
-
-import sys
-import re
-import os.path
 
 
 def get_expanded_variables(versionfile_source):
@@ -187,7 +184,7 @@ def versions_from_parentdir(parentdir_prefix, versionfile_source,
     return {"version": dirname[len(parentdir_prefix):], "full": ""}
 
 tag_prefix = ""
-parentdir_prefix = "leap_client-"
+parentdir_prefix = "bitmask-"
 versionfile_source = "src/leap/_version.py"
 
 
