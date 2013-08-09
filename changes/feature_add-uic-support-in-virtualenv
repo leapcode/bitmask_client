@@ -1,1 +1,0 @@
-  o Add pyside-uic support inside the virtualenv. This way it won't fail to 'make' if the virtualenv is activated. Closes #3411.

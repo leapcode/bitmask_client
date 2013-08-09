@@ -1,2 +1,0 @@
-  o Fail gracefully when the events port 8090 is in use by something
-    else. Fixes #3276.

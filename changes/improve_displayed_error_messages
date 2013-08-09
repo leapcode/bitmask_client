@@ -1,2 +1,0 @@
-  o Display a more generic error message in the main window, and leave
-    the detailed one for the log. Closes #3373.

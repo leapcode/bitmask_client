@@ -1,2 +1,0 @@
-  o Support bundled gpg. Related to #3397.
-  o Set the default port for SMTP to be 2013.

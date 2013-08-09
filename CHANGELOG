@@ -1,3 +1,39 @@
+0.3.0 Aug 9:
+  o Add missing scripts does not stop if a command fails, also warns
+    the user if there was an error. Closes #3294.
+  o Replace 'Sign Out' with 'Log Out' and 'User' with
+    'Username'. Closes #3319.
+  o Verify cacert existence before using it. Closes bug #3362.
+  o Properly handle login failures. Closes bug #3401.
+  o Bugfix, avoid getting negative rates. Closes #3274.
+  o Raise window when setting it as visible. Fixes #3374
+  o Fail gracefully when the events port 8090 is in use by something
+    else. Fixes #3276.
+  o Validate the username in the login form against the same regexp as
+    the wizard registration form. Fixes #3214.
+  o Update text from the tray menu based on the visibility of the
+    window. Fixes #3400.
+  o Add check for outdated polkit file. Closes #3209.
+  o Add support for multiple schemas so we can support multiples api
+    versions. Closes #3310.
+  o Rebrand the client to be named Bitmask. Feature #3313.
+  o Add cancel button to login. Closes #3318.
+  o Add multiple schema support for SMTP. Closes #3403.
+  o Add multiple schema support for Soledad. Closes #3404.
+  o Update Transifex project name and translators'
+    documentation. Closes #3418.
+  o Add check for tuntap kext before launching openvpn. Closes: #2906
+  o Accept flag for changing openvpn verbosity in logs. Closes: #3305
+  o Add imap service to the client. Closes: #2579
+  o Add pyside-uic support inside the virtualenv. This way it won't
+    fail to 'make' if the virtualenv is activated. Closes #3411.
+  o Reintegrate SMTP relay module. Closes #3375
+  o Reintegrate Soledad into the client. Closes #3307.
+  o Support bundled gpg. Related to #3397.
+  o Set the default port for SMTP to be 2013.
+  o Display a more generic error message in the main window, and leave
+    the detailed one for the log. Closes #3373.
+
 0.2.4 Jul 26:
   o Use the provider CA cert for every request once we have it
     bootstrapped (TOFU). Closes #3227.

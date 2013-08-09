@@ -1,2 +1,0 @@
-  o Validate the username in the login form against the same regexp as
-    the wizard registration form. Fixes #3214.
