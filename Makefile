@@ -17,7 +17,7 @@ COMPILED_DIR = src/leap/gui
 TRANSLAT_DIR = data/translations
 
 #Project file, used for translations
-PROJFILE = data/leap_client.pro
+PROJFILE = data/bitmask.pro
 
 #UI files to compile
 UI_FILES = loggerwindow.ui mainwindow.ui wizard.ui login.ui statuspanel.ui
@@ -58,7 +58,7 @@ $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
 
 manpages:
-	rst2man docs/man/leap.1.rst docs/man/leap.1
+	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
 
 apidocs:
 	@sphinx-apidoc -o docs/api src/leap
