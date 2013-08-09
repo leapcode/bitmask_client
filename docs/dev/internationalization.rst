@@ -65,7 +65,7 @@ If you do not already have it, install the ``transifex-client`` from the cheese 
 
 You can learn more about the transifex-client `here <http://help.transifex.com/features/client/index.html>`_.
 
-**1.** Add any new source files to the project file, ``data/leap_client.pro``. *We should automate this with some templating, it's tedious.*
+**1.** Add any new source files to the project file, ``data/bitmask.pro``. *We should automate this with some templating, it's tedious.*
 
 **2.** Update the source .ts file ``data/ts/en_US.ts``.::
 
