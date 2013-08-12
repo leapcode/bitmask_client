@@ -18,10 +18,10 @@
 Initialization of imap service
 """
 import logging
-import sys
+#import sys
 
 from leap.mail.imap.service import imap
-from twisted.python import log
+#from twisted.python import log
 
 logger = logging.getLogger(__name__)
 

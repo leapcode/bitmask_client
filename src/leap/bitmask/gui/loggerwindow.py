@@ -21,9 +21,11 @@ History log window
 import logging
 
 from PySide import QtGui
+
 from ui_loggerwindow import Ui_LoggerWindow
+
+from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.common.check import leap_assert, leap_assert_type
-from leap.util.leap_log_handler import LeapLogHandler
 
 logger = logging.getLogger(__name__)
 

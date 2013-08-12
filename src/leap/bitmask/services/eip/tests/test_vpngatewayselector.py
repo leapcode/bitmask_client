@@ -20,8 +20,9 @@ tests for vpngatewayselector
 
 import unittest
 
-from leap.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
+from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.common.testing.basetest import BaseLeapTest
+
 from mock import Mock
 
 

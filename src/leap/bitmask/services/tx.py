@@ -20,7 +20,7 @@ Twisted services launched by the client
 import logging
 
 from twisted.application.service import Application
-from twisted.internet.task import LoopingCall
+#from twisted.internet.task import LoopingCall
 
 logger = logging.getLogger(__name__)
 

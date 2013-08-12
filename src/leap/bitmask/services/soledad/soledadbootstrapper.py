@@ -25,16 +25,16 @@ import os
 from PySide import QtCore
 from u1db import errors as u1db_errors
 
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
+from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
+from leap.bitmask.util.request_helpers import get_content
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
-from leap.config.providerconfig import ProviderConfig
-from leap.crypto.srpauth import SRPAuth
-from leap.services.soledad.soledadconfig import SoledadConfig
-from leap.util.request_helpers import get_content
 from leap.soledad import Soledad
-from leap.services.abstractbootstrapper import AbstractBootstrapper
 
 logger = logging.getLogger(__name__)
 

@@ -20,8 +20,8 @@ SMTP configuration
 """
 import logging
 
+from leap.bitmask.services.mail.smtpspec import get_schema
 from leap.common.config.baseconfig import BaseConfig
-from leap.services.mail.smtpspec import get_schema
 
 logger = logging.getLogger(__name__)
 

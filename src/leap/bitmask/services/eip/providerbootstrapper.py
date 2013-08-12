@@ -26,14 +26,14 @@ import requests
 
 from PySide import QtCore
 
+from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
+from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.util.constants import REQUEST_TIMEOUT
+from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
+from leap.bitmask.provider.supportedapis import SupportedAPIs
 from leap.common.certs import get_digest
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.common.check import leap_assert, leap_assert_type, leap_check
-from leap.config.providerconfig import ProviderConfig, MissingCACert
-from leap.util.request_helpers import get_content
-from leap.util.constants import REQUEST_TIMEOUT
-from leap.services.abstractbootstrapper import AbstractBootstrapper
-from leap.provider.supportedapis import SupportedAPIs
 
 
 logger = logging.getLogger(__name__)

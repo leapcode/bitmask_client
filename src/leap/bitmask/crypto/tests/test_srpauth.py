@@ -28,19 +28,20 @@ import binascii
 import requests
 import mock
 
+from functools import partial
+
 from mock import MagicMock
 from nose.twistedtools import reactor, deferred
 from twisted.python import log
 from twisted.internet import threads
-from functools import partial
 from requests.models import Response
 from simplejson.decoder import JSONDecodeError
 
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto import srpregister, srpauth
+from leap.bitmask.crypto.tests import fake_provider
+from leap.bitmask.util.request_helpers import get_content
 from leap.common.testing.https_server import where
-from leap.config.providerconfig import ProviderConfig
-from leap.crypto import srpregister, srpauth
-from leap.crypto.tests import fake_provider
-from leap.util.request_helpers import get_content
 
 log.startLogging(sys.stdout)
 

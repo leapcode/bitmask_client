@@ -17,7 +17,7 @@
 
 import argparse
 
-from leap.util import IS_RELEASE_VERSION
+from leap.bitmask.util import IS_RELEASE_VERSION
 
 
 def build_parser():

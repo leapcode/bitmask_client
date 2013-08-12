@@ -17,14 +17,16 @@
 """
 tests for leap_log_handler
 """
-
-import unittest
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 
 import logging
 
-from leap.util.leap_log_handler import LeapLogHandler
+from leap.bitmask.util.leap_log_handler import LeapLogHandler
+from leap.bitmask.util.pyside_tests_helper import BasicPySlotCase
 from leap.common.testing.basetest import BaseLeapTest
-from leap.util.pyside_tests_helper import BasicPySlotCase
 
 from mock import Mock
 

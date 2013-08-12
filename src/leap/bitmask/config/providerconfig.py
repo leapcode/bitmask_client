@@ -21,9 +21,9 @@ Provider configuration
 import logging
 import os
 
+from leap.bitmask.config.provider_spec import leap_provider_spec
 from leap.common.check import leap_check
 from leap.common.config.baseconfig import BaseConfig, LocalizedKey
-from leap.config.provider_spec import leap_provider_spec
 
 logger = logging.getLogger(__name__)
 

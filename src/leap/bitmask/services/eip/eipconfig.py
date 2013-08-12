@@ -25,10 +25,10 @@ import time
 
 import ipaddr
 
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.services.eip.eipspec import get_schema
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.config.baseconfig import BaseConfig
-from leap.config.providerconfig import ProviderConfig
-from leap.services.eip.eipspec import get_schema
 
 logger = logging.getLogger(__name__)
 

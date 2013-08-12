@@ -26,8 +26,9 @@ from PySide import QtCore
 
 from nose.twistedtools import deferred
 
-from leap.services.abstractbootstrapper import AbstractBootstrapper
-from leap.util.pyside_tests_helper import UsesQApplication, BasicPySlotCase
+from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
+from leap.bitmask.util.pyside_tests_helper import \
+    UsesQApplication, BasicPySlotCase
 
 
 class TesterBootstrapper(AbstractBootstrapper):

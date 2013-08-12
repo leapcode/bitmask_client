@@ -29,9 +29,9 @@ from functools import partial
 from PySide import QtCore
 from twisted.internet import threads
 
+from leap.bitmask.util import request_helpers as reqhelper
+from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.common.check import leap_assert
-from leap.util.constants import REQUEST_TIMEOUT
-from leap.util import request_helpers as reqhelper
 from leap.common.events import signal as events_signal
 from leap.common.events import events_pb2 as proto
 

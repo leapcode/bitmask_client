@@ -26,20 +26,20 @@ import socket
 
 from PySide import QtCore
 
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.services.eip.vpnlaunchers import get_platform_launcher
+from leap.bitmask.services.eip.eipconfig import EIPConfig
+from leap.bitmask.services.eip.udstelnet import UDSTelnet
+from leap.bitmask.util import first
 from leap.common.check import leap_assert, leap_assert_type
-from leap.config.providerconfig import ProviderConfig
-from leap.services.eip.vpnlaunchers import get_platform_launcher
-from leap.services.eip.eipconfig import EIPConfig
-from leap.services.eip.udstelnet import UDSTelnet
-from leap.util import first
 
 logger = logging.getLogger(__name__)
 vpnlog = logging.getLogger('leap.openvpn')
 
 from twisted.internet import protocol
 from twisted.internet import defer
-from twisted.internet.task import LoopingCall
 from twisted.internet import error as internet_error
+from twisted.internet.task import LoopingCall
 
 
 class VPNSignals(QtCore.QObject):

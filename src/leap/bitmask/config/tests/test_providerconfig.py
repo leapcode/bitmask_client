@@ -27,9 +27,9 @@ import os
 import json
 import copy
 
+from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
+from leap.bitmask.services import get_supported
 from leap.common.testing.basetest import BaseLeapTest
-from leap.config.providerconfig import ProviderConfig, MissingCACert
-from leap.services import get_supported
 
 from mock import Mock
 

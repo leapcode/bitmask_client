@@ -17,10 +17,10 @@
 """
 tests for _is_release_version function
 """
-
 import unittest
+
+from leap.bitmask.util import _is_release_version as is_release_version
 from leap.common.testing.basetest import BaseLeapTest
-from leap.util import _is_release_version as is_release_version
 
 
 class TestIsReleaseVersion(BaseLeapTest):

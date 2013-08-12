@@ -26,7 +26,7 @@ except ImportError:
 import logging
 import sys
 
-from leap.util.streamtologger import StreamToLogger
+from leap.bitmask.util.streamtologger import StreamToLogger
 from leap.common.testing.basetest import BaseLeapTest
 
 

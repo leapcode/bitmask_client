@@ -23,7 +23,7 @@ import logging
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
-from leap.util.keyring_helpers import has_keyring
+from leap.bitmask.util.keyring_helpers import has_keyring
 
 logger = logging.getLogger(__name__)
 

@@ -18,9 +18,7 @@
 """
 Request helpers for backward compatible "parsing" of requests
 """
-
 import time
-
 import json
 
 from dateutil import parser as dateparser

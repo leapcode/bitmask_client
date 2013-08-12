@@ -22,9 +22,9 @@ import errno
 import os
 import platform
 
+from leap.bitmask import platform_init
 from leap.common.events import signal as signal_event
 from leap.common.events import events_pb2 as proto
-from leap import platform_init
 
 if platform_init.IS_UNIX:
     from fcntl import flock, LOCK_EX, LOCK_NB
@@ -36,7 +36,7 @@ else:  # WINDOWS
 
     from tempfile import gettempdir
 
-    from leap.util import get_modification_ts, update_modification_ts
+    from leap.bitmask.util import get_modification_ts, update_modification_ts
 
 logger = logging.getLogger(__name__)
 

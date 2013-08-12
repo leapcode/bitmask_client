@@ -26,6 +26,7 @@ from functools import partial
 
 from PySide import QtCore
 from twisted.internet import threads
+
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)

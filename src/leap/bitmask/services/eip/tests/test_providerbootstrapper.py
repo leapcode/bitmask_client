@@ -39,15 +39,16 @@ from nose.twistedtools import deferred, reactor
 from twisted.internet import threads
 from requests.models import Response
 
+from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services.eip.providerbootstrapper import \
+    UnsupportedProviderAPI
+from leap.bitmask.services.eip.providerbootstrapper import WrongFingerprint
+from leap.bitmask.provider.supportedapis import SupportedAPIs
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.tests import fake_provider
+from leap.common.files import mkdir_p
 from leap.common.testing.https_server import where
 from leap.common.testing.basetest import BaseLeapTest
-from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.services.eip.providerbootstrapper import UnsupportedProviderAPI
-from leap.services.eip.providerbootstrapper import WrongFingerprint
-from leap.provider.supportedapis import SupportedAPIs
-from leap.config.providerconfig import ProviderConfig
-from leap.crypto.tests import fake_provider
-from leap.common.files import mkdir_p
 
 
 class ProviderBootstrapperTest(BaseLeapTest):

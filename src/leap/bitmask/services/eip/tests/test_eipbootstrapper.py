@@ -36,13 +36,13 @@ from nose.twistedtools import deferred, reactor
 from twisted.internet import threads
 from requests.models import Response
 
+from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
+from leap.bitmask.services.eip.eipconfig import EIPConfig
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.tests import fake_provider
+from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.common.testing.basetest import BaseLeapTest
-from leap.services.eip.eipbootstrapper import EIPBootstrapper
-from leap.services.eip.eipconfig import EIPConfig
-from leap.config.providerconfig import ProviderConfig
-from leap.crypto.tests import fake_provider
 from leap.common.files import mkdir_p
-from leap.crypto.srpauth import SRPAuth
 
 
 class EIPBootstrapperActiveTest(BaseLeapTest):

@@ -28,10 +28,10 @@ import tempfile
 
 from PySide import QtGui
 
-from leap.config.leapsettings import LeapSettings
-from leap.services.eip import vpnlaunchers
-from leap.util import first
-from leap.util import privilege_policies
+from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.services.eip import vpnlaunchers
+from leap.bitmask.util import first
+from leap.bitmask.util import privilege_policies
 
 
 logger = logging.getLogger(__name__)

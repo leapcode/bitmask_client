@@ -22,18 +22,20 @@ import os
 import logging
 import json
 
-from PySide import QtCore, QtGui
 from functools import partial
+
+from PySide import QtCore, QtGui
 from twisted.internet import threads
 
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.srpregister import SRPRegister
+from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
+from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services import get_supported
+
 from ui_wizard import Ui_Wizard
-from leap.config.providerconfig import ProviderConfig
-from leap.crypto.srpregister import SRPRegister
-from leap.util.privilege_policies import is_missing_policy_permissions
-from leap.util.request_helpers import get_content
-from leap.util.keyring_helpers import has_keyring
-from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.services import get_supported
 
 logger = logging.getLogger(__name__)
 

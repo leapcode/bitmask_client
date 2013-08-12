@@ -24,18 +24,18 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+from leap.bitmask.gui import locale_rc
+from leap.bitmask.gui import twisted_main
+from leap.bitmask.gui.mainwindow import MainWindow
+from leap.bitmask.platform_init import IS_MAC
+from leap.bitmask.platform_init.locks import we_are_the_one_and_only
+#from leap.bitmask.services.tx import leap_services
+from leap.bitmask.util import __version__ as VERSION
+from leap.bitmask.util import leap_argparse
+from leap.bitmask.util.leap_log_handler import LeapLogHandler
+from leap.bitmask.util.streamtologger import StreamToLogger
+from leap.bitmask.util.requirement_checker import check_requirements
 from leap.common.events import server as event_server
-from leap.util import __version__ as VERSION
-from leap.util import leap_argparse
-from leap.util.leap_log_handler import LeapLogHandler
-from leap.util.streamtologger import StreamToLogger
-from leap.util.requirement_checker import check_requirements
-from leap.gui import locale_rc
-from leap.gui import twisted_main
-from leap.gui.mainwindow import MainWindow
-from leap.platform_init import IS_MAC
-from leap.platform_init.locks import we_are_the_one_and_only
-from leap.services.tx import leap_services
 
 
 import codecs

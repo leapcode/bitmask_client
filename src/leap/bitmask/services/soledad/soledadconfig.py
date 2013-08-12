@@ -20,8 +20,8 @@ Soledad configuration
 """
 import logging
 
+from leap.bitmask.services.soledad.soledadspec import get_schema
 from leap.common.config.baseconfig import BaseConfig
-from leap.services.soledad.soledadspec import get_schema
 
 logger = logging.getLogger(__name__)
 

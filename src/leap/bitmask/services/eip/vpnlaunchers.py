@@ -33,13 +33,13 @@ except ImportError:
 from abc import ABCMeta, abstractmethod
 from functools import partial
 
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
+from leap.bitmask.util import first
+from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
+from leap.bitmask.util import privilege_policies
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import which
-from leap.config.providerconfig import ProviderConfig
-from leap.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
-from leap.util import first
-from leap.util.privilege_policies import LinuxPolicyChecker
-from leap.util import privilege_policies
 
 logger = logging.getLogger(__name__)
 

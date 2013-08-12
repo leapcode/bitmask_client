@@ -22,9 +22,9 @@ import json
 import os
 import unittest
 
+from leap.bitmask.services.eip.eipconfig import EIPConfig
+from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.common.testing.basetest import BaseLeapTest
-from leap.services.eip.eipconfig import EIPConfig
-from leap.config.providerconfig import ProviderConfig
 
 from mock import Mock
 

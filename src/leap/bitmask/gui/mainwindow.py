@@ -29,44 +29,47 @@ import keyring
 from PySide import QtCore, QtGui
 from twisted.internet import threads
 
+from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.gui.loggerwindow import LoggerWindow
+from leap.bitmask.gui.wizard import Wizard
+from leap.bitmask.gui.login import LoginWidget
+from leap.bitmask.gui.statuspanel import StatusPanelWidget
+from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
+from leap.bitmask.services.eip.eipconfig import EIPConfig
+from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
+# XXX: Soledad might not work out of the box in Windows, issue #2932
+from leap.bitmask.services.soledad.soledadbootstrapper import \
+    SoledadBootstrapper
+from leap.bitmask.services.mail.smtpbootstrapper import SMTPBootstrapper
+from leap.bitmask.services.mail import imap
+from leap.bitmask.platform_init import IS_WIN, IS_MAC
+from leap.bitmask.platform_init.initializers import init_platform
+
+from leap.bitmask.services.eip.vpnprocess import VPN
+from leap.bitmask.services.eip.vpnprocess import OpenVPNAlreadyRunning
+from leap.bitmask.services.eip.vpnprocess import AlienOpenVPNAlreadyRunning
+
+from leap.bitmask.services.eip.vpnlaunchers import VPNLauncherException
+from leap.bitmask.services.eip.vpnlaunchers import OpenVPNNotFoundException
+from leap.bitmask.services.eip.vpnlaunchers import EIPNoPkexecAvailable
+from leap.bitmask.services.eip.vpnlaunchers import \
+    EIPNoPolkitAuthAgentAvailable
+from leap.bitmask.services.eip.vpnlaunchers import EIPNoTunKextLoaded
+
+from leap.bitmask.util import __version__ as VERSION
+from leap.bitmask.util.keyring_helpers import has_keyring
+
+from leap.bitmask.services.mail.smtpconfig import SMTPConfig
+
+if IS_WIN:
+    from leap.bitmask.platform_init.locks import WindowsLock
+    from leap.bitmask.platform_init.locks import raise_window_ack
+
 from leap.common.check import leap_assert
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
-from leap.config.leapsettings import LeapSettings
-from leap.config.providerconfig import ProviderConfig
-from leap.crypto.srpauth import SRPAuth
-from leap.gui.loggerwindow import LoggerWindow
-from leap.gui.wizard import Wizard
-from leap.gui.login import LoginWidget
-from leap.gui.statuspanel import StatusPanelWidget
-from leap.services.eip.eipbootstrapper import EIPBootstrapper
-from leap.services.eip.eipconfig import EIPConfig
-from leap.services.eip.providerbootstrapper import ProviderBootstrapper
-# XXX: Soledad might not work out of the box in Windows, issue #2932
-from leap.services.soledad.soledadbootstrapper import SoledadBootstrapper
-from leap.services.mail.smtpbootstrapper import SMTPBootstrapper
-from leap.services.mail import imap
-from leap.platform_init import IS_WIN, IS_MAC
-from leap.platform_init.initializers import init_platform
-
-from leap.services.eip.vpnprocess import VPN
-from leap.services.eip.vpnprocess import OpenVPNAlreadyRunning
-from leap.services.eip.vpnprocess import AlienOpenVPNAlreadyRunning
-
-from leap.services.eip.vpnlaunchers import VPNLauncherException
-from leap.services.eip.vpnlaunchers import OpenVPNNotFoundException
-from leap.services.eip.vpnlaunchers import EIPNoPkexecAvailable
-from leap.services.eip.vpnlaunchers import EIPNoPolkitAuthAgentAvailable
-from leap.services.eip.vpnlaunchers import EIPNoTunKextLoaded
-
-from leap.util import __version__ as VERSION
-from leap.util.keyring_helpers import has_keyring
-
-from leap.services.mail.smtpconfig import SMTPConfig
-
-if IS_WIN:
-    from leap.platform_init.locks import WindowsLock
-    from leap.platform_init.locks import raise_window_ack
 
 from ui_mainwindow import Ui_MainWindow
 

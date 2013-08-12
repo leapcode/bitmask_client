@@ -24,15 +24,15 @@ import os
 
 from PySide import QtCore
 
-from leap.common.check import leap_assert, leap_assert_type
+from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.services.eip.eipconfig import EIPConfig
+from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.util.constants import REQUEST_TIMEOUT
+from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.common import certs
+from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
-from leap.config.providerconfig import ProviderConfig
-from leap.crypto.srpauth import SRPAuth
-from leap.services.eip.eipconfig import EIPConfig
-from leap.util.request_helpers import get_content
-from leap.util.constants import REQUEST_TIMEOUT
-from leap.services.abstractbootstrapper import AbstractBootstrapper
 
 logger = logging.getLogger(__name__)
 

@@ -22,14 +22,15 @@ import logging
 
 from datetime import datetime
 from functools import partial
+
 from PySide import QtCore, QtGui
 
-from ui_statuspanel import Ui_StatusPanel
-
+from leap.bitmask.services.eip.vpnprocess import VPNManager
+from leap.bitmask.platform_init import IS_WIN, IS_LINUX
+from leap.bitmask.util import first
 from leap.common.check import leap_assert_type
-from leap.services.eip.vpnprocess import VPNManager
-from leap.platform_init import IS_WIN, IS_LINUX
-from leap.util import first
+
+from ui_statuspanel import Ui_StatusPanel
 
 logger = logging.getLogger(__name__)
 
