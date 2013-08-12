@@ -223,8 +223,8 @@ def _darwin_has_tun_kext():
     """
     # XXX we should be smarter here and use kextstats output.
 
-    has_kext = os.path.isdir("/System/Library/Extensions/tun.kext")
-    has_startup = os.path.isdir("/System/Library/StartupItems/tun")
+    has_kext = os.path.isdir("/Library/Extensions/tun.kext")
+    has_startup = os.path.isdir("/Library/StartupItems/tun")
     has_tun_and_startup = has_kext and has_startup
     logger.debug(
         'platform initializer check: has tun_and_startup = %s' %
