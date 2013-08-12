@@ -380,6 +380,7 @@ class MainWindow(QtGui.QMainWindow):
             leap_log_handler = self._get_leap_logging_handler()
             if leap_log_handler is None:
                 logger.error('Leap logger handler not found')
+                return
             else:
                 self._logger_window = LoggerWindow(handler=leap_log_handler)
                 self._logger_window.setVisible(
