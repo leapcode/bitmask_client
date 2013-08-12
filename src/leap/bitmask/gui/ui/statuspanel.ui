@@ -284,7 +284,6 @@
  </widget>
  <resources>
   <include location="../../../../../data/resources/icons.qrc"/>
-  <include location="../../../../data/resources/icons.qrc"/>
  </resources>
  <connections/>
 </ui>
