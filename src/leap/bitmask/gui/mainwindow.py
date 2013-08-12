@@ -1053,11 +1053,26 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             soledad_ready
         """
-        logger.debug('Starting imap service')
+        if self._provider_config.provides_mx() and \
+                self._enabled_services.count(self.MX_SERVICE) > 0:
+            logger.debug('Starting imap service')
 
-        self._imap_service = imap.start_imap_service(
-            self._soledad,
-            self._keymanager)
+            self._imap_service = imap.start_imap_service(
+                self._soledad,
+                self._keymanager)
+        else:
+            if self._enabled_services.count(self.MX_SERVICE) > 0:
+                pass  # TODO: show MX status
+                #self._status_panel.set_eip_status(
+                #    self.tr("%s does not support MX") %
+                #    (self._provider_config.get_domain(),),
+                #                     error=True)
+            else:
+                pass  # TODO: show MX status
+                #self._status_panel.set_eip_status(
+                #    self.tr("MX is disabled"))
+
+
 
     def _get_socket_host(self):
         """
