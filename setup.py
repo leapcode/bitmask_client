@@ -19,7 +19,7 @@ import versioneer
 versioneer.versionfile_source = 'src/leap/bitmask/_version.py'
 versioneer.versionfile_build = 'leap/bitmask/_version.py'
 versioneer.tag_prefix = ''  # tags are like 1.2.0
-versioneer.parentdir_prefix = 'bitmask-'
+#versioneer.parentdir_prefix = 'bitmask-'
 
 #from setuptools import Command
 

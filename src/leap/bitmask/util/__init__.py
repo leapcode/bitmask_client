@@ -49,7 +49,7 @@ __version__ = "unknown"
 IS_RELEASE_VERSION = False
 
 try:
-    from leap._version import get_versions
+    from leap.bitmask._version import get_versions
     __version__ = get_versions()['version']
     IS_RELEASE_VERSION = _is_release_version(__version__)
     del get_versions

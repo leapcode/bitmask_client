@@ -185,7 +185,7 @@ def versions_from_parentdir(parentdir_prefix, versionfile_source,
 
 tag_prefix = ""
 parentdir_prefix = "bitmask-"
-versionfile_source = "src/leap/_version.py"
+versionfile_source = "src/leap/bitmask/_version.py"
 
 
 def get_versions(default={"version": "unknown", "full": ""}, verbose=False):
