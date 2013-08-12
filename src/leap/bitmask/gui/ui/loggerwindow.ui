@@ -14,7 +14,7 @@
    <string>Logs</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../../data/resources/mainwindow.qrc">
+   <iconset resource="../../../../../data/resources/mainwindow.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -49,7 +49,7 @@
         <string>Debug</string>
        </property>
        <property name="icon">
-        <iconset resource="../../../../data/resources/loggerwindow.qrc">
+        <iconset resource="../../../../../data/resources/loggerwindow.qrc">
          <normaloff>:/images/oxygen-icons/script-error.png</normaloff>:/images/oxygen-icons/script-error.png</iconset>
        </property>
        <property name="checkable">
@@ -69,7 +69,7 @@
         <string>Info</string>
        </property>
        <property name="icon">
-        <iconset resource="../../../../data/resources/loggerwindow.qrc">
+        <iconset resource="../../../../../data/resources/loggerwindow.qrc">
          <normaloff>:/images/oxygen-icons/dialog-information.png</normaloff>:/images/oxygen-icons/dialog-information.png</iconset>
        </property>
        <property name="checkable">
@@ -89,7 +89,7 @@
         <string>Warning</string>
        </property>
        <property name="icon">
-        <iconset resource="../../../../data/resources/loggerwindow.qrc">
+        <iconset resource="../../../../../data/resources/loggerwindow.qrc">
          <normaloff>:/images/oxygen-icons/dialog-warning.png</normaloff>:/images/oxygen-icons/dialog-warning.png</iconset>
        </property>
        <property name="checkable">
@@ -109,7 +109,7 @@
         <string>Error</string>
        </property>
        <property name="icon">
-        <iconset resource="../../../../data/resources/loggerwindow.qrc">
+        <iconset resource="../../../../../data/resources/loggerwindow.qrc">
          <normaloff>:/images/oxygen-icons/dialog-error.png</normaloff>:/images/oxygen-icons/dialog-error.png</iconset>
        </property>
        <property name="checkable">
@@ -129,7 +129,7 @@
         <string>Critical</string>
        </property>
        <property name="icon">
-        <iconset resource="../../../../data/resources/loggerwindow.qrc">
+        <iconset resource="../../../../../data/resources/loggerwindow.qrc">
          <normaloff>:/images/oxygen-icons/edit-bomb.png</normaloff>:/images/oxygen-icons/edit-bomb.png</iconset>
        </property>
        <property name="checkable">
@@ -149,7 +149,7 @@
         <string>Save to file</string>
        </property>
        <property name="icon">
-        <iconset resource="../../../../data/resources/loggerwindow.qrc">
+        <iconset resource="../../../../../data/resources/loggerwindow.qrc">
          <normaloff>:/images/oxygen-icons/document-save-as.png</normaloff>:/images/oxygen-icons/document-save-as.png</iconset>
        </property>
       </widget>
@@ -168,8 +168,8 @@
   <tabstop>txtLogHistory</tabstop>
  </tabstops>
  <resources>
-  <include location="../../../../data/resources/loggerwindow.qrc"/>
-  <include location="../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../../data/resources/loggerwindow.qrc"/>
+  <include location="../../../../../data/resources/mainwindow.qrc"/>
  </resources>
  <connections/>
 </ui>

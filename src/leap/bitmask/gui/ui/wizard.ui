@@ -14,7 +14,7 @@
    <string>Bitmask first run</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../../data/resources/mainwindow.qrc">
+   <iconset resource="../../../../../data/resources/mainwindow.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <property name="modal">
@@ -193,7 +193,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -215,7 +215,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -237,7 +237,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -486,7 +486,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -508,7 +508,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -551,7 +551,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -771,7 +771,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/mask-icon.png</pixmap>
+       <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/mask-icon.png</pixmap>
       </property>
      </widget>
     </item>
@@ -787,7 +787,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/Globe.png</pixmap>
+       <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Globe.png</pixmap>
       </property>
      </widget>
     </item>
@@ -839,8 +839,9 @@
   <tabstop>btnCheck</tabstop>
  </tabstops>
  <resources>
+  <include location="../../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../../data/resources/locale.qrc"/>
   <include location="../../../../data/resources/mainwindow.qrc"/>
-  <include location="../../../../data/resources/locale.qrc"/>
  </resources>
  <connections/>
 </ui>
