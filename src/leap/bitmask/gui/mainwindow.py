@@ -60,6 +60,7 @@ from leap.bitmask.services.eip.vpnlaunchers import EIPNoTunKextLoaded
 
 from leap.bitmask.util import __version__ as VERSION
 from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.bitmask.util.leap_log_handler import LeapLogHandler
 
 from leap.bitmask.services.mail.smtpconfig import SMTPConfig
 
@@ -359,7 +360,6 @@ class MainWindow(QtGui.QMainWindow):
         :return: a logging handler or None
         :rtype: LeapLogHandler or None
         """
-        from leap.util.leap_log_handler import LeapLogHandler
         leap_logger = logging.getLogger('leap')
         for h in leap_logger.handlers:
             if isinstance(h, LeapLogHandler):
