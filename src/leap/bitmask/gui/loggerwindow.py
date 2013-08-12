@@ -56,6 +56,10 @@ class LoggerWindow(QtGui.QDialog):
         self.ui.btnWarning.toggled.connect(self._load_history),
         self.ui.btnError.toggled.connect(self._load_history),
         self.ui.btnCritical.toggled.connect(self._load_history)
+        self.ui.leFilterBy.textEdited.connect(self._filter_by)
+        self.ui.cbCaseInsensitive.stateChanged.connect(self._load_history)
+
+        self._current_filter = ""
 
         # Load logging history and connect logger with the widget
         self._logging_handler = handler
@@ -95,7 +99,14 @@ class LoggerWindow(QtGui.QDialog):
             close_tag = "</td></tr>"
             message = open_tag + message + close_tag
 
-            self.ui.txtLogHistory.append(message)
+            filter_by = self._current_filter
+            msg = message
+            if self.ui.cbCaseInsensitive.isChecked():
+                msg = msg.upper()
+                filter_by = filter_by.upper()
+
+            if msg.find(filter_by) != -1:
+                self.ui.txtLogHistory.append(message)
 
     def _load_history(self):
         """
@@ -119,6 +130,16 @@ class LoggerWindow(QtGui.QDialog):
             logging.ERROR: self.ui.btnError.isChecked(),
             logging.CRITICAL: self.ui.btnCritical.isChecked()
         }
+
+    def _filter_by(self, text):
+        """
+        Sets the text to use for filtering logs in the log window.
+
+        :param text: the text to compare with the logs when filtering.
+        :type text: str
+        """
+        self._current_filter = text
+        self._load_history()
 
     def _save_log_to_file(self):
         """
