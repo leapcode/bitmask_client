@@ -1,0 +1,3 @@
+  o Activate window when setting it visible. Also display Hide/Show
+    message in the tray icon taking into account the window
+    activation. Fixes #3433.
