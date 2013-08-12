@@ -16,12 +16,12 @@ import os
 from pkg import utils
 
 import versioneer
-versioneer.versionfile_source = 'src/leap/_version.py'
-versioneer.versionfile_build = 'leap/_version.py'
+versioneer.versionfile_source = 'src/leap/bitmask/_version.py'
+versioneer.versionfile_build = 'leap/bitmask/_version.py'
 versioneer.tag_prefix = ''  # tags are like 1.2.0
-versioneer.parentdir_prefix = 'bitmask-'
+#versioneer.parentdir_prefix = 'bitmask-'
 
-from setuptools import Command
+#from setuptools import Command
 
 # The following import avoids the premature unloading of the `util` submodule
 # when running tests, which would cause an error when nose finishes tests and
@@ -110,7 +110,7 @@ cmdclass["sdist"] = cmd_sdist
 
 
 setup(
-    name="bitmask",
+    name="leap.bitmask",
     package_dir={"": "src"},
     version=versioneer.get_version(),
     cmdclass=cmdclass,
