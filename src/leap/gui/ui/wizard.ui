@@ -771,7 +771,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/leap-color-big.png</pixmap>
+       <pixmap resource="../../../../data/resources/mainwindow.qrc">:/images/mask-icon.png</pixmap>
       </property>
      </widget>
     </item>
