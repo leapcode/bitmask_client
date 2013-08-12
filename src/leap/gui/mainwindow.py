@@ -610,7 +610,7 @@ class MainWindow(QtGui.QMainWindow):
             self.tr("Hide Main Window"))[int(visible)]
 
         # set labels
-        visible = self.isVisible()
+        visible = self.isVisible() and self.isActiveWindow()
         self._action_visible.setText(get_action(visible))
 
     def _toggle_visible(self):
@@ -620,8 +620,10 @@ class MainWindow(QtGui.QMainWindow):
 
         Toggles the window visibility
         """
-        if not self.isVisible():
+        visible = self.isVisible() and self.isActiveWindow()
+        if not visible:
             self.show()
+            self.activateWindow()
             self.raise_()
         else:
             self.hide()
