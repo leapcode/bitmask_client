@@ -421,6 +421,8 @@ class StatusPanelWidget(QtGui.QWidget):
             self.set_eip_status(self.tr("Waiting to start..."))
         elif status == "ASSIGN_IP":
             self.set_eip_status(self.tr("Assigning IP"))
+        elif status == "RECONNECTING":
+            self.set_eip_status(self.tr("Reconnecting..."))
         elif status == "ALREADYRUNNING":
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
