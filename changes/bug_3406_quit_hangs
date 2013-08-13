@@ -1,0 +1,2 @@
+  o Stop the twisted reactor adding the stop call to the call chain
+    instead of stopping it directly. Fixes #3406.
