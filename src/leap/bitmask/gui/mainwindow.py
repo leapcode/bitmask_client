@@ -169,8 +169,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # This is loaded only once, there's a bug when doing that more
         # than once
-        ProviderConfig.standalone = standalone
-        EIPConfig.standalone = standalone
         self._standalone = standalone
         self._provider_config = ProviderConfig()
         # Used for automatic start of EIP
