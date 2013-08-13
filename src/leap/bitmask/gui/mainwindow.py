@@ -206,6 +206,8 @@ class MainWindow(QtGui.QMainWindow):
         # This thread is similar to the provider bootstrapper
         self._eip_bootstrapper = EIPBootstrapper()
 
+        # TODO change the name of "download_config" signal to
+        # something less confusing (config_ready maybe)
         self._eip_bootstrapper.download_config.connect(
             self._eip_intermediate_stage)
         self._eip_bootstrapper.download_client_certificate.connect(
@@ -216,6 +218,8 @@ class MainWindow(QtGui.QMainWindow):
             self._soledad_intermediate_stage)
         self._soledad_bootstrapper.gen_key.connect(
             self._soledad_bootstrapped_stage)
+        self._soledad_bootstrapper.soledad_timeout.connect(
+            self._retry_soledad_connection)
 
         self._smtp_bootstrapper = SMTPBootstrapper()
         self._smtp_bootstrapper.download_config.connect(
@@ -953,8 +957,22 @@ class MainWindow(QtGui.QMainWindow):
             # TODO: display in the GUI:
             # should pass signal to a slot in status_panel
             # that sets the global status
-            logger.warning("Soledad failed to start: %s" %
-                           (data[self._soledad_bootstrapper.ERROR_KEY],))
+            logger.error("Soledad failed to start: %s" %
+                         (data[self._soledad_bootstrapper.ERROR_KEY],))
+            self._retry_soledad_connection()
+
+    def _retry_soledad_connection(self):
+        """
+        Retries soledad connection.
+        """
+        logger.debug("Retrying soledad connection.")
+        if self._soledad_bootstrapper.should_retry_initialization():
+            self._soledad_bootstrapper.increment_retries_count()
+            threads.deferToThread(
+                self._soledad_bootstrapper.load_and_sync_soledad)
+        else:
+            logger.warning("Max number of soledad initialization "
+                           "retries reached.")
 
     def _soledad_bootstrapped_stage(self, data):
         """
@@ -971,13 +989,14 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._soledad_bootstrapper.PASSED_KEY]
         if not passed:
+            logger.debug("ERROR on soledad bootstrapping:")
             logger.error(data[self._soledad_bootstrapper.ERROR_KEY])
             return
+        else:
+            logger.debug("Done bootstrapping Soledad")
 
-        logger.debug("Done bootstrapping Soledad")
-
-        self._soledad = self._soledad_bootstrapper.soledad
-        self._keymanager = self._soledad_bootstrapper.keymanager
+            self._soledad = self._soledad_bootstrapper.soledad
+            self._keymanager = self._soledad_bootstrapper.keymanager
 
         # Ok, now soledad is ready, so we can allow other things that
         # depend on soledad to start.

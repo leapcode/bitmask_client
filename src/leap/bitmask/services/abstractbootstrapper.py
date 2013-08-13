@@ -128,7 +128,6 @@ class AbstractBootstrapper(QtCore.QObject):
         :type signal: QtCore.SignalInstance
         """
         if signal:
-            logger.debug("Emitting %s" % (signal,))
             signal.emit({self.PASSED_KEY: True, self.ERROR_KEY: ""})
 
     def _callback_threader(self, cb, res, *args, **kwargs):

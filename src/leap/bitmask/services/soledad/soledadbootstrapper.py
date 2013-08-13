@@ -21,6 +21,7 @@ Soledad bootstrapping
 
 import logging
 import os
+import socket
 
 from PySide import QtCore
 from u1db import errors as u1db_errors
@@ -49,10 +50,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
     PUBKEY_KEY = "user[public_key]"
 
+    MAX_INIT_RETRIES = 10
+
     # All dicts returned are of the form
     # {"passed": bool, "error": str}
     download_config = QtCore.Signal(dict)
     gen_key = QtCore.Signal(dict)
+    soledad_timeout = QtCore.Signal()
+    soledad_failed = QtCore.Signal()
 
     def __init__(self):
         AbstractBootstrapper.__init__(self)
@@ -63,7 +68,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._download_if_needed = False
         self._user = ""
         self._password = ""
+        self._srpauth = None
         self._soledad = None
+
+        self._soledad_retries = 0
 
     @property
     def keymanager(self):
@@ -73,7 +81,32 @@ class SoledadBootstrapper(AbstractBootstrapper):
     def soledad(self):
         return self._soledad
 
-    def _load_and_sync_soledad(self, srp_auth):
+    @property
+    def srpauth(self):
+        leap_assert(self._provider_config is not None,
+                    "We need a provider config")
+        return SRPAuth(self._provider_config)
+
+    # retries
+
+    def should_retry_initialization(self):
+        """
+        Returns True if we should retry the initialization.
+        """
+        logger.debug("current retries: %s, max retries: %s" % (
+            self._soledad_retries,
+            self.MAX_INIT_RETRIES))
+        return self._soledad_retries < self.MAX_INIT_RETRIES
+
+    def increment_retries_count(self):
+        """
+        Increments the count of initialization retries.
+        """
+        self._soledad_retries += 1
+
+    # initialization
+
+    def load_and_sync_soledad(self):
         """
         Once everthing is in the right place, we instantiate and sync
         Soledad
@@ -81,6 +114,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :param srp_auth: SRPAuth object used
         :type srp_auth: SRPAuth
         """
+        srp_auth = self.srpauth
         uuid = srp_auth.get_uid()
 
         prefix = os.path.join(self._soledad_config.get_path_prefix(),
@@ -114,8 +148,24 @@ class SoledadBootstrapper(AbstractBootstrapper):
                     cert_file=cert_file,
                     auth_token=srp_auth.get_token())
                 self._soledad.sync()
+
+            # XXX All these errors should be handled by soledad itself,
+            # and return a subclass of SoledadInitializationFailed
+            except socket.timeout:
+                logger.debug("SOLEDAD TIMED OUT...")
+                self.soledad_timeout.emit()
+            except socket.error as exc:
+                logger.error("Socket error while initializing soledad")
+                if exc.errno in (111, ):
+                    self.soledad_failed.emit()
             except u1db_errors.Unauthorized:
-                logger.error("Error while initializing soledad.")
+                logger.error("Error while initializing soledad "
+                             "(unauthorized).")
+                self.soledad_failed.emit()
+            except Exception as exc:
+                logger.error("Unhandled error while initializating "
+                             "soledad: %r" % (exc,))
+                raise
         else:
             raise Exception("No soledad server found")
 
@@ -151,7 +201,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             api_version)
         logger.debug('Downloading soledad config from: %s' % config_uri)
 
-        srp_auth = SRPAuth(self._provider_config)
+        # TODO factor out this srpauth protected get (make decorator)
+        srp_auth = self.srpauth
         session_id = srp_auth.get_session_id()
         cookies = None
         if session_id:
@@ -183,7 +234,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                                        self._provider_config.get_domain(),
                                        "soledad-service.json"])
 
-        self._load_and_sync_soledad(srp_auth)
+        self.load_and_sync_soledad()
 
     def _gen_key(self, _):
         """
@@ -197,8 +248,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         logger.debug("Retrieving key for %s" % (address,))
 
-        srp_auth = SRPAuth(self._provider_config)
+        srp_auth = self.srpauth
 
+        # TODO: use which implementation with known paths
         # TODO: Fix for Windows
         gpgbin = "/usr/bin/gpg"
 
@@ -251,6 +303,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         leap_assert_type(provider_config, ProviderConfig)
 
+        # XXX we should provider a method for setting provider_config
         self._provider_config = provider_config
         self._download_if_needed = download_if_needed
         self._user = user
