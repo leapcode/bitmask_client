@@ -53,8 +53,8 @@ def quit(app):
     :type app: QtCore.QApplication
     """
     from twisted.internet import reactor
-    logger.debug('stopping twisted reactor')
+    logger.debug('Stopping twisted reactor')
     try:
-        reactor.stop()
+        reactor.callLater(0, reactor.stop)
     except error.ReactorNotRunning:
-        logger.debug('reactor not running')
+        logger.debug('Reactor not running')
