@@ -247,9 +247,9 @@ class SRPAuthTestCase(unittest.TestCase):
 
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthUnknownUser):
-                with mock.patch('leap.util.request_helpers.get_content',
-                                new=mock.create_autospec(get_content)) as \
-                        content:
+                with mock.patch(
+                        'leap.bitmask.util.request_helpers.get_content',
+                        new=mock.create_autospec(get_content)) as content:
                     content.return_value = ("{}", 0)
 
                     self.auth_backend._start_authentication(
@@ -264,9 +264,9 @@ class SRPAuthTestCase(unittest.TestCase):
 
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthBadStatusCode):
-                with mock.patch('leap.util.request_helpers.get_content',
-                                new=mock.create_autospec(get_content)) as \
-                        content:
+                with mock.patch(
+                        'leap.bitmask.util.request_helpers.get_content',
+                        new=mock.create_autospec(get_content)) as content:
                     content.return_value = ("{}", 0)
 
                     self.auth_backend._start_authentication(None,
@@ -281,9 +281,9 @@ class SRPAuthTestCase(unittest.TestCase):
 
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthNoSalt):
-                with mock.patch('leap.util.request_helpers.get_content',
-                                new=mock.create_autospec(get_content)) as \
-                        content:
+                with mock.patch(
+                        'leap.bitmask.util.request_helpers.get_content',
+                        new=mock.create_autospec(get_content)) as content:
                     content.return_value = ("{}", 0)
 
                     self.auth_backend._start_authentication(None,
@@ -298,9 +298,9 @@ class SRPAuthTestCase(unittest.TestCase):
 
         def wrapper(_):
             with self.assertRaises(srpauth.SRPAuthNoB):
-                with mock.patch('leap.util.request_helpers.get_content',
-                                new=mock.create_autospec(get_content)) as \
-                        content:
+                with mock.patch(
+                        'leap.bitmask.util.request_helpers.get_content',
+                        new=mock.create_autospec(get_content)) as content:
                     content.return_value = ('{"salt": ""}', 0)
 
                     self.auth_backend._start_authentication(None,
@@ -317,7 +317,7 @@ class SRPAuthTestCase(unittest.TestCase):
         test_B = "67890"
 
         def wrapper(_):
-            with mock.patch('leap.util.request_helpers.get_content',
+            with mock.patch('leap.bitmask.util.request_helpers.get_content',
                             new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ('{"salt":"%s", "B":"%s"}' % (test_salt,
@@ -395,7 +395,7 @@ class SRPAuthTestCase(unittest.TestCase):
         d = self._prepare_auth_challenge()
 
         def wrapper(salt_B):
-            with mock.patch('leap.util.request_helpers.get_content',
+            with mock.patch('leap.bitmask.util.request_helpers.get_content',
                             new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("{", 0)
@@ -421,7 +421,7 @@ class SRPAuthTestCase(unittest.TestCase):
             return_value=res)
 
         def wrapper(salt_B):
-            with mock.patch('leap.util.request_helpers.get_content',
+            with mock.patch('leap.bitmask.util.request_helpers.get_content',
                             new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("", 0)
@@ -445,7 +445,7 @@ class SRPAuthTestCase(unittest.TestCase):
             return_value=res)
 
         def wrapper(salt_B):
-            with mock.patch('leap.util.request_helpers.get_content',
+            with mock.patch('leap.bitmask.util.request_helpers.get_content',
                             new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("[]", 0)
@@ -469,7 +469,7 @@ class SRPAuthTestCase(unittest.TestCase):
             return_value=res)
 
         def wrapper(salt_B):
-            with mock.patch('leap.util.request_helpers.get_content',
+            with mock.patch('leap.bitmask.util.request_helpers.get_content',
                             new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("{}", 0)
