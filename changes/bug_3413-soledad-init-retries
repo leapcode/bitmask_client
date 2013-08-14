@@ -1,0 +1,1 @@
+  o Allow soledad initialization to retry if it times out. Closes: #3413
