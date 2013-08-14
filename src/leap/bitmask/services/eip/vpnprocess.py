@@ -31,6 +31,7 @@ from leap.bitmask.services.eip.vpnlaunchers import get_platform_launcher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.bitmask.services.eip.udstelnet import UDSTelnet
 from leap.bitmask.util import first
+from leap.bitmask.platform_init import IS_MAC
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -228,7 +229,7 @@ class VPNManager(object):
     """
 
     # Timers, in secs
-    POLL_TIME = 0.5
+    POLL_TIME = 2.5 if IS_MAC else 1.0
     CONNECTION_RETRY_TIME = 1
 
     TS_KEY = "ts"
