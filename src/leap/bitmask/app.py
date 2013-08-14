@@ -24,26 +24,14 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
-from leap.bitmask.gui import locale_rc
-from leap.bitmask.gui import twisted_main
-from leap.bitmask.gui.mainwindow import MainWindow
-from leap.bitmask.platform_init import IS_MAC
-from leap.bitmask.platform_init.locks import we_are_the_one_and_only
-#from leap.bitmask.services.tx import leap_services
-from leap.bitmask.util import __version__ as VERSION
 from leap.bitmask.util import leap_argparse
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
-from leap.bitmask.util.requirement_checker import check_requirements
 from leap.common.events import server as event_server
-
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
-
-# pylint: avoid unused import
-assert(locale_rc)
 
 
 def sigint_handler(*args, **kwargs):
@@ -144,6 +132,29 @@ def main():
     logfile = opts.log_file
     openvpn_verb = opts.openvpn_verb
 
+    #############################################################
+    # Given how paths and bundling works, we need to delay the imports
+    # of certain parts that depend on this path settings.
+    # So first we set all the places where standalone might be queried.
+    from leap.bitmask.config.providerconfig import ProviderConfig
+    from leap.common.config.baseconfig import BaseConfig
+    from leap.bitmask.services.eip.eipconfig import EIPConfig
+    BaseConfig.standalone = standalone
+    ProviderConfig.standalone = standalone
+    EIPConfig.standalone = standalone
+
+    # And then we import all the other stuff
+    from leap.bitmask.gui import locale_rc
+    from leap.bitmask.gui import twisted_main
+    from leap.bitmask.gui.mainwindow import MainWindow
+    from leap.bitmask.platform_init import IS_MAC
+    from leap.bitmask.platform_init.locks import we_are_the_one_and_only
+    from leap.bitmask.util import __version__ as VERSION
+    from leap.bitmask.util.requirement_checker import check_requirements
+
+    # pylint: avoid unused import
+    assert(locale_rc)
+
     logger = add_logger_handlers(debug, logfile)
     replace_stdout_stderr_with_logging(logger)
 
@@ -161,6 +172,9 @@ def main():
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')
+
+    ProviderConfig.standalone = standalone
+    EIPConfig.standalone = standalone
 
     # We force the style if on KDE so that it doesn't load all the kde
     # libs, which causes a compatibility issue in some systems.
