@@ -579,7 +579,7 @@ class VPNManager(object):
                 # we need to be able to filter out arguments in the form
                 # --openvpn-foo, since otherwise we are shooting ourselves
                 # in the feet.
-                if any(map(lambda s: s.startswith("openvpn"), p.cmdline)):
+                if any(map(lambda s: s.find("LEAPOPENVPN") != -1, p.cmdline)):
                     openvpn_process = p
                     break
             except psutil.error.AccessDenied:
