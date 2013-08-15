@@ -17,7 +17,7 @@ twisted
 qt4reactor
 python-gnupg
 
-leap.common>=0.2.5
+leap.common>=0.3.0
 leap.soledad>=0.1.0
 leap.keymanager>=0.2.0
 
