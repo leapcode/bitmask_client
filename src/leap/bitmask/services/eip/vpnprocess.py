@@ -229,6 +229,9 @@ class VPNManager(object):
     """
 
     # Timers, in secs
+    # NOTE: We need to set a bigger poll time in OSX because it seems
+    # openvpn malfunctions when you ask it a lot of things in a short
+    # amount of time.
     POLL_TIME = 2.5 if IS_MAC else 1.0
     CONNECTION_RETRY_TIME = 1
 
