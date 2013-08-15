@@ -402,6 +402,10 @@ class LinuxVPNLauncher(VPNLauncher):
         openvpn = first(openvpn_possibilities)
         args = []
 
+        args += [
+            '--setenv', "LEAPOPENVPN", "1"
+        ]
+
         pkexec = self.maybe_pkexec()
         if pkexec:
             args.append(openvpn)
@@ -658,6 +662,10 @@ class DarwinVPNLauncher(VPNLauncher):
         openvpn = first(openvpn_possibilities)
         args = [openvpn]
 
+        args += [
+            '--setenv', "LEAPOPENVPN", "1"
+        ]
+
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
@@ -825,6 +833,11 @@ class WindowsVPNLauncher(VPNLauncher):
 
         openvpn = first(openvpn_possibilities)
         args = []
+
+        args += [
+            '--setenv', "LEAPOPENVPN", "1"
+        ]
+
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
