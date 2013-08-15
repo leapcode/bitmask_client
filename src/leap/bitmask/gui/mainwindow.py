@@ -33,6 +33,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.gui.loggerwindow import LoggerWindow
+from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.login import LoginWidget
 from leap.bitmask.gui.statuspanel import StatusPanelWidget
@@ -162,6 +163,7 @@ class MainWindow(QtGui.QMainWindow):
             self._launch_wizard)
 
         self.ui.btnShowLog.clicked.connect(self._show_logger_window)
+        self.ui.btnPreferences.clicked.connect(self._show_preferences)
 
         self._status_panel = StatusPanelWidget(
             self.ui.stackedWidget.widget(self.EIP_STATUS_INDEX))
@@ -292,6 +294,7 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard_firstrun = False
 
         self._logger_window = None
+        self._preferences_window = None
 
         self._bypass_checks = bypass_checks
 
@@ -402,6 +405,21 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.btnShowLog.setChecked(self._logger_window.isVisible())
 
         self._logger_window.finished.connect(self._uncheck_logger_button)
+
+    def _show_preferences(self):
+        """
+        SLOT
+        TRIGGERS:
+          self.ui.action_show_preferences.triggered
+          self.ui.btnPreferences.clicked
+
+        Displays the preferences window.
+        """
+        preferences = self._preferences_window
+        if preferences is None:
+            preferences = PreferencesWindow(self, self._srp_auth)
+
+        preferences.show()
 
     def _uncheck_logger_button(self):
         """
@@ -925,6 +943,7 @@ class MainWindow(QtGui.QMainWindow):
             # panel
             QtCore.QTimer.singleShot(1000, self._switch_to_status)
             self._login_defer = None
+            self.ui.btnPreferences.setEnabled(True)
         else:
             self._login_widget.set_enabled(True)
 
@@ -1399,6 +1418,7 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.set_password("")
         self._login_widget.set_enabled(True)
         self._login_widget.set_status("")
+        self.ui.btnPreferences.setEnabled(False)
 
     def _intermediate_stage(self, data):
         """
