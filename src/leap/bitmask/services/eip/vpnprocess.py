@@ -229,6 +229,9 @@ class VPNManager(object):
     """
 
     # Timers, in secs
+    # NOTE: We need to set a bigger poll time in OSX because it seems
+    # openvpn malfunctions when you ask it a lot of things in a short
+    # amount of time.
     POLL_TIME = 2.5 if IS_MAC else 1.0
     CONNECTION_RETRY_TIME = 1
 
@@ -579,7 +582,7 @@ class VPNManager(object):
                 # we need to be able to filter out arguments in the form
                 # --openvpn-foo, since otherwise we are shooting ourselves
                 # in the feet.
-                if any(map(lambda s: s.startswith("openvpn"), p.cmdline)):
+                if any(map(lambda s: s.find("LEAPOPENVPN") != -1, p.cmdline)):
                     openvpn_process = p
                     break
             except psutil.error.AccessDenied:
