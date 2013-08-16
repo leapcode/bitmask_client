@@ -402,14 +402,14 @@ class LinuxVPNLauncher(VPNLauncher):
         openvpn = first(openvpn_possibilities)
         args = []
 
-        args += [
-            '--setenv', "LEAPOPENVPN", "1"
-        ]
-
         pkexec = self.maybe_pkexec()
         if pkexec:
             args.append(openvpn)
             openvpn = first(pkexec)
+
+        args += [
+            '--setenv', "LEAPOPENVPN", "1"
+        ]
 
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
