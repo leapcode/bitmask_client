@@ -3,6 +3,7 @@ leap-client (0.3.0) unstable; urgency=low
   * Upgrade to 0.3.0
   * Add python-pyside dependencies
   * Remove versioned dependency on python-requests
+  * Rename manpage for bitmask rename
 
  -- Micah Anderson <micah@debian.org>  Thu, 15 Aug 2013 20:22:18 -0400
 
