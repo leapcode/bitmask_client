@@ -43,9 +43,6 @@ install-python%:
 #override_dh_auto_install: $(PYTHON3:%=install-python%)
 #        dh_auto_install
 
-override_dh_installchangelogs:
-	dh_installchangelogs -k NEWS.rst
-
 # build and install sphinx docs
 # 
 override_dh_installdocs:
