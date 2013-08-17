@@ -18,7 +18,6 @@ docs/covhtml
 include/
 lib/
 local/
-man/
 share/
 src/leap/util/reqs.txt
 src/leap.egg-info/

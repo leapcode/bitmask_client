@@ -12,7 +12,6 @@ docs/covhtml export-ignore
 include/ export-ignore
 lib/ export-ignore
 local/ export-ignore
-man/ export-ignore
 share/ export-ignore
 src/leap.egg-info/ export-ignore
 src/leap_client.egg-info export-ignore
