@@ -1,4 +1,4 @@
-Source: leap-client
+Source: bitmask
 Section: misc
 Priority: extra
 Maintainer: Ben Carrillo <ben@futeisha.org>
@@ -15,7 +15,7 @@ Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6), python-setu
                xvfb, xauth
 X-Python-Version: >= 2.6
 
-Package: leap-client
+Package: bitmask
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends},
   python-qt4,

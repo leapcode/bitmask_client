@@ -1,4 +1,4 @@
-leap-client (0.3.0) unstable; urgency=low
+bitmask (0.3.0) unstable; urgency=low
 
   * Upgrade to 0.3.0
   * Add python-pyside dependencies
@@ -7,6 +7,7 @@ leap-client (0.3.0) unstable; urgency=low
   * Remove no longer existing NEWS file installation
   * Disable running of tests on package build
   * Add man pages back in
+  * Rename to bitmask
   
  -- Micah Anderson <micah@debian.org>  Thu, 15 Aug 2013 20:22:18 -0400
 
