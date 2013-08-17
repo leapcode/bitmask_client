@@ -5,6 +5,7 @@ leap-client (0.3.0) unstable; urgency=low
   * Remove versioned dependency on python-requests
   * Rename manpage for bitmask rename
   * Remove no longer existing NEWS file installation
+  * Disable running of tests on package build
   
  -- Micah Anderson <micah@debian.org>  Thu, 15 Aug 2013 20:22:18 -0400
 

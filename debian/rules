@@ -8,6 +8,7 @@
 #
 # Uncomment this to turn on verbose mode.
 #DH_VERBOSE=1
+DEB_BUILD_OPTIONS=nocheck
 
 PYTHON2=$(shell pyversions -vr)
 
