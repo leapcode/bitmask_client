@@ -37,7 +37,10 @@ Depends: ${misc:Depends}, ${python:Depends},
   python-mock,
   pep8,
   openvpn,
-  policykit-1-gnome
+  policykit-1-gnome,
+  python-pyside, 
+  python-pyside.qtcore, 
+  python-pyside.qtgui
 Suggests: resolvconf
 Conflicts: autoresolv
 Enhances: openvpn
