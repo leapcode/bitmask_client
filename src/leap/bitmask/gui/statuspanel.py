@@ -28,7 +28,9 @@ from PySide import QtCore, QtGui
 from leap.bitmask.services.eip.vpnprocess import VPNManager
 from leap.bitmask.platform_init import IS_WIN, IS_LINUX
 from leap.bitmask.util import first
-from leap.common.check import leap_assert_type
+from leap.common.check import leap_assert, leap_assert_type
+from leap.common.events import register
+from leap.common.events import events_pb2 as proto
 
 from ui_statuspanel import Ui_StatusPanel
 
@@ -116,6 +118,14 @@ class StatusPanelWidget(QtGui.QWidget):
     RATE_STR = "%14.2f KB/s"
     TOTAL_STR = "%14.2f Kb"
 
+    MAIL_OFF_ICON = ":/images/mail-unlocked.png"
+    MAIL_ON_ICON = ":/images/mail-locked.png"
+
+    _soledad_event = QtCore.Signal(object)
+    _smtp_event = QtCore.Signal(object)
+    _imap_event = QtCore.Signal(object)
+    _keymanager_event = QtCore.Signal(object)
+
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
 
@@ -142,6 +152,73 @@ class StatusPanelWidget(QtGui.QWidget):
 
         self._set_traffic_rates()
         self._make_status_clickable()
+
+        register(signal=proto.KEYMANAGER_LOOKING_FOR_KEY,
+                 callback=self._mail_handle_keymanager_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.KEYMANAGER_KEY_FOUND,
+                 callback=self._mail_handle_keymanager_events,
+                 reqcbk=lambda req, resp: None)
+
+        # register(signal=proto.KEYMANAGER_KEY_NOT_FOUND,
+        #          callback=self._mail_handle_keymanager_events,
+        #          reqcbk=lambda req, resp: None)
+
+        register(signal=proto.KEYMANAGER_STARTED_KEY_GENERATION,
+                 callback=self._mail_handle_keymanager_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.KEYMANAGER_FINISHED_KEY_GENERATION,
+                 callback=self._mail_handle_keymanager_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.KEYMANAGER_DONE_UPLOADING_KEYS,
+                 callback=self._mail_handle_keymanager_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.SOLEDAD_DONE_DOWNLOADING_KEYS,
+                 callback=self._mail_handle_soledad_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.SOLEDAD_DONE_UPLOADING_KEYS,
+                 callback=self._mail_handle_soledad_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.SMTP_SERVICE_STARTED,
+                 callback=self._mail_handle_smtp_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.SMTP_SERVICE_FAILED_TO_START,
+                 callback=self._mail_handle_smtp_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.IMAP_SERVICE_STARTED,
+                 callback=self._mail_handle_imap_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.IMAP_SERVICE_FAILED_TO_START,
+                 callback=self._mail_handle_imap_events,
+                 reqcbk=lambda req, resp: None)
+
+        register(signal=proto.IMAP_UNREAD_MAIL,
+                 callback=self._mail_handle_imap_events,
+                 reqcbk=lambda req, resp: None)
+
+        self._set_long_mail_status("")
+        self.ui.lblUnread.setVisible(False)
+
+        self._smtp_started = False
+        self._imap_started = False
+
+        self._soledad_event.connect(
+            self._mail_handle_soledad_events_slot)
+        self._imap_event.connect(
+            self._mail_handle_imap_events_slot)
+        self._smtp_event.connect(
+            self._mail_handle_smtp_events_slot)
+        self._keymanager_event.connect(
+            self._mail_handle_keymanager_events_slot)
 
     def _make_status_clickable(self):
         """
@@ -460,3 +537,167 @@ class StatusPanelWidget(QtGui.QWidget):
 
     def set_provider(self, provider):
         self.ui.lblProvider.setText(provider)
+
+    def _mail_handle_soledad_events(self, req):
+        """
+        Callback for ...
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        self._soledad_event.emit(req)
+
+    def _mail_handle_soledad_events_slot(self, req):
+        """
+        SLOT
+        TRIGGER: _mail_handle_soledad_events
+
+        Reacts to an Soledad event
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        self.ui.lblMailStatus.setText(self.tr("Starting..."))
+
+        ext_status = ""
+
+        if req.event == proto.SOLEDAD_DONE_UPLOADING_KEYS:
+            ext_status = self.tr("Soledad has started...")
+        elif req.event == proto.SOLEDAD_DONE_DOWNLOADING_KEYS:
+            ext_status = self.tr("Soledad is starting, please wait...")
+        else:
+            leap_assert(False,
+                        "Don't know how to handle this state: %s"
+                        % (req.event))
+
+        self._set_long_mail_status(ext_status)
+
+    def _mail_handle_keymanager_events(self, req):
+        """
+        Callback for the KeyManager events
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        self._keymanager_event.emit(req)
+
+    def _mail_handle_keymanager_events_slot(self, req):
+        """
+        SLOT
+        TRIGGER: _mail_handle_keymanager_events
+
+        Reacts to an KeyManager event
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        self.ui.lblMailStatus.setText(self.tr("Starting..."))
+
+        ext_status = ""
+
+        if req.event == proto.KEYMANAGER_LOOKING_FOR_KEY:
+            ext_status = self.tr("Looking for key for this user")
+        elif req.event == proto.KEYMANAGER_KEY_FOUND:
+            ext_status = self.tr("Found key! Starting mail...")
+        # elif req.event == proto.KEYMANAGER_KEY_NOT_FOUND:
+        #     ext_status = self.tr("Key not found!")
+        elif req.event == proto.KEYMANAGER_STARTED_KEY_GENERATION:
+            ext_status = self.tr("Generating new key, please wait...")
+        elif req.event == proto.KEYMANAGER_FINISHED_KEY_GENERATION:
+            ext_status = self.tr("Finished generating key!")
+        elif req.event == proto.KEYMANAGER_DONE_UPLOADING_KEYS:
+            ext_status = self.tr("Starting mail...")
+        else:
+            leap_assert(False,
+                        "Don't know how to handle this state: %s"
+                        % (req.event))
+
+        self._set_long_mail_status(ext_status)
+
+    def _mail_handle_smtp_events(self, req):
+        """
+        Callback for the SMTP events
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        self._smtp_event.emit(req)
+
+    def _mail_handle_smtp_events_slot(self, req):
+        """
+        SLOT
+        TRIGGER: _mail_handle_smtp_events
+
+        Reacts to an SMTP event
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        ext_status = ""
+
+        if req.event == proto.SMTP_SERVICE_STARTED:
+            ext_status = self.tr("SMTP has started...")
+            self._smtp_started = True
+            if self._smtp_started and self._imap_started:
+                self.ui.lblMailStatus.setText(self.tr("ON"))
+                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
+                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(":/images/mail-locked.png"))
+                ext_status = ""
+        elif req.event == proto.SMTP_SERVICE_FAILED_TO_START:
+            ext_status = self.tr("SMTP failed to start, check the logs.")
+            self.ui.lblMailStatus.setText(self.tr("Failed"))
+        else:
+            leap_assert(False,
+                        "Don't know how to handle this state: %s"
+                        % (req.event))
+
+        self._set_long_mail_status(ext_status)
+
+    def _mail_handle_imap_events(self, req):
+        """
+        Callback for the IMAP events
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        self._imap_event.emit(req)
+
+    def _mail_handle_imap_events_slot(self, req):
+        """
+        SLOT
+        TRIGGER: _mail_handle_imap_events
+
+        Reacts to an IMAP event
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
+        """
+        ext_status = None
+
+        if req.event == proto.IMAP_SERVICE_STARTED:
+            ext_status = self.tr("IMAP has started...")
+            self._imap_started = True
+            if self._smtp_started and self._imap_started:
+                self.ui.lblMailStatus.setText(self.tr("ON"))
+                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
+                ext_status = ""
+        elif req.event == proto.IMAP_SERVICE_FAILED_TO_START:
+            ext_status = self.tr("IMAP failed to start, check the logs.")
+            self.ui.lblMailStatus.setText(self.tr("Failed"))
+        elif req.event == proto.IMAP_UNREAD_MAIL:
+            if self._smtp_started and self._imap_started:
+                self.ui.lblUnread.setText(self.tr("%s Unread Emails") % (req.content))
+                self.ui.lblUnread.setVisible(req.content != "0")
+                self.ui.lblMailStatus.setText(self.tr("ON"))
+                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
+        else:
+            leap_assert(False,
+                        "Don't know how to handle this state: %s"
+                        % (req.event))
+
+        if ext_status is not None:
+            self._set_long_mail_status(ext_status)
+
+    def _set_long_mail_status(self, ext_status):
+        self.ui.lblLongMailStatus.setText(ext_status)
+        self.ui.grpMailStatus.setVisible(len(ext_status) > 0)
