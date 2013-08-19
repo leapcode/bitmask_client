@@ -35,7 +35,7 @@ from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
-from leap.soledad import Soledad
+from leap.soledad.client import Soledad
 
 logger = logging.getLogger(__name__)
 
