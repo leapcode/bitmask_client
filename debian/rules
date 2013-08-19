@@ -18,6 +18,7 @@ PYTHON2=$(shell pyversions -vr)
 override_dh_prep:
 	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
 	dh_prep
+	make -f ./Makefile
 
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 
