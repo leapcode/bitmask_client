@@ -13,7 +13,8 @@ DEB_BUILD_OPTIONS=nocheck
 PYTHON2=$(shell pyversions -vr)
 
 %:
-	dh $@ --with python2,sphinxdoc --buildsystem=python_distutils
+	dh $@ --with python2 --buildsystem=python_distutils
+#dh $@ --with python2,sphinxdoc --buildsystem=python_distutils
 
 override_dh_prep:
 	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
@@ -49,11 +50,12 @@ install-python%:
 # 
 override_dh_installdocs:
 	python setup.py build_sphinx
-	dh_installdocs build/sphinx/html
+#COMMENTING OUT TO WORKAROUND THIS ERROR:
+#dh_sphinxdoc: error: unknown JavaScript code: debian/bitmask/usr/share/doc/bitmask/html/_static/jquery.js
+#dh_installdocs build/sphinx/html
 
 override_dh_auto_clean:
 	dh_auto_clean
 	rm -rf build
 	rm -rf docs/_build 
 	rm -rf *.egg-info
-	#rm docs/man/leap-client.1
