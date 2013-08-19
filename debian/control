@@ -3,22 +3,21 @@ Section: misc
 Priority: extra
 Maintainer: Ben Carrillo <ben@futeisha.org>
 Standards-Version: 3.9.4
-Homepage: http://leap.se
+Homepage: https://leap.se
 #Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
 #Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
 Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6), python-setuptools,
-               python-qt4, pep8,
+               pep8,
                python-sphinx (>= 1.0.7+dfsg), docutils-common, python-nose, python-mock,
                python-requests, python-srp, python-crypto, python-keyring, python-xdg,
-               python-jsonschema (>= 0.7.0), python-psutil, python-openssl, python-sh,
-               python-dateutil, python-argparse, python-netifaces, 
+               python-jsonschema (>= 0.7.0), python-psutil, python-openssl,
+               python-dateutil, python-argparse, python-netifaces, pyside-tools,
                xvfb, xauth
 X-Python-Version: >= 2.6
 
 Package: bitmask
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends},
-  python-qt4,
   python-openssl,
   python-crypto,
   python-keyring (>= 0.9.2),
@@ -30,7 +29,6 @@ Depends: ${misc:Depends}, ${python:Depends},
   python-requests,
   python-xdg,
   python-jsonschema (>= 0.7.0),
-  python-sh,
   python-setuptools,
   python-nose,
   python-mock,
