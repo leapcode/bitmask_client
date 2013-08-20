@@ -444,6 +444,25 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         self.assertFalse(ProviderConfig.save.called)
 
     @mock.patch(
+        'leap.bitmask.config.providerconfig.ProviderConfig.get_domain',
+        lambda x: where('testdomain.com'))
+    def test_download_provider_info_not_modified_and_no_cacert(self):
+        self._setup_provider_config_with("1", tempfile.mkdtemp())
+        self._setup_providerbootstrapper(True)
+        provider_path = self._produce_dummy_provider_json()
+
+        # set mtime to something really new
+        os.utime(provider_path, (-1, time.time()))
+
+        with mock.patch.object(
+                ProviderConfig, 'get_api_uri',
+                return_value="https://localhost:%s" % (self.https_port,)):
+            self.pb._download_provider_info()
+        # we check that it doesn't save the provider
+        # config, because it's new enough
+        self.assertFalse(ProviderConfig.save.called)
+
+    @mock.patch(
         'leap.bitmask.config.providerconfig.ProviderConfig.get_ca_cert_path',
         lambda x: where('cacert.pem'))
     def test_download_provider_info_modified(self):
