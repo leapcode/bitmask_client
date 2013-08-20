@@ -1090,8 +1090,6 @@ class MainWindow(QtGui.QMainWindow):
                 #self._status_panel.set_eip_status(
                 #    self.tr("MX is disabled"))
 
-
-
     def _get_socket_host(self):
         """
         Returns the socket and port to be used for VPN

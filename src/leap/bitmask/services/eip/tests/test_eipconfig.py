@@ -30,8 +30,7 @@ from mock import Mock
 
 
 sample_config = {
-    "gateways": [
-    {
+    "gateways": [{
         "capabilities": {
             "adblock": False,
             "filter_dns": True,

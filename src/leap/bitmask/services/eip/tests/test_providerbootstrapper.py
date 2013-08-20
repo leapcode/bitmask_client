@@ -64,7 +64,10 @@ class ProviderBootstrapperTest(BaseLeapTest):
         self.pb._check_name_resolution()
         # Something highly likely to fail
         self.pb._domain = "uquhqweuihowquie.abc.def"
-        with self.assertRaises(socket.gaierror):
+
+        # In python 2.7.4 raises socket.error
+        # In python 2.7.5 raises socket.gaierror
+        with self.assertRaises((socket.gaierror, socket.error)):
             self.pb._check_name_resolution()
 
     @deferred()
