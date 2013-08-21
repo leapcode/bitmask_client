@@ -117,6 +117,10 @@ class StreamToLoggerTest(BaseLeapTest):
         self.assertEqual(log, message)
         self.assertEqual(log_level, logging.ERROR)
 
+    def test_twisted_log(self):
+        from twisted.python import log
+        log.startLogging(sys.stdout)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

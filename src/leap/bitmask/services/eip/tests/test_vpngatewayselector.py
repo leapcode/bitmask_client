@@ -19,6 +19,7 @@ tests for vpngatewayselector
 """
 
 import unittest
+import time
 
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.common.testing.basetest import BaseLeapTest
@@ -127,6 +128,20 @@ class VPNGatewaySelectorTest(BaseLeapTest):
         gateways = gateway_selector.get_gateways()
         self.assertEqual(gateways, [ips[4], ips[2], ips[3], ips[1]])
 
+
+class VPNGatewaySelectorDSTTest(VPNGatewaySelectorTest):
+    """
+    VPNGatewaySelector's tests.
+    It uses the opposite value of the current DST.
+    """
+    def setUp(self):
+        self._original_daylight = time.daylight
+        time.daylight = not time.daylight
+        VPNGatewaySelectorTest.setUp(self)
+
+    def tearDown(self):
+        VPNGatewaySelectorTest.tearDown(self)
+        time.daylight = self._original_daylight
 
 if __name__ == "__main__":
     unittest.main()
