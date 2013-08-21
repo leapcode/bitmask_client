@@ -89,6 +89,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
     # retries
 
+    def cancel_bootstrap(self):
+        self._soledad_retries = self.MAX_INIT_RETRIES
+
     def should_retry_initialization(self):
         """
         Returns True if we should retry the initialization.
