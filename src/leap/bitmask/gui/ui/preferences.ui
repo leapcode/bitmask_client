@@ -166,54 +166,5 @@
  <resources>
   <include location="../../../../../data/resources/mainwindow.qrc"/>
  </resources>
- <connections>
-  <connection>
-   <sender>leCurrentPassword</sender>
-   <signal>returnPressed()</signal>
-   <receiver>leNewPassword</receiver>
-   <slot>setFocus()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>273</x>
-     <y>113</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>272</x>
-     <y>135</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>leNewPassword</sender>
-   <signal>returnPressed()</signal>
-   <receiver>leNewPassword2</receiver>
-   <slot>setFocus()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>349</x>
-     <y>139</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>351</x>
-     <y>163</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>leNewPassword2</sender>
-   <signal>returnPressed()</signal>
-   <receiver>pbChangePassword</receiver>
-   <slot>setFocus()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>178</x>
-     <y>169</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>178</x>
-     <y>198</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
