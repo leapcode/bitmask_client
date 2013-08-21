@@ -641,7 +641,8 @@ class StatusPanelWidget(QtGui.QWidget):
             if self._smtp_started and self._imap_started:
                 self.ui.lblMailStatus.setText(self.tr("ON"))
                 self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
-                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(":/images/mail-locked.png"))
+                self.ui.lblMailIcon.setPixmap(
+                    QtGui.QPixmap(":/images/mail-locked.png"))
                 ext_status = ""
         elif req.event == proto.SMTP_SERVICE_FAILED_TO_START:
             ext_status = self.tr("SMTP failed to start, check the logs.")
@@ -686,7 +687,8 @@ class StatusPanelWidget(QtGui.QWidget):
             self.ui.lblMailStatus.setText(self.tr("Failed"))
         elif req.event == proto.IMAP_UNREAD_MAIL:
             if self._smtp_started and self._imap_started:
-                self.ui.lblUnread.setText(self.tr("%s Unread Emails") % (req.content))
+                self.ui.lblUnread.setText(
+                    self.tr("%s Unread Emails") % (req.content))
                 self.ui.lblUnread.setVisible(req.content != "0")
                 self.ui.lblMailStatus.setText(self.tr("ON"))
                 self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
