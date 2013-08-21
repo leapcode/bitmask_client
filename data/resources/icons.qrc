@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="/">
+    <file>../images/mail-locked.png</file>
+    <file>../images/mail-unlocked.png</file>
     <file>../images/light/16/down-arrow.png</file>
     <file>../images/light/16/up-arrow.png</file>
     <file>../images/light/64/network-eip-acquiring.png</file>
