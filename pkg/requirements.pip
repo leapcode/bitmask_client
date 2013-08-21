@@ -18,7 +18,7 @@ qt4reactor
 python-gnupg
 
 leap.common>=0.3.0
-leap.soledad>=0.1.0
+leap.soledad.client>=0.3.0
 leap.keymanager>=0.2.0
 
 # Remove this when nickserver is online
