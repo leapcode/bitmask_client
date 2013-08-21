@@ -478,13 +478,14 @@ class SRPAuth(QtCore.QObject):
             """
             logger.debug("Starting logout...")
 
-            leap_assert(self.get_session_id(),
-                        "Cannot logout an unexisting session")
+            if self.get_session_id() is None:
+                logger.debug("Already logged out")
+                return
 
             logout_url = "%s/%s/%s/" % (self._provider_config.get_api_uri(),
                                         self._provider_config.
                                         get_api_version(),
-                                        "sessions")
+                                        "logout")
             try:
                 self._session.delete(logout_url,
                                      data=self.get_session_id(),
@@ -494,12 +495,12 @@ class SRPAuth(QtCore.QObject):
             except Exception as e:
                 logger.warning("Something went wrong with the logout: %r" %
                                (e,))
-
-            self.set_session_id(None)
-            self.set_uid(None)
-            # Also reset the session
-            self._session = self._fetcher.session()
-            logger.debug("Successfully logged out.")
+            else:
+                self.set_session_id(None)
+                self.set_uid(None)
+                # Also reset the session
+                self._session = self._fetcher.session()
+                logger.debug("Successfully logged out.")
 
         def set_session_id(self, session_id):
             QtCore.QMutexLocker(self._session_id_lock)
