@@ -1,1 +1,3 @@
 docs/man/leap-client.1
+MANIFEST
+src/leap.bitmask.egg-info/*
