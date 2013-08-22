@@ -694,5 +694,9 @@ WebSite: http://www.everaldo.com/
 ---
 data/images/oxygen-icons/
 
+The following icons were created based on 'mail-unread.png' from oxygen:
+data/images/mail-locked.png
+data/images/mail-unlocked.png
+
 License: LGPL - http://www.gnu.org/licenses/lgpl.html
 Website: http://www.oxygen-icons.org/

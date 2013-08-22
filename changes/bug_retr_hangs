@@ -1,0 +1,3 @@
+  o Make the poll interval bigger to improve openvpn's internal
+    behavior. If it gets queried too many times per second, it's
+    behavior won't be good. Fixes #3430.
