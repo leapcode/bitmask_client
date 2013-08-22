@@ -1343,6 +1343,9 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts the logout sequence
         """
+
+        self._soledad_bootstrapper.cancel_bootstrap()
+
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
         threads.deferToThread(self._srp_auth.logout)
