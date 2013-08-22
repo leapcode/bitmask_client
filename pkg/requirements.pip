@@ -21,8 +21,5 @@ leap.common>=0.3.0
 leap.soledad.client>=0.3.0
 leap.keymanager>=0.2.0
 
-# Remove this when nickserver is online
-mock
-
 # Remove this when u1db fixes its dependency on oauth
 oauth
