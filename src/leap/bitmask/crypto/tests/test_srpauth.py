@@ -663,11 +663,10 @@ class SRPAuthTestCase(unittest.TestCase):
         return d
 
     @deferred()
-    def test_logout_fails_if_not_logged_in(self):
+    def test_logout_does_not_fail_if_not_logged_in(self):
 
         def wrapper(*args):
-            with self.assertRaises(AssertionError):
-                self.auth_backend.logout()
+            self.auth_backend.logout()
 
         d = threads.deferToThread(wrapper)
         return d
