@@ -18,12 +18,37 @@
 Initialization of imap service
 """
 import logging
+import os
 #import sys
 
 from leap.mail.imap.service import imap
 #from twisted.python import log
 
 logger = logging.getLogger(__name__)
+
+# The name of the environment variable that has to be
+# set to override the default time value, in seconds.
+INCOMING_CHECK_PERIOD_ENV = "BITMASK_MAILCHECK_PERIOD"
+
+
+def get_mail_check_period():
+    """
+    Tries to get the value of the environment variable for
+    overriding the period for incoming mail fetch.
+    """
+    period = None
+    period_str = os.environ.get(INCOMING_CHECK_PERIOD_ENV, None)
+    try:
+        period = int(period_str)
+    except (ValueError, TypeError):
+        logger.warning("BAD value found for %s: %s" % (
+            INCOMING_CHECK_PERIOD_ENV,
+            period_str))
+    except Exception as exc:
+        logger.warning("Unhandled error while getting %s: %r" % (
+            INCOMING_CHECK_PERIOD_ENV,
+            exc))
+    return period
 
 
 def start_imap_service(*args, **kwargs):
@@ -33,6 +58,10 @@ def start_imap_service(*args, **kwargs):
     :returns: twisted.internet.task.LoopingCall instance
     """
     logger.debug('Launching imap service')
+
+    override_period = get_mail_check_period()
+    if override_period:
+        kwargs['check_period'] = override_period
 
     # Uncomment the next two lines to get a separate debugging log
     # TODO handle this by a separate flag.
