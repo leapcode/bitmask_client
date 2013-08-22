@@ -1,3 +1,9 @@
+bitmask (0.3.1pre) unstable; urgency=low
+
+  * Merge develop for new release
+
+ -- Micah Anderson <micah@debian.org>  Thu, 22 Aug 2013 17:22:26 -0400
+
 bitmask (0.3.0) unstable; urgency=low
 
   * Upgrade to 0.3.0
