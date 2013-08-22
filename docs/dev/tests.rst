@@ -39,8 +39,8 @@ Hint: colorized output
 
 Install ``rednose`` locally, export the ``NOSE_REDNOSE`` variable, and give your eyes a rest :)::
 
-  (leap_client)% pip install rednose
-  (leap_client)% export NOSE_REDNOSE=1
+  (bitmask)% pip install rednose
+  (bitmask)% export NOSE_REDNOSE=1
 
 Testing all the supported python versions
 -----------------------------------------

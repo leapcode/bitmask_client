@@ -1,26 +1,10 @@
 util Package
 ============
 
-:mod:`coroutines` Module
-------------------------
-
-.. automodule:: leap.util.coroutines
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`dicts` Module
+:mod:`util` Package
 -------------------
 
-.. automodule:: leap.util.dicts
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-:mod:`fileutil` Module
-----------------------
-
-.. automodule:: leap.util.fileutil
+.. automodule:: leap.util
     :members:
     :undoc-members:
     :show-inheritance:
@@ -33,34 +17,35 @@ util Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`misc` Module
-------------------
+:mod:`leap_log_handler` Module
+------------------------------
 
-.. automodule:: leap.util.misc
+.. automodule:: leap.util.leap_log_handler
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`translations` Module
---------------------------
+:mod:`privilege_policies` Module
+--------------------------------
 
-.. automodule:: leap.util.translations
+.. automodule:: leap.util.privilege_policies
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`web` Module
------------------
+:mod:`request_helpers` Module
+-----------------------------
 
-.. automodule:: leap.util.web
+.. automodule:: leap.util.request_helpers
     :members:
     :undoc-members:
     :show-inheritance:
 
-Subpackages
------------
+:mod:`requirement_checker` Module
+---------------------------------
 
-.. toctree::
-
-    leap.util.tests
+.. automodule:: leap.util.requirement_checker
+    :members:
+    :undoc-members:
+    :show-inheritance:
 

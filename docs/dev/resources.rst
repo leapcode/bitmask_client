@@ -1,7 +1,7 @@
 .. _resources:
 
-PyQt Resource files
-===================
+PySide Resource files
+=====================
 
 Compiling resource/ui files
 ---------------------------

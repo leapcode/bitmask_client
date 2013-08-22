@@ -9,18 +9,34 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`constants` Module
------------------------
-
-.. automodule:: leap.gui.constants
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 :mod:`locale_rc` Module
 -----------------------
 
 .. automodule:: leap.gui.locale_rc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`loggerwindow` Module
+--------------------------
+
+.. automodule:: leap.gui.loggerwindow
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`loggerwindow_rc` Module
+-----------------------------
+
+.. automodule:: leap.gui.loggerwindow_rc
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`mainwindow` Module
+------------------------
+
+.. automodule:: leap.gui.mainwindow
     :members:
     :undoc-members:
     :show-inheritance:
@@ -33,43 +49,51 @@ gui Package
     :undoc-members:
     :show-inheritance:
 
-:mod:`progress` Module
-----------------------
+:mod:`twisted_main` Module
+--------------------------
 
-.. automodule:: leap.gui.progress
+.. automodule:: leap.gui.twisted_main
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`styles` Module
+:mod:`ui_loggerwindow` Module
+-----------------------------
+
+.. automodule:: leap.gui.ui_loggerwindow
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ui_mainwindow` Module
+---------------------------
+
+.. automodule:: leap.gui.ui_mainwindow
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`ui_wizard` Module
+-----------------------
+
+.. automodule:: leap.gui.ui_wizard
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`wizard` Module
 --------------------
 
-.. automodule:: leap.gui.styles
+.. automodule:: leap.gui.wizard
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`threads` Module
----------------------
+:mod:`wizardpage` Module
+------------------------
 
-.. automodule:: leap.gui.threads
+.. automodule:: leap.gui.wizardpage
     :members:
     :undoc-members:
     :show-inheritance:
-
-:mod:`utils` Module
--------------------
-
-.. automodule:: leap.gui.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    leap.gui.firstrun
-    leap.gui.tests
 

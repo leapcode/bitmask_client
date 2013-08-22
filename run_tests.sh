@@ -15,6 +15,8 @@ function usage {
   echo "  -P, --no-pep8            Don't run pep8"
   echo "  -c, --coverage           Generate coverage report"
   echo "  -h, --help               Print this usage message"
+  echo "  -A, --all		   Run all tests, without excluding any"
+  echo "  -i, --progressive	   Run with nose-progressive plugin"
   echo "  --hide-elapsed           Don't print the elapsed time for each test along with slow test list"
   echo ""
   echo "Note: with no options specified, the script will try to run the tests in a virtual environment,"
@@ -33,13 +35,15 @@ function process_option {
     -p|--pep8) just_pep8=1;;
     -P|--no-pep8) no_pep8=1;;
     -c|--coverage) coverage=1;;
+    -A|--all) alltests=1;;
+    -i|--progressive) progressive=1;;
     -*) noseopts="$noseopts $1";;
     *) noseargs="$noseargs $1"
   esac
 }
 
 venv=.venv
-with_venv=setup/tools/with_venv.sh
+with_venv=pkg/tools/with_venv.sh
 always_venv=0
 never_venv=0
 force=0
@@ -51,6 +55,8 @@ wrapper=""
 just_pep8=0
 no_pep8=0
 coverage=0
+alltests=0
+progressive=0
 
 for arg in "$@"; do
   process_option $arg
@@ -58,15 +64,29 @@ done
 
 # If enabled, tell nose to collect coverage data
 if [ $coverage -eq 1 ]; then
-    noseopts="$noseopts --with-coverage --cover-package=leap-client"
+    noseopts="$noseopts --with-coverage --cover-package=leap --cover-html --cover-html-dir=docs/covhtml/ --cover-erase"
 fi
 
 if [ $no_site_packages -eq 1 ]; then
   installvenvopts="--no-site-packages"
 fi
 
+# If alltests flag is not set, let's exclude some dirs that are troublesome.
+if [ $alltests -eq 0 ]; then
+  echo "[+] Running ALL tests..."
+  #noseopts="$noseopts --exclude-dir=leap/soledad"
+fi
+
+# If progressive flag enabled, run with this nice plugin :)
+if [ $progressive -eq 1 ]; then
+    noseopts="$noseopts --with-progressive"
+fi
+
+
 function run_tests {
+  echo "running tests..."
   # Just run the test suites in current environment
+  echo "NOSETESTS=$NOSETESTS"
   ${wrapper} $NOSETESTS
   # If we get some short import error right away, print the error log directly
   RESULT=$?
@@ -75,9 +95,9 @@ function run_tests {
 
 function run_pep8 {
   echo "Running pep8 ..."
-  srcfiles="src/leap tests"
+  srcfiles="src/leap"
   # Just run PEP8 in current environment
-  pep8_opts="--ignore=E202,W602 --exclude=*_rc.py --repeat"
+  pep8_opts="--ignore=E202,W602 --exclude=*_rc.py,ui_*,_version.py --repeat"
   ${wrapper} pep8 ${pep8_opts} ${srcfiles}
 }
 
@@ -85,7 +105,9 @@ function run_pep8 {
 # in the current debhelper build process,
 # so I exclude the topmost tests
 
-NOSETESTS="nosetests leap $noseopts $noseargs"
+#NOSETESTS="nosetests leap --exclude=soledad* $noseopts $noseargs"
+NOSETESTS="$VIRTUAL_ENV/bin/nosetests . $noseopts $noseargs"
+#--with-coverage --cover-package=leap"
 
 if [ $never_venv -eq 0 ]
 then
@@ -99,14 +121,14 @@ then
   else
     if [ $always_venv -eq 1 ]; then
       # Automatically install the virtualenv
-      python setup/install_venv.py $installvenvopts
+      python pkg/install_venv.py $installvenvopts
       wrapper="${with_venv}"
     else
       echo -e "No virtual environment found...create one? (Y/n) \c"
       read use_ve
       if [ "x$use_ve" = "xY" -o "x$use_ve" = "x" -o "x$use_ve" = "xy" ]; then
         # Install the virtualenv and run the test suite in it
-        python setup/install_venv.py $installvenvopts
+        python pkg/install_venv.py $installvenvopts
         wrapper=${with_venv}
       fi
     fi
@@ -131,15 +153,8 @@ if [ -z "$noseargs" ]; then
   fi
 fi
 
-function run_coverage {
-    # XXX not working? getting 3rd party modules
-    coverage_opts="--include `pwd`/src/leap/*,`pwd`/src/leap/eip/*"
-    ${wrapper} coverage html -d docs/covhtml -i $coverage_opts
-    echo "now point your browser at docs/covhtml/index.html"
-}
-
 if [ $coverage -eq 1 ]; then
     echo "Generating coverage report in docs/covhtml/"
-    run_coverage
+    echo "now point your browser at docs/covhtml/index.html"
     exit
 fi

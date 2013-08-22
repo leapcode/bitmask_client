@@ -30,7 +30,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 VENV = os.path.join(ROOT, '.venv')
 PIP_REQUIRES = os.path.join(ROOT, 'pkg', 'requirements.pip')
-TEST_REQUIRES = os.path.join(ROOT, 'pkg', 'test-requirements.pip')
+TEST_REQUIRES = os.path.join(ROOT, 'pkg', 'requirements-testing.pip')
 PY_VERSION = "python%s.%s" % (sys.version_info[0], sys.version_info[1])
 
 
@@ -167,7 +167,7 @@ def create_virtualenv(venv=VENV, no_site_packages=True):
     """
     print 'Creating venv...',
     if no_site_packages:
-        #setuptools and virtualenv don't play nicely together, 
+        #setuptools and virtualenv don't play nicely together,
         #so we create the virtualenv with the distribute package instead.
         #See: view-source:http://pypi.python.org/pypi/distribute
         run_command(['virtualenv', '-q', '--distribute', '--no-site-packages', VENV])

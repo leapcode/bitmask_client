@@ -1,18 +1,26 @@
 crypto Package
 ==============
 
-:mod:`certs` Module
--------------------
+:mod:`constants` Module
+-----------------------
 
-.. automodule:: leap.crypto.certs
+.. automodule:: leap.crypto.constants
     :members:
     :undoc-members:
     :show-inheritance:
 
-:mod:`leapkeyring` Module
+:mod:`srpauth` Module
+---------------------
+
+.. automodule:: leap.crypto.srpauth
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+:mod:`srpregister` Module
 -------------------------
 
-.. automodule:: leap.crypto.leapkeyring
+.. automodule:: leap.crypto.srpregister
     :members:
     :undoc-members:
     :show-inheritance:

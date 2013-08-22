@@ -1,28 +1,27 @@
-﻿ANNOUNCING LEAP Client, the internet encryption toolkit, v0.2.0
+﻿ANNOUNCING Bitmask, the internet encryption toolkit, v0.3.0
 
-The LEAP team is pleased to announce the immediate
-availability of version 0.2.0 of LEAP Client
+The LEAP team is pleased to announce the immediate availability of
+version 0.3.0 of Bitmask
 
-https://leap.se/downloads/leap-client
+https://downloads.leap.se/client/
 
 LEAP (LEAP Encryption Access Project) develops a plan to secure
 everyday communication, breaking down into discrete services.
 
-The client for the current phase gives support to the EIP Service.
+The client for the current phase gives support to the EIP Service and
+the first beta release of Encrypted Mail.
 EIP (the Encrypted Internet Proxy) provides circumvention,
 location anonymization, and traffic encryption in a hassle-free,
 automatically self-configuring fashion.
+Encrypted Mail
 
 You can read the user manual and the developer notes online at:
 
-http://leap-client.readthedocs.org
+http://bitmask.readthedocs.org/
 
-This is the first testing release for the LEAP Client, and it
-is by no means intended for real production use. Especially you
-are encouraged to not provide any kind of sensitive password during
-your registration process. 
-
-See the NEWS file for more details.
+WARNING: This is still a beta release of our services, a lot of
+testing and audits are still needed so DO NOT use this for strong
+security.
 
 
 WHAT CAN THIS VERSION OF THE CLIENT DO FOR ME?
@@ -64,8 +63,8 @@ will be following soon.
 
 BUGS
 
-You can send the bugs our way by pointing your telnet session to port 443 on 
-https://leap.se/code. We will do our best to make them follow our 
+You can send the bugs our way by pointing your telnet session to port 443 on
+https://leap.se/code. We will do our best to make them follow our
 intensive bug-reeducation program.
 
 
@@ -76,7 +75,7 @@ If you are lucky enough, you can spot us sleepless in night trains,
 rooftops, rainforests, and beyond any border.
 
 
-Kali Kaneko, and all the LEAP team.
+The LEAP team.
 
-Feb 15, 2012
+Aug 9, 2013
 Somewhere in the middle of the intertubes.

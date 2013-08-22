@@ -3,7 +3,7 @@
 Internals
 =========
 
-This section covers briefly the internal organization of the LEAP Client source tree.
+This section covers briefly the internal organization of Bitmask source tree.
 
 .. note::
 

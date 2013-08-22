@@ -1,47 +1,39 @@
 ﻿= LEAP CLient Release Checklist (*) =
 
-Not that we are following all steps here, but it is good to keep some
-sort of sanity...
-
-  * [X] validate rc
-    * [X] all rc-critical closed!
-    * [X] all bbots green
-    * [X] uploaded translations: make translations
-    * [X] re-generate pyqt resources
+  * [ ] validate rc
+    * [ ] all rc-critical closed!
+    * [ ] all bbots green
+    * [ ] uploaded translations: make translations
+    * [ ] re-generate pyside resources
     
-  * [O] update docs
-    * [X] check installation sections
+  * [ ] update docs
     * [ ] CREDITS
-    * [X] relnotes.txt
-    * [X] docs/known_issues.rst
-    * [X] NEWS.rst: Add release name and date to top-most item in NEWS.
+    * [ ] relnotes.txt
+    * [ ] docs/known_issues.rst
+    * [ ] NEWS.rst: Add release name and date to top-most item in NEWS.
 
-  * [X] change docs/install.rst to point to just the current
+  * [ ] change docs/quickstart.rst to point to just the current
     leap-client-X.Y.Z.deb binaries and .tar.gz source code files
-  * [X] on release/vX.Y.Z branch: git pull
+  * [ ] on release/vX.Y.Z branch: git pull
   * [ ] git tag X.Y.Z
   * [ ] build locally to make sure the release is reporting itself as the
-    intended version ...
+    intended version (FIXME!)
   * [ ] make sure buildbot is green
   * [ ] make sure other people aren't committing at that moment
   * [ ] FUTURE: push tag along with some other documentation-only patch (typically to
     relnotes.txt) to trigger buildslaves
-    * [ ] git push --tags leap; git push leap
+    * [ ] git push --tags official; git push official
     * [ ] that will build tarballs
   * [ ] make sure buildbot is green (in a parallel universe, he)
   * [ ] download tarballs, sign with "gpg -ba -u deadbeef TAR", upload *.asc
   * [ ] symlink the release tarball on leap.se downloads page:
     /var/www/source/leap-client/releases/ CHANGEME XXX
     
-  * [X] update news pages. release notes.
+  * [ ] update news pages. release notes.
   * [ ] send out relnotes.txt to internal list.
-
   * [ ] wait ...?
 
   * [ ] PYPI UPLOAD: with "python ./setup.py sdist upload register"
-      * [ ] login to pypi
-      * [ ] from Edit, add new release
-      * [ ] upload .tar.gz, .asc
 
   * [ ] make an "announcement of new release" on leap.se
   * [ ] close the Milestone on the chili Roadmap
@@ -50,4 +42,4 @@ sort of sanity...
      
 notes
 -----
-(*) the original version of this handy checklist kindly borrowed from tahoe-lafs documentation =)
+(*) this checklist kindly borrowed from tahoe-lafs documentation =)

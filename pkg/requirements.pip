@@ -1,17 +1,28 @@
 # in order of addition to the project.
-# do not change the ordering.
+# try not to change the ordering.
+#
+# PySide -- It's a requirement indeed, but
+# it gives troubles when operating inside virtualenvs.
+# Use LEAP_VENV_SKIP_PYSIDE to avoid installing it!
 
-argparse # only for python 2.6
-requests<1.0.0 
-psutil
-netifaces
-pyopenssl
-jsonschema #>0.7
+argparse
+requests
 srp>=1.0.2
-pycrypto
-keyring>=0.9.2
+pyopenssl
+keyring
 python-dateutil
-sh
-pyxdg
+psutil
+ipaddr
+twisted
+qt4reactor
+python-gnupg
 
-#pygeoip # optional
+leap.common>=0.2.5
+leap.soledad>=0.1.0
+leap.keymanager>=0.2.0
+
+# Remove this when nickserver is online
+mock
+
+# Remove this when u1db fixes its dependency on oauth
+oauth

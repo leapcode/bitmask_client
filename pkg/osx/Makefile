@@ -1,12 +1,10 @@
-#WARNING: You need to run this with an activated VIRTUALENV.
-
 OSX = dist/LEAP\ Client.app/Contents/MacOS/
 GITC = `git rev-parse --short HEAD`
 DMG = "dist/leap-client-$(GITC).dmg"
 INST = "dist/LEAP Client installer.app"
 INSTR = "dist/LEAP Client installer.app/Contents/Resources"
 
-pkg :  dist trim installer dmg
+pkg :  check-env dist tuntap installer dmg
 
 dist :
 	~/pyinstaller/pyinstaller.py -w -s leap-client.spec
@@ -16,20 +14,22 @@ dist :
 
 trim:
 	#XXX this should go properly in pyinstaller spec excludes, but going quick'n'dirty
+	#XXX adapt to PySide
 	rm $(OSX)QtSvg $(OSX)QtXml $(OSX)QtNetwork $(OSX)QtOpenGL $(OSX)Qt3Support $(OSX)QtSql
+
+tuntap:
+	./build_tuntaposx clean && ./build_tuntaposx
 
 installer:
 	#XXX need to fix some paths there (binary, etc)
 	platypus -P install/leap-installer.platypus -y $(INST)
-	#XXX should build tuntap extensions ourselves
+	# build tuntaposx kernel extension
 	mkdir $(INSTR)/StartupItems
 	mkdir $(INSTR)/Extensions
-	cp -r /opt/local/Library/StartupItems/tun $(INSTR)/StartupItems
-	cp -r /opt/local/Library/StartupItems/tap $(INSTR)/StartupItems
-	cp -r /opt/local/Library/Extensions/tun.kext $(INSTR)/Extensions
-	cp -r /opt/local/Library/Extensions/tap.kext $(INSTR)/Extensions
-	#copy the binary that we have previously built
-	#XXX not building it yet...
+	cp -r dist/tun.kext $(INSTR)/Extensions
+	cp -r dist/tuntaposx/StartupItems/* $(INSTR)/StartupItems
+	cp install/tun.kext/Info.plist $(INSTR)/Extensions/tun.kext/Contents/
+	#copy the binary that we have previously built (not yet)
 	cp ../../openvpn/build/openvpn.leap $(INSTR)
 	#copy startup scripts
 	cp install/client.up.sh $(INSTR) 
@@ -41,6 +41,11 @@ installer:
 dmg :
 	rm -f $(DMG)
 	hdiutil create -format UDBZ -srcfolder $(INST) $(DMG)
+
+check-env:
+ifndef VIRTUAL_ENV
+    $(error WHAT DO YOU THINK VIRTUALENV IS FOR??!! Please go get into one..)
+endif
 
 clean :
 	rm -rf dist/ build/

@@ -3,64 +3,59 @@
 Installation
 ============
 
-This part of the documentation covers the installation of the LEAP Client.
+This part of the documentation covers the installation of Bitmask.
 We assume that you want to get it properly installed before being able to use it.
 
-Debian package
---------------
+.. note::
 
-If you are lucky enough to be using a debian system... well, you are lucky enough :)
-
-To be able to install ``leap-client``, you need to add the leap repo to your software sources. First you add the leap keys to your keyring::
-
-  gpg --recv-key 0x1E34A1828E207901 0x485B12FA218E81EB
-  gpg -a --export 0x1E34A1828E207901  | sudo apt-key add - 
-
-Now you edit :file:`/etc/apt/sources.list` and add the leap repository::
-
-  deb http://deb.leap.se/debian unstable main
-
-Get the package ``leap-keyring``, so you can install the packages in a trusted way and get key updates automatically::
-
-  apt-get update
-  apt-get install leap-keyring
-
-And, finally, install the client::
-
-  apt-get install leap-client
+   The recommended way of installing in the near future will be the standalone bundles, but those are not quite ready yet. Methods described in this page assume you are familiar with python code, and you can find your way through the process of dependencies install. You can refer to the sections :ref:`setting up a working environment <environment>` or :ref:`fetching latest code for testing <fetchinglatest>`.
 
 
 Distribute & Pip
 ----------------
 
-Install the dependencies::
+.. warning:: The package in the cheese shop is from the stable, `0.2.0` release, which is now outdated. You are encouraged to install the development version instead.
 
-    apt-get install openvpn python-qt4 python-dev python-openssl
+Installing Bitmask is as simple as using `pip <http://www.pip-installer.org/>`_ for the already released versions ::
 
+    $ pip install bitmask
 
-And then installing the client with `pip <http://www.pip-installer.org/>`_ is as simple as::
+Debian package
+--------------
 
-    pip install leap-client
+.. warning::
+
+   The debian package in the leap repositories is from the stable, `0.2.0` release, which is now outdated. You are encouraged to install the development version instead,
+
+First, you need to bootstrap your apt-key::
+
+   # gpg --recv-key 0x1E34A1828E207901 0x485B12FA218E81EB
+   # gpg --list-sigs 0x1E34A1828E207901
+   # gpg --list-sigs 0x485B12FA218E81EB
+   # gpg -a --export 0x1E34A1828E207901  | sudo apt-key add - 
+
+Add the archive to your sources.list::
+
+   # echo "deb http://deb.leap.se/debian unstable main" >> /etc/apt/sources.list
+   # apt-get update
+   # apt-get install leap-keyring
+
+And  then you can happily install bitmask::
+
+   apt-get install bitmask
 
 Show me the code!
 -----------------
 
-You can get the latest tarball ::
+You can get the code from LEAP public git repository ::
 
-    wget https://leap.se/downloads/leap-client/tarball/latest
-
-Or the zipball::
-
-    wget http://leap.se/downloads/leap-client/zipball/latest
-
-Or, if you prefer, you can also get the code from LEAP public git repository ::
-
-    git clone git://leap.se/leap_client
+   $ git clone git://leap.se/bitmask
 
 Or from the github mirror ::
 
-    git clone git://github.com/leapcode/leap_client.git
+   $ git clone git://github.com/leapcode/bitmask.git
 
-Once you have grabbed a copy of the sources for whatever mean, you can install it into your site-packages::
+Once you have grabbed a copy of the sources, you can install it into your site-packages easily ::
 
    $ pyton setup.py install
+

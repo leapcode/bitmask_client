@@ -9,14 +9,14 @@
 # use import PyQt4; PyQt4.__path__ instead
 
 platform='unknown'
-unamestr=`uname`
+unamestr=$(uname)
 if [[ "$unamestr" == 'Linux' ]]; then
    platform='linux'
 elif [[ "$unamestr" == 'Darwin' ]]; then
    platform='darwin'
 fi
 
-LIBS=( PyQt4 sip.so )
+LIBS=( PySide pysideuic )
 
 PYTHON_VERSION=python$(python -c "import sys; print (str(sys.version_info[0])+'.'+str(sys.version_info[1]))")
 VAR=( $(which -a $PYTHON_VERSION) )
@@ -34,5 +34,7 @@ fi
 
 for LIB in ${LIBS[@]}
 do
-    ln -s $LIB_SYSTEM_PATH/$LIB $LIB_VIRTUALENV_PATH/$LIB 
+    if [[ ! -e $LIB_VIRTUALENV_PATH/$LIB ]]; then
+       ln -s $LIB_SYSTEM_PATH/$LIB $LIB_VIRTUALENV_PATH/$LIB
+    fi
 done

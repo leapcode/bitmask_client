@@ -1,5 +1,0 @@
-coverage
-mock
-nose
-pep8==1.1
-sphinx>=1.1.2

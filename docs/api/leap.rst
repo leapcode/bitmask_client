@@ -30,12 +30,11 @@ Subpackages
 
 .. toctree::
 
-    leap.base
-    leap.baseapp
-    leap.certs
+    leap.config
     leap.crypto
-    leap.eip
     leap.gui
-    leap.testing
+    leap.keymanager
+    leap.platform_init
+    leap.services
     leap.util
 
