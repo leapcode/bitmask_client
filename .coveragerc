@@ -1,7 +1,7 @@
 # .coveragerc to control coverage.py
 [run]
 branch = True
-omit=src/leap/gui/ui_*,src/leap/*/tests/*,src/leap/*/*/tests/*,src/leap/gui/*_rc*,src/leap/_version*
+omit=src/leap/bitmask/gui/ui_*,src/leap/bitmask/*/tests/*,src/leap/bitmask/*/*/tests/*,src/leap/bitmask/gui/*_rc*,src/leap/bitmask/_version*
 
 [report]
 # Regexes for lines to exclude from consideration
@@ -22,4 +22,4 @@ exclude_lines =
     if __name__ == .__main__.:
 
 ignore_errors = True
-omit=src/leap/gui/ui_*,src/leap/*/tests/*,src/leap/*/*/tests/*,src/leap/gui/*_rc*,src/leap/_version*
+omit=src/leap/bitmask/gui/ui_*,src/leap/bitmask/*/tests/*,src/leap/bitmask/*/*/tests/*,src/leap/bitmask/gui/*_rc*,src/leap/bitmask/_version*
