@@ -193,6 +193,9 @@ class SRPAuth(QtCore.QObject):
             :type password: str
             """
             logger.debug("Authentication preprocessing...")
+
+            username = username.lower()
+
             self._srp_user = self._srp.User(username,
                                             password,
                                             self._hashfun,

@@ -107,6 +107,9 @@ class SRPRegister(QtCore.QObject):
         :rtype: tuple
         :rparam: (ok, request)
         """
+
+        username = username.lower()
+
         salt, verifier = self._srp.create_salted_verification_key(
             username,
             password,
