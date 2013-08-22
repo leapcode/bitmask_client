@@ -100,6 +100,7 @@ class MainWindow(QtGui.QMainWindow):
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
+    mail_client_logged_in = QtCore.Signal([])
 
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
@@ -126,13 +127,17 @@ class MainWindow(QtGui.QMainWindow):
         """
         QtGui.QMainWindow.__init__(self)
 
-        # register leap events
+        # register leap events ########################################
         register(signal=proto.UPDATER_NEW_UPDATES,
                  callback=self._new_updates_available,
                  reqcbk=lambda req, resp: None)  # make rpc call async
         register(signal=proto.RAISE_WINDOW,
                  callback=self._on_raise_window_event,
                  reqcbk=lambda req, resp: None)  # make rpc call async
+        register(signal=proto.IMAP_CLIENT_LOGIN,
+                 callback=self._on_mail_client_logged_in,
+                 reqcbk=lambda req, resp: None)  # make rpc call async
+        # end register leap events ####################################
 
         self._quit_callback = quit_callback
 
@@ -148,7 +153,7 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.stackedWidget.widget(self.LOGIN_INDEX))
         self.ui.loginLayout.addWidget(self._login_widget)
 
-        # Signals
+        # Qt Signal Connections #####################################
         # TODO separate logic from ui signals.
 
         self._login_widget.login.connect(self._login)
@@ -274,8 +279,12 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.btnMore.setVisible(False)
         self.ui.btnMore.clicked.connect(self._updates_details)
 
+        # Services signals/slots connection
         self.new_updates.connect(self._react_to_new_updates)
         self.soledad_ready.connect(self._start_imap_service)
+        self.mail_client_logged_in.connect(self._fetch_incoming_mail)
+
+        ################################# end Qt Signals connection ########
 
         init_platform()
 
@@ -1023,6 +1032,7 @@ class MainWindow(QtGui.QMainWindow):
                 #self._status_panel.set_eip_status(
                 #    self.tr("MX is disabled"))
 
+    ###################################################################
     # Service control methods: smtp
 
     def _smtp_bootstrapped_stage(self, data):
@@ -1065,6 +1075,9 @@ class MainWindow(QtGui.QMainWindow):
                              smtp_key=client_cert,
                              encrypted_only=False)
 
+    ###################################################################
+    # Service control methods: imap
+
     def _start_imap_service(self):
         """
         SLOT
@@ -1090,19 +1103,41 @@ class MainWindow(QtGui.QMainWindow):
                 #self._status_panel.set_eip_status(
                 #    self.tr("MX is disabled"))
 
+    def _on_mail_client_logged_in(self, req):
+        """
+        Triggers qt signal when client login event is received.
+        """
+        self.mail_client_logged_in.emit()
+
+    def _fetch_incoming_mail(self):
+        """
+        SLOT
+        TRIGGERS:
+            mail_client_logged_in
+        """
+        # TODO have a mutex over fetch operation.
+        if self._imap_service:
+            logger.debug('Client connected, fetching mail...')
+            self._imap_service.fetch()
+
+    # end service control methods (imap)
+
+    ###################################################################
+    # Service control methods: eip
+
     def _get_socket_host(self):
         """
         Returns the socket and port to be used for VPN
 
         :rtype: tuple (str, str) (host, port)
         """
-
         # TODO: make this properly multiplatform
 
         if platform.system() == "Windows":
             host = "localhost"
             port = "9876"
         else:
+            # XXX cleanup this on exit too
             host = os.path.join(tempfile.mkdtemp(prefix="leap-tmp"),
                                 'openvpn.socket')
             port = "unix"
