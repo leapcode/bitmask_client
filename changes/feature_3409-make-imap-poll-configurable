@@ -1,0 +1,2 @@
+  o Make mail fetch interval in imap service configurable via environment
+    variable. Closes: #3409

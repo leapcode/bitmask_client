@@ -7,10 +7,10 @@
 ###### EDIT ###################### 
 #Directory with ui and resource files
 RESOURCE_DIR = data/resources
-UI_DIR = src/leap/gui/ui
+UI_DIR = src/leap/bitmask/gui/ui
 
 #Directory for compiled resources
-COMPILED_DIR = src/leap/gui
+COMPILED_DIR = src/leap/bitmask/gui
 
 #Directory for (finished) translations
 TRANSLAT_DIR = data/translations
@@ -66,7 +66,7 @@ manpages:
 	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
 
 apidocs:
-	@sphinx-apidoc -o docs/api src/leap
+	@sphinx-apidoc -o docs/api src/leap/bitmask
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)

@@ -1,0 +1,1 @@
+  o Set the standalone flag before it's being used. Fixes #3426.

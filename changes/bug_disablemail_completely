@@ -1,0 +1,2 @@
+  o Do not start IMAP daemon if mail was not selected among the
+    services. Fixes #3435.
