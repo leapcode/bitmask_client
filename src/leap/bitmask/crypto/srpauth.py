@@ -495,12 +495,12 @@ class SRPAuth(QtCore.QObject):
             except Exception as e:
                 logger.warning("Something went wrong with the logout: %r" %
                                (e,))
-
-            self.set_session_id(None)
-            self.set_uid(None)
-            # Also reset the session
-            self._session = self._fetcher.session()
-            logger.debug("Successfully logged out.")
+            else:
+                self.set_session_id(None)
+                self.set_uid(None)
+                # Also reset the session
+                self._session = self._fetcher.session()
+                logger.debug("Successfully logged out.")
 
         def set_session_id(self, session_id):
             QtCore.QMutexLocker(self._session_id_lock)
