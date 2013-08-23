@@ -343,7 +343,7 @@ class LinuxVPNLauncher(VPNLauncher):
         abs_path_in_bundle = os.path.join(cwd, rel_path_in_bundle)
         if os.path.isfile(abs_path_in_bundle):
             return abs_path_in_bundle
-        abs_path_in_system = kls.OPENVPN_DOWN_ROOT_FILE
+        abs_path_in_system = kls.OPENVPN_DOWN_ROOT_PATH
         if os.path.isfile(abs_path_in_system):
             return abs_path_in_system
 
