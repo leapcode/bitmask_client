@@ -52,14 +52,14 @@ trove_classifiers = [
 parsed_reqs = utils.parse_requirements()
 
 cmdclass = versioneer.get_cmdclass()
-leap_launcher = 'bitmask=leap.app:main'
+leap_launcher = 'bitmask=leap.bitmask.app:main'
 
 from setuptools.command.develop import develop as _develop
 
 
 def copy_reqs(path, withsrc=False):
     # add a copy of the processed requirements to the package
-    _reqpath = ('leap', 'util', 'reqs.txt')
+    _reqpath = ('leap', 'bitmask', 'util', 'reqs.txt')
     if withsrc:
         reqsfile = os.path.join(path, 'src', *_reqpath)
     else:
