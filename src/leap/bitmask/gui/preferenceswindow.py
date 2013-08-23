@@ -26,6 +26,7 @@ from PySide import QtGui
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.soledad.client import NoStorageSecret
 from leap.bitmask.crypto.srpauth import SRPAuthBadPassword
+from leap.bitmask.util.password import basic_password_checks
 
 logger = logging.getLogger(__name__)
 
@@ -58,37 +59,6 @@ class PreferencesWindow(QtGui.QDialog):
 
         # Connections
         self.ui.pbChangePassword.clicked.connect(self._change_password)
-
-    def _basic_password_checks(self, username, password, password2):
-        """
-        Performs basic password checks to avoid really easy passwords.
-
-        :param username: username provided at the registrarion form
-        :type username: str
-        :param password: password from the registration form
-        :type password: str
-        :param password2: second password from the registration form
-        :type password: str
-
-        :returns: True and empty message if all the checks pass,
-                  False and an error message otherwise
-        :rtype: tuple(bool, str)
-        """
-        message = None
-
-        if message is None and password != password2:
-            message = self.tr("Passwords don't match")
-
-        if message is None and len(password) < 6:
-            message = self.tr("Password too short")
-
-        if message is None and password in self.WEAK_PASSWORDS:
-            message = self.tr("Password too easy")
-
-        if message is None and username == password:
-            message = self.tr("Password equal to username")
-
-        return message is None, message
 
     def _set_password_change_status(self, status, error=False, success=False):
         """
@@ -132,8 +102,7 @@ class PreferencesWindow(QtGui.QDialog):
         new_password = self.ui.leNewPassword.text()
         new_password2 = self.ui.leNewPassword2.text()
 
-        ok, msg = self._basic_password_checks(
-            username, new_password, new_password2)
+        ok, msg = basic_password_checks(username, new_password, new_password2)
 
         if not ok:
             self._set_changing_password(False)
