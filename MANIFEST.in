@@ -4,5 +4,5 @@ recursive-include docs api/* config/* dev/* man/* pkg/* testers/* user/*
 prune docs/_build
 prune docs/covhtml
 include versioneer.py
-include src/leap/util/reqs.txt
-include src/leap/crypto/tests/wrongcert.pem
+include src/leap/bitmask/util/reqs.txt
+include src/leap/bitmask/crypto/tests/wrongcert.pem
