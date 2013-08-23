@@ -1,3 +1,0 @@
-  o Improve OpenVPN detection by searching for a specific leap-only
-    string in the command line. This makes it possible to run other
-    VPN instances while also using EIP. Fixes #3268 and #3364.
