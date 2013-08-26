@@ -1,3 +1,10 @@
+bitmask (0.3.1) unstable; urgency=low
+
+  * Merge master for new release
+  * Cherrypick fix for updown script.
+
+ -- Ben Carrillo <ben@futeisha.org>  Mon, 26 Aug 2013 14:21:06 +0200
+
 bitmask (0.3.1pre) unstable; urgency=low
 
   * Merge develop for new release
