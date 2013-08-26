@@ -3,8 +3,8 @@ The LEAP Encryption Access Project Client
 
 *your internet encryption toolkit*
 
-.. image:: https://pypip.in/v/bitmask/badge.png
-        :target: https://crate.io/packages/bitmask
+.. image:: https://pypip.in/v/leap.bitmask/badge.png
+        :target: https://crate.io/packages/leap.bitmask
 
 Dependencies
 ------------------
