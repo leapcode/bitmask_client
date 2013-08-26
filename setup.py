@@ -108,6 +108,21 @@ class cmd_sdist(versioneer_sdist):
 cmdclass["build"] = cmd_build
 cmdclass["sdist"] = cmd_sdist
 
+import platform
+_system = platform.system()
+IS_LINUX = True if _system == "Linux" else False
+
+if IS_LINUX:
+    data_files = [
+        # ("share/man/man1",
+        #     ["docs/man/bitmask.1"]),
+        ("share/polkit-1/actions",
+         ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
+        ("/etc/leap/",
+         ["pkg/linux/resolv-update"]),
+    ]
+else:
+    data_files = []
 
 setup(
     name="leap.bitmask",
@@ -146,12 +161,7 @@ setup(
     include_package_data=True,
     # not being used? -- setuptools does not like it.
     # looks like debhelper is honoring it...
-    data_files=[
-        # ("share/man/man1",
-        #     ["docs/man/bitmask.1"]),
-        ("share/polkit-1/actions",
-         ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
-    ],
+    data_files=data_files,
     zip_safe=False,
     platforms="all",
     entry_points={
