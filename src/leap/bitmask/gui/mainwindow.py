@@ -419,7 +419,8 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        PreferencesWindow(self, self._srp_auth, self._soledad).show()
+        PreferencesWindow(
+            self, self._srp_auth, self._soledad, self._settings).show()
 
     def _uncheck_logger_button(self):
         """
