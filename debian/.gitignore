@@ -1,8 +1,0 @@
-debian/bitmask.postinst.debhelper
-debian/bitmask.postrm.debhelper
-debian/bitmask.prerm.debhelper
-debian/bitmask.substvars
-debian/bitmask/
-debian/files
-docs/man/bitmask.1
-
