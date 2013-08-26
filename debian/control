@@ -39,6 +39,7 @@ Depends:
   python-pyside.qtcore, 
   python-pyside.qtgui,
   python-leap-common,
+  leap-mail,
   soledad-client
 Suggests: resolvconf
 Conflicts: autoresolv

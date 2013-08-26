@@ -1,2 +1,3 @@
 leap.soledad.client soledad-client
 leap.common python-leap-common
+leap.mail leap-mail
