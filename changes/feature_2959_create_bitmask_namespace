@@ -1,1 +1,0 @@
-  o Move all client code into its own namespace (leap.bitmask). Closes: #2959

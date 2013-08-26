@@ -1,2 +1,0 @@
-  o Transforms usernames to lower case before they are used in the
-    registration and authentication. Closes #3541.

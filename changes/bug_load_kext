@@ -1,2 +1,0 @@
-  o OSX: Check for the tun.kext existence in /Library/Extensions
-    instead of /System/Library/Extensions. Fixes #3271.
