@@ -491,7 +491,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         # XXX: May be this can be divided into two methods?
 
-        self._login_widget.set_providers(self._configured_providers())
+        providers = self._settings.get_configured_providers()
+        self._login_widget.set_providers(providers)
         self._show_systray()
         self.show()
         if IS_MAC:
@@ -736,34 +737,14 @@ class MainWindow(QtGui.QMainWindow):
 
         QtGui.QMainWindow.closeEvent(self, e)
 
-    def _configured_providers(self):
-        """
-        Returns the available providers based on the file structure
-
-        :rtype: list
-        """
-
-        # TODO: check which providers have a valid certificate among
-        # other things, not just the directories
-        providers = []
-        try:
-            providers = os.listdir(
-                os.path.join(self._provider_config.get_path_prefix(),
-                             "leap",
-                             "providers"))
-        except Exception as e:
-            logger.debug("Error listing providers, assume there are none. %r"
-                         % (e,))
-
-        return providers
-
     def _first_run(self):
         """
         Returns True if there are no configured providers. False otherwise
 
         :rtype: bool
         """
-        has_provider_on_disk = len(self._configured_providers()) != 0
+        providers = self._settings.get_configured_providers()
+        has_provider_on_disk = len(providers) != 0
         is_proper_provider = self._settings.get_properprovider()
         return not (has_provider_on_disk and is_proper_provider)
 
