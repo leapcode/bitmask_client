@@ -75,11 +75,10 @@ class LeapSettings(object):
         the config
         :type standalone: bool
         """
-
-        settings_path = os.path.join(get_platform_prefixer()
-                                     .get_path_prefix(standalone=standalone),
-                                     "leap",
-                                     self.CONFIG_NAME)
+        self._path_prefix = get_platform_prefixer().get_path_prefix(
+            standalone=standalone)
+        settings_path = os.path.join(
+            self._path_prefix, "leap", self.CONFIG_NAME)
         self._settings = QtCore.QSettings(settings_path,
                                           QtCore.QSettings.IniFormat)
 
@@ -119,6 +118,26 @@ class LeapSettings(object):
         leap_assert(windowstate, "We need a window state")
         self._settings.setValue(self.WINDOWSTATE_KEY, windowstate)
 
+    def get_configured_providers(self):
+        """
+        Returns the configured providers based on the file structure in the
+        settings directory.
+
+        :rtype: list of str
+        """
+        # TODO: check which providers have a valid certificate among
+        # other things, not just the directories
+        providers = []
+        try:
+            providers_path = os.path.join(
+                self._path_prefix, "leap", "providers")
+            providers = os.listdir(providers_path)
+        except Exception as e:
+            logger.debug("Error listing providers, assume there are none. %r"
+                         % (e,))
+
+        return providers
+
     def get_enabled_services(self, provider):
         """
         Returns a list of enabled services for the given provider
@@ -151,8 +170,12 @@ class LeapSettings(object):
         leap_assert(len(provider) > 0, "We need a nonempty provider")
         leap_assert_type(services, list)
 
-        self._settings.setValue("%s/Services" % (provider,),
-                                services)
+        key = "{0}/Services".format(provider)
+        if not services:
+            # if there are no enabled services we don't need that key
+            self._settings.remove(key)
+        else:
+            self._settings.setValue(key, services)
 
     def get_user(self):
         """
