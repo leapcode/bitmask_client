@@ -34,7 +34,7 @@ from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.bitmask.services import get_supported
+from leap.bitmask.services import get_service_display_name, get_supported
 
 from ui_wizard import Ui_Wizard
 
@@ -83,23 +83,6 @@ class Wizard(QtGui.QWizard):
         self.QUESTION_ICON = QtGui.QPixmap(":/images/Emblem-question.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/Dialog-error.png")
         self.OK_ICON = QtGui.QPixmap(":/images/Dialog-accept.png")
-
-        # Correspondence for services and their name to display
-        EIP_LABEL = self.tr("Encrypted Internet")
-        MX_LABEL = self.tr("Encrypted Mail")
-
-        if self._is_need_eip_password_warning():
-            EIP_LABEL += " " + self.tr(
-                "(will need admin password to start)")
-
-        self.SERVICE_DISPLAY = [
-            EIP_LABEL,
-            MX_LABEL
-        ]
-        self.SERVICE_CONFIG = [
-            "openvpn",
-            "mx"
-        ]
 
         self._selected_services = set()
         self._shown_services = set()
@@ -507,8 +490,10 @@ class Wizard(QtGui.QWizard):
             try:
                 if service not in self._shown_services:
                     checkbox = QtGui.QCheckBox(self)
-                    service_index = self.SERVICE_CONFIG.index(service)
-                    checkbox.setText(self.SERVICE_DISPLAY[service_index])
+                    service_label = get_service_display_name(
+                        service, self.standalone)
+                    checkbox.setText(service_label)
+
                     self.ui.serviceListLayout.addWidget(checkbox)
                     checkbox.stateChanged.connect(
                         partial(self._service_selection_changed, service))
