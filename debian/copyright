@@ -1,5 +1,5 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: leap-client
+Upstream-Name: bitmask 
 Upstream-Contact: info@leap.se
 Source: <http://github.com/leapcode/leap_client/>
 
