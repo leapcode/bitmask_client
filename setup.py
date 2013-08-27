@@ -52,14 +52,14 @@ trove_classifiers = [
 parsed_reqs = utils.parse_requirements()
 
 cmdclass = versioneer.get_cmdclass()
-leap_launcher = 'bitmask=leap.app:main'
+leap_launcher = 'bitmask=leap.bitmask.app:main'
 
 from setuptools.command.develop import develop as _develop
 
 
 def copy_reqs(path, withsrc=False):
     # add a copy of the processed requirements to the package
-    _reqpath = ('leap', 'util', 'reqs.txt')
+    _reqpath = ('leap', 'bitmask', 'util', 'reqs.txt')
     if withsrc:
         reqsfile = os.path.join(path, 'src', *_reqpath)
     else:
@@ -108,6 +108,21 @@ class cmd_sdist(versioneer_sdist):
 cmdclass["build"] = cmd_build
 cmdclass["sdist"] = cmd_sdist
 
+import platform
+_system = platform.system()
+IS_LINUX = True if _system == "Linux" else False
+
+if IS_LINUX:
+    data_files = [
+        # ("share/man/man1",
+        #     ["docs/man/bitmask.1"]),
+        ("share/polkit-1/actions",
+         ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
+        ("/etc/leap/",
+         ["pkg/linux/resolv-update"]),
+    ]
+else:
+    data_files = []
 
 setup(
     name="leap.bitmask",
@@ -146,12 +161,7 @@ setup(
     include_package_data=True,
     # not being used? -- setuptools does not like it.
     # looks like debhelper is honoring it...
-    data_files=[
-        # ("share/man/man1",
-        #     ["docs/man/bitmask.1"]),
-        ("share/polkit-1/actions",
-         ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
-    ],
+    data_files=data_files,
     zip_safe=False,
     platforms="all",
     entry_points={

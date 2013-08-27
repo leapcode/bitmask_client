@@ -134,6 +134,8 @@ class SRPAuth(QtCore.QObject):
         A_KEY = "A"
         CLIENT_AUTH_KEY = "client_auth"
         SESSION_ID_KEY = "_session_id"
+        USER_VERIFIER_KEY = 'user[password_verifier]'
+        USER_SALT_KEY = 'user[password_salt]'
 
         def __init__(self, provider_config):
             """
@@ -168,6 +170,10 @@ class SRPAuth(QtCore.QObject):
 
             self._srp_user = None
             self._srp_a = None
+
+            # User credentials stored for password changing checks
+            self._username = None
+            self._password = None
 
         def _safe_unhexlify(self, val):
             """
@@ -438,6 +444,51 @@ class SRPAuth(QtCore.QObject):
         def _threader(self, cb, res, *args, **kwargs):
             return threads.deferToThread(cb, res, *args, **kwargs)
 
+        def change_password(self, current_password, new_password):
+            """
+            Changes the password for the currently logged user if the current
+            password match.
+            It requires to be authenticated.
+
+            Might raise:
+                SRPAuthBadPassword
+                requests.exceptions.HTTPError
+
+            :param current_password: the current password for the logged user.
+            :type current_password: str
+            :param new_password: the new password for the user
+            :type new_password: str
+            """
+            leap_assert(self.get_uid() is not None)
+
+            if current_password != self._password:
+                raise SRPAuthBadPassword
+
+            url = "%s/%s/users/%s.json" % (
+                self._provider_config.get_api_uri(),
+                self._provider_config.get_api_version(),
+                self.get_uid())
+
+            salt, verifier = self._srp.create_salted_verification_key(
+                self._username, new_password, self._hashfun, self._ng)
+
+            cookies = {self.SESSION_ID_KEY: self.get_session_id()}
+            user_data = {
+                self.USER_VERIFIER_KEY: binascii.hexlify(verifier),
+                self.USER_SALT_KEY: binascii.hexlify(salt)
+            }
+
+            change_password = self._session.put(
+                url, data=user_data,
+                verify=self._provider_config.get_ca_cert_path(),
+                cookies=cookies,
+                timeout=REQUEST_TIMEOUT)
+
+            # In case of non 2xx it raises HTTPError
+            change_password.raise_for_status()
+
+            self._password = new_password
+
         def authenticate(self, username, password):
             """
             Executes the whole authentication process for a user
@@ -453,6 +504,10 @@ class SRPAuth(QtCore.QObject):
             :rtype: twisted.internet.defer.Deferred
             """
             leap_assert(self.get_session_id() is None, "Already logged in")
+
+            # User credentials stored for password changing checks
+            self._username = username.lower()
+            self._password = password
 
             d = threads.deferToThread(self._authentication_preprocessing,
                                       username=username,
@@ -564,6 +619,33 @@ class SRPAuth(QtCore.QObject):
         d.addCallback(self._gui_notify)
         d.addErrback(self._errback)
         return d
+
+    def change_password(self, current_password, new_password):
+        """
+        Changes the user's password.
+
+        :param current_password: the current password of the user.
+        :type current_password: str
+        :param new_password: the new password for the user.
+        :type new_password: str
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        d = threads.deferToThread(
+            self.__instance.change_password, current_password, new_password)
+        return d
+
+    def get_username(self):
+        """
+        Returns the username of the currently authenticated user or None if
+        no user is logged.
+
+        :rtype: str or None
+        """
+        if self.get_uid() is None:
+            return None
+        return self.__instance._username
 
     def _gui_notify(self, _):
         """

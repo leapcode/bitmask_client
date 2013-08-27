@@ -1,0 +1,3 @@
+leap.soledad.client soledad-client ; PEP386
+leap.common python-leap-common ; PEP386
+leap.mail leap-mail ; PEP386

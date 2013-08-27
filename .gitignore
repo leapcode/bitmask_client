@@ -11,7 +11,6 @@ ui_*.py
 bin/
 build/
 core
-debian/python-leap-client/
 dist/
 docs/_build
 docs/covhtml
@@ -32,3 +31,10 @@ MANIFEST
 _trial_temp*
 config/*
 CHANGELOG~
+debian/bitmask.postinst.debhelper
+debian/bitmask.postrm.debhelper
+debian/bitmask.prerm.debhelper
+debian/bitmask.substvars
+debian/bitmask/
+debian/files
+docs/man/bitmask.1

@@ -9,6 +9,7 @@
 # Uncomment this to turn on verbose mode.
 #DH_VERBOSE=1
 DEB_BUILD_OPTIONS=nocheck
+package=bitmask
 
 PYTHON2=$(shell pyversions -vr)
 
@@ -19,6 +20,7 @@ PYTHON2=$(shell pyversions -vr)
 override_dh_prep:
 	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
 	dh_prep
+	# this will re-generate the resource files and locales.
 	make -f ./Makefile
 
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
@@ -49,10 +51,15 @@ install-python%:
 # build and install sphinx docs
 # 
 override_dh_installdocs:
-	python setup.py build_sphinx
+#	python setup.py build_sphinx
+	dh_installdocs
+
 #COMMENTING OUT TO WORKAROUND THIS ERROR:
 #dh_sphinxdoc: error: unknown JavaScript code: debian/bitmask/usr/share/doc/bitmask/html/_static/jquery.js
 #dh_installdocs build/sphinx/html
+
+override_dh_installchangelogs:
+	 dh_installchangelogs CHANGELOG
 
 override_dh_auto_clean:
 	dh_auto_clean
