@@ -1,10 +1,18 @@
-bitmask (0.3.1pre) unstable; urgency=low
+bitmask (0.3.1) unstable; urgency=low
 
-  * Merge in develop changes
+  [ Ben Carrillo ]
+  * Merge master for new release
+  * Cherrypick fix for updown script.
+  * Add data files to install /etc/leap/resolv-update
+  * Add leap.mail and leap.soledad.client dependencies explicitly.
+  * Install CHANGELOG.
+  * Update path to icon and menu entry to new package name.
+
+  [ Micah Anderson ]
   * Update debian/copyright for new license
   * Reformat extended description to fit properly
 
- -- Micah Anderson <micah@debian.org>  Thu, 22 Aug 2013 15:24:53 -0400
+ -- Ben Carrillo <ben@futeisha.org>  Mon, 26 Aug 2013 14:21:06 +0200
 
 bitmask (0.3.0) unstable; urgency=low
 

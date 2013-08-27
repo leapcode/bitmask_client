@@ -17,7 +17,8 @@ X-Python-Version: >= 2.6
 
 Package: bitmask
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends},
+Depends:
+  ${misc:Depends}, ${python:Depends},
   python-openssl,
   python-crypto,
   python-keyring (>= 0.9.2),
@@ -30,14 +31,16 @@ Depends: ${misc:Depends}, ${python:Depends},
   python-xdg,
   python-jsonschema (>= 0.7.0),
   python-setuptools,
-  python-nose,
-  python-mock,
   pep8,
   openvpn,
+#polkit-gnome should not be a hard dep, but a recommends
   policykit-1-gnome,
   python-pyside, 
   python-pyside.qtcore, 
-  python-pyside.qtgui
+  python-pyside.qtgui,
+  python-leap-common,
+  leap-mail,
+  soledad-client
 Suggests: resolvconf
 Conflicts: autoresolv
 Enhances: openvpn

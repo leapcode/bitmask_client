@@ -1,3 +1,40 @@
+0.3.1 Aug 23:
+  o Replace wizard images with the rainbow mask. Closes #3425.
+  o Update leap.common minimum version needed.
+  o Set the standalone flag before it's being used. Fixes #3426.
+  o Stop the twisted reactor adding the stop call to the call chain
+    instead of stopping it directly. Fixes #3406.
+  o Allow soledad initialization to retry if it times out. Closes:
+    #3413
+  o Activate window when setting it visible. Also display Hide/Show
+    message in the tray icon taking into account the window
+    activation. Fixes #3433.
+  o Do not start IMAP daemon if mail was not selected among the
+    services. Fixes #3435.
+  o Reword RECONNECTING state of openvpn. Fixes #3429.
+  o Improve OpenVPN detection by searching for a specific leap-only
+    string in the command line. This makes it possible to run other
+    VPN instances while also using EIP. Fixes #3268 and #3364.
+  o OSX: Check for the tun.kext existence in /Library/Extensions
+    instead of /System/Library/Extensions. Fixes #3271.
+  o Use DELETE /1/logout to properly logout. Fixes #3510.
+  o Make the poll interval bigger to improve openvpn's internal
+    behavior. If it gets queried too many times per second, it's
+    behavior won't be good. Fixes #3430.
+  o Transforms usernames to lower case before they are used in the
+    registration and authentication. Closes #3541.
+  o Add filter option to the logger window. Closes #3407.
+  o Add a preference panel that lets you change your password. Closes
+    #3500 #2798 #3533.
+  o Move all client code into its own namespace
+    (leap.bitmask). Closes: #2959
+  o Make mail fetch interval in imap service configurable via
+    environment variable. Closes: #3409
+  o Update to new soledad package scheme (common, client and
+    server). Closes #3487.
+  o Fetch incoming mail when mail client logs in. Closes: #3525
+  o Add first draft of the UI for Encrypted Mail. Closes #3499.
+
 0.3.0 Aug 9:
   o Add missing scripts does not stop if a command fails, also warns
     the user if there was an error. Closes #3294.
