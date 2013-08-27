@@ -42,11 +42,10 @@ Suggests: resolvconf
 Conflicts: autoresolv
 Enhances: openvpn
 Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
- LEAP (LEAP Encryption Access Project) develops
- a plan to secure everyday communication, breaking down
- into discrete services.
+ LEAP (LEAP Encryption Access Project) develops a plan to secure everyday
+ communication, breaking down into discrete services.
  .
- The client for the current phase gives support to the EIP Service.
- EIP (the Encrypted Internet Proxy) provides circumvention, location
- anonymization, and traffic encryption in a hassle-free,
- automatically self-configuring fashion, and has an enhanced level of security.
+ The client for the current phase gives support to the EIP Service. The
+ Encrypted Internet Proxy) provides circumvention, location anonymization, and
+ traffic encryption in a hassle-free, automatically self-configuring fashion,
+ and has an enhanced level of security.

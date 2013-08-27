@@ -1,6 +1,8 @@
 bitmask (0.3.1pre) unstable; urgency=low
 
   * Merge in develop changes
+  * Update debian/copyright for new license
+  * Reformat extended description to fit properly
 
  -- Micah Anderson <micah@debian.org>  Thu, 22 Aug 2013 15:24:53 -0400
 
