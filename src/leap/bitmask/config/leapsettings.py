@@ -170,8 +170,12 @@ class LeapSettings(object):
         leap_assert(len(provider) > 0, "We need a nonempty provider")
         leap_assert_type(services, list)
 
-        self._settings.setValue("%s/Services" % (provider,),
-                                services)
+        key = "{0}/Services".format(provider)
+        if not services:
+            # if there are no enabled services we don't need that key
+            self._settings.remove(key)
+        else:
+            self._settings.setValue(key, services)
 
     def get_user(self):
         """
