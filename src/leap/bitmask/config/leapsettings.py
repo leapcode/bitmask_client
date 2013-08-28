@@ -129,7 +129,7 @@ class LeapSettings(object):
         providers = []
         try:
             providers_path = os.path.join(
-                self._path_prefix, "leap", "providers")
+                get_path_prefix(), "leap", "providers")
             providers = os.listdir(providers_path)
         except Exception as e:
             logger.debug("Error listing providers, assume there are none. %r"
