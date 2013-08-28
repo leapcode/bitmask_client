@@ -23,8 +23,8 @@ import logging
 import getpass
 import os
 import platform
-import subprocess
 import stat
+import subprocess
 try:
     import grp
 except ImportError:
@@ -34,6 +34,7 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 
 from leap.bitmask.config.leapsettings import LeapSettings
+
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.bitmask.util import first
@@ -218,19 +219,19 @@ def _is_auth_agent_running():
     return any(is_running)
 
 
-def _try_to_launch_agent():
+def _try_to_launch_agent(standalone=False):
     """
     Tries to launch a polkit daemon.
     """
-    opts = [
-        "/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1",
-        # XXX add kde thing here
-    ]
-    for cmd in opts:
-        try:
-            subprocess.Popen([cmd], shell=True)
-        except:
-            pass
+    env = None
+    if standalone is True:
+        env = {
+            "PYTHONPATH": os.path.abspath('../../../../lib/')}
+    try:
+        subprocess.call(["python", "-m", "leap.bitmask.util.polkit_agent"],
+                        shell=True, env=env)
+    except Exception as exc:
+        logger.exception(exc)
 
 
 class LinuxVPNLauncher(VPNLauncher):
@@ -314,7 +315,7 @@ class LinuxVPNLauncher(VPNLauncher):
         """
         if _is_pkexec_in_system():
             if not _is_auth_agent_running():
-                _try_to_launch_agent()
+                _try_to_launch_agent(ProviderConfig.standalone)
             if _is_auth_agent_running():
                 pkexec_possibilities = which(kls.PKEXEC_BIN)
                 leap_assert(len(pkexec_possibilities) > 0,

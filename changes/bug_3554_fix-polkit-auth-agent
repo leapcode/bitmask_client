@@ -1,0 +1,1 @@
+  o Properly daemonize polkit-gnome-authentication-agent. Closes: #3554
