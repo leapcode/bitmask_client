@@ -30,6 +30,7 @@ from leap.bitmask.crypto.srpauth import SRPAuthBadPassword
 from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services import get_supported
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.services import get_service_display_name
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class PreferencesWindow(QtGui.QDialog):
 
     WEAK_PASSWORDS = ("123456", "qweasd", "qwerty", "password")
 
-    def __init__(self, parent, srp_auth, soledad, leap_settings):
+    def __init__(self, parent, srp_auth, soledad, leap_settings, standalone):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
@@ -49,31 +50,23 @@ class PreferencesWindow(QtGui.QDialog):
         :type srp_auth: SRPAuth
         :param soledad: Soledad object configured in the main app.
         :type soledad: Soledad
+        :param standalone: If True, the application is running as standalone
+                           and the preferences dialog should display some
+                           messages according to this.
+        :type standalone: bool
         """
         QtGui.QDialog.__init__(self, parent)
 
         self._srp_auth = srp_auth
         self._soledad = soledad
         self._settings = leap_settings
+        self._standalone = standalone
 
         # Load UI
         self.ui = Ui_Preferences()
         self.ui.setupUi(self)
         self.ui.lblPasswordChangeStatus.setVisible(False)
         self.ui.lblProvidersServicesStatus.setVisible(False)
-
-        # Correspondence for services and their name to display
-        EIP_LABEL = self.tr("Encrypted Internet")
-        MX_LABEL = self.tr("Encrypted Mail")
-
-        self.SERVICE_DISPLAY = [
-            EIP_LABEL,
-            MX_LABEL
-        ]
-        self.SERVICE_CONFIG = [
-            "openvpn",
-            "mx"
-        ]
 
         self._selected_services = set()
         self._provider_config = ProviderConfig()
@@ -83,10 +76,22 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui.cbProvidersServices.currentIndexChanged[unicode].connect(
             self._populate_services)
 
+        parent.soledad_ready.connect(self._soledad_ready)
+
         if not self._settings.get_configured_providers():
             self.ui.gbEnabledServices.setEnabled(False)
         else:
             self._add_configured_providers()
+
+    def _soledad_ready(self):
+        """
+        SLOT
+        TRIGGERS:
+            parent.soledad_ready
+        It sets the soledad object as ready to use.
+        """
+        self._soledad_ready = True
+        self.ui.gbPasswordChange.setEnabled(True)
 
     def _set_password_change_status(self, status, error=False, success=False):
         """
@@ -283,8 +288,10 @@ class PreferencesWindow(QtGui.QDialog):
         for service in services:
             try:
                 checkbox = QtGui.QCheckBox(self)
-                service_index = self.SERVICE_CONFIG.index(service)
-                checkbox.setText(self.SERVICE_DISPLAY[service_index])
+                service_label = get_service_display_name(
+                    service, self._standalone)
+                checkbox.setText(service_label)
+
                 self.ui.vlServices.addWidget(checkbox)
                 checkbox.stateChanged.connect(
                     partial(self._service_selection_changed, service))

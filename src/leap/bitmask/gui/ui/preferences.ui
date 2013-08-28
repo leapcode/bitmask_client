@@ -20,6 +20,9 @@
   <layout class="QGridLayout" name="gridLayout_3">
    <item row="0" column="0">
     <widget class="QGroupBox" name="gbPasswordChange">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>Password Change</string>
      </property>

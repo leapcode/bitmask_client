@@ -288,17 +288,12 @@ class MainWindow(QtGui.QMainWindow):
 
         ################################# end Qt Signals connection ########
 
-        # Enable the password change when soledad is ready
-        self.soledad_ready.connect(
-            partial(self.ui.btnPreferences.setEnabled, True))
-
         init_platform()
 
         self._wizard = None
         self._wizard_firstrun = False
 
         self._logger_window = None
-        self._preferences_window = None
 
         self._bypass_checks = bypass_checks
 
@@ -419,8 +414,11 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        PreferencesWindow(
-            self, self._srp_auth, self._soledad, self._settings).show()
+        preferences_window = PreferencesWindow(
+            self, self._srp_auth, self._soledad,
+            self._settings, self._standalone)
+
+        preferences_window.show()
 
     def _uncheck_logger_button(self):
         """
