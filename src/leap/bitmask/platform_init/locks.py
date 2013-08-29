@@ -185,7 +185,7 @@ if platform_init.IS_WIN:
         Creates a lock based on the atomic nature of mkdir on Windows
         system calls.
         """
-        LOCKBASE = os.path.join(gettempdir(), "leap-client-lock")
+        LOCKBASE = os.path.join(gettempdir(), "bitmask-lock")
 
         def __init__(self):
             """
@@ -353,7 +353,7 @@ def we_are_the_one_and_only():
     _sys = platform.system()
 
     if _sys in ("Linux", "Darwin"):
-        locker = UnixLock('/tmp/leap-client.lock')
+        locker = UnixLock('/tmp/bitmask.lock')
         locker.get_lock()
         we_are_the_one = locker.locked_by_us
         if not we_are_the_one:

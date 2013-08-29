@@ -8,6 +8,7 @@
 ui_*.py
 !.coveragerc
 !.tx
+!.gitattributes
 bin/
 build/
 core

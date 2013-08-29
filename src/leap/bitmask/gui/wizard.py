@@ -32,6 +32,7 @@ from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
 from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.services import get_supported
 
@@ -199,41 +200,6 @@ class Wizard(QtGui.QWizard):
         """
         self.ui.lblPassword2.setFocus()
 
-    def _basic_password_checks(self, username, password, password2):
-        """
-        Performs basic password checks to avoid really easy passwords.
-
-        :param username: username provided at the registrarion form
-        :type username: str
-        :param password: password from the registration form
-        :type password: str
-        :param password2: second password from the registration form
-        :type password: str
-
-        :return: returns True if all the checks pass, False otherwise
-        :rtype: bool
-        """
-        message = None
-
-        if message is None and password != password2:
-            message = self.tr("Passwords don't match")
-
-        if message is None and len(password) < 6:
-            message = self.tr("Password too short")
-
-        if message is None and password in self.WEAK_PASSWORDS:
-            message = self.tr("Password too easy")
-
-        if message is None and username == password:
-            message = self.tr("Password equal to username")
-
-        if message is not None:
-            self._set_register_status(message, error=True)
-            self._focus_password()
-            return False
-
-        return True
-
     def _register(self):
         """
         Performs the registration based on the values provided in the form
@@ -244,7 +210,8 @@ class Wizard(QtGui.QWizard):
         password = self.ui.lblPassword.text()
         password2 = self.ui.lblPassword2.text()
 
-        if self._basic_password_checks(username, password, password2):
+        ok, msg = basic_password_checks(username, password, password2)
+        if ok:
             register = SRPRegister(provider_config=self._provider_config)
             register.registration_finished.connect(
                 self._registration_finished)
@@ -258,6 +225,8 @@ class Wizard(QtGui.QWizard):
             self._password = password
             self._set_register_status(self.tr("Starting registration..."))
         else:
+            self._set_register_status(msg, error=True)
+            self._focus_password()
             self.ui.btnRegister.setEnabled(True)
 
     def _set_registration_fields_visibility(self, visible):
