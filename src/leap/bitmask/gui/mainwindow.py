@@ -284,6 +284,7 @@ class MainWindow(QtGui.QMainWindow):
         # Services signals/slots connection
         self.new_updates.connect(self._react_to_new_updates)
         self.soledad_ready.connect(self._start_imap_service)
+        self.soledad_ready.connect(self._set_soledad_ready)
         self.mail_client_logged_in.connect(self._fetch_incoming_mail)
 
         ################################# end Qt Signals connection ########
@@ -298,6 +299,7 @@ class MainWindow(QtGui.QMainWindow):
         self._bypass_checks = bypass_checks
 
         self._soledad = None
+        self._soledad_ready = False
         self._keymanager = None
         self._imap_service = None
 
@@ -415,10 +417,25 @@ class MainWindow(QtGui.QMainWindow):
         Displays the preferences window.
         """
         preferences_window = PreferencesWindow(
-            self, self._srp_auth, self._soledad,
-            self._settings, self._standalone)
+            self, self._srp_auth, self._settings, self._standalone)
+
+        if self._soledad_ready:
+            preferences_window.set_soledad_ready(self._soledad)
+        else:
+            self.soledad_ready.connect(
+                lambda: preferences_window.set_soledad_ready(self._soledad))
 
         preferences_window.show()
+
+    def _set_soledad_ready(self):
+        """
+        SLOT
+        TRIGGERS:
+            self.soledad_ready
+
+        It sets the soledad object as ready to use.
+        """
+        self._soledad_ready = True
 
     def _uncheck_logger_button(self):
         """

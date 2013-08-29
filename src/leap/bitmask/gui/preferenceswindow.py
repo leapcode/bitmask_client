@@ -42,14 +42,12 @@ class PreferencesWindow(QtGui.QDialog):
 
     WEAK_PASSWORDS = ("123456", "qweasd", "qwerty", "password")
 
-    def __init__(self, parent, srp_auth, soledad, leap_settings, standalone):
+    def __init__(self, parent, srp_auth, leap_settings, standalone):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
         :param srp_auth: SRPAuth object configured in the main app.
         :type srp_auth: SRPAuth
-        :param soledad: Soledad object configured in the main app.
-        :type soledad: Soledad
         :param standalone: If True, the application is running as standalone
                            and the preferences dialog should display some
                            messages according to this.
@@ -58,9 +56,9 @@ class PreferencesWindow(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
 
         self._srp_auth = srp_auth
-        self._soledad = soledad
         self._settings = leap_settings
         self._standalone = standalone
+        self._soledad = None
 
         # Load UI
         self.ui = Ui_Preferences()
@@ -76,21 +74,23 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui.cbProvidersServices.currentIndexChanged[unicode].connect(
             self._populate_services)
 
-        parent.soledad_ready.connect(self._soledad_ready)
-
         if not self._settings.get_configured_providers():
             self.ui.gbEnabledServices.setEnabled(False)
         else:
             self._add_configured_providers()
 
-    def _soledad_ready(self):
+    def set_soledad_ready(self, soledad):
         """
         SLOT
         TRIGGERS:
             parent.soledad_ready
+
         It sets the soledad object as ready to use.
+
+        :param soledad: Soledad object configured in the main app.
+        :type soledad: Soledad
         """
-        self._soledad_ready = True
+        self._soledad = soledad
         self.ui.gbPasswordChange.setEnabled(True)
 
     def _set_password_change_status(self, status, error=False, success=False):
@@ -128,6 +128,10 @@ class PreferencesWindow(QtGui.QDialog):
 
     def _change_password(self):
         """
+        SLOT
+        TRIGGERS:
+            self.ui.pbChangePassword.clicked
+
         Changes the user's password if the inputboxes are correctly filled.
         """
         username = self._srp_auth.get_username()
