@@ -20,13 +20,13 @@ function up() {
   comment=$(
 cat <<SETVAR
 #
-# This is a temporary resolv.conf set by the LEAP Client in order to
+# This is a temporary resolv.conf set by the Bitmask in order to
 # strictly enforce that DNS lookups are secured by the VPN.
 #
-# When the LEAP Client quits or the VPN connection it manages is dropped,
+# When Bitmask quits or the VPN connection it manages is dropped,
 # this file will be replace with the regularly scheduled /etc/resolv.conf
 #
-# If you want custom entries to appear in this file while LEAP is running,
+# If you want custom entries to appear in this file while Bitmask is running,
 # put them in /etc/leap/resolv-head or /etc/leap/resolv-tail. These files
 # should only be writable by root.
 #
