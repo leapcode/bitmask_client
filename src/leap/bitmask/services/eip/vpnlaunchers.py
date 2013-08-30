@@ -33,6 +33,7 @@ except ImportError:
 from abc import ABCMeta, abstractmethod
 from functools import partial
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.bitmask.util import first
@@ -414,8 +415,15 @@ class LinuxVPNLauncher(VPNLauncher):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateway_selector = VPNGatewaySelector(eipconfig)
-        gateways = gateway_selector.get_gateways()
+        gateways = []
+        leap_settings = LeapSettings(ProviderConfig.standalone)
+        gateway_conf = leap_settings.get_selected_gateway()
+
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
 
         if not gateways:
             logger.error('No gateway was found!')
