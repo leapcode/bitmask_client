@@ -66,6 +66,10 @@ class LeapSettings(object):
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
     ALERTMISSING_KEY = "AlertMissingScripts"
+    GATEWAY_KEY = "Gateway"
+
+    # values
+    GATEWAY_AUTOMATIC = "Automatic"
 
     def __init__(self, standalone=False):
         """
@@ -136,6 +140,38 @@ class LeapSettings(object):
                          % (e,))
 
         return providers
+
+    def get_selected_gateway(self, provider):
+        """
+        Returns the configured gateway for the given provider.
+
+        :param provider: provider domain
+        :type provider: str
+
+        :rtype: str
+        """
+        leap_assert(len(provider) > 0, "We need a nonempty provider")
+        gateway_key = "{0}/{1}".format(provider, self.GATEWAY_KEY)
+        gateway = self._settings.value(gateway_key, self.GATEWAY_AUTOMATIC)
+
+        return gateway
+
+    def set_selected_gateway(self, provider, gateway):
+        """
+        Saves the configured gateway for the given provider
+
+        :param provider: provider domain
+        :type provider: str
+
+        :param gateway: gateway to use as default
+        :type gateway: str
+        """
+
+        leap_assert(len(provider) > 0, "We need a nonempty provider")
+        leap_assert_type(gateway, (str, unicode))
+
+        gateway_key = "{0}/{1}".format(provider, self.GATEWAY_KEY)
+        self._settings.setValue(gateway_key, gateway)
 
     def get_enabled_services(self, provider):
         """

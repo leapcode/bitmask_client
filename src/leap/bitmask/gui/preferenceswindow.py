@@ -30,6 +30,7 @@ from leap.bitmask.crypto.srpauth import SRPAuthBadPassword
 from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services import get_supported
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.bitmask.services import get_service_display_name
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ class PreferencesWindow(QtGui.QDialog):
         :type standalone: bool
         """
         QtGui.QDialog.__init__(self, parent)
+        self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
         self._srp_auth = srp_auth
         self._settings = leap_settings
@@ -65,14 +67,19 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui.setupUi(self)
         self.ui.lblPasswordChangeStatus.setVisible(False)
         self.ui.lblProvidersServicesStatus.setVisible(False)
+        self.ui.lblProvidersGatewayStatus.setVisible(False)
 
         self._selected_services = set()
-        self._provider_config = ProviderConfig()
 
         # Connections
         self.ui.pbChangePassword.clicked.connect(self._change_password)
         self.ui.cbProvidersServices.currentIndexChanged[unicode].connect(
             self._populate_services)
+        self.ui.cbProvidersGateway.currentIndexChanged[unicode].connect(
+            self._populate_gateways)
+
+        self.ui.cbGateways.currentIndexChanged[unicode].connect(
+            lambda x: self.ui.lblProvidersGatewayStatus.setVisible(False))
 
         if not self._settings.get_configured_providers():
             self.ui.gbEnabledServices.setEnabled(False)
@@ -207,12 +214,37 @@ class PreferencesWindow(QtGui.QDialog):
 
         :param status: status message to display, can be HTML
         :type status: str
+        :param success: is set to True if we should display the
+                        message as green
+        :type success: bool
         """
         if success:
             status = "<font color='green'><b>%s</b></font>" % (status,)
 
         self.ui.lblProvidersServicesStatus.setVisible(True)
         self.ui.lblProvidersServicesStatus.setText(status)
+
+    def _set_providers_gateway_status(self, status, success=False,
+                                      error=False):
+        """
+        Sets the status label for the gateway change.
+
+        :param status: status message to display, can be HTML
+        :type status: str
+        :param success: is set to True if we should display the
+                        message as green
+        :type success: bool
+        :param error: is set to True if we should display the
+                        message as red
+        :type error: bool
+        """
+        if success:
+            status = "<font color='green'><b>%s</b></font>" % (status,)
+        elif error:
+            status = "<font color='red'><b>%s</b></font>" % (status,)
+
+        self.ui.lblProvidersGatewayStatus.setVisible(True)
+        self.ui.lblProvidersGatewayStatus.setText(status)
 
     def _add_configured_providers(self):
         """
@@ -250,7 +282,7 @@ class PreferencesWindow(QtGui.QDialog):
         """
         SLOT
         TRIGGERS:
-            self.ui.cbProvidersServices.clicked
+            self.ui.cbProvidersServices.currentIndexChanged[unicode]
 
         Loads the services that the provider provides into the UI for
         the user to enable or disable.
@@ -261,10 +293,11 @@ class PreferencesWindow(QtGui.QDialog):
         # We hide the maybe-visible status label after a change
         self.ui.lblProvidersServicesStatus.setVisible(False)
 
-        provider_config_path = os.path.join(
-            "leap", "providers", domain, "provider.json")
+        if not domain:
+            return
 
-        if not domain or not self._provider_config.load(provider_config_path):
+        provider_config = self._get_provider_config(domain)
+        if provider_config is None:
             return
 
         # set the proper connection for the 'save' button
@@ -276,7 +309,7 @@ class PreferencesWindow(QtGui.QDialog):
         save_services = partial(self._save_enabled_services, domain)
         self.ui.pbSaveServices.clicked.connect(save_services)
 
-        services = get_supported(self._provider_config.get_services())
+        services = get_supported(provider_config.get_services())
         services_conf = self._settings.get_enabled_services(domain)
 
         # discard changes if other provider is selected
@@ -307,7 +340,11 @@ class PreferencesWindow(QtGui.QDialog):
 
     def _save_enabled_services(self, provider):
         """
-        Saves the new settings to the configuration file.
+        SLOT
+        TRIGGERS:
+            self.ui.pbSaveServices.clicked
+
+        Saves the new enabled services settings to the configuration file.
 
         :param provider: the provider config that we need to save.
         :type provider: str
@@ -319,3 +356,108 @@ class PreferencesWindow(QtGui.QDialog):
             "Services settings for provider '{0}' saved.".format(provider))
         logger.debug(msg)
         self._set_providers_services_status(msg, success=True)
+
+    def _get_provider_config(self, domain):
+        """
+        Helper to return a valid Provider Config from the domain name.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+
+        :rtype: ProviderConfig or None if there is a problem loading the config
+        """
+        provider_config = ProviderConfig()
+        provider_config_path = os.path.join(
+            "leap", "providers", domain, "provider.json")
+
+        if not provider_config.load(provider_config_path):
+            provider_config = None
+
+        return provider_config
+
+    def _save_selected_gateway(self, provider):
+        """
+        SLOT
+        TRIGGERS:
+            self.ui.pbSaveGateway.clicked
+
+        Saves the new gateway setting to the configuration file.
+
+        :param provider: the provider config that we need to save.
+        :type provider: str
+        """
+        gateway = self.ui.cbGateways.currentText()
+
+        if gateway == self.AUTOMATIC_GATEWAY_LABEL:
+            gateway = self._settings.GATEWAY_AUTOMATIC
+        else:
+            idx = self.ui.cbGateways.currentIndex()
+            gateway = self.ui.cbGateways.itemData(idx)
+
+        self._settings.set_selected_gateway(provider, gateway)
+
+        msg = self.tr(
+            "Gateway settings for provider '{0}' saved.".format(provider))
+        logger.debug(msg)
+        self._set_providers_gateway_status(msg, success=True)
+
+    def _populate_gateways(self, domain):
+        """
+        SLOT
+        TRIGGERS:
+            self.ui.cbProvidersGateway.currentIndexChanged[unicode]
+
+        Loads the gateways that the provider provides into the UI for
+        the user to select.
+
+        :param domain: the domain of the provider to load gateways from.
+        :type domain: str
+        """
+        # We hide the maybe-visible status label after a change
+        self.ui.lblProvidersGatewayStatus.setVisible(False)
+
+        if not domain:
+            return
+
+        try:
+            # disconnect prevoiusly connected save method
+            self.ui.pbSaveGateway.clicked.disconnect()
+        except RuntimeError:
+            pass  # Signal was not connected
+
+        # set the proper connection for the 'save' button
+        save_gateway = partial(self._save_selected_gateway, domain)
+        self.ui.pbSaveGateway.clicked.connect(save_gateway)
+
+        eip_config = EIPConfig()
+        provider_config = self._get_provider_config(domain)
+
+        eip_config_path = os.path.join("leap", "providers",
+                                       domain, "eip-service.json")
+        api_version = provider_config.get_api_version()
+        eip_config.set_api_version(api_version)
+        eip_loaded = eip_config.load(eip_config_path)
+
+        if not eip_loaded or provider_config is None:
+            self._set_providers_gateway_status(
+                self.tr("There was a problem with configuration files."),
+                error=True)
+            return
+
+        gateways = VPNGatewaySelector(eip_config).get_gateways_list()
+        logger.debug(gateways)
+
+        self.ui.cbGateways.clear()
+        self.ui.cbGateways.addItem(self.AUTOMATIC_GATEWAY_LABEL)
+
+        # Add the available gateways and
+        # select the one stored in configuration file.
+        selected_gateway = self._settings.get_selected_gateway(domain)
+        index = 0
+        for idx, (gw_name, gw_ip) in enumerate(gateways):
+            gateway = "{0} ({1})".format(gw_name, gw_ip)
+            self.ui.cbGateways.addItem(gateway, gw_ip)
+            if gw_ip == selected_gateway:
+                index = idx + 1
+
+        self.ui.cbGateways.setCurrentIndex(index)
