@@ -1,0 +1,10 @@
+#################################################
+# This file keeps track of the recent changes
+# introduced in internal leap dependencies.
+# Add your changes here so we can properly update
+# requirements.pip during the release process.
+#################################################
+
+leap.common>=0.3.2
+# leap.common.config.get_path_prefix
+
