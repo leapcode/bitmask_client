@@ -126,7 +126,7 @@ class PreferencesWindow(QtGui.QDialog):
         :type disable: bool
         """
         if disable:
-            self._set_password_change_disable(self.tr("Changing password..."))
+            self._set_password_change_status(self.tr("Changing password..."))
 
         self.ui.leCurrentPassword.setEnabled(not disable)
         self.ui.leNewPassword.setEnabled(not disable)
