@@ -11,7 +11,8 @@ bitmask (0.3.1) unstable; urgency=low
   [ Micah Anderson ]
   * Update debian/copyright for new license
   * Reformat extended description to fit properly
-
+  * Add leap-keymanager to pydist-overrides
+	
  -- Ben Carrillo <ben@futeisha.org>  Mon, 26 Aug 2013 14:21:06 +0200
 
 bitmask (0.3.0) unstable; urgency=low
