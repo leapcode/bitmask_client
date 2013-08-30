@@ -17,7 +17,9 @@
     * [ ] Update relnotes.txt if needed.
     * [ ] git rm changes/*
     * [ ] git commit -av
-    * [ ] Update dependencies on the current package in the packages that remain if needed (that's why the order).
+    * [ ] Review pkg/requirements.pip for everything and update if needed (that's why the order).
+      - See whatever has been introduced in changes/VERSION_COMPAT
+      - Reset changes/VERSION_COMPAT
     * [ ] git tag -s X.Y.Z (note the -s so that it's a signed tag) The message should be something like: Tag <package> version X.Y.Z
     * [ ] git push origin X.Y.Z
     * [ ] git checkout master && git pull origin master && git merge release-X.Y.Z && git push origin master
