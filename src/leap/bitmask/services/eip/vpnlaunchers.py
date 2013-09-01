@@ -417,7 +417,8 @@ class LinuxVPNLauncher(VPNLauncher):
 
         gateways = []
         leap_settings = LeapSettings(ProviderConfig.standalone)
-        gateway_conf = leap_settings.get_selected_gateway()
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
 
         if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
             gateway_selector = VPNGatewaySelector(eipconfig)
