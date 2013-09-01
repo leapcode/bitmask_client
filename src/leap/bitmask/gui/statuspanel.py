@@ -591,6 +591,11 @@ class StatusPanelWidget(QtGui.QWidget):
         :param req: Request type
         :type req: leap.common.events.events_pb2.SignalRequest
         """
+        # We want to ignore this kind of events once everything has
+        # started
+        if self._smtp_started and self._imap_started:
+            return
+
         self.ui.lblMailStatus.setText(self.tr("Starting..."))
 
         ext_status = ""
