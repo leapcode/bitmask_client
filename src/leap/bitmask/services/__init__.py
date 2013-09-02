@@ -26,6 +26,8 @@ DEPLOYED = ["openvpn", "mx"]
 def get_service_display_name(service, standalone=False):
     """
     Returns the name to display of the given service.
+    If there is no configured name for that service, then returns the same
+    parameter
 
     :param service: the 'machine' service name
     :type service: str
@@ -42,8 +44,10 @@ def get_service_display_name(service, standalone=False):
     EIP_LABEL = _tr("Encrypted Internet")
     MX_LABEL = _tr("Encrypted Mail")
 
-    service_display = [EIP_LABEL, MX_LABEL]
-    service_config = ["openvpn", "mx"]
+    service_display = {
+        "openvpn": EIP_LABEL,
+        "mx": MX_LABEL
+    }
 
     # If we need to add a warning about eip needing
     # administrative permissions to start. That can be either
@@ -52,7 +56,7 @@ def get_service_display_name(service, standalone=False):
     if standalone or is_missing_policy_permissions():
         EIP_LABEL += " " + _tr("(will need admin password to start)")
 
-    return service_display[service_config.index(service)]
+    return service_display.get(service, service)
 
 
 def get_supported(services):
