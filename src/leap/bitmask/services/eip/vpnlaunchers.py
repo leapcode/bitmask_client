@@ -430,7 +430,7 @@ class LinuxVPNLauncher(VPNLauncher):
             logger.error('No gateway was found!')
             raise VPNLauncherException(self.tr('No gateway was found!'))
 
-        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']
@@ -678,11 +678,22 @@ class DarwinVPNLauncher(VPNLauncher):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateway_selector = VPNGatewaySelector(eipconfig)
-        gateways = gateway_selector.get_gateways()
+        gateways = []
+        leap_settings = LeapSettings(ProviderConfig.standalone)
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
 
-        logger.debug("Using gateways ips: {gw}".format(
-            gw=', '.join(gateways)))
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
+
+        if not gateways:
+            logger.error('No gateway was found!')
+            raise VPNLauncherException(self.tr('No gateway was found!'))
+
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']
@@ -850,10 +861,22 @@ class WindowsVPNLauncher(VPNLauncher):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateway_selector = VPNGatewaySelector(eipconfig)
-        gateways = gateway_selector.get_gateways()
+        gateways = []
+        leap_settings = LeapSettings(ProviderConfig.standalone)
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
 
-        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
+
+        if not gateways:
+            logger.error('No gateway was found!')
+            raise VPNLauncherException(self.tr('No gateway was found!'))
+
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']
