@@ -90,6 +90,9 @@ class HandlerAdapter(object):
     def setLevel(self, *args, **kwargs):
         return self._handler.setLevel(*args, **kwargs)
 
+    def addFilter(self, *args, **kwargs):
+        return self._handler.addFilter(*args, **kwargs)
+
     def handle(self, *args, **kwargs):
         return self._handler.handle(*args, **kwargs)
 

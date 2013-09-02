@@ -25,6 +25,7 @@ from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask.util import leap_argparse
+from leap.bitmask.util import log_silencer
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
 from leap.common.events import server as event_server
@@ -51,7 +52,7 @@ def install_qtreactor(logger):
     logger.debug("Qt4 reactor installed")
 
 
-def add_logger_handlers(debug=False, logfile=None):
+def add_logger_handlers(debug=False, logfile=None, standalone=False):
     """
     Create the logger and attach the handlers.
 
@@ -71,6 +72,7 @@ def add_logger_handlers(debug=False, logfile=None):
     # Create logger and formatter
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
+
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(log_format)
 
@@ -78,12 +80,16 @@ def add_logger_handlers(debug=False, logfile=None):
     console = logging.StreamHandler()
     console.setLevel(level)
     console.setFormatter(formatter)
+
+    silencer = log_silencer.SelectiveSilencerFilter(standalone=standalone)
+    console.addFilter(silencer)
     logger.addHandler(console)
     logger.debug('Console handler plugged!')
 
     # LEAP custom handler
     leap_handler = LeapLogHandler()
     leap_handler.setLevel(level)
+    leap_handler.addFilter(silencer)
     logger.addHandler(leap_handler)
     logger.debug('Leap handler plugged!')
 
@@ -93,6 +99,7 @@ def add_logger_handlers(debug=False, logfile=None):
         fileh = logging.FileHandler(logfile)
         fileh.setLevel(logging.DEBUG)
         fileh.setFormatter(formatter)
+        fileh.addFilter(silencer)
         logger.addHandler(fileh)
         logger.debug('File handler plugged!')
 
@@ -155,7 +162,7 @@ def main():
     # pylint: avoid unused import
     assert(locale_rc)
 
-    logger = add_logger_handlers(debug, logfile)
+    logger = add_logger_handlers(debug, logfile, standalone)
     replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
