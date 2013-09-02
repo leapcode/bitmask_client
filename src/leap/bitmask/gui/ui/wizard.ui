@@ -183,7 +183,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>Can we stablish a secure connection?</string>
+          <string>Can we establish a secure connection?</string>
          </property>
         </widget>
        </item>
