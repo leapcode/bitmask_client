@@ -52,7 +52,6 @@ class Wizard(QtGui.QWizard):
     SETUP_PROVIDER_PAGE = 3
     REGISTER_USER_PAGE = 4
     SERVICES_PAGE = 5
-    FINISH_PAGE = 6
 
     WEAK_PASSWORDS = ("123456", "qweasd", "qwerty",
                       "password")
@@ -144,7 +143,7 @@ class Wizard(QtGui.QWizard):
 
         self.page(self.REGISTER_USER_PAGE).setButtonText(
             QtGui.QWizard.CommitButton, self.tr("&Next >"))
-        self.page(self.FINISH_PAGE).setButtonText(
+        self.page(self.SERVICES_PAGE).setButtonText(
             QtGui.QWizard.FinishButton, self.tr("Connect"))
 
         # XXX: Temporary removal for enrollment policy
