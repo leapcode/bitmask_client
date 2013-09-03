@@ -3,8 +3,15 @@
 # introduced in internal leap dependencies.
 # Add your changes here so we can properly update
 # requirements.pip during the release process.
+# (leave header when resetting)
 #################################################
+#
+# BEGIN DEPENDENCY LIST -------------------------
+# leap.foo.bar>=x.y.z
 
 leap.common>=0.3.2
 # leap.common.config.get_path_prefix
+#
+leap.mail>=0.3.2
+# smtp returns factory
 
