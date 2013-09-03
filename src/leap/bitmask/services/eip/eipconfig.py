@@ -141,7 +141,7 @@ class VPNGatewaySelector(object):
         if time.daylight:
             local_offset = time.altzone
 
-        return local_offset / 3600
+        return -local_offset / 3600
 
 
 class EIPConfig(BaseConfig):
