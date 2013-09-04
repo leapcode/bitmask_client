@@ -74,6 +74,9 @@ Distribute & Pip
 
    The rest of the methods described below in this page assume you are familiar with python code, and you can find your way through the process of dependencies install. For more insight, you can also refer to the sections :ref:`setting up a working environment <environment>` or :ref:`fetching latest code for testing <fetchinglatest>`.
 
+.. image:: https://pypip.in/v/leap.bitmask/badge.png
+        :target: https://crate.io/packages/leap.bitmask
+
 
 Installing Bitmask is as simple as using `pip <http://www.pip-installer.org/>`_ for the already released versions ::
 
