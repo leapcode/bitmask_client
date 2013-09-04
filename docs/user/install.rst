@@ -4,7 +4,7 @@ Installation
 ============
 
 This part of the documentation covers the installation of Bitmask.
-We assume that you want to get it properly installed before being able to use it.
+We assume that you want to get it properly installed before being able to use it. But we can we wrong.
 
 Standalone bundle
 -----------------
@@ -38,11 +38,10 @@ For the signature verification you can use ::
 
 Asuming that you downloaded the linux 64 bits bundle.
 
-.. _`PySide`: http://qt-project.org/wiki/PySide
 .. _`Linux 64 bits bundle`: https://downloads.leap.se/client/linux/Bitmask-linux64-latest.tar.bz2
 .. _`Linux 32 bits bundle`: https://downloads.leap.se/client/linux/Bitmask-linux32-latest.tar.bz2
 .. _`OSX bundle`: https://downloads.leap.se/client/osx/Bitmask-OSX-latest.dmg
-.. _`Windows bundle`: https://downloads.leap.se/client/osx/Bitmask-windows-latest.zip
+.. _`Windows bundle`: https://downloads.leap.se/client/windows/Bitmask-windows-latest.zip
 
 Debian package
 --------------
@@ -84,15 +83,16 @@ Installing Bitmask is as simple as using `pip <http://www.pip-installer.org/>`_ 
 Show me the code!
 -----------------
 
+.. XXX UPDATE REPO NAMES AS SOON AS #3417 is DONE
+
 You can get the code from LEAP public git repository ::
 
-   $ git clone git://leap.se/bitmask
+   $ git clone git://leap.se/leap_client
 
 Or from the github mirror ::
 
-   $ git clone git://github.com/leapcode/bitmask.git
+   $ git clone git://github.com/leapcode/leap_client.git
 
 Once you have grabbed a copy of the sources, you can install it into your site-packages easily ::
 
    $ pyton setup.py install
-
