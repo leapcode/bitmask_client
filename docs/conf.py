@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# LEAP documentation build configuration file, created by
+# Bitmask documentation build configuration file, created by
 # sphinx-quickstart on Sun Jul 22 18:32:05 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -25,10 +25,13 @@ sys.path.insert(0, os.path.abspath('../src/leap/bitmask/services'))
 sys.path.insert(0, os.path.abspath('../src/leap/bitmask/services/eip'))
 sys.path.insert(0, os.path.abspath('../src/leap/bitmask/util'))
 
-sys.path.insert(0, os.path.abspath(
-    os.path.expanduser(
-        '~/Virtualenvs/leap-client/local/lib/python2.7/'
-        'site-packages/leap/common')))
+try:
+    sys.path.insert(0, os.path.abspath(
+        os.path.expanduser(
+            '~/Virtualenvs/leap-bitmask/local/lib/python2.7/'
+            'site-packages/leap/common')))
+except:
+    pass
 
 # TODO: should add all the virtualenv site-packages to the path
 # as a workaround, install all in your path.
@@ -130,7 +133,7 @@ html_theme = 'default'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "../data/images/leap-color-small.png"
+html_logo = "../data/images/mask-small.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
