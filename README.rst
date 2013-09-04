@@ -6,6 +6,13 @@ The LEAP Encryption Access Project Client
 .. image:: https://pypip.in/v/leap.bitmask/badge.png
         :target: https://crate.io/packages/leap.bitmask
 
+Read the Docs!
+------------------
+
+The latest documentation is available at `Read The Docs`_.
+
+.. _`RTD`: http://bitmask.rtfd.org
+
 Dependencies
 ------------------
 
@@ -101,7 +108,7 @@ which the first time should automagically install all the needed dependencies in
 License
 =======
 
-.. image:: https://raw.github.com/leapcode/bitmask/develop/docs/user/gpl.png
+.. image:: https://raw.github.com/leapcode/leap_client/develop/docs/user/gpl.png
 
 Bitmask is released under the terms of the `GNU GPL version 3`_ or later.
 
