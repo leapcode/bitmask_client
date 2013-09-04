@@ -891,6 +891,8 @@ class MainWindow(QtGui.QMainWindow):
             logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
 
+        self._login_widget.set_status(self.tr("Log in cancelled by the user."))
+
     def _provider_config_loaded(self, data):
         """
         SLOT
