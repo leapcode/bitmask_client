@@ -1,4 +1,5 @@
 ﻿= Bitmask Release Checklist (*) =
+  * [ ] Check that all tests are passing!
   * [ ] Tag everything
     * Should be done for the following packages, in order:
       1. leap.common
@@ -24,10 +25,13 @@
     * [ ] git push origin X.Y.Z
     * [ ] git checkout master && git pull origin master && git merge release-X.Y.Z && git push origin master
     * [ ] git checkout develop && git pull origin develop && git merge release-X.Y.Z && git push origin develop
-  * [ ] Build bundles
+  * [ ] Build and upload bundles
     * [ ] Use the scripts under pkg/<os>/ to build the the bundles.
     * [ ] Sign them with gpg -a <path/to/bundle>
-    * [ ] Upload bundle and signature to web-uploads@salmon.leap.se:~/public/client/<os>/
+    * [ ] Upload bundle and signature to web-uploads@salmon.leap.se:~/public/client/<os>/Bitmask-<os>-<ver>.(tar.bz2,dmg,zip)
+    * [ ] Update symbolic link for latest upload and signature:
+    	* [ ] ~/public/client/Bitmask-<os>-latest
+    	* [ ] ~/public/client/Bitmask-<os>-latest.asc
   * [ ] Announce
     * [ ] Mail leap@lists.riseup.net
 

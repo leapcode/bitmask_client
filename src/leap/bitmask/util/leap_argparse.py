@@ -14,10 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+"""
+Parses the command line arguments passed to the application.
+"""
 import argparse
 
-from leap.bitmask.util import IS_RELEASE_VERSION
+from leap.bitmask import IS_RELEASE_VERSION
 
 
 def build_parser():
