@@ -15,58 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Initializes version and app info, plus some small and handy functions.
+Some small and handy functions.
 """
 import datetime
 import os
-
-from pkg_resources import parse_version
-
-
-def _is_release_version(version):
-    """
-    Helper to determine whether a version is a final release or not.
-    The release needs to be of the form: w.x.y.z containing only numbers
-    and dots.
-
-    :param version: the version string
-    :type version: str
-    :returns: if the version is a release version or not.
-    :rtype: bool
-    """
-    parsed_version = parse_version(version)
-    not_number = 0
-    for x in parsed_version:
-        try:
-            int(x)
-        except:
-            not_number += 1
-
-    return not_number == 1
-
-
-__version__ = "unknown"
-IS_RELEASE_VERSION = False
-
-try:
-    from leap.bitmask._version import get_versions
-    __version__ = get_versions()['version']
-    IS_RELEASE_VERSION = _is_release_version(__version__)
-    del get_versions
-except ImportError:
-    #running on a tree that has not run
-    #the setup.py setver
-    pass
-
-__appname__ = "unknown"
-try:
-    from leap._appname import __appname__
-except ImportError:
-    #running on a tree that has not run
-    #the setup.py setver
-    pass
-
-__full_version__ = __appname__ + '/' + str(__version__)
 
 
 def first(things):
