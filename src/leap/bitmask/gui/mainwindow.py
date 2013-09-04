@@ -270,6 +270,9 @@ class MainWindow(QtGui.QMainWindow):
         self._status_panel.set_action_eip_startstop(
             self._action_eip_startstop)
 
+        self._action_preferences = QtGui.QAction(self.tr("Preferences"), self)
+        self._action_preferences.triggered.connect(self._show_preferences)
+
         self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
 
@@ -609,10 +612,8 @@ class MainWindow(QtGui.QMainWindow):
             self._systray.setVisible(True)
             return
 
-        # Placeholder actions
-        # They are temporary to display the tray as designed
-        preferences_action = QtGui.QAction(self.tr("Preferences"), self)
-        preferences_action.setEnabled(False)
+        # Placeholder action
+        # It is temporary to display the tray as designed
         help_action = QtGui.QAction(self.tr("Help"), self)
         help_action.setEnabled(False)
 
@@ -623,7 +624,7 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_eip_status)
         systrayMenu.addAction(self._action_eip_startstop)
         systrayMenu.addSeparator()
-        systrayMenu.addAction(preferences_action)
+        systrayMenu.addAction(self._action_preferences)
         systrayMenu.addAction(help_action)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_log_out)
