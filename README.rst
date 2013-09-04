@@ -1,17 +1,26 @@
-The LEAP Encryption Access Project Client
-=========================================
-
+Bitmask
+=======
 *your internet encryption toolkit*
 
 .. image:: https://pypip.in/v/leap.bitmask/badge.png
         :target: https://crate.io/packages/leap.bitmask
+
+**Bitmask** is the multiplatform desktop client for the services offered by
+`the LEAP Platform`_.
+It is written in python using `PySide`_ and licensed under the GPL3.
+Currently we distribute pre-compiled bundles for Linux and OSX, with Windows
+bundles following soon.
+
+.. _`PySide`: http://qt-project.org/wiki/PySide
+.. _`the LEAP Platform`: https://github.com/leapcode/leap_platform
+
 
 Read the Docs!
 ------------------
 
 The latest documentation is available at `Read The Docs`_.
 
-.. _`RTD`: http://bitmask.rtfd.org
+.. _`Read The Docs`: http://bitmask.rtfd.org
 
 Dependencies
 ------------------
@@ -62,7 +71,7 @@ Hacking
 
 The Bitmask git repository is available at::
 
-  git://leap.se/bitmask
+  git://leap.se/leap_client
 
 Some steps need to be run when setting a development environment for the first time.
 
