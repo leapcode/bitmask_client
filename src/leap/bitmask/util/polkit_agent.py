@@ -24,24 +24,24 @@ import daemon
 
 logger = logging.getLogger(__name__)
 
-BASE_PATH = "/usr/lib/policykit-1-gnome/"\
-            + "polkit-%s-authentication-agent-1"
-
-GNOME_PATH = BASE_PATH % ("gnome",)
-KDE_PATH = BASE_PATH % ("kde",)
+AUTH_FILE = "polkit-%s-authentication-agent-1"
+BASE_PATH_GNO = "/usr/lib/policykit-1-gnome/"
+BASE_PATH_KDE = "/usr/lib/kde4/libexec/"
+GNO_PATH = BASE_PATH_GNO + AUTH_FILE % ("gnome",)
+KDE_PATH = BASE_PATH_KDE + AUTH_FILE % ("kde",)
 
 
 def _launch_agent():
     logger.debug('Launching polkit auth agent')
-    print "launching polkit"
     try:
-        subprocess.call(GNOME_PATH)
+        subprocess.call(GNO_PATH)
     except Exception as exc:
-        try:
-            subprocess.call(KDE_PATH)
-        except Exception as exc:
-            logger.error('Exception while running polkit authentication agent '
-                         '%s' % (exc,))
+        logger.error('Exception while running polkit authentication agent '
+                     '%s' % (exc,))
+        # XXX fix KDE launch. See: #3755
+        #try:
+            #subprocess.call(KDE_PATH)
+        #except Exception as exc:
 
 
 def launch():

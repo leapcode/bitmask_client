@@ -32,6 +32,7 @@ except ImportError:
 
 from abc import ABCMeta, abstractmethod
 from functools import partial
+from time import sleep
 
 from leap.bitmask.config.leapsettings import LeapSettings
 
@@ -228,7 +229,11 @@ def _try_to_launch_agent(standalone=False):
         env = {
             "PYTHONPATH": os.path.abspath('../../../../lib/')}
     try:
-        subprocess.call(["python", "-m", "leap.bitmask.util.polkit_agent"],
+        # We need to quote the command because subprocess call
+        # will do "sh -c 'foo'", so if we do not quoute it we'll end
+        # up with a invocation to the python interpreter. And that
+        # is bad.
+        subprocess.call(["python -m leap.bitmask.util.polkit_agent"],
                         shell=True, env=env)
     except Exception as exc:
         logger.exception(exc)
@@ -316,6 +321,7 @@ class LinuxVPNLauncher(VPNLauncher):
         if _is_pkexec_in_system():
             if not _is_auth_agent_running():
                 _try_to_launch_agent(ProviderConfig.standalone)
+                sleep(0.5)
             if _is_auth_agent_running():
                 pkexec_possibilities = which(kls.PKEXEC_BIN)
                 leap_assert(len(pkexec_possibilities) > 0,
