@@ -58,7 +58,7 @@ from leap.bitmask.services.eip.vpnlaunchers import \
     EIPNoPolkitAuthAgentAvailable
 from leap.bitmask.services.eip.vpnlaunchers import EIPNoTunKextLoaded
 
-from leap.bitmask.util import __version__ as VERSION
+from leap.bitmask import __version__ as VERSION
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 

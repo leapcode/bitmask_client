@@ -156,7 +156,7 @@ def main():
     from leap.bitmask.gui.mainwindow import MainWindow
     from leap.bitmask.platform_init import IS_MAC
     from leap.bitmask.platform_init.locks import we_are_the_one_and_only
-    from leap.bitmask.util import __version__ as VERSION
+    from leap.bitmask import __version__ as VERSION
     from leap.bitmask.util.requirement_checker import check_requirements
 
     # pylint: avoid unused import
