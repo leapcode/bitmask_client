@@ -18,6 +18,8 @@ qt4reactor
 python-gnupg
 python-daemon # this should not be needed for Windows.
 
+keyring<3.0.0  # See #3759
+
 leap.common>=0.3.0
 leap.soledad.client>=0.3.0
 leap.keymanager>=0.2.0
