@@ -9,13 +9,14 @@ DEST=$5
 rm $TEMPLATE_BUNDLE/CHANGELOG
 rm $TEMPLATE_BUNDLE/relnotes.txt
 rm -rf $TEMPLATE_BUNDLE/apps/leap
-rm $TEMPLATE_BUNDLE/lib/leap/{common,keymanager,soledad,mail}
+rm -rf $TEMPLATE_BUNDLE/lib/leap/{common,keymanager,soledad,mail}
 
 # checkout VERSION in all repos
 
 for i in {leap_client,leap_pycommon,soledad,keymanager,leap_mail}
   do
     cd $REPOS_ROOT/$i
+    git fetch
     git checkout $VERSION
   done
 
