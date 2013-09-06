@@ -53,7 +53,7 @@ LICENSE
 
 You may use Bitmask under the GNU General Public License,
 version 3 or, at your option, any later version. See the file
-"COPYING.GPL" for the terms of the GNU General Public
+"LICENSE" for the terms of the GNU General Public
 License, version 3.
 
 In addition, as a special exception, the copyright holders give
