@@ -8,10 +8,3 @@
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
-
-leap.common>=0.3.2
-# leap.common.config.get_path_prefix
-#
-leap.mail>=0.3.2
-# smtp returns factory
-
