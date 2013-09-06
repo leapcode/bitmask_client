@@ -19,7 +19,7 @@ To allow rapid testing in different platforms, we have put together a quick scri
 
 .. note::
 
-   In the near future, we will be using ``standalone bundles`` with the ability to self-update.
+   In the near future, we will be using :ref:`standalone bundles <standalone-bundle>` with the ability to self-update.
 
 Install dependencies
 ^^^^^^^^^^^^^^^^^^^^
@@ -41,8 +41,8 @@ Download and source the following script in the parent folder where you want you
 .. code-block:: bash
 
    cd /tmp
-   wget https://raw.github.com/leapcode/bitmask/develop/pkg/scripts/leap_client_bootstrap.sh
-   source leap_client_bootstrap.sh
+   wget https://raw.github.com/leapcode/leap_client/develop/pkg/scripts/bitmask_bootstrap.sh
+   source bitmask_bootstrap.sh
 
 Tada! If everything went well, you should be able to run bitmask by typing::
 
@@ -52,7 +52,7 @@ Noticed that your prompt changed? That was *virtualenv*. Keep reading...
 
 Activating the virtualenv
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-The above bootstrap script has fetched latest code inside a virtualenv, which is an isolated, *virtual* python local environment that avoids messing with your global paths. You will notice you are *inside* a virtualenv because you will see a modified prompt reminding it to you (*leap-client-testbuild* in this case).
+The above bootstrap script has fetched latest code inside a virtualenv, which is an isolated, *virtual* python local environment that avoids messing with your global paths. You will notice you are *inside* a virtualenv because you will see a modified prompt reminding it to you (*bitmask-testbuild* in this case).
 
 Thus, if you forget to *activate your virtualenv*, bitmask will not run from the local path, and it will be looking for something else in your global path. So, **you have to remember to activate your virtualenv** each time that you open a new shell and want to execute the code you are testing. You can do this by typing::
 

@@ -6,6 +6,8 @@ Installation
 This part of the documentation covers the installation of Bitmask.
 We assume that you want to get it properly installed before being able to use it. But we can we wrong.
 
+.. _standalone-bundle:
+
 Standalone bundle
 -----------------
 
