@@ -13,8 +13,10 @@ Cloning the repo
 
 ::
 
-    git clone git://leap.se/bitmask
+    git clone git://leap.se/leap_client
     git checkout develop
+
+.. XXX change this when repo changes.
 
 Base Dependencies
 ------------------
@@ -121,6 +123,10 @@ If you *only* are running bitmask from inside a virtualenv, you will need to cop
 Missing Authentication agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you are running a desktop other than gnome or unity, you might get an error saying that you are not running the authentication agent. You can launch it like this::
+If you are using linux and running a desktop other than unity or gnome, you might get an error saying that you are not running the authentication agent. For systems with gnome libraries installed you can launch it like this::
 
     /usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1 &
+
+or if you are a kde user::
+
+   /usr/lib/kde4/libexec/polkit-kde-authentication-agent-1 &
