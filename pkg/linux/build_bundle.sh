@@ -77,13 +77,13 @@ cp $JOINT_CHANGELOG $TEMPLATE_BUNDLE/CHANGELOG
 
 cp $REPOS_ROOT/leap_client/LICENSE $TEMPLATE_BUNDLE/LICENSE
 
-# clean pyc$
-
+# clean *.pyc files
 cd $TEMPLATE_BUNDLE
-for i in $(find . | grep pyc$);
-  do
-    rm $i
-  done
+find . -name "*.pyc" -delete
+
+# remove execution flags (because vbox fs) and set all read permissions
+chmod -x CHANGELOG LICENSE README
+chmod +r CHANGELOG LICENSE README
 
 # create tarball
 

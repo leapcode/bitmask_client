@@ -27,7 +27,7 @@
     * [ ] git checkout develop && git pull origin develop && git merge release-X.Y.Z && git push origin develop
   * [ ] Build and upload bundles
     * [ ] Use the scripts under pkg/<os>/ to build the the bundles.
-    * [ ] Sign them with gpg -a <path/to/bundle>
+    * [ ] Sign them with gpg -a --sign --detach-sign <path/to/bundle>
     * [ ] Upload bundle and signature to web-uploads@salmon.leap.se:~/public/client/<os>/Bitmask-<os>-<ver>.(tar.bz2,dmg,zip)
     * [ ] Update symbolic link for latest upload and signature:
     	* [ ] ~/public/client/Bitmask-<os>-latest
