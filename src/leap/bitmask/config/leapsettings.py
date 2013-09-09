@@ -75,12 +75,12 @@ class LeapSettings(object):
         """
         Constructor
 
-        :param standalone: parameter used to define the location of
-        the config
+        :param standalone: parameter used to define the location of the config.
         :type standalone: bool
         """
-        settings_path = os.path.join(
-            get_path_prefix(standalone=standalone), "leap", self.CONFIG_NAME)
+        self._path_prefix = get_path_prefix(standalone=standalone)
+        settings_path = os.path.join(self._path_prefix,
+                                     "leap", self.CONFIG_NAME)
 
         self._settings = QtCore.QSettings(settings_path,
                                           QtCore.QSettings.IniFormat)
@@ -132,8 +132,8 @@ class LeapSettings(object):
         # other things, not just the directories
         providers = []
         try:
-            providers_path = os.path.join(
-                get_path_prefix(), "leap", "providers")
+            providers_path = os.path.join(self._path_prefix,
+                                          "leap", "providers")
             providers = os.listdir(providers_path)
         except Exception as e:
             logger.debug("Error listing providers, assume there are none. %r"
