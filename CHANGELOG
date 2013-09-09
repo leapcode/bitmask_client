@@ -1,4 +1,4 @@
-0.3.2 Sep 9:
+0.3.2 Sep 6 -- the "no crashes or anything" release:
   o Fix up script in non-bundle linuces. Closes: #3450
   o Logout stops imap and smtp services. Closes: #3553
   o Properly daemonize polkit-gnome-authentication-agent. Closes: #3554
