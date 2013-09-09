@@ -346,7 +346,8 @@ class StatusPanelWidget(QtGui.QWidget):
         Updates the system tray icon tooltip using the eip and mx statuses.
         """
         status = self.tr("Encrypted Internet is {0}").format(self._eip_status)
-        status += self.tr("\nEncrypted Mail is {0}").format(self._mx_status)
+        status += '\n'
+        status += self.tr("Encrypted Mail is {0}").format(self._mx_status)
         self._systray.setToolTip(status)
 
     def set_action_eip_startstop(self, action_eip_startstop):
@@ -544,14 +545,14 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         selected_pixmap = self.ERROR_ICON
         selected_pixmap_tray = self.ERROR_ICON_TRAY
-        tray_message = self.tr("Encryption is OFF")
+        tray_message = self.tr("Encrypted Internet is OFF")
         if status in ("WAIT", "AUTH", "GET_CONFIG",
                       "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
             selected_pixmap_tray = self.CONNECTING_ICON_TRAY
             tray_message = self.tr("Turning ON")
         elif status in ("CONNECTED"):
-            tray_message = self.tr("Encryption is ON")
+            tray_message = self.tr("Encrypted Internet is ON")
             selected_pixmap = self.CONNECTED_ICON
             selected_pixmap_tray = self.CONNECTED_ICON_TRAY
 
