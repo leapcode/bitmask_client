@@ -141,6 +141,9 @@ class StatusPanelWidget(QtGui.QWidget):
 
         self.hide_status_box()
 
+        # set systray tooltip statuses
+        self._eip_status = self._mx_status = ""
+
         # Set the EIP status icons
         self.CONNECTING_ICON = None
         self.CONNECTED_ICON = None
@@ -336,6 +339,16 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         leap_assert_type(systray, QtGui.QSystemTrayIcon)
         self._systray = systray
+        self._systray.setToolTip(self.tr("All services are OFF"))
+
+    def _update_systray_tooltip(self):
+        """
+        Updates the system tray icon tooltip using the eip and mx statuses.
+        """
+        status = self.tr("Encrypted Internet is {0}").format(self._eip_status)
+        status += '\n'
+        status += self.tr("Encrypted Mail is {0}").format(self._mx_status)
+        self._systray.setToolTip(status)
 
     def set_action_eip_startstop(self, action_eip_startstop):
         """
@@ -400,10 +413,12 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         leap_assert_type(error, bool)
 
-        self._systray.setToolTip(status)
+        self._eip_status = status
+
         if error:
             status = "<font color='red'>%s</font>" % (status,)
         self.ui.lblEIPStatus.setText(status)
+        self._update_systray_tooltip()
 
     def set_startstop_enabled(self, value):
         """
@@ -530,14 +545,14 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         selected_pixmap = self.ERROR_ICON
         selected_pixmap_tray = self.ERROR_ICON_TRAY
-        tray_message = self.tr("Encryption is OFF")
+        tray_message = self.tr("Encrypted Internet is OFF")
         if status in ("WAIT", "AUTH", "GET_CONFIG",
                       "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
             selected_pixmap_tray = self.CONNECTING_ICON_TRAY
             tray_message = self.tr("Turning ON")
         elif status in ("CONNECTED"):
-            tray_message = self.tr("Encryption is ON")
+            tray_message = self.tr("Encrypted Internet is ON")
             selected_pixmap = self.CONNECTED_ICON
             selected_pixmap_tray = self.CONNECTED_ICON_TRAY
 
@@ -559,15 +574,18 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         self.ui.lblMailStatus.setText(status)
 
+        self._mx_status = self.tr('OFF')
         tray_status = self.tr('Encrypted Mail is OFF')
 
         icon = QtGui.QPixmap(self.MAIL_OFF_ICON)
         if ready:
             icon = QtGui.QPixmap(self.MAIL_ON_ICON)
+            self._mx_status = self.tr('ON')
             tray_status = self.tr('Encrypted Mail is ON')
 
         self.ui.lblMailIcon.setPixmap(icon)
         self._action_mail_status.setText(tray_status)
+        self._update_systray_tooltip()
 
     def _mail_handle_soledad_events(self, req):
         """

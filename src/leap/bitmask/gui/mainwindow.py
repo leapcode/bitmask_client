@@ -256,7 +256,7 @@ class MainWindow(QtGui.QMainWindow):
         self._action_eip_provider.setEnabled(False)
 
         self._action_eip_status = QtGui.QAction(
-            self.tr("Encrypted internet is OFF"),
+            self.tr("Encrypted Internet is OFF"),
             self)
         self._action_eip_status.setEnabled(False)
         self._status_panel.set_action_eip_status(
