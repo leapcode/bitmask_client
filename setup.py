@@ -135,17 +135,17 @@ import platform
 _system = platform.system()
 IS_LINUX = True if _system == "Linux" else False
 
+data_files = []
+
 if IS_LINUX:
+    # XXX use check_for_permissions to install data
+    # globally. See #3805
     data_files = [
-        # ("share/man/man1",
-        #     ["docs/man/bitmask.1"]),
         ("share/polkit-1/actions",
          ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
-        ("/etc/leap/",
+        ("etc/leap/",
          ["pkg/linux/resolv-update"]),
     ]
-else:
-    data_files = []
 
 setup(
     name="leap.bitmask",
