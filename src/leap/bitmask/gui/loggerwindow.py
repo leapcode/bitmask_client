@@ -91,7 +91,6 @@ class LoggerWindow(QtGui.QDialog):
         }
         level = log[LeapLogHandler.RECORD_KEY].levelno
         message = log[LeapLogHandler.MESSAGE_KEY]
-        message = message.replace('\n', '<br>\n')
 
         if self._logs_to_display[level]:
             open_tag = "<tr style='" + html_style[level] + "'>"
@@ -152,8 +151,13 @@ class LoggerWindow(QtGui.QDialog):
         if fileName:
             try:
                 with open(fileName, 'w') as output:
-                    output.write(self.ui.txtLogHistory.toPlainText())
-                    output.write('\n')
+                    history = self.ui.txtLogHistory.toPlainText()
+                    # Chop some \n.
+                    # html->plain adds several \n because the html is made
+                    # using table cells.
+                    history = history.replace('\n\n\n', '\n')
+
+                    output.write(history)
                 logger.debug('Log saved in %s' % (fileName, ))
             except IOError, e:
                 logger.error("Error saving log file: %r" % (e, ))
