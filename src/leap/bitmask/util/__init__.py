@@ -27,7 +27,7 @@ def first(things):
     """
     try:
         return things[0]
-    except TypeError:
+    except (IndexError, TypeError):
         return None
 
 
