@@ -1,0 +1,2 @@
+  o Fix LoggerWindow saving more than one line return per line in the logs
+    file. Closes #3714.
