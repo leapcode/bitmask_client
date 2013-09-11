@@ -682,11 +682,18 @@ class MainWindow(QtGui.QMainWindow):
         Toggles the window visibility
         """
         visible = self.isVisible() and self.isActiveWindow()
+        qApp = QtCore.QCoreApplication.instance()
+
         if not visible:
+            qApp.setQuitOnLastWindowClosed(True)
             self.show()
             self.activateWindow()
             self.raise_()
         else:
+            # We set this in order to avoid dialogs shutting down the
+            # app on close, as they will be the only visible window.
+            # e.g.: PreferencesWindow, LoggerWindow
+            qApp.setQuitOnLastWindowClosed(False)
             self.hide()
 
         self._update_hideshow_menu()
@@ -1611,6 +1618,11 @@ class MainWindow(QtGui.QMainWindow):
         """
         # TODO separate the shutting down of services from the
         # UI stuff.
+
+        # Set this in case that the app is hidden
+        qApp = QtCore.QCoreApplication.instance()
+        qApp.setQuitOnLastWindowClosed(True)
+
         self._cleanup_and_quit()
 
         self._really_quit = True
