@@ -1,15 +1,20 @@
-.. LEAP documentation master file, created by
+.. Bitmask documentation master file, created by
    sphinx-quickstart on Sun Jul 22 18:32:05 2012.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-LEAP Client
+Bitmask
 =====================================
 
-Release v\ |version|. (`Impatient? jump to the` :ref:`Installation <install>` `section!`)
+Release v \ |version|. (`Impatient? jump to the` :ref:`Installation <install>` `section!`)
 
 .. if you change this paragraph, change it in user/intro too
-The **LEAP Encryption Access Project Client** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PySide, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
+**Bitmask** is the multiplatform desktop client for the services offered by :ref:`the LEAP Platform <leapplatform>`.
+It is written in python using `PySide`_ and :ref:`licensed under the GPL3 <gpl3>`.
+Currently we distribute pre-compiled bundles for Linux and OSX, with Windows
+bundles following soon.
+
+.. _`PySide`: http://qt-project.org/wiki/PySide
 
 User Guide
 ----------
@@ -48,7 +53,6 @@ If you want to contribute to the project, we wrote this for you.
 .. dev/internals
    dev/authors
    dev/todo
-   dev/workflow
 
 Packager Guide
 ---------------
@@ -87,3 +91,5 @@ If you are looking for a reference to specific classes or functions, you are lik
    :maxdepth: 2
 
    api/leap
+
+

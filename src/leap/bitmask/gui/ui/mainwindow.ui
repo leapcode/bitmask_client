@@ -217,7 +217,7 @@
       <item>
        <widget class="QPushButton" name="btnPreferences">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string>Preferences</string>

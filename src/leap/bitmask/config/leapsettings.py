@@ -24,7 +24,7 @@ import logging
 from PySide import QtCore
 
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.config.prefixers import get_platform_prefixer
+from leap.common.config import get_path_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -66,20 +66,22 @@ class LeapSettings(object):
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
     ALERTMISSING_KEY = "AlertMissingScripts"
+    GATEWAY_KEY = "Gateway"
+
+    # values
+    GATEWAY_AUTOMATIC = "Automatic"
 
     def __init__(self, standalone=False):
         """
         Constructor
 
-        :param standalone: parameter used to define the location of
-        the config
+        :param standalone: parameter used to define the location of the config.
         :type standalone: bool
         """
+        self._path_prefix = get_path_prefix(standalone=standalone)
+        settings_path = os.path.join(self._path_prefix,
+                                     "leap", self.CONFIG_NAME)
 
-        settings_path = os.path.join(get_platform_prefixer()
-                                     .get_path_prefix(standalone=standalone),
-                                     "leap",
-                                     self.CONFIG_NAME)
         self._settings = QtCore.QSettings(settings_path,
                                           QtCore.QSettings.IniFormat)
 
@@ -119,6 +121,58 @@ class LeapSettings(object):
         leap_assert(windowstate, "We need a window state")
         self._settings.setValue(self.WINDOWSTATE_KEY, windowstate)
 
+    def get_configured_providers(self):
+        """
+        Returns the configured providers based on the file structure in the
+        settings directory.
+
+        :rtype: list of str
+        """
+        # TODO: check which providers have a valid certificate among
+        # other things, not just the directories
+        providers = []
+        try:
+            providers_path = os.path.join(self._path_prefix,
+                                          "leap", "providers")
+            providers = os.listdir(providers_path)
+        except Exception as e:
+            logger.debug("Error listing providers, assume there are none. %r"
+                         % (e,))
+
+        return providers
+
+    def get_selected_gateway(self, provider):
+        """
+        Returns the configured gateway for the given provider.
+
+        :param provider: provider domain
+        :type provider: str
+
+        :rtype: str
+        """
+        leap_assert(len(provider) > 0, "We need a nonempty provider")
+        gateway_key = "{0}/{1}".format(provider, self.GATEWAY_KEY)
+        gateway = self._settings.value(gateway_key, self.GATEWAY_AUTOMATIC)
+
+        return gateway
+
+    def set_selected_gateway(self, provider, gateway):
+        """
+        Saves the configured gateway for the given provider
+
+        :param provider: provider domain
+        :type provider: str
+
+        :param gateway: gateway to use as default
+        :type gateway: str
+        """
+
+        leap_assert(len(provider) > 0, "We need a nonempty provider")
+        leap_assert_type(gateway, (str, unicode))
+
+        gateway_key = "{0}/{1}".format(provider, self.GATEWAY_KEY)
+        self._settings.setValue(gateway_key, gateway)
+
     def get_enabled_services(self, provider):
         """
         Returns a list of enabled services for the given provider
@@ -151,8 +205,12 @@ class LeapSettings(object):
         leap_assert(len(provider) > 0, "We need a nonempty provider")
         leap_assert_type(services, list)
 
-        self._settings.setValue("%s/Services" % (provider,),
-                                services)
+        key = "{0}/Services".format(provider)
+        if not services:
+            # if there are no enabled services we don't need that key
+            self._settings.remove(key)
+        else:
+            self._settings.setValue(key, services)
 
     def get_user(self):
         """

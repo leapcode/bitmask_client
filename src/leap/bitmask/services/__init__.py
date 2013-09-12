@@ -17,7 +17,46 @@
 """
 Services module.
 """
+from PySide import QtCore
+from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
+
 DEPLOYED = ["openvpn", "mx"]
+
+
+def get_service_display_name(service, standalone=False):
+    """
+    Returns the name to display of the given service.
+    If there is no configured name for that service, then returns the same
+    parameter
+
+    :param service: the 'machine' service name
+    :type service: str
+    :param standalone: True if the app is running in a standalone mode, used
+                       to display messages according that.
+    :type standalone: bool
+
+    :rtype: str
+    """
+    # qt translator method helper
+    _tr = QtCore.QObject().tr
+
+    # Correspondence for services and their name to display
+    EIP_LABEL = _tr("Encrypted Internet")
+    MX_LABEL = _tr("Encrypted Mail")
+
+    service_display = {
+        "openvpn": EIP_LABEL,
+        "mx": MX_LABEL
+    }
+
+    # If we need to add a warning about eip needing
+    # administrative permissions to start. That can be either
+    # because we are running in standalone mode, or because we could
+    # not find the needed privilege escalation mechanisms being operative.
+    if standalone or is_missing_policy_permissions():
+        EIP_LABEL += " " + _tr("(will need admin password to start)")
+
+    return service_display.get(service, service)
 
 
 def get_supported(services):

@@ -14,9 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
-Main window for the leap client
+Main window for Bitmask.
 """
 import logging
 import os
@@ -59,7 +58,7 @@ from leap.bitmask.services.eip.vpnlaunchers import \
     EIPNoPolkitAuthAgentAvailable
 from leap.bitmask.services.eip.vpnlaunchers import EIPNoTunKextLoaded
 
-from leap.bitmask.util import __version__ as VERSION
+from leap.bitmask import __version__ as VERSION
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 
@@ -102,6 +101,7 @@ class MainWindow(QtGui.QMainWindow):
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
     mail_client_logged_in = QtCore.Signal([])
+    logout = QtCore.Signal([])
 
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
@@ -254,13 +254,19 @@ class MainWindow(QtGui.QMainWindow):
         self._action_eip_provider = QtGui.QAction(
             self.tr("No default provider"), self)
         self._action_eip_provider.setEnabled(False)
+
         self._action_eip_status = QtGui.QAction(
             self.tr("Encrypted internet is OFF"),
             self)
         self._action_eip_status.setEnabled(False)
-
         self._status_panel.set_action_eip_status(
             self._action_eip_status)
+
+        self._action_mail_status = QtGui.QAction(
+            self.tr("Encrypted Mail is OFF"), self)
+        self._action_mail_status.setEnabled(False)
+        self._status_panel.set_action_mail_status(
+            self._action_mail_status)
 
         self._action_eip_startstop = QtGui.QAction(
             self.tr("Turn OFF"), self)
@@ -269,6 +275,9 @@ class MainWindow(QtGui.QMainWindow):
         self._action_eip_startstop.setEnabled(False)
         self._status_panel.set_action_eip_startstop(
             self._action_eip_startstop)
+
+        self._action_preferences = QtGui.QAction(self.tr("Preferences"), self)
+        self._action_preferences.triggered.connect(self._show_preferences)
 
         self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
@@ -284,13 +293,12 @@ class MainWindow(QtGui.QMainWindow):
         # Services signals/slots connection
         self.new_updates.connect(self._react_to_new_updates)
         self.soledad_ready.connect(self._start_imap_service)
+        self.soledad_ready.connect(self._set_soledad_ready)
         self.mail_client_logged_in.connect(self._fetch_incoming_mail)
+        self.logout.connect(self._stop_imap_service)
+        self.logout.connect(self._stop_smtp_service)
 
         ################################# end Qt Signals connection ########
-
-        # Enable the password change when soledad is ready
-        self.soledad_ready.connect(
-            partial(self.ui.btnPreferences.setEnabled, True))
 
         init_platform()
 
@@ -298,12 +306,13 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard_firstrun = False
 
         self._logger_window = None
-        self._preferences_window = None
 
         self._bypass_checks = bypass_checks
 
         self._soledad = None
+        self._soledad_ready = False
         self._keymanager = None
+        self._smtp_service = None
         self._imap_service = None
 
         self._login_defer = None
@@ -419,7 +428,26 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        PreferencesWindow(self, self._srp_auth, self._soledad).show()
+        preferences_window = PreferencesWindow(
+            self, self._srp_auth, self._settings, self._standalone)
+
+        if self._soledad_ready:
+            preferences_window.set_soledad_ready(self._soledad)
+        else:
+            self.soledad_ready.connect(
+                lambda: preferences_window.set_soledad_ready(self._soledad))
+
+        preferences_window.show()
+
+    def _set_soledad_ready(self):
+        """
+        SLOT
+        TRIGGERS:
+            self.soledad_ready
+
+        It sets the soledad object as ready to use.
+        """
+        self._soledad_ready = True
 
     def _uncheck_logger_button(self):
         """
@@ -491,7 +519,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         # XXX: May be this can be divided into two methods?
 
-        self._login_widget.set_providers(self._configured_providers())
+        providers = self._settings.get_configured_providers()
+        self._login_widget.set_providers(providers)
         self._show_systray()
         self.show()
         if IS_MAC:
@@ -589,10 +618,8 @@ class MainWindow(QtGui.QMainWindow):
             self._systray.setVisible(True)
             return
 
-        # Placeholder actions
-        # They are temporary to display the tray as designed
-        preferences_action = QtGui.QAction(self.tr("Preferences"), self)
-        preferences_action.setEnabled(False)
+        # Placeholder action
+        # It is temporary to display the tray as designed
         help_action = QtGui.QAction(self.tr("Help"), self)
         help_action.setEnabled(False)
 
@@ -602,8 +629,9 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_eip_provider)
         systrayMenu.addAction(self._action_eip_status)
         systrayMenu.addAction(self._action_eip_startstop)
+        systrayMenu.addAction(self._action_mail_status)
         systrayMenu.addSeparator()
-        systrayMenu.addAction(preferences_action)
+        systrayMenu.addAction(self._action_preferences)
         systrayMenu.addAction(help_action)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_log_out)
@@ -736,34 +764,14 @@ class MainWindow(QtGui.QMainWindow):
 
         QtGui.QMainWindow.closeEvent(self, e)
 
-    def _configured_providers(self):
-        """
-        Returns the available providers based on the file structure
-
-        :rtype: list
-        """
-
-        # TODO: check which providers have a valid certificate among
-        # other things, not just the directories
-        providers = []
-        try:
-            providers = os.listdir(
-                os.path.join(self._provider_config.get_path_prefix(),
-                             "leap",
-                             "providers"))
-        except Exception as e:
-            logger.debug("Error listing providers, assume there are none. %r"
-                         % (e,))
-
-        return providers
-
     def _first_run(self):
         """
         Returns True if there are no configured providers. False otherwise
 
         :rtype: bool
         """
-        has_provider_on_disk = len(self._configured_providers()) != 0
+        providers = self._settings.get_configured_providers()
+        has_provider_on_disk = len(providers) != 0
         is_proper_provider = self._settings.get_properprovider()
         return not (has_provider_on_disk and is_proper_provider)
 
@@ -891,6 +899,8 @@ class MainWindow(QtGui.QMainWindow):
             logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
 
+        self._login_widget.set_status(self.tr("Log in cancelled by the user."))
+
     def _provider_config_loaded(self, data):
         """
         SLOT
@@ -912,7 +922,7 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth.logout_finished.connect(
                     self._done_logging_out)
 
-            # TODO: Add errback!
+            # TODO Add errback!
             self._login_defer = self._srp_auth.authenticate(username, password)
         else:
             self._login_widget.set_status(
@@ -979,7 +989,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._soledad_bootstrapper.PASSED_KEY]
         if not passed:
-            # TODO: display in the GUI:
+            # TODO display in the GUI:
             # should pass signal to a slot in status_panel
             # that sets the global status
             logger.error("Soledad failed to start: %s" %
@@ -1040,13 +1050,13 @@ class MainWindow(QtGui.QMainWindow):
                 True)
         else:
             if self._enabled_services.count(self.MX_SERVICE) > 0:
-                pass  # TODO: show MX status
+                pass  # TODO show MX status
                 #self._status_panel.set_eip_status(
                 #    self.tr("%s does not support MX") %
                 #    (self._provider_config.get_domain(),),
                 #                     error=True)
             else:
-                pass  # TODO: show MX status
+                pass  # TODO show MX status
                 #self._status_panel.set_eip_status(
                 #    self.tr("MX is disabled"))
 
@@ -1073,25 +1083,43 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug("Done bootstrapping SMTP")
 
         hosts = self._smtp_config.get_hosts()
-        # TODO: handle more than one host and define how to choose
+        # TODO handle more than one host and define how to choose
         if len(hosts) > 0:
             hostname = hosts.keys()[0]
             logger.debug("Using hostname %s for SMTP" % (hostname,))
             host = hosts[hostname][self.IP_KEY].encode("utf-8")
             port = hosts[hostname][self.PORT_KEY]
-            # TODO: pick local smtp port in a better way
-            # TODO: Make the encrypted_only configurable
+            # TODO move the start to _start_smtp_service
+
+            # TODO Make the encrypted_only configurable
+            # TODO pick local smtp port in a better way
+            # TODO remove hard-coded port and let leap.mail set
+            # the specific default.
 
             from leap.mail.smtp import setup_smtp_relay
             client_cert = self._eip_config.get_client_cert_path(
                 self._provider_config)
-            setup_smtp_relay(port=2013,
-                             keymanager=self._keymanager,
-                             smtp_host=host,
-                             smtp_port=port,
-                             smtp_cert=client_cert,
-                             smtp_key=client_cert,
-                             encrypted_only=False)
+            self._smtp_service = setup_smtp_relay(
+                port=2013,
+                keymanager=self._keymanager,
+                smtp_host=host,
+                smtp_port=port,
+                smtp_cert=client_cert,
+                smtp_key=client_cert,
+                encrypted_only=False)
+
+    def _stop_smtp_service(self):
+        """
+        SLOT
+        TRIGGERS:
+            self.logout
+        """
+        # There is a subtle difference here:
+        # we are stopping the factory for the smtp service here,
+        # but in the imap case we are just stopping the fetcher.
+        if self._smtp_service is not None:
+            logger.debug('Stopping smtp service.')
+            self._smtp_service.doStop()
 
     ###################################################################
     # Service control methods: imap
@@ -1100,7 +1128,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-            soledad_ready
+            self.soledad_ready
         """
         if self._provider_config.provides_mx() and \
                 self._enabled_services.count(self.MX_SERVICE) > 0:
@@ -1109,17 +1137,6 @@ class MainWindow(QtGui.QMainWindow):
             self._imap_service = imap.start_imap_service(
                 self._soledad,
                 self._keymanager)
-        else:
-            if self._enabled_services.count(self.MX_SERVICE) > 0:
-                pass  # TODO: show MX status
-                #self._status_panel.set_eip_status(
-                #    self.tr("%s does not support MX") %
-                #    (self._provider_config.get_domain(),),
-                #                     error=True)
-            else:
-                pass  # TODO: show MX status
-                #self._status_panel.set_eip_status(
-                #    self.tr("MX is disabled"))
 
     def _on_mail_client_logged_in(self, req):
         """
@@ -1131,12 +1148,26 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-            mail_client_logged_in
+            self.mail_client_logged_in
         """
         # TODO have a mutex over fetch operation.
         if self._imap_service:
             logger.debug('Client connected, fetching mail...')
             self._imap_service.fetch()
+
+    def _stop_imap_service(self):
+        """
+        SLOT
+        TRIGGERS:
+            self.logout
+        """
+        # There is a subtle difference here:
+        # we are just stopping the fetcher here,
+        # but in the smtp case we are stopping the factory.
+        # We should homogenize both services.
+        if self._imap_service is not None:
+            logger.debug('Stopping imap service.')
+            self._imap_service.stop()
 
     # end service control methods (imap)
 
@@ -1149,7 +1180,8 @@ class MainWindow(QtGui.QMainWindow):
 
         :rtype: tuple (str, str) (host, port)
         """
-        # TODO: make this properly multiplatform
+        # TODO make this properly multiplatform
+        # TODO get this out of gui/
 
         if platform.system() == "Windows":
             host = "localhost"
@@ -1402,6 +1434,7 @@ class MainWindow(QtGui.QMainWindow):
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
         threads.deferToThread(self._srp_auth.logout)
+        self.logout.emit()
 
     def _done_logging_out(self, ok, message):
         """
@@ -1576,7 +1609,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         Cleanup and tidely close the main window before quitting.
         """
-        # TODO: separate the shutting down of services from the
+        # TODO separate the shutting down of services from the
         # UI stuff.
         self._cleanup_and_quit()
 

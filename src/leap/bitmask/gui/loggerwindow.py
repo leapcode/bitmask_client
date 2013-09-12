@@ -146,7 +146,8 @@ class LoggerWindow(QtGui.QDialog):
         Lets the user save the current log to a file
         """
         fileName, filtr = QtGui.QFileDialog.getSaveFileName(
-            self, self.tr("Save As"))
+            self, self.tr("Save As"),
+            options=QtGui.QFileDialog.DontUseNativeDialog)
 
         if fileName:
             try:

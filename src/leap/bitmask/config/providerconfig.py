@@ -24,6 +24,7 @@ import os
 from leap.bitmask.config.provider_spec import leap_provider_spec
 from leap.common.check import leap_check
 from leap.common.config.baseconfig import BaseConfig, LocalizedKey
+from leap.bitmask.services import get_service_display_name
 
 logger = logging.getLogger(__name__)
 
@@ -130,9 +131,11 @@ class ProviderConfig(BaseConfig):
         Returns a string with the available services in the current
         provider, ready to be shown to the user.
         """
-        services_str = ", ".join(self.get_services())
-        services_str = services_str.replace(
-            "openvpn", "Encrypted Internet")
+        services = []
+        for service in self.get_services():
+            services.append(get_service_display_name(service))
+
+        services_str = ", ".join(services)
         return services_str
 
     def get_ca_cert_path(self, about_to_download=False):
@@ -216,3 +219,4 @@ if __name__ == "__main__":
         print provider.get_languages()
         print provider.get_name()
         print provider.get_services()
+        print provider.get_services_string()
