@@ -2,12 +2,12 @@
   * [ ] Check that all tests are passing!
   * [ ] Tag everything
     * Should be done for the following packages, in order:
-      1. leap.common
-      2. leap.keymanager
-      3. leap.soledad
-      4. leap.mail
-      5. leap.bitmask
-      6. leap.mx
+      * [ ] 1. leap.common
+      * [ ] 2. leap.keymanager
+      * [ ] 3. leap.soledad
+      * [ ] 4. leap.mail
+      * [ ] 5. leap.bitmask
+      * [ ] 6. leap.mx
     * NOTE: It's assumed that origin is the leap.se repo
     * [ ] git fetch origin
     * [ ] git tag -l, and see the latest tagged version (unless it's not a minor version bump, in which case, just bump to it)
