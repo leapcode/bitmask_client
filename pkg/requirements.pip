@@ -9,7 +9,6 @@ argparse
 requests
 srp>=1.0.2
 pyopenssl
-keyring
 python-dateutil
 psutil
 ipaddr
