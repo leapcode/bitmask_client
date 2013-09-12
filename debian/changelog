@@ -1,3 +1,9 @@
+bitmask (0.3.2) unstable; urgency=low
+
+  * Merge master for 0.3.2 release.
+
+ -- Ben Carrillo <ben@futeisha.org>  Thu, 12 Sep 2013 14:30:01 +0200
+
 bitmask (0.3.1) unstable; urgency=low
 
   [ Ben Carrillo ]
