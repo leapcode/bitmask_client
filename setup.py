@@ -1,9 +1,32 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# setup.py
+# Copyright (C) 2013 LEAP
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Setup file for bitmask.
+"""
 
 from __future__ import print_function
 
 import sys
+
+if not sys.version_info[0] == 2:
+    print("[ERROR] Sorry, Python 3 is not supported (yet). "
+          "Try running with python2: python2 setup.py ...")
+    exit()
 
 try:
     from setuptools import setup, find_packages
@@ -112,17 +135,17 @@ import platform
 _system = platform.system()
 IS_LINUX = True if _system == "Linux" else False
 
+data_files = []
+
 if IS_LINUX:
+    # XXX use check_for_permissions to install data
+    # globally. See #3805
     data_files = [
-        # ("share/man/man1",
-        #     ["docs/man/bitmask.1"]),
         ("share/polkit-1/actions",
          ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
-        ("/etc/leap/",
+        ("etc/leap/",
          ["pkg/linux/resolv-update"]),
     ]
-else:
-    data_files = []
 
 setup(
     name="leap.bitmask",

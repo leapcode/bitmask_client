@@ -32,8 +32,9 @@ from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
 from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.bitmask.services import get_supported
+from leap.bitmask.services import get_service_display_name, get_supported
 
 from ui_wizard import Ui_Wizard
 
@@ -51,7 +52,6 @@ class Wizard(QtGui.QWizard):
     SETUP_PROVIDER_PAGE = 3
     REGISTER_USER_PAGE = 4
     SERVICES_PAGE = 5
-    FINISH_PAGE = 6
 
     WEAK_PASSWORDS = ("123456", "qweasd", "qwerty",
                       "password")
@@ -82,23 +82,6 @@ class Wizard(QtGui.QWizard):
         self.QUESTION_ICON = QtGui.QPixmap(":/images/Emblem-question.png")
         self.ERROR_ICON = QtGui.QPixmap(":/images/Dialog-error.png")
         self.OK_ICON = QtGui.QPixmap(":/images/Dialog-accept.png")
-
-        # Correspondence for services and their name to display
-        EIP_LABEL = self.tr("Encrypted Internet")
-        MX_LABEL = self.tr("Encrypted Mail")
-
-        if self._is_need_eip_password_warning():
-            EIP_LABEL += " " + self.tr(
-                "(will need admin password to start)")
-
-        self.SERVICE_DISPLAY = [
-            EIP_LABEL,
-            MX_LABEL
-        ]
-        self.SERVICE_CONFIG = [
-            "openvpn",
-            "mx"
-        ]
 
         self._selected_services = set()
         self._shown_services = set()
@@ -160,7 +143,7 @@ class Wizard(QtGui.QWizard):
 
         self.page(self.REGISTER_USER_PAGE).setButtonText(
             QtGui.QWizard.CommitButton, self.tr("&Next >"))
-        self.page(self.FINISH_PAGE).setButtonText(
+        self.page(self.SERVICES_PAGE).setButtonText(
             QtGui.QWizard.FinishButton, self.tr("Connect"))
 
         # XXX: Temporary removal for enrollment policy
@@ -199,41 +182,6 @@ class Wizard(QtGui.QWizard):
         """
         self.ui.lblPassword2.setFocus()
 
-    def _basic_password_checks(self, username, password, password2):
-        """
-        Performs basic password checks to avoid really easy passwords.
-
-        :param username: username provided at the registrarion form
-        :type username: str
-        :param password: password from the registration form
-        :type password: str
-        :param password2: second password from the registration form
-        :type password: str
-
-        :return: returns True if all the checks pass, False otherwise
-        :rtype: bool
-        """
-        message = None
-
-        if message is None and password != password2:
-            message = self.tr("Passwords don't match")
-
-        if message is None and len(password) < 6:
-            message = self.tr("Password too short")
-
-        if message is None and password in self.WEAK_PASSWORDS:
-            message = self.tr("Password too easy")
-
-        if message is None and username == password:
-            message = self.tr("Password equal to username")
-
-        if message is not None:
-            self._set_register_status(message, error=True)
-            self._focus_password()
-            return False
-
-        return True
-
     def _register(self):
         """
         Performs the registration based on the values provided in the form
@@ -244,7 +192,8 @@ class Wizard(QtGui.QWizard):
         password = self.ui.lblPassword.text()
         password2 = self.ui.lblPassword2.text()
 
-        if self._basic_password_checks(username, password, password2):
+        ok, msg = basic_password_checks(username, password, password2)
+        if ok:
             register = SRPRegister(provider_config=self._provider_config)
             register.registration_finished.connect(
                 self._registration_finished)
@@ -258,6 +207,8 @@ class Wizard(QtGui.QWizard):
             self._password = password
             self._set_register_status(self.tr("Starting registration..."))
         else:
+            self._set_register_status(msg, error=True)
+            self._focus_password()
             self.ui.btnRegister.setEnabled(True)
 
     def _set_registration_fields_visibility(self, visible):
@@ -538,8 +489,10 @@ class Wizard(QtGui.QWizard):
             try:
                 if service not in self._shown_services:
                     checkbox = QtGui.QCheckBox(self)
-                    service_index = self.SERVICE_CONFIG.index(service)
-                    checkbox.setText(self.SERVICE_DISPLAY[service_index])
+                    service_label = get_service_display_name(
+                        service, self.standalone)
+                    checkbox.setText(service_label)
+
                     self.ui.serviceListLayout.addWidget(checkbox)
                     checkbox.stateChanged.connect(
                         partial(self._service_selection_changed, service))

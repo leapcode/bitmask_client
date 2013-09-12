@@ -686,12 +686,6 @@ License: GNU General Public License - http://en.wikipedia.org/wiki/GNU_General_P
 WebSite: http://wefunction.com/
 IconPackage: WooFunction icon pack - http://www.iconspedia.com/pack/woofunction-icons-4136/
 ---
-data/images/Globe.png
-
-Author: Everaldo Coelho
-License: LGPL - http://www.gnu.org/licenses/lgpl.html
-WebSite: http://www.everaldo.com/
----
 data/images/oxygen-icons/
 
 The following icons were created based on 'mail-unread.png' from oxygen:

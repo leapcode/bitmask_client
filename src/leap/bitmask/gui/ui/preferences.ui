@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>451</width>
-    <height>267</height>
+    <width>503</width>
+    <height>529</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,9 +17,149 @@
    <iconset resource="../../../../../data/resources/mainwindow.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
+  <layout class="QGridLayout" name="gridLayout_3">
+   <item row="5" column="0">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="gbGatewaySelector">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="title">
+      <string>Select gateway for provider</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="1" colspan="2">
+       <widget class="QComboBox" name="cbProvidersGateway">
+        <item>
+         <property name="text">
+          <string>&lt;Select provider&gt;</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblSelectProvider">
+        <property name="text">
+         <string>&amp;Select provider:</string>
+        </property>
+        <property name="buddy">
+         <cstring>cbProvidersGateway</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Select gateway:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2">
+       <widget class="QComboBox" name="cbGateways">
+        <item>
+         <property name="text">
+          <string>Automatic</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="5" column="2">
+       <widget class="QPushButton" name="pbSaveGateway">
+        <property name="text">
+         <string>Save this provider settings</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="3">
+       <widget class="QLabel" name="lblProvidersGatewayStatus">
+        <property name="text">
+         <string>&lt; Providers Gateway Status &gt;</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QGroupBox" name="gbEnabledServices">
+     <property name="title">
+      <string>Enabled services</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="3" column="1">
+       <widget class="QPushButton" name="pbSaveServices">
+        <property name="text">
+         <string>Save this provider settings</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QGroupBox" name="gbServices">
+        <property name="title">
+         <string>Services</string>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0">
+          <layout class="QVBoxLayout" name="vlServices"/>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="cbProvidersServices">
+        <item>
+         <property name="text">
+          <string>&lt;Select provider&gt;</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Select provider:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QLabel" name="lblProvidersServicesStatus">
+        <property name="text">
+         <string>&lt; Providers Services Status &gt;</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
     <widget class="QGroupBox" name="gbPasswordChange">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>Password Change</string>
      </property>
@@ -97,69 +237,6 @@
       </item>
      </layout>
     </widget>
-   </item>
-   <item>
-    <widget class="QGroupBox" name="gbGatewaySelector">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="title">
-      <string>Select gateway for provider</string>
-     </property>
-     <property name="checkable">
-      <bool>false</bool>
-     </property>
-     <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="lblSelectProvider">
-        <property name="text">
-         <string>&amp;Select provider:</string>
-        </property>
-        <property name="buddy">
-         <cstring>cbProviders</cstring>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="cbProviders">
-        <item>
-         <property name="text">
-          <string>&lt;Select provider&gt;</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>Select gateway:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QComboBox" name="comboBox">
-        <item>
-         <property name="text">
-          <string>Automatic</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>

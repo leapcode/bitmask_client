@@ -3,7 +3,8 @@
 Running
 ==================
 
-This document covers how to launch Bitmask.
+This document covers how to launch Bitmask. Also know as, where the magic
+happens.
 
 Launching Bitmask
 -----------------
@@ -11,7 +12,7 @@ After a successful installation, there should be a launcher called `bitmask` som
 
   % bitmask
 
-The first time you launch it, it should launch the first run wizard that will guide you through the setup of the LEAP Services.
+The first time you launch it, it should launch the first run wizard that will guide you through the mostly automatic configuration of the LEAP Services.
 
 .. note::
 
@@ -37,8 +38,8 @@ If you ask for it, you can also have all that debug info in a beautiful file rea
 .. If you want to increment the level of verbosity passed to openvpn, you can do::
 .. $ bitmask --openvpn-verbosity 4
 
-Options
-------------
+I want all the options!
+-----------------------
 To see all the available command line options::
 
   $ bitmask --help

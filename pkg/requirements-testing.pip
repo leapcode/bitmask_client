@@ -1,6 +1,7 @@
 nose
 nose-exclude
 nose-progressive
+mock
 
 
 unittest2  # TODO we should include this dep only for python2.6
@@ -13,6 +14,5 @@ tox
 # double reqs
 # (the client already includes, which gives some errors)
 # -----------
-# mock # re-add XXX
 #twisted
 #zope.interface

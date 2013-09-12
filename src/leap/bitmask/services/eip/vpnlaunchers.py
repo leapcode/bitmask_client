@@ -23,8 +23,8 @@ import logging
 import getpass
 import os
 import platform
-import subprocess
 import stat
+import subprocess
 try:
     import grp
 except ImportError:
@@ -32,6 +32,9 @@ except ImportError:
 
 from abc import ABCMeta, abstractmethod
 from functools import partial
+from time import sleep
+
+from leap.bitmask.config.leapsettings import LeapSettings
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
@@ -217,19 +220,23 @@ def _is_auth_agent_running():
     return any(is_running)
 
 
-def _try_to_launch_agent():
+def _try_to_launch_agent(standalone=False):
     """
     Tries to launch a polkit daemon.
     """
-    opts = [
-        "/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1",
-        # XXX add kde thing here
-    ]
-    for cmd in opts:
-        try:
-            subprocess.Popen([cmd], shell=True)
-        except:
-            pass
+    env = None
+    if standalone is True:
+        env = {
+            "PYTHONPATH": os.path.abspath('../../../../lib/')}
+    try:
+        # We need to quote the command because subprocess call
+        # will do "sh -c 'foo'", so if we do not quoute it we'll end
+        # up with a invocation to the python interpreter. And that
+        # is bad.
+        subprocess.call(["python -m leap.bitmask.util.polkit_agent"],
+                        shell=True, env=env)
+    except Exception as exc:
+        logger.exception(exc)
 
 
 class LinuxVPNLauncher(VPNLauncher):
@@ -313,7 +320,8 @@ class LinuxVPNLauncher(VPNLauncher):
         """
         if _is_pkexec_in_system():
             if not _is_auth_agent_running():
-                _try_to_launch_agent()
+                _try_to_launch_agent(ProviderConfig.standalone)
+                sleep(0.5)
             if _is_auth_agent_running():
                 pkexec_possibilities = which(kls.PKEXEC_BIN)
                 leap_assert(len(pkexec_possibilities) > 0,
@@ -414,14 +422,22 @@ class LinuxVPNLauncher(VPNLauncher):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateway_selector = VPNGatewaySelector(eipconfig)
-        gateways = gateway_selector.get_gateways()
+        gateways = []
+        leap_settings = LeapSettings(ProviderConfig.standalone)
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
+
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
 
         if not gateways:
             logger.error('No gateway was found!')
             raise VPNLauncherException(self.tr('No gateway was found!'))
 
-        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']
@@ -669,11 +685,22 @@ class DarwinVPNLauncher(VPNLauncher):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateway_selector = VPNGatewaySelector(eipconfig)
-        gateways = gateway_selector.get_gateways()
+        gateways = []
+        leap_settings = LeapSettings(ProviderConfig.standalone)
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
 
-        logger.debug("Using gateways ips: {gw}".format(
-            gw=', '.join(gateways)))
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
+
+        if not gateways:
+            logger.error('No gateway was found!')
+            raise VPNLauncherException(self.tr('No gateway was found!'))
+
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']
@@ -841,10 +868,22 @@ class WindowsVPNLauncher(VPNLauncher):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateway_selector = VPNGatewaySelector(eipconfig)
-        gateways = gateway_selector.get_gateways()
+        gateways = []
+        leap_settings = LeapSettings(ProviderConfig.standalone)
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
 
-        logger.debug("Using gateways ips: {}".format(', '.join(gateways)))
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
+
+        if not gateways:
+            logger.error('No gateway was found!')
+            raise VPNLauncherException(self.tr('No gateway was found!'))
+
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']

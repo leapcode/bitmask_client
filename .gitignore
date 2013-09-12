@@ -8,6 +8,7 @@
 ui_*.py
 !.coveragerc
 !.tx
+!.gitattributes
 bin/
 build/
 core
@@ -18,15 +19,12 @@ include/
 lib/
 local/
 share/
-src/leap/util/reqs.txt
-src/leap.egg-info/
-src/leap_client.egg-info
-src/leap/_branding.py
-src/leap/certs/*.pem
-src/*.egg-info
-src/pysqlcipher
 pkg/osx/dist
 pkg/osx/build
+
+src/*.egg-info
+src/pysqlcipher
+src/leap/bitmask/util/reqs.txt
 MANIFEST
 _trial_temp*
 config/*

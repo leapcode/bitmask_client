@@ -17,34 +17,33 @@ cc_red="${esc}[0;31m"
 cc_normal=`echo -en "${esc}[m\017"`
 
 echo "${cc_yellow}"
-echo "~~~~~~~~~~~~~~~~~~~~~~"
-echo "LEAP                  "
-echo "client bootstrapping  "
-echo "~~~~~~~~~~~~~~~~~~~~~~"
+echo "~~~~~~~~~~~~~~~~~~~~~~~"
+echo " Bitmask bootstrapping "
+echo "~~~~~~~~~~~~~~~~~~~~~~~"
 echo ""
 echo "${cc_green}Creating virtualenv...${cc_normal}"
 
-mkdir leap-client-testbuild
-virtualenv leap-client-testbuild
-source leap-client-testbuild/bin/activate
+mkdir bitmask-testbuild
+virtualenv bitmask-testbuild
+source bitmask-testbuild/bin/activate
 
-echo "${cc_green}Installing leap client...${cc_normal}"
+echo "${cc_green}Installing bitmask...${cc_normal}"
 
 # Clone latest git (develop branch)
 # change "develop" for any other branch you want.
 
 
-pip install -e 'git://leap.se/leap_client@develop#egg=leap-client'
+pip install -e 'git://leap.se/leap_client@develop#egg=leap.bitmask'
 
-cd leap-client-testbuild
+cd bitmask-testbuild
 
 # symlink the pyside libraries to the system libs
-./src/leap-client/pkg/postmkvenv.sh
+./src/leap.bitmask/pkg/postmkvenv.sh
 
-echo "${cc_green}leap-client installed! =)"
+echo "${cc_green}bitmask installed! =)"
 echo "${cc_yellow}"
 echo "Launch it with: "
 echo "~~~~~~~~~~~~~~~~~~~~~~"
-echo "bin/leap-client"
+echo "bin/bitmask"
 echo "~~~~~~~~~~~~~~~~~~~~~~"
 echo "${cc_normal}"

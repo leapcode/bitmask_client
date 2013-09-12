@@ -62,11 +62,12 @@ class VPNGatewaySelector(object):
 
         self._eipconfig = eipconfig
 
-    def get_gateways(self):
+    def get_gateways_list(self):
         """
-        Returns the 4 best gateways, sorted by timezone proximity.
+        Returns the existing gateways, sorted by timezone proximity.
 
-        :rtype: list of IPv4Address or IPv6Address object.
+        :rtype: list of tuples (location, ip)
+                (str, IPv4Address or IPv6Address object)
         """
         gateways_timezones = []
         locations = self._eipconfig.get_locations()
@@ -77,19 +78,35 @@ class VPNGatewaySelector(object):
             gateway_distance = 99  # if hasn't location -> should go last
 
             if gateway_location is not None:
-                gw_offset = int(locations[gateway['location']]['timezone'])
+                timezone = locations[gateway['location']]['timezone']
+                gateway_name = locations[gateway['location']].get('name', None)
+                if gateway_name is not None:
+                    gateway_location = gateway_name
+
+                gw_offset = int(timezone)
                 if gw_offset in self.equivalent_timezones:
                     gw_offset = self.equivalent_timezones[gw_offset]
 
                 gateway_distance = self._get_timezone_distance(gw_offset)
 
             ip = self._eipconfig.get_gateway_ip(idx)
-            gateways_timezones.append((ip, gateway_distance))
+            gateways_timezones.append((ip, gateway_distance, gateway_location))
 
-        gateways_timezones = sorted(gateways_timezones,
-                                    key=lambda gw: gw[1])[:4]
+        gateways_timezones = sorted(gateways_timezones, key=lambda gw: gw[1])
 
-        gateways = [ip for ip, dist in gateways_timezones]
+        gateways = []
+        for ip, distance, location in gateways_timezones:
+            gateways.append((location, ip))
+
+        return gateways
+
+    def get_gateways(self):
+        """
+        Returns the 4 best gateways, sorted by timezone proximity.
+
+        :rtype: list of IPv4Address or IPv6Address object.
+        """
+        gateways = [ip for location, ip in self.get_gateways_list()][:4]
         return gateways
 
     def _get_timezone_distance(self, offset):
@@ -124,7 +141,7 @@ class VPNGatewaySelector(object):
         if time.daylight:
             local_offset = time.altzone
 
-        return local_offset / 3600
+        return -local_offset / 3600
 
 
 class EIPConfig(BaseConfig):
@@ -246,7 +263,8 @@ if __name__ == "__main__":
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    eipconfig = EIPConfig('1')
+    eipconfig = EIPConfig()
+    eipconfig.set_api_version('1')
 
     try:
         eipconfig.get_clusters()
@@ -255,9 +273,14 @@ if __name__ == "__main__":
         print "Safe value getting is working"
 
     if eipconfig.load("leap/providers/bitmask.net/eip-service.json"):
+        print "EIPConfig methods"
         print eipconfig.get_clusters()
         print eipconfig.get_gateways()
         print eipconfig.get_locations()
         print eipconfig.get_openvpn_configuration()
         print eipconfig.get_serial()
         print eipconfig.get_version()
+        print "VPNGatewaySelector methods"
+        gws = VPNGatewaySelector(eipconfig)
+        print gws.get_gateways()
+        print gws.get_gateways_list()

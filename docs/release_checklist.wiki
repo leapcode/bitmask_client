@@ -1,0 +1,40 @@
+﻿= Bitmask Release Checklist (*) =
+  * [ ] Check that all tests are passing!
+  * [ ] Tag everything
+    * Should be done for the following packages, in order:
+      1. leap.common
+      2. leap.keymanager
+      3. leap.soledad
+      4. leap.mail
+      5. leap.bitmask
+      6. leap.mx
+    * NOTE: It's assumed that origin is the leap.se repo
+    * [ ] git fetch origin
+    * [ ] git tag -l, and see the latest tagged version (unless it's not a minor version bump, in which case, just bump to it)
+    * [ ] Checkout release-X.Y.Z (locally, never pushed)
+    * [ ] Fold in changes files into the CHANGELOG
+      - NOTE: For leap.soledad, the CHANGELOG entries should be divided per package (common, client, server). See older releases for reference.
+      - Helper bash line: for i in $(ls changes); do cat changes/$i; echo; done
+    * [ ] Update relnotes.txt if needed.
+    * [ ] git rm changes/*
+    * [ ] git commit -av
+    * [ ] Review pkg/requirements.pip for everything and update if needed (that's why the order).
+      - See whatever has been introduced in changes/VERSION_COMPAT
+      - Reset changes/VERSION_COMPAT
+    * [ ] git tag -s X.Y.Z (note the -s so that it's a signed tag) The message should be something like: Tag <package> version X.Y.Z
+    * [ ] git push origin X.Y.Z
+    * [ ] git checkout master && git pull origin master && git merge release-X.Y.Z && git push origin master
+    * [ ] git checkout develop && git pull origin develop && git merge release-X.Y.Z && git push origin develop
+  * [ ] Build and upload bundles
+    * [ ] Use the scripts under pkg/<os>/ to build the the bundles.
+    * [ ] Sign them with gpg -a <path/to/bundle>
+    * [ ] Upload bundle and signature to web-uploads@salmon.leap.se:~/public/client/<os>/Bitmask-<os>-<ver>.(tar.bz2,dmg,zip)
+    * [ ] Update symbolic link for latest upload and signature:
+    	* [ ] ~/public/client/Bitmask-<os>-latest
+    	* [ ] ~/public/client/Bitmask-<os>-latest.asc
+  * [ ] Announce
+    * [ ] Mail leap@lists.riseup.net
+
+Notes
+-----
+(*) this checklist kindly borrowed from tahoe-lafs documentation =)

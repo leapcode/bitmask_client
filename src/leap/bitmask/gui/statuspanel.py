@@ -356,6 +356,16 @@ class StatusPanelWidget(QtGui.QWidget):
         leap_assert_type(action_eip_status, QtGui.QAction)
         self._action_eip_status = action_eip_status
 
+    def set_action_mail_status(self, action_mail_status):
+        """
+        Sets the action_mail_status to use.
+
+        :param action_mail_status: action_mail_status to be used
+        :type action_mail_status: QtGui.QAction
+        """
+        leap_assert_type(action_mail_status, QtGui.QAction)
+        self._action_mail_status = action_mail_status
+
     def set_global_status(self, status, error=False):
         """
         Sets the global status label.
@@ -538,6 +548,27 @@ class StatusPanelWidget(QtGui.QWidget):
     def set_provider(self, provider):
         self.ui.lblProvider.setText(provider)
 
+    def _set_mail_status(self, status, ready=False):
+        """
+        Sets the Encrypted Mail status in the label and in the tray icon.
+
+        :param status: the status text to display
+        :type status: unicode
+        :param ready: if mx is ready or not.
+        :type ready: bool
+        """
+        self.ui.lblMailStatus.setText(status)
+
+        tray_status = self.tr('Encrypted Mail is OFF')
+
+        icon = QtGui.QPixmap(self.MAIL_OFF_ICON)
+        if ready:
+            icon = QtGui.QPixmap(self.MAIL_ON_ICON)
+            tray_status = self.tr('Encrypted Mail is ON')
+
+        self.ui.lblMailIcon.setPixmap(icon)
+        self._action_mail_status.setText(tray_status)
+
     def _mail_handle_soledad_events(self, req):
         """
         Callback for ...
@@ -557,7 +588,7 @@ class StatusPanelWidget(QtGui.QWidget):
         :param req: Request type
         :type req: leap.common.events.events_pb2.SignalRequest
         """
-        self.ui.lblMailStatus.setText(self.tr("Starting..."))
+        self._set_mail_status(self.tr("Starting..."))
 
         ext_status = ""
 
@@ -591,7 +622,12 @@ class StatusPanelWidget(QtGui.QWidget):
         :param req: Request type
         :type req: leap.common.events.events_pb2.SignalRequest
         """
-        self.ui.lblMailStatus.setText(self.tr("Starting..."))
+        # We want to ignore this kind of events once everything has
+        # started
+        if self._smtp_started and self._imap_started:
+            return
+
+        self._set_mail_status(self.tr("Starting..."))
 
         ext_status = ""
 
@@ -639,14 +675,11 @@ class StatusPanelWidget(QtGui.QWidget):
             ext_status = self.tr("SMTP has started...")
             self._smtp_started = True
             if self._smtp_started and self._imap_started:
-                self.ui.lblMailStatus.setText(self.tr("ON"))
-                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
-                self.ui.lblMailIcon.setPixmap(
-                    QtGui.QPixmap(":/images/mail-locked.png"))
+                self._set_mail_status(self.tr("ON"), ready=True)
                 ext_status = ""
         elif req.event == proto.SMTP_SERVICE_FAILED_TO_START:
             ext_status = self.tr("SMTP failed to start, check the logs.")
-            self.ui.lblMailStatus.setText(self.tr("Failed"))
+            self._set_mail_status(self.tr("Failed"))
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"
@@ -679,19 +712,17 @@ class StatusPanelWidget(QtGui.QWidget):
             ext_status = self.tr("IMAP has started...")
             self._imap_started = True
             if self._smtp_started and self._imap_started:
-                self.ui.lblMailStatus.setText(self.tr("ON"))
-                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
+                self._set_mail_status(self.tr("ON"), ready=True)
                 ext_status = ""
         elif req.event == proto.IMAP_SERVICE_FAILED_TO_START:
             ext_status = self.tr("IMAP failed to start, check the logs.")
-            self.ui.lblMailStatus.setText(self.tr("Failed"))
+            self._set_mail_status(self.tr("Failed"))
         elif req.event == proto.IMAP_UNREAD_MAIL:
             if self._smtp_started and self._imap_started:
                 self.ui.lblUnread.setText(
                     self.tr("%s Unread Emails") % (req.content))
                 self.ui.lblUnread.setVisible(req.content != "0")
-                self.ui.lblMailStatus.setText(self.tr("ON"))
-                self.ui.lblMailIcon.setPixmap(QtGui.QPixmap(self.MAIL_ON_ICON))
+                self._set_mail_status(self.tr("ON"), ready=True)
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"

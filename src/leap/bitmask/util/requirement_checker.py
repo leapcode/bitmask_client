@@ -51,8 +51,9 @@ def get_requirements():
 
     # if we are running from the package
     if not develop:
-        requires_file_name = os.path.join('leap', 'util', 'reqs.txt')
-        dist_name = Requirement.parse('leap-client')
+        requires_file_name = os.path.join(
+            'leap', 'bitmask', 'util', 'reqs.txt')
+        dist_name = Requirement.parse('leap.bitmask')
 
         try:
             with resource_stream(dist_name, requires_file_name) as stream:

@@ -1,3 +1,23 @@
+0.3.2 Sep 9:
+  o Fix up script in non-bundle linuces. Closes: #3450
+  o Logout stops imap and smtp services. Closes: #3553
+  o Properly daemonize polkit-gnome-authentication-agent. Closes: #3554
+  o Set appropiate error on login cancel. Closes #3582.
+  o Fix gateway selection problem. Closes 3595.
+  o Fix typo in wizard: stablish -> establish. Closes #3615.
+  o Display Encrypted Mail instead of mx in wizard. Closes #3657.
+  o Fix save logs to file dialog freezing. Closes #3675.
+  o Complain if setup.py is run with python3. Closes: #3711
+  o Enable preferences option in systray. Closes #3717.
+  o Make soledad emit failed signal for all kinds of socket error.
+  o Allow to selectively silence logs from different leap components. Closes: #3504
+  o Add option to select gateway manually in the preferences panel. Closes #3505.
+  o Add preferences option to select the enabled services of a provider. Closes #3534.
+  o Refactor basic password checks. Closes #3552.
+  o Use dirspec instead of plain xdg. Closes #3574.
+  o Remove last page from wizard. Closes #3616.
+  o Display encrypted mail status in the tray. Closes #3659.
+
 0.3.1 Aug 23:
   o Replace wizard images with the rainbow mask. Closes #3425.
   o Update leap.common minimum version needed.

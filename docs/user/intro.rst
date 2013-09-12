@@ -6,26 +6,34 @@ Introduction
 Bitmask
 -------
 .. if yoy change this, change it also in the index.rst
-**Bitmask** is a :ref:`GPL3 Licensed <gpl3>` multiplatform client, written in python using PySide, that supports the features offered by :ref:`the LEAP Platform <leapplatform>`. Currently is being tested on Linux, support for OSX and Windows will come soon.
+**Bitmask** is the multiplatform desktop client for the services offered by :ref:`the LEAP Platform <leapplatform>`.
+It is written in python using `PySide`_ and :ref:`licensed under the GPL3 <gpl3>`.
+Currently we distribute pre-compiled bundles for Linux and OSX, with Windows
+bundles following soon.
 
 Features
 ^^^^^^^^
 
 Bitmask allows to easily secure communications.
 
-- Provider selection
-- User registration
+- Provider selection.
+- User registration.
 - Encrypted Internet Proxy support (autoconfigured service using openvpn).
+- Encrypted email.
 
 Coming soon
 ^^^^^^^^^^^^
 
-- Encrypted email
+- Encrypted chat.
+
 
 .. _leapplatform:
 
 The LEAP Platform
 ^^^^^^^^^^^^^^^^^
+
+.. image:: leap-color-small.*
+
 The LEAP Provider Platform is the server-side part of LEAP that is run by service providers. It consists of a set of complementary packages and recipes to automate the maintenance of LEAP services in a hardened GNU/Linux environment. Our goal is to make it painless for service providers and ISPs to deploy a secure communications platform.
 
 Read `more about the LEAP Platform <https://leap.se/en/technology/platform>`_ or `check out the code <https://github.com/leapcode/leap_platform>`_.
@@ -96,6 +104,8 @@ Bitmask is released under the terms of the `GNU GPL version 3`_ or later.
     along with Bitmask.  If not, see http://www.gnu.org/licenses/.
 
 .. _`GNU GPL version 3`: http://www.gnu.org/licenses/gpl.txt
+
+.. _`PySide`: http://qt-project.org/wiki/PySide
 
 .. ??? include whole version?
     .. include:: ../COPYING

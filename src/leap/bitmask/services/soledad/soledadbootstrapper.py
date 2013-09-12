@@ -159,8 +159,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 self.soledad_timeout.emit()
             except socket.error as exc:
                 logger.error("Socket error while initializing soledad")
-                if exc.errno in (111, ):
-                    self.soledad_failed.emit()
+                self.soledad_failed.emit()
             except u1db_errors.Unauthorized:
                 logger.error("Error while initializing soledad "
                              "(unauthorized).")

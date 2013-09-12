@@ -5,6 +5,11 @@ Development Workflow
 
 This section documents the workflow that the LEAP project team follows and expects for the code contributions.
 
+While reading this guide, you should have in mind the two rules of contributing code:
+
+* The first rule of code contribution is: Nobody will push unreviewed code to the mainline branches.
+* The second rule of code contribution is: Nobody will push unreviewed code to the mainline branches.
+
 Code formatting
 ---------------
 In one word: `PEP8`_.
@@ -24,7 +29,7 @@ We are basing our workflow on what is described in `A successful git branching m
 
 .. image:: https://leap.se/code/attachments/13/git-branching-model.png
 
-The author of the aforementioned post has also a handy pdf version of it: `branching_model.pdf`_ 
+The author of the aforementioned post has also a handy pdf version of it: `branching_model.pdf`_
 
 However, we use a setup in which each developer maintains her own feature branch in her private repo. After a code review, this feature branch is rebased onto the authoritative integration branch. Thus, the leapcode repo in leap.se (mirrored in github) only maintains the master and develop branches.
 
@@ -41,3 +46,41 @@ All code ready to be merged into the integration branch is expected to:
 * Have tests
 * Be documented
 * Pass existing tests: do **run_tests.sh** and **tox -v**. All feature branches are automagically built by our `buildbot farm <http://lemur.leap.se:8010/grid>`_. So please check your branch is green before merging it it to `develop`. Rebasing against the current tip of the integration when possible is preferred in order to keep a clean history.
+
+Using Github
+------------
+
+Particularly for the Bitmask client, we are using Github. So you should fork the repo from `github`_ . Depending on what kind of work you are going to do (bug or feature) you should create a branch with the following name:
+
+`bug/some_descriptive_text`
+
+or
+
+`feature/some_descriptive_text`
+
+Do your work there, push it, and create a pull request against the develop branch in the leapcode owned repo. Either you should post the pull request in `#leap-dev` at `Freenode` or we will just notice it when it's created.
+
+Your code will get reviewed/discussed by someone else on the team, and say that you need to make some changes. What you would do is the following:
+
+  git checkout <your branch>
+
+  # edit what you need here ...
+
+  # Simple commit, this doesn't need a good commit message
+  git commit -avm "Fix"
+
+  # This will help you reorder your commits and squash them (so that the
+  # final commit list has good representative messages)
+  git rebase -i develop
+
+  # Since you've rewritten your history, you'll need a force push
+  git push <your remote> +<your branch>
+
+This will update your pull request automatically, but it won't notify us about the update, so you should add a comment saying so, or re-pingthe reviewer.
+
+.. _`github`: https://github.com/leapcode/
+
+Other methods
+-------------
+
+Feel free to use any other methods like format-patch and mail or whatever method you prefer, although we recommend you follow the same workflow as we do.
