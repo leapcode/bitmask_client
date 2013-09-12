@@ -71,7 +71,7 @@ Hacking
 
 The Bitmask git repository is available at::
 
-  git://leap.se/leap_client
+  git://leap.se/bitmask_client
 
 Some steps need to be run when setting a development environment for the first time.
 
@@ -117,7 +117,7 @@ which the first time should automagically install all the needed dependencies in
 License
 =======
 
-.. image:: https://raw.github.com/leapcode/leap_client/develop/docs/user/gpl.png
+.. image:: https://raw.github.com/leapcode/bitmask_client/develop/docs/user/gpl.png
 
 Bitmask is released under the terms of the `GNU GPL version 3`_ or later.
 

@@ -13,7 +13,7 @@ Cloning the repo
 
 ::
 
-    git clone git://leap.se/leap_client
+    git clone git://leap.se/bitmask_client
     git checkout develop
 
 .. XXX change this when repo changes.
