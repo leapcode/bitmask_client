@@ -22,9 +22,9 @@
       - See whatever has been introduced in changes/VERSION_COMPAT
       - Reset changes/VERSION_COMPAT
     * [ ] git checkout master && git pull origin master && git merge --no-ff release-X.Y.Z && git push origin master
-    * [ ] git checkout develop && git pull origin develop && git merge --no-ff release-X.Y.Z && git push origin develop
-    * [ ] git tag -s X.Y.Z (note the -s so that it's a signed tag) The message should be something like: Tag <package> version X.Y.Z
+    * [ ] git tag -s X.Y.Z  -m "Tag <package> version X.Y.Z" # (note the -s so that it's a signed tag and -m to specify the message for the tag)
     * [ ] git push origin X.Y.Z
+    * [ ] git checkout develop && git merge master && git push origin develop
   * [ ] Build and upload bundles
     * [ ] Use the scripts under pkg/<os>/ to build the the bundles.
     * [ ] Sign them with gpg -a --sign --detach-sign <path/to/bundle>
