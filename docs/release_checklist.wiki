@@ -17,10 +17,10 @@
       - Helper bash line: for i in $(ls changes); do cat changes/$i; echo; done
     * [ ] Update relnotes.txt if needed.
     * [ ] git rm changes/*
-    * [ ] git commit -av
     * [ ] Review pkg/requirements.pip for everything and update if needed (that's why the order).
       - See whatever has been introduced in changes/VERSION_COMPAT
       - Reset changes/VERSION_COMPAT
+    * [ ] git commit -av  # we should add a commit message here...
     * [ ] git checkout master && git pull origin master && git merge --no-ff release-X.Y.Z && git push origin master
     * [ ] git tag -s X.Y.Z  -m "Tag <package> version X.Y.Z" # (note the -s so that it's a signed tag and -m to specify the message for the tag)
     * [ ] git push origin X.Y.Z

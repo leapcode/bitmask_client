@@ -18,10 +18,10 @@
 """
 Setup file for bitmask.
 """
-
 from __future__ import print_function
 
 import sys
+import re
 
 if not sys.version_info[0] == 2:
     print("[ERROR] Sorry, Python 3 is not supported (yet). "
@@ -65,10 +65,13 @@ trove_classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 2.6",
     "Programming Language :: Python :: 2.7",
-    "Topic :: Communications",
     "Topic :: Security",
-    "Topic :: System :: Networking",
-    "Topic :: Utilities"
+    'Topic :: Security :: Cryptography',
+    "Topic :: Communications",
+    'Topic :: Communications :: Email',
+    'Topic :: Communications :: Email :: Post-Office :: IMAP',
+    'Topic :: Internet',
+    "Topic :: Utilities",
 ]
 
 
@@ -139,7 +142,7 @@ data_files = []
 
 if IS_LINUX:
     # XXX use check_for_permissions to install data
-    # globally. See #3805
+    # globally. Or make specific install command. See #3805
     data_files = [
         ("share/polkit-1/actions",
          ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
@@ -147,23 +150,42 @@ if IS_LINUX:
          ["pkg/linux/resolv-update"]),
     ]
 
+DOWNLOAD_BASE = ('https://github.com/leapcode/bitmask_client/'
+                 'archive/%s.tar.gz')
+VERSION = versioneer.get_version()
+DOWNLOAD_URL = ""
+
+# get the short version for the download url
+short_ver = re.findall('\d+\.\d+\.\d+', VERSION)
+if len(short_ver) > 0:
+    DOWNLOAD_URL = DOWNLOAD_BASE % short_ver[0]
+
+
 setup(
     name="leap.bitmask",
     package_dir={"": "src"},
-    version=versioneer.get_version(),
+    version=VERSION,
     cmdclass=cmdclass,
-    description="The Internet Encryption Toolkit",
+    description=("The Internet Encryption Toolkit: "
+                 "Encrypted Internet Proxy and Encrypted Mail."),
+    # XXX unify the long_description on a file of its own, so we
+    # can reuse it easily.
     long_description=(
-        "Desktop Client for the LEAP Platform."
+        "Bitmask is the multiplatform desktop client for the LEAP Platform."
         "\n"
-        "LEAP (LEAP Encryption Access Project) develops "
-        "a multi-year plan to secure everyday communication, breaking down"
-        "into discrete services, to be rolled out one at a time.\n"
-        "The client for the current phase gives support to the EIP Service."
-        "EIP (the Encrypted Internet Proxy) provides circumvention, location "
-        "anonymization, and traffic "
-        "encryption in a hassle-free, automatically self-configuring fashion, "
-        "and has an enhanced level of security."
+        "The LEAP Encryption Access Project develops "
+        "a multi-year plan to secure everyday communication.\n "
+        "The Encrypted Internet Proxy (EIP) provides circumvention, location "
+        "anonymization, and traffic encryption in a hassle-free, "
+        "automatically self-configuring fashion.\n"
+        "Encrypted Mail offers automatic encryption and decryption for "
+        "both outgoing and incoming email, adding public key cryptography "
+        "to your mail without you ever having to worry about key distribution "
+        "or signature verification. \n"
+        "The Encrypted Mail services will run local SMTP and IMAP proxies "
+        "that, once you configure the mail client of your choice, will "
+        "automatically encrypt and decrypt your email using GPG encryption "
+        "under the hood."
     ),
     classifiers=trove_classifiers,
     install_requires=parsed_reqs,
@@ -171,10 +193,13 @@ setup(
     tests_require=utils.parse_requirements(
         reqfiles=['pkg/requirements-testing.pip']),
     keywords=('Bitmask, LEAP, client, qt, encryption, '
-              'proxy, openvpn, imap, smtp'),
+              'proxy, openvpn, imap, smtp, gnupg'),
     author='The LEAP Encryption Access Project',
     author_email='info@leap.se',
-    url='https://leap.se',
+    maintainer='Kali Kaneko',
+    maintainer_email='kali@leap.se',
+    url='https://bitmask.rtfd.org',
+    download_url=DOWNLOAD_URL,
     license='GPL-3+',
     packages=find_packages(
         'src',
