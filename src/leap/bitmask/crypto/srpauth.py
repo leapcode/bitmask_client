@@ -553,6 +553,7 @@ class SRPAuth(QtCore.QObject):
             except Exception as e:
                 logger.warning("Something went wrong with the logout: %r" %
                                (e,))
+                raise
             else:
                 self.set_session_id(None)
                 self.set_uid(None)
