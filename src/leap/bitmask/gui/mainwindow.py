@@ -696,7 +696,9 @@ class MainWindow(QtGui.QMainWindow):
             qApp.setQuitOnLastWindowClosed(False)
             self.hide()
 
-        self._update_hideshow_menu()
+        # Wait a bit until the window visibility has changed so
+        # the menu is set with the correct value.
+        QtCore.QTimer.singleShot(500, self._update_hideshow_menu)
 
     def _center_window(self):
         """
