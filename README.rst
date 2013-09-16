@@ -47,7 +47,7 @@ Installing
 After getting the source and installing all the dependencies, proceed to install ``bitmask`` package::
 
   $ make
-  $ sudo python setup.py install
+  $ sudo python2 setup.py install
 
 Running
 -------
@@ -94,7 +94,7 @@ Symlink your global pyside libraries::
 
 And make your working tree available to your pythonpath::
 
-  (bitmask)$ python setup.py develop
+  (bitmask)$ python2 setup.py develop
 
 Run Bitmask::
 
