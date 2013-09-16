@@ -34,8 +34,8 @@ Bitmask depends on these libraries:
 
 Python packages are listed in ``pkg/requirements.pip`` and ``pkg/test-requirements.pip``
 
-Debian
-^^^^^^
+Getting dependencies under debian
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With a Debian based system, to be able to run Bitmask you need to run the following command::
 
@@ -47,7 +47,7 @@ Installing
 After getting the source and installing all the dependencies, proceed to install ``bitmask`` package::
 
   $ make
-  $ sudo LEAP_VENV_SKIP_PYSIDE=1 python setup.py install
+  $ sudo python2 setup.py install
 
 Running
 -------
@@ -60,7 +60,7 @@ If you are testing a new provider and do not have a CA certificate chain tied to
 
   $ bitmask --danger
 
-But **DO NOT use it on a regular bases**.
+But **DO NOT use it on a regular basis**.
 
 **WARNING**: If you use the --danger flag you may be victim to a MITM_ attack without noticing. Use at your own risk.
 
@@ -69,9 +69,13 @@ But **DO NOT use it on a regular bases**.
 Hacking
 =======
 
-The Bitmask git repository is available at::
+Get the source from the main Bitmask repo::
 
-  git://leap.se/bitmask_client
+    git clone https://leap.se/git/bitmask_client
+
+The code is also browsable online at::
+
+    https://leap.se/git/?p=bitmask_client.git
 
 Some steps need to be run when setting a development environment for the first time.
 
@@ -90,14 +94,14 @@ Symlink your global pyside libraries::
 
 And make your working tree available to your pythonpath::
 
-  (bitmask)$ python setup.py develop
+  (bitmask)$ python2 setup.py develop
 
 Run Bitmask::
 
-  (bitmask)$ python src/leap/app.py -d
+  (bitmask)$ bitmask --debug
 
 
-If you are testing a new provider that doesn't have the proper certificates yet, you can use --danger flag, but **DO NOT use it on a regular bases**.
+If you are testing a new provider that doesn't have the proper certificates yet, you can use --danger flag, but **DO NOT use it on a regular basis**.
 
 **WARNING**: If you use the --danger flag you may be victim to a MITM_ attack without noticing. Use at your own risk.
 
