@@ -1057,17 +1057,6 @@ class MainWindow(QtGui.QMainWindow):
                 self._provider_config,
                 self._smtp_config,
                 True)
-        else:
-            if self._enabled_services.count(self.MX_SERVICE) > 0:
-                pass  # TODO show MX status
-                #self._status_panel.set_eip_status(
-                #    self.tr("%s does not support MX") %
-                #    (self._provider_config.get_domain(),),
-                #                     error=True)
-            else:
-                pass  # TODO show MX status
-                #self._status_panel.set_eip_status(
-                #    self.tr("MX is disabled"))
 
     ###################################################################
     # Service control methods: smtp
@@ -1090,7 +1079,12 @@ class MainWindow(QtGui.QMainWindow):
             logger.error(data[self._smtp_bootstrapper.ERROR_KEY])
             return
         logger.debug("Done bootstrapping SMTP")
+        self._check_smtp_config()
 
+    def _check_smtp_config(self):
+        """
+        Checks smtp config and tries to download smtp client cert if needed.
+        """
         hosts = self._smtp_config.get_hosts()
         # TODO handle more than one host and define how to choose
         if len(hosts) > 0:
@@ -1098,24 +1092,40 @@ class MainWindow(QtGui.QMainWindow):
             logger.debug("Using hostname %s for SMTP" % (hostname,))
             host = hosts[hostname][self.IP_KEY].encode("utf-8")
             port = hosts[hostname][self.PORT_KEY]
-            # TODO move the start to _start_smtp_service
 
-            # TODO Make the encrypted_only configurable
-            # TODO pick local smtp port in a better way
-            # TODO remove hard-coded port and let leap.mail set
-            # the specific default.
+            client_cert = self._smtp_config.get_client_cert_path(
+                self._provider_config,
+                about_to_download=True)
 
-            from leap.mail.smtp import setup_smtp_relay
-            client_cert = self._eip_config.get_client_cert_path(
-                self._provider_config)
-            self._smtp_service = setup_smtp_relay(
-                port=2013,
-                keymanager=self._keymanager,
-                smtp_host=host,
-                smtp_port=port,
-                smtp_cert=client_cert,
-                smtp_key=client_cert,
-                encrypted_only=False)
+            if not os.path.isfile(client_cert):
+                self._smtp_bootstrapper._download_client_certificates()
+            if os.path.isfile(client_cert):
+                self._start_smtp_service(host, port, client_cert)
+            else:
+                logger.warning("Tried to download email client "
+                               "certificate, but could not find any")
+
+        else:
+            logger.warning("No smtp hosts configured")
+
+    def _start_smtp_service(self, host, port, cert):
+        """
+        Starts the smtp service.
+        """
+        # TODO Make the encrypted_only configurable
+        # TODO pick local smtp port in a better way
+        # TODO remove hard-coded port and let leap.mail set
+        # the specific default.
+
+        from leap.mail.smtp import setup_smtp_relay
+        self._smtp_service = setup_smtp_relay(
+            port=2013,
+            keymanager=self._keymanager,
+            smtp_host=host,
+            smtp_port=port,
+            smtp_cert=cert,
+            smtp_key=cert,
+            encrypted_only=False)
 
     def _stop_smtp_service(self):
         """

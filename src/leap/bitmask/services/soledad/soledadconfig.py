@@ -14,25 +14,25 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Soledad configuration
 """
 import logging
 
+from leap.bitmask.services import ServiceConfig
 from leap.bitmask.services.soledad.soledadspec import get_schema
-from leap.common.config.baseconfig import BaseConfig
 
 logger = logging.getLogger(__name__)
 
 
-class SoledadConfig(BaseConfig):
+class SoledadConfig(ServiceConfig):
     """
     Soledad configuration abstraction class
     """
+    _service_name = "soledad"
 
     def __init__(self):
-        BaseConfig.__init__(self)
+        ServiceConfig.__init__(self)
 
     def _get_schema(self):
         """

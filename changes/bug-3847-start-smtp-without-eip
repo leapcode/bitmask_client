@@ -1,0 +1,1 @@
+  o Allow SMTP to start even when provider does not offer EIP. Closes: #3847
