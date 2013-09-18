@@ -536,7 +536,7 @@ class VPNManager(object):
         """
         Return a dict containing the vpn environment to be used.
         """
-        return self._launcher.get_vpn_env(self._providerconfig)
+        return self._launcher.get_vpn_env()
 
     def terminate_openvpn(self, shutdown=False):
         """

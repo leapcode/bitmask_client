@@ -27,6 +27,7 @@ from functools import partial
 from PySide import QtCore, QtGui
 from twisted.internet import threads
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
@@ -58,20 +59,15 @@ class Wizard(QtGui.QWizard):
 
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
-    def __init__(self, standalone=False, bypass_checks=False):
+    def __init__(self, bypass_checks=False):
         """
         Constructor for the main Wizard.
 
-        :param standalone: If True, the application is running as standalone
-            and the wizard should display some messages according to this.
-        :type standalone: bool
         :param bypass_checks: Set to true if the app should bypass
         first round of checks for CA certificates at bootstrap
         :type bypass_checks: bool
         """
         QtGui.QWizard.__init__(self)
-
-        self.standalone = standalone
 
         self.ui = Ui_Wizard()
         self.ui.setupUi(self)
@@ -489,8 +485,7 @@ class Wizard(QtGui.QWizard):
             try:
                 if service not in self._shown_services:
                     checkbox = QtGui.QCheckBox(self)
-                    service_label = get_service_display_name(
-                        service, self.standalone)
+                    service_label = get_service_display_name(service)
                     checkbox.setText(service_label)
 
                     self.ui.serviceListLayout.addWidget(checkbox)

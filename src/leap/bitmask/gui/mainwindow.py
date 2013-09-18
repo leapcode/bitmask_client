@@ -28,6 +28,7 @@ import keyring
 from PySide import QtCore, QtGui
 from twisted.internet import threads
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
@@ -107,7 +108,6 @@ class MainWindow(QtGui.QMainWindow):
     user_stopped_eip = False
 
     def __init__(self, quit_callback,
-                 standalone=False,
                  openvpn_verb=1,
                  bypass_checks=False):
         """
@@ -116,10 +116,6 @@ class MainWindow(QtGui.QMainWindow):
         :param quit_callback: Function to be called when closing
                               the application.
         :type quit_callback: callable
-
-        :param standalone: Set to true if the app should use configs
-                           inside its pwd
-        :type standalone: bool
 
         :param bypass_checks: Set to true if the app should bypass
                               first round of checks for CA
@@ -147,7 +143,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self._settings = LeapSettings(standalone)
+        self._settings = LeapSettings()
 
         self._login_widget = LoginWidget(
             self._settings,
@@ -176,7 +172,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # This is loaded only once, there's a bug when doing that more
         # than once
-        self._standalone = standalone
         self._provider_config = ProviderConfig()
         # Used for automatic start of EIP
         self._provisional_provider_config = ProviderConfig()
@@ -322,8 +317,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._first_run():
             self._wizard_firstrun = True
-            self._wizard = Wizard(standalone=standalone,
-                                  bypass_checks=bypass_checks)
+            self._wizard = Wizard(bypass_checks=bypass_checks)
             # Give this window time to finish init and then show the wizard
             QtCore.QTimer.singleShot(1, self._launch_wizard)
             self._wizard.accepted.connect(self._finish_init)
@@ -428,8 +422,7 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        preferences_window = PreferencesWindow(
-            self, self._srp_auth, self._settings, self._standalone)
+        preferences_window = PreferencesWindow(self, self._srp_auth)
 
         if self._soledad_ready:
             preferences_window.set_soledad_ready(self._soledad)
@@ -981,8 +974,7 @@ class MainWindow(QtGui.QMainWindow):
             self._provider_config,
             self._login_widget.get_user(),
             self._login_widget.get_password(),
-            download_if_needed=True,
-            standalone=self._standalone)
+            download_if_needed=True)
 
         self._download_eip_config()
 

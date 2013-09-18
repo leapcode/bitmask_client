@@ -53,7 +53,7 @@ def install_qtreactor(logger):
     logger.debug("Qt4 reactor installed")
 
 
-def add_logger_handlers(debug=False, logfile=None, standalone=False):
+def add_logger_handlers(debug=False, logfile=None):
     """
     Create the logger and attach the handlers.
 
@@ -82,7 +82,7 @@ def add_logger_handlers(debug=False, logfile=None, standalone=False):
     console.setLevel(level)
     console.setFormatter(formatter)
 
-    silencer = log_silencer.SelectiveSilencerFilter(standalone=standalone)
+    silencer = log_silencer.SelectiveSilencerFilter()
     console.addFilter(silencer)
     logger.addHandler(console)
     logger.debug('Console handler plugged!')
@@ -149,12 +149,10 @@ def main():
     # Given how paths and bundling works, we need to delay the imports
     # of certain parts that depend on this path settings.
     # So first we set all the places where standalone might be queried.
-    from leap.bitmask.config.providerconfig import ProviderConfig
+    from leap.bitmask.config import flags
     from leap.common.config.baseconfig import BaseConfig
-    from leap.bitmask.services.eip.eipconfig import EIPConfig
+    flags.STANDALONE = standalone
     BaseConfig.standalone = standalone
-    ProviderConfig.standalone = standalone
-    EIPConfig.standalone = standalone
 
     # And then we import all the other stuff
     from leap.bitmask.gui import locale_rc
@@ -167,7 +165,7 @@ def main():
     # pylint: avoid unused import
     assert(locale_rc)
 
-    logger = add_logger_handlers(debug, logfile, standalone)
+    logger = add_logger_handlers(debug, logfile)
     replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
@@ -184,9 +182,6 @@ def main():
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')
-
-    ProviderConfig.standalone = standalone
-    EIPConfig.standalone = standalone
 
     # We force the style if on KDE so that it doesn't load all the kde
     # libs, which causes a compatibility issue in some systems.
@@ -228,7 +223,6 @@ def main():
 
     window = MainWindow(
         lambda: twisted_main.quit(app),
-        standalone=standalone,
         openvpn_verb=openvpn_verb,
         bypass_checks=bypass_checks)
 

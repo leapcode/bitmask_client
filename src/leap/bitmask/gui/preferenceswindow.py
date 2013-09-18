@@ -24,6 +24,7 @@ import logging
 from functools import partial
 from PySide import QtCore, QtGui
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.soledad.client import NoStorageSecret
 from leap.bitmask.crypto.srpauth import SRPAuthBadPassword
@@ -40,23 +41,18 @@ class PreferencesWindow(QtGui.QDialog):
     """
     Window that displays the preferences.
     """
-    def __init__(self, parent, srp_auth, leap_settings, standalone):
+    def __init__(self, parent, srp_auth):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
         :param srp_auth: SRPAuth object configured in the main app.
         :type srp_auth: SRPAuth
-        :param standalone: If True, the application is running as standalone
-                           and the preferences dialog should display some
-                           messages according to this.
-        :type standalone: bool
         """
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
         self._srp_auth = srp_auth
-        self._settings = leap_settings
-        self._standalone = standalone
+        self._settings = LeapSettings()
         self._soledad = None
 
         # Load UI
@@ -322,8 +318,7 @@ class PreferencesWindow(QtGui.QDialog):
         for service in services:
             try:
                 checkbox = QtGui.QCheckBox(self)
-                service_label = get_service_display_name(
-                    service, self._standalone)
+                service_label = get_service_display_name(service)
                 checkbox.setText(service_label)
 
                 self.ui.vlServices.addWidget(checkbox)

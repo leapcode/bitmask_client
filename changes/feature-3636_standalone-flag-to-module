@@ -1,0 +1,2 @@
+  o Move STANDALONE flag to a module and unify get_path_prefix queries.
+    Closes #3636.
