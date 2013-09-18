@@ -14,16 +14,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Keyring helpers.
 """
+import logging
 
 import keyring
 
+from keyring.backends.file import EncryptedKeyring, PlaintextKeyring
+
+logger = logging.getLogger(__name__)
+
+
 OBSOLETE_KEYRINGS = [
-    keyring.backends.file.EncryptedKeyring,
-    keyring.backends.file.PlaintextKeyring
+    EncryptedKeyring,
+    PlaintextKeyring
 ]
 
 
@@ -34,4 +39,10 @@ def has_keyring():
     :rtype: bool
     """
     kr = keyring.get_keyring()
-    return kr is not None and kr.__class__ not in OBSOLETE_KEYRINGS
+    klass = kr.__class__
+    logger.debug("Selected keyring: %s" % (klass,))
+
+    canuse = kr is not None and klass not in OBSOLETE_KEYRINGS
+    if not canuse:
+        logger.debug("Not using this keyring since it is obsolete")
+    return canuse
