@@ -251,10 +251,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._systray = None
 
-        self._action_eip_provider = QtGui.QAction(
-            self.tr("No default provider"), self)
-        self._action_eip_provider.setEnabled(False)
-
         self._action_eip_status = QtGui.QAction(
             self.tr("Encrypted Internet is OFF"),
             self)
@@ -594,8 +590,6 @@ class MainWindow(QtGui.QMainWindow):
                         "no default provider configured")
             return
 
-        self._action_eip_provider.setText(default_provider)
-
         self._enabled_services = self._settings.get_enabled_services(
             default_provider)
 
@@ -626,7 +620,6 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu = QtGui.QMenu(self)
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
-        systrayMenu.addAction(self._action_eip_provider)
         systrayMenu.addAction(self._action_eip_status)
         systrayMenu.addAction(self._action_eip_startstop)
         systrayMenu.addAction(self._action_mail_status)
@@ -1242,9 +1235,6 @@ class MainWindow(QtGui.QMainWindow):
                 provider = "%s@%s" % (self._logged_user, provider)
 
             self._status_panel.set_provider(provider)
-
-            self._action_eip_provider.setText(provider_config.get_domain())
-
             self._status_panel.eip_started()
 
             # XXX refactor into status_panel method?
