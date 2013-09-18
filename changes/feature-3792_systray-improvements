@@ -1,0 +1,6 @@
+  o Tasktray menu changes, closes #3792.
+    - Remove the provider domain item (e.g. bitmask.net).
+    - Rename the EIP status menu items to be more descriptive.
+    - Change the EIP status menu items from disabled menu items
+      to submenus with children.
+    - Move the EIP action menu items under the EIP status submenu tree.
