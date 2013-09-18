@@ -1453,13 +1453,16 @@ class MainWindow(QtGui.QMainWindow):
         Switches the stackedWidget back to the login stage after
         logging out
         """
-        self._logged_user = None
-        self.ui.action_log_out.setEnabled(False)
-        self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
-        self._login_widget.set_password("")
-        self._login_widget.set_enabled(True)
-        self._login_widget.set_status("")
-        self.ui.btnPreferences.setEnabled(False)
+        if ok:
+            self._logged_user = None
+            self.ui.action_log_out.setEnabled(False)
+            self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
+            self._login_widget.set_password("")
+            self._login_widget.set_enabled(True)
+            self._login_widget.set_status("")
+        else:
+            status_text = self.tr("Something went wrong with the logout.")
+            self._status_panel.set_global_status(status_text, error=True)
 
     def _intermediate_stage(self, data):
         """
