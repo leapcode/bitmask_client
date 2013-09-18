@@ -251,26 +251,14 @@ class MainWindow(QtGui.QMainWindow):
 
         self._systray = None
 
-        self._action_eip_status = QtGui.QAction(
-            self.tr("Encrypted Internet is OFF"),
-            self)
-        self._action_eip_status.setEnabled(False)
-        self._status_panel.set_action_eip_status(
-            self._action_eip_status)
-
-        self._action_mail_status = QtGui.QAction(
-            self.tr("Mail is OFF"), self)
+        self._action_mail_status = QtGui.QAction(self.tr("Mail is OFF"), self)
         self._action_mail_status.setEnabled(False)
-        self._status_panel.set_action_mail_status(
-            self._action_mail_status)
+        self._status_panel.set_action_mail_status(self._action_mail_status)
 
-        self._action_eip_startstop = QtGui.QAction(
-            self.tr("Turn ON"), self)
-        self._action_eip_startstop.triggered.connect(
-            self._stop_eip)
+        self._action_eip_startstop = QtGui.QAction(self.tr("Turn ON"), self)
+        self._action_eip_startstop.triggered.connect(self._stop_eip)
         self._action_eip_startstop.setEnabled(False)
-        self._status_panel.set_action_eip_startstop(
-            self._action_eip_startstop)
+        self._status_panel.set_action_eip_startstop(self._action_eip_startstop)
 
         self._action_preferences = QtGui.QAction(self.tr("Preferences"), self)
         self._action_preferences.triggered.connect(self._show_preferences)
@@ -620,8 +608,11 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu = QtGui.QMenu(self)
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
-        systrayMenu.addAction(self._action_eip_status)
-        systrayMenu.addAction(self._action_eip_startstop)
+
+        eip_menu = systrayMenu.addMenu(self.tr("Encrypted Internet is OFF"))
+        eip_menu.addAction(self._action_eip_startstop)
+        self._status_panel.set_eip_status_menu(eip_menu)
+
         systrayMenu.addAction(self._action_mail_status)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self._action_preferences)

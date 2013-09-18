@@ -130,7 +130,7 @@ class StatusPanelWidget(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
 
         self._systray = None
-        self._action_eip_status = None
+        self._eip_status_menu = None
 
         self.ui = Ui_StatusPanel()
         self.ui.setupUi(self)
@@ -359,15 +359,15 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         self._action_eip_startstop = action_eip_startstop
 
-    def set_action_eip_status(self, action_eip_status):
+    def set_eip_status_menu(self, eip_status_menu):
         """
-        Sets the action_eip_status to use.
+        Sets the eip_status_menu to use.
 
-        :param action_eip_status: action_eip_status to be used
-        :type action_eip_status: QtGui.QAction
+        :param eip_status_menu: eip_status_menu to be used
+        :type eip_status_menu: QtGui.QMenu
         """
-        leap_assert_type(action_eip_status, QtGui.QAction)
-        self._action_eip_status = action_eip_status
+        leap_assert_type(eip_status_menu, QtGui.QMenu)
+        self._eip_status_menu = eip_status_menu
 
     def set_action_mail_status(self, action_mail_status):
         """
@@ -558,7 +558,7 @@ class StatusPanelWidget(QtGui.QWidget):
 
         self.set_icon(selected_pixmap)
         self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
-        self._action_eip_status.setText(tray_message)
+        self._eip_status_menu.setTitle(tray_message)
 
     def set_provider(self, provider):
         self.ui.lblProvider.setText(provider)
