@@ -347,7 +347,7 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         status = self.tr("Encrypted Internet is {0}").format(self._eip_status)
         status += '\n'
-        status += self.tr("Encrypted Mail is {0}").format(self._mx_status)
+        status += self.tr("Mail is {0}").format(self._mx_status)
         self._systray.setToolTip(status)
 
     def set_action_eip_startstop(self, action_eip_startstop):
@@ -550,7 +550,7 @@ class StatusPanelWidget(QtGui.QWidget):
                       "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
             selected_pixmap_tray = self.CONNECTING_ICON_TRAY
-            tray_message = self.tr("Turning ON")
+            tray_message = self.tr("Encrypted Internet is STARTING")
         elif status in ("CONNECTED"):
             tray_message = self.tr("Encrypted Internet is ON")
             selected_pixmap = self.CONNECTED_ICON
@@ -565,7 +565,7 @@ class StatusPanelWidget(QtGui.QWidget):
 
     def _set_mail_status(self, status, ready=False):
         """
-        Sets the Encrypted Mail status in the label and in the tray icon.
+        Sets the Mail status in the label and in the tray icon.
 
         :param status: the status text to display
         :type status: unicode
@@ -575,13 +575,13 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui.lblMailStatus.setText(status)
 
         self._mx_status = self.tr('OFF')
-        tray_status = self.tr('Encrypted Mail is OFF')
+        tray_status = self.tr('Mail is OFF')
 
         icon = QtGui.QPixmap(self.MAIL_OFF_ICON)
         if ready:
             icon = QtGui.QPixmap(self.MAIL_ON_ICON)
             self._mx_status = self.tr('ON')
-            tray_status = self.tr('Encrypted Mail is ON')
+            tray_status = self.tr('Mail is ON')
 
         self.ui.lblMailIcon.setPixmap(icon)
         self._action_mail_status.setText(tray_status)
