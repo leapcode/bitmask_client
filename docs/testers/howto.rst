@@ -25,8 +25,9 @@ Install dependencies
 ^^^^^^^^^^^^^^^^^^^^
 First, install all the base dependencies plus git, virtualenv and development files needed to compile several extensions::
 
-   apt-get install openvpn git-core python-dev python-qt4 python-setuptools python-virtualenv
+   apt-get install openvpn git-core python-dev python-pyside python-setuptools python-virtualenv
 
+.. TODO Should review these dependencies. ^^
 
 Bootstrap script
 ^^^^^^^^^^^^^^^^
