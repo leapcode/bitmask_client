@@ -555,15 +555,6 @@ class Wizard(QtGui.QWizard):
         if pageId == self.SERVICES_PAGE:
             self._populate_services()
 
-    def _is_need_eip_password_warning(self):
-        """
-        Returns True if we need to add a warning about eip needing
-        administrative permissions to start. That can be either
-        because we are running in standalone mode, or because we could
-        not find the needed privilege escalation mechanisms being operative.
-        """
-        return self.standalone or is_missing_policy_permissions()
-
     def nextId(self):
         """
         Sets the next page id for the wizard based on wether the user

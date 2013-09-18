@@ -40,9 +40,6 @@ class PreferencesWindow(QtGui.QDialog):
     """
     Window that displays the preferences.
     """
-
-    WEAK_PASSWORDS = ("123456", "qweasd", "qwerty", "password")
-
     def __init__(self, parent, srp_auth, leap_settings, standalone):
         """
         :param parent: parent object of the PreferencesWindow.
