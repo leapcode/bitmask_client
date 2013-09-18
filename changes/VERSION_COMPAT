@@ -8,3 +8,6 @@
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
+
+leap.soledad.client>=0.4.0  # because of backward-incompatible changes
+			    # https://github.com/leapcode/soledad/pull/76
