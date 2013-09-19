@@ -1204,7 +1204,8 @@ class MainWindow(QtGui.QMainWindow):
         provider_config = self._get_best_provider_config()
 
         try:
-            host, port = self._get_socket_host()
+            # XXX move this to EIPConductor
+            host, port = get_openvpn_management()
             self._vpn.start(eipconfig=self._eip_config,
                             providerconfig=provider_config,
                             socket_host=host,
@@ -1627,37 +1628,3 @@ class MainWindow(QtGui.QMainWindow):
             self._quit_callback()
 
         logger.debug('Bye.')
-
-
-if __name__ == "__main__":
-    import signal
-
-    def sigint_handler(*args, **kwargs):
-        logger.debug('SIGINT catched. shutting down...')
-        mainwindow = args[0]
-        mainwindow.quit()
-
-    import sys
-
-    logger = logging.getLogger(name='leap')
-    logger.setLevel(logging.DEBUG)
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        '%(asctime)s '
-        '- %(name)s - %(levelname)s - %(message)s')
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    app = QtGui.QApplication(sys.argv)
-    mainwindow = MainWindow()
-    mainwindow.show()
-
-    timer = QtCore.QTimer()
-    timer.start(500)
-    timer.timeout.connect(lambda: None)
-
-    sigint = partial(sigint_handler, mainwindow)
-    signal.signal(signal.SIGINT, sigint)
-
-    sys.exit(app.exec_())
