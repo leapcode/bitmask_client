@@ -21,7 +21,7 @@ import logging
 import os
 import re
 
-from leap.common.config import get_path_prefix
+from leap.bitmask.util import get_path_prefix
 
 
 class SelectiveSilencerFilter(logging.Filter):
@@ -48,12 +48,11 @@ class SelectiveSilencerFilter(logging.Filter):
         'leap.common.events',
     )
 
-    def __init__(self, standalone=False):
+    def __init__(self):
         """
         Tries to load silencer rules from the default path,
         or load from the SILENCER_RULES tuple if not found.
         """
-        self.standalone = standalone
         self.rules = None
         if os.path.isfile(self._rules_path):
             self.rules = self._load_rules()
@@ -65,9 +64,7 @@ class SelectiveSilencerFilter(logging.Filter):
         """
         The configuration file for custom ignore rules.
         """
-        return os.path.join(
-            get_path_prefix(standalone=self.standalone),
-            "leap", self.CONFIG_NAME)
+        return os.path.join(get_path_prefix(), "leap", self.CONFIG_NAME)
 
     def _load_rules(self):
         """

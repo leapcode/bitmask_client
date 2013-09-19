@@ -23,6 +23,7 @@ import os
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services import ServiceConfig
 from leap.bitmask.services.mail.smtpspec import get_schema
+from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -61,13 +62,10 @@ class SMTPConfig(ServiceConfig):
         leap_assert(providerconfig, "We need a provider")
         leap_assert_type(providerconfig, ProviderConfig)
 
-        cert_path = os.path.join(self.get_path_prefix(),
-                                 "leap",
-                                 "providers",
+        cert_path = os.path.join(get_path_prefix(),
+                                 "leap", "providers",
                                  providerconfig.get_domain(),
-                                 "keys",
-                                 "client",
-                                 "smtp.pem")
+                                 "keys", "client", "smtp.pem")
 
         if not about_to_download:
             leap_assert(os.path.exists(cert_path),

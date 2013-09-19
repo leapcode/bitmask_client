@@ -21,10 +21,11 @@ Provider configuration
 import logging
 import os
 
-from leap.bitmask.config.provider_spec import leap_provider_spec
 from leap.common.check import leap_check
 from leap.common.config.baseconfig import BaseConfig, LocalizedKey
+from leap.bitmask.config.provider_spec import leap_provider_spec
 from leap.bitmask.services import get_service_display_name
+from leap.bitmask.util import get_path_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -151,13 +152,9 @@ class ProviderConfig(BaseConfig):
         :type about_to_download: bool
         """
 
-        cert_path = os.path.join(self.get_path_prefix(),
-                                 "leap",
-                                 "providers",
+        cert_path = os.path.join(get_path_prefix(), "leap", "providers",
                                  self.get_domain(),
-                                 "keys",
-                                 "ca",
-                                 "cacert.pem")
+                                 "keys", "ca", "cacert.pem")
 
         if not about_to_download:
             cert_exists = os.path.exists(cert_path)

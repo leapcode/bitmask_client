@@ -28,6 +28,7 @@ from PySide import QtCore
 
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
 from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.util import get_path_prefix
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.provider.supportedapis import SupportedAPIs
@@ -133,9 +134,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
 
         headers = {}
 
-        provider_json = os.path.join(
-            ProviderConfig().get_path_prefix(), "leap", "providers",
-            self._domain, "provider.json")
+        provider_json = os.path.join(get_path_prefix(), "leap", "providers",
+                                     self._domain, "provider.json")
         mtime = get_mtime(provider_json)
 
         if self._download_if_needed and mtime:

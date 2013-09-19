@@ -20,6 +20,13 @@ Some small and handy functions.
 import datetime
 import os
 
+from leap.bitmask.config import flags
+from leap.common.config import get_path_prefix as common_get_path_prefix
+
+
+def get_path_prefix():
+    return common_get_path_prefix(flags.STANDALONE)
+
 
 def first(things):
     """
