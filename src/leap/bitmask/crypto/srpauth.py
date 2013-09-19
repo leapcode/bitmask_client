@@ -200,8 +200,6 @@ class SRPAuth(QtCore.QObject):
             """
             logger.debug("Authentication preprocessing...")
 
-            username = username.lower()
-
             self._srp_user = self._srp.User(username,
                                             password,
                                             self._hashfun,
@@ -506,7 +504,7 @@ class SRPAuth(QtCore.QObject):
             leap_assert(self.get_session_id() is None, "Already logged in")
 
             # User credentials stored for password changing checks
-            self._username = username.lower()
+            self._username = username
             self._password = password
 
             d = threads.deferToThread(self._authentication_preprocessing,
@@ -615,7 +613,7 @@ class SRPAuth(QtCore.QObject):
         :param password: password for this user
         :type password: str
         """
-
+        username = username.lower()
         d = self.__instance.authenticate(username, password)
         d.addCallback(self._gui_notify)
         d.addErrback(self._errback)
