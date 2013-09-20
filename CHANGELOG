@@ -27,6 +27,7 @@
     - Move the EIP action menu items under the EIP status submenu tree.
   o Adds --version flag. Closes: #3816
   o Refactors EIPConnection to use LEAPConnection state machine. Closes: #3900
+  o Include resource files and ui in the distrubution tarball. Closes: #3825
 
 0.3.2 Sep 6 -- the "no crashes or anything" release:
   o Fix up script in non-bundle linuces. Closes: #3450
