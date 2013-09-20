@@ -95,6 +95,7 @@ class VPN(object):
         self._reactor = reactor
         self._qtsigs = VPNSignals()
 
+        # XXX should get it from config.flags
         self._openvpn_verb = kwargs.get(self.OPENVPN_VERB, None)
 
     @property

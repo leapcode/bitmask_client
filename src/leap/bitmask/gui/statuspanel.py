@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Status Panel widget implementation
 """
@@ -25,9 +24,10 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+from leap.bitmask.services.eip.connection import EIPConnection
 from leap.bitmask.services.eip.vpnprocess import VPNManager
 from leap.bitmask.platform_init import IS_WIN, IS_LINUX
-from leap.bitmask.util import first
+from leap.bitmask.util.averages import RateMovingAverage
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
@@ -37,83 +37,10 @@ from ui_statuspanel import Ui_StatusPanel
 logger = logging.getLogger(__name__)
 
 
-class RateMovingAverage(object):
-    """
-    Moving window average for calculating
-    upload and download rates.
-    """
-    SAMPLE_SIZE = 5
-
-    def __init__(self):
-        """
-        Initializes an empty array of fixed size
-        """
-        self.reset()
-
-    def reset(self):
-        self._data = [None for i in xrange(self.SAMPLE_SIZE)]
-
-    def append(self, x):
-        """
-        Appends a new data point to the collection.
-
-        :param x: A tuple containing timestamp and traffic points
-                  in the form (timestamp, traffic)
-        :type x: tuple
-        """
-        self._data.pop(0)
-        self._data.append(x)
-
-    def get(self):
-        """
-        Gets the collection.
-        """
-        return self._data
-
-    def get_average(self):
-        """
-        Gets the moving average.
-        """
-        data = filter(None, self.get())
-        traff = [traffic for (ts, traffic) in data]
-        times = [ts for (ts, traffic) in data]
-
-        try:
-            deltatraffic = traff[-1] - first(traff)
-            deltat = (times[-1] - first(times)).seconds
-        except IndexError:
-            deltatraffic = 0
-            deltat = 0
-
-        try:
-            rate = float(deltatraffic) / float(deltat) / 1024
-        except ZeroDivisionError:
-            rate = 0
-
-        # In some cases we get negative rates
-        if rate < 0:
-            rate = 0
-
-        return rate
-
-    def get_total(self):
-        """
-        Gets the total accumulated throughput.
-        """
-        try:
-            return self._data[-1][1] / 1024
-        except TypeError:
-            return 0
-
-
 class StatusPanelWidget(QtGui.QWidget):
     """
     Status widget that displays the current state of the LEAP services
     """
-
-    start_eip = QtCore.Signal()
-    stop_eip = QtCore.Signal()
-
     DISPLAY_TRAFFIC_RATES = True
     RATE_STR = "%14.2f KB/s"
     TOTAL_STR = "%14.2f Kb"
@@ -121,6 +48,7 @@ class StatusPanelWidget(QtGui.QWidget):
     MAIL_OFF_ICON = ":/images/mail-unlocked.png"
     MAIL_ON_ICON = ":/images/mail-locked.png"
 
+    eip_connection_connected = QtCore.Signal()
     _soledad_event = QtCore.Signal(object)
     _smtp_event = QtCore.Signal(object)
     _imap_event = QtCore.Signal(object)
@@ -135,9 +63,7 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui = Ui_StatusPanel()
         self.ui.setupUi(self)
 
-        self.ui.btnEipStartStop.setEnabled(False)
-        self.ui.btnEipStartStop.clicked.connect(
-            self.start_eip)
+        self.eipconnection = EIPConnection()
 
         self.hide_status_box()
 
@@ -330,6 +256,8 @@ class StatusPanelWidget(QtGui.QWidget):
         self.CONNECTED_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[1])
         self.ERROR_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[2])
 
+    # Systray and actions
+
     def set_systray(self, systray):
         """
         Sets the systray object to use.
@@ -401,6 +329,25 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         self.ui.globalStatusBox.hide()
 
+    # EIP status ---
+
+    @property
+    def eip_button(self):
+        return self.ui.btnEipStartStop
+
+    @property
+    def eip_label(self):
+        return self.ui.lblEIPStatus
+
+    def eip_pre_up(self):
+        """
+        Triggered when the app activates eip.
+        Hides the status box and disables the start/stop button.
+        """
+        self.hide_status_box()
+        self.set_startstop_enabled(False)
+
+    # XXX disable (later) --------------------------
     def set_eip_status(self, status, error=False):
         """
         Sets the status label at the VPN stage to status
@@ -420,6 +367,7 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui.lblEIPStatus.setText(status)
         self._update_systray_tooltip()
 
+    # XXX disable ---------------------------------
     def set_startstop_enabled(self, value):
         """
         Enable or disable btnEipStartStop and _action_eip_startstop
@@ -432,14 +380,7 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui.btnEipStartStop.setEnabled(value)
         self._action_eip_startstop.setEnabled(value)
 
-    def eip_pre_up(self):
-        """
-        Triggered when the app activates eip.
-        Hides the status box and disables the start/stop button.
-        """
-        self.hide_status_box()
-        self.set_startstop_enabled(False)
-
+    # XXX disable -----------------------------
     def eip_started(self):
         """
         Sets the state of the widget to how it should look after EIP
@@ -448,27 +389,21 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui.btnEipStartStop.setText(self.tr("Turn OFF"))
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
-            self.stop_eip)
+            self.eipconnection.qtsigs.do_connect_signal)
 
+    # XXX disable -----------------------------
     def eip_stopped(self):
         """
         Sets the state of the widget to how it should look after EIP
         has stopped
         """
+        # XXX should connect this to EIPConnection.disconnected_signal
         self._reset_traffic_rates()
+        # XXX disable -----------------------------
         self.ui.btnEipStartStop.setText(self.tr("Turn ON"))
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
-            self.start_eip)
-
-    def set_icon(self, icon):
-        """
-        Sets the icon to display for EIP
-
-        :param icon: icon to display
-        :type icon: QPixmap
-        """
-        self.ui.lblVPNStatusIcon.setPixmap(icon)
+            self.eipconnection.qtsigs.do_disconnect_signal)
 
     def update_vpn_status(self, data):
         """
@@ -507,14 +442,21 @@ class StatusPanelWidget(QtGui.QWidget):
         TRIGGER: VPN.state_changed
 
         Updates the displayed VPN state based on the data provided by
-        the VPN thread
+        the VPN thread.
+
+        Emits:
+            If the status is connected, we emit EIPConnection.qtsigs.
+            connected_signal
         """
         status = data[VPNManager.STATUS_STEP_KEY]
         self.set_eip_status_icon(status)
         if status == "CONNECTED":
+            # XXX should be handled by the state machine too.
             self.set_eip_status(self.tr("ON"))
-            # Only now we can properly enable the button.
-            self.set_startstop_enabled(True)
+            logger.debug("STATUS IS CONNECTED --- emitting signal")
+            self.eip_connection_connected.emit()
+
+        # XXX should lookup status map in EIPConnection
         elif status == "AUTH":
             self.set_eip_status(self.tr("Authenticating..."))
         elif status == "GET_CONFIG":
@@ -528,13 +470,23 @@ class StatusPanelWidget(QtGui.QWidget):
         elif status == "ALREADYRUNNING":
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
-            QtCore.QTimer.singleShot(0, self.stop_eip)
+            QtCore.QTimer.singleShot(
+                0, self.eipconnection.qtsigs.do_disconnect_signal)
             QtCore.QTimer.singleShot(0, partial(self.set_global_status,
                                                 self.tr("Unable to start VPN, "
                                                         "it's already "
                                                         "running.")))
         else:
             self.set_eip_status(status)
+
+    def set_eip_icon(self, icon):
+        """
+        Sets the icon to display for EIP
+
+        :param icon: icon to display
+        :type icon: QPixmap
+        """
+        self.ui.lblVPNStatusIcon.setPixmap(icon)
 
     def set_eip_status_icon(self, status):
         """
@@ -556,12 +508,16 @@ class StatusPanelWidget(QtGui.QWidget):
             selected_pixmap = self.CONNECTED_ICON
             selected_pixmap_tray = self.CONNECTED_ICON_TRAY
 
-        self.set_icon(selected_pixmap)
+        self.set_eip_icon(selected_pixmap)
         self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
         self._eip_status_menu.setTitle(tray_message)
 
     def set_provider(self, provider):
         self.ui.lblProvider.setText(provider)
+
+    #
+    # mail methods
+    #
 
     def _set_mail_status(self, status, ready=False):
         """
@@ -742,7 +698,7 @@ class StatusPanelWidget(QtGui.QWidget):
                 self.ui.lblUnread.setVisible(req.content != "0")
                 self._set_mail_status(self.tr("ON"), ready=True)
         else:
-            leap_assert(False,
+            leap_assert(False,  # XXX ???
                         "Don't know how to handle this state: %s"
                         % (req.event))
 

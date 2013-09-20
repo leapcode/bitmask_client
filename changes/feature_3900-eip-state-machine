@@ -1,0 +1,1 @@
+  o Refactors EIPConnection to use LEAPConnection state machine. Closes: #3900
