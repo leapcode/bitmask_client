@@ -25,8 +25,9 @@ Install dependencies
 ^^^^^^^^^^^^^^^^^^^^
 First, install all the base dependencies plus git, virtualenv and development files needed to compile several extensions::
 
-   apt-get install openvpn git-core python-dev python-qt4 python-setuptools python-virtualenv
+   apt-get install openvpn git-core python-dev python-pyside python-setuptools python-virtualenv
 
+.. TODO Should review these dependencies. ^^
 
 Bootstrap script
 ^^^^^^^^^^^^^^^^
@@ -41,12 +42,12 @@ Download and source the following script in the parent folder where you want you
 .. code-block:: bash
 
    cd /tmp
-   wget https://raw.github.com/leapcode/leap_client/develop/pkg/scripts/bitmask_bootstrap.sh
+   wget https://raw.github.com/leapcode/bitmask_client/develop/pkg/scripts/bitmask_bootstrap.sh
    source bitmask_bootstrap.sh
 
 Tada! If everything went well, you should be able to run bitmask by typing::
 
-    bin/bitmask
+    bitmask
 
 Noticed that your prompt changed? That was *virtualenv*. Keep reading...
 

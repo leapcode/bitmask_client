@@ -14,25 +14,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 EIP bootstrapping
 """
-
 import logging
 import os
 
 from PySide import QtCore
 
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.crypto.srpauth import SRPAuth
-from leap.bitmask.services.eip.eipconfig import EIPConfig
-from leap.bitmask.util.request_helpers import get_content
-from leap.bitmask.util.constants import REQUEST_TIMEOUT
+from leap.bitmask.crypto.certs import download_client_cert
+from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
-from leap.common import certs
+from leap.bitmask.services.eip.eipconfig import EIPConfig
+from leap.common import certs as leap_certs
+from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
+from leap.common.files import check_and_fix_urw_only
 
 logger = logging.getLogger(__name__)
 
@@ -63,50 +61,15 @@ class EIPBootstrapper(AbstractBootstrapper):
 
         leap_assert(self._provider_config,
                     "We need a provider configuration!")
-
         logger.debug("Downloading EIP config for %s" %
                      (self._provider_config.get_domain(),))
 
-        api_version = self._provider_config.get_api_version()
         self._eip_config = EIPConfig()
-        self._eip_config.set_api_version(api_version)
-
-        headers = {}
-        mtime = get_mtime(os.path.join(self._eip_config
-                                       .get_path_prefix(),
-                                       "leap",
-                                       "providers",
-                                       self._provider_config.get_domain(),
-                                       "eip-service.json"))
-
-        if self._download_if_needed and mtime:
-            headers['if-modified-since'] = mtime
-
-        # there is some confusion with this uri,
-        # it's in 1/config/eip, config/eip and config/1/eip...
-        config_uri = "%s/%s/config/eip-service.json" % (
-            self._provider_config.get_api_uri(),
-            api_version)
-        logger.debug('Downloading eip config from: %s' % config_uri)
-
-        res = self._session.get(config_uri,
-                                verify=self._provider_config
-                                .get_ca_cert_path(),
-                                headers=headers,
-                                timeout=REQUEST_TIMEOUT)
-        res.raise_for_status()
-
-        # Not modified
-        if res.status_code == 304:
-            logger.debug("EIP definition has not been modified")
-        else:
-            eip_definition, mtime = get_content(res)
-
-            self._eip_config.load(data=eip_definition, mtime=mtime)
-            self._eip_config.save(["leap",
-                                   "providers",
-                                   self._provider_config.get_domain(),
-                                   "eip-service.json"])
+        download_service_config(
+            self._provider_config,
+            self._eip_config,
+            self._session,
+            self._download_if_needed)
 
     def _download_client_certificates(self, *args):
         """
@@ -124,40 +87,17 @@ class EIPBootstrapper(AbstractBootstrapper):
 
         # For re-download if something is wrong with the cert
         self._download_if_needed = self._download_if_needed and \
-            not certs.should_redownload(client_cert_path)
+            not leap_certs.should_redownload(client_cert_path)
 
         if self._download_if_needed and \
-                os.path.exists(client_cert_path):
+                os.path.isfile(client_cert_path):
             check_and_fix_urw_only(client_cert_path)
             return
 
-        srp_auth = SRPAuth(self._provider_config)
-        session_id = srp_auth.get_session_id()
-        cookies = None
-        if session_id:
-            cookies = {"_session_id": session_id}
-        cert_uri = "%s/%s/cert" % (
-            self._provider_config.get_api_uri(),
-            self._provider_config.get_api_version())
-        logger.debug('getting cert from uri: %s' % cert_uri)
-        res = self._session.get(cert_uri,
-                                verify=self._provider_config
-                                .get_ca_cert_path(),
-                                cookies=cookies,
-                                timeout=REQUEST_TIMEOUT)
-        res.raise_for_status()
-        client_cert = res.content
-
-        if not certs.is_valid_pemfile(client_cert):
-            raise Exception(self.tr("The downloaded certificate is not a "
-                                    "valid PEM file"))
-
-        mkdir_p(os.path.dirname(client_cert_path))
-
-        with open(client_cert_path, "w") as f:
-            f.write(client_cert)
-
-        check_and_fix_urw_only(client_cert_path)
+        download_client_cert(
+            self._provider_config,
+            client_cert_path,
+            self._session)
 
     def run_eip_setup_checks(self,
                              provider_config,

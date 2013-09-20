@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# keyring_helpers.py
+# flags.py
 # Copyright (C) 2013 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,34 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Keyring helpers.
+This file is meant to be used to store global flags that affect the
+application.
+
+WARNING: You should NOT use this kind of flags unless you're sure of what
+         you're doing, and someone else tells you that you're right.
+         Most of the times there is a better and safer alternative.
 """
-import logging
 
-import keyring
-
-from keyring.backends.file import EncryptedKeyring, PlaintextKeyring
-
-logger = logging.getLogger(__name__)
-
-
-OBSOLETE_KEYRINGS = [
-    EncryptedKeyring,
-    PlaintextKeyring
-]
-
-
-def has_keyring():
-    """
-    Returns whether we have an useful keyring to use.
-
-    :rtype: bool
-    """
-    kr = keyring.get_keyring()
-    klass = kr.__class__
-    logger.debug("Selected keyring: %s" % (klass,))
-
-    canuse = kr is not None and klass not in OBSOLETE_KEYRINGS
-    if not canuse:
-        logger.debug("Not using this keyring since it is obsolete")
-    return canuse
+# The STANDALONE flag is used to:
+#   - define a different set of messages for the application when is running
+#     inside of a bundle or installed system wide.
+#   - use a relative or system wide path to find the configuration files.
+#   - search for binaries inside the bundled app instead of the system ones.
+#     e.g.: openvpn, gpg
+STANDALONE = False

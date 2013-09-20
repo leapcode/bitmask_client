@@ -26,11 +26,13 @@ import socket
 from PySide import QtCore
 from u1db import errors as u1db_errors
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
 from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
 from leap.keymanager import KeyManager, openpgp
@@ -120,8 +122,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         srp_auth = self.srpauth
         uuid = srp_auth.get_uid()
 
-        prefix = os.path.join(self._soledad_config.get_path_prefix(),
-                              "leap", "soledad")
+        prefix = os.path.join(get_path_prefix(), "leap", "soledad")
         secrets_path = "%s/%s.secret" % (prefix, uuid)
         local_db_path = "%s/%s.db" % (prefix, uuid)
 
@@ -186,11 +187,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         headers = {}
         mtime = get_mtime(
-            os.path.join(
-                self._soledad_config.get_path_prefix(),
-                "leap", "providers",
-                self._provider_config.get_domain(),
-                "soledad-service.json"))
+            os.path.join(get_path_prefix(), "leap", "providers",
+                         self._provider_config.get_domain(),
+                         "soledad-service.json"))
 
         if self._download_if_needed and mtime:
             headers['if-modified-since'] = mtime
@@ -256,8 +255,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # TODO: Fix for Windows
         gpgbin = "/usr/bin/gpg"
 
-        if self._standalone:
-            gpgbin = os.path.join(self._provider_config.get_path_prefix(),
+        if flags.STANDALONE:
+            gpgbin = os.path.join(get_path_prefix(),
                                   "..", "apps", "mail", "gpg")
 
         self._keymanager = KeyManager(
@@ -284,8 +283,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                                  provider_config,
                                  user,
                                  password,
-                                 download_if_needed=False,
-                                 standalone=False):
+                                 download_if_needed=False):
         """
         Starts the checks needed for a new soledad setup
 
@@ -299,9 +297,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
                                    files if the have changed since the
                                    time it was previously downloaded.
         :type download_if_needed: bool
-        :param standalone: If True, it'll look for paths inside the
-                           bundle (like for gpg)
-        :type standalone: bool
         """
         leap_assert_type(provider_config, ProviderConfig)
 
@@ -310,7 +305,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._download_if_needed = download_if_needed
         self._user = user
         self._password = password
-        self._standalone = standalone
 
         cb_chain = [
             (self._download_config, self.download_config),

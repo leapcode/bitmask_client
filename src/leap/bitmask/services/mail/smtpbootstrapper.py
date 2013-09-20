@@ -14,22 +14,21 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 SMTP bootstrapping
 """
-
 import logging
 import os
 
 from PySide import QtCore
 
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.crypto.srpauth import SRPAuth
-from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.crypto.certs import download_client_cert
+from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
+from leap.common import certs as leap_certs
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.files import get_mtime
+from leap.common.files import check_and_fix_urw_only
 
 logger = logging.getLogger(__name__)
 
@@ -61,55 +60,45 @@ class SMTPBootstrapper(AbstractBootstrapper):
         logger.debug("Downloading SMTP config for %s" %
                      (self._provider_config.get_domain(),))
 
-        headers = {}
-        mtime = get_mtime(os.path.join(self._smtp_config
-                                       .get_path_prefix(),
-                                       "leap",
-                                       "providers",
-                                       self._provider_config.get_domain(),
-                                       "smtp-service.json"))
+        download_service_config(
+            self._provider_config,
+            self._smtp_config,
+            self._session,
+            self._download_if_needed)
 
-        if self._download_if_needed and mtime:
-            headers['if-modified-since'] = mtime
+    def _download_client_certificates(self, *args):
+        """
+        Downloads the SMTP client certificate for the given provider
 
-        api_version = self._provider_config.get_api_version()
+        We actually are downloading the certificate for the same uri as
+        for the EIP config, but we duplicate these bits to allow mail
+        service to be working in a provider that does not offer EIP.
+        """
+        # TODO factor out with eipboostrapper.download_client_certificates
+        # TODO this shouldn't be a private method, it's called from
+        # mainwindow.
+        leap_assert(self._provider_config, "We need a provider configuration!")
+        leap_assert(self._smtp_config, "We need an smtp configuration!")
 
-        # there is some confusion with this uri,
-        config_uri = "%s/%s/config/smtp-service.json" % (
-            self._provider_config.get_api_uri(), api_version)
+        logger.debug("Downloading SMTP client certificate for %s" %
+                     (self._provider_config.get_domain(),))
 
-        logger.debug('Downloading SMTP config from: %s' % config_uri)
+        client_cert_path = self._smtp_config.\
+            get_client_cert_path(self._provider_config,
+                                 about_to_download=True)
 
-        srp_auth = SRPAuth(self._provider_config)
-        session_id = srp_auth.get_session_id()
-        cookies = None
-        if session_id:
-            cookies = {"_session_id": session_id}
+        # For re-download if something is wrong with the cert
+        self._download_if_needed = self._download_if_needed and \
+            not leap_certs.should_redownload(client_cert_path)
 
-        res = self._session.get(config_uri,
-                                verify=self._provider_config
-                                .get_ca_cert_path(),
-                                headers=headers,
-                                cookies=cookies)
-        res.raise_for_status()
+        if self._download_if_needed and \
+                os.path.isfile(client_cert_path):
+            check_and_fix_urw_only(client_cert_path)
+            return
 
-        self._smtp_config.set_api_version(api_version)
-
-        # Not modified
-        if res.status_code == 304:
-            logger.debug("SMTP definition has not been modified")
-            self._smtp_config.load(os.path.join(
-                "leap", "providers",
-                self._provider_config.get_domain(),
-                "smtp-service.json"))
-        else:
-            smtp_definition, mtime = get_content(res)
-
-            self._smtp_config.load(data=smtp_definition, mtime=mtime)
-            self._smtp_config.save(["leap",
-                                    "providers",
-                                    self._provider_config.get_domain(),
-                                    "smtp-service.json"])
+        download_client_cert(self._provider_config,
+                             client_cert_path,
+                             self._session)
 
     def run_smtp_setup_checks(self,
                               provider_config,

@@ -38,6 +38,8 @@ general options
 
 **-s, --standalone**          Makes Bitmask use standalone directories for configuration and binary searching.
 
+**-V, --version**             Displays Bitmask version and exits.
+
 
 openvpn options
 ---------------

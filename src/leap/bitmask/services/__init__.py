@@ -17,13 +17,29 @@
 """
 Services module.
 """
+import logging
+import os
+
 from PySide import QtCore
+
+from leap.bitmask.config import flags
+from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
+from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.util import get_path_prefix
+
+from leap.common.check import leap_assert
+from leap.common.config.baseconfig import BaseConfig
+from leap.common.files import get_mtime
+
+logger = logging.getLogger(__name__)
+
 
 DEPLOYED = ["openvpn", "mx"]
 
 
-def get_service_display_name(service, standalone=False):
+def get_service_display_name(service):
     """
     Returns the name to display of the given service.
     If there is no configured name for that service, then returns the same
@@ -31,9 +47,6 @@ def get_service_display_name(service, standalone=False):
 
     :param service: the 'machine' service name
     :type service: str
-    :param standalone: True if the app is running in a standalone mode, used
-                       to display messages according that.
-    :type standalone: bool
 
     :rtype: str
     """
@@ -53,7 +66,7 @@ def get_service_display_name(service, standalone=False):
     # administrative permissions to start. That can be either
     # because we are running in standalone mode, or because we could
     # not find the needed privilege escalation mechanisms being operative.
-    if standalone or is_missing_policy_permissions():
+    if flags.STANDALONE or is_missing_policy_permissions():
         EIP_LABEL += " " + _tr("(will need admin password to start)")
 
     return service_display.get(service, service)
@@ -70,3 +83,87 @@ def get_supported(services):
     :rtype: list of str
     """
     return filter(lambda s: s in DEPLOYED, services)
+
+
+def download_service_config(provider_config, service_config,
+                            session,
+                            download_if_needed=True):
+    """
+    Downloads config for a given service.
+
+    :param provider_config: an instance of ProviderConfig
+    :type provider_config: ProviderConfig
+
+    :param service_config: an instance of a particular Service config.
+    :type service_config: BaseConfig
+
+    :param session: an instance of a fetcher.session
+                    (currently we're using requests only, but it can be
+                    anything that implements that interface)
+    :type session: requests.sessions.Session
+    """
+    service_name = service_config.name
+    service_json = "{0}-service.json".format(service_name)
+    headers = {}
+    mtime = get_mtime(os.path.join(get_path_prefix(),
+                                   "leap", "providers",
+                                   provider_config.get_domain(),
+                                   service_json))
+    if download_if_needed and mtime:
+        headers['if-modified-since'] = mtime
+
+    api_version = provider_config.get_api_version()
+
+    config_uri = "%s/%s/config/%s-service.json" % (
+        provider_config.get_api_uri(),
+        api_version,
+        service_name)
+    logger.debug('Downloading %s config from: %s' % (
+        service_name.upper(),
+        config_uri))
+
+    # XXX make and use @with_srp_auth decorator
+    srp_auth = SRPAuth(provider_config)
+    session_id = srp_auth.get_session_id()
+    cookies = None
+    if session_id:
+        cookies = {"_session_id": session_id}
+
+    res = session.get(config_uri,
+                      verify=provider_config.get_ca_cert_path(),
+                      headers=headers,
+                      timeout=REQUEST_TIMEOUT,
+                      cookies=cookies)
+    res.raise_for_status()
+
+    service_config.set_api_version(api_version)
+
+    # Not modified
+    service_path = ("leap", "providers", provider_config.get_domain(),
+                    service_json)
+    if res.status_code == 304:
+        logger.debug(
+            "{0} definition has not been modified".format(
+                service_name.upper()))
+        service_config.load(os.path.join(*service_path))
+    else:
+        service_definition, mtime = get_content(res)
+        service_config.load(data=service_definition, mtime=mtime)
+        service_config.save(service_path)
+
+
+class ServiceConfig(BaseConfig):
+    """
+    Base class used by the different service configs
+    """
+
+    _service_name = None
+
+    @property
+    def name(self):
+        """
+        Getter for the service name.
+        Derived classes should assign it.
+        """
+        leap_assert(self._service_name is not None)
+        return self._service_name

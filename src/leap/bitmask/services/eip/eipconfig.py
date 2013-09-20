@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Provider configuration
 """
@@ -26,9 +25,10 @@ import time
 import ipaddr
 
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.services import ServiceConfig
 from leap.bitmask.services.eip.eipspec import get_schema
+from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.config.baseconfig import BaseConfig
 
 logger = logging.getLogger(__name__)
 
@@ -144,15 +144,17 @@ class VPNGatewaySelector(object):
         return -local_offset / 3600
 
 
-class EIPConfig(BaseConfig):
+class EIPConfig(ServiceConfig):
     """
     Provider configuration abstraction class
     """
+    _service_name = "eip"
+
     OPENVPN_ALLOWED_KEYS = ("auth", "cipher", "tls-cipher")
     OPENVPN_CIPHERS_REGEX = re.compile("[A-Z0-9\-]+")
 
     def __init__(self):
-        BaseConfig.__init__(self)
+        ServiceConfig.__init__(self)
         self._api_version = None
 
     def _get_schema(self):
@@ -236,13 +238,10 @@ class EIPConfig(BaseConfig):
         leap_assert(providerconfig, "We need a provider")
         leap_assert_type(providerconfig, ProviderConfig)
 
-        cert_path = os.path.join(self.get_path_prefix(),
-                                 "leap",
-                                 "providers",
+        cert_path = os.path.join(get_path_prefix(),
+                                 "leap", "providers",
                                  providerconfig.get_domain(),
-                                 "keys",
-                                 "client",
-                                 "openvpn.pem")
+                                 "keys", "client", "openvpn.pem")
 
         if not about_to_download:
             leap_assert(os.path.exists(cert_path),

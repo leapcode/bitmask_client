@@ -33,7 +33,7 @@ echo "${cc_green}Installing bitmask...${cc_normal}"
 # change "develop" for any other branch you want.
 
 
-pip install -e 'git://leap.se/leap_client@develop#egg=leap.bitmask'
+pip install -e 'git+https://leap.se/git/bitmask_client@develop#egg=leap.bitmask'
 
 cd bitmask-testbuild
 
