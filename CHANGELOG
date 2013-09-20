@@ -1,3 +1,33 @@
+0.3.3 Sep 20 -- "the calm after the tempest" release:
+  o Remove execution bits in text files in bundle. Closes #3617.
+  o Use generic bad username/password message instead of specific ones when
+    the user uses incorrect data during login. Closes #3656.
+  o Fix LoggerWindow saving more than one line return per line in the logs
+    file. Closes #3714.
+  o Fix keyring imports so we do not get import errors. Closes: #3759
+  o Catch logout problem, display a user message and allow log back in after a
+    successful logout if there was a logout error before. Closes #3774.
+  o Fix path prefix helper for the bundle and add regresion tests. Closes #3778.
+  o Prevent dialogs closing the app when it has been minimized to the tray. Closes #3791.
+  o Do not try to install resolv-update globally. Closes: #3803
+  o Inconsistent hide/show main window from tray action. Closes #3821.
+  o Allow SMTP to start even when provider does not offer EIP. Closes: #3847
+  o Fix username case problem at register/login. Closes #3857.
+  o Catch IndexError on `first` utility.
+  o Update git repo name in docs. Closes: #3417
+  o Move STANDALONE flag to a module and unify get_path_prefix queries.
+    Closes #3636.
+  o Display the Encrypted Internet and Encrypted Email status in the systray
+    tooltip. Closes #3758.
+  o Tasktray menu changes, closes #3792.
+    - Remove the provider domain item (e.g. bitmask.net).
+    - Rename the EIP status menu items to be more descriptive.
+    - Change the EIP status menu items from disabled menu items
+      to submenus with children.
+    - Move the EIP action menu items under the EIP status submenu tree.
+  o Adds --version flag. Closes: #3816
+  o Refactors EIPConnection to use LEAPConnection state machine. Closes: #3900
+
 0.3.2 Sep 6 -- the "no crashes or anything" release:
   o Fix up script in non-bundle linuces. Closes: #3450
   o Logout stops imap and smtp services. Closes: #3553

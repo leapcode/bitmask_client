@@ -1,1 +1,0 @@
-  o Prevent dialogs closing the app when it has been minimized to the tray. Closes #3791.

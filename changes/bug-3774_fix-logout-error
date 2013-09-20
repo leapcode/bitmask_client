@@ -1,2 +1,0 @@
-  o Catch logout problem, display a user message and allow log back in after a
-    successful logout if there was a logout error before. Closes #3774.

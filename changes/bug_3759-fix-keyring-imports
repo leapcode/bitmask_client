@@ -1,1 +1,0 @@
-  o Fix keyring imports so we do not get import errors. Closes: #3759
