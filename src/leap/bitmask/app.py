@@ -152,12 +152,6 @@ def main():
     """
     Starts the main event loop and launches the main window.
     """
-    try:
-        event_server.ensure_server(event_server.SERVER_PORT)
-    except Exception as e:
-        # We don't even have logger configured in here
-        print "Could not ensure server: %r" % (e,)
-
     _, opts = leap_argparse.init_leapc_args()
 
     if opts.version:
@@ -169,6 +163,12 @@ def main():
     debug = opts.debug
     logfile = opts.log_file
     openvpn_verb = opts.openvpn_verb
+
+    try:
+        event_server.ensure_server(event_server.SERVER_PORT)
+    except Exception as e:
+        # We don't even have logger configured in here
+        print "Could not ensure server: %r" % (e,)
 
     #############################################################
     # Given how paths and bundling works, we need to delay the imports

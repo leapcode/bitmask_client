@@ -1,0 +1,1 @@
+  o Avoid error message if --version flag is used. Closes #3914.
