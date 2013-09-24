@@ -179,6 +179,9 @@ def main():
     flags.STANDALONE = standalone
     BaseConfig.standalone = standalone
 
+    logger = add_logger_handlers(debug, logfile)
+    replace_stdout_stderr_with_logging(logger)
+
     # And then we import all the other stuff
     from leap.bitmask.gui import locale_rc
     from leap.bitmask.gui import twisted_main
@@ -189,9 +192,6 @@ def main():
 
     # pylint: avoid unused import
     assert(locale_rc)
-
-    logger = add_logger_handlers(debug, logfile)
-    replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
         # Bitmask is already running
