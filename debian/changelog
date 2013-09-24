@@ -1,3 +1,9 @@
+bitmask (0.3.3) unstable; urgency=low
+
+  * Update to 0.3.3 release.
+
+ -- Micah Anderson <micah@debian.org>  Tue, 24 Sep 2013 17:07:42 -0400
+
 bitmask (0.3.2) unstable; urgency=low
 
   * Merge master for 0.3.2 release.
