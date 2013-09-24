@@ -16,11 +16,10 @@ twisted
 qt4reactor
 python-gnupg
 python-daemon # this should not be needed for Windows.
-
-keyring<=2.9  # See #3759
+keyring
 
 leap.common>=0.3.2
-leap.soledad.client>=0.3.0
+leap.soledad.client>=0.4.0
 leap.keymanager>=0.2.0
 leap.mail>=0.3.2
 

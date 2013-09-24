@@ -171,6 +171,9 @@ class SRPAuth(QtCore.QObject):
             self._srp_user = None
             self._srp_a = None
 
+            # Error msg displayed if the username or the password is invalid
+            self._WRONG_USER_PASS = self.tr("Invalid username or password.")
+
             # User credentials stored for password changing checks
             self._username = None
             self._password = None
@@ -199,8 +202,6 @@ class SRPAuth(QtCore.QObject):
             :type password: str
             """
             logger.debug("Authentication preprocessing...")
-
-            username = username.lower()
 
             self._srp_user = self._srp.User(username,
                                             password,
@@ -265,7 +266,7 @@ class SRPAuth(QtCore.QObject):
                              "Status code = %r. Content: %r" %
                              (init_session.status_code, content))
                 if init_session.status_code == 422:
-                    raise SRPAuthUnknownUser(self.tr("Unknown user"))
+                    raise SRPAuthUnknownUser(self._WRONG_USER_PASS)
 
                 raise SRPAuthBadStatusCode(self.tr("There was a problem with"
                                                    " authentication"))
@@ -354,7 +355,7 @@ class SRPAuth(QtCore.QObject):
                                  "received: %s", (content,))
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
                              (auth_result.status_code, error))
-                raise SRPAuthBadPassword(self.tr("Wrong password"))
+                raise SRPAuthBadPassword(self._WRONG_USER_PASS)
 
             if auth_result.status_code not in (200,):
                 logger.error("No valid response (HAMK): "
@@ -506,7 +507,7 @@ class SRPAuth(QtCore.QObject):
             leap_assert(self.get_session_id() is None, "Already logged in")
 
             # User credentials stored for password changing checks
-            self._username = username.lower()
+            self._username = username
             self._password = password
 
             d = threads.deferToThread(self._authentication_preprocessing,
@@ -553,6 +554,7 @@ class SRPAuth(QtCore.QObject):
             except Exception as e:
                 logger.warning("Something went wrong with the logout: %r" %
                                (e,))
+                raise
             else:
                 self.set_session_id(None)
                 self.set_uid(None)
@@ -614,7 +616,7 @@ class SRPAuth(QtCore.QObject):
         :param password: password for this user
         :type password: str
         """
-
+        username = username.lower()
         d = self.__instance.authenticate(username, password)
         d.addCallback(self._gui_notify)
         d.addErrback(self._errback)

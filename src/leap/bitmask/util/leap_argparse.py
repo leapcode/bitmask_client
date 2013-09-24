@@ -27,7 +27,7 @@ def build_parser():
     All the options for the leap arg parser
     Some of these could be switched on only if debug flag is present!
     """
-    epilog = "Copyright 2012 The LEAP Encryption Access Project"
+    epilog = "Copyright 2012-2013 The LEAP Encryption Access Project"
     parser = argparse.ArgumentParser(description="""
 Launches Bitmask""", epilog=epilog)
     parser.add_argument('-d', '--debug', action="store_true",
@@ -50,6 +50,8 @@ Launches Bitmask""", epilog=epilog)
                         help='Makes Bitmask use standalone'
                         'directories for configuration and binary'
                         'searching')
+    parser.add_argument('-V', '--version', action="store_true",
+                        help='Displays Bitmask version and exits')
 
     # Not in use, we might want to reintroduce them.
     #parser.add_argument('-i', '--no-provider-checks',

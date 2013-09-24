@@ -34,15 +34,18 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 from time import sleep
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.bitmask.util import first
+from leap.bitmask.util import get_path_prefix
 from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
 from leap.bitmask.util import privilege_policies
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import which
+
 
 logger = logging.getLogger(__name__)
 
@@ -98,14 +101,11 @@ class VPNLauncher(object):
         return []
 
     @abstractmethod
-    def get_vpn_env(self, providerconfig):
+    def get_vpn_env(self):
         """
         Returns a dictionary with the custom env for the platform.
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
-
-        :param providerconfig: provider specific configuration
-        :type providerconfig: ProviderConfig
 
         :rtype: dict
         """
@@ -220,14 +220,13 @@ def _is_auth_agent_running():
     return any(is_running)
 
 
-def _try_to_launch_agent(standalone=False):
+def _try_to_launch_agent():
     """
     Tries to launch a polkit daemon.
     """
     env = None
-    if standalone is True:
-        env = {
-            "PYTHONPATH": os.path.abspath('../../../../lib/')}
+    if flags.STANDALONE is True:
+        env = {"PYTHONPATH": os.path.abspath('../../../../lib/')}
     try:
         # We need to quote the command because subprocess call
         # will do "sh -c 'foo'", so if we do not quoute it we'll end
@@ -247,8 +246,7 @@ class LinuxVPNLauncher(VPNLauncher):
     PKEXEC_BIN = 'pkexec'
     OPENVPN_BIN = 'openvpn'
     OPENVPN_BIN_PATH = os.path.join(
-        ProviderConfig().get_path_prefix(),
-        "..", "apps", "eip", OPENVPN_BIN)
+        get_path_prefix(), "..", "apps", "eip", OPENVPN_BIN)
 
     SYSTEM_CONFIG = "/etc/leap"
     UP_DOWN_FILE = "resolv-update"
@@ -320,7 +318,7 @@ class LinuxVPNLauncher(VPNLauncher):
         """
         if _is_pkexec_in_system():
             if not _is_auth_agent_running():
-                _try_to_launch_agent(ProviderConfig.standalone)
+                _try_to_launch_agent()
                 sleep(0.5)
             if _is_auth_agent_running():
                 pkexec_possibilities = which(kls.PKEXEC_BIN)
@@ -397,10 +395,9 @@ class LinuxVPNLauncher(VPNLauncher):
         leap_assert(socket_port, "We need a socket port!")
 
         kwargs = {}
-        if ProviderConfig.standalone:
+        if flags.STANDALONE:
             kwargs['path_extension'] = os.path.join(
-                providerconfig.get_path_prefix(),
-                "..", "apps", "eip")
+                get_path_prefix(), "..", "apps", "eip")
 
         openvpn_possibilities = which(self.OPENVPN_BIN, **kwargs)
 
@@ -423,7 +420,7 @@ class LinuxVPNLauncher(VPNLauncher):
             args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateways = []
-        leap_settings = LeapSettings(ProviderConfig.standalone)
+        leap_settings = LeapSettings()
         domain = providerconfig.get_domain()
         gateway_conf = leap_settings.get_selected_gateway(domain)
 
@@ -513,23 +510,17 @@ class LinuxVPNLauncher(VPNLauncher):
 
         return [openvpn] + args
 
-    def get_vpn_env(self, providerconfig):
+    def get_vpn_env(self):
         """
         Returns a dictionary with the custom env for the platform.
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
 
-        :param providerconfig: provider specific configuration
-        :type providerconfig: ProviderConfig
-
         :rtype: dict
         """
-        leap_assert(providerconfig, "We need a provider config")
-        leap_assert_type(providerconfig, ProviderConfig)
-
-        return {"LD_LIBRARY_PATH": os.path.join(
-                providerconfig.get_path_prefix(),
-                "..", "lib")}
+        return {
+            "LD_LIBRARY_PATH": os.path.join(get_path_prefix(), "..", "lib")
+        }
 
 
 class DarwinVPNLauncher(VPNLauncher):
@@ -664,10 +655,9 @@ class DarwinVPNLauncher(VPNLauncher):
             raise EIPNoTunKextLoaded
 
         kwargs = {}
-        if ProviderConfig.standalone:
+        if flags.STANDALONE:
             kwargs['path_extension'] = os.path.join(
-                providerconfig.get_path_prefix(),
-                "..", "apps", "eip")
+                get_path_prefix(), "..", "apps", "eip")
 
         openvpn_possibilities = which(
             self.OPENVPN_BIN,
@@ -686,7 +676,7 @@ class DarwinVPNLauncher(VPNLauncher):
             args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateways = []
-        leap_settings = LeapSettings(ProviderConfig.standalone)
+        leap_settings = LeapSettings()
         domain = providerconfig.get_domain()
         gateway_conf = leap_settings.get_selected_gateway(domain)
 
@@ -787,20 +777,17 @@ class DarwinVPNLauncher(VPNLauncher):
 
         return [command] + cmd_args
 
-    def get_vpn_env(self, providerconfig):
+    def get_vpn_env(self):
         """
         Returns a dictionary with the custom env for the platform.
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
 
-        :param providerconfig: provider specific configuration
-        :type providerconfig: ProviderConfig
-
         :rtype: dict
         """
-        return {"DYLD_LIBRARY_PATH": os.path.join(
-                providerconfig.get_path_prefix(),
-                "..", "lib")}
+        return {
+            "DYLD_LIBRARY_PATH": os.path.join(get_path_prefix(), "..", "lib")
+        }
 
 
 class WindowsVPNLauncher(VPNLauncher):
@@ -852,7 +839,7 @@ class WindowsVPNLauncher(VPNLauncher):
 
         openvpn_possibilities = which(
             self.OPENVPN_BIN,
-            path_extension=os.path.join(providerconfig.get_path_prefix(),
+            path_extension=os.path.join(get_path_prefix(),
                                         "..", "apps", "eip"))
 
         if len(openvpn_possibilities) == 0:
@@ -869,7 +856,7 @@ class WindowsVPNLauncher(VPNLauncher):
             args += ['--verb', '%d' % (openvpn_verb,)]
 
         gateways = []
-        leap_settings = LeapSettings(ProviderConfig.standalone)
+        leap_settings = LeapSettings()
         domain = providerconfig.get_domain()
         gateway_conf = leap_settings.get_selected_gateway(domain)
 
@@ -936,14 +923,11 @@ class WindowsVPNLauncher(VPNLauncher):
 
         return [openvpn] + args
 
-    def get_vpn_env(self, providerconfig):
+    def get_vpn_env(self):
         """
         Returns a dictionary with the custom env for the platform.
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
-
-        :param providerconfig: provider specific configuration
-        :type providerconfig: ProviderConfig
 
         :rtype: dict
         """

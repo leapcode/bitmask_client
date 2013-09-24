@@ -14,6 +14,31 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# M:::::::MMMMMMMMMM~:::::::::::::::::::::::::::::::::::::~MMMMMMMMMM~:::::::M
+# M:::::MMM$$$$$77$MMMMN~:::::::::::::::::::::::::::::~NMMMM$77$$$$$MMM::::::M
+# M:::~MMZ$$$$$777777I8MMMM~:::::::::::::::::::::::~MMMMDI777777$$$$$$MM:::::M
+# M:::MMZ$$$$$777777IIIIIZMMMM:::::::::::::::::::MMNMZIIIII777777$$$$$$MM::::M
+# M::DMN$$$$$777777IIIIIII??7DDNM+:::::::::::=MDDD7???IIIIII777777$$$$$DMN:::M
+# M::MM$$$$$7777777IIIIIII????+?88OOMMMMMMMOO88???????IIIIIII777777$$$$$MM:::M
+# M::MM$$$$$777777IIIIIIII??????++++7ZZ$$ZI+++++??????IIIIIIII777777$$$$MM~::M
+# M:~MM$$$$77777Z8OIIIIIIII??????++++++++++++++??????IIIIIIIO8Z77777$$$$NM+::M
+# M::MM$$$777MMMMMMMMMMMZ?II???????+++++++++???????III$MMMMMMMMMMM7777$$DM$::M
+# M:~MM$$77MMMI~::::::$MMMM$?I????????????????????I$MMMMZ~::::::+MMM77$$MM~::M
+# M::MM$7777MM::::::::::::MMMMI?????????????????IMMMM:::::::::::~MM7777$MM:::M
+# M::MM777777MM~:::::::::::::MMMD?I?????????IIDMMM,:::::::::::::MM777777MM:::M
+# M::DMD7777IIMM$::::::::::::?MMM?I??????????IMMM$::::::::::::7MM7I77778MN:::M
+# M:::MM777IIIIMMMN~:::::::MMMM?II???+++++????IIMMMM::::::::MMMMIIII777MM::::M
+# M:::ZMM7IIIIIIIOMMMMMMMMMMZ?III???++++++++??III?$MMMMMMMMMMO?IIIIII7MMO::::M
+# M::::MMDIIIIIIIIII?IIIII?IIIII???+++===++++??IIIIIIII?II?IIIIIIIIII7MM:::::M
+# M:::::MM7IIIIIIIIIIIIIIIIIIIII??+++IZ$$I+++??IIIIIIIIIIIIIIIIIIIII7MM::::::M
+# M::::::MMOIIIIIIIIIIIIIIIIIIII?D888MMMMM8O8D?IIIIIIIIIIIIIIIIIIII$MM:::::::M
+# M:::::::MMM?IIIIIIIIIIIIIIII7MNMD:::::::::OMNM$IIIIIIIIIIIIIIII?MMM::::::::M
+# M::::::::NMMI?IIIIIIIIIII?OMMM:::::::::::::::MMMO?IIIIIIIIIIIIIMMN:::::::::M
+# M::::::::::MMMIIIIIIIII?8MMM:::::::::::::::::::MMM8IIIIIIIIIIMMM:::::::::::M
+# M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
+# M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
+#                (thanks to: http://www.glassgiant.com/ascii/)
 
 import logging
 import signal
@@ -24,6 +49,7 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+from leap.bitmask import __version__ as VERSION
 from leap.bitmask.util import leap_argparse
 from leap.bitmask.util import log_silencer
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
@@ -52,7 +78,7 @@ def install_qtreactor(logger):
     logger.debug("Qt4 reactor installed")
 
 
-def add_logger_handlers(debug=False, logfile=None, standalone=False):
+def add_logger_handlers(debug=False, logfile=None):
     """
     Create the logger and attach the handlers.
 
@@ -81,7 +107,7 @@ def add_logger_handlers(debug=False, logfile=None, standalone=False):
     console.setLevel(level)
     console.setFormatter(formatter)
 
-    silencer = log_silencer.SelectiveSilencerFilter(standalone=standalone)
+    silencer = log_silencer.SelectiveSilencerFilter()
     console.addFilter(silencer)
     logger.addHandler(console)
     logger.debug('Console handler plugged!')
@@ -133,6 +159,11 @@ def main():
         print "Could not ensure server: %r" % (e,)
 
     _, opts = leap_argparse.init_leapc_args()
+
+    if opts.version:
+        print "Bitmask version: %s" % (VERSION,)
+        sys.exit(0)
+
     standalone = opts.standalone
     bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
@@ -143,12 +174,10 @@ def main():
     # Given how paths and bundling works, we need to delay the imports
     # of certain parts that depend on this path settings.
     # So first we set all the places where standalone might be queried.
-    from leap.bitmask.config.providerconfig import ProviderConfig
+    from leap.bitmask.config import flags
     from leap.common.config.baseconfig import BaseConfig
-    from leap.bitmask.services.eip.eipconfig import EIPConfig
+    flags.STANDALONE = standalone
     BaseConfig.standalone = standalone
-    ProviderConfig.standalone = standalone
-    EIPConfig.standalone = standalone
 
     # And then we import all the other stuff
     from leap.bitmask.gui import locale_rc
@@ -156,13 +185,12 @@ def main():
     from leap.bitmask.gui.mainwindow import MainWindow
     from leap.bitmask.platform_init import IS_MAC
     from leap.bitmask.platform_init.locks import we_are_the_one_and_only
-    from leap.bitmask import __version__ as VERSION
     from leap.bitmask.util.requirement_checker import check_requirements
 
     # pylint: avoid unused import
     assert(locale_rc)
 
-    logger = add_logger_handlers(debug, logfile, standalone)
+    logger = add_logger_handlers(debug, logfile)
     replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
@@ -179,9 +207,6 @@ def main():
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')
-
-    ProviderConfig.standalone = standalone
-    EIPConfig.standalone = standalone
 
     # We force the style if on KDE so that it doesn't load all the kde
     # libs, which causes a compatibility issue in some systems.
@@ -223,7 +248,6 @@ def main():
 
     window = MainWindow(
         lambda: twisted_main.quit(app),
-        standalone=standalone,
         openvpn_verb=openvpn_verb,
         bypass_checks=bypass_checks)
 

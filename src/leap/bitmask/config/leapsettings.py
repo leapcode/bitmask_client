@@ -24,7 +24,7 @@ import logging
 from PySide import QtCore
 
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.config import get_path_prefix
+from leap.bitmask.util import get_path_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -71,15 +71,8 @@ class LeapSettings(object):
     # values
     GATEWAY_AUTOMATIC = "Automatic"
 
-    def __init__(self, standalone=False):
-        """
-        Constructor
-
-        :param standalone: parameter used to define the location of the config.
-        :type standalone: bool
-        """
-        self._path_prefix = get_path_prefix(standalone=standalone)
-        settings_path = os.path.join(self._path_prefix,
+    def __init__(self):
+        settings_path = os.path.join(get_path_prefix(),
                                      "leap", self.CONFIG_NAME)
 
         self._settings = QtCore.QSettings(settings_path,
@@ -132,7 +125,7 @@ class LeapSettings(object):
         # other things, not just the directories
         providers = []
         try:
-            providers_path = os.path.join(self._path_prefix,
+            providers_path = os.path.join(get_path_prefix(),
                                           "leap", "providers")
             providers = os.listdir(providers_path)
         except Exception as e:
