@@ -132,7 +132,7 @@ class VPNLauncher(object):
         Same as missing_updown_scripts but does not check for exec bit.
         :rtype: list
         """
-        leap_assert(kls.UPDOWN_FILES is not None,
+        leap_assert(kls.OTHER_FILES is not None,
                     "Need to define OTHER_FILES for this particular "
                     "auncher before calling this method")
         file_exist = partial(_has_other_files, warn=False)
@@ -261,6 +261,7 @@ class LinuxVPNLauncher(VPNLauncher):
         OPENVPN_DOWN_ROOT_BASE,
         OPENVPN_DOWN_ROOT_FILE)
 
+    UP_SCRIPT = DOWN_SCRIPT = UP_DOWN_PATH
     UPDOWN_FILES = (UP_DOWN_PATH,)
     POLKIT_PATH = LinuxPolicyChecker.get_polkit_path()
     OTHER_FILES = (POLKIT_PATH, )
@@ -357,16 +358,17 @@ class LinuxVPNLauncher(VPNLauncher):
                        "scripts will be run. DNS leaks are likely!")
         return None
 
-    def get_vpn_command(self, eipconfig=None, providerconfig=None,
-                        socket_host=None, socket_port="unix", openvpn_verb=1):
+    def get_vpn_command(self, eipconfig, providerconfig, socket_host,
+                        socket_port="unix", openvpn_verb=1):
         """
         Returns the platform dependant vpn launching command. It will
         look for openvpn in the regular paths and algo in
-        path_prefix/apps/eip/ (in case standalone is set)
+        path_prefix/apps/eip/ (in case that standalone is set)
 
         Might raise:
-            VPNLauncherException,
-            OpenVPNNotFoundException.
+            EIPNoTunKextLoaded,
+            OpenVPNNotFoundException,
+            VPNLauncherException.
 
         :param eipconfig: eip configuration object
         :type eipconfig: EIPConfig
@@ -387,12 +389,8 @@ class LinuxVPNLauncher(VPNLauncher):
         :return: A VPN command ready to be launched
         :rtype: list
         """
-        leap_assert(eipconfig, "We need an eip config")
         leap_assert_type(eipconfig, EIPConfig)
-        leap_assert(providerconfig, "We need a provider config")
         leap_assert_type(providerconfig, ProviderConfig)
-        leap_assert(socket_host, "We need a socket host!")
-        leap_assert(socket_port, "We need a socket port!")
 
         kwargs = {}
         if flags.STANDALONE:
@@ -400,17 +398,11 @@ class LinuxVPNLauncher(VPNLauncher):
                 get_path_prefix(), "..", "apps", "eip")
 
         openvpn_possibilities = which(self.OPENVPN_BIN, **kwargs)
-
         if len(openvpn_possibilities) == 0:
             raise OpenVPNNotFoundException()
 
         openvpn = first(openvpn_possibilities)
         args = []
-
-        pkexec = self.maybe_pkexec()
-        if pkexec:
-            args.append(openvpn)
-            openvpn = first(pkexec)
 
         args += [
             '--setenv', "LEAPOPENVPN", "1"
@@ -454,22 +446,23 @@ class LinuxVPNLauncher(VPNLauncher):
         ]
 
         openvpn_configuration = eipconfig.get_openvpn_configuration()
-
         for key, value in openvpn_configuration.items():
             args += ['--%s' % (key,), value]
+
+        user = getpass.getuser()
 
         ##############################################################
         # The down-root plugin fails in some situations, so we don't
         # drop privs for the time being
         ##############################################################
         # args += [
-        #     '--user', getpass.getuser(),
+        #     '--user', user,
         #     '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
         # ]
 
         if socket_port == "unix":  # that's always the case for linux
             args += [
-                '--management-client-user', getpass.getuser()
+                '--management-client-user', user
             ]
 
         args += [
@@ -478,26 +471,29 @@ class LinuxVPNLauncher(VPNLauncher):
             '--script-security', '2'
         ]
 
-        plugin_path = self.maybe_down_plugin()
-        # If we do not have the down plugin neither in the bundle
-        # nor in the system, we do not do updown scripts. The alternative
-        # is leaving the user without the ability to restore dns and routes
-        # to its original state.
-
-        if plugin_path and _has_updown_scripts(self.UP_DOWN_PATH):
+        if _has_updown_scripts(self.UP_SCRIPT):
             args += [
-                '--up', self.UP_DOWN_PATH,
-                '--down', self.UP_DOWN_PATH,
-                ##############################################################
-                # For the time being we are disabling the usage of the
-                # down-root plugin, because it doesn't quite work as
-                # expected (i.e. it doesn't run route -del as root
-                # when finishing, so it fails to properly
-                # restart/quit)
-                ##############################################################
-                # '--plugin', plugin_path,
-                # '\'script_type=down %s\'' % self.UP_DOWN_PATH
+                '--up', '\"%s\"' % (self.UP_SCRIPT,),
             ]
+
+        if _has_updown_scripts(self.DOWN_SCRIPT):
+            args += [
+                '--down', '\"%s\"' % (self.DOWN_SCRIPT,)
+            ]
+
+        ###########################################################
+        # For the time being we are disabling the usage of the
+        # down-root plugin, because it doesn't quite work as
+        # expected (i.e. it doesn't run route -del as root
+        # when finishing, so it fails to properly
+        # restart/quit)
+        ###########################################################
+        # if _has_updown_scripts(self.OPENVPN_DOWN_PLUGIN):
+        #     args += [
+        #         '--plugin', self.OPENVPN_DOWN_ROOT,
+        #         '\'%s\'' % self.DOWN_SCRIPT  # for OSX
+        #         '\'script_type=down %s\'' % self.DOWN_SCRIPT  # for Linux
+        #     ]
 
         args += [
             '--cert', eipconfig.get_client_cert_path(providerconfig),
@@ -505,10 +501,16 @@ class LinuxVPNLauncher(VPNLauncher):
             '--ca', providerconfig.get_ca_cert_path()
         ]
 
-        logger.debug("Running VPN with command:")
-        logger.debug("%s %s" % (openvpn, " ".join(args)))
+        command = [openvpn]
+        pkexec = self.maybe_pkexec()
+        if pkexec:
+            command.insert(0, first(pkexec))
 
-        return [openvpn] + args
+        command_and_args = command + args
+        logger.debug("Running VPN with command:")
+        logger.debug(" ".join(command_and_args))
+
+        return command_and_args
 
     def get_vpn_env(self):
         """
