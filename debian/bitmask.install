@@ -1,3 +1,2 @@
 pkg/linux/polkit/net.openvpn.gui.leap.policy usr/share/polkit-1/actions/
-pkg/linux/resolv-update etc/leap/
 debian/bitmask.xpm usr/share/pixmaps

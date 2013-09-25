@@ -146,7 +146,7 @@ if IS_LINUX:
     data_files = [
         ("share/polkit-1/actions",
          ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
-        ("etc/leap/",
+        ("/etc/leap/",
          ["pkg/linux/resolv-update"]),
     ]
 
