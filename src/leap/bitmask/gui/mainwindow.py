@@ -53,12 +53,12 @@ from leap.bitmask.services.eip.vpnprocess import VPN
 from leap.bitmask.services.eip.vpnprocess import OpenVPNAlreadyRunning
 from leap.bitmask.services.eip.vpnprocess import AlienOpenVPNAlreadyRunning
 
-from leap.bitmask.services.eip.vpnlaunchers import VPNLauncherException
-from leap.bitmask.services.eip.vpnlaunchers import OpenVPNNotFoundException
-from leap.bitmask.services.eip.vpnlaunchers import EIPNoPkexecAvailable
-from leap.bitmask.services.eip.vpnlaunchers import \
+from leap.bitmask.services.eip.vpnlauncher import VPNLauncherException
+from leap.bitmask.services.eip.vpnlauncher import OpenVPNNotFoundException
+from leap.bitmask.services.eip.linuxvpnlauncher import EIPNoPkexecAvailable
+from leap.bitmask.services.eip.linuxvpnlauncher import \
     EIPNoPolkitAuthAgentAvailable
-from leap.bitmask.services.eip.vpnlaunchers import EIPNoTunKextLoaded
+from leap.bitmask.services.eip.darwinvpnlauncher import EIPNoTunKextLoaded
 
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
