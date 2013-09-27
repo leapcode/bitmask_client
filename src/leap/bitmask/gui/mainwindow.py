@@ -1007,6 +1007,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         Retries soledad connection.
         """
+        # XXX should move logic to soledad boostrapper itself
         logger.debug("Retrying soledad connection.")
         if self._soledad_bootstrapper.should_retry_initialization():
             self._soledad_bootstrapper.increment_retries_count()
@@ -1031,8 +1032,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._soledad_bootstrapper.PASSED_KEY]
         if not passed:
+            # TODO should actually *display* on the panel.
             logger.debug("ERROR on soledad bootstrapping:")
-            logger.error(data[self._soledad_bootstrapper.ERROR_KEY])
+            logger.error("%r" % data[self._soledad_bootstrapper.ERROR_KEY])
             return
         else:
             logger.debug("Done bootstrapping Soledad")
