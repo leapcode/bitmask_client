@@ -1,0 +1,2 @@
+  o Improve error handling during soledad bootstrap. Closes: #3965.
+    	Affects: #3619, #3867, #3966
