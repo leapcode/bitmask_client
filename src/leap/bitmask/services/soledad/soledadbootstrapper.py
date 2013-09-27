@@ -29,13 +29,13 @@ from u1db import errors as u1db_errors
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
-from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask.util import is_file, is_empty_file
 from leap.bitmask.util import get_path_prefix
-from leap.common.files import get_mtime
 from leap.common.check import leap_assert, leap_assert_type, leap_check
+from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
 from leap.soledad.client import Soledad
@@ -58,13 +58,13 @@ class SoledadBootstrapper(AbstractBootstrapper):
     """
     Soledad init procedure
     """
-
     SOLEDAD_KEY = "soledad"
     KEYMANAGER_KEY = "keymanager"
 
     PUBKEY_KEY = "user[public_key]"
 
     MAX_INIT_RETRIES = 10
+    MAX_SYNC_RETRIES = 10
 
     # All dicts returned are of the form
     # {"passed": bool, "error": str}
@@ -80,6 +80,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._soledad_config = None
         self._keymanager = None
         self._download_if_needed = False
+
         self._user = ""
         self._password = ""
         self._srpauth = None
@@ -153,6 +154,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Once everthing is in the right place, we instantiate and sync
         Soledad
         """
+        # TODO this method is still too large
         uuid = self.srpauth.get_uid()
         token = self.srpauth.get_token()
 
@@ -162,7 +164,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         server_dict = self._soledad_config.get_hosts()
 
         if not server_dict.keys():
-            # XXX raise more specific exception
+            # XXX raise more specific exception, and catch it properly!
             raise Exception("No soledad server found")
 
         selected_server = server_dict[server_dict.keys()[0]]
@@ -170,7 +172,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
             selected_server["hostname"],
             selected_server["port"],
             uuid)
-
         logger.debug("Using soledad server url: %s" % (server_url,))
 
         cert_file = self._provider_config.get_ca_cert_path()
@@ -192,10 +193,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
                    "Null soledad, error while initializing")
 
         # and now, let's sync
-        sync_tries = 10
+        sync_tries = self.MAX_SYNC_RETRIES
         while sync_tries > 0:
             try:
                 self._try_soledad_sync()
+
+                # at this point, sometimes the client
+                # gets stuck and does not progress to
+                # the _gen_key step. XXX investigate.
                 logger.debug("Soledad has been synced.")
                 # so long, and thanks for all the fish
                 return
@@ -224,11 +229,13 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :param secrets_path: path to secrets file
         :param local_db_path: path to local db file
         :param server_url: soledad server uri
-        :cert_file:
+        :param cert_file: path to the certificate of the ca used
+                          to validate the SSL certificate used by the remote
+                          soledad server.
+        :type cert_file: str
         :param auth token: auth token
         :type auth_token: str
         """
-
         # TODO: If selected server fails, retry with another host
         # (issue #3309)
         try:
@@ -282,65 +289,57 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         leap_assert(self._provider_config,
                     "We need a provider configuration!")
-
         logger.debug("Downloading Soledad config for %s" %
                      (self._provider_config.get_domain(),))
 
         self._soledad_config = SoledadConfig()
+        download_service_config(
+            self._provider_config,
+            self._soledad_config,
+            self._session,
+            self._download_if_needed)
 
-        # TODO factor out with eip/provider configs.
-
-        headers = {}
-        mtime = get_mtime(
-            os.path.join(get_path_prefix(), "leap", "providers",
-                         self._provider_config.get_domain(),
-                         "soledad-service.json"))
-
-        if self._download_if_needed and mtime:
-            headers['if-modified-since'] = mtime
-
-        api_version = self._provider_config.get_api_version()
-
-        # there is some confusion with this uri,
-        config_uri = "%s/%s/config/soledad-service.json" % (
-            self._provider_config.get_api_uri(),
-            api_version)
-        logger.debug('Downloading soledad config from: %s' % config_uri)
-
-        # TODO factor out this srpauth protected get (make decorator)
-        srp_auth = self.srpauth
-        session_id = srp_auth.get_session_id()
-        cookies = None
-        if session_id:
-            cookies = {"_session_id": session_id}
-
-        res = self._session.get(config_uri,
-                                verify=self._provider_config
-                                .get_ca_cert_path(),
-                                headers=headers,
-                                cookies=cookies)
-        res.raise_for_status()
-
-        self._soledad_config.set_api_version(api_version)
-
-        # Not modified
-        if res.status_code == 304:
-            logger.debug("Soledad definition has not been modified")
-            self._soledad_config.load(
-                os.path.join(
-                    "leap", "providers",
-                    self._provider_config.get_domain(),
-                    "soledad-service.json"))
-        else:
-            soledad_definition, mtime = get_content(res)
-
-            self._soledad_config.load(data=soledad_definition, mtime=mtime)
-            self._soledad_config.save(["leap",
-                                       "providers",
-                                       self._provider_config.get_domain(),
-                                       "soledad-service.json"])
-
+        # soledad config is ok, let's proceed to load and sync soledad
+        # XXX but honestly, this is a pretty strange entry point for that.
+        # it feels like it should be the other way around:
+        # load_and_sync, and from there, if needed, call download_config
         self.load_and_sync_soledad()
+
+    def _get_gpg_bin_path(self):
+        """
+        Returns the path to gpg binary.
+        :returns: the gpg binary path
+        :rtype: str
+        """
+        # TODO: Fix for Windows
+        gpgbin = None
+        if flags.STANDALONE:
+            gpgbin = os.path.join(
+                get_path_prefix(), "..", "apps", "mail", "gpg")
+        else:
+            gpgbin = which("gpg")
+        leap_check(gpgbin is not None, "Could not find gpg binary")
+        return gpgbin
+
+    def _init_keymanager(self, address):
+        """
+        Initializes the keymanager.
+        :param address: the address to initialize the keymanager with.
+        :type address: str
+        """
+        srp_auth = self.srpauth
+        logger.debug('initializing keymanager...')
+        self._keymanager = KeyManager(
+            address,
+            "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
+            self._soledad,
+            #token=srp_auth.get_token(),  # TODO: enable token usage
+            session_id=srp_auth.get_session_id(),
+            ca_cert_path=self._provider_config.get_ca_cert_path(),
+            api_uri=self._provider_config.get_api_uri(),
+            api_version=self._provider_config.get_api_version(),
+            uid=srp_auth.get_uid(),
+            gpgbinary=self._get_gpg_bin_path())
 
     def _gen_key(self, _):
         """
@@ -353,33 +352,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
                     "We need a non-null soledad to generate keys")
 
         address = "%s@%s" % (self._user, self._provider_config.get_domain())
-
+        self._init_keymanager(address)
         logger.debug("Retrieving key for %s" % (address,))
 
-        srp_auth = self.srpauth
-
-        # TODO: use which implementation with known paths
-        # TODO: Fix for Windows
-        gpgbin = "/usr/bin/gpg"
-
-        if flags.STANDALONE:
-            gpgbin = os.path.join(get_path_prefix(),
-                                  "..", "apps", "mail", "gpg")
-
-        self._keymanager = KeyManager(
-            address,
-            "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
-            self._soledad,
-            #token=srp_auth.get_token(),  # TODO: enable token usage
-            session_id=srp_auth.get_session_id(),
-            ca_cert_path=self._provider_config.get_ca_cert_path(),
-            api_uri=self._provider_config.get_api_uri(),
-            api_version=self._provider_config.get_api_version(),
-            uid=srp_auth.get_uid(),
-            gpgbinary=gpgbin)
         try:
-            self._keymanager.get_key(address, openpgp.OpenPGPKey,
-                                     private=True, fetch_remote=False)
+            self._keymanager.get_key(
+                address, openpgp.OpenPGPKey, private=True, fetch_remote=False)
         except KeyNotFound:
             logger.debug("Key not found. Generating key for %s" % (address,))
             self._keymanager.gen_key(openpgp.OpenPGPKey)
