@@ -14,14 +14,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Soledad bootstrapping
 """
-
 import logging
 import os
 import socket
+
+from ssl import SSLError
 
 from PySide import QtCore
 from u1db import errors as u1db_errors
@@ -32,14 +32,26 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
 from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask.util import is_file, is_empty_file
 from leap.bitmask.util import get_path_prefix
-from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import get_mtime
+from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
 from leap.soledad.client import Soledad
 
 logger = logging.getLogger(__name__)
+
+
+# TODO these exceptions could be moved to soledad itself
+# after settling this down.
+
+class SoledadSyncError(Exception):
+    message = "Error while syncing Soledad"
+
+
+class SoledadInitError(Exception):
+    message = "Error while initializing Soledad"
 
 
 class SoledadBootstrapper(AbstractBootstrapper):
@@ -109,68 +121,159 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         self._soledad_retries += 1
 
+    def _get_db_paths(self, uuid):
+        """
+        Returns the secrets and local db paths needed for soledad
+        initialization
+
+        :param uuid: uuid for user
+        :type uuid: str
+
+        :return: a tuple with secrets, local_db paths
+        :rtype: tuple
+        """
+        prefix = os.path.join(get_path_prefix(), "leap", "soledad")
+        secrets = "%s/%s.secret" % (prefix, uuid)
+        local_db = "%s/%s.db" % (prefix, uuid)
+
+        # We remove an empty file if found to avoid complains
+        # about the db not being properly initialized
+        if is_file(local_db) and is_empty_file(local_db):
+            try:
+                os.remove(local_db)
+            except OSError:
+                logger.warning("Could not remove empty file %s"
+                               % local_db)
+        return secrets, local_db
+
     # initialization
 
     def load_and_sync_soledad(self):
         """
         Once everthing is in the right place, we instantiate and sync
         Soledad
-
-        :param srp_auth: SRPAuth object used
-        :type srp_auth: SRPAuth
         """
-        srp_auth = self.srpauth
-        uuid = srp_auth.get_uid()
+        uuid = self.srpauth.get_uid()
+        token = self.srpauth.get_token()
 
-        prefix = os.path.join(get_path_prefix(), "leap", "soledad")
-        secrets_path = "%s/%s.secret" % (prefix, uuid)
-        local_db_path = "%s/%s.db" % (prefix, uuid)
+        secrets_path, local_db_path = self._get_db_paths(uuid)
 
         # TODO: Select server based on timezone (issue #3308)
         server_dict = self._soledad_config.get_hosts()
 
-        if server_dict.keys():
-            selected_server = server_dict[server_dict.keys()[0]]
-            server_url = "https://%s:%s/user-%s" % (
-                selected_server["hostname"],
-                selected_server["port"],
-                uuid)
-
-            logger.debug("Using soledad server url: %s" % (server_url,))
-
-            cert_file = self._provider_config.get_ca_cert_path()
-
-            # TODO: If selected server fails, retry with another host
-            # (issue #3309)
-            try:
-                self._soledad = Soledad(
-                    uuid,
-                    self._password.encode("utf-8"),
-                    secrets_path=secrets_path,
-                    local_db_path=local_db_path,
-                    server_url=server_url,
-                    cert_file=cert_file,
-                    auth_token=srp_auth.get_token())
-                self._soledad.sync()
-
-            # XXX All these errors should be handled by soledad itself,
-            # and return a subclass of SoledadInitializationFailed
-            except socket.timeout:
-                logger.debug("SOLEDAD TIMED OUT...")
-                self.soledad_timeout.emit()
-            except socket.error as exc:
-                logger.error("Socket error while initializing soledad")
-                self.soledad_failed.emit()
-            except u1db_errors.Unauthorized:
-                logger.error("Error while initializing soledad "
-                             "(unauthorized).")
-                self.soledad_failed.emit()
-            except Exception as exc:
-                logger.error("Unhandled error while initializating "
-                             "soledad: %r" % (exc,))
-                raise
-        else:
+        if not server_dict.keys():
+            # XXX raise more specific exception
             raise Exception("No soledad server found")
+
+        selected_server = server_dict[server_dict.keys()[0]]
+        server_url = "https://%s:%s/user-%s" % (
+            selected_server["hostname"],
+            selected_server["port"],
+            uuid)
+
+        logger.debug("Using soledad server url: %s" % (server_url,))
+
+        cert_file = self._provider_config.get_ca_cert_path()
+
+        logger.debug('local_db:%s' % (local_db_path,))
+        logger.debug('secrets_path:%s' % (secrets_path,))
+
+        try:
+            self._try_soledad_init(
+                uuid, secrets_path, local_db_path,
+                server_url, cert_file, token)
+        except:
+            # re-raise the exceptions from try_init,
+            # we're currently handling the retries from the
+            # soledad-launcher in the gui.
+            raise
+
+        leap_check(self._soledad is not None,
+                   "Null soledad, error while initializing")
+
+        # and now, let's sync
+        sync_tries = 10
+        while sync_tries > 0:
+            try:
+                self._try_soledad_sync()
+                logger.debug("Soledad has been synced.")
+                # so long, and thanks for all the fish
+                return
+            except SoledadSyncError:
+                # maybe it's my connection, but I'm getting
+                # ssl handshake timeouts and read errors quite often.
+                # A particularly big sync is a disaster.
+                # This deserves further investigation, maybe the
+                # retry strategy can be pushed to u1db, or at least
+                # it's something worthy to talk about with the
+                # ubuntu folks.
+                sync_tries -= 1
+                continue
+
+        # reached bottom, failed to sync
+        # and there's nothing we can do...
+        self.soledad_failed.emit()
+        raise SoledadSyncError()
+
+    def _try_soledad_init(self, uuid, secrets_path, local_db_path,
+                          server_url, cert_file, auth_token):
+        """
+        Tries to initialize soledad.
+
+        :param uuid: user identifier
+        :param secrets_path: path to secrets file
+        :param local_db_path: path to local db file
+        :param server_url: soledad server uri
+        :cert_file:
+        :param auth token: auth token
+        :type auth_token: str
+        """
+
+        # TODO: If selected server fails, retry with another host
+        # (issue #3309)
+        try:
+            self._soledad = Soledad(
+                uuid,
+                self._password.encode("utf-8"),
+                secrets_path=secrets_path,
+                local_db_path=local_db_path,
+                server_url=server_url,
+                cert_file=cert_file,
+                auth_token=auth_token)
+
+        # XXX All these errors should be handled by soledad itself,
+        # and return a subclass of SoledadInitializationFailed
+        except socket.timeout:
+            logger.debug("SOLEDAD initialization TIMED OUT...")
+            self.soledad_timeout.emit()
+        except socket.error as exc:
+            logger.error("Socket error while initializing soledad")
+            self.soledad_failed.emit()
+        except u1db_errors.Unauthorized:
+            logger.error("Error while initializing soledad "
+                         "(unauthorized).")
+            self.soledad_failed.emit()
+        except Exception as exc:
+            logger.exception("Unhandled error while initializating "
+                             "soledad: %r" % (exc,))
+            self.soledad_failed.emit()
+
+    def _try_soledad_sync(self):
+        """
+        Tries to sync soledad.
+        Raises SoledadSyncError if not successful.
+        """
+        try:
+            logger.error("trying to sync soledad....")
+            self._soledad.sync()
+        except SSLError as exc:
+            logger.error("%r" % (exc,))
+            raise SoledadSyncError("Failed to sync soledad")
+        except Exception as exc:
+            logger.exception("Unhandled error while syncing"
+                             "soledad: %r" % (exc,))
+            self.soledad_failed.emit()
+            raise SoledadSyncError("Failed to sync soledad")
 
     def _download_config(self):
         """
@@ -184,6 +287,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                      (self._provider_config.get_domain(),))
 
         self._soledad_config = SoledadConfig()
+
+        # TODO factor out with eip/provider configs.
 
         headers = {}
         mtime = get_mtime(
@@ -242,8 +347,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Generates the key pair if needed, uploads it to the webapp and
         nickserver
         """
-        leap_assert(self._provider_config,
+        leap_assert(self._provider_config is not None,
                     "We need a provider configuration!")
+        leap_assert(self._soledad is not None,
+                    "We need a non-null soledad to generate keys")
 
         address = "%s@%s" % (self._user, self._provider_config.get_domain())
 
