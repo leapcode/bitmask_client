@@ -234,6 +234,8 @@ class MainWindow(QtGui.QMainWindow):
             self._soledad_bootstrapped_stage)
         self._soledad_bootstrapper.soledad_timeout.connect(
             self._retry_soledad_connection)
+        # XXX missing connect to soledad_failed (signal unrecoverable to user)
+        # TODO wait until chiiph ui refactor.
 
         self._smtp_bootstrapper = SMTPBootstrapper()
         self._smtp_bootstrapper.download_config.connect(

@@ -250,12 +250,16 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         # XXX All these errors should be handled by soledad itself,
         # and return a subclass of SoledadInitializationFailed
+
+        # recoverable, will guarantee retries
         except socket.timeout:
             logger.debug("SOLEDAD initialization TIMED OUT...")
             self.soledad_timeout.emit()
         except socket.error as exc:
             logger.error("Socket error while initializing soledad")
-            self.soledad_failed.emit()
+            self.soledad_timeout.emit()
+
+        # unrecoverable
         except u1db_errors.Unauthorized:
             logger.error("Error while initializing soledad "
                          "(unauthorized).")
