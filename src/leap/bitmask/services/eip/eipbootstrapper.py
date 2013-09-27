@@ -28,7 +28,6 @@ from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.common import certs as leap_certs
-from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import check_and_fix_urw_only
 
