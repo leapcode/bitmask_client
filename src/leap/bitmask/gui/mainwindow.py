@@ -36,9 +36,9 @@ from leap.bitmask.gui import statemachines
 from leap.bitmask.gui.statuspanel import StatusPanelWidget
 from leap.bitmask.gui.wizard import Wizard
 
+from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.bitmask.services.eip.eipconfig import EIPConfig
-from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
 # XXX: Soledad might not work out of the box in Windows, issue #2932
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
