@@ -32,8 +32,10 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.gui.loggerwindow import LoggerWindow
 from leap.bitmask.gui.login import LoginWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
+from leap.bitmask.gui.eip_preferenceswindow import EIPPreferencesWindow
 from leap.bitmask.gui import statemachines
-from leap.bitmask.gui.statuspanel import StatusPanelWidget
+from leap.bitmask.gui.eip_status import EIPStatusWidget
+from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.wizard import Wizard
 
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
@@ -147,7 +149,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self._login_widget = LoginWidget(
             self._settings,
-            self.ui.stackedWidget.widget(self.LOGIN_INDEX))
+            self)
         self.ui.loginLayout.addWidget(self._login_widget)
 
         # Qt Signal Connections #####################################
@@ -155,17 +157,14 @@ class MainWindow(QtGui.QMainWindow):
 
         self._login_widget.login.connect(self._login)
         self._login_widget.cancel_login.connect(self._cancel_login)
-        self._login_widget.show_wizard.connect(
-            self._launch_wizard)
+        self._login_widget.show_wizard.connect(self._launch_wizard)
+        self._login_widget.logout.connect(self._logout)
 
-        self.ui.btnShowLog.clicked.connect(self._show_logger_window)
-        self.ui.btnPreferences.clicked.connect(self._show_preferences)
+        self._eip_status = EIPStatusWidget(self)
+        self.ui.eipLayout.addWidget(self._eip_status)
 
-        self._status_panel = StatusPanelWidget(
-            self.ui.stackedWidget.widget(self.EIP_STATUS_INDEX))
-        self.ui.statusLayout.addWidget(self._status_panel)
-
-        self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
+        self._mail_status = MailStatusWidget(self)
+        self.ui.mailLayout.addWidget(self._mail_status)
 
         self._eip_connection = EIPConnection()
 
@@ -173,7 +172,7 @@ class MainWindow(QtGui.QMainWindow):
             self._start_eip)
         self._eip_connection.qtsigs.disconnecting_signal.connect(
             self._stop_eip)
-        self._status_panel.eip_connection_connected.connect(
+        self._eip_status.eip_connection_connected.connect(
             self._on_eip_connected)
 
         # This is loaded only once, there's a bug when doing that more
@@ -221,9 +220,9 @@ class MainWindow(QtGui.QMainWindow):
             self._finish_eip_bootstrap)
         self._vpn = VPN(openvpn_verb=openvpn_verb)
         self._vpn.qtsigs.state_changed.connect(
-            self._status_panel.update_vpn_state)
+            self._eip_status.update_vpn_state)
         self._vpn.qtsigs.status_changed.connect(
-            self._status_panel.update_vpn_status)
+            self._eip_status.update_vpn_status)
         self._vpn.qtsigs.process_finished.connect(
             self._eip_finished)
 
@@ -241,12 +240,16 @@ class MainWindow(QtGui.QMainWindow):
         self._smtp_bootstrapper.download_config.connect(
             self._smtp_bootstrapped_stage)
 
-        self.ui.action_log_out.setEnabled(False)
-        self.ui.action_log_out.triggered.connect(self._logout)
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
+        self.ui.action_create_new_account.triggered.connect(
+            self._launch_wizard)
+
+        if IS_MAC:
+            self.ui.menuFile.menuAction().setText(self.tr("Util"))
+
         self.raise_window.connect(self._do_raise_mainwindow)
 
         # Used to differentiate between real quits and close to tray
@@ -256,16 +259,16 @@ class MainWindow(QtGui.QMainWindow):
 
         self._action_mail_status = QtGui.QAction(self.tr("Mail is OFF"), self)
         self._action_mail_status.setEnabled(False)
-        self._status_panel.set_action_mail_status(self._action_mail_status)
+        self._mail_status.set_action_mail_status(self._action_mail_status)
 
         self._action_eip_startstop = QtGui.QAction("", self)
-        self._status_panel.set_action_eip_startstop(self._action_eip_startstop)
-
-        self._action_preferences = QtGui.QAction(self.tr("Preferences"), self)
-        self._action_preferences.triggered.connect(self._show_preferences)
+        self._eip_status.set_action_eip_startstop(self._action_eip_startstop)
 
         self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
+
+        self.ui.btnPreferences.clicked.connect(self._show_preferences)
+        self.ui.btnEIPPreferences.clicked.connect(self._show_eip_preferences)
 
         self._enabled_services = []
 
@@ -282,6 +285,7 @@ class MainWindow(QtGui.QMainWindow):
         self.mail_client_logged_in.connect(self._fetch_incoming_mail)
         self.logout.connect(self._stop_imap_service)
         self.logout.connect(self._stop_smtp_service)
+        self.logout.connect(self._mail_status.stopped_mail)
 
         ################################# end Qt Signals connection ########
 
@@ -393,7 +397,6 @@ class MainWindow(QtGui.QMainWindow):
         SLOT
         TRIGGERS:
           self.ui.action_show_logs.triggered
-          self.ui.btnShowLog.clicked
 
         Displays the window with the history of messages logged until now
         and displays the new ones on arrival.
@@ -407,18 +410,13 @@ class MainWindow(QtGui.QMainWindow):
                 self._logger_window = LoggerWindow(handler=leap_log_handler)
                 self._logger_window.setVisible(
                     not self._logger_window.isVisible())
-                self.ui.btnShowLog.setChecked(self._logger_window.isVisible())
         else:
             self._logger_window.setVisible(not self._logger_window.isVisible())
-            self.ui.btnShowLog.setChecked(self._logger_window.isVisible())
-
-        self._logger_window.finished.connect(self._uncheck_logger_button)
 
     def _show_preferences(self):
         """
         SLOT
         TRIGGERS:
-          self.ui.action_show_preferences.triggered
           self.ui.btnPreferences.clicked
 
         Displays the preferences window.
@@ -433,6 +431,16 @@ class MainWindow(QtGui.QMainWindow):
 
         preferences_window.show()
 
+    def _show_eip_preferences(self):
+        """
+        SLOT
+        TRIGGERS:
+          self.ui.btnEIPPreferences.clicked
+
+        Displays the EIP preferences window.
+        """
+        EIPPreferencesWindow(self).show()
+
     def _set_soledad_ready(self):
         """
         SLOT
@@ -442,13 +450,6 @@ class MainWindow(QtGui.QMainWindow):
         It sets the soledad object as ready to use.
         """
         self._soledad_ready = True
-
-    def _uncheck_logger_button(self):
-        """
-        SLOT
-        Sets the checked state of the loggerwindow button to false.
-        """
-        self.ui.btnShowLog.setChecked(False)
 
     def _new_updates_available(self, req):
         """
@@ -623,24 +624,20 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
 
-        eip_menu = systrayMenu.addMenu(self.tr("Encrypted Internet is OFF"))
+        eip_menu = systrayMenu.addMenu(self.tr("Encrypted Internet: OFF"))
         eip_menu.addAction(self._action_eip_startstop)
-        self._status_panel.set_eip_status_menu(eip_menu)
+        self._eip_status.set_eip_status_menu(eip_menu)
 
         systrayMenu.addAction(self._action_mail_status)
         systrayMenu.addSeparator()
-        systrayMenu.addAction(self._action_preferences)
-        systrayMenu.addAction(help_action)
-        systrayMenu.addSeparator()
-        systrayMenu.addAction(self.ui.action_log_out)
         systrayMenu.addAction(self.ui.action_quit)
         self._systray = QtGui.QSystemTrayIcon(self)
         self._systray.setContextMenu(systrayMenu)
-        self._systray.setIcon(self._status_panel.ERROR_ICON_TRAY)
+        self._systray.setIcon(self._eip_status.ERROR_ICON_TRAY)
         self._systray.setVisible(True)
         self._systray.activated.connect(self._tray_activated)
 
-        self._status_panel.set_systray(self._systray)
+        self._eip_status.set_systray(self._systray)
 
     def _tray_activated(self, reason=None):
         """
@@ -846,47 +843,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         leap_assert(self._provider_config, "We need a provider config")
 
-        username = self._login_widget.get_user()
-        password = self._login_widget.get_password()
-        provider = self._login_widget.get_selected_provider()
-
-        self._enabled_services = self._settings.get_enabled_services(
-            self._login_widget.get_selected_provider())
-
-        if len(provider) == 0:
-            self._login_widget.set_status(
-                self.tr("Please select a valid provider"))
-            return
-
-        if len(username) == 0:
-            self._login_widget.set_status(
-                self.tr("Please provide a valid username"))
-            return
-
-        if len(password) == 0:
-            self._login_widget.set_status(
-                self.tr("Please provide a valid Password"))
-            return
-
-        self._login_widget.set_status(self.tr("Logging in..."), error=False)
-        self._login_widget.set_enabled(False)
-
-        if self._login_widget.get_remember() and has_keyring():
-            # in the keyring and in the settings
-            # we store the value 'usename@provider'
-            username_domain = (username + '@' + provider).encode("utf8")
-            try:
-                keyring.set_password(self.KEYRING_KEY,
-                                     username_domain,
-                                     password.encode("utf8"))
-                # Only save the username if it was saved correctly in
-                # the keyring
-                self._settings.set_user(username_domain)
-            except Exception as e:
-                logger.error("Problem saving data to keyring. %r"
-                             % (e,))
-
-        self._download_provider_config()
+        if self._login_widget.start_login():
+            self._download_provider_config()
 
     def _cancel_login(self):
         """
@@ -954,7 +912,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if ok:
             self._logged_user = self._login_widget.get_user()
-            self.ui.action_log_out.setEnabled(True)
             # We leave a bit of room for the user to see the
             # "Succeeded" message and then we switch to the EIP status
             # panel
@@ -969,15 +926,15 @@ class MainWindow(QtGui.QMainWindow):
         Changes the stackedWidget index to the EIP status one and
         triggers the eip bootstrapping
         """
-        if not self._already_started_eip:
-            self._status_panel.set_provider(
-                "%s@%s" % (self._login_widget.get_user(),
-                           self._get_best_provider_config().get_domain()))
 
-        self.ui.stackedWidget.setCurrentIndex(self.EIP_STATUS_INDEX)
+        self._login_widget.logged_in()
 
         # TODO separate UI from logic.
         # TODO soledad should check if we want to run only over EIP.
+        if self._provider_config.provides_mx() and \
+           self._enabled_services.count(self.MX_SERVICE) > 0:
+            self._mail_status.about_to_start()
+
         self._soledad_bootstrapper.run_soledad_setup_checks(
             self._provider_config,
             self._login_widget.get_user(),
@@ -1199,9 +1156,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         Initializes and starts the EIP state machine
         """
-        button = self._status_panel.eip_button
+        button = self._eip_status.eip_button
         action = self._action_eip_startstop
-        label = self._status_panel.eip_label
+        label = self._eip_status.eip_label
         builder = statemachines.ConnectionMachineBuilder(self._eip_connection)
         eip_machine = builder.make_machine(button=button,
                                            action=action,
@@ -1214,7 +1171,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-            self._status_panel.eip_connection_connected
+            self._eip_status.eip_connection_connected
         Emits the EIPConnection.qtsigs.connected_signal
 
         This is a little workaround for connecting the vpn-connected
@@ -1229,7 +1186,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self._status_panel.start_eip
+          self._eip_status.start_eip
           self._action_eip_startstop.triggered
         or called from _finish_eip_bootstrap
 
@@ -1237,7 +1194,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         provider_config = self._get_best_provider_config()
         provider = provider_config.get_domain()
-        self._status_panel.eip_pre_up()
+        self._eip_status.eip_pre_up()
         self.user_stopped_eip = False
 
         try:
@@ -1248,16 +1205,14 @@ class MainWindow(QtGui.QMainWindow):
                             socket_host=host,
                             socket_port=port)
             self._settings.set_defaultprovider(provider)
-            if self._logged_user is not None:
-                provider = "%s@%s" % (self._logged_user, provider)
 
             # XXX move to the state machine too
-            self._status_panel.set_provider(provider)
+            self._eip_status.set_provider(provider)
 
         # TODO refactor exceptions so they provide translatable
         # usef-facing messages.
         except EIPNoPolkitAuthAgentAvailable:
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 # XXX this should change to polkit-kde where
                 # applicable.
                 self.tr("We could not find any "
@@ -1270,30 +1225,30 @@ class MainWindow(QtGui.QMainWindow):
                 error=True)
             self._set_eipstatus_off()
         except EIPNoTunKextLoaded:
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 self.tr("Encrypted Internet cannot be started because "
                         "the tuntap extension is not installed properly "
                         "in your system."))
             self._set_eipstatus_off()
         except EIPNoPkexecAvailable:
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 self.tr("We could not find <b>pkexec</b> "
                         "in your system."),
                 error=True)
             self._set_eipstatus_off()
         except OpenVPNNotFoundException:
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 self.tr("We could not find openvpn binary."),
                 error=True)
             self._set_eipstatus_off()
         except OpenVPNAlreadyRunning as e:
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 self.tr("Another openvpn instance is already running, and "
                         "could not be stopped."),
                 error=True)
             self._set_eipstatus_off()
         except AlienOpenVPNAlreadyRunning as e:
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 self.tr("Another openvpn instance is already running, and "
                         "could not be stopped because it was not launched by "
                         "Bitmask. Please stop it and try again."),
@@ -1302,7 +1257,7 @@ class MainWindow(QtGui.QMainWindow):
         except VPNLauncherException as e:
             # XXX We should implement again translatable exceptions so
             # we can pass a translatable string to the panel (usermessage attr)
-            self._status_panel.set_global_status("%s" % (e,), error=True)
+            self._eip_status.set_eip_status("%s" % (e,), error=True)
             self._set_eipstatus_off()
         else:
             self._already_started_eip = True
@@ -1312,7 +1267,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self._status_panel.stop_eip
+          self._eip_status.stop_eip
           self._action_eip_startstop.triggered
         or called from _eip_finished
 
@@ -1328,23 +1283,25 @@ class MainWindow(QtGui.QMainWindow):
         self.user_stopped_eip = True
         self._vpn.terminate()
 
-        self._set_eipstatus_off()
+        self._set_eipstatus_off(False)
 
         self._already_started_eip = False
 
         # XXX do via signal
         self._settings.set_defaultprovider(None)
         if self._logged_user:
-            self._status_panel.set_provider(
+            self._eip_status.set_provider(
                 "%s@%s" % (self._logged_user,
                            self._get_best_provider_config().get_domain()))
+        self._eip_status.eip_stopped()
 
-    def _set_eipstatus_off(self):
+    def _set_eipstatus_off(self, error=True):
         """
         Sets eip status to off
         """
-        self._status_panel.set_eip_status(self.tr("OFF"), error=True)
-        self._status_panel.set_eip_status_icon("error")
+        self._eip_status.set_eip_status(self.tr("EIP has stopped"),
+                                        error=error)
+        self._eip_status.set_eip_status_icon("error")
 
     def _download_eip_config(self):
         """
@@ -1359,7 +1316,7 @@ class MainWindow(QtGui.QMainWindow):
                 not self._already_started_eip:
 
             # XXX this should be handled by the state machine.
-            self._status_panel.set_eip_status(
+            self._eip_status.set_eip_status(
                 self.tr("Starting..."))
             self._eip_bootstrapper.run_eip_setup_checks(
                 provider_config,
@@ -1367,11 +1324,11 @@ class MainWindow(QtGui.QMainWindow):
             self._already_started_eip = True
         elif not self._already_started_eip:
             if self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
-                self._status_panel.set_eip_status(
+                self._eip_status.set_eip_status(
                     self.tr("Not supported"),
                     error=True)
             else:
-                self._status_panel.set_eip_status(self.tr("Disabled"))
+                self._eip_status.set_eip_status(self.tr("Disabled"))
 
     def _finish_eip_bootstrap(self, data):
         """
@@ -1386,7 +1343,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if not passed:
             error_msg = self.tr("There was a problem with the provider")
-            self._status_panel.set_eip_status(error_msg, error=True)
+            self._eip_status.set_eip_status(error_msg, error=True)
             logger.error(data[self._eip_bootstrapper.ERROR_KEY])
             self._already_started_eip = False
             return
@@ -1406,7 +1363,7 @@ class MainWindow(QtGui.QMainWindow):
             # DO START EIP Connection!
             self._eip_connection.qtsigs.do_connect_signal.emit()
         else:
-            self._status_panel.set_eip_status(
+            self._eip_status.set_eip_status(
                 self.tr("Could not load Encrypted Internet "
                         "Configuration."),
                 error=True)
@@ -1441,7 +1398,7 @@ class MainWindow(QtGui.QMainWindow):
     def _logout(self):
         """
         SLOT
-        TRIGGER: self.ui.action_log_out.triggered
+        TRIGGER: self._login_widget.logout
 
         Starts the logout sequence
         """
@@ -1461,16 +1418,17 @@ class MainWindow(QtGui.QMainWindow):
         Switches the stackedWidget back to the login stage after
         logging out
         """
+        self._login_widget.done_logout()
+
         if ok:
             self._logged_user = None
-            self.ui.action_log_out.setEnabled(False)
-            self.ui.stackedWidget.setCurrentIndex(self.LOGIN_INDEX)
-            self._login_widget.set_password("")
-            self._login_widget.set_enabled(True)
-            self._login_widget.set_status("")
+
+            self._login_widget.logged_out()
+
         else:
-            status_text = self.tr("Something went wrong with the logout.")
-            self._status_panel.set_global_status(status_text, error=True)
+            self._login_widget.set_login_status(
+                self.tr("Something went wrong with the logout."),
+                error=True)
 
     def _intermediate_stage(self, data):
         """
@@ -1541,7 +1499,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # XXX check if these exitCodes are pkexec/cocoasudo specific
         if exitCode in (126, 127):
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 self.tr("Encrypted Internet could not be launched "
                         "because you did not authenticate properly."),
                 error=True)
@@ -1549,7 +1507,7 @@ class MainWindow(QtGui.QMainWindow):
             signal = qtsigs.connection_aborted_signal
 
         elif exitCode != 0 or not self.user_stopped_eip:
-            self._status_panel.set_global_status(
+            self._eip_status.set_eip_status(
                 self.tr("Encrypted Internet finished in an "
                         "unexpected manner!"), error=True)
             signal = qtsigs.connection_died_signal

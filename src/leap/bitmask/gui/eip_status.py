@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# statuspanel.py
+# eip_status.py
 # Copyright (C) 2013 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Status Panel widget implementation
+EIP Status Panel widget implementation
 """
 import logging
 
@@ -26,33 +26,24 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask.services.eip.connection import EIPConnection
 from leap.bitmask.services.eip.vpnprocess import VPNManager
-from leap.bitmask.platform_init import IS_WIN, IS_LINUX
+from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.util.averages import RateMovingAverage
-from leap.common.check import leap_assert, leap_assert_type
-from leap.common.events import register
-from leap.common.events import events_pb2 as proto
+from leap.common.check import leap_assert_type
 
-from ui_statuspanel import Ui_StatusPanel
+from ui_eip_status import Ui_EIPStatus
 
 logger = logging.getLogger(__name__)
 
 
-class StatusPanelWidget(QtGui.QWidget):
+class EIPStatusWidget(QtGui.QWidget):
     """
-    Status widget that displays the current state of the LEAP services
+    EIP Status widget that displays the current state of the EIP service
     """
     DISPLAY_TRAFFIC_RATES = True
     RATE_STR = "%14.2f KB/s"
     TOTAL_STR = "%14.2f Kb"
 
-    MAIL_OFF_ICON = ":/images/mail-unlocked.png"
-    MAIL_ON_ICON = ":/images/mail-locked.png"
-
     eip_connection_connected = QtCore.Signal()
-    _soledad_event = QtCore.Signal(object)
-    _smtp_event = QtCore.Signal(object)
-    _imap_event = QtCore.Signal(object)
-    _keymanager_event = QtCore.Signal(object)
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -60,15 +51,15 @@ class StatusPanelWidget(QtGui.QWidget):
         self._systray = None
         self._eip_status_menu = None
 
-        self.ui = Ui_StatusPanel()
+        self.ui = Ui_EIPStatus()
         self.ui.setupUi(self)
 
         self.eipconnection = EIPConnection()
 
-        self.hide_status_box()
+        # set systray tooltip status
+        self._eip_status = ""
 
-        # set systray tooltip statuses
-        self._eip_status = self._mx_status = ""
+        self.ui.eip_bandwidth.hide()
 
         # Set the EIP status icons
         self.CONNECTING_ICON = None
@@ -82,72 +73,7 @@ class StatusPanelWidget(QtGui.QWidget):
         self._set_traffic_rates()
         self._make_status_clickable()
 
-        register(signal=proto.KEYMANAGER_LOOKING_FOR_KEY,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.KEYMANAGER_KEY_FOUND,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
-
-        # register(signal=proto.KEYMANAGER_KEY_NOT_FOUND,
-        #          callback=self._mail_handle_keymanager_events,
-        #          reqcbk=lambda req, resp: None)
-
-        register(signal=proto.KEYMANAGER_STARTED_KEY_GENERATION,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.KEYMANAGER_FINISHED_KEY_GENERATION,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.KEYMANAGER_DONE_UPLOADING_KEYS,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.SOLEDAD_DONE_DOWNLOADING_KEYS,
-                 callback=self._mail_handle_soledad_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.SOLEDAD_DONE_UPLOADING_KEYS,
-                 callback=self._mail_handle_soledad_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.SMTP_SERVICE_STARTED,
-                 callback=self._mail_handle_smtp_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.SMTP_SERVICE_FAILED_TO_START,
-                 callback=self._mail_handle_smtp_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.IMAP_SERVICE_STARTED,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.IMAP_SERVICE_FAILED_TO_START,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.IMAP_UNREAD_MAIL,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
-
-        self._set_long_mail_status("")
-        self.ui.lblUnread.setVisible(False)
-
-        self._smtp_started = False
-        self._imap_started = False
-
-        self._soledad_event.connect(
-            self._mail_handle_soledad_events_slot)
-        self._imap_event.connect(
-            self._mail_handle_imap_events_slot)
-        self._smtp_event.connect(
-            self._mail_handle_smtp_events_slot)
-        self._keymanager_event.connect(
-            self._mail_handle_keymanager_events_slot)
+        self._provider = ""
 
     def _make_status_clickable(self):
         """
@@ -233,20 +159,15 @@ class StatusPanelWidget(QtGui.QWidget):
         WIN   : light icons
         """
         EIP_ICONS = EIP_ICONS_TRAY = (
-            ":/images/conn_connecting-light.png",
-            ":/images/conn_connected-light.png",
-            ":/images/conn_error-light.png")
+            ":/images/black/32/wait.png",
+            ":/images/black/32/on.png",
+            ":/images/black/32/off.png")
 
         if IS_LINUX:
             EIP_ICONS_TRAY = (
-                ":/images/conn_connecting.png",
-                ":/images/conn_connected.png",
-                ":/images/conn_error.png")
-        elif IS_WIN:
-            EIP_ICONS = EIP_ICONS_TRAY = (
-                ":/images/conn_connecting.png",
-                ":/images/conn_connected.png",
-                ":/images/conn_error.png")
+                ":/images/white/32/wait.png",
+                ":/images/white/32/on.png",
+                ":/images/white/32/off.png")
 
         self.CONNECTING_ICON = QtGui.QPixmap(EIP_ICONS[0])
         self.CONNECTED_ICON = QtGui.QPixmap(EIP_ICONS[1])
@@ -271,11 +192,9 @@ class StatusPanelWidget(QtGui.QWidget):
 
     def _update_systray_tooltip(self):
         """
-        Updates the system tray icon tooltip using the eip and mx statuses.
+        Updates the system tray icon tooltip using the eip and mx status.
         """
-        status = self.tr("Encrypted Internet is {0}").format(self._eip_status)
-        status += '\n'
-        status += self.tr("Mail is {0}").format(self._mx_status)
+        status = self.tr("Encrypted Internet: {0}").format(self._eip_status)
         self._systray.setToolTip(status)
 
     def set_action_eip_startstop(self, action_eip_startstop):
@@ -297,17 +216,7 @@ class StatusPanelWidget(QtGui.QWidget):
         leap_assert_type(eip_status_menu, QtGui.QMenu)
         self._eip_status_menu = eip_status_menu
 
-    def set_action_mail_status(self, action_mail_status):
-        """
-        Sets the action_mail_status to use.
-
-        :param action_mail_status: action_mail_status to be used
-        :type action_mail_status: QtGui.QAction
-        """
-        leap_assert_type(action_mail_status, QtGui.QAction)
-        self._action_mail_status = action_mail_status
-
-    def set_global_status(self, status, error=False):
+    def set_eip_status(self, status, error=False):
         """
         Sets the global status label.
 
@@ -320,14 +229,8 @@ class StatusPanelWidget(QtGui.QWidget):
         leap_assert_type(error, bool)
         if error:
             status = "<font color='red'><b>%s</b></font>" % (status,)
-        self.ui.lblGlobalStatus.setText(status)
-        self.ui.globalStatusBox.show()
-
-    def hide_status_box(self):
-        """
-        Hide global status box.
-        """
-        self.ui.globalStatusBox.hide()
+        self.ui.lblEIPStatus.setText(status)
+        self.ui.lblEIPStatus.show()
 
     # EIP status ---
 
@@ -344,7 +247,6 @@ class StatusPanelWidget(QtGui.QWidget):
         Triggered when the app activates eip.
         Hides the status box and disables the start/stop button.
         """
-        self.hide_status_box()
         self.set_startstop_enabled(False)
 
     # XXX disable (later) --------------------------
@@ -365,6 +267,7 @@ class StatusPanelWidget(QtGui.QWidget):
         if error:
             status = "<font color='red'>%s</font>" % (status,)
         self.ui.lblEIPStatus.setText(status)
+        self.ui.lblEIPStatus.show()
         self._update_systray_tooltip()
 
     # XXX disable ---------------------------------
@@ -404,6 +307,11 @@ class StatusPanelWidget(QtGui.QWidget):
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
             self.eipconnection.qtsigs.do_disconnect_signal)
+
+        self.ui.eip_bandwidth.hide()
+        self.ui.lblEIPMessage.setText(
+            self.tr("Traffic is being routed in the clear"))
+        self.ui.lblEIPStatus.show()
 
     def update_vpn_status(self, data):
         """
@@ -451,9 +359,10 @@ class StatusPanelWidget(QtGui.QWidget):
         status = data[VPNManager.STATUS_STEP_KEY]
         self.set_eip_status_icon(status)
         if status == "CONNECTED":
+            self.ui.eip_bandwidth.show()
+            self.ui.lblEIPStatus.hide()
+
             # XXX should be handled by the state machine too.
-            self.set_eip_status(self.tr("ON"))
-            logger.debug("STATUS IS CONNECTED --- emitting signal")
             self.eip_connection_connected.emit()
 
         # XXX should lookup status map in EIPConnection
@@ -472,7 +381,7 @@ class StatusPanelWidget(QtGui.QWidget):
             # the UI won't update properly
             QtCore.QTimer.singleShot(
                 0, self.eipconnection.qtsigs.do_disconnect_signal)
-            QtCore.QTimer.singleShot(0, partial(self.set_global_status,
+            QtCore.QTimer.singleShot(0, partial(self.set_eip_status,
                                                 self.tr("Unable to start VPN, "
                                                         "it's already "
                                                         "running.")))
@@ -497,14 +406,14 @@ class StatusPanelWidget(QtGui.QWidget):
         """
         selected_pixmap = self.ERROR_ICON
         selected_pixmap_tray = self.ERROR_ICON_TRAY
-        tray_message = self.tr("Encrypted Internet is OFF")
+        tray_message = self.tr("Encrypted Internet: OFF")
         if status in ("WAIT", "AUTH", "GET_CONFIG",
                       "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
             selected_pixmap_tray = self.CONNECTING_ICON_TRAY
-            tray_message = self.tr("Encrypted Internet is STARTING")
+            tray_message = self.tr("Encrypted Internet: Starting...")
         elif status in ("CONNECTED"):
-            tray_message = self.tr("Encrypted Internet is ON")
+            tray_message = self.tr("Encrypted Internet: ON")
             selected_pixmap = self.CONNECTED_ICON
             selected_pixmap_tray = self.CONNECTED_ICON_TRAY
 
@@ -513,198 +422,6 @@ class StatusPanelWidget(QtGui.QWidget):
         self._eip_status_menu.setTitle(tray_message)
 
     def set_provider(self, provider):
-        self.ui.lblProvider.setText(provider)
-
-    #
-    # mail methods
-    #
-
-    def _set_mail_status(self, status, ready=False):
-        """
-        Sets the Mail status in the label and in the tray icon.
-
-        :param status: the status text to display
-        :type status: unicode
-        :param ready: if mx is ready or not.
-        :type ready: bool
-        """
-        self.ui.lblMailStatus.setText(status)
-
-        self._mx_status = self.tr('OFF')
-        tray_status = self.tr('Mail is OFF')
-
-        icon = QtGui.QPixmap(self.MAIL_OFF_ICON)
-        if ready:
-            icon = QtGui.QPixmap(self.MAIL_ON_ICON)
-            self._mx_status = self.tr('ON')
-            tray_status = self.tr('Mail is ON')
-
-        self.ui.lblMailIcon.setPixmap(icon)
-        self._action_mail_status.setText(tray_status)
-        self._update_systray_tooltip()
-
-    def _mail_handle_soledad_events(self, req):
-        """
-        Callback for ...
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        self._soledad_event.emit(req)
-
-    def _mail_handle_soledad_events_slot(self, req):
-        """
-        SLOT
-        TRIGGER: _mail_handle_soledad_events
-
-        Reacts to an Soledad event
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        self._set_mail_status(self.tr("Starting..."))
-
-        ext_status = ""
-
-        if req.event == proto.SOLEDAD_DONE_UPLOADING_KEYS:
-            ext_status = self.tr("Soledad has started...")
-        elif req.event == proto.SOLEDAD_DONE_DOWNLOADING_KEYS:
-            ext_status = self.tr("Soledad is starting, please wait...")
-        else:
-            leap_assert(False,
-                        "Don't know how to handle this state: %s"
-                        % (req.event))
-
-        self._set_long_mail_status(ext_status)
-
-    def _mail_handle_keymanager_events(self, req):
-        """
-        Callback for the KeyManager events
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        self._keymanager_event.emit(req)
-
-    def _mail_handle_keymanager_events_slot(self, req):
-        """
-        SLOT
-        TRIGGER: _mail_handle_keymanager_events
-
-        Reacts to an KeyManager event
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        # We want to ignore this kind of events once everything has
-        # started
-        if self._smtp_started and self._imap_started:
-            return
-
-        self._set_mail_status(self.tr("Starting..."))
-
-        ext_status = ""
-
-        if req.event == proto.KEYMANAGER_LOOKING_FOR_KEY:
-            ext_status = self.tr("Looking for key for this user")
-        elif req.event == proto.KEYMANAGER_KEY_FOUND:
-            ext_status = self.tr("Found key! Starting mail...")
-        # elif req.event == proto.KEYMANAGER_KEY_NOT_FOUND:
-        #     ext_status = self.tr("Key not found!")
-        elif req.event == proto.KEYMANAGER_STARTED_KEY_GENERATION:
-            ext_status = self.tr("Generating new key, please wait...")
-        elif req.event == proto.KEYMANAGER_FINISHED_KEY_GENERATION:
-            ext_status = self.tr("Finished generating key!")
-        elif req.event == proto.KEYMANAGER_DONE_UPLOADING_KEYS:
-            ext_status = self.tr("Starting mail...")
-        else:
-            leap_assert(False,
-                        "Don't know how to handle this state: %s"
-                        % (req.event))
-
-        self._set_long_mail_status(ext_status)
-
-    def _mail_handle_smtp_events(self, req):
-        """
-        Callback for the SMTP events
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        self._smtp_event.emit(req)
-
-    def _mail_handle_smtp_events_slot(self, req):
-        """
-        SLOT
-        TRIGGER: _mail_handle_smtp_events
-
-        Reacts to an SMTP event
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        ext_status = ""
-
-        if req.event == proto.SMTP_SERVICE_STARTED:
-            ext_status = self.tr("SMTP has started...")
-            self._smtp_started = True
-            if self._smtp_started and self._imap_started:
-                self._set_mail_status(self.tr("ON"), ready=True)
-                ext_status = ""
-        elif req.event == proto.SMTP_SERVICE_FAILED_TO_START:
-            ext_status = self.tr("SMTP failed to start, check the logs.")
-            self._set_mail_status(self.tr("Failed"))
-        else:
-            leap_assert(False,
-                        "Don't know how to handle this state: %s"
-                        % (req.event))
-
-        self._set_long_mail_status(ext_status)
-
-    def _mail_handle_imap_events(self, req):
-        """
-        Callback for the IMAP events
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        self._imap_event.emit(req)
-
-    def _mail_handle_imap_events_slot(self, req):
-        """
-        SLOT
-        TRIGGER: _mail_handle_imap_events
-
-        Reacts to an IMAP event
-
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
-        """
-        ext_status = None
-
-        if req.event == proto.IMAP_SERVICE_STARTED:
-            ext_status = self.tr("IMAP has started...")
-            self._imap_started = True
-            if self._smtp_started and self._imap_started:
-                self._set_mail_status(self.tr("ON"), ready=True)
-                ext_status = ""
-        elif req.event == proto.IMAP_SERVICE_FAILED_TO_START:
-            ext_status = self.tr("IMAP failed to start, check the logs.")
-            self._set_mail_status(self.tr("Failed"))
-        elif req.event == proto.IMAP_UNREAD_MAIL:
-            if self._smtp_started and self._imap_started:
-                self.ui.lblUnread.setText(
-                    self.tr("%s Unread Emails") % (req.content))
-                self.ui.lblUnread.setVisible(req.content != "0")
-                self._set_mail_status(self.tr("ON"), ready=True)
-        else:
-            leap_assert(False,  # XXX ???
-                        "Don't know how to handle this state: %s"
-                        % (req.event))
-
-        if ext_status is not None:
-            self._set_long_mail_status(ext_status)
-
-    def _set_long_mail_status(self, ext_status):
-        self.ui.lblLongMailStatus.setText(ext_status)
-        self.ui.grpMailStatus.setVisible(len(ext_status) > 0)
+        self._provider = provider
+        self.ui.lblEIPMessage.setText(
+            self.tr("Route traffic through: {0}").format(self._provider))

@@ -44,6 +44,25 @@ class ProviderConfig(BaseConfig):
     def __init__(self):
         BaseConfig.__init__(self)
 
+    @classmethod
+    def get_provider_config(self, domain):
+        """
+        Helper to return a valid Provider Config from the domain name.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+
+        :rtype: ProviderConfig or None if there is a problem loading the config
+        """
+        provider_config = ProviderConfig()
+        provider_config_path = os.path.join(
+            "leap", "providers", domain, "provider.json")
+
+        if not provider_config.load(provider_config_path):
+            provider_config = None
+
+        return provider_config
+
     def _get_schema(self):
         """
         Returns the schema corresponding to the version given.
