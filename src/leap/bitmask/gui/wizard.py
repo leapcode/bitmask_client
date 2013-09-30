@@ -110,9 +110,6 @@ class Wizard(QtGui.QWizard):
 
         self.currentIdChanged.connect(self._current_id_changed)
 
-        self.ui.lblPassword.setEchoMode(QtGui.QLineEdit.Password)
-        self.ui.lblPassword2.setEchoMode(QtGui.QLineEdit.Password)
-
         self.ui.lnProvider.textChanged.connect(
             self._enable_check)
 
