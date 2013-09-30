@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 First run wizard
 """
@@ -27,15 +26,13 @@ from functools import partial
 from PySide import QtCore, QtGui
 from twisted.internet import threads
 
-from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpregister import SRPRegister
-from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
+from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services import get_service_display_name, get_supported
 from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.password import basic_password_checks
-from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.bitmask.services import get_service_display_name, get_supported
 
 from ui_wizard import Ui_Wizard
 

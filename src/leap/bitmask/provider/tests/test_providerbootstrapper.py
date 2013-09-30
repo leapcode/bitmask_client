@@ -14,15 +14,12 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-
 """
 Tests for the Provider Boostrapper checks
 
 These will be whitebox tests since we want to make sure the private
 implementation is checking what we expect.
 """
-
 import os
 import mock
 import socket
@@ -39,13 +36,12 @@ from nose.twistedtools import deferred, reactor
 from twisted.internet import threads
 from requests.models import Response
 
-from leap.bitmask.services.eip.providerbootstrapper import ProviderBootstrapper
-from leap.bitmask.services.eip.providerbootstrapper import \
-    UnsupportedProviderAPI
-from leap.bitmask.services.eip.providerbootstrapper import WrongFingerprint
-from leap.bitmask.provider.supportedapis import SupportedAPIs
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.tests import fake_provider
+from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.provider.providerbootstrapper import UnsupportedProviderAPI
+from leap.bitmask.provider.providerbootstrapper import WrongFingerprint
+from leap.bitmask.provider.supportedapis import SupportedAPIs
 from leap.common.files import mkdir_p
 from leap.common.testing.https_server import where
 from leap.common.testing.basetest import BaseLeapTest

@@ -8,3 +8,4 @@
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
+leap.common >= 0.3.4  # because the ca_bundle
