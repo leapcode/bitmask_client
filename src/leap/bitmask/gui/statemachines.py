@@ -138,6 +138,14 @@ class ConnectionMachineBuilder(object):
         states[_CON].addTransition(
             conn.qtsigs.connection_aborted_signal,
             states[_OFF])
+        # * Connection died can in some cases also be
+        #   triggered while we are in CONNECTING
+        #   state. I should be avoided, since connection_aborted
+        #   is clearer (and reserve connection_died
+        #   for transitions from on->off
+        states[_CON].addTransition(
+            conn.qtsigs.connection_died_signal,
+            states[_OFF])
 
         # adding states to the machine
         for state in states.itervalues():
