@@ -1531,7 +1531,9 @@ class MainWindow(QtGui.QMainWindow):
         # TODO we should have a way of parsing the latest lines in the vpn
         # log buffer so we can have a more precise idea of which type
         # of error did we have (server side, local problem, etc)
-        abnormal = True
+
+        qtsigs = self._eip_connection.qtsigs
+        signal = qtsigs.disconnected_signal
 
         # XXX check if these exitCodes are pkexec/cocoasudo specific
         if exitCode in (126, 127):
@@ -1540,28 +1542,25 @@ class MainWindow(QtGui.QMainWindow):
                         "because you did not authenticate properly."),
                 error=True)
             self._vpn.killit()
+            signal = qtsigs.connection_aborted_signal
+
         elif exitCode != 0 or not self.user_stopped_eip:
             self._status_panel.set_global_status(
                 self.tr("Encrypted Internet finished in an "
                         "unexpected manner!"), error=True)
-        else:
-            abnormal = False
+            signal = qtsigs.connection_died_signal
+
         if exitCode == 0 and IS_MAC:
             # XXX remove this warning after I fix cocoasudo.
             logger.warning("The above exit code MIGHT BE WRONG.")
-
-        # We emit signals to trigger transitions in the state machine:
-        qtsigs = self._eip_connection.qtsigs
-        if abnormal:
-            signal = qtsigs.connection_died_signal
-        else:
-            signal = qtsigs.disconnected_signal
 
         # XXX verify that the logic kees the same w/o the abnormal flag
         # after the refactor to EIPConnection has been completed
         # (eipconductor taking the most of the logic under transitions
         # that right now are handled under status_panel)
         #self._stop_eip(abnormal)
+
+        # We emit signals to trigger transitions in the state machine:
         signal.emit()
 
     def _on_raise_window_event(self, req):

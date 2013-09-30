@@ -103,6 +103,7 @@ class AbstractLEAPConnection(object):
 
     # Bypass stages
     connection_died_signal = None
+    connection_aborted_signal = None
 
     class Disconnected(State):
         """Disconnected state"""
