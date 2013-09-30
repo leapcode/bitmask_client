@@ -26,6 +26,7 @@ from functools import partial
 from PySide import QtCore, QtGui
 from twisted.internet import threads
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
@@ -140,6 +141,11 @@ class Wizard(QtGui.QWizard):
         # https://leap.se/code/issues/2922
         self.ui.label_12.setVisible(False)
         self.ui.lblProviderPolicy.setVisible(False)
+
+        # Load configured providers into wizard
+        ls = LeapSettings()
+        providers = ls.get_configured_providers()
+        self.ui.cbProviders.addItems(providers)
 
     def get_domain(self):
         return self._domain
