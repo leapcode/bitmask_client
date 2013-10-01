@@ -362,11 +362,27 @@ class SoledadBootstrapper(AbstractBootstrapper):
         try:
             self._keymanager.get_key(
                 address, openpgp.OpenPGPKey, private=True, fetch_remote=False)
+            return
         except KeyNotFound:
             logger.debug("Key not found. Generating key for %s" % (address,))
+
+        # generate key
+        try:
             self._keymanager.gen_key(openpgp.OpenPGPKey)
+        except Exception as exc:
+            logger.error("error while generating key!")
+            logger.exception(exc)
+            raise
+
+        # send key
+        try:
             self._keymanager.send_key(openpgp.OpenPGPKey)
-            logger.debug("Key generated successfully.")
+        except Exception as exc:
+            logger.error("error while sending key!")
+            logger.exception(exc)
+            raise
+
+        logger.debug("Key generated successfully.")
 
     def run_soledad_setup_checks(self,
                                  provider_config,
