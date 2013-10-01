@@ -216,22 +216,6 @@ class EIPStatusWidget(QtGui.QWidget):
         leap_assert_type(eip_status_menu, QtGui.QMenu)
         self._eip_status_menu = eip_status_menu
 
-    def set_eip_status(self, status, error=False):
-        """
-        Sets the global status label.
-
-        :param status: status message
-        :type status: str or unicode
-        :param error: if the status is an erroneous one, then set this
-                      to True
-        :type error: bool
-        """
-        leap_assert_type(error, bool)
-        if error:
-            status = "<font color='red'><b>%s</b></font>" % (status,)
-        self.ui.lblEIPStatus.setText(status)
-        self.ui.lblEIPStatus.show()
-
     # EIP status ---
 
     @property
@@ -261,9 +245,7 @@ class EIPStatusWidget(QtGui.QWidget):
         :type error: bool
         """
         leap_assert_type(error, bool)
-
         self._eip_status = status
-
         if error:
             status = "<font color='red'>%s</font>" % (status,)
         self.ui.lblEIPStatus.setText(status)
