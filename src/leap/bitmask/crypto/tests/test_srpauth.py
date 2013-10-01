@@ -680,10 +680,7 @@ class SRPAuthTestCase(unittest.TestCase):
             self.auth_backend._session.delete,
             side_effect=Exception())
 
-        def wrapper(*args):
-            self.auth_backend.logout()
-
-        d = threads.deferToThread(wrapper)
+        d = threads.deferToThread(self.auth.logout)
         return d
 
     @deferred()

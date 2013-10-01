@@ -156,7 +156,9 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # Watch out! We're handling the verify paramenter differently here.
 
         headers = {}
-        provider_json = os.path.join(get_path_prefix(), "leap", "providers",
+        provider_json = os.path.join(get_path_prefix(),
+                                     "leap",
+                                     "providers",
                                      self._domain, "provider.json")
         mtime = get_mtime(provider_json)
 

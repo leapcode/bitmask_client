@@ -42,6 +42,8 @@ from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.provider.providerbootstrapper import UnsupportedProviderAPI
 from leap.bitmask.provider.providerbootstrapper import WrongFingerprint
 from leap.bitmask.provider.supportedapis import SupportedAPIs
+from leap.bitmask import util
+from leap.bitmask.util import get_path_prefix
 from leap.common.files import mkdir_p
 from leap.common.testing.https_server import where
 from leap.common.testing.basetest import BaseLeapTest
@@ -315,16 +317,19 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         # tearDown so we are sure everything is as expected for each
         # test. If we do it inside each specific test, a failure in
         # the test will leave the implementation with the mock.
-        self.old_gpp = ProviderConfig.get_path_prefix
+        self.old_gpp = util.get_path_prefix
+
         self.old_load = ProviderConfig.load
         self.old_save = ProviderConfig.save
         self.old_api_version = ProviderConfig.get_api_version
+        self.old_api_uri = ProviderConfig.get_api_uri
 
     def tearDown(self):
-        ProviderConfig.get_path_prefix = self.old_gpp
+        util.get_path_prefix = self.old_gpp
         ProviderConfig.load = self.old_load
         ProviderConfig.save = self.old_save
         ProviderConfig.get_api_version = self.old_api_version
+        ProviderConfig.get_api_uri = self.old_api_uri
 
     def test_check_https_succeeds(self):
         # XXX: Need a proper CA signed cert to test this
@@ -372,10 +377,11 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
                             paths
         :type path_prefix: str
         """
-        ProviderConfig.get_path_prefix = mock.MagicMock(
-            return_value=path_prefix)
+        util.get_path_prefix = mock.MagicMock(return_value=path_prefix)
         ProviderConfig.get_api_version = mock.MagicMock(
             return_value=api)
+        ProviderConfig.get_api_uri = mock.MagicMock(
+            return_value="https://localhost:%s" % (self.https_port,))
         ProviderConfig.load = mock.MagicMock()
         ProviderConfig.save = mock.MagicMock()
 
@@ -400,10 +406,8 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         :returns: the provider.json path used
         :rtype: str
         """
-        provider_dir = os.path.join(ProviderConfig()
-                                    .get_path_prefix(),
-                                    "leap",
-                                    "providers",
+        provider_dir = os.path.join(get_path_prefix(),
+                                    "leap", "providers",
                                     self.pb._domain)
         mkdir_p(provider_dir)
         provider_path = os.path.join(provider_dir,
@@ -413,6 +417,9 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
             p.write("A")
         return provider_path
 
+    @mock.patch(
+        'leap.bitmask.config.providerconfig.ProviderConfig.get_domain',
+        lambda x: where('testdomain.com'))
     def test_download_provider_info_new_provider(self):
         self._setup_provider_config_with("1", tempfile.mkdtemp())
         self._setup_providerbootstrapper(True)
@@ -431,10 +438,7 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         # set mtime to something really new
         os.utime(provider_path, (-1, time.time()))
 
-        with mock.patch.object(
-                ProviderConfig, 'get_api_uri',
-                return_value="https://localhost:%s" % (self.https_port,)):
-            self.pb._download_provider_info()
+        self.pb._download_provider_info()
         # we check that it doesn't save the provider
         # config, because it's new enough
         self.assertFalse(ProviderConfig.save.called)
@@ -450,10 +454,7 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         # set mtime to something really new
         os.utime(provider_path, (-1, time.time()))
 
-        with mock.patch.object(
-                ProviderConfig, 'get_api_uri',
-                return_value="https://localhost:%s" % (self.https_port,)):
-            self.pb._download_provider_info()
+        self.pb._download_provider_info()
         # we check that it doesn't save the provider
         # config, because it's new enough
         self.assertFalse(ProviderConfig.save.called)
@@ -469,10 +470,7 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         # set mtime to something really old
         os.utime(provider_path, (-1, 100))
 
-        with mock.patch.object(
-                ProviderConfig, 'get_api_uri',
-                return_value="https://localhost:%s" % (self.https_port,)):
-            self.pb._download_provider_info()
+        self.pb._download_provider_info()
         self.assertTrue(ProviderConfig.load.called)
         self.assertTrue(ProviderConfig.save.called)
 
@@ -484,11 +482,8 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         self._setup_providerbootstrapper(False)
         self._produce_dummy_provider_json()
 
-        with mock.patch.object(
-                ProviderConfig, 'get_api_uri',
-                return_value="https://localhost:%s" % (self.https_port,)):
-            with self.assertRaises(UnsupportedProviderAPI):
-                self.pb._download_provider_info()
+        with self.assertRaises(UnsupportedProviderAPI):
+            self.pb._download_provider_info()
 
     @mock.patch(
         'leap.bitmask.config.providerconfig.ProviderConfig.get_ca_cert_path',
@@ -499,10 +494,7 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         self._setup_providerbootstrapper(False)
         self._produce_dummy_provider_json()
 
-        with mock.patch.object(
-                ProviderConfig, 'get_api_uri',
-                return_value="https://localhost:%s" % (self.https_port,)):
-            self.pb._download_provider_info()
+        self.pb._download_provider_info()
 
     @mock.patch(
         'leap.bitmask.config.providerconfig.ProviderConfig.get_api_uri',
