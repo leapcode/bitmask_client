@@ -38,9 +38,10 @@ from leap.bitmask.gui.eip_status import EIPStatusWidget
 from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.wizard import Wizard
 
+from leap.bitmask import provider
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
-from leap.bitmask.services.eip.eipconfig import EIPConfig
+from leap.bitmask.services.eip import eipconfig
 # XXX: Soledad might not work out of the box in Windows, issue #2932
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
@@ -100,6 +101,7 @@ class MainWindow(QtGui.QMainWindow):
     MX_SERVICE = "mx"
 
     # Signals
+    eip_needs_login = QtCore.Signal([])
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
@@ -162,6 +164,10 @@ class MainWindow(QtGui.QMainWindow):
 
         self._eip_status = EIPStatusWidget(self)
         self.ui.eipLayout.addWidget(self._eip_status)
+        self._login_widget.logged_in_signal.connect(
+            self._eip_status.enable_eip_start)
+        self._login_widget.logged_in_signal.connect(
+            self._enable_eip_start_action)
 
         self._mail_status = MailStatusWidget(self)
         self.ui.mailLayout.addWidget(self._mail_status)
@@ -174,13 +180,17 @@ class MainWindow(QtGui.QMainWindow):
             self._stop_eip)
         self._eip_status.eip_connection_connected.connect(
             self._on_eip_connected)
+        self.eip_needs_login.connect(
+            self._eip_status.disable_eip_start)
+        self.eip_needs_login.connect(
+            self._disable_eip_start_action)
 
         # This is loaded only once, there's a bug when doing that more
         # than once
         self._provider_config = ProviderConfig()
         # Used for automatic start of EIP
         self._provisional_provider_config = ProviderConfig()
-        self._eip_config = EIPConfig()
+        self._eip_config = eipconfig.EIPConfig()
 
         self._already_started_eip = False
 
@@ -309,6 +319,17 @@ class MainWindow(QtGui.QMainWindow):
 
         self._smtp_config = SMTPConfig()
 
+        # Eip machine is a public attribute where the state machine for
+        # the eip connection will be available to the different components.
+        # Remember that this will not live in the  +1600LOC mainwindow for
+        # all the eternity, so at some point we will be moving this to
+        # the EIPConductor or some other clever component that we will
+        # instantiate from here.
+
+        self.eip_machine = None
+        # start event machines
+        self.start_eip_machine()
+
         if self._first_run():
             self._wizard_firstrun = True
             self._wizard = Wizard(bypass_checks=bypass_checks)
@@ -317,18 +338,9 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard.accepted.connect(self._finish_init)
             self._wizard.rejected.connect(self._rejected_wizard)
         else:
+            # during finish_init, we disable the eip start button
+            # so this has to be done after eip_machine is started
             self._finish_init()
-
-        # Eip machine is a public attribute where the state machine for
-        # the eip connection will be available to the different components.
-        # Remember that this will not live in the  +1600LOC mainwindow for
-        # all the eternity, so at some point we will be moving this to
-        # the EIPConductor or some other clever component that we will
-        # instantiate from here.
-        self.eip_machine = None
-
-        # start event machines
-        self.start_eip_machine()
 
     def _rejected_wizard(self):
         """
@@ -582,21 +594,29 @@ class MainWindow(QtGui.QMainWindow):
         """
         Tries to autostart EIP
         """
-        default_provider = self._settings.get_defaultprovider()
+        settings = self._settings
+
+        should_autostart = settings.get_autostart_eip()
+        if not should_autostart:
+            logger.debug('Will not autostart EIP since it is setup '
+                         'to not to do it')
+            self.eip_needs_login.emit()
+            return
+
+        default_provider = settings.get_defaultprovider()
 
         if default_provider is None:
             logger.info("Cannot autostart Encrypted Internet because there is "
                         "no default provider configured")
+            self.eip_needs_login.emit()
             return
 
-        self._enabled_services = self._settings.get_enabled_services(
+        self._enabled_services = settings.get_enabled_services(
             default_provider)
 
-        if self._provisional_provider_config.load(
-            os.path.join("leap",
-                         "providers",
-                         default_provider,
-                         "provider.json")):
+        loaded = self._provisional_provider_config.load(
+            provider.get_provider_path(default_provider))
+        if loaded:
             # XXX I think we should not try to re-download config every time,
             # it adds some delay.
             # Maybe if it's the first run in a session,
@@ -604,6 +624,7 @@ class MainWindow(QtGui.QMainWindow):
             self._download_eip_config()
         else:
             # XXX: Display a proper message to the user
+            self.eip_needs_login.emit()
             logger.error("Unable to load %s config, cannot autostart." %
                          (default_provider,))
 
@@ -1165,6 +1186,21 @@ class MainWindow(QtGui.QMainWindow):
                                            label=label)
         self.eip_machine = eip_machine
         self.eip_machine.start()
+        logger.debug('eip machine started')
+
+    @QtCore.Slot()
+    def _disable_eip_start_action(self):
+        """
+        Disables the EIP start action in the systray menu.
+        """
+        self._action_eip_startstop.setEnabled(False)
+
+    @QtCore.Slot()
+    def _enable_eip_start_action(self):
+        """
+        Enables the EIP start action in the systray menu.
+        """
+        self._action_eip_startstop.setEnabled(True)
 
     @QtCore.Slot()
     def _on_eip_connected(self):
@@ -1196,6 +1232,27 @@ class MainWindow(QtGui.QMainWindow):
         provider = provider_config.get_domain()
         self._eip_status.eip_pre_up()
         self.user_stopped_eip = False
+
+        # until we set an option in the preferences window,
+        # we'll assume that by default we try to autostart.
+        # If we switch it off manually, it won't try the next
+        # time.
+        self._settings.set_autostart_eip(True)
+
+        loaded = eipconfig.load_eipconfig_if_needed(
+            provider_config, self._eip_config, provider)
+
+        if not loaded:
+            self._eip_status.set_eip_status(
+                self.tr("Could not load Encrypted Internet "
+                        "Configuration."),
+                error=True)
+            # signal connection aborted to state machine
+            qtsigs = self._eip_connection.qtsigs
+            qtsigs.connection_aborted_signal.emit()
+            logger.error("Tried to start EIP but cannot find any "
+                         "available provider!")
+            return
 
         try:
             # XXX move this to EIPConductor
@@ -1263,7 +1320,7 @@ class MainWindow(QtGui.QMainWindow):
             self._already_started_eip = True
 
     @QtCore.Slot()
-    def _stop_eip(self, abnormal=False):
+    def _stop_eip(self):
         """
         SLOT
         TRIGGERS:
@@ -1277,18 +1334,15 @@ class MainWindow(QtGui.QMainWindow):
         :param abnormal: whether this was an abnormal termination.
         :type abnormal: bool
         """
-        if abnormal:
-            logger.warning("Abnormal EIP termination.")
-
         self.user_stopped_eip = True
         self._vpn.terminate()
 
         self._set_eipstatus_off(False)
-
         self._already_started_eip = False
 
-        # XXX do via signal
-        self._settings.set_defaultprovider(None)
+        logger.debug('Setting autostart to: False')
+        self._settings.set_autostart_eip(False)
+
         if self._logged_user:
             self._eip_status.set_provider(
                 "%s@%s" % (self._logged_user,
@@ -1351,13 +1405,9 @@ class MainWindow(QtGui.QMainWindow):
         provider_config = self._get_best_provider_config()
         domain = provider_config.get_domain()
 
-        loaded = self._eip_config.loaded()
-        if not loaded:
-            eip_config_path = os.path.join("leap", "providers",
-                                           domain, "eip-service.json")
-            api_version = provider_config.get_api_version()
-            self._eip_config.set_api_version(api_version)
-            loaded = self._eip_config.load(eip_config_path)
+        # XXX  move check to _start_eip ?
+        loaded = eipconfig.load_eipconfig_if_needed(
+            provider_config, self._eip_config, domain)
 
         if loaded:
             # DO START EIP Connection!

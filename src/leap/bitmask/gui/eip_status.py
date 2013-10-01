@@ -233,6 +233,30 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         self.set_startstop_enabled(False)
 
+    @QtCore.Slot()
+    def disable_eip_start(self):
+        """
+        Triggered when a default provider_config has not been found.
+        Disables the start button and adds instructions to the user.
+        """
+        logger.debug('Hiding EIP start button')
+        # you might be tempted to change this for a .setEnabled(False).
+        # it won't work. it's under the claws of the state machine.
+        # probably the best thing would be to make a transitional
+        # transition there, but that's more involved.
+        self.eip_button.hide()
+        msg = self.tr("You must login to use Encrypted Internet")
+        self.eip_label.setText(msg)
+
+    @QtCore.Slot()
+    def enable_eip_start(self):
+        """
+        Triggered after a successful login.
+        Enables the start button.
+        """
+        logger.debug('Showing EIP start button')
+        self.eip_button.show()
+
     # XXX disable (later) --------------------------
     def set_eip_status(self, status, error=False):
         """
@@ -261,6 +285,8 @@ class EIPStatusWidget(QtGui.QWidget):
         :param value: True for enabled, False otherwise
         :type value: bool
         """
+        # TODO use disable_eip_start instead
+        # this should be handled by the state machine
         leap_assert_type(value, bool)
         self.ui.btnEipStartStop.setEnabled(value)
         self._action_eip_startstop.setEnabled(value)
