@@ -52,13 +52,6 @@ class SRPAuthConnectionError(SRPAuthenticationError):
     pass
 
 
-class SRPAuthUnknownUser(SRPAuthenticationError):
-    """
-    Exception raised when trying to authenticate an unknown user
-    """
-    pass
-
-
 class SRPAuthBadStatusCode(SRPAuthenticationError):
     """
     Exception raised when we received an unknown bad status code
@@ -97,7 +90,7 @@ class SRPAuthJSONDecodeError(SRPAuthenticationError):
     pass
 
 
-class SRPAuthBadPassword(SRPAuthenticationError):
+class SRPAuthBadUserOrPassword(SRPAuthenticationError):
     """
     Exception raised when the user provided a bad password to auth.
     """
@@ -219,7 +212,6 @@ class SRPAuth(QtCore.QObject):
             Might raise all SRPAuthenticationError based:
               SRPAuthenticationError
               SRPAuthConnectionError
-              SRPAuthUnknownUser
               SRPAuthBadStatusCode
               SRPAuthNoSalt
               SRPAuthNoB
@@ -266,7 +258,7 @@ class SRPAuth(QtCore.QObject):
                              "Status code = %r. Content: %r" %
                              (init_session.status_code, content))
                 if init_session.status_code == 422:
-                    raise SRPAuthUnknownUser(self._WRONG_USER_PASS)
+                    raise SRPAuthBadUserOrPassword(self._WRONG_USER_PASS)
 
                 raise SRPAuthBadStatusCode(self.tr("There was a problem with"
                                                    " authentication"))
@@ -296,7 +288,7 @@ class SRPAuth(QtCore.QObject):
               SRPAuthBadDataFromServer
               SRPAuthConnectionError
               SRPAuthJSONDecodeError
-              SRPAuthBadPassword
+              SRPAuthBadUserOrPassword
 
             :param salt_B: salt and B parameters for the username
             :type salt_B: tuple
@@ -355,7 +347,7 @@ class SRPAuth(QtCore.QObject):
                                  "received: %s", (content,))
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
                              (auth_result.status_code, error))
-                raise SRPAuthBadPassword(self._WRONG_USER_PASS)
+                raise SRPAuthBadUserOrPassword(self._WRONG_USER_PASS)
 
             if auth_result.status_code not in (200,):
                 logger.error("No valid response (HAMK): "
@@ -452,7 +444,7 @@ class SRPAuth(QtCore.QObject):
             It requires to be authenticated.
 
             Might raise:
-                SRPAuthBadPassword
+                SRPAuthBadUserOrPassword
                 requests.exceptions.HTTPError
 
             :param current_password: the current password for the logged user.
@@ -463,7 +455,7 @@ class SRPAuth(QtCore.QObject):
             leap_assert(self.get_uid() is not None)
 
             if current_password != self._password:
-                raise SRPAuthBadPassword
+                raise SRPAuthBadUserOrPassword
 
             url = "%s/%s/users/%s.json" % (
                 self._provider_config.get_api_uri(),

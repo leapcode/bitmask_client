@@ -1,0 +1,2 @@
+  o Do not distinguish between different possible authentication
+    errors. Fixes #3859.
