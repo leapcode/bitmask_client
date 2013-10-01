@@ -293,6 +293,7 @@ class LoginWidget(QtGui.QWidget):
 
         self.set_status(self.tr("Logging in..."), error=False)
         self.set_enabled(False)
+        self.ui.clblErrorMsg.hide()
 
         if self.get_remember() and has_keyring():
             # in the keyring and in the settings
