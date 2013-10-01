@@ -262,15 +262,13 @@ class EIPConfigTest(BaseLeapTest):
 
     def test_get_client_cert_path_as_expected(self):
         config = self._get_eipconfig()
-        config.get_path_prefix = Mock(return_value='test')
-
         provider_config = ProviderConfig()
 
         # mock 'get_domain' so we don't need to load a config
         provider_domain = 'test.provider.com'
         provider_config.get_domain = Mock(return_value=provider_domain)
 
-        expected_path = os.path.join('test', 'leap', 'providers',
+        expected_path = os.path.join('leap', 'providers',
                                      provider_domain, 'keys', 'client',
                                      'openvpn.pem')
 
@@ -278,26 +276,24 @@ class EIPConfigTest(BaseLeapTest):
         os.path.exists = Mock(return_value=True)
         cert_path = config.get_client_cert_path(provider_config)
 
-        self.assertEqual(cert_path, expected_path)
+        self.assertTrue(cert_path.endswith(expected_path))
 
     def test_get_client_cert_path_about_to_download(self):
         config = self._get_eipconfig()
-        config.get_path_prefix = Mock(return_value='test')
-
         provider_config = ProviderConfig()
 
         # mock 'get_domain' so we don't need to load a config
         provider_domain = 'test.provider.com'
         provider_config.get_domain = Mock(return_value=provider_domain)
 
-        expected_path = os.path.join('test', 'leap', 'providers',
+        expected_path = os.path.join('leap', 'providers',
                                      provider_domain, 'keys', 'client',
                                      'openvpn.pem')
 
         cert_path = config.get_client_cert_path(
             provider_config, about_to_download=True)
 
-        self.assertEqual(cert_path, expected_path)
+        self.assertTrue(cert_path.endswith(expected_path))
 
     def test_get_client_cert_path_fails(self):
         config = self._get_eipconfig()
