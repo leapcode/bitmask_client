@@ -14,10 +14,13 @@ SOURCES += ../src/leap/bitmask/app.py \
            ../src/leap/bitmask/gui/loggerwindow.py \
            ../src/leap/bitmask/gui/login.py \
            ../src/leap/bitmask/gui/mainwindow.py \
-           ../src/leap/bitmask/gui/statuspanel.py \
            ../src/leap/bitmask/gui/twisted_main.py \
            ../src/leap/bitmask/gui/wizardpage.py \
            ../src/leap/bitmask/gui/wizard.py \
+           ../src/leap/bitmask/gui/eip_status.py \
+           ../src/leap/bitmask/gui/mail_status.py \
+           ../src/leap/bitmask/gui/eippreferences.py \
+           ../src/leap/bitmask/gui/preferences.py \
            ../src/leap/bitmask/platform_init/initializers.py \
            ../src/leap/bitmask/platform_init/locks.py \
            ../src/leap/bitmask/provider/supportedapis.py \
@@ -45,8 +48,11 @@ SOURCES += ../src/leap/bitmask/app.py \
 FORMS += ../src/leap/bitmask/gui/ui/loggerwindow.ui \
          ../src/leap/bitmask/gui/ui/login.ui \
          ../src/leap/bitmask/gui/ui/mainwindow.ui \
-         ../src/leap/bitmask/gui/ui/statuspanel.ui \
          ../src/leap/bitmask/gui/ui/wizard.ui \
+         ../src/leap/bitmask/gui/ui/eip_status.ui \
+         ../src/leap/bitmask/gui/ui/mail_status.ui \
+         ../src/leap/bitmask/gui/ui/eippreferences.ui \
+         ../src/leap/bitmask/gui/ui/preferences.ui \
 
 # where to generate ts files -- tx will pick from here
 
