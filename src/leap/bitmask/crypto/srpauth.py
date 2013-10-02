@@ -129,6 +129,7 @@ class SRPAuth(QtCore.QObject):
         SESSION_ID_KEY = "_session_id"
         USER_VERIFIER_KEY = 'user[password_verifier]'
         USER_SALT_KEY = 'user[password_salt]'
+        AUTHORIZATION_KEY = "Authorization"
 
         def __init__(self, provider_config):
             """
@@ -466,6 +467,10 @@ class SRPAuth(QtCore.QObject):
                 self._username, new_password, self._hashfun, self._ng)
 
             cookies = {self.SESSION_ID_KEY: self.get_session_id()}
+            headers = {
+                self.AUTHORIZATION_KEY:
+                "Token token={0}".format(self.get_token())
+            }
             user_data = {
                 self.USER_VERIFIER_KEY: binascii.hexlify(verifier),
                 self.USER_SALT_KEY: binascii.hexlify(salt)
@@ -475,7 +480,8 @@ class SRPAuth(QtCore.QObject):
                 url, data=user_data,
                 verify=self._provider_config.get_ca_cert_path(),
                 cookies=cookies,
-                timeout=REQUEST_TIMEOUT)
+                timeout=REQUEST_TIMEOUT,
+                headers=headers)
 
             # In case of non 2xx it raises HTTPError
             change_password.raise_for_status()

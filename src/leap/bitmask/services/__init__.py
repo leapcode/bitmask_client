@@ -127,9 +127,14 @@ def download_service_config(provider_config, service_config,
     # XXX make and use @with_srp_auth decorator
     srp_auth = SRPAuth(provider_config)
     session_id = srp_auth.get_session_id()
+    token = srp_auth.get_token()
     cookies = None
-    if session_id:
+    if session_id is not None:
         cookies = {"_session_id": session_id}
+
+    # API v2 will only support token auth, but in v1 we can send both
+    if token is not None:
+        headers["Authorization"] = 'Token token="{0}"'.format(token)
 
     res = session.get(config_uri,
                       verify=provider_config.get_ca_cert_path(),
