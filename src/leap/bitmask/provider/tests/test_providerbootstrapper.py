@@ -43,7 +43,6 @@ from leap.bitmask.provider.providerbootstrapper import UnsupportedProviderAPI
 from leap.bitmask.provider.providerbootstrapper import WrongFingerprint
 from leap.bitmask.provider.supportedapis import SupportedAPIs
 from leap.bitmask import util
-from leap.bitmask.util import get_path_prefix
 from leap.common.files import mkdir_p
 from leap.common.testing.https_server import where
 from leap.common.testing.basetest import BaseLeapTest
@@ -406,7 +405,7 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         :returns: the provider.json path used
         :rtype: str
         """
-        provider_dir = os.path.join(get_path_prefix(),
+        provider_dir = os.path.join(util.get_path_prefix(),
                                     "leap", "providers",
                                     self.pb._domain)
         mkdir_p(provider_dir)
