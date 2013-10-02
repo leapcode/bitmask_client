@@ -246,7 +246,7 @@ class SRPAuthTestCase(unittest.TestCase):
         d = self._prepare_auth_test(422)
 
         def wrapper(_):
-            with self.assertRaises(srpauth.SRPAuthUnknownUser):
+            with self.assertRaises(srpauth.SRPAuthBadUserOrPassword):
                 with mock.patch(
                         'leap.bitmask.util.request_helpers.get_content',
                         new=mock.create_autospec(get_content)) as content:
@@ -425,7 +425,7 @@ class SRPAuthTestCase(unittest.TestCase):
                             new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("", 0)
-                with self.assertRaises(srpauth.SRPAuthBadPassword):
+                with self.assertRaises(srpauth.SRPAuthBadUserOrPassword):
                     self.auth_backend._process_challenge(
                         salt_B,
                         username=self.TEST_USER)
@@ -449,7 +449,7 @@ class SRPAuthTestCase(unittest.TestCase):
                             new=mock.create_autospec(get_content)) as \
                     content:
                 content.return_value = ("[]", 0)
-                with self.assertRaises(srpauth.SRPAuthBadPassword):
+                with self.assertRaises(srpauth.SRPAuthBadUserOrPassword):
                     self.auth_backend._process_challenge(
                         salt_B,
                         username=self.TEST_USER)

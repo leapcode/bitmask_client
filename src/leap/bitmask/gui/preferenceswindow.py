@@ -27,11 +27,10 @@ from PySide import QtCore, QtGui
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.soledad.client import NoStorageSecret
-from leap.bitmask.crypto.srpauth import SRPAuthBadPassword
+from leap.bitmask.crypto.srpauth import SRPAuthBadUserOrPassword
 from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services import get_supported
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.bitmask.services import get_service_display_name
 
 logger = logging.getLogger(__name__)
@@ -179,7 +178,7 @@ class PreferencesWindow(QtGui.QDialog):
         logger.error("Error changing password: %s", (failure, ))
         problem = self.tr("There was a problem changing the password.")
 
-        if failure.check(SRPAuthBadPassword):
+        if failure.check(SRPAuthBadUserOrPassword):
             problem = self.tr("You did not enter a correct current password.")
 
         self._set_password_change_status(problem, error=True)
