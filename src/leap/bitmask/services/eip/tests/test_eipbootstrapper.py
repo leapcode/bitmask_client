@@ -41,6 +41,7 @@ from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.tests import fake_provider
 from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask import util
 from leap.common.testing.basetest import BaseLeapTest
 from leap.common.files import mkdir_p
 
@@ -60,13 +61,13 @@ class EIPBootstrapperActiveTest(BaseLeapTest):
 
     def setUp(self):
         self.eb = EIPBootstrapper()
-        self.old_pp = EIPConfig.get_path_prefix
+        self.old_pp = util.get_path_prefix
         self.old_save = EIPConfig.save
         self.old_load = EIPConfig.load
         self.old_si = SRPAuth.get_session_id
 
     def tearDown(self):
-        EIPConfig.get_path_prefix = self.old_pp
+        util.get_path_prefix = self.old_pp
         EIPConfig.save = self.old_save
         EIPConfig.load = self.old_load
         SRPAuth.get_session_id = self.old_si
@@ -97,13 +98,13 @@ class EIPBootstrapperActiveTest(BaseLeapTest):
         pc.get_ca_cert_path = mock.MagicMock(return_value=False)
 
         path_prefix = tempfile.mkdtemp()
-        EIPConfig.get_path_prefix = mock.MagicMock(return_value=path_prefix)
+        util.get_path_prefix = mock.MagicMock(return_value=path_prefix)
         EIPConfig.save = mock.MagicMock()
         EIPConfig.load = mock.MagicMock()
 
         self.eb._download_if_needed = ifneeded
 
-        provider_dir = os.path.join(EIPConfig.get_path_prefix(),
+        provider_dir = os.path.join(util.get_path_prefix(),
                                     "leap",
                                     "providers",
                                     pc.get_domain())
@@ -184,13 +185,13 @@ class EIPBootstrapperActiveTest(BaseLeapTest):
         pc.get_ca_cert_path = mock.MagicMock(return_value=False)
 
         path_prefix = tempfile.mkdtemp()
-        EIPConfig.get_path_prefix = mock.MagicMock(return_value=path_prefix)
+        util.get_path_prefix = mock.MagicMock(return_value=path_prefix)
         EIPConfig.save = mock.MagicMock()
         EIPConfig.load = mock.MagicMock()
 
         self.eb._download_if_needed = ifneeded
 
-        provider_dir = os.path.join(EIPConfig.get_path_prefix(),
+        provider_dir = os.path.join(util.get_path_prefix(),
                                     "leap",
                                     "providers",
                                     "somedomain")

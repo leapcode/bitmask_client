@@ -27,7 +27,7 @@ from PySide import QtCore
 
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
 from leap.bitmask.util.request_helpers import get_content
-from leap.bitmask.util import get_path_prefix
+from leap.bitmask import util
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.provider.supportedapis import SupportedAPIs
@@ -156,7 +156,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # Watch out! We're handling the verify paramenter differently here.
 
         headers = {}
-        provider_json = os.path.join(get_path_prefix(),
+        provider_json = os.path.join(util.get_path_prefix(),
                                      "leap",
                                      "providers",
                                      self._domain, "provider.json")
