@@ -105,10 +105,12 @@ def download_service_config(provider_config, service_config,
     service_name = service_config.name
     service_json = "{0}-service.json".format(service_name)
     headers = {}
-    mtime = get_mtime(os.path.join(get_path_prefix(),
+    mtime = get_mtime(os.path.join(service_config
+                                   .get_path_prefix(),
                                    "leap", "providers",
                                    provider_config.get_domain(),
                                    service_json))
+
     if download_if_needed and mtime:
         headers['if-modified-since'] = mtime
 

@@ -150,10 +150,10 @@ class EIPBootstrapperActiveTest(BaseLeapTest):
 
         def check(*args):
             self.eb._eip_config.save.assert_called_once_with(
-                ["leap",
+                ("leap",
                  "providers",
                  self.eb._provider_config.get_domain(),
-                 "eip-service.json"])
+                 "eip-service.json"))
         d.addCallback(check)
         return d
 
