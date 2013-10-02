@@ -330,7 +330,7 @@ class LoginWidget(QtGui.QWidget):
 
         self.set_password("")
         self.set_enabled(True)
-        self.set_status("")
+        self.set_status("", error=False)
 
     def set_login_status(self, msg, error=False):
         """
