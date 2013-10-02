@@ -26,6 +26,7 @@ from functools import partial
 from PySide import QtCore, QtGui
 from twisted.internet import threads
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
@@ -81,6 +82,8 @@ class Wizard(QtGui.QWizard):
 
         self._show_register = False
 
+        self._use_existing_provider = False
+
         self.ui.grpCheckProvider.setVisible(False)
         self.ui.btnCheck.clicked.connect(self._check_provider)
         self.ui.lnProvider.returnPressed.connect(self._check_provider)
@@ -110,9 +113,6 @@ class Wizard(QtGui.QWizard):
 
         self.currentIdChanged.connect(self._current_id_changed)
 
-        self.ui.lblPassword.setEchoMode(QtGui.QLineEdit.Password)
-        self.ui.lblPassword2.setEchoMode(QtGui.QLineEdit.Password)
-
         self.ui.lnProvider.textChanged.connect(
             self._enable_check)
 
@@ -124,6 +124,8 @@ class Wizard(QtGui.QWizard):
             self._register)
         self.ui.btnRegister.clicked.connect(
             self._register)
+
+        self.ui.rbExistingProvider.toggled.connect(self._skip_provider_checks)
 
         usernameRe = QtCore.QRegExp(self.BARE_USERNAME_REGEX)
         self.ui.lblUser.setValidator(
@@ -143,6 +145,11 @@ class Wizard(QtGui.QWizard):
         # https://leap.se/code/issues/2922
         self.ui.label_12.setVisible(False)
         self.ui.lblProviderPolicy.setVisible(False)
+
+        # Load configured providers into wizard
+        ls = LeapSettings()
+        providers = ls.get_configured_providers()
+        self.ui.cbProviders.addItems(providers)
 
     def get_domain(self):
         return self._domain
@@ -314,6 +321,25 @@ class Wizard(QtGui.QWizard):
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_select_defer = self._provider_bootstrapper.\
             run_provider_select_checks(self._domain)
+
+    def _skip_provider_checks(self, skip):
+        """
+        SLOT
+        Triggered:
+            self.ui.rbExistingProvider.toggled
+
+        Allows the user to move to the next page without make any checks,
+        used when we are selecting an already configured provider.
+
+        :param skip: if we should skip checks or not
+        :type skip: bool
+        """
+        if skip:
+            self._reset_provider_check()
+
+        self.page(self.SELECT_PROVIDER_PAGE).set_completed(skip)
+        self.button(QtGui.QWizard.NextButton).setEnabled(skip)
+        self._use_existing_provider = skip
 
     def _complete_task(self, data, label, complete=False, complete_page=-1):
         """
@@ -560,5 +586,15 @@ class Wizard(QtGui.QWizard):
                 return self.REGISTER_USER_PAGE
             else:
                 return self.SERVICES_PAGE
+
+        if self.currentPage() == self.page(self.SELECT_PROVIDER_PAGE):
+            if self._use_existing_provider:
+                self._domain = self.ui.cbProviders.currentText()
+                self._provider_config = ProviderConfig.get_provider_config(
+                    self._domain)
+                if self._show_register:
+                    return self.REGISTER_USER_PAGE
+                else:
+                    return self.SERVICES_PAGE
 
         return QtGui.QWizard.nextId(self)
