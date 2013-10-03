@@ -67,6 +67,7 @@ class LeapSettings(object):
     DEFAULTPROVIDER_KEY = "DefaultProvider"
     ALERTMISSING_KEY = "AlertMissingScripts"
     GATEWAY_KEY = "Gateway"
+    PINNED_KEY = "Pinned"
 
     # values
     GATEWAY_AUTOMATIC = "Automatic"
@@ -133,6 +134,22 @@ class LeapSettings(object):
                          % (e,))
 
         return providers
+
+    def is_pinned_provider(self, domain):
+        """
+        Returns True if the domain 'domain' is pinned with the application.
+                False otherwise.
+
+        :param provider: provider domain
+        :type provider: str
+
+        :rtype: bool
+        """
+        leap_assert(len(domain) > 0, "We need a nonempty domain.")
+        pinned_key = "{0}/{1}".format(domain, self.PINNED_KEY)
+        result = to_bool(self._settings.value(pinned_key, False))
+
+        return result
 
     def get_selected_gateway(self, provider):
         """

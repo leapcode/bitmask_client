@@ -20,6 +20,7 @@ First run wizard
 import os
 import logging
 import json
+import random
 
 from functools import partial
 
@@ -146,10 +147,33 @@ class Wizard(QtGui.QWizard):
         self.ui.label_12.setVisible(False)
         self.ui.lblProviderPolicy.setVisible(False)
 
-        # Load configured providers into wizard
+        self._load_configured_providers()
+
+    def _load_configured_providers(self):
+        """
+        Loads the configured providers into the wizard providers combo box.
+        """
         ls = LeapSettings()
         providers = ls.get_configured_providers()
-        self.ui.cbProviders.addItems(providers)
+        pinned = []
+        user_added = []
+
+        # separate pinned providers from user added ones
+        for p in providers:
+            if ls.is_pinned_provider(p):
+                pinned.append(p)
+            else:
+                user_added.append(p)
+
+        if user_added:
+            self.ui.cbProviders.addItems(user_added)
+
+        if user_added and pinned:
+            self.ui.cbProviders.addItem('---')
+
+        if pinned:
+            random.shuffle(pinned)  # don't prioritize alphabetically
+            self.ui.cbProviders.addItems(pinned)
 
     def get_domain(self):
         return self._domain
