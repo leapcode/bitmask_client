@@ -766,9 +766,10 @@ class MainWindow(QtGui.QMainWindow):
         """
         Reimplements the changeEvent method to minimize to tray
         """
-        if QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
-                e.type() == QtCore.QEvent.WindowStateChange and \
-                self.isMinimized():
+        if not IS_MAC and \
+           QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
+           e.type() == QtCore.QEvent.WindowStateChange and \
+           self.isMinimized():
             self._toggle_visible()
             e.accept()
             return
