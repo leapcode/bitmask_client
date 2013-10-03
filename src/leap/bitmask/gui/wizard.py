@@ -155,6 +155,12 @@ class Wizard(QtGui.QWizard):
         """
         ls = LeapSettings()
         providers = ls.get_configured_providers()
+        if not providers:
+            self.ui.rbExistingProvider.setEnabled(False)
+            self.ui.label_8.setEnabled(False)  # 'https://' label
+            self.ui.cbProviders.setEnabled(False)
+            return
+
         pinned = []
         user_added = []
 
