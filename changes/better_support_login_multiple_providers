@@ -1,2 +1,3 @@
   o Fixes a bug where you cannot login to a different provider once
-    you logged in to another one.
+    you logged in to another one. Fixes #3695.
+  o Also resets the session for every login attempt. Related to #3695.

@@ -508,6 +508,8 @@ class SRPAuth(QtCore.QObject):
             self._username = username
             self._password = password
 
+            self._session = self._fetcher.session()
+
             d = threads.deferToThread(self._authentication_preprocessing,
                                       username=username,
                                       password=password)
