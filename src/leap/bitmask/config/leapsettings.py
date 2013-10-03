@@ -65,6 +65,7 @@ class LeapSettings(object):
     PROPERPROVIDER_KEY = "ProperProvider"
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
+    AUTOSTARTEIP_KEY = "AutoStartEIP"
     ALERTMISSING_KEY = "AlertMissingScripts"
     GATEWAY_KEY = "Gateway"
     PINNED_KEY = "Pinned"
@@ -301,6 +302,24 @@ class LeapSettings(object):
             self._settings.remove(self.DEFAULTPROVIDER_KEY)
         else:
             self._settings.setValue(self.DEFAULTPROVIDER_KEY, provider)
+
+    def get_autostart_eip(self):
+        """
+        Gets whether the app should autostart EIP.
+
+        :rtype: bool
+        """
+        return to_bool(self._settings.value(self.AUTOSTARTEIP_KEY, False))
+
+    def set_autostart_eip(self, autostart):
+        """
+        Sets whether the app should autostart EIP.
+
+        :param autostart: True if we should try to autostart EIP.
+        :type autostart: bool
+        """
+        leap_assert_type(autostart, bool)
+        self._settings.setValue(self.AUTOSTARTEIP_KEY, autostart)
 
     def get_alert_missing_scripts(self):
         """

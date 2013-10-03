@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Login widget implementation
 """
@@ -36,9 +35,9 @@ class LoginWidget(QtGui.QWidget):
     Login widget that emits signals to display the wizard or to
     perform login.
     """
-
     # Emitted when the login button is clicked
     login = QtCore.Signal()
+    logged_in_signal = QtCore.Signal()
     cancel_login = QtCore.Signal()
     logout = QtCore.Signal()
 
@@ -320,6 +319,7 @@ class LoginWidget(QtGui.QWidget):
         self.ui.lblUser.setText("%s@%s" % (self.get_user(),
                                            self.get_selected_provider()))
         self.set_login_status("")
+        self.logged_in_signal.emit()
 
     def logged_out(self):
         """
