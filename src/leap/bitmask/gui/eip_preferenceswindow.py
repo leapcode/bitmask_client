@@ -50,6 +50,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui = Ui_EIPPreferences()
         self.ui.setupUi(self)
         self.ui.lblProvidersGatewayStatus.setVisible(False)
+        self.ui.lblAutoStartEIPStatus.setVisible(False)
 
         # Connections
         self.ui.cbProvidersGateway.currentIndexChanged[unicode].connect(
@@ -58,7 +59,39 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.cbGateways.currentIndexChanged[unicode].connect(
             lambda x: self.ui.lblProvidersGatewayStatus.setVisible(False))
 
+        self.ui.cbProvidersEIP.currentIndexChanged[unicode].connect(
+            lambda x: self.ui.lblAutoStartEIPStatus.setVisible(False))
+
+        self.ui.cbAutoStartEIP.toggled.connect(
+            lambda x: self.ui.lblAutoStartEIPStatus.setVisible(False))
+
+        self.ui.pbSaveAutoStartEIP.clicked.connect(self._save_auto_start_eip)
+
         self._add_configured_providers()
+
+        # Load auto start EIP settings
+        self.ui.cbAutoStartEIP.setChecked(self._settings.get_autostart_eip())
+        default_provider = self._settings.get_defaultprovider()
+        idx = self.ui.cbProvidersEIP.findText(default_provider)
+        self.ui.cbProvidersEIP.setCurrentIndex(idx)
+
+    def _save_auto_start_eip(self):
+        """
+        SLOT
+        TRIGGER:
+            self.ui.cbAutoStartEIP.toggled
+
+        Saves the automatic start of EIP user preference.
+        """
+        default_provider = self.ui.cbProvidersEIP.currentText()
+        enabled = self.ui.cbAutoStartEIP.isChecked()
+
+        self._settings.set_autostart_eip(enabled)
+        self._settings.set_defaultprovider(default_provider)
+
+        self.ui.lblAutoStartEIPStatus.show()
+        logger.debug('Auto start EIP saved: {0} {1}.'.format(
+            default_provider, enabled))
 
     def _set_providers_gateway_status(self, status, success=False,
                                       error=False):
@@ -87,8 +120,16 @@ class EIPPreferencesWindow(QtGui.QDialog):
         Add the client's configured providers to the providers combo boxes.
         """
         self.ui.cbProvidersGateway.clear()
-        for provider in self._settings.get_configured_providers():
+        self.ui.cbProvidersEIP.clear()
+        providers = self._settings.get_configured_providers()
+        if not providers:
+            self.ui.gbAutomaticEIP.setEnabled(False)
+            self.ui.gbGatewaySelector.setEnabled(False)
+            return
+
+        for provider in providers:
             self.ui.cbProvidersGateway.addItem(provider)
+            self.ui.cbProvidersEIP.addItem(provider)
 
     def _save_selected_gateway(self, provider):
         """
