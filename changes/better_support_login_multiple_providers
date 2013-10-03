@@ -1,0 +1,2 @@
+  o Fixes a bug where you cannot login to a different provider once
+    you logged in to another one.

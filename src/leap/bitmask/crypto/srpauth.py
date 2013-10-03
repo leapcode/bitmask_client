@@ -603,6 +603,13 @@ class SRPAuth(QtCore.QObject):
         # Store instance reference as the only member in the handle
         self.__dict__['_SRPAuth__instance'] = SRPAuth.__instance
 
+        # Generally, we initialize this with a provider_config once,
+        # and after that initialize it without one and use the one
+        # that was assigned before. But we need to update it if we
+        # want to be able to logout and login into another provider.
+        if provider_config is not None:
+            SRPAuth.__instance._provider_config = provider_config
+
     def authenticate(self, username, password):
         """
         Executes the whole authentication process for a user
