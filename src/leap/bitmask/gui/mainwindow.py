@@ -950,17 +950,22 @@ class MainWindow(QtGui.QMainWindow):
 
         self._login_widget.logged_in()
 
+        self._enabled_services = self._settings.get_enabled_services(
+            self._provider_config.get_domain())
+
         # TODO separate UI from logic.
         # TODO soledad should check if we want to run only over EIP.
         if self._provider_config.provides_mx() and \
            self._enabled_services.count(self.MX_SERVICE) > 0:
             self._mail_status.about_to_start()
 
-        self._soledad_bootstrapper.run_soledad_setup_checks(
-            self._provider_config,
-            self._login_widget.get_user(),
-            self._login_widget.get_password(),
-            download_if_needed=True)
+            self._soledad_bootstrapper.run_soledad_setup_checks(
+                self._provider_config,
+                self._login_widget.get_user(),
+                self._login_widget.get_password(),
+                download_if_needed=True)
+        else:
+            self._mail_status.set_disabled()
 
         self._download_eip_config()
 
