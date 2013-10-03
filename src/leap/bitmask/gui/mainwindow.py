@@ -312,6 +312,7 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad_ready = False
         self._keymanager = None
         self._smtp_service = None
+        self._smtp_port = None
         self._imap_service = None
 
         self._login_defer = None
@@ -1104,7 +1105,7 @@ class MainWindow(QtGui.QMainWindow):
         # the specific default.
 
         from leap.mail.smtp import setup_smtp_relay
-        self._smtp_service = setup_smtp_relay(
+        self._smtp_service, self._smtp_port = setup_smtp_relay(
             port=2013,
             keymanager=self._keymanager,
             smtp_host=host,
@@ -1124,6 +1125,7 @@ class MainWindow(QtGui.QMainWindow):
         # but in the imap case we are just stopping the fetcher.
         if self._smtp_service is not None:
             logger.debug('Stopping smtp service.')
+            self._smtp_port.stopListening()
             self._smtp_service.doStop()
 
     ###################################################################
