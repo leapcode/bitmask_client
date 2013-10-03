@@ -321,7 +321,18 @@ class SoledadBootstrapper(AbstractBootstrapper):
             gpgbin = os.path.join(
                 get_path_prefix(), "..", "apps", "mail", "gpg")
         else:
-            gpgbin = which("gpg")
+            try:
+                gpgbin_options = which("gpg")
+                # gnupg checks that the path to the binary is not a
+                # symlink, so we need to filter those and come up with
+                # just one option.
+                for opt in gpgbin_options:
+                    if not os.path.islink(opt):
+                        gpgbin = opt
+                        break
+            except IndexError as e:
+                logger.debug("Couldn't find the gpg binary!")
+                logger.exception(e)
         leap_check(gpgbin is not None, "Could not find gpg binary")
         return gpgbin
 
