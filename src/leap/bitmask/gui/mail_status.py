@@ -199,7 +199,8 @@ class MailStatusWidget(QtGui.QWidget):
 
         :param status: the status text to display
         :type status: unicode
-        :param ready: 2 or >2 if mx is ready, 0 if stopped, 1 if it's starting.
+        :param ready: 2 or >2 if mx is ready, 0 if stopped, 1 if it's
+                      starting, < 0 if disabled.
         :type ready: int
         """
         self.ui.lblMailStatus.setText(status)
@@ -219,6 +220,8 @@ class MailStatusWidget(QtGui.QWidget):
             icon = self.CONNECTED_ICON
             self._mx_status = self.tr('ON')
             tray_status = self.tr('Mail is ON')
+        elif ready < 0:
+            tray_status = self.tr("Mail is disabled")
 
         self.ui.lblMailStatusIcon.setPixmap(icon)
         self._action_mail_status.setText(tray_status)
@@ -391,6 +394,12 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._set_mail_status(self.tr("About to start, please wait..."),
                               ready=1)
+
+    def set_disabled(self):
+        """
+        Displays the correct UI for disabled mail.
+        """
+        self._set_mail_status(self.tr("Disabled"), -1)
 
     def stopped_mail(self):
         """

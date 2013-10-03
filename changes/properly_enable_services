@@ -1,0 +1,1 @@
+  o Do not start Soledad if Mail is not enabled. Fixes #3989.
