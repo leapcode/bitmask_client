@@ -1,2 +1,0 @@
-  o Add more verbose error handling during key generation and syncing.
-    Helps diagnose: #3985; Addresses in part: #3965

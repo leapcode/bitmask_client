@@ -1,2 +1,0 @@
-  o Avoids errors due to the EIP switch button and action being enabled
-    when we do not have a configured provider. Closes: #3927

@@ -1,3 +1,36 @@
+0.3.4 Oct 4 -- the "look at my new makeup" release:
+  o Fixes a bug where you cannot login to a different provider once
+    you logged in to another one. Fixes #3695.
+  o Resets the session for every login attempt. Related to #3695.
+  o Avoid error message if --version flag is used. Closes #3914.
+  o Fix a bug in which failing to authenticate properly left
+    connection in an unconsistent state. Closes: #3926
+  o Avoids errors due to the EIP switch button and action being
+    enabled when we do not have a configured provider. Closes: #3927
+  o Add more verbose error handling during key generation and syncing.
+    Helps diagnose: #3985; Addresses in part: #3965
+  o Choose one gnupg binary path that is also not a symlink. Closes
+    #3999.
+  o Refactor vpn launchers, reuse code, improve implementations,
+    update documentation. Closes #2858.
+  o Add preferences option to enable/disable the automatic start of
+    EIP and selection of the EIP provider to auto start. Closes #3631.
+  o Force cleanlooks style for kde only if the app is running from
+    bundle. Closes #3981.
+  o Add a dropdown for known providers in the wizard. Closes #3995.
+  o Separate pinned providers from user configures ones. Closes #3996.
+  o Improve error handling during soledad bootstrap. Closes: #3965.
+    Affects: #3619, #3867, #3966
+  o Implement new UI design. Closes #3973.
+  o Make the initial provider cert verifications against our modified
+    CA-bundle (includes ca-cert certificates, for now). Closes: #3850
+  o Use token header for authenticated requests. Closes #3910.
+  o Do not distinguish between different possible authentication
+    errors. Fixes #3859.
+  o Do not start Soledad if Mail is not enabled. Fixes #3989.
+  o Allow window minization on OSX. Fixes #3932.
+  o Properly stop the smtp daemon. Fixes #3873.
+
 0.3.3 Sep 20 -- "the calm after the tempest" release:
   o Remove execution bits in text files in bundle. Closes #3617.
   o Use generic bad username/password message instead of specific ones when

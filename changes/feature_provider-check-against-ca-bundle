@@ -1,2 +1,0 @@
-  o Make the initial provider cert verifications against our modified
-    CA-bundle (includes ca-cert certificates, for now). Closes: #3850

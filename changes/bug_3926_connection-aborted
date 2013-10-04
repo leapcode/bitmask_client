@@ -1,2 +1,0 @@
-  o Fix a bug in which failing to authenticate properly left connection
-    in an unconsistent state. Closes: #3926
