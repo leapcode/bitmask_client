@@ -27,11 +27,14 @@ Git flow
 --------
 We are basing our workflow on what is described in `A successful git branching model <http://nvie.com/posts/a-successful-git-branching-model/>`_.
 
-.. image:: https://leap.se/code/attachments/13/git-branching-model.png
+.. image:: https://downloads.leap.se/pics/git-branching-model.png
 
-The author of the aforementioned post has also a handy pdf version of it: `branching_model.pdf`_
+Vincent Driessen, the author of the aforementioned post has also a handy pdf version of it: `branching_model.pdf`_
 
-However, we use a setup in which each developer maintains her own feature branch in her private repo. After a code review, this feature branch is rebased onto the authoritative integration branch. Thus, the leapcode repo in leap.se (mirrored in github) only maintains the master and develop branches.
+However, we use a slightly modified setup in which each developer maintains her
+own feature branch in her private repo. After a code review, this feature branch
+is rebased onto the authoritative integration branch. Thus, the leapcode repo in
+leap.se (mirrored in github) only maintains the master and develop branches.  
 
 A couple of tools that help to follow this process are  `git-flow`_ and `git-sweep`_.
 
@@ -50,30 +53,33 @@ All code ready to be merged into the integration branch is expected to:
 Using Github
 ------------
 
-Particularly for the Bitmask client, we are using Github. So you should fork the repo from `github`_ . Depending on what kind of work you are going to do (bug or feature) you should create a branch with the following name:
+Particularly for the Bitmask client, we are using Github. So you should fork the repo from `github`_ . Depending on what kind of work you are going to do (bug or feature) you should **create a branch** with the following name:
 
-`bug/some_descriptive_text`
+``bug/some_descriptive_text``
 
 or
 
-`feature/some_descriptive_text`
+``feature/some_descriptive_text``
 
-Do your work there, push it, and create a pull request against the develop branch in the leapcode owned repo. Either you should post the pull request in `#leap-dev` at `Freenode` or we will just notice it when it's created.
+Do your work there, push it, and create a pull request against the develop branch in the main repo (the one owned by leapcode). Now you should wait until we see it, or you can try also posting your pull request in ``#leap-dev`` at `freenode <https://freenode.net>`_.
 
-Your code will get reviewed/discussed by someone else on the team, and say that you need to make some changes. What you would do is the following:
+Your code will get reviewed/discussed by someone else on the team. In case that you need to make some changes, you would do the following::
 
   git checkout <your branch>
 
-  # edit what you need here ...
+*Edit what you need here ...*
 
-  # Simple commit, this doesn't need a good commit message
+Simple commit, this doesn't need a good commit message::
+
   git commit -avm "Fix"
 
-  # This will help you reorder your commits and squash them (so that the
-  # final commit list has good representative messages)
+This will help you reorder your commits and squash them (so that the
+final commit list has good representative messages)::
+
   git rebase -i develop
 
-  # Since you've rewritten your history, you'll need a force push
+Since you've rewritten your history, you'll need a force push::
+
   git push <your remote> +<your branch>
 
 This will update your pull request automatically, but it won't notify us about the update, so you should add a comment saying so, or re-pingthe reviewer.

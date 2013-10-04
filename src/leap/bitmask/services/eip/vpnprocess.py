@@ -27,7 +27,7 @@ import socket
 from PySide import QtCore
 
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.services.eip.vpnlaunchers import get_platform_launcher
+from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.bitmask.services.eip.udstelnet import UDSTelnet
 from leap.bitmask.util import first
@@ -697,7 +697,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         self._socket_host = socket_host
         self._socket_port = socket_port
 
-        self._launcher = get_platform_launcher()
+        self._launcher = get_vpn_launcher()
 
         self._last_state = None
         self._last_status = None

@@ -1,0 +1,435 @@
+# -*- coding: utf-8 -*-
+# eip_status.py
+# Copyright (C) 2013 LEAP
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+EIP Status Panel widget implementation
+"""
+import logging
+
+from datetime import datetime
+from functools import partial
+
+from PySide import QtCore, QtGui
+
+from leap.bitmask.services.eip.connection import EIPConnection
+from leap.bitmask.services.eip.vpnprocess import VPNManager
+from leap.bitmask.platform_init import IS_LINUX
+from leap.bitmask.util.averages import RateMovingAverage
+from leap.common.check import leap_assert_type
+
+from ui_eip_status import Ui_EIPStatus
+
+logger = logging.getLogger(__name__)
+
+
+class EIPStatusWidget(QtGui.QWidget):
+    """
+    EIP Status widget that displays the current state of the EIP service
+    """
+    DISPLAY_TRAFFIC_RATES = True
+    RATE_STR = "%14.2f KB/s"
+    TOTAL_STR = "%14.2f Kb"
+
+    eip_connection_connected = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+
+        self._systray = None
+        self._eip_status_menu = None
+
+        self.ui = Ui_EIPStatus()
+        self.ui.setupUi(self)
+
+        self.eipconnection = EIPConnection()
+
+        # set systray tooltip status
+        self._eip_status = ""
+
+        self.ui.eip_bandwidth.hide()
+
+        # Set the EIP status icons
+        self.CONNECTING_ICON = None
+        self.CONNECTED_ICON = None
+        self.ERROR_ICON = None
+        self.CONNECTING_ICON_TRAY = None
+        self.CONNECTED_ICON_TRAY = None
+        self.ERROR_ICON_TRAY = None
+        self._set_eip_icons()
+
+        self._set_traffic_rates()
+        self._make_status_clickable()
+
+        self._provider = ""
+
+    def _make_status_clickable(self):
+        """
+        Makes upload and download figures clickable.
+        """
+        onclicked = self._on_VPN_status_clicked
+        self.ui.btnUpload.clicked.connect(onclicked)
+        self.ui.btnDownload.clicked.connect(onclicked)
+
+    def _on_VPN_status_clicked(self):
+        """
+        SLOT
+        TRIGGER: self.ui.btnUpload.clicked
+                 self.ui.btnDownload.clicked
+
+        Toggles between rate and total throughput display for vpn
+        status figures.
+        """
+        self.DISPLAY_TRAFFIC_RATES = not self.DISPLAY_TRAFFIC_RATES
+        self.update_vpn_status(None)  # refresh
+
+    def _set_traffic_rates(self):
+        """
+        Initializes up and download rates.
+        """
+        self._up_rate = RateMovingAverage()
+        self._down_rate = RateMovingAverage()
+
+        self.ui.btnUpload.setText(self.RATE_STR % (0,))
+        self.ui.btnDownload.setText(self.RATE_STR % (0,))
+
+    def _reset_traffic_rates(self):
+        """
+        Resets up and download rates, and cleans up the labels.
+        """
+        self._up_rate.reset()
+        self._down_rate.reset()
+        self.update_vpn_status(None)
+
+    def _update_traffic_rates(self, up, down):
+        """
+        Updates up and download rates.
+
+        :param up: upload total.
+        :type up: int
+        :param down: download total.
+        :type down: int
+        """
+        ts = datetime.now()
+        self._up_rate.append((ts, up))
+        self._down_rate.append((ts, down))
+
+    def _get_traffic_rates(self):
+        """
+        Gets the traffic rates (in KB/s).
+
+        :returns: a tuple with the (up, down) rates
+        :rtype: tuple
+        """
+        up = self._up_rate
+        down = self._down_rate
+
+        return (up.get_average(), down.get_average())
+
+    def _get_traffic_totals(self):
+        """
+        Gets the traffic total throughput (in Kb).
+
+        :returns: a tuple with the (up, down) totals
+        :rtype: tuple
+        """
+        up = self._up_rate
+        down = self._down_rate
+
+        return (up.get_total(), down.get_total())
+
+    def _set_eip_icons(self):
+        """
+        Sets the EIP status icons for the main window and for the tray
+
+        MAC   : dark icons
+        LINUX : dark icons in window, light icons in tray
+        WIN   : light icons
+        """
+        EIP_ICONS = EIP_ICONS_TRAY = (
+            ":/images/black/32/wait.png",
+            ":/images/black/32/on.png",
+            ":/images/black/32/off.png")
+
+        if IS_LINUX:
+            EIP_ICONS_TRAY = (
+                ":/images/white/32/wait.png",
+                ":/images/white/32/on.png",
+                ":/images/white/32/off.png")
+
+        self.CONNECTING_ICON = QtGui.QPixmap(EIP_ICONS[0])
+        self.CONNECTED_ICON = QtGui.QPixmap(EIP_ICONS[1])
+        self.ERROR_ICON = QtGui.QPixmap(EIP_ICONS[2])
+
+        self.CONNECTING_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[0])
+        self.CONNECTED_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[1])
+        self.ERROR_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[2])
+
+    # Systray and actions
+
+    def set_systray(self, systray):
+        """
+        Sets the systray object to use.
+
+        :param systray: Systray object
+        :type systray: QtGui.QSystemTrayIcon
+        """
+        leap_assert_type(systray, QtGui.QSystemTrayIcon)
+        self._systray = systray
+        self._systray.setToolTip(self.tr("All services are OFF"))
+
+    def _update_systray_tooltip(self):
+        """
+        Updates the system tray icon tooltip using the eip and mx status.
+        """
+        status = self.tr("Encrypted Internet: {0}").format(self._eip_status)
+        self._systray.setToolTip(status)
+
+    def set_action_eip_startstop(self, action_eip_startstop):
+        """
+        Sets the action_eip_startstop to use.
+
+        :param action_eip_startstop: action_eip_status to be used
+        :type action_eip_startstop: QtGui.QAction
+        """
+        self._action_eip_startstop = action_eip_startstop
+
+    def set_eip_status_menu(self, eip_status_menu):
+        """
+        Sets the eip_status_menu to use.
+
+        :param eip_status_menu: eip_status_menu to be used
+        :type eip_status_menu: QtGui.QMenu
+        """
+        leap_assert_type(eip_status_menu, QtGui.QMenu)
+        self._eip_status_menu = eip_status_menu
+
+    # EIP status ---
+
+    @property
+    def eip_button(self):
+        return self.ui.btnEipStartStop
+
+    @property
+    def eip_label(self):
+        return self.ui.lblEIPStatus
+
+    def eip_pre_up(self):
+        """
+        Triggered when the app activates eip.
+        Hides the status box and disables the start/stop button.
+        """
+        self.set_startstop_enabled(False)
+
+    @QtCore.Slot()
+    def disable_eip_start(self):
+        """
+        Triggered when a default provider_config has not been found.
+        Disables the start button and adds instructions to the user.
+        """
+        logger.debug('Hiding EIP start button')
+        # you might be tempted to change this for a .setEnabled(False).
+        # it won't work. it's under the claws of the state machine.
+        # probably the best thing would be to make a transitional
+        # transition there, but that's more involved.
+        self.eip_button.hide()
+        msg = self.tr("You must login to use Encrypted Internet")
+        self.eip_label.setText(msg)
+
+    @QtCore.Slot()
+    def enable_eip_start(self):
+        """
+        Triggered after a successful login.
+        Enables the start button.
+        """
+        logger.debug('Showing EIP start button')
+        self.eip_button.show()
+
+    # XXX disable (later) --------------------------
+    def set_eip_status(self, status, error=False):
+        """
+        Sets the status label at the VPN stage to status
+
+        :param status: status message
+        :type status: str or unicode
+        :param error: if the status is an erroneous one, then set this
+                      to True
+        :type error: bool
+        """
+        leap_assert_type(error, bool)
+        self._eip_status = status
+        if error:
+            status = "<font color='red'>%s</font>" % (status,)
+        self.ui.lblEIPStatus.setText(status)
+        self.ui.lblEIPStatus.show()
+        self._update_systray_tooltip()
+
+    # XXX disable ---------------------------------
+    def set_startstop_enabled(self, value):
+        """
+        Enable or disable btnEipStartStop and _action_eip_startstop
+        based on value
+
+        :param value: True for enabled, False otherwise
+        :type value: bool
+        """
+        # TODO use disable_eip_start instead
+        # this should be handled by the state machine
+        leap_assert_type(value, bool)
+        self.ui.btnEipStartStop.setEnabled(value)
+        self._action_eip_startstop.setEnabled(value)
+
+    # XXX disable -----------------------------
+    def eip_started(self):
+        """
+        Sets the state of the widget to how it should look after EIP
+        has started
+        """
+        self.ui.btnEipStartStop.setText(self.tr("Turn OFF"))
+        self.ui.btnEipStartStop.disconnect(self)
+        self.ui.btnEipStartStop.clicked.connect(
+            self.eipconnection.qtsigs.do_connect_signal)
+
+    # XXX disable -----------------------------
+    def eip_stopped(self):
+        """
+        Sets the state of the widget to how it should look after EIP
+        has stopped
+        """
+        # XXX should connect this to EIPConnection.disconnected_signal
+        self._reset_traffic_rates()
+        # XXX disable -----------------------------
+        self.ui.btnEipStartStop.setText(self.tr("Turn ON"))
+        self.ui.btnEipStartStop.disconnect(self)
+        self.ui.btnEipStartStop.clicked.connect(
+            self.eipconnection.qtsigs.do_disconnect_signal)
+
+        self.ui.eip_bandwidth.hide()
+        self.ui.lblEIPMessage.setText(
+            self.tr("Traffic is being routed in the clear"))
+        self.ui.lblEIPStatus.show()
+
+    def update_vpn_status(self, data):
+        """
+        SLOT
+        TRIGGER: VPN.status_changed
+
+        Updates the download/upload labels based on the data provided
+        by the VPN thread.
+
+        :param data: a dictionary with the tcp/udp write and read totals.
+                     If data is None, we just will refresh the display based
+                     on the previous data.
+        :type data: dict
+        """
+        if data:
+            upload = float(data[VPNManager.TCPUDP_WRITE_KEY] or "0")
+            download = float(data[VPNManager.TCPUDP_READ_KEY] or "0")
+            self._update_traffic_rates(upload, download)
+
+        if self.DISPLAY_TRAFFIC_RATES:
+            uprate, downrate = self._get_traffic_rates()
+            upload_str = self.RATE_STR % (uprate,)
+            download_str = self.RATE_STR % (downrate,)
+
+        else:  # display total throughput
+            uptotal, downtotal = self._get_traffic_totals()
+            upload_str = self.TOTAL_STR % (uptotal,)
+            download_str = self.TOTAL_STR % (downtotal,)
+
+        self.ui.btnUpload.setText(upload_str)
+        self.ui.btnDownload.setText(download_str)
+
+    def update_vpn_state(self, data):
+        """
+        SLOT
+        TRIGGER: VPN.state_changed
+
+        Updates the displayed VPN state based on the data provided by
+        the VPN thread.
+
+        Emits:
+            If the status is connected, we emit EIPConnection.qtsigs.
+            connected_signal
+        """
+        status = data[VPNManager.STATUS_STEP_KEY]
+        self.set_eip_status_icon(status)
+        if status == "CONNECTED":
+            self.ui.eip_bandwidth.show()
+            self.ui.lblEIPStatus.hide()
+
+            # XXX should be handled by the state machine too.
+            self.eip_connection_connected.emit()
+
+        # XXX should lookup status map in EIPConnection
+        elif status == "AUTH":
+            self.set_eip_status(self.tr("Authenticating..."))
+        elif status == "GET_CONFIG":
+            self.set_eip_status(self.tr("Retrieving configuration..."))
+        elif status == "WAIT":
+            self.set_eip_status(self.tr("Waiting to start..."))
+        elif status == "ASSIGN_IP":
+            self.set_eip_status(self.tr("Assigning IP"))
+        elif status == "RECONNECTING":
+            self.set_eip_status(self.tr("Reconnecting..."))
+        elif status == "ALREADYRUNNING":
+            # Put the following calls in Qt's event queue, otherwise
+            # the UI won't update properly
+            QtCore.QTimer.singleShot(
+                0, self.eipconnection.qtsigs.do_disconnect_signal)
+            QtCore.QTimer.singleShot(0, partial(self.set_eip_status,
+                                                self.tr("Unable to start VPN, "
+                                                        "it's already "
+                                                        "running.")))
+        else:
+            self.set_eip_status(status)
+
+    def set_eip_icon(self, icon):
+        """
+        Sets the icon to display for EIP
+
+        :param icon: icon to display
+        :type icon: QPixmap
+        """
+        self.ui.lblVPNStatusIcon.setPixmap(icon)
+
+    def set_eip_status_icon(self, status):
+        """
+        Given a status step from the VPN thread, set the icon properly
+
+        :param status: status step
+        :type status: str
+        """
+        selected_pixmap = self.ERROR_ICON
+        selected_pixmap_tray = self.ERROR_ICON_TRAY
+        tray_message = self.tr("Encrypted Internet: OFF")
+        if status in ("WAIT", "AUTH", "GET_CONFIG",
+                      "RECONNECTING", "ASSIGN_IP"):
+            selected_pixmap = self.CONNECTING_ICON
+            selected_pixmap_tray = self.CONNECTING_ICON_TRAY
+            tray_message = self.tr("Encrypted Internet: Starting...")
+        elif status in ("CONNECTED"):
+            tray_message = self.tr("Encrypted Internet: ON")
+            selected_pixmap = self.CONNECTED_ICON
+            selected_pixmap_tray = self.CONNECTED_ICON_TRAY
+
+        self.set_eip_icon(selected_pixmap)
+        self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
+        self._eip_status_menu.setTitle(tray_message)
+
+    def set_provider(self, provider):
+        self._provider = provider
+        self.ui.lblEIPMessage.setText(
+            self.tr("Route traffic through: {0}").format(self._provider))

@@ -65,8 +65,10 @@ class LeapSettings(object):
     PROPERPROVIDER_KEY = "ProperProvider"
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
+    AUTOSTARTEIP_KEY = "AutoStartEIP"
     ALERTMISSING_KEY = "AlertMissingScripts"
     GATEWAY_KEY = "Gateway"
+    PINNED_KEY = "Pinned"
 
     # values
     GATEWAY_AUTOMATIC = "Automatic"
@@ -133,6 +135,22 @@ class LeapSettings(object):
                          % (e,))
 
         return providers
+
+    def is_pinned_provider(self, domain):
+        """
+        Returns True if the domain 'domain' is pinned with the application.
+                False otherwise.
+
+        :param provider: provider domain
+        :type provider: str
+
+        :rtype: bool
+        """
+        leap_assert(len(domain) > 0, "We need a nonempty domain.")
+        pinned_key = "{0}/{1}".format(domain, self.PINNED_KEY)
+        result = to_bool(self._settings.value(pinned_key, False))
+
+        return result
 
     def get_selected_gateway(self, provider):
         """
@@ -284,6 +302,24 @@ class LeapSettings(object):
             self._settings.remove(self.DEFAULTPROVIDER_KEY)
         else:
             self._settings.setValue(self.DEFAULTPROVIDER_KEY, provider)
+
+    def get_autostart_eip(self):
+        """
+        Gets whether the app should autostart EIP.
+
+        :rtype: bool
+        """
+        return to_bool(self._settings.value(self.AUTOSTARTEIP_KEY, False))
+
+    def set_autostart_eip(self, autostart):
+        """
+        Sets whether the app should autostart EIP.
+
+        :param autostart: True if we should try to autostart EIP.
+        :type autostart: bool
+        """
+        leap_assert_type(autostart, bool)
+        self._settings.setValue(self.AUTOSTARTEIP_KEY, autostart)
 
     def get_alert_missing_scripts(self):
         """

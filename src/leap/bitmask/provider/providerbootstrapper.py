@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Provider bootstrapping
 """
@@ -28,14 +27,14 @@ from PySide import QtCore
 
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
 from leap.bitmask.util.request_helpers import get_content
-from leap.bitmask.util import get_path_prefix
+from leap.bitmask import util
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.provider.supportedapis import SupportedAPIs
+from leap.common import ca_bundle
 from leap.common.certs import get_digest
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.common.check import leap_assert, leap_assert_type, leap_check
-
 
 logger = logging.getLogger(__name__)
 
@@ -85,16 +84,32 @@ class ProviderBootstrapper(AbstractBootstrapper):
         self._provider_config = None
         self._download_if_needed = False
 
+    @property
+    def verify(self):
+        """
+        Verify parameter for requests.
+
+        :returns: either False, if checks are skipped, or the
+                  path to the ca bundle.
+        :rtype: bool or str
+        """
+        if self._bypass_checks:
+            verify = False
+        else:
+            verify = ca_bundle.where()
+        return verify
+
     def _check_name_resolution(self):
         """
         Checks that the name resolution for the provider name works
         """
         leap_assert(self._domain, "Cannot check DNS without a domain")
-
         logger.debug("Checking name resolution for %s" % (self._domain))
 
         # We don't skip this check, since it's basic for the whole
         # system to work
+        # err --- but we can do it after a failure, to diagnose what went
+        # wrong. Right now we're just adding connection overhead. -- kali
         socket.gethostbyname(self._domain)
 
     def _check_https(self, *args):
@@ -102,24 +117,29 @@ class ProviderBootstrapper(AbstractBootstrapper):
         Checks that https is working and that the provided certificate
         checks out
         """
-
         leap_assert(self._domain, "Cannot check HTTPS without a domain")
-
         logger.debug("Checking https for %s" % (self._domain))
 
         # We don't skip this check, since it's basic for the whole
-        # system to work
+        # system to work.
+        # err --- but we can do it after a failure, to diagnose what went
+        # wrong. Right now we're just adding connection overhead. -- kali
 
         try:
             res = self._session.get("https://%s" % (self._domain,),
-                                    verify=not self._bypass_checks,
+                                    verify=self.verify,
                                     timeout=REQUEST_TIMEOUT)
             res.raise_for_status()
-        except requests.exceptions.SSLError:
+        except requests.exceptions.SSLError as exc:
+            logger.exception(exc)
             self._err_msg = self.tr("Provider certificate could "
                                     "not be verified")
             raise
-        except Exception:
+        except Exception as exc:
+            # XXX careful!. The error might be also a SSL handshake
+            # timeout error, in which case we should retry a couple of times
+            # more, for cases where the ssl server gives high latencies.
+            logger.exception(exc)
             self._err_msg = self.tr("Provider does not support HTTPS")
             raise
 
@@ -129,12 +149,16 @@ class ProviderBootstrapper(AbstractBootstrapper):
         """
         leap_assert(self._domain,
                     "Cannot download provider info without a domain")
-
         logger.debug("Downloading provider info for %s" % (self._domain))
 
-        headers = {}
+        # --------------------------------------------------------------
+        # TODO factor out with the download routines in services.
+        # Watch out! We're handling the verify paramenter differently here.
 
-        provider_json = os.path.join(get_path_prefix(), "leap", "providers",
+        headers = {}
+        provider_json = os.path.join(util.get_path_prefix(),
+                                     "leap",
+                                     "providers",
                                      self._domain, "provider.json")
         mtime = get_mtime(provider_json)
 
@@ -142,16 +166,18 @@ class ProviderBootstrapper(AbstractBootstrapper):
             headers['if-modified-since'] = mtime
 
         uri = "https://%s/%s" % (self._domain, "provider.json")
-        verify = not self._bypass_checks
+        verify = self.verify
 
         if mtime:  # the provider.json exists
-            provider_config = ProviderConfig()
-            provider_config.load(provider_json)
+        # So, we're getting it from the api.* and checking against
+        # the provider ca.
             try:
-                verify = provider_config.get_ca_cert_path()
+                provider_config = ProviderConfig()
+                provider_config.load(provider_json)
                 uri = provider_config.get_api_uri() + '/provider.json'
+                verify = provider_config.get_ca_cert_path()
             except MissingCACert:
-                # get_ca_cert_path fails if the certificate does not exists.
+                # no ca? then download from main domain again.
                 pass
 
         logger.debug("Requesting for provider.json... "
@@ -165,6 +191,9 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # Not modified
         if res.status_code == 304:
             logger.debug("Provider definition has not been modified")
+        # --------------------------------------------------------------
+        # end refactor, more or less...
+        # XXX Watch out, have to check the supported api yet.
         else:
             provider_definition, mtime = get_content(res)
 
@@ -181,8 +210,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
             else:
                 api_supported = ', '.join(SupportedAPIs.SUPPORTED_APIS)
                 error = ('Unsupported provider API version. '
-                         'Supported versions are: {}. '
-                         'Found: {}.').format(api_supported, api_version)
+                         'Supported versions are: {0}. '
+                         'Found: {1}.').format(api_supported, api_version)
 
                 logger.error(error)
                 raise UnsupportedProviderAPI(error)
@@ -230,7 +259,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         """
         Downloads the CA cert that is going to be used for the api URL
         """
-
+        # XXX maybe we can skip this step if
+        # we have a fresh one.
         leap_assert(self._provider_config, "Cannot download the ca cert "
                     "without a provider config!")
 
@@ -244,7 +274,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
             return
 
         res = self._session.get(self._provider_config.get_ca_cert_uri(),
-                                verify=not self._bypass_checks,
+                                verify=self.verify,
                                 timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
 

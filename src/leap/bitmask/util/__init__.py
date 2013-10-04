@@ -62,3 +62,17 @@ def update_modification_ts(path):
     """
     os.utime(path, None)
     return get_modification_ts(path)
+
+
+def is_file(path):
+    """
+    Returns True if the path exists and is a file.
+    """
+    return os.path.isfile(path)
+
+
+def is_empty_file(path):
+    """
+    Returns True if the file at path is empty.
+    """
+    return os.stat(path).st_size is 0

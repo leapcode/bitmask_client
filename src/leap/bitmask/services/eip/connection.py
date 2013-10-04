@@ -40,6 +40,7 @@ class EIPConnectionSignals(QtCore.QObject):
     disconnected_signal = QtCore.Signal()
 
     connection_died_signal = QtCore.Signal()
+    connection_aborted_signal = QtCore.Signal()
 
 
 class EIPConnection(AbstractLEAPConnection):

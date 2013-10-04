@@ -14,16 +14,18 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
 Login widget implementation
 """
 import logging
 
+import keyring
+
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
 from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.common.check import leap_assert_type
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +35,11 @@ class LoginWidget(QtGui.QWidget):
     Login widget that emits signals to display the wizard or to
     perform login.
     """
-
     # Emitted when the login button is clicked
     login = QtCore.Signal()
+    logged_in_signal = QtCore.Signal()
     cancel_login = QtCore.Signal()
+    logout = QtCore.Signal()
 
     # Emitted when the user selects "Other..." in the provider
     # combobox or click "Create Account"
@@ -76,12 +79,20 @@ class LoginWidget(QtGui.QWidget):
 
         self.ui.cmbProviders.currentIndexChanged.connect(
             self._current_provider_changed)
-        self.ui.btnCreateAccount.clicked.connect(
-            self.show_wizard)
+
+        self.ui.btnLogout.clicked.connect(
+            self.logout)
 
         username_re = QtCore.QRegExp(self.BARE_USERNAME_REGEX)
         self.ui.lnUser.setValidator(
             QtGui.QRegExpValidator(username_re, self))
+
+        self.logged_out()
+
+        self.ui.btnLogout.clicked.connect(self.start_logout)
+
+        self.ui.clblErrorMsg.hide()
+        self.ui.clblErrorMsg.clicked.connect(self.ui.clblErrorMsg.hide)
 
     def _remember_state_changed(self, state):
         """
@@ -185,8 +196,10 @@ class LoginWidget(QtGui.QWidget):
         if len(status) > self.MAX_STATUS_WIDTH:
             status = status[:self.MAX_STATUS_WIDTH] + "..."
         if error:
-            status = "<font color='red'><b>%s</b></font>" % (status,)
-        self.ui.lblStatus.setText(status)
+            self.ui.clblErrorMsg.show()
+            self.ui.clblErrorMsg.setText(status)
+        else:
+            self.ui.lblStatus.setText(status)
 
     def set_enabled(self, enabled=False):
         """
@@ -211,6 +224,7 @@ class LoginWidget(QtGui.QWidget):
         """
         text = self.tr("Cancel")
         login_or_cancel = self.cancel_login
+        hide_remember = enabled
 
         if not enabled:
             text = self.tr("Log In")
@@ -220,6 +234,8 @@ class LoginWidget(QtGui.QWidget):
 
         self.ui.btnLogin.clicked.disconnect()
         self.ui.btnLogin.clicked.connect(login_or_cancel)
+        self.ui.chkRemember.setVisible(not hide_remember)
+        self.ui.lblStatus.setVisible(hide_remember)
 
     def _focus_password(self):
         """
@@ -243,3 +259,106 @@ class LoginWidget(QtGui.QWidget):
             self.ui.cmbProviders.blockSignals(False)
         else:
             self._selected_provider_index = param
+
+    def start_login(self):
+        """
+        Setups the login widgets for actually performing the login and
+        performs some basic checks.
+
+        :returns: True if everything's good to go, False otherwise
+        :rtype: bool
+        """
+        username = self.get_user()
+        password = self.get_password()
+        provider = self.get_selected_provider()
+
+        self._enabled_services = self._settings.get_enabled_services(
+            self.get_selected_provider())
+
+        if len(provider) == 0:
+            self.set_status(
+                self.tr("Please select a valid provider"))
+            return False
+
+        if len(username) == 0:
+            self.set_status(
+                self.tr("Please provide a valid username"))
+            return False
+
+        if len(password) == 0:
+            self.set_status(
+                self.tr("Please provide a valid password"))
+            return False
+
+        self.set_status(self.tr("Logging in..."), error=False)
+        self.set_enabled(False)
+        self.ui.clblErrorMsg.hide()
+
+        if self.get_remember() and has_keyring():
+            # in the keyring and in the settings
+            # we store the value 'usename@provider'
+            username_domain = (username + '@' + provider).encode("utf8")
+            try:
+                keyring.set_password(self.KEYRING_KEY,
+                                     username_domain,
+                                     password.encode("utf8"))
+                # Only save the username if it was saved correctly in
+                # the keyring
+                self._settings.set_user(username_domain)
+            except Exception as e:
+                logger.exception("Problem saving data to keyring. %r"
+                                 % (e,))
+        return True
+
+    def logged_in(self):
+        """
+        Sets the widgets to the logged in state
+        """
+        self.ui.login_widget.hide()
+        self.ui.logged_widget.show()
+        self.ui.lblUser.setText("%s@%s" % (self.get_user(),
+                                           self.get_selected_provider()))
+        self.set_login_status("")
+        self.logged_in_signal.emit()
+
+    def logged_out(self):
+        """
+        Sets the widgets to the logged out state
+        """
+        self.ui.login_widget.show()
+        self.ui.logged_widget.hide()
+
+        self.set_password("")
+        self.set_enabled(True)
+        self.set_status("", error=False)
+
+    def set_login_status(self, msg, error=False):
+        """
+        Sets the status label for the logged in state.
+
+        :param msg: status message
+        :type msg: str or unicode
+        :param error: if the status is an erroneous one, then set this
+                      to True
+        :type error: bool
+        """
+        leap_assert_type(error, bool)
+        if error:
+            msg = "<font color='red'><b>%s</b></font>" % (msg,)
+        self.ui.lblLoginStatus.setText(msg)
+        self.ui.lblLoginStatus.show()
+
+    def start_logout(self):
+        """
+        Sets the widgets to the logging out state
+        """
+        self.ui.btnLogout.setText(self.tr("Loggin out..."))
+        self.ui.btnLogout.setEnabled(False)
+
+    def done_logout(self):
+        """
+        Sets the widgets to the logged out state
+        """
+        self.ui.btnLogout.setText(self.tr("Logout"))
+        self.ui.btnLogout.setEnabled(True)
+        self.ui.clblErrorMsg.hide()

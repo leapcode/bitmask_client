@@ -20,7 +20,11 @@ leap.bitmask.services.eip module initialization
 import os
 import tempfile
 
-from leap.bitmask.platform_init import IS_WIN
+from leap.bitmask.services.eip.darwinvpnlauncher import DarwinVPNLauncher
+from leap.bitmask.services.eip.linuxvpnlauncher import LinuxVPNLauncher
+from leap.bitmask.services.eip.windowsvpnlauncher import WindowsVPNLauncher
+from leap.bitmask.platform_init import IS_LINUX, IS_MAC, IS_WIN
+from leap.common.check import leap_assert
 
 
 def get_openvpn_management():
@@ -40,3 +44,24 @@ def get_openvpn_management():
         port = "unix"
 
     return host, port
+
+
+def get_vpn_launcher():
+    """
+    Return the VPN launcher for the current platform.
+    """
+    if not (IS_LINUX or IS_MAC or IS_WIN):
+        error_msg = "VPN Launcher not implemented for this platform."
+        raise NotImplementedError(error_msg)
+
+    launcher = None
+    if IS_LINUX:
+        launcher = LinuxVPNLauncher
+    elif IS_MAC:
+        launcher = DarwinVPNLauncher
+    elif IS_WIN:
+        launcher = WindowsVPNLauncher
+
+    leap_assert(launcher is not None)
+
+    return launcher()

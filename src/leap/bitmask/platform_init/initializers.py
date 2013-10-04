@@ -29,7 +29,9 @@ import tempfile
 from PySide import QtGui
 
 from leap.bitmask.config.leapsettings import LeapSettings
-from leap.bitmask.services.eip import vpnlaunchers
+from leap.bitmask.services.eip import get_vpn_launcher
+from leap.bitmask.services.eip.linuxvpnlauncher import LinuxVPNLauncher
+from leap.bitmask.services.eip.darwinvpnlauncher import DarwinVPNLauncher
 from leap.bitmask.util import first
 from leap.bitmask.util import privilege_policies
 
@@ -106,7 +108,7 @@ def check_missing():
     config = LeapSettings()
     alert_missing = config.get_alert_missing_scripts()
 
-    launcher = vpnlaunchers.get_platform_launcher()
+    launcher = get_vpn_launcher()
     missing_scripts = launcher.missing_updown_scripts
     missing_other = launcher.missing_other_files
 
@@ -251,7 +253,7 @@ def _darwin_install_missing_scripts(badexec, notfound):
         "..",
         "Resources",
         "openvpn")
-    launcher = vpnlaunchers.DarwinVPNLauncher
+    launcher = DarwinVPNLauncher
 
     if os.path.isdir(installer_path):
         fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
@@ -356,7 +358,7 @@ def _linux_install_missing_scripts(badexec, notfound):
     """
     success = False
     installer_path = os.path.join(os.getcwd(), "apps", "eip", "files")
-    launcher = vpnlaunchers.LinuxVPNLauncher
+    launcher = LinuxVPNLauncher
 
     # XXX refactor with darwin, same block.
 

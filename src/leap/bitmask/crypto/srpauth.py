@@ -52,13 +52,6 @@ class SRPAuthConnectionError(SRPAuthenticationError):
     pass
 
 
-class SRPAuthUnknownUser(SRPAuthenticationError):
-    """
-    Exception raised when trying to authenticate an unknown user
-    """
-    pass
-
-
 class SRPAuthBadStatusCode(SRPAuthenticationError):
     """
     Exception raised when we received an unknown bad status code
@@ -97,7 +90,7 @@ class SRPAuthJSONDecodeError(SRPAuthenticationError):
     pass
 
 
-class SRPAuthBadPassword(SRPAuthenticationError):
+class SRPAuthBadUserOrPassword(SRPAuthenticationError):
     """
     Exception raised when the user provided a bad password to auth.
     """
@@ -136,6 +129,7 @@ class SRPAuth(QtCore.QObject):
         SESSION_ID_KEY = "_session_id"
         USER_VERIFIER_KEY = 'user[password_verifier]'
         USER_SALT_KEY = 'user[password_salt]'
+        AUTHORIZATION_KEY = "Authorization"
 
         def __init__(self, provider_config):
             """
@@ -219,7 +213,6 @@ class SRPAuth(QtCore.QObject):
             Might raise all SRPAuthenticationError based:
               SRPAuthenticationError
               SRPAuthConnectionError
-              SRPAuthUnknownUser
               SRPAuthBadStatusCode
               SRPAuthNoSalt
               SRPAuthNoB
@@ -266,7 +259,7 @@ class SRPAuth(QtCore.QObject):
                              "Status code = %r. Content: %r" %
                              (init_session.status_code, content))
                 if init_session.status_code == 422:
-                    raise SRPAuthUnknownUser(self._WRONG_USER_PASS)
+                    raise SRPAuthBadUserOrPassword(self._WRONG_USER_PASS)
 
                 raise SRPAuthBadStatusCode(self.tr("There was a problem with"
                                                    " authentication"))
@@ -296,7 +289,7 @@ class SRPAuth(QtCore.QObject):
               SRPAuthBadDataFromServer
               SRPAuthConnectionError
               SRPAuthJSONDecodeError
-              SRPAuthBadPassword
+              SRPAuthBadUserOrPassword
 
             :param salt_B: salt and B parameters for the username
             :type salt_B: tuple
@@ -355,7 +348,7 @@ class SRPAuth(QtCore.QObject):
                                  "received: %s", (content,))
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
                              (auth_result.status_code, error))
-                raise SRPAuthBadPassword(self._WRONG_USER_PASS)
+                raise SRPAuthBadUserOrPassword(self._WRONG_USER_PASS)
 
             if auth_result.status_code not in (200,):
                 logger.error("No valid response (HAMK): "
@@ -452,7 +445,7 @@ class SRPAuth(QtCore.QObject):
             It requires to be authenticated.
 
             Might raise:
-                SRPAuthBadPassword
+                SRPAuthBadUserOrPassword
                 requests.exceptions.HTTPError
 
             :param current_password: the current password for the logged user.
@@ -463,7 +456,7 @@ class SRPAuth(QtCore.QObject):
             leap_assert(self.get_uid() is not None)
 
             if current_password != self._password:
-                raise SRPAuthBadPassword
+                raise SRPAuthBadUserOrPassword
 
             url = "%s/%s/users/%s.json" % (
                 self._provider_config.get_api_uri(),
@@ -474,6 +467,10 @@ class SRPAuth(QtCore.QObject):
                 self._username, new_password, self._hashfun, self._ng)
 
             cookies = {self.SESSION_ID_KEY: self.get_session_id()}
+            headers = {
+                self.AUTHORIZATION_KEY:
+                "Token token={0}".format(self.get_token())
+            }
             user_data = {
                 self.USER_VERIFIER_KEY: binascii.hexlify(verifier),
                 self.USER_SALT_KEY: binascii.hexlify(salt)
@@ -483,7 +480,8 @@ class SRPAuth(QtCore.QObject):
                 url, data=user_data,
                 verify=self._provider_config.get_ca_cert_path(),
                 cookies=cookies,
-                timeout=REQUEST_TIMEOUT)
+                timeout=REQUEST_TIMEOUT,
+                headers=headers)
 
             # In case of non 2xx it raises HTTPError
             change_password.raise_for_status()
@@ -509,6 +507,8 @@ class SRPAuth(QtCore.QObject):
             # User credentials stored for password changing checks
             self._username = username
             self._password = password
+
+            self._session = self._fetcher.session()
 
             d = threads.deferToThread(self._authentication_preprocessing,
                                       username=username,
@@ -604,6 +604,13 @@ class SRPAuth(QtCore.QObject):
 
         # Store instance reference as the only member in the handle
         self.__dict__['_SRPAuth__instance'] = SRPAuth.__instance
+
+        # Generally, we initialize this with a provider_config once,
+        # and after that initialize it without one and use the one
+        # that was assigned before. But we need to update it if we
+        # want to be able to logout and login into another provider.
+        if provider_config is not None:
+            SRPAuth.__instance._provider_config = provider_config
 
     def authenticate(self, username, password):
         """
