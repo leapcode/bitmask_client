@@ -8,5 +8,3 @@
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
-leap.common >= 0.3.4  # because the ca_bundle
-leap.keymanager >= 0.3.3 # because the gnupg dep
