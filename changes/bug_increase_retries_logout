@@ -1,0 +1,2 @@
+  o Increase the amount of retries for the authentication request
+    session. Fixes #4037.
