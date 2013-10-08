@@ -268,7 +268,6 @@ class MainWindow(QtGui.QMainWindow):
         self._systray = None
 
         self._action_mail_status = QtGui.QAction(self.tr("Mail is OFF"), self)
-        self._action_mail_status.setEnabled(False)
         self._mail_status.set_action_mail_status(self._action_mail_status)
 
         self._action_eip_startstop = QtGui.QAction("", self)
