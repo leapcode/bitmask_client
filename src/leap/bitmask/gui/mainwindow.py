@@ -258,7 +258,7 @@ class MainWindow(QtGui.QMainWindow):
             self._launch_wizard)
 
         if IS_MAC:
-            self.ui.menuFile.menuAction().setText(self.tr("Util"))
+            self.ui.menuFile.menuAction().setText(self.tr("File"))
 
         self.raise_window.connect(self._do_raise_mainwindow)
 
