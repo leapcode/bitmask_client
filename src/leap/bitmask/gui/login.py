@@ -94,6 +94,9 @@ class LoginWidget(QtGui.QWidget):
         self.ui.clblErrorMsg.hide()
         self.ui.clblErrorMsg.clicked.connect(self.ui.clblErrorMsg.hide)
 
+        self.ui.lnUser.textEdited.connect(self.ui.clblErrorMsg.hide)
+        self.ui.lnPassword.textEdited.connect(self.ui.clblErrorMsg.hide)
+
     def _remember_state_changed(self, state):
         """
         Saves the remember state in the LeapSettings
