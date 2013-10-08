@@ -298,6 +298,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self.ui.lblNewUpdates.setVisible(False)
         self.ui.btnMore.setVisible(False)
+        #########################################
+        # We hide this in height temporarily too
+        self.ui.lblNewUpdates.resize(0, 0)
+        self.ui.btnMore.resize(0, 0)
+        #########################################
         self.ui.btnMore.clicked.connect(self._updates_details)
 
         # Services signals/slots connection
@@ -639,7 +644,7 @@ class MainWindow(QtGui.QMainWindow):
         eip_menu = systrayMenu.addMenu(self.tr("Encrypted Internet: OFF"))
         eip_menu.addAction(self._action_eip_startstop)
         self._eip_status.set_eip_status_menu(eip_menu)
-
+        systrayMenu.addSeparator()
         systrayMenu.addAction(self._action_mail_status)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_quit)
@@ -941,6 +946,7 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         self._login_widget.logged_in()
+        self.ui.lblLoginProvider.setText(self._provider_config.get_name())
 
         self._enabled_services = self._settings.get_enabled_services(
             self._provider_config.get_domain())
@@ -1613,6 +1619,7 @@ class MainWindow(QtGui.QMainWindow):
         logging out
         """
         self._login_widget.done_logout()
+        self.ui.lblLoginProvider.setText(self.tr("Login"))
 
         if ok:
             self._logged_user = None
