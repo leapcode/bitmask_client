@@ -1,0 +1,3 @@
+  o Implements openvpn observer. Closes: #3901
+  o Reconnect EIP if network down. Closes #3790
+  o Reconnect if tls-restart. Closes: #3262
