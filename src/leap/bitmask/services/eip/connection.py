@@ -46,4 +46,5 @@ class EIPConnectionSignals(QtCore.QObject):
 class EIPConnection(AbstractLEAPConnection):
 
     def __init__(self):
+        # XXX this should be public instead
         self._qtsigs = EIPConnectionSignals()

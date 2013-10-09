@@ -241,6 +241,10 @@ class VPNLauncher(object):
             '--ca', providerconfig.get_ca_cert_path()
         ]
 
+        args += [
+            '--ping', '10',
+            '--ping-restart', '30']
+
         command_and_args = [openvpn] + args
         logger.debug("Running VPN with command:")
         logger.debug(" ".join(command_and_args))

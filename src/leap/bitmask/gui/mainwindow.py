@@ -174,10 +174,12 @@ class MainWindow(QtGui.QMainWindow):
 
         self._eip_connection = EIPConnection()
 
+        # XXX this should be handled by EIP Conductor
         self._eip_connection.qtsigs.connecting_signal.connect(
             self._start_eip)
         self._eip_connection.qtsigs.disconnecting_signal.connect(
             self._stop_eip)
+
         self._eip_status.eip_connection_connected.connect(
             self._on_eip_connected)
         self.eip_needs_login.connect(
@@ -228,13 +230,22 @@ class MainWindow(QtGui.QMainWindow):
             self._eip_intermediate_stage)
         self._eip_bootstrapper.download_client_certificate.connect(
             self._finish_eip_bootstrap)
+
         self._vpn = VPN(openvpn_verb=openvpn_verb)
+
+        # connect vpn process signals
         self._vpn.qtsigs.state_changed.connect(
             self._eip_status.update_vpn_state)
         self._vpn.qtsigs.status_changed.connect(
             self._eip_status.update_vpn_status)
         self._vpn.qtsigs.process_finished.connect(
             self._eip_finished)
+        self._vpn.qtsigs.network_unreachable.connect(
+            self._on_eip_network_unreachable)
+        self._vpn.qtsigs.process_restart_tls.connect(
+            self._do_eip_restart)
+        self._vpn.qtsigs.process_restart_ping.connect(
+            self._do_eip_restart)
 
         self._soledad_bootstrapper = SoledadBootstrapper()
         self._soledad_bootstrapper.download_config.connect(
@@ -267,6 +278,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self._systray = None
 
+        # XXX separate actions into a different
+        # module.
         self._action_mail_status = QtGui.QAction(self.tr("Mail is OFF"), self)
         self._mail_status.set_action_mail_status(self._action_mail_status)
 
@@ -398,6 +411,8 @@ class MainWindow(QtGui.QMainWindow):
         :return: a logging handler or None
         :rtype: LeapLogHandler or None
         """
+        # TODO this can be a function, does not need
+        # to be a method.
         leap_logger = logging.getLogger('leap')
         for h in leap_logger.handlers:
             if isinstance(h, LeapLogHandler):
@@ -462,6 +477,10 @@ class MainWindow(QtGui.QMainWindow):
         It sets the soledad object as ready to use.
         """
         self._soledad_ready = True
+
+    #
+    # updates
+    #
 
     def _new_updates_available(self, req):
         """
@@ -590,43 +609,9 @@ class MainWindow(QtGui.QMainWindow):
                         saved_password.decode("utf8"))
                     self._login()
 
-    def _try_autostart_eip(self):
-        """
-        Tries to autostart EIP
-        """
-        settings = self._settings
-
-        should_autostart = settings.get_autostart_eip()
-        if not should_autostart:
-            logger.debug('Will not autostart EIP since it is setup '
-                         'to not to do it')
-            self.eip_needs_login.emit()
-            return
-
-        default_provider = settings.get_defaultprovider()
-
-        if default_provider is None:
-            logger.info("Cannot autostart Encrypted Internet because there is "
-                        "no default provider configured")
-            self.eip_needs_login.emit()
-            return
-
-        self._enabled_services = settings.get_enabled_services(
-            default_provider)
-
-        loaded = self._provisional_provider_config.load(
-            provider.get_provider_path(default_provider))
-        if loaded:
-            # XXX I think we should not try to re-download config every time,
-            # it adds some delay.
-            # Maybe if it's the first run in a session,
-            # or we can try only if it fails.
-            self._download_eip_config()
-        else:
-            # XXX: Display a proper message to the user
-            self.eip_needs_login.emit()
-            logger.error("Unable to load %s config, cannot autostart." %
-                         (default_provider,))
+    #
+    # systray
+    #
 
     def _show_systray(self):
         """
@@ -970,7 +955,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self._download_eip_config()
 
+    ###################################################################
+    # Service control methods: soledad
+
     def _soledad_intermediate_stage(self, data):
+        # TODO missing param docstring
         """
         SLOT
         TRIGGERS:
@@ -1221,16 +1210,53 @@ class MainWindow(QtGui.QMainWindow):
         signal that currently is beeing processed under status_panel.
         After the refactor to EIPConductor this should not be necessary.
         """
-        logger.debug('EIP connected signal received ...')
         self._eip_connection.qtsigs.connected_signal.emit()
+
+    def _try_autostart_eip(self):
+        """
+        Tries to autostart EIP
+        """
+        settings = self._settings
+
+        should_autostart = settings.get_autostart_eip()
+        if not should_autostart:
+            logger.debug('Will not autostart EIP since it is setup '
+                         'to not to do it')
+            self.eip_needs_login.emit()
+            return
+
+        default_provider = settings.get_defaultprovider()
+
+        if default_provider is None:
+            logger.info("Cannot autostart Encrypted Internet because there is "
+                        "no default provider configured")
+            self.eip_needs_login.emit()
+            return
+
+        self._enabled_services = settings.get_enabled_services(
+            default_provider)
+
+        loaded = self._provisional_provider_config.load(
+            provider.get_provider_path(default_provider))
+        if loaded:
+            # XXX I think we should not try to re-download config every time,
+            # it adds some delay.
+            # Maybe if it's the first run in a session,
+            # or we can try only if it fails.
+            self._download_eip_config()
+        else:
+            # XXX: Display a proper message to the user
+            self.eip_needs_login.emit()
+            logger.error("Unable to load %s config, cannot autostart." %
+                         (default_provider,))
 
     @QtCore.Slot()
     def _start_eip(self):
         """
         SLOT
         TRIGGERS:
-          self._eip_status.start_eip
-          self._action_eip_startstop.triggered
+          self._eip_connection.qtsigs.do_connect_signal
+          (via state machine)
         or called from _finish_eip_bootstrap
 
         Starts EIP
@@ -1331,8 +1357,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self._eip_status.stop_eip
-          self._action_eip_startstop.triggered
+          self._eip_connection.qtsigs.do_disconnect_signal
+          (via state machine)
         or called from _eip_finished
 
         Stops vpn process and makes gui adjustments to reflect
@@ -1356,13 +1382,99 @@ class MainWindow(QtGui.QMainWindow):
                            self._get_best_provider_config().get_domain()))
         self._eip_status.eip_stopped()
 
+    @QtCore.Slot()
+    def _on_eip_network_unreachable(self):
+        # XXX Should move to EIP Conductor
+        """
+        SLOT
+        TRIGGERS:
+            self._eip_connection.qtsigs.network_unreachable
+
+        Displays a "network unreachable" error in the EIP status panel.
+        """
+        self._eip_status.set_eip_status(self.tr("Network is unreachable"),
+                                        error=True)
+        self._eip_status.set_eip_status_icon("error")
+
+    @QtCore.Slot()
+    def _do_eip_restart(self):
+        # XXX Should move to EIP Conductor
+        """
+        SLOT
+            self._eip_connection.qtsigs.process_restart
+
+        Restart the connection.
+        """
+        # for some reason, emitting the do_disconnect/do_connect
+        # signals hangs the UI.
+        self._stop_eip()
+        QtCore.QTimer.singleShot(2000, self._start_eip)
+
     def _set_eipstatus_off(self, error=True):
         """
         Sets eip status to off
         """
+        # XXX this should be handled by the state machine.
         self._eip_status.set_eip_status(self.tr("EIP has stopped"),
                                         error=error)
         self._eip_status.set_eip_status_icon("error")
+
+    def _eip_finished(self, exitCode):
+        """
+        SLOT
+        TRIGGERS:
+          self._vpn.process_finished
+
+        Triggered when the EIP/VPN process finishes to set the UI
+        accordingly.
+
+        Ideally we would have the right exit code here,
+        but the use of different wrappers (pkexec, cocoasudo) swallows
+        the openvpn exit code so we get zero exit in some cases  where we
+        shouldn't. As a workaround we just use a flag to indicate
+        a purposeful switch off, and mark everything else as unexpected.
+
+        In the near future we should trigger a native notification from here,
+        since the user really really wants to know she is unprotected asap.
+        And the right thing to do will be to fail-close.
+
+        :param exitCode: the exit code of the eip process.
+        :type exitCode: int
+        """
+        # TODO move to EIPConductor.
+        # TODO Add error catching to the openvpn log observer
+        # so we can have a more precise idea of which type
+        # of error did we have (server side, local problem, etc)
+
+        logger.info("VPN process finished with exitCode %s..."
+                    % (exitCode,))
+
+        qtsigs = self._eip_connection.qtsigs
+        signal = qtsigs.disconnected_signal
+
+        # XXX check if these exitCodes are pkexec/cocoasudo specific
+        if exitCode in (126, 127):
+            self._eip_status.set_eip_status(
+                self.tr("Encrypted Internet could not be launched "
+                        "because you did not authenticate properly."),
+                error=True)
+            self._vpn.killit()
+            signal = qtsigs.connection_aborted_signal
+
+        elif exitCode != 0 or not self.user_stopped_eip:
+            self._eip_status.set_eip_status(
+                self.tr("Encrypted Internet finished in an "
+                        "unexpected manner!"), error=True)
+            signal = qtsigs.connection_died_signal
+
+        if exitCode == 0 and IS_MAC:
+            # XXX remove this warning after I fix cocoasudo.
+            logger.warning("The above exit code MIGHT BE WRONG.")
+
+        # We emit signals to trigger transitions in the state machine:
+        signal.emit()
+
+    # eip boostrapping, config etc...
 
     def _download_eip_config(self):
         """
@@ -1425,7 +1537,25 @@ class MainWindow(QtGui.QMainWindow):
                         "Configuration."),
                 error=True)
 
-    # end eip methods -------------------------------------------
+    def _eip_intermediate_stage(self, data):
+        # TODO missing param
+        """
+        SLOT
+        TRIGGERS:
+          self._eip_bootstrapper.download_config
+
+        If there was a problem, displays it, otherwise it does nothing.
+        This is used for intermediate bootstrapping stages, in case
+        they fail.
+        """
+        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        if not passed:
+            self._login_widget.set_status(
+                self.tr("Unable to connect: Problem with provider"))
+            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
+            self._already_started_eip = False
+
+    # end of EIP methods ---------------------------------------------
 
     def _get_best_provider_config(self):
         """
@@ -1468,6 +1598,7 @@ class MainWindow(QtGui.QMainWindow):
         self.logout.emit()
 
     def _done_logging_out(self, ok, message):
+        # TODO missing params in docstring
         """
         SLOT
         TRIGGER: self._srp_auth.logout_finished
@@ -1488,6 +1619,7 @@ class MainWindow(QtGui.QMainWindow):
                 error=True)
 
     def _intermediate_stage(self, data):
+        # TODO this method name is confusing as hell.
         """
         SLOT
         TRIGGERS:
@@ -1507,80 +1639,9 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr("Unable to connect: Problem with provider"))
             logger.error(data[self._provider_bootstrapper.ERROR_KEY])
 
-    def _eip_intermediate_stage(self, data):
-        """
-        SLOT
-        TRIGGERS:
-          self._eip_bootstrapper.download_config
-
-        If there was a problem, displays it, otherwise it does nothing.
-        This is used for intermediate bootstrapping stages, in case
-        they fail.
-        """
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
-        if not passed:
-            self._login_widget.set_status(
-                self.tr("Unable to connect: Problem with provider"))
-            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
-            self._already_started_eip = False
-
-    def _eip_finished(self, exitCode):
-        """
-        SLOT
-        TRIGGERS:
-          self._vpn.process_finished
-
-        Triggered when the EIP/VPN process finishes to set the UI
-        accordingly.
-        """
-        # TODO move to EIPConductor.
-        logger.info("VPN process finished with exitCode %s..."
-                    % (exitCode,))
-
-        # Ideally we would have the right exit code here,
-        # but the use of different wrappers (pkexec, cocoasudo) swallows
-        # the openvpn exit code so we get zero exit in some cases  where we
-        # shouldn't. As a workaround we just use a flag to indicate
-        # a purposeful switch off, and mark everything else as unexpected.
-
-        # In the near future we should trigger a native notification from here,
-        # since the user really really wants to know she is unprotected asap.
-        # And the right thing to do will be to fail-close.
-
-        # TODO we should have a way of parsing the latest lines in the vpn
-        # log buffer so we can have a more precise idea of which type
-        # of error did we have (server side, local problem, etc)
-
-        qtsigs = self._eip_connection.qtsigs
-        signal = qtsigs.disconnected_signal
-
-        # XXX check if these exitCodes are pkexec/cocoasudo specific
-        if exitCode in (126, 127):
-            self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet could not be launched "
-                        "because you did not authenticate properly."),
-                error=True)
-            self._vpn.killit()
-            signal = qtsigs.connection_aborted_signal
-
-        elif exitCode != 0 or not self.user_stopped_eip:
-            self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet finished in an "
-                        "unexpected manner!"), error=True)
-            signal = qtsigs.connection_died_signal
-
-        if exitCode == 0 and IS_MAC:
-            # XXX remove this warning after I fix cocoasudo.
-            logger.warning("The above exit code MIGHT BE WRONG.")
-
-        # XXX verify that the logic kees the same w/o the abnormal flag
-        # after the refactor to EIPConnection has been completed
-        # (eipconductor taking the most of the logic under transitions
-        # that right now are handled under status_panel)
-        #self._stop_eip(abnormal)
-
-        # We emit signals to trigger transitions in the state machine:
-        signal.emit()
+    #
+    # window handling methods
+    #
 
     def _on_raise_window_event(self, req):
         """
@@ -1605,6 +1666,10 @@ class MainWindow(QtGui.QMainWindow):
         self.show()
         if IS_MAC:
             self.raise_()
+
+    #
+    # cleanup and quit methods
+    #
 
     def _cleanup_pidfiles(self):
         """
