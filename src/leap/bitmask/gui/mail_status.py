@@ -35,7 +35,6 @@ class MailStatusWidget(QtGui.QWidget):
     """
     Status widget that displays the state of the LEAP Mail service
     """
-    eip_connection_connected = QtCore.Signal()
     _soledad_event = QtCore.Signal(object)
     _smtp_event = QtCore.Signal(object)
     _imap_event = QtCore.Signal(object)
@@ -192,6 +191,17 @@ class MailStatusWidget(QtGui.QWidget):
         """
         leap_assert_type(action_mail_status, QtGui.QAction)
         self._action_mail_status = action_mail_status
+
+    def set_soledad_failed(self):
+        """
+        SLOT
+        TRIGGER:
+            SoledadBootstrapper.soledad_failed
+
+        This method is called whenever soledad has a failure.
+        """
+        msg = self.tr("There was an unexpected problem with Soledad.")
+        self._set_mail_status(msg, ready=-1)
 
     def _set_mail_status(self, status, ready=0):
         """
