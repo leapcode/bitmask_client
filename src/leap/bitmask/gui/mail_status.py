@@ -35,7 +35,6 @@ class MailStatusWidget(QtGui.QWidget):
     """
     Status widget that displays the state of the LEAP Mail service
     """
-    eip_connection_connected = QtCore.Signal()
     _soledad_event = QtCore.Signal(object)
     _smtp_event = QtCore.Signal(object)
     _imap_event = QtCore.Signal(object)
