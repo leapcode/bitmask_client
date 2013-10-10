@@ -1,0 +1,2 @@
+  o In case of Soledad failure, display to the user that there was a problem.
+    Closes #4025.
