@@ -264,6 +264,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
             logger.error("Error while initializing soledad "
                          "(unauthorized).")
             self.soledad_failed.emit()
+        except u1db_errors.HTTPError as exc:
+            logger.exception("Error whie initializing soledad "
+                             "(HTTPError)")
+            self.soledad_failed.emit()
         except Exception as exc:
             logger.exception("Unhandled error while initializating "
                              "soledad: %r" % (exc,))
