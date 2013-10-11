@@ -164,7 +164,7 @@ class VPNLauncher(object):
 
         if not gateways:
             logger.error('No gateway was found!')
-            raise VPNLauncherException(kls.tr('No gateway was found!'))
+            raise VPNLauncherException('No gateway was found!')
 
         logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
