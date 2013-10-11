@@ -19,17 +19,19 @@ SOURCES += ../src/leap/bitmask/app.py \
            ../src/leap/bitmask/gui/wizard.py \
            ../src/leap/bitmask/gui/eip_status.py \
            ../src/leap/bitmask/gui/mail_status.py \
-           ../src/leap/bitmask/gui/eippreferences.py \
-           ../src/leap/bitmask/gui/preferences.py \
+           ../src/leap/bitmask/gui/eip_preferenceswindow.py \
+           ../src/leap/bitmask/gui/preferenceswindow.py \
            ../src/leap/bitmask/platform_init/initializers.py \
            ../src/leap/bitmask/platform_init/locks.py \
            ../src/leap/bitmask/provider/supportedapis.py \
            ../src/leap/bitmask/services/abstractbootstrapper.py \
            ../src/leap/bitmask/services/eip/eipbootstrapper.py \
            ../src/leap/bitmask/services/eip/eipconfig.py \
-           ../src/leap/bitmask/services/eip/providerbootstrapper.py \
+           ../src/leap/bitmask/provider/providerbootstrapper.py \
+           ../src/leap/bitmask/services/__init__.py \
+           ../src/leap/bitmask/services/connections.py \
            ../src/leap/bitmask/services/eip/udstelnet.py \
-           ../src/leap/bitmask/services/eip/vpnlaunchers.py \
+           ../src/leap/bitmask/services/eip/vpnlauncher.py \
            ../src/leap/bitmask/services/eip/vpnprocess.py \
            ../src/leap/bitmask/services/mail/smtpbootstrapper.py \
            ../src/leap/bitmask/services/mail/smtpconfig.py \
