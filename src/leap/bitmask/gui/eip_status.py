@@ -424,6 +424,9 @@ class EIPStatusWidget(QtGui.QWidget):
             tray_message = self.tr("Encrypted Internet: ON")
             selected_pixmap = self.CONNECTED_ICON
             selected_pixmap_tray = self.CONNECTED_ICON_TRAY
+            self._eip_status = 'ON'
+            self._update_systray_tooltip()
+
 
         self.set_eip_icon(selected_pixmap)
         self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
