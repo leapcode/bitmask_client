@@ -175,10 +175,9 @@ class ProviderConfigTest(BaseLeapTest):
 
     def test_get_ca_cert_path_as_expected(self):
         pc = self._provider_config
-        pc.get_path_prefix = Mock(return_value='test')
 
         provider_domain = sample_config['domain']
-        expected_path = os.path.join('test', 'leap', 'providers',
+        expected_path = os.path.join('leap', 'providers',
                                      provider_domain, 'keys', 'ca',
                                      'cacert.pem')
 
@@ -186,24 +185,21 @@ class ProviderConfigTest(BaseLeapTest):
         os.path.exists = Mock(return_value=True)
         cert_path = pc.get_ca_cert_path()
 
-        self.assertEqual(cert_path, expected_path)
+        self.assertTrue(cert_path.endswith(expected_path))
 
     def test_get_ca_cert_path_about_to_download(self):
         pc = self._provider_config
-        pc.get_path_prefix = Mock(return_value='test')
 
         provider_domain = sample_config['domain']
-        expected_path = os.path.join('test', 'leap', 'providers',
+        expected_path = os.path.join('leap', 'providers',
                                      provider_domain, 'keys', 'ca',
                                      'cacert.pem')
 
         cert_path = pc.get_ca_cert_path(about_to_download=True)
-
-        self.assertEqual(cert_path, expected_path)
+        self.assertTrue(cert_path.endswith(expected_path))
 
     def test_get_ca_cert_path_fails(self):
         pc = self._provider_config
-        pc.get_path_prefix = Mock(return_value='test')
 
         # mock 'get_domain' so we don't need to load a config
         provider_domain = 'test.provider.com'

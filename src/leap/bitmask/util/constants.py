@@ -16,4 +16,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 SIGNUP_TIMEOUT = 5
-REQUEST_TIMEOUT = 10
+REQUEST_TIMEOUT = 15

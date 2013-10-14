@@ -152,12 +152,6 @@ def main():
     """
     Starts the main event loop and launches the main window.
     """
-    try:
-        event_server.ensure_server(event_server.SERVER_PORT)
-    except Exception as e:
-        # We don't even have logger configured in here
-        print "Could not ensure server: %r" % (e,)
-
     _, opts = leap_argparse.init_leapc_args()
 
     if opts.version:
@@ -170,6 +164,12 @@ def main():
     logfile = opts.log_file
     openvpn_verb = opts.openvpn_verb
 
+    try:
+        event_server.ensure_server(event_server.SERVER_PORT)
+    except Exception as e:
+        # We don't even have logger configured in here
+        print "Could not ensure server: %r" % (e,)
+
     #############################################################
     # Given how paths and bundling works, we need to delay the imports
     # of certain parts that depend on this path settings.
@@ -178,6 +178,9 @@ def main():
     from leap.common.config.baseconfig import BaseConfig
     flags.STANDALONE = standalone
     BaseConfig.standalone = standalone
+
+    logger = add_logger_handlers(debug, logfile)
+    replace_stdout_stderr_with_logging(logger)
 
     # And then we import all the other stuff
     from leap.bitmask.gui import locale_rc
@@ -189,9 +192,6 @@ def main():
 
     # pylint: avoid unused import
     assert(locale_rc)
-
-    logger = add_logger_handlers(debug, logfile)
-    replace_stdout_stderr_with_logging(logger)
 
     if not we_are_the_one_and_only():
         # Bitmask is already running
@@ -211,7 +211,7 @@ def main():
     # We force the style if on KDE so that it doesn't load all the kde
     # libs, which causes a compatibility issue in some systems.
     # For more info, see issue #3194
-    if os.environ.get("KDE_SESSION_UID") is not None:
+    if flags.STANDALONE and os.environ.get("KDE_SESSION_UID") is not None:
         sys.argv.append("-style")
         sys.argv.append("Cleanlooks")
 

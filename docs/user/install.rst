@@ -88,14 +88,19 @@ Installing Bitmask is as simple as using `pip <http://www.pip-installer.org/>`_ 
 Show me the code!
 -----------------
 
-You can get the code from LEAP public git repository ::
+For the users that can find their way through python packages,
+you can get the code from LEAP public git repository ::
 
-   $ git clone git://leap.se/bitmask_client
+   $ git clone https://leap.se/git/bitmask_client
 
 Or from the github mirror ::
 
    $ git clone git://github.com/leapcode/bitmask_client.git
 
-Once you have grabbed a copy of the sources, you can install it into your site-packages easily ::
+Once you have grabbed a copy of the sources, and installed all the base
+dependencies, you can install it into your site-packages easily ::
 
-   $ pyton setup.py install
+   $ make  # compile the resources
+   $ sudo python2 setup.py install
+
+Although, like always, it is a better idea to install things in a virtualenv.

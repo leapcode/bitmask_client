@@ -29,6 +29,7 @@ import mock
 
 from leap.common.testing.basetest import BaseLeapTest
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.config import flags
 
 
 class LeapSettingsTest(BaseLeapTest):
@@ -44,6 +45,7 @@ class LeapSettingsTest(BaseLeapTest):
         """
         Test that the config file IS NOT stored under the CWD.
         """
+        flags.STANDALONE = False
         self._leapsettings = LeapSettings()
         with mock.patch('os.listdir') as os_listdir:
             # use this method only to spy where LeapSettings is looking for
@@ -57,7 +59,8 @@ class LeapSettingsTest(BaseLeapTest):
         """
         Test that the config file IS stored under the CWD.
         """
-        self._leapsettings = LeapSettings(standalone=True)
+        flags.STANDALONE = True
+        self._leapsettings = LeapSettings()
         with mock.patch('os.listdir') as os_listdir:
             # use this method only to spy where LeapSettings is looking for
             self._leapsettings.get_configured_providers()

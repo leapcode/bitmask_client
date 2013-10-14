@@ -12,23 +12,27 @@
     * [ ] git fetch origin
     * [ ] git tag -l, and see the latest tagged version (unless it's not a minor version bump, in which case, just bump to it)
     * [ ] Checkout release-X.Y.Z (locally, never pushed)
-    * [ ] Fold in changes files into the CHANGELOG
-      - NOTE: For leap.soledad, the CHANGELOG entries should be divided per package (common, client, server). See older releases for reference.
-      - Helper bash line: for i in $(ls changes); do cat changes/$i; echo; done
-    * [ ] Update relnotes.txt if needed.
-    * [ ] git rm changes/*
+    * [ ] Update relnotes.txt in leap.bitmask if needed.
+
     * [ ] Review pkg/requirements.pip for everything and update if needed (that's why the order).
-      - See whatever has been introduced in changes/VERSION_COMPAT
-      - Reset changes/VERSION_COMPAT
+          - See whatever has been introduced in changes/VERSION_COMPAT
+          - Reset changes/VERSION_COMPAT
     * [ ] git commit -av  # we should add a commit message here...
-    * [ ] git checkout master && git pull origin master && git merge --no-ff release-X.Y.Z && git push origin master
-    * [ ] git tag -s X.Y.Z  -m "Tag <package> version X.Y.Z" # (note the -s so that it's a signed tag and -m to specify the message for the tag)
-    * [ ] git push origin X.Y.Z
+
+    * [ ] Fold in changes files into the CHANGELOG
+          - NOTE: For leap.soledad, the CHANGELOG entries should be divided per package (common, client, server). See older releases for reference.
+          - Helper bash line: for i in $(ls changes); do cat changes/$i; echo; done
+    * [ ] git rm changes/feature*; git rm changes/bug*
+    * [ ] git commit -m "Fold in changes."
+
+    * [ ] git checkout master && git pull origin master && git merge --no-ff release-X.Y.Z --no-edit
+    * [ ] git tag -s X.Y.Z -m "Tag <package> version X.Y.Z" # (note the -s so that it's a signed tag and -m to specify the message for the tag)
+    * [ ] git push origin master; git push origin X.Y.Z
     * [ ] git checkout develop && git merge master && git push origin develop
   * [ ] Build and upload bundles
     * [ ] Use the scripts under pkg/<os>/ to build the the bundles.
     * [ ] Sign them with gpg -a --sign --detach-sign <path/to/bundle>
-    * [ ] Upload bundle and signature to web-uploads@salmon.leap.se:~/public/client/<os>/Bitmask-<os>-<ver>.(tar.bz2,dmg,zip)
+    * [ ] Upload bundle and signature to downloads.leap.se/client/<os>/Bitmask-<os>-<ver>.(tar.bz2,dmg,zip)
     * [ ] Update symbolic link for latest upload and signature:
     	* [ ] ~/public/client/Bitmask-<os>-latest
     	* [ ] ~/public/client/Bitmask-<os>-latest.asc

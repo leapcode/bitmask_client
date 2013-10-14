@@ -1,104 +1,101 @@
-﻿ANNOUNCING Bitmask, the internet encryption toolkit, release 0.3.3
+﻿ANNOUNCING Bitmask, the internet encryption toolkit, release 0.3.4
 
-The LEAP team is pleased to announce the immediate availability of
-version 0.3.3 of Bitmask, the Internet Encryption Toolkit, codename
-"the calm after the tempest".
+The LEAP  team is  pleased to announce  the immediate  availability of
+version 0.3.4  of Bitmask,  the Internet Encryption  Toolkit, codename
+"look at my new makeup".
 
 https://downloads.leap.se/client/
 
-LEAP (LEAP Encryption Access Project) develops a plan to secure everyday
-communication, breaking down into discrete services.
+LEAP  (LEAP  Encryption Access  Project)  develops  a plan  to  secure
+everyday communication, breaking down into discrete services.
 
-Bitmask is the desktop client to connect to the services offered by the
-LEAP Platform. In the current phase the supported services are Encrypted
-Internet Proxy and Encrypted Mail.
+Bitmask is  the desktop client to  connect to the services  offered by
+the LEAP  Platform.  In the  current phase the supported  services are
+Encrypted Internet Proxy and Encrypted Mail.
 
-The Encrypted Internet Proxy provides circumvention, location
-anonymization, and traffic encryption in a hassle-free, automatically
+The   Encrypted  Internet   Proxy  provides   circumvention,  location
+anonymization, and traffic encryption  in a hassle-free, automatically
 self-configuring fashion.
 
-Encrypted Mail offers automatic encryption and decryption for both
-outgoing and incoming email, adding public key cryptography to your mail
-without you ever having to worry about key distribution or signature
-verification.
+Encrypted  Mail offers  automatic encryption  and decryption  for both
+outgoing and  incoming email, adding  public key cryptography  to your
+mail  without you  ever  having  to worry  about  key distribution  or
+signature verification.
 
-You can read about this and many other cool things in the user manual
+You can read about this and many  other cool things in the user manual
 and the developer notes, which can be found online at:
 
 http://bitmask.rtfd.org/
 
-WARNING: This is still part of a beta release of our software, a lot of
-testing and auditing is still needed, so indeed use it, and feed us back,
-fork it and contribute to its development, but by any means DO NOT trust
-your life to it (yet!).
-
+WARNING: This is still  part of a beta release of  our software, a lot
+of testing and auditing is still needed, so indeed use it, and feed us
+back, fork it  and contribute to its development, but  by any means DO
+NOT trust your life to it (yet!).
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask 0.3.3 is mostly a bugfix release, with some minor improvements.
-On this release, we have fixed many UI bugs, and have undergone internal
-reorganizations in the code. This release also bumps the requirement
-for Soledad, the encrypted data syncronization engine behind Bitmask,
-which has experienced a backward-incompatible change. You can refer to
-the CHANGELOG for the meat.
+Bitmask 0.3.4  is a  bugfix release  but it  also has  a shiny  new UI
+design,  it's still  a work  in progress  since it  will change  after
+testing in this  release, but it's progressing nicely.  We have better
+mail support, and  we are using the new gnupg  instead of python-gnupg
+for  its  security  and  better  flexibility. You  can  refer  to  the
+CHANGELOG for the meat.
 
-As always, you can connect to the Encrypted Internet Proxy service offered
-by a provider of your choice, and enjoy a encrypted internet connection
-that the spying eyes can only track back to your provider.
+As always,  you can  connect to the  Encrypted Internet  Proxy service
+offered by a  provider of your choice, and enjoy  a encrypted internet
+connection that the spying eyes can only track back to your provider.
 
 The Encrypted Mail services will run local SMTP and IMAP proxies that,
-once you configure the mail client of your choice, will automatically
+once you configure the mail  client of your choice, will automatically
 encrypt and decrypt your email using GPG encryption under the hood.
 
-If it is the first time you run Bitmask, the first run wizard will help
-you registering an user with your selected provider, downloading all
-the config files needed to connect to the various LEAP services.
-
+If it  is the first  time you run Bitmask,  the first run  wizard will
+help you registering an user  with your selected provider, downloading
+all the config files needed to connect to the various LEAP services.
 
 LICENSE
 
-You may use Bitmask under the GNU General Public License, version 3 or,
-at your option, any later version. See the file "LICENSE" for the terms
-of the GNU General Public License, version 3.
+You may  use Bitmask under the  GNU General Public License,  version 3
+or, at your option, any later  version. See the file "LICENSE" for the
+terms of the GNU General Public License, version 3.
 
-In addition, as a special exception, the copyright holders give permission
-to link the code of portions of this program with the OpenSSL library
-under certain conditions as described in each individual source file,
-and distribute linked combinations including the two.
-
+In  addition,  as a  special  exception,  the copyright  holders  give
+permission  to link  the code  of portions  of this  program with  the
+OpenSSL  library  under  certain   conditions  as  described  in  each
+individual source  file, and distribute linked  combinations including
+the two.
 
 INSTALLATION
 
 We distribute the current version of Bitmask as standalone bundles for
-GNU/Linux and OSX, but it is likely that you are able to run it under
-other systems, specially if you are skillful and patience is one of
+GNU/Linux and OSX, but it is likely  that you are able to run it under
+other systems,  specially if you are  skillful and patience is  one of
 your virtues.
 
 Have a look at "docs/user/install.rst".
 
-Packages will be soon provided for debian and ubuntu, and the release
+Packages will be soon provided for  debian and ubuntu, and the release
 of windows bundles will be resumed shortly.
 
-We will love to hear if you are interested in help making packages
+We will  love to hear  if you are  interested in help  making packages
 available for any other system.
-
 
 BUGS
 
-You can send the bugs our way by pointing your telnet session to port
-443 on https://leap.se/code. We will do our best to make them follow
+You can send the bugs our way  by pointing your telnet session to port
+443 on https://leap.se/code.  We will do  our best to make them follow
 our intensive bug-reeducation program.
-
 
 HACKING
 
 You can find us in the #leap-dev channel on the freenode network.
 
 If you are lucky enough, you can also spot us drinking mate, sleepless
-in night trains, rooftops, rainforests, lonely islands and, always,
+in night  trains, rooftops,  rainforests, lonely islands  and, always,
 beyond any border.
-
 
 The LEAP team,
 
-Sep 20, 2013 Somewhere in the middle of the intertubes.
+Oct 4, 2013
+Somewhere in the middle of the intertubes.
+EOF
