@@ -69,6 +69,7 @@ class LeapSettings(object):
     ALERTMISSING_KEY = "AlertMissingScripts"
     GATEWAY_KEY = "Gateway"
     PINNED_KEY = "Pinned"
+    SKIPFIRSTRUN_KEY = "SkipFirstRun"
 
     # values
     GATEWAY_AUTOMATIC = "Automatic"
@@ -260,29 +261,6 @@ class LeapSettings(object):
         leap_assert_type(remember, bool)
         self._settings.setValue(self.REMEMBER_KEY, remember)
 
-    # TODO: make this scale with multiple providers, we are assuming
-    # just one for now
-    def get_properprovider(self):
-        """
-        Returns True if there is a properly configured provider.
-
-        .. note:: this assumes only one provider for now.
-
-        :rtype: bool
-        """
-        return to_bool(self._settings.value(self.PROPERPROVIDER_KEY, False))
-
-    def set_properprovider(self, properprovider):
-        """
-        Sets whether the app should automatically login.
-
-        :param properprovider: True if the provider is properly configured,
-            False otherwise.
-        :type properprovider: bool
-        """
-        leap_assert_type(properprovider, bool)
-        self._settings.setValue(self.PROPERPROVIDER_KEY, properprovider)
-
     def get_defaultprovider(self):
         """
         Returns the default provider to be used for autostarting EIP
@@ -338,3 +316,22 @@ class LeapSettings(object):
         """
         leap_assert_type(value, bool)
         self._settings.setValue(self.ALERTMISSING_KEY, value)
+
+    def get_skip_first_run(self):
+        """
+        Gets the setting for skip running the first run wizard.
+
+        :returns: if the first run wizard should be skipped or not
+        :rtype: bool
+        """
+        return to_bool(self._settings.value(self.SKIPFIRSTRUN_KEY, False))
+
+    def set_skip_first_run(self, skip):
+        """
+        Gets the setting for skip the first run wizard.
+
+        :param skip: if the first run wizard should be skipped or not
+        :type skip: bool
+        """
+        leap_assert_type(skip, bool)
+        self._settings.setValue(self.SKIPFIRSTRUN_KEY, skip)
