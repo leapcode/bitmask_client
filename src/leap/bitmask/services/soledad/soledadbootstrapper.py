@@ -34,6 +34,7 @@ from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
 from leap.bitmask.util import is_file, is_empty_file
 from leap.bitmask.util import get_path_prefix
+from leap.bitmask.platform_init import IS_WIN
 from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
@@ -319,11 +320,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :returns: the gpg binary path
         :rtype: str
         """
-        # TODO: Fix for Windows
         gpgbin = None
         if flags.STANDALONE:
             gpgbin = os.path.join(
                 get_path_prefix(), "..", "apps", "mail", "gpg")
+            if IS_WIN:
+                gpgbin += ".exe"
         else:
             try:
                 gpgbin_options = which("gpg")
