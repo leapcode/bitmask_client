@@ -1,3 +1,10 @@
+bitmask (0.3.4) unstable; urgency=low
+
+  * Update to 0.3.4 release.
+  * Removed explicit gnupg dependency; now we indirectly depend on
+    python-gnupg-ng.
+ -- Ben Carrillo <ben@futeisha.org>  Mon, 14 Oct 2013 17:34:43 -0300
+
 bitmask (0.3.3) unstable; urgency=low
 
   * Update to 0.3.3 release.
