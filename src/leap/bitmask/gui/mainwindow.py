@@ -365,7 +365,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         if self._wizard_firstrun:
             self._settings.set_properprovider(False)
-            self.quit()
+            providers = self._settings.get_configured_providers()
+            has_provider_on_disk = len(providers) != 0
+            if not has_provider_on_disk:
+                # if we don't have any provider configured (included a pinned
+                # one) we can't use the application, so quit.
+                self.quit()
         else:
             self._finish_init()
 
@@ -393,6 +398,7 @@ class MainWindow(QtGui.QMainWindow):
         if IS_MAC:
             self._wizard.raise_()
         self._wizard.finished.connect(self._wizard_finished)
+        self._settings.set_skip_first_run(True)
 
     def _wizard_finished(self):
         """
@@ -783,8 +789,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         providers = self._settings.get_configured_providers()
         has_provider_on_disk = len(providers) != 0
-        is_proper_provider = self._settings.get_properprovider()
-        return not (has_provider_on_disk and is_proper_provider)
+        skip_first_run = self._settings.get_skip_first_run()
+        return not (has_provider_on_disk and skip_first_run)
 
     def _download_provider_config(self):
         """
