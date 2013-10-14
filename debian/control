@@ -42,6 +42,7 @@ Depends:
   python-leap-common,
   leap-mail,
   soledad-client
+Recommends: xul-ext-bitmask
 Suggests: resolvconf
 Conflicts: autoresolv
 Enhances: openvpn
