@@ -1,0 +1,5 @@
+  o Disable stdout redirection on Windows for the time being since it
+    breaks the bundle.
+  o Default UP_SCRIPT and DOWN_SCRIPT to None and only add that
+    parameter to the vpn command if not None.
+  o Look for gpg on windows with the .exe extension.
