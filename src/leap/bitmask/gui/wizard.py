@@ -53,9 +53,6 @@ class Wizard(QtGui.QWizard):
     REGISTER_USER_PAGE = 4
     SERVICES_PAGE = 5
 
-    WEAK_PASSWORDS = ("123456", "qweasd", "qwerty",
-                      "password")
-
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
     def __init__(self, bypass_checks=False):
