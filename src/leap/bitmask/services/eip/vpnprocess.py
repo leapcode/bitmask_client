@@ -739,7 +739,6 @@ class VPNManager(object):
             raise OpenVPNAlreadyRunning
 
 
-
 class VPNProcess(protocol.ProcessProtocol, VPNManager):
     """
     A ProcessProtocol class that can be used to spawn a process that will

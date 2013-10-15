@@ -427,7 +427,6 @@ class EIPStatusWidget(QtGui.QWidget):
             self._eip_status = 'ON'
             self._update_systray_tooltip()
 
-
         self.set_eip_icon(selected_pixmap)
         self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
         self._eip_status_menu.setTitle(tray_message)
