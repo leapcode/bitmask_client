@@ -100,7 +100,8 @@ def add_logger_handlers(debug=False, logfile=None):
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
 
-    log_format = '%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s - %(levelname)s - %(message)s'
+    log_format = ('%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s '
+                  '- %(levelname)s - %(message)s')
     formatter = logging.Formatter(log_format)
 
     # Console handler

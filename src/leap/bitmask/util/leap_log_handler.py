@@ -52,7 +52,8 @@ class LogHandler(logging.Handler):
         :param logging_level: the debug level to define the color.
         :type logging_level: str.
         """
-        log_format = '%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s - %(levelname)s - %(message)s'
+        log_format = ('%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s '
+                      '- %(levelname)s - %(message)s')
         formatter = logging.Formatter(log_format)
 
         return formatter
