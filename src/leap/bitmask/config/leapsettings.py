@@ -62,7 +62,6 @@ class LeapSettings(object):
     GEOMETRY_KEY = "Geometry"
     WINDOWSTATE_KEY = "WindowState"
     USER_KEY = "User"
-    PROPERPROVIDER_KEY = "ProperProvider"
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
     AUTOSTARTEIP_KEY = "AutoStartEIP"

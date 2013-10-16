@@ -369,7 +369,6 @@ class MainWindow(QtGui.QMainWindow):
         finishing.
         """
         if self._wizard_firstrun:
-            self._settings.set_properprovider(False)
             providers = self._settings.get_configured_providers()
             has_provider_on_disk = len(providers) != 0
             if not has_provider_on_disk:
@@ -582,7 +581,6 @@ class MainWindow(QtGui.QMainWindow):
                 self._login_widget.set_password(possible_password)
                 self._login()
             self._wizard = None
-            self._settings.set_properprovider(True)
         else:
             self._try_autostart_eip()
             if not self._settings.get_remember():
