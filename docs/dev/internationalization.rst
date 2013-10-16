@@ -65,19 +65,20 @@ If you do not already have it, install the ``transifex-client`` from the cheese 
 
 You can learn more about the transifex-client `here <http://help.transifex.com/features/client/index.html>`_.
 
-**1.** Add any new source files to the project file, ``data/bitmask.pro``. *We should automate this with some templating, it's tedious.*
-
-**2.** Update the source .ts file ``data/ts/en_US.ts``.::
+**1.** Update the source .ts file ``data/ts/en_US.ts``.::
 
    $ make translations
 
-**3.** Push source .ts file to transifex::
+It automatically adds any new source files and forms to the project file, ``data/bitmask.pro``.
+If there is a file to be ignored in the translations you need to edit the ``data/make_project_file.py`` to set the excludes.
+
+**2.** Push source .ts file to transifex::
 
    $ tx push -s
 
-**4.** Let the translation fairies do their work...
+**3.** Let the translation fairies do their work...
 
-**5.** *Et voila!* Get updated .ts files for each language from ``Transifex``. For instance, to pull updated spanish translations:: 
+**4.** *Et voila!* Get updated .ts files for each language from ``Transifex``. For instance, to pull updated spanish translations:: 
 
    $ tx pull -l es
    Pulling new translations for resource bitmask.bitmask (source: data/ts/en_US.ts)
