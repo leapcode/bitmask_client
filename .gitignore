@@ -29,3 +29,5 @@ MANIFEST
 _trial_temp*
 config/*
 CHANGELOG~
+
+data/bitmask.pro
