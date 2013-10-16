@@ -297,6 +297,7 @@ class LoginWidget(QtGui.QWidget):
         self.set_enabled(False)
         self.ui.clblErrorMsg.hide()
 
+        self._settings.set_provider(provider)
         if self.get_remember() and has_keyring():
             # in the keyring and in the settings
             # we store the value 'usename@provider'

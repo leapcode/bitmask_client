@@ -62,6 +62,7 @@ class LeapSettings(object):
     GEOMETRY_KEY = "Geometry"
     WINDOWSTATE_KEY = "WindowState"
     USER_KEY = "User"
+    PROVIDER_KEY = "Provider"
     REMEMBER_KEY = "RememberUserAndPass"
     DEFAULTPROVIDER_KEY = "DefaultProvider"
     AUTOSTARTEIP_KEY = "AutoStartEIP"
@@ -240,6 +241,24 @@ class LeapSettings(object):
         """
         leap_assert(len(user) > 0, "We cannot save an empty user")
         self._settings.setValue(self.USER_KEY, user)
+
+    def get_provider(self):
+        """
+        Returns the configured provider to remember, None if there isn't one
+
+        :rtype: str or None
+        """
+        return self._settings.value(self.PROVIDER_KEY, None)
+
+    def set_provider(self, provider):
+        """
+        Saves the provider to remember
+
+        :param provider: provider name to remember
+        :type provider: str
+        """
+        leap_assert(len(provider) > 0, "We cannot save an empty provider")
+        self._settings.setValue(self.PROVIDER_KEY, provider)
 
     def get_remember(self):
         """
