@@ -583,6 +583,11 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = None
         else:
             self._try_autostart_eip()
+
+            domain = self._settings.get_provider()
+            if domain is not None:
+                self._login_widget.select_provider_by_name(domain)
+
             if not self._settings.get_remember():
                 # nothing to do here
                 return
@@ -599,9 +604,6 @@ class MainWindow(QtGui.QMainWindow):
             if saved_user is not None and has_keyring():
                 # fill the username
                 self._login_widget.set_user(username)
-
-                # select the configured provider in the combo box
-                self._login_widget.select_provider_by_name(domain)
 
                 self._login_widget.set_remember(True)
 
