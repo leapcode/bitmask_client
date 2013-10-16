@@ -13,14 +13,14 @@ Cloning the repo
 
 ::
 
-    git clone git://leap.se/bitmask_client
+    git clone https://leap.se/git/?p=bitmask_client.git
     git checkout develop
 
 .. XXX change this when repo changes.
 
 Base Dependencies
 ------------------
-Bitmask depends on these libraries:
+Bitmask depends on these base libraries:
 
 * `python 2.6 or 2.7`
 * `qt4` libraries (see also :ref:`Troubleshooting PySide install <pysidevirtualenv>` about how to install inside your virtualenv)
@@ -29,13 +29,11 @@ Bitmask depends on these libraries:
 
 Debian
 ^^^^^^
-In debian-based systems::
+In debian-based systems, you can get everything you need:
 
-  $ apt-get install openvpn python-pyside python-openssl
-
-To install the software from sources::
-
-  $ apt-get install python-pip python-dev
+.. include:: quickstart.rst
+   :start-after: begin-debian-deps
+   :end-before: end-debian-deps
 
 .. _virtualenv:
 
@@ -122,6 +120,7 @@ If you *only* are running bitmask from inside a virtualenv, you will need to cop
 
 Missing Authentication agent
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. TODO I think we could be safely removing this section by now.
 
 If you are using linux and running a desktop other than unity or gnome, you might get an error saying that you are not running the authentication agent. For systems with gnome libraries installed you can launch it like this::
 
