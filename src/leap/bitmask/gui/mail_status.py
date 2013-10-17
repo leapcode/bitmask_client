@@ -387,8 +387,11 @@ class MailStatusWidget(QtGui.QWidget):
             self._set_mail_status(self.tr("Failed"))
         elif req.event == proto.IMAP_UNREAD_MAIL:
             if self._smtp_started and self._imap_started:
-                self._set_mail_status(self.tr("%s Unread Emails") %
-                                      (req.content), ready=2)
+                if req.content != "0":
+                    self._set_mail_status(self.tr("%s Unread Emails") %
+                                          (req.content,), ready=2)
+                else:
+                    self._set_mail_status("", ready=2)
         else:
             leap_assert(False,  # XXX ???
                         "Don't know how to handle this state: %s"
