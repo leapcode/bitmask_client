@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>398</width>
-    <height>262</height>
+    <width>435</width>
+    <height>273</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>EIP Preferences</string>
+   <string>Encrypted Internet Preferences</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../../../../data/resources/mainwindow.qrc">
@@ -88,7 +88,7 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="gbAutomaticEIP">
      <property name="title">
-      <string>Automatic EIP start</string>
+      <string>Automatic Encrypted Internet start</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="3" column="0">
@@ -126,7 +126,7 @@
          <enum>Qt::LeftToRight</enum>
         </property>
         <property name="text">
-         <string>Enable Automatic start of EIP</string>
+         <string>Enable Automatic start:</string>
         </property>
         <property name="checked">
          <bool>true</bool>
