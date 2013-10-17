@@ -1,6 +1,6 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-<file>../translations/es.qm</file>
-<file>../translations/de.qm</file>
+<file>../translations/vi.qm</file>
+<file>../translations/en_GB.qm</file>
 </qresource>
 </RCC>
