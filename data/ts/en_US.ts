@@ -1164,9 +1164,6 @@
     </message>
 </context>
 <context>
-    <name>kls</name>
-</context>
-<context>
     <name>msg</name>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="93"/>
