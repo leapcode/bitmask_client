@@ -50,6 +50,8 @@ class MailStatusWidget(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
 
         self._systray = None
+        self._disabled = True
+        self._started = False
 
         self.ui = Ui_MailStatusWidget()
         self.ui.setupUi(self)
@@ -98,28 +100,15 @@ class MailStatusWidget(QtGui.QWidget):
                  callback=self._mail_handle_soledad_events,
                  reqcbk=lambda req, resp: None)
 
-        register(signal=proto.SMTP_SERVICE_STARTED,
-                 callback=self._mail_handle_smtp_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.SMTP_SERVICE_FAILED_TO_START,
-                 callback=self._mail_handle_smtp_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.IMAP_SERVICE_STARTED,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
-
-        register(signal=proto.IMAP_SERVICE_FAILED_TO_START,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
-
         register(signal=proto.IMAP_UNREAD_MAIL,
                  callback=self._mail_handle_imap_events,
                  reqcbk=lambda req, resp: None)
-
-        self._smtp_started = False
-        self._imap_started = False
+        register(signal=proto.IMAP_SERVICE_STARTED,
+                 callback=self._mail_handle_imap_events,
+                 reqcbk=lambda req, resp: None)
+        register(signal=proto.SMTP_SERVICE_STARTED,
+                 callback=self._mail_handle_imap_events,
+                 reqcbk=lambda req, resp: None)
 
         self._soledad_event.connect(
             self._mail_handle_soledad_events_slot)
@@ -176,6 +165,9 @@ class MailStatusWidget(QtGui.QWidget):
         """
         # TODO: Figure out how to handle this with the two status in different
         # classes
+        # XXX right now we could connect the state transition signals of the
+        # two connection machines (EIP/Mail) to a class that keeps track of the
+        # state -- kali
         # status = self.tr("Encrypted Internet: {0}").format(self._eip_status)
         # status += '\n'
         # status += self.tr("Mail is {0}").format(self._mx_status)
@@ -292,10 +284,8 @@ class MailStatusWidget(QtGui.QWidget):
         """
         # We want to ignore this kind of events once everything has
         # started
-        if self._smtp_started and self._imap_started:
+        if self._started:
             return
-
-        self._set_mail_status(self.tr("Starting..."), ready=1)
 
         ext_status = ""
 
@@ -340,20 +330,17 @@ class MailStatusWidget(QtGui.QWidget):
         ext_status = ""
 
         if req.event == proto.SMTP_SERVICE_STARTED:
-            ext_status = self.tr("SMTP has started...")
             self._smtp_started = True
-            if self._smtp_started and self._imap_started:
-                self._set_mail_status(self.tr("ON"), ready=2)
-                ext_status = ""
         elif req.event == proto.SMTP_SERVICE_FAILED_TO_START:
             ext_status = self.tr("SMTP failed to start, check the logs.")
-            self._set_mail_status(self.tr("Failed"))
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"
                         % (req.event))
 
         self._set_mail_status(ext_status, ready=2)
+
+    # ----- XXX deprecate (move to mail conductor)
 
     def _mail_handle_imap_events(self, req):
         """
@@ -376,27 +363,17 @@ class MailStatusWidget(QtGui.QWidget):
         """
         ext_status = None
 
-        if req.event == proto.IMAP_SERVICE_STARTED:
-            ext_status = self.tr("IMAP has started...")
-            self._imap_started = True
-            if self._smtp_started and self._imap_started:
-                self._set_mail_status(self.tr("ON"), ready=2)
-                ext_status = ""
-        elif req.event == proto.IMAP_SERVICE_FAILED_TO_START:
-            ext_status = self.tr("IMAP failed to start, check the logs.")
-            self._set_mail_status(self.tr("Failed"))
-        elif req.event == proto.IMAP_UNREAD_MAIL:
-            if self._smtp_started and self._imap_started:
+        if req.event == proto.IMAP_UNREAD_MAIL:
+
+            if self._started:
+                print "printing foo"
                 if req.content != "0":
                     self._set_mail_status(self.tr("%s Unread Emails") %
                                           (req.content,), ready=2)
                 else:
                     self._set_mail_status("", ready=2)
-        else:
-            leap_assert(False,  # XXX ???
-                        "Don't know how to handle this state: %s"
-                        % (req.event))
-
+        elif req.event == proto.IMAP_SERVICE_STARTED:
+            self._imap_started = True
         if ext_status is not None:
             self._set_mail_status(ext_status, ready=1)
 
@@ -414,8 +391,50 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._set_mail_status(self.tr("Disabled"), -1)
 
-    def stopped_mail(self):
+    # statuses
+
+    # XXX make the signal emit the label and state.
+
+    @QtCore.Slot()
+    def mail_state_disconnected(self):
         """
-        Displayes the correct UI for the stopped state.
+        Displays the correct UI for the disconnected state.
         """
-        self._set_mail_status(self.tr("OFF"))
+        # XXX this should handle the disabled state better.
+        self._started = False
+        if self._disabled:
+            self.mail_state_disabled()
+        else:
+            self._set_mail_status(self.tr("OFF"), -1)
+
+    @QtCore.Slot()
+    def mail_state_connecting(self):
+        """
+        Displays the correct UI for the connecting state.
+        """
+        self._disabled = False
+        self._started = True
+        self._set_mail_status(self.tr("Starting..."), 1)
+
+    @QtCore.Slot()
+    def mail_state_disconnecting(self):
+        """
+        Displays the correct UI for the connecting state.
+        """
+        self._set_mail_status(self.tr("Disconnecting..."), 1)
+
+    @QtCore.Slot()
+    def mail_state_connected(self):
+        """
+        Displays the correct UI for the connected state.
+        """
+        self._set_mail_status(self.tr("ON"), 2)
+
+    @QtCore.Slot()
+    def mail_state_disabled(self):
+        """
+        Displays the correct UI for the disabled state.
+        """
+        self._disabled = True
+        self._set_mail_status(
+            self.tr("You must be logged in to use encrypted email."), -1)

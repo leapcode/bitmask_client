@@ -25,6 +25,7 @@ from ssl import SSLError
 
 from PySide import QtCore
 from u1db import errors as u1db_errors
+from zope.proxy import sameProxiedObjects
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -190,7 +191,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             # soledad-launcher in the gui.
             raise
 
-        leap_check(self._soledad is not None,
+        leap_assert(sameProxiedObjects(self._soledad, None)
+                    is not True,
                    "Null soledad, error while initializing")
 
         # and now, let's sync
