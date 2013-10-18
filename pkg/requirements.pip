@@ -19,8 +19,8 @@ keyring
 
 leap.common>=0.3.4
 leap.soledad.client>=0.4.0
-leap.keymanager>=0.3.3
-leap.mail>=0.3.4
+leap.keymanager>=0.3.4
+leap.mail>=0.3.5
 
 # Remove this when u1db fixes its dependency on oauth
 oauth

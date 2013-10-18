@@ -1,66 +1,65 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS><TS version="1.1">
+<?xml version="1.0" ?><!DOCTYPE TS><TS language="vi" version="1.1">
 <context>
     <name>EIPPreferences</name>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="14"/>
         <source>EIP Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>Tùy biến EIP</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="27"/>
         <source>Select gateway for provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Chọn gateway cho nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="36"/>
         <source>&amp;Select provider:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Chọn nhà cung cấp:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="140"/>
         <source>&lt;Select provider&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Chọn nhà cung cấp&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="55"/>
         <source>Save this provider settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Chọn thiết lập cho nhà cung cấp này</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="62"/>
         <source>&lt; Providers Gateway Status &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Trạng thái gateway của nhà cung cấp&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="72"/>
         <source>Select gateway:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chọn gateway:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="80"/>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Tự động</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="91"/>
         <source>Automatic EIP start</source>
-        <translation type="unfinished"></translation>
+        <translation>Tự động khởi động EIP</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="109"/>
         <source>&lt;font color=&apos;green&apos;&gt;&lt;b&gt;Automatic EIP start saved!&lt;/b&gt;&lt;/font&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;font color=&apos;green&apos;&gt;&lt;b&gt;Đã lưu lại phần tự động khởi động EIP!&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="119"/>
         <source>Save auto start setting</source>
-        <translation type="unfinished"></translation>
+        <translation>Lưu lại thiết lập về tự động khởi động</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eippreferences.ui" line="129"/>
         <source>Enable Automatic start of EIP</source>
-        <translation type="unfinished"></translation>
+        <translation>Tự động cho phép khởi động của EIP</translation>
     </message>
 </context>
 <context>
@@ -68,17 +67,17 @@
     <message>
         <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="47"/>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Tự động</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="156"/>
         <source>Gateway settings for provider &apos;{0}&apos; saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Thiết lập gateway dành cho nhà cung cấp &apos;{0}&apos; đã được lưu lại.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="198"/>
         <source>There was a problem with configuration files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi với tập tin cấu hình.</translation>
     </message>
 </context>
 <context>
@@ -86,27 +85,27 @@
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eip_status.ui" line="20"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Đơn mẫu</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eip_status.ui" line="31"/>
         <source>Turn On</source>
-        <translation type="unfinished"></translation>
+        <translation>Mở lên</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eip_status.ui" line="63"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eip_status.ui" line="86"/>
         <source>Traffic is being routed in the clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Lưu lượng mạng đang được điều hướng rỗng</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/eip_status.ui" line="253"/>
         <source>0.0 KB/s</source>
-        <translation type="unfinished"></translation>
+        <translation>0.0 KB/giây</translation>
     </message>
 </context>
 <context>
@@ -114,82 +113,82 @@
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="191"/>
         <source>All services are OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>Tất cả các dịch vụ hiện đang bị TẮT</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="197"/>
         <source>Encrypted Internet: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>Internet đã được mã hóa: {0}</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="249"/>
         <source>You must login to use Encrypted Internet</source>
-        <translation type="unfinished"></translation>
+        <translation>Bạn phải đăng nhập để sử dụng phần mã hóa internet</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="300"/>
         <source>Turn OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>Bật TẮT</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="314"/>
         <source>Turn ON</source>
-        <translation type="unfinished"></translation>
+        <translation>Bật LÊN</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="321"/>
         <source>Traffic is being routed in the clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Lưu lượng mạng đang được điều hướng rỗng</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="378"/>
         <source>Authenticating...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang xác nhận...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="380"/>
         <source>Retrieving configuration...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang đọc lại cấu hình...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="382"/>
         <source>Waiting to start...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang đợi để bắt đầu...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="384"/>
         <source>Assigning IP</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang gán IP</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="386"/>
         <source>Reconnecting...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang thực hiện việc kết nối lại...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="395"/>
         <source>Unable to start VPN, it&apos;s already running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể khởi động VPN, phần VPN này đã được chạy.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="418"/>
         <source>Encrypted Internet: OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>Chức năng mã hóa internet: TẮT</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="423"/>
         <source>Encrypted Internet: Starting...</source>
-        <translation type="unfinished"></translation>
+        <translation>Mã hóa internet: Đang bắt đầu...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="425"/>
         <source>Encrypted Internet: ON</source>
-        <translation type="unfinished"></translation>
+        <translation>Mã hóa internet: MỞ</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/eip_status.py" line="437"/>
+        <location filename="../src/leap/bitmask/gui/eip_status.py" line="435"/>
         <source>Route traffic through: {0}</source>
-        <translation type="unfinished"></translation>
+        <translation>Điều hướng lưu lượng mạng qua: {0}</translation>
     </message>
 </context>
 <context>
@@ -197,52 +196,52 @@
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="14"/>
         <source>Logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Nhật trình</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="49"/>
         <source>Debug</source>
-        <translation type="unfinished"></translation>
+        <translation>Gỡ lỗi</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="69"/>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Thông tin</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="89"/>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>Cảnh báo</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="109"/>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Lỗi</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="129"/>
         <source>Critical</source>
-        <translation type="unfinished"></translation>
+        <translation>Nghiêm trọng</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="149"/>
         <source>Save to file</source>
-        <translation type="unfinished"></translation>
+        <translation>Lưu vào tập tin</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="148"/>
         <source>Save As</source>
-        <translation type="unfinished"></translation>
+        <translation>Lưu dưới dạng</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="24"/>
         <source>Filter by:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lọc dữ liệu theo:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/loggerwindow.ui" line="34"/>
         <source>Case Insensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>Phân biệt chữ hoa chữ thường</translation>
     </message>
 </context>
 <context>
@@ -250,77 +249,77 @@
     <message>
         <location filename="../src/leap/bitmask/gui/ui/login.ui" line="26"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Biểu mẫu</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="75"/>
+        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="153"/>
         <source>&lt;b&gt;Provider:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Nhà cung cấp:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="94"/>
+        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="172"/>
         <source>Remember username and password</source>
-        <translation type="unfinished"></translation>
+        <translation>Ghi nhớ tên người dùng và mật khẩu</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="119"/>
+        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="197"/>
         <source>&lt;b&gt;Username:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Tên người dùng:&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="132"/>
+        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="210"/>
         <source>&lt;b&gt;Password:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Mật khẩu:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/login.py" line="234"/>
         <source>Log In</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng nhập</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/login.py" line="121"/>
         <source>Other...</source>
-        <translation type="unfinished"></translation>
+        <translation>Các phần khác...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/login.py" line="229"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Hủy bỏ</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="250"/>
+        <location filename="../src/leap/bitmask/gui/ui/login.ui" line="63"/>
         <source>...</source>
-        <translation type="unfinished"></translation>
+        <translation>...</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="366"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="365"/>
         <source>Logout</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng xuất</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/login.py" line="283"/>
         <source>Please select a valid provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Vui lòng chọn một nhà cung cấp hợp lệ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/login.py" line="288"/>
         <source>Please provide a valid username</source>
-        <translation type="unfinished"></translation>
+        <translation>Vui lòng cung cấp một tên người dùng hợp lệ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/login.py" line="293"/>
         <source>Please provide a valid password</source>
-        <translation type="unfinished"></translation>
+        <translation>Xin vui lòng cung cấp một mật khẩu hợp lệ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/login.py" line="296"/>
         <source>Logging in...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang đăng nhập...</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="359"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="358"/>
         <source>Loggin out...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang Đăng xuất...</translation>
     </message>
 </context>
 <context>
@@ -328,366 +327,367 @@
     <message>
         <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="20"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
+        <translation>Biểu mẫu</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="47"/>
+        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="31"/>
         <source>You must login to use encrypted email.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bạn phải đăng nhập để sử dụng email được mã hóa.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="79"/>
+        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="44"/>
         <source>Email</source>
-        <translation type="unfinished"></translation>
+        <translation>Email</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="171"/>
         <source>All services are OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>Tất cả các dịch vụ hiện đang bị TẮT</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="204"/>
         <source>There was an unexpected problem with Soledad.</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi với phần Soledad.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="418"/>
         <source>OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>TẮT</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="221"/>
         <source>Mail is OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>Tắt tính năng mail</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="224"/>
         <source>You must be logged in to use encrypted email.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bạn phải đăng nhập để sử dụng dịch vụ email mã hóa.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="228"/>
         <source>Starting..</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang khởi chạy...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="229"/>
         <source>Mail is starting</source>
-        <translation type="unfinished"></translation>
+        <translation>Mail đang được bắt đầu</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="383"/>
         <source>ON</source>
-        <translation type="unfinished"></translation>
+        <translation>MỞ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="233"/>
         <source>Mail is ON</source>
-        <translation type="unfinished"></translation>
+        <translation>Mail hiện đang MỞ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="236"/>
         <source>Mail is disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Mail hiện đang bị vô hiệu hóa</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="298"/>
         <source>Starting...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang khởi chạy...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="265"/>
         <source>Soledad has started...</source>
-        <translation type="unfinished"></translation>
+        <translation>Soledad đã được khởi chạy...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="267"/>
         <source>Soledad is starting, please wait...</source>
-        <translation type="unfinished"></translation>
+        <translation>Soledad hiện đang khởi động, xin vui lòng chờ trong giây lát..</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="304"/>
         <source>Looking for key for this user</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang tìm kiếm phần khóa dữ liệu đối với người dùng này</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="308"/>
         <source>Found key! Starting mail...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đã tìm thấy khóa! Đang khởi động mail...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="310"/>
         <source>Generating new key, please wait...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang tạo các khóa mới, xin vui lòng đợi trong giây lát...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="312"/>
         <source>Finished generating key!</source>
-        <translation type="unfinished"></translation>
+        <translation>Đã hoàn tất thao tác tạo các khóa dữ liệu!</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="314"/>
         <source>Starting mail...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang khởi động mail...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="344"/>
         <source>SMTP has started...</source>
-        <translation type="unfinished"></translation>
+        <translation>Dịch vụ SMTP đã được bắt đầu...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="350"/>
         <source>SMTP failed to start, check the logs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể khởi động dịch vụ SMTP, kiểm tra nhật trình.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="387"/>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Gặp lỗi</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="381"/>
         <source>IMAP has started...</source>
-        <translation type="unfinished"></translation>
+        <translation>Dịch vụ IMAP đã được bắt đầu...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="387"/>
         <source>IMAP failed to start, check the logs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể khởi động dịch vụ IMAP, kiểm tra phần nhật trình.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="391"/>
         <source>%s Unread Emails</source>
-        <translation type="unfinished"></translation>
+        <translation>%s email chưa đọc</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="405"/>
         <source>About to start, please wait...</source>
-        <translation type="unfinished"></translation>
+        <translation>Chuẩn bị khởi chạy, xin vui lòng đợi trong giây lát...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="412"/>
         <source>Disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Vô Hiệu Hóa</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="287"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="257"/>
         <source>There are new updates available, please restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiện có một phiên bản mới vừa được phát hành, xin vui lòng khởi động lại.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="329"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="299"/>
         <source>More...</source>
-        <translation type="unfinished"></translation>
+        <translation>Thêm...</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="637"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="626"/>
         <source>Help</source>
-        <translation type="unfinished"></translation>
+        <translation>Trợ giúp</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="390"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="360"/>
         <source>&amp;Quit</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Thoát</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="400"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="370"/>
         <source>&amp;Help</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Trợ giúp</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="405"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="375"/>
         <source>&amp;Wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Phần hướng dẫn</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="683"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="672"/>
         <source>Hide Main Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Ẩn cửa sổ chính</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="537"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="527"/>
         <source> The following components will be updated:
 %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Các thành phần sau đây sẽ được cập nhật:
+%s</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="540"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="530"/>
         <source>Updates available</source>
-        <translation type="unfinished"></translation>
+        <translation>Đã có phiên bản mới</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="682"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="671"/>
         <source>Show Main Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiện cửa sổ chính</translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1314"/>
+        <source>We could not find any authentication agent in your system.&lt;br/&gt;Make sure you have &lt;b&gt;polkit-gnome-authentication-agent-1&lt;/b&gt; running and try again.</source>
+        <translation>Chúng tôi không tìm thấy phần trợ lý xác nhận nào trong hệ thống của bạn.&lt;br/&gt;Hãy chắc chắn rằng bạn có&lt;b&gt;phần polkit-gnome-authentication-agent-1&lt;/b&gt; đang được chạy và hãy thử lại lần nữa.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1326"/>
-        <source>We could not find any authentication agent in your system.&lt;br/&gt;Make sure you have &lt;b&gt;polkit-gnome-authentication-agent-1&lt;/b&gt; running and try again.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1338"/>
         <source>We could not find &lt;b&gt;pkexec&lt;/b&gt; in your system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Chúng tôi không tìm thấy &lt;b&gt;pkexec&lt;/b&gt; trong hệ thống của bạn.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1343"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1331"/>
         <source>We could not find openvpn binary.</source>
-        <translation type="unfinished"></translation>
+        <translation>Không tìm thấy phần nhị phân của openconnect.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1505"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1493"/>
         <source>Starting...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang khởi chạy...</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1513"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1501"/>
         <source>Not supported</source>
-        <translation type="unfinished"></translation>
+        <translation>Không được hỗ trợ</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1516"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1504"/>
         <source>Disabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Vô Hiệu Hóa</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1549"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1537"/>
         <source>Could not load Encrypted Internet Configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể nạp mã hóa cấu hình của Internet.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1471"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1459"/>
         <source>Encrypted Internet could not be launched because you did not authenticate properly.</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể chạy được phần mã hóa Internet vì bạn đã không được xác thực đúng cách.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1479"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1467"/>
         <source>Encrypted Internet finished in an unexpected manner!</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiến trình mã hóa Internet đã được hoàn tất một cách bất ngờ!</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="32"/>
         <source>Bitmask</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitmask</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="395"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="365"/>
         <source>About &amp;Bitmask</source>
-        <translation type="unfinished"></translation>
+        <translation>Dịch bởi Vietnamesel10n</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mainwindow.py" line="283"/>
         <source>Mail is OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>Tắt tính năng mail</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="528"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="518"/>
         <source>The Bitmask app is ready to update, please restart the application.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitmask hiện đã sẵn sàng để cài đặt bản cập nhật mới, vui lòng khởi động khởi động lại ứng dụng.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="745"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="734"/>
         <source>About Bitmask - %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Thông tin về Bitmask - %s</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="759"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="748"/>
         <source>Version: &lt;b&gt;%s&lt;/b&gt;&lt;br&gt;&lt;br&gt;Bitmask is the Desktop client application for the LEAP platform, supporting encrypted internet proxy, secure email, and secure chat (coming soon).&lt;br&gt;&lt;br&gt;LEAP is a non-profit dedicated to giving all internet users access to secure communication. Our focus is on adapting encryption technology to make it easy to use and widely available. &lt;br&gt;&lt;br&gt;&lt;a href=&apos;https://leap.se&apos;&gt;More about LEAP&lt;/a&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Phiên bản: &lt;b&gt;%s&lt;/b&gt;&lt;br&gt;&lt;br&gt;Bitmask là một chương trình trên nền desktop dựa trên nền tảng LEAP, hỗ trợ proxy trên internet được mã hóa, bảo mật email, và bảo mật các nội dung chat (tính năng này hiện đang được phát triển và sẽ được phát hành trong phiên bản sắp tới).&lt;br&gt;&lt;br&gt;LEAP là một nền tảng phi lợi nhuận nhằm cung cấp cho người dùng tính năng bảo mật khi giao tiếp trên các hệ thống internet. Mục tiêu của chúng tôi là đưa các kỹ thuật mã hóa đến với người dùng theo cách dễ sử dụng nhất. &lt;br&gt;&lt;br&gt;&lt;a href=&apos;https://leap.se&apos;&gt;Thông tin thêm về LEAP&lt;/a&gt;</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="847"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="836"/>
         <source>Unable to login: Problem with provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể đăng nhập: Xảy ra lỗi với nhà cung cấp</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="885"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="874"/>
         <source>Log in cancelled by the user.</source>
-        <translation type="unfinished"></translation>
+        <translation>Người dùng đã hủy bỏ thao tác đăng nhập.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1333"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1321"/>
         <source>Encrypted Internet cannot be started because the tuntap extension is not installed properly in your system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể khởi động phần mã hóa dành cho Internet vì phần tiện ích tuntap vẫn chưa được cài đặt trên hệ thống của bạn.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1349"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1337"/>
         <source>Another openvpn instance is already running, and could not be stopped.</source>
-        <translation type="unfinished"></translation>
+        <translation>Một tiến trình khác thuộc openvpn hiện đang được thực thi, và không thể bị dừng lại</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1356"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1344"/>
         <source>Another openvpn instance is already running, and could not be stopped because it was not launched by Bitmask. Please stop it and try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Một tiếng trình khác thuộc openvpn hiện đang được thực thi và không thể được dừng lại vì đây là tiến trình được sử dụng bởi Bitmask. Xin vui lòng thử thao tác dừng lại và thử lại</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1531"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1519"/>
         <source>There was a problem with the provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi với nhà cung cấp</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1631"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1618"/>
         <source>Something went wrong with the logout.</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi với thao tác đăng xuất.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1652"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1639"/>
         <source>Unable to connect: Problem with provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể kết nối: Xảy ra lỗi với nhà cung cấp</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="119"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="113"/>
         <source>Encrypted Internet</source>
-        <translation type="unfinished"></translation>
+        <translation>Internet đã được mã hóa</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1622"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="194"/>
         <source>Login</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng nhập</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="364"/>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="334"/>
         <source>&amp;Bitmask</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bitmask</translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="355"/>
+        <source>Preferences...</source>
+        <translation>Tùy Biến...</translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="380"/>
+        <source>Show &amp;Log</source>
+        <translation>Hiển thị &amp;nhật trình</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="385"/>
-        <source>Preferences...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="410"/>
-        <source>Show &amp;Log</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/leap/bitmask/gui/ui/mainwindow.ui" line="415"/>
         <source>Create a new account...</source>
-        <translation type="unfinished"></translation>
+        <translation>Tạo một tài khoản mới...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/mainwindow.py" line="272"/>
         <source>File</source>
-        <translation type="unfinished"></translation>
+        <translation>Tập tin</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="644"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="633"/>
         <source>Encrypted Internet: OFF</source>
-        <translation type="unfinished"></translation>
+        <translation>Chức năng mã hóa internet: TẮT</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1407"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1395"/>
         <source>Network is unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể truy cập mạng</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1430"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1418"/>
         <source>EIP has stopped</source>
-        <translation type="unfinished"></translation>
+        <translation>EIP đã dừng lại</translation>
     </message>
 </context>
 <context>
@@ -695,67 +695,67 @@
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="14"/>
         <source>Preferences</source>
-        <translation type="unfinished"></translation>
+        <translation>Tùy Biến</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="40"/>
         <source>Password Change</source>
-        <translation type="unfinished"></translation>
+        <translation>Thay đổi mật khẩu</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="49"/>
         <source>&amp;Current password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mật khẩu hiện tại:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="66"/>
         <source>&amp;New password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Mật khẩu mới:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="83"/>
         <source>&amp;Re-enter new password:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Nhập lại mật khẩu:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="100"/>
         <source>Change</source>
-        <translation type="unfinished"></translation>
+        <translation>Thay đổi</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="107"/>
         <source>&lt;Password change status&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Trạng thái thay đổi mật khẩu&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="120"/>
         <source>Enabled services</source>
-        <translation type="unfinished"></translation>
+        <translation>Các dịch vụ đã được cho phép</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="126"/>
         <source>Save this provider settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Lưu lại thiết lập dành cho nhà cung cấp này</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="133"/>
         <source>Services</source>
-        <translation type="unfinished"></translation>
+        <translation>Dịch vụ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="149"/>
         <source>&lt;Select provider&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Chọn nhà cung cấp&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="157"/>
         <source>Select provider:</source>
-        <translation type="unfinished"></translation>
+        <translation>Chọn nhà cung cấp:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences.ui" line="164"/>
         <source>&lt; Providers Services Status &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;Trạng thái dịch vụ từ nhà cung cấp&gt;</translation>
     </message>
 </context>
 <context>
@@ -763,32 +763,32 @@
     <message>
         <location filename="../src/leap/bitmask/gui/preferenceswindow.py" line="53"/>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Tự động</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/preferenceswindow.py" line="115"/>
         <source>Changing password...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang thay đổi mật khẩu...</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/preferenceswindow.py" line="166"/>
         <source>Password changed successfully.</source>
-        <translation type="unfinished"></translation>
+        <translation>Đã thay đổi thành công mật khẩu.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/preferenceswindow.py" line="181"/>
         <source>There was a problem changing the password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi với tiến trình thay đổi mật khẩu.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/preferenceswindow.py" line="184"/>
         <source>You did not enter a correct current password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bjan chưa điền vào chính xác mật khẩu hiện tại.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/preferenceswindow.py" line="317"/>
         <source>Services settings for provider &apos;{0}&apos; saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Đã lưu lại thông tin về thiết lập của dịch vụ từ nhà cung cấp &apos;{0}&apos;</translation>
     </message>
 </context>
 <context>
@@ -796,12 +796,12 @@
     <message>
         <location filename="../src/leap/bitmask/provider/providerbootstrapper.py" line="137"/>
         <source>Provider certificate could not be verified</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể xác nhận nơi cung cấp chứng chỉ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/provider/providerbootstrapper.py" line="144"/>
         <source>Provider does not support HTTPS</source>
-        <translation type="unfinished"></translation>
+        <translation>Nhà cung cấp không hỗ trợ HTTPS</translation>
     </message>
 </context>
 <context>
@@ -809,7 +809,7 @@
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="711"/>
         <source>Succeeded</source>
-        <translation type="unfinished"></translation>
+        <translation>Đã thành công</translation>
     </message>
 </context>
 <context>
@@ -817,292 +817,292 @@
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="43"/>
         <source>Welcome</source>
-        <translation type="unfinished"></translation>
+        <translation>Chào mừng bạn</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="55"/>
         <source>Log In with my credentials</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng nhập với thông tin đăng nhập của tôi</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="62"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Now we will guide you through some configuration that is needed before you can connect for the first time.&lt;/p&gt;&lt;p&gt;If you ever need to modify these options again, you can find the wizard in the &lt;span style=&quot; font-style:italic;&quot;&gt;&apos;Settings&apos;&lt;/span&gt; menu from the main window.&lt;/p&gt;&lt;p&gt;Do you want to &lt;span style=&quot; font-weight:600;&quot;&gt;sign up&lt;/span&gt; for a new account, or &lt;span style=&quot; font-weight:600;&quot;&gt;log in&lt;/span&gt; with an already existing username?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Bây giờ chúng tôi sẽ hướng dẫn bạn thông qua một số cấu hình đó là cần thiết trước khi bạn có thể kết nối lần đầu tiên.&lt;/p&gt;&lt;p&gt;Nếu bạn đã bao giờ cần phải sửa đổi các tùy chọn này một lần nữa, bạn có thể tìm thấy thuật sĩ trong trình đơn &lt;span style=&quot; font-style:italic;&quot;&gt;&apos;Cài đặt&apos;&lt;/span&gt; từ cửa sổ chính của.&lt;/p&gt;&lt;p&gt;Bạn có muốn &lt;span style=&quot; font-weight:600;&quot;&gt;đăng ký&lt;/span&gt; cho một tài khoản mới, hoặc &lt;span style=&quot; font-weight:600;&quot;&gt;đăng nhập&lt;/span&gt; với tên người dùng đã tồn tại?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="75"/>
         <source>Sign up for a new account</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng ký một tài khoản mới</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="112"/>
         <source>Provider selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Chọn nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="115"/>
         <source>Please enter the domain of the provider you want to use for your connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Vui lòng nhập tên miền của các nhà cung cấp bạn muốn sử dụng cho kết nối của bạn</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="305"/>
         <source>Check</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiểm tra</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="312"/>
         <source>https://</source>
-        <translation type="unfinished"></translation>
+        <translation>https://</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="153"/>
         <source>Checking for a valid provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang kiểm tra tính hợp lệ của nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="159"/>
         <source>Getting provider information</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang tiếp nhận thông tin từ nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="239"/>
         <source>Can we reach this provider?</source>
-        <translation type="unfinished"></translation>
+        <translation>Bạn có muốn liên lạc với nhà cung cấp hay không?</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="333"/>
         <source>Provider Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Thông tin về nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="336"/>
         <source>Description of services offered by this provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Mô tả về dịch vụ được cung cấp bởi nhà cung cấp này\</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="345"/>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Tên</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="377"/>
         <source>Desc</source>
-        <translation type="unfinished"></translation>
+        <translation>Mô tả</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="387"/>
         <source>&lt;b&gt;Services offered:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Dịch vụ cung cấp:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="397"/>
         <source>services</source>
-        <translation type="unfinished"></translation>
+        <translation>dịch vụ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="417"/>
         <source>&lt;b&gt;Enrollment policy:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Chính sách đăng ký:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="427"/>
         <source>policy</source>
-        <translation type="unfinished"></translation>
+        <translation>chính sách</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="447"/>
         <source>&lt;b&gt;URL:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Đường dẫn liên kết :&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="457"/>
         <source>URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Đường dẫn liên kết</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="464"/>
         <source>&lt;b&gt;Description:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Mô tả:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="475"/>
         <source>Provider setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Thiết lập nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="478"/>
         <source>Gathering configuration options for this provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang thu thập các tùy chọn cấu hình cho nhà cung cấp này</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="500"/>
         <source>We are downloading some bits that we need to establish a secure connection with the provider for the first time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Chúng tôi đang tải xuống một số bit dữ liệu mà chúng ta cần phải thiết lập một kết nối an toàn với các nhà cung cấp cho lần khởi chạy đầu tiên.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="523"/>
         <source>Setting up provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang thiết lập nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="573"/>
         <source>Getting info from the Certificate Authority</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang nhận thông tin từ bộ phận xác nhận chứng chỉ an toàn</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="580"/>
         <source>Do we trust this Certificate Authority?</source>
-        <translation type="unfinished"></translation>
+        <translation>Bạn có tin tưởng vào bộ phân xác nhận chứng chỉ an toàn này không?</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="587"/>
         <source>Establishing a trust relationship with this provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang thiết lập một mối quan hệ tin tưởng dạng dữ liệu với nhà cung cấp này</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="646"/>
         <source>Register new user</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng ký người dùng mới</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="649"/>
         <source>Register a new user with provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng ký một người dùng mới với nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="664"/>
         <source>&lt;b&gt;Password:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Mật khẩu:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="691"/>
         <source>&lt;b&gt;Re-enter password:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Nhập lại mật khẩu:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="701"/>
         <source>Register</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng ký</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="747"/>
         <source>Remember my username and password</source>
-        <translation type="unfinished"></translation>
+        <translation>Ghi nhớ tên người dùng và mật khẩu</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="771"/>
         <source>Service selection</source>
-        <translation type="unfinished"></translation>
+        <translation>Lựa chọn dịch vụ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="774"/>
         <source>Please select the services you would like to have</source>
-        <translation type="unfinished"></translation>
+        <translation>Vui lòng chọn dịch vụ bạn muốn sử dụng</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="138"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="141"/>
         <source>&amp;Next &gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Tiếp theo &gt;</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="140"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="143"/>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Kết nối</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="235"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="238"/>
         <source>Starting registration...</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang bắt đầu đăng ký...</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="266"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="269"/>
         <source>User %s successfully registered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Người dùng %s đã đăng ký thành công.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="286"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="289"/>
         <source>Unknown error</source>
-        <translation type="unfinished"></translation>
+        <translation>Lỗi không rõ nguyên nhân</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="411"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="414"/>
         <source>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;Non-existent provider&lt;/b&gt;&lt;/font&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;Nhà cung cấp không tồn tại&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="429"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="432"/>
         <source>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;%s&lt;/b&gt;&lt;/font&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;%s&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="457"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="460"/>
         <source>Unable to load provider configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể tải cấu hình của nhà cung cấp.</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="463"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="466"/>
         <source>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;Not a valid provider&lt;/b&gt;&lt;/font&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;Không phải là một nhà cung cấp hợp lệ&lt;/b&gt;&lt;/font&gt;</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="529"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="532"/>
         <source>Services by %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Dịch vụ của %s</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="549"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="552"/>
         <source>Something went wrong while trying to load service %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi khi cố tải dịch vụ %s</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="566"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="569"/>
         <source>Gathering configuration options for %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Đang thu thập các tùy chọn cấu hình cho nhà cung cấp %s</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="575"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="578"/>
         <source>Description of services offered by %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Mô tả về dịch vụ được cung cấp bởi nhà cung cấp %s</translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="596"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="599"/>
         <source>Register a new user with %s</source>
-        <translation type="unfinished"></translation>
+        <translation>Đăng ký một người dùng mới với %s</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="26"/>
         <source>Bitmask first run</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitmask được ưu tiên chạy trước</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="46"/>
         <source>This is the Bitmask first run wizard</source>
-        <translation type="unfinished"></translation>
+        <translation>Đây là phần hướng dẫn khởi chạy Bitmask</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="166"/>
         <source>Can we establish a secure connection?</source>
-        <translation type="unfinished"></translation>
+        <translation>Liệu chúng ta có thể thiết lập một kết nối an toàn không?</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="734"/>
         <source>&lt;b&gt;Username:&lt;/b&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;b&gt;Tên tài khoản:&lt;/b&gt;</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="269"/>
         <source>Configure or select a provider</source>
-        <translation type="unfinished"></translation>
+        <translation>Cấu hình hoặc lựa chọn một nhà cung cấp</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="275"/>
         <source>Configure new provider:</source>
-        <translation type="unfinished"></translation>
+        <translation>Cấu hình một nhà cung cấp mới:</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="285"/>
         <source>Use existing one:</source>
-        <translation type="unfinished"></translation>
+        <translation>Sử dụng phần đã tồn tại:</translation>
     </message>
 </context>
 <context>
@@ -1110,57 +1110,65 @@
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="288"/>
         <source>The server did not send the salt parameter</source>
-        <translation type="unfinished"></translation>
+        <translation>Các máy chủ đã không gửi tham số salt</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="292"/>
         <source>The server did not send the B parameter</source>
-        <translation type="unfinished"></translation>
+        <translation>Các máy chủ đã không gửi tham số B</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="324"/>
         <source>The data sent from the server had errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Dữ liệu được gửi từ các máy chủ chứa lỗi</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="346"/>
         <source>Could not connect to the server</source>
-        <translation type="unfinished"></translation>
+        <translation>Không thể kết nối tới máy chủ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="372"/>
         <source>Unknown error (%s)</source>
-        <translation type="unfinished"></translation>
+        <translation>Lỗi không rõ nguyên nhân (%s)</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="403"/>
         <source>Problem getting data from server</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi khi nhận dữ liệu từ máy chủ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="429"/>
         <source>Bad data from server</source>
-        <translation type="unfinished"></translation>
+        <translation>Dữ liệu không chuẩn từ máy chủ</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="436"/>
         <source>Auth verification failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Xác nhận thất bại</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="444"/>
         <source>Session cookie verification failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Xác nhận phiên làm việc cookie gặp lỗi</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="279"/>
         <source>There was a problem with authentication</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi với tiến trình xác nhận</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/crypto/srpauth.py" line="174"/>
         <source>Invalid username or password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tên tài khoản hoặc mật khẩu không đúng.</translation>
+    </message>
+</context>
+<context>
+    <name>kls</name>
+    <message>
+        <location filename="../src/leap/bitmask/services/eip/vpnlauncher.py" line="167"/>
+        <source>No gateway was found!</source>
+        <translation>Không tìm thấ gateway nào hết!</translation>
     </message>
 </context>
 <context>
@@ -1168,42 +1176,42 @@
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="93"/>
         <source>Missing up/down scripts</source>
-        <translation type="unfinished"></translation>
+        <translation>Thiếu phần mã lên/xuống</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="184"/>
         <source>TAP Driver</source>
-        <translation type="unfinished"></translation>
+        <translation>Trình điều khiển TAP</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="191"/>
         <source>Encrypted Internet uses VPN, which needs a TAP device installed and none has been found. This will ask for administrative privileges.</source>
-        <translation type="unfinished"></translation>
+        <translation>Internet được mã hóa sử dụng VPN, cần một thiết bị TAP được cài đặt và hiện không tìm thấy đối tượng nào về phần này. Tiến trình này yêu cầu quyền quản trị.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="310"/>
         <source>TUN Driver</source>
-        <translation type="unfinished"></translation>
+        <translation>Trình điều khiển TUN</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="318"/>
         <source>Encrypted Internet uses VPN, which needs a kernel extension for a TUN device installed, and none has been found. This will ask for administrative privileges.</source>
-        <translation type="unfinished"></translation>
+        <translation>Internet được mã hóa sử dụng VPN, cần một thiết bị TUN được cài đặt và hiện không tìm thấy đối tượng nào về phần này. Tiến trình này yêu cầu quyền quản trị.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="132"/>
         <source>Problem installing files</source>
-        <translation type="unfinished"></translation>
+        <translation>Xảy ra lỗi khi đang thực hiện thao tác cài đặt tập tin</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="133"/>
         <source>Some of the files could not be copied.</source>
-        <translation type="unfinished"></translation>
+        <translation>Một số tập tin không thể được sao chép.</translation>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="313"/>
         <source>Bitmask needs to install the necessary drivers for Encrypted Internet to work. Would you like to proceed?</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitmask cần cài đặt một vài driver thiết yếu để tiến trình mã hóa Internet hoạt động. Bạn có muốn tiếp tục hay không?</translation>
     </message>
 </context>
 </TS>

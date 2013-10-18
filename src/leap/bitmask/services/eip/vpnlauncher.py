@@ -102,6 +102,8 @@ class VPNLauncher(object):
 
     UPDOWN_FILES = None
     OTHER_FILES = None
+    UP_SCRIPT = None
+    DOWN_SCRIPT = None
 
     @classmethod
     @abstractmethod
@@ -164,7 +166,7 @@ class VPNLauncher(object):
 
         if not gateways:
             logger.error('No gateway was found!')
-            raise VPNLauncherException(kls.tr('No gateway was found!'))
+            raise VPNLauncherException('No gateway was found!')
 
         logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
 
@@ -211,15 +213,17 @@ class VPNLauncher(object):
             '--script-security', '2'
         ]
 
-        if _has_updown_scripts(kls.UP_SCRIPT):
-            args += [
-                '--up', '\"%s\"' % (kls.UP_SCRIPT,),
-            ]
+        if kls.UP_SCRIPT is not None:
+            if _has_updown_scripts(kls.UP_SCRIPT):
+                args += [
+                    '--up', '\"%s\"' % (kls.UP_SCRIPT,),
+                ]
 
-        if _has_updown_scripts(kls.DOWN_SCRIPT):
-            args += [
-                '--down', '\"%s\"' % (kls.DOWN_SCRIPT,)
-            ]
+        if kls.DOWN_SCRIPT is not None:
+            if _has_updown_scripts(kls.DOWN_SCRIPT):
+                args += [
+                    '--down', '\"%s\"' % (kls.DOWN_SCRIPT,)
+                ]
 
         ###########################################################
         # For the time being we are disabling the usage of the
@@ -240,6 +244,10 @@ class VPNLauncher(object):
             '--key', eipconfig.get_client_cert_path(providerconfig),
             '--ca', providerconfig.get_ca_cert_path()
         ]
+
+        args += [
+            '--ping', '10',
+            '--ping-restart', '30']
 
         command_and_args = [openvpn] + args
         logger.debug("Running VPN with command:")

@@ -94,6 +94,9 @@ class LoginWidget(QtGui.QWidget):
         self.ui.clblErrorMsg.hide()
         self.ui.clblErrorMsg.clicked.connect(self.ui.clblErrorMsg.hide)
 
+        self.ui.lnUser.textEdited.connect(self.ui.clblErrorMsg.hide)
+        self.ui.lnPassword.textEdited.connect(self.ui.clblErrorMsg.hide)
+
     def _remember_state_changed(self, state):
         """
         Saves the remember state in the LeapSettings
@@ -294,6 +297,7 @@ class LoginWidget(QtGui.QWidget):
         self.set_enabled(False)
         self.ui.clblErrorMsg.hide()
 
+        self._settings.set_provider(provider)
         if self.get_remember() and has_keyring():
             # in the keyring and in the settings
             # we store the value 'usename@provider'

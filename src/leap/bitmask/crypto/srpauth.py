@@ -25,6 +25,7 @@ import json
 #this error is raised from requests
 from simplejson.decoder import JSONDecodeError
 from functools import partial
+from requests.adapters import HTTPAdapter
 
 from PySide import QtCore
 from twisted.internet import threads
@@ -154,7 +155,8 @@ class SRPAuth(QtCore.QObject):
             self._ng = self._srp.NG_1024
             # **************************************************** #
 
-            self._session = self._fetcher.session()
+            self._reset_session()
+
             self._session_id = None
             self._session_id_lock = QtCore.QMutex()
             self._uid = None
@@ -171,6 +173,18 @@ class SRPAuth(QtCore.QObject):
             # User credentials stored for password changing checks
             self._username = None
             self._password = None
+
+        def _reset_session(self):
+            """
+            Resets the current session and sets max retries to 30.
+            """
+            self._session = self._fetcher.session()
+            # We need to bump the default retries, otherwise logout
+            # fails most of the times
+            # NOTE: This is a workaround for the moment, the server
+            # side seems to return correctly every time, but it fails
+            # on the client end.
+            self._session.mount('https://', HTTPAdapter(max_retries=30))
 
         def _safe_unhexlify(self, val):
             """
@@ -508,7 +522,7 @@ class SRPAuth(QtCore.QObject):
             self._username = username
             self._password = password
 
-            self._session = self._fetcher.session()
+            self._reset_session()
 
             d = threads.deferToThread(self._authentication_preprocessing,
                                       username=username,

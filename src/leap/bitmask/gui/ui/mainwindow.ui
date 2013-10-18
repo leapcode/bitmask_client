@@ -86,12 +86,15 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QWidget" name="widget_2" native="true">
+         <widget class="QFrame" name="frame_2">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QFrame{background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(160, 160, 160, 128), stop:1 rgba(255, 255, 255, 0));}</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <property name="leftMargin">
@@ -109,6 +112,9 @@
                <bold>true</bold>
               </font>
              </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
+             </property>
              <property name="text">
               <string>Encrypted Internet</string>
              </property>
@@ -121,6 +127,9 @@
                <width>48</width>
                <height>20</height>
               </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
              </property>
              <property name="text">
               <string/>
@@ -167,12 +176,20 @@
          </widget>
         </item>
         <item>
-         <widget class="QWidget" name="widget" native="true">
+         <widget class="QFrame" name="frame">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">QFrame{
+background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(160, 160, 160, 128), stop:1 rgba(255, 255, 255, 0));
+}</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <property name="leftMargin">
@@ -190,6 +207,9 @@
                <bold>true</bold>
               </font>
              </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
+             </property>
              <property name="text">
               <string>Login</string>
              </property>
@@ -202,6 +222,9 @@
                <width>48</width>
                <height>20</height>
               </size>
+             </property>
+             <property name="styleSheet">
+              <string notr="true"/>
              </property>
              <property name="text">
               <string/>
@@ -216,7 +239,11 @@
          </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="loginLayout"/>
+         <layout class="QVBoxLayout" name="loginLayout">
+          <property name="topMargin">
+           <number>12</number>
+          </property>
+         </layout>
         </item>
         <item>
          <widget class="Line" name="line_2">
@@ -226,7 +253,10 @@
          </widget>
         </item>
         <item>
-         <layout class="QVBoxLayout" name="mailLayout">
+         <layout class="QVBoxLayout" name="mailLayout" stretch="">
+          <property name="spacing">
+           <number>-1</number>
+          </property>
           <property name="margin">
            <number>12</number>
           </property>
@@ -269,7 +299,7 @@
         <property name="sizeHint" stdset="0">
          <size>
           <width>40</width>
-          <height>20</height>
+          <height>0</height>
          </size>
         </property>
        </spacer>
@@ -290,7 +320,7 @@
       <item row="1" column="2">
        <widget class="QPushButton" name="btnMore">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -311,7 +341,7 @@
         <property name="sizeHint" stdset="0">
          <size>
           <width>40</width>
-          <height>20</height>
+          <height>0</height>
          </size>
         </property>
        </spacer>

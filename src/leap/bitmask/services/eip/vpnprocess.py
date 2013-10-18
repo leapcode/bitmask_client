@@ -24,6 +24,8 @@ import psutil.error
 import shutil
 import socket
 
+from itertools import chain, repeat
+
 from PySide import QtCore
 
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -50,12 +52,91 @@ class VPNSignals(QtCore.QObject):
     They are instantiated in the VPN object and passed along
     till the VPNProcess.
     """
+    # signals for the process
     state_changed = QtCore.Signal(dict)
     status_changed = QtCore.Signal(dict)
     process_finished = QtCore.Signal(int)
 
+    # signals that come from parsing
+    # openvpn output
+    network_unreachable = QtCore.Signal()
+    process_restart_tls = QtCore.Signal()
+    process_restart_ping = QtCore.Signal()
+
     def __init__(self):
         QtCore.QObject.__init__(self)
+
+
+class VPNObserver(object):
+    """
+    A class containing different patterns in the openvpn output that
+    we can react upon.
+    """
+
+    # TODO this is i18n-sensitive, right?
+    # in that case, we should add the translations :/
+    # until we find something better.
+
+    _events = {
+        'NETWORK_UNREACHABLE': (
+            'Network is unreachable (code=101)',),
+        'PROCESS_RESTART_TLS': (
+            "SIGUSR1[soft,tls-error]",),
+        'PROCESS_RESTART_PING': (
+            "SIGUSR1[soft,ping-restart]",),
+        'INITIALIZATION_COMPLETED': (
+            "Initialization Sequence Completed",),
+    }
+
+    def __init__(self, qtsigs):
+        """
+        Initializer. Keeps a reference to the passed qtsigs object
+        :param qtsigs: an object containing the different qt signals to
+                       be used to communicate with different parts of
+                       the application (the EIP state machine, for instance).
+        """
+        self._qtsigs = qtsigs
+
+    def watch(self, line):
+        """
+        Inspects line searching for the different patterns. If a match
+        is found, try to emit the corresponding signal.
+
+        :param line: a line of openvpn output
+        :type line: str
+        """
+        chained_iter = chain(*[
+            zip(repeat(key, len(l)), l)
+            for key, l in self._events.iteritems()])
+        for event, pattern in chained_iter:
+            if pattern in line:
+                logger.debug('pattern matched! %s' % pattern)
+                break
+        else:
+            return
+
+        sig = self._get_signal(event)
+        if sig:
+            sig.emit()
+            return
+        else:
+            logger.debug(
+                'We got %s event from openvpn output but we '
+                'could not find a matching signal for it.'
+                % event)
+
+    def _get_signal(self, event):
+        """
+        Tries to get the matching signal from the eip signals
+        objects based on the name of the passed event (in lowercase)
+
+        :param event: the name of the event that we want to get a signal
+                      for
+        :type event: str
+        :returns: a QtSignal, or None
+        :rtype: QtSignal or None
+        """
+        return getattr(self._qtsigs, event.lower(), None)
 
 
 class OpenVPNAlreadyRunning(Exception):
@@ -160,10 +241,14 @@ class VPN(object):
             tries += 1
             reactor.callLater(self.TERMINATE_WAIT,
                               self._kill_if_left_alive, tries)
+            return
 
         # after running out of patience, we try a killProcess
         logger.debug("Process did not died. Sending a SIGKILL.")
-        self.killit()
+        try:
+            self.killit()
+        except OSError:
+            logger.error("Could not kill process!")
 
     def killit(self):
         """
@@ -703,7 +788,11 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         self._last_status = None
         self._alive = False
 
+        # XXX use flags, maybe, instead of passing
+        # the parameter around.
         self._openvpn_verb = openvpn_verb
+
+        self._vpn_observer = VPNObserver(qtsigs)
 
     # processProtocol methods
 
@@ -726,8 +815,9 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         .. seeAlso: `http://twistedmatrix.com/documents/13.0.0/api/twisted.internet.protocol.ProcessProtocol.html` # noqa
         """
         # truncate the newline
-        # should send this to the logging window
-        vpnlog.info(data[:-1])
+        line = data[:-1]
+        vpnlog.info(line)
+        self._vpn_observer.watch(line)
 
     def processExited(self, reason):
         """
