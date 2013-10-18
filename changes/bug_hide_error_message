@@ -1,2 +1,0 @@
-  o Hide login error message when the user interacts with the widgets
-    to fix the potential problem. Fixes #4022.
