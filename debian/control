@@ -3,6 +3,7 @@ Section: misc
 Priority: extra
 Maintainer: Ben Carrillo <ben@futeisha.org>
 Standards-Version: 3.9.4
+Uploaders: Micah Anderson <micah@debian.org>
 Homepage: https://leap.se
 #Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
 #Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
