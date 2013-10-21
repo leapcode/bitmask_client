@@ -10,11 +10,11 @@ Bitmask
 `the LEAP Platform`_.
 
 It is written in python using `PySide`_ and licensed under the GPL3.
-Currently we distribute pre-compiled bundles for Linux and OSX, with Windows
-bundles following soon.
+Currently we distribute pre-compiled `bundles`_ for Linux, OSX and Windows.
 
 .. _`PySide`: http://qt-project.org/wiki/PySide
 .. _`the LEAP Platform`: https://github.com/leapcode/leap_platform
+.. _`bundles`: https://downloads.leap.se/client/
 
 
 Read the Docs!
