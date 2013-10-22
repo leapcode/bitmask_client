@@ -3,7 +3,7 @@
 Setting up a development environment
 ====================================
 
-This document covers how to get an enviroment ready to contribute code to Bitmask.
+This document covers how to get an enviroment ready to contribute code to Bitmask, with some explanations of what are we doing in each step along the way. For just the meat, check the :ref:`quickstart <quickstart>` `section`.
 
 Cloning the repo
 ----------------
@@ -58,10 +58,14 @@ Read more about it in the `project documentation page <http://pypi.python.org/py
 
 Create and activate your dev environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-::
 
-    $ virtualenv </path/to/new/environment>
-    $ source </path/to/new/environment>/bin/activate
+You first create a virtualenv in any directory that you like::
+
+    $ mkdir ~/Virtualenvs
+    $ virtualenv ~/Virtualenvs/bitmask
+    $ source ~/Virtualenvs/bitmask/bin/activate
+
+.. TODO use virtualenvwrapper + isis non-sudo recipe here 
 
 .. _pysidevirtualenv:
 
@@ -74,14 +78,10 @@ As a workaround, you can run the following script after creating your virtualenv
 
     $ pkg/postmkvenv.sh
 
-A second option if that does not work for you would be to install PySide globally and pass the ``--site-packages`` option when you are creating your virtualenv::
+A second option if that does not work for you would be to install PySide globally and pass the ``--system-site-packages`` option when you are creating your virtualenv::
 
-    $ apt-get install python-pyside
-    $ virtualenv --site-packages .
-
-After that, you must export ``LEAP_VENV_SKIP_PYSIDE`` to skip the isntallation::
-
-    $ export LEAP_VENV_SKIP_PYSIDE=1
+    $ sudo apt-get install python-pyside
+    $ virtualenv --system-site-packages .
 
 And now you are ready to proceed with the next section.
 
@@ -92,8 +92,32 @@ Install python dependencies
 
 You can install python dependencies with ``pip``. If you do it inside your working environment, they will be installed avoiding the need for administrative permissions::
 
-    $ pip install -r pkg/requirements.pip
+    $ (bitmask) pip install -r pkg/requirements.pip
 
+.. _makeresources:
+
+Install Bitmask
+---------------
+
+We will be using setuptools **development mode** inside the virtualenv. It will
+creaate a link from the local site-packages to your working directory. In this
+way, your changes will always be in the installation path without need to
+install the package you are working on.::
+
+    $ (bitmask) python2 setup.py develop
+
+After this step, your Bitmask launcher will be located at
+``~/Virtualenvs/bitmask/bin/bitmask``, and it will be in the path as long as you
+have sourced your virtualenv.
+
+Make resources
+--------------
+
+We also need to compile the resource files::
+
+    $ (bitmask) make resources
+
+.. TODO need to make translations too?
 
 .. _copyscriptfiles:
 
@@ -129,3 +153,12 @@ If you are using linux and running a desktop other than unity or gnome, you migh
 or if you are a kde user::
 
    /usr/lib/kde4/libexec/polkit-kde-authentication-agent-1 &
+
+Running!
+--------
+
+If everything went well, you should be able to run your client by invoking
+``bitmask``. If it does not get launched, or you just want to see more verbose
+output, try the debug mode::
+
+   $ (bitmask) bitmask --debug

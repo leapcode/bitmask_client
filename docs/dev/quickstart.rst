@@ -1,3 +1,5 @@
+.. _quickstart:
+
 Quickstart
 ==========
 
@@ -56,11 +58,11 @@ Install python requirements::
 
 Install the bitmask package in development mode inside the virtualenv::
 
-    $ ./setup.py develop
+    $ python2 setup.py develop
 
 Compile the resource files::
 
-    $ make
+    $ make resources
 
 Copy necessary files into system folders, with root privileges::
 
