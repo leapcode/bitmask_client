@@ -41,15 +41,22 @@ Getting dependencies under debian
 
 With a Debian based system, to be able to run Bitmask you need to run the following command::
 
-  $ sudo apt-get install openvpn python-pyside pyside-tools python-setuptools python-all-dev python-pip python-dev python-openssl
+    $ sudo apt-get install git python-dev python-setuptools
+    python-virtualenv python-pip python-openssl libsqlite3-dev g++ openvpn
+    pyside-tools python-pyside 
 
 Installing
 -----------
 
-After getting the source and installing all the dependencies, proceed to install ``bitmask`` package::
+Quick install, from the cheese shop::
 
-  $ make
-  $ sudo python2 setup.py install
+  $ sudo pip install leap.bitmask
+
+If you prefer to install from sources::
+
+ $ make
+ $ sudo python2 setup.py install
+
 
 Running
 -------
@@ -101,13 +108,6 @@ And make your working tree available to your pythonpath::
 Run Bitmask::
 
   (bitmask)$ bitmask --debug
-
-
-If you are testing a new provider that doesn't have the proper certificates yet, you can use --danger flag, but **DO NOT use it on a regular basis**.
-
-**WARNING**: If you use the --danger flag you may be victim to a MITM_ attack without noticing. Use at your own risk.
-
-.. _MITM: http://en.wikipedia.org/wiki/Man-in-the-middle_attack
 
 Testing
 =======
