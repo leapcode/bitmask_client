@@ -48,10 +48,15 @@ With a Debian based system, to be able to run Bitmask you need to run the follow
 Installing
 -----------
 
-After getting the source and installing all the dependencies, proceed to install ``bitmask`` package::
+Quick install, from the cheese shop::
 
-  $ make
-  $ sudo python2 setup.py install
+  $ sudo pip install leap.bitmask
+
+If you prefer to install from sources::
+
+ $ make
+ $ sudo python2 setup.py install
+
 
 Running
 -------
