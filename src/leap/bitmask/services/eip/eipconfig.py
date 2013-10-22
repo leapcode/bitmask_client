@@ -33,6 +33,45 @@ from leap.common.check import leap_assert, leap_assert_type
 logger = logging.getLogger(__name__)
 
 
+def get_eipconfig_path(domain):
+    """
+    Returns relative path for EIP config.
+
+    :param domain: the domain to which this eipconfig belongs to.
+    :type domain: str
+    :returns: the path
+    :rtype: str
+    """
+    leap_assert(domain is not None, "get_eipconfig_path: We need a domain")
+    return os.path.join("leap", "providers", domain, "eip-service.json")
+
+
+def load_eipconfig_if_needed(provider_config, eip_config, domain):
+    """
+    Utility function to prime a eip_config object from a loaded
+    provider_config and the chosen provider domain.
+
+    :param provider_config: a loaded instance of ProviderConfig
+    :type provider_config: ProviderConfig
+
+    :param eip_config: the eipconfig object to be primed.
+    :type eip_config: EIPConfig
+
+    :param domain: the chosen provider domain
+    :type domain: str
+
+    :returns: Whether the eip_config object has been succesfully loaded
+    :rtype: bool
+    """
+    loaded = eip_config.loaded()
+    if not loaded:
+        eip_config_path = get_eipconfig_path(domain)
+        api_version = provider_config.get_api_version()
+        eip_config.set_api_version(api_version)
+        loaded = eip_config.load(eip_config_path)
+    return loaded
+
+
 class VPNGatewaySelector(object):
     """
     VPN Gateway selector.
@@ -59,7 +98,6 @@ class VPNGatewaySelector(object):
             tz_offset = self.equivalent_timezones[tz_offset]
 
         self._local_offset = tz_offset
-
         self._eipconfig = eipconfig
 
     def get_gateways_list(self):

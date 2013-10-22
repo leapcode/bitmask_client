@@ -128,8 +128,22 @@ class ConnectionMachineBuilder(object):
             states[_OFF])
 
         # * If we receive the connection_died, we transition
-        #   to the off state
+        #   from on directly to the off state
         states[_ON].addTransition(
+            conn.qtsigs.connection_died_signal,
+            states[_OFF])
+
+        # * If we receive the connection_aborted, we transition
+        #   from connecting to the off state
+        states[_CON].addTransition(
+            conn.qtsigs.connection_aborted_signal,
+            states[_OFF])
+        # * Connection died can in some cases also be
+        #   triggered while we are in CONNECTING
+        #   state. I should be avoided, since connection_aborted
+        #   is clearer (and reserve connection_died
+        #   for transitions from on->off
+        states[_CON].addTransition(
             conn.qtsigs.connection_died_signal,
             states[_OFF])
 

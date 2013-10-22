@@ -34,16 +34,18 @@ BITMASK_BIN=$TEMPLATE_BUNDLE/bitmask
 BUNDLE_NAME=Bitmask-linux$ARCH-$VERSION
 
 # clean template
-rm $TEMPLATE_BUNDLE/CHANGELOG
-rm $TEMPLATE_BUNDLE/relnotes.txt
+rm -f $TEMPLATE_BUNDLE/CHANGELOG
+rm -f $TEMPLATE_BUNDLE/relnotes.txt
 rm -rf $TEMPLATE_BUNDLE/apps/leap
 rm -rf $TEMPLATE_BUNDLE/lib/leap/{common,keymanager,soledad,mail}
 
 # checkout the latest tag in all repos
 for repo in $REPOSITORIES; do
     cd $REPOS_ROOT/$repo
-    git fetch
-    # checkout to the latest annotated tag, supress 'detached head' warning
+    git checkout master
+    git pull --ff-only origin master && git fetch
+    git reset --hard origin/master  # this avoids problems if you are in a commit far in the past
+    # checkout to the closest annotated tag, supress 'detached head' warning
     git checkout --quiet `git describe --abbrev=0`
 done
 
@@ -82,7 +84,7 @@ cp src/launcher $BITMASK_BIN
 
 # copy launcher.py to template bundle
 # e.g. TEMPLATE_BUNDLE/Bitmask.app/Contents/MacOS/apps/
-cd $REPOS_ROOT/bitmask_client_launcher/src/
+cd $REPOS_ROOT/bitmask_launcher/src/
 cp launcher.py $TEMPLATE_BUNDLE/apps/
 
 # copy relnotes, joint changelog and LICENSE to TEMPLATE_BUNDLE

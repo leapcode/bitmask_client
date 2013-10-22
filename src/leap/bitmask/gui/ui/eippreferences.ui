@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EIPPreferences</class>
+ <widget class="QDialog" name="EIPPreferences">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>398</width>
+    <height>262</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>EIP Preferences</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../../../../../data/resources/mainwindow.qrc">
+    <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
+  </property>
+  <layout class="QGridLayout" name="gridLayout_2">
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="gbGatewaySelector">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="title">
+      <string>Select gateway for provider</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="lblSelectProvider">
+        <property name="text">
+         <string>&amp;Select provider:</string>
+        </property>
+        <property name="buddy">
+         <cstring>cbProvidersGateway</cstring>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="2">
+       <widget class="QComboBox" name="cbProvidersGateway">
+        <item>
+         <property name="text">
+          <string>&lt;Select provider&gt;</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="7" column="2">
+       <widget class="QPushButton" name="pbSaveGateway">
+        <property name="text">
+         <string>Save this provider settings</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="3">
+       <widget class="QLabel" name="lblProvidersGatewayStatus">
+        <property name="text">
+         <string>&lt; Providers Gateway Status &gt;</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>Select gateway:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1" colspan="2">
+       <widget class="QComboBox" name="cbGateways">
+        <item>
+         <property name="text">
+          <string>Automatic</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QGroupBox" name="gbAutomaticEIP">
+     <property name="title">
+      <string>Automatic EIP start</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="3" column="0">
+       <widget class="QLabel" name="lblAutoStartEIPStatus">
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="styleSheet">
+         <string notr="true"/>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::NoFrame</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Plain</enum>
+        </property>
+        <property name="text">
+         <string>&lt;font color='green'&gt;&lt;b&gt;Automatic EIP start saved!&lt;/b&gt;&lt;/font&gt;</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="pbSaveAutoStartEIP">
+        <property name="text">
+         <string>Save auto start setting</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="cbAutoStartEIP">
+        <property name="layoutDirection">
+         <enum>Qt::LeftToRight</enum>
+        </property>
+        <property name="text">
+         <string>Enable Automatic start of EIP</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="cbProvidersEIP">
+        <item>
+         <property name="text">
+          <string>&lt;Select provider&gt;</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+     </layout>
+     <zorder>cbAutoStartEIP</zorder>
+     <zorder>lblAutoStartEIPStatus</zorder>
+     <zorder>pbSaveAutoStartEIP</zorder>
+     <zorder>cbProvidersEIP</zorder>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <tabstops>
+  <tabstop>cbAutoStartEIP</tabstop>
+  <tabstop>cbProvidersEIP</tabstop>
+  <tabstop>pbSaveAutoStartEIP</tabstop>
+  <tabstop>cbProvidersGateway</tabstop>
+  <tabstop>cbGateways</tabstop>
+  <tabstop>pbSaveGateway</tabstop>
+ </tabstops>
+ <resources>
+  <include location="../../../../../data/resources/mainwindow.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>cbAutoStartEIP</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cbProvidersEIP</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>180</x>
+     <y>53</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>238</x>
+     <y>53</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

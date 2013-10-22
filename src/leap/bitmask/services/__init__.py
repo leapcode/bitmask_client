@@ -27,7 +27,7 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
 from leap.bitmask.util.request_helpers import get_content
-from leap.bitmask.util import get_path_prefix
+from leap.bitmask import util
 
 from leap.common.check import leap_assert
 from leap.common.config.baseconfig import BaseConfig
@@ -105,10 +105,11 @@ def download_service_config(provider_config, service_config,
     service_name = service_config.name
     service_json = "{0}-service.json".format(service_name)
     headers = {}
-    mtime = get_mtime(os.path.join(get_path_prefix(),
+    mtime = get_mtime(os.path.join(util.get_path_prefix(),
                                    "leap", "providers",
                                    provider_config.get_domain(),
                                    service_json))
+
     if download_if_needed and mtime:
         headers['if-modified-since'] = mtime
 
@@ -125,9 +126,14 @@ def download_service_config(provider_config, service_config,
     # XXX make and use @with_srp_auth decorator
     srp_auth = SRPAuth(provider_config)
     session_id = srp_auth.get_session_id()
+    token = srp_auth.get_token()
     cookies = None
-    if session_id:
+    if session_id is not None:
         cookies = {"_session_id": session_id}
+
+    # API v2 will only support token auth, but in v1 we can send both
+    if token is not None:
+        headers["Authorization"] = 'Token token="{0}"'.format(token)
 
     res = session.get(config_uri,
                       verify=provider_config.get_ca_cert_path(),
