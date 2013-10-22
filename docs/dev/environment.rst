@@ -3,7 +3,11 @@
 Setting up a development environment
 ====================================
 
-This document covers how to get an enviroment ready to contribute code to Bitmask, with some explanations of what are we doing in each step along the way. For just the meat, check the :ref:`quickstart <quickstart>` `section`.
+This document covers how to get an enviroment ready to contribute code to
+Bitmask, with some explanations of what are we doing in each step along the way.
+For just the meat, check the :ref:`quickstart <quickstart>` section. If you only
+want to do a a quick fetch of the latest code for casual testing, you can use
+the :ref:`bootstrap script <fetchinglatest>` instead.
 
 Cloning the repo
 ----------------
@@ -13,7 +17,8 @@ Cloning the repo
 
 ::
 
-    git clone https://leap.se/git/?p=bitmask_client.git
+    git clone https://leap.se/git/?p=bitmask_client.git bitmask
+    cd bitmask
     git checkout develop
 
 .. XXX change this when repo changes.
@@ -64,6 +69,9 @@ You first create a virtualenv in any directory that you like::
     $ mkdir ~/Virtualenvs
     $ virtualenv ~/Virtualenvs/bitmask
     $ source ~/Virtualenvs/bitmask/bin/activate
+    (bitmask)$
+
+Note the change in the prompt.
 
 .. TODO use virtualenvwrapper + isis non-sudo recipe here 
 
@@ -76,7 +84,7 @@ If you attempt to install PySide inside a virtualenv as part of the rest of the 
 
 As a workaround, you can run the following script after creating your virtualenv. It will symlink to your global PySide installation (*this is the recommended way if you are running a debian-based system*)::
 
-    $ pkg/postmkvenv.sh
+    (bitmask)$ pkg/postmkvenv.sh
 
 A second option if that does not work for you would be to install PySide globally and pass the ``--system-site-packages`` option when you are creating your virtualenv::
 
@@ -90,32 +98,48 @@ And now you are ready to proceed with the next section.
 Install python dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can install python dependencies with ``pip``. If you do it inside your working environment, they will be installed avoiding the need for administrative permissions::
+You can install python dependencies with ``pip``. If you do it inside your
+working environment, they will be installed avoiding the need for administrative
+permissions::
 
-    $ (bitmask) pip install -r pkg/requirements.pip
+    (bitmask)$ pip install -r pkg/requirements.pip
 
-.. _makeresources:
+This step is not strictly needed, since the ``setup.py develop`` in the next
+paragraph with also fetch the needed dependencies. But you need to know abou it:
+when you or any person in the development team will be adding a new dependency,
+you will have to repeat this command so that the new dependencies are installed
+inside your virtualenv.
+
+.. _installbitmaskdevelop:
 
 Install Bitmask
 ---------------
 
-We will be using setuptools **development mode** inside the virtualenv. It will
-creaate a link from the local site-packages to your working directory. In this
-way, your changes will always be in the installation path without need to
-install the package you are working on.::
+Normally we would install the ``leap.bitmask`` package as any other package
+inside the virtualenv.
+But, instead, we will be using setuptools **development mode**. The difference
+is that, instead of installing the package in a permanent location in your
+regular installed packages path, it will create a link from the local
+site-packages to your working directory. In this way, your changes will always
+be in the installation path without need to install the package you are working
+on.::
 
-    $ (bitmask) python2 setup.py develop
+    (bitmask)$ python2 setup.py develop
 
 After this step, your Bitmask launcher will be located at
 ``~/Virtualenvs/bitmask/bin/bitmask``, and it will be in the path as long as you
 have sourced your virtualenv.
+
+.. _makeresources:
 
 Make resources
 --------------
 
 We also need to compile the resource files::
 
-    $ (bitmask) make resources
+    (bitmask)$ make resources
+
+You need to repeat this step each time you change a ``.ui`` file.
 
 .. TODO need to make translations too?
 
@@ -161,4 +185,4 @@ If everything went well, you should be able to run your client by invoking
 ``bitmask``. If it does not get launched, or you just want to see more verbose
 output, try the debug mode::
 
-   $ (bitmask) bitmask --debug
+   (bitmask)$ bitmask --debug
