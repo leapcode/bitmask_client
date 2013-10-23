@@ -17,6 +17,7 @@
 
 import binascii
 import logging
+import sys
 
 import requests
 import srp
@@ -249,10 +250,13 @@ class SRPAuth(QtCore.QObject):
                     (self._provider_config.get_api_uri(),
                      self._provider_config.get_api_version(),
                      "sessions")
+
+                ca_cert_path = self._provider_config.get_ca_cert_path()
+                ca_cert_path = ca_cert_path.encode(sys.getfilesystemencoding())
+
                 init_session = self._session.post(sessions_url,
                                                   data=auth_data,
-                                                  verify=self._provider_config.
-                                                  get_ca_cert_path(),
+                                                  verify=ca_cert_path,
                                                   timeout=REQUEST_TIMEOUT)
                 # Clean up A value, we don't need it anymore
                 self._srp_a = None
