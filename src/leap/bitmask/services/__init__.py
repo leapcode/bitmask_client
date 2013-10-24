@@ -19,6 +19,7 @@ Services module.
 """
 import logging
 import os
+import sys
 
 from PySide import QtCore
 
@@ -135,8 +136,12 @@ def download_service_config(provider_config, service_config,
     if token is not None:
         headers["Authorization"] = 'Token token="{0}"'.format(token)
 
+    verify = provider_config.get_ca_cert_path()
+    if verify:
+        verify = verify.encode(sys.getfilesystemencoding())
+
     res = session.get(config_uri,
-                      verify=provider_config.get_ca_cert_path(),
+                      verify=verify,
                       headers=headers,
                       timeout=REQUEST_TIMEOUT,
                       cookies=cookies)
