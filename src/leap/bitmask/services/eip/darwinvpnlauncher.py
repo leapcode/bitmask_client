@@ -21,6 +21,7 @@ import commands
 import getpass
 import logging
 import os
+import sys
 
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncher
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncherException
@@ -185,6 +186,8 @@ class DarwinVPNLauncher(VPNLauncher):
 
         :rtype: dict
         """
+        ld_library_path = os.path.join(get_path_prefix(), "..", "lib")
+        ld_library_path.encode(sys.getfilesystemencoding())
         return {
-            "DYLD_LIBRARY_PATH": os.path.join(get_path_prefix(), "..", "lib")
+            "DYLD_LIBRARY_PATH": ld_library_path
         }

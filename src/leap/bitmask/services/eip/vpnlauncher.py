@@ -250,9 +250,6 @@ class VPNLauncher(object):
             '--ping-restart', '30']
 
         command_and_args = [openvpn] + args
-        logger.debug("Running VPN with command:")
-        logger.debug(" ".join(command_and_args))
-
         return command_and_args
 
     @classmethod
