@@ -16,6 +16,7 @@ twisted
 qt4reactor
 python-daemon # this should not be needed for Windows.
 keyring
+zope.proxy
 
 leap.common>=0.3.4
 leap.soledad.client>=0.4.0
