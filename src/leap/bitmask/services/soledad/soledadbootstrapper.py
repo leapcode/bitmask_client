@@ -246,7 +246,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         try:
             self._soledad = Soledad(
                 uuid,
-                self._password.encode('utf-8'),
+                self._password,
                 secrets_path=secrets_path.encode(encoding),
                 local_db_path=local_db_path.encode(encoding),
                 server_url=server_url,
