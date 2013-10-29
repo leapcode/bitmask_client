@@ -31,6 +31,7 @@ from PySide import QtCore
 from twisted.internet import threads
 
 from leap.bitmask.util import request_helpers as reqhelper
+from leap.bitmask.util.compat import requests_has_max_retries
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.common.check import leap_assert
 from leap.common.events import signal as events_signal
@@ -184,7 +185,11 @@ class SRPAuth(QtCore.QObject):
             # NOTE: This is a workaround for the moment, the server
             # side seems to return correctly every time, but it fails
             # on the client end.
-            self._session.mount('https://', HTTPAdapter(max_retries=30))
+            if requests_has_max_retries:
+                adapter = HTTPAdapter(max_retries=30)
+            else:
+                adapter = HTTPAdapter()
+            self._session.mount('https://', adapter)
 
         def _safe_unhexlify(self, val):
             """
