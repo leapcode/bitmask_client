@@ -414,9 +414,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :param provider_config: Provider configuration
         :type provider_config: ProviderConfig
         :param user: User's login
-        :type user: str
+        :type user: unicode
         :param password: User's password
-        :type password: str
+        :type password: unicode
         :param download_if_needed: If True, it will only download
                                    files if the have changed since the
                                    time it was previously downloaded.
