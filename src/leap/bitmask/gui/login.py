@@ -168,7 +168,7 @@ class LoginWidget(QtGui.QWidget):
         """
         Returns the user that appears in the widget.
 
-        :rtype: str
+        :rtype: unicode
         """
         return self.ui.lnUser.text()
 
@@ -185,7 +185,7 @@ class LoginWidget(QtGui.QWidget):
         """
         Returns the password that appears in the widget
 
-        :rtype: str
+        :rtype: unicode
         """
         return self.ui.lnPassword.text()
 

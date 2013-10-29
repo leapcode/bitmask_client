@@ -20,6 +20,7 @@ Soledad bootstrapping
 import logging
 import os
 import socket
+import sys
 
 from ssl import SSLError
 
@@ -241,14 +242,15 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         # TODO: If selected server fails, retry with another host
         # (issue #3309)
+        encoding = sys.getfilesystemencoding()
         try:
             self._soledad = Soledad(
                 uuid,
-                self._password.encode("utf-8"),
-                secrets_path=secrets_path,
-                local_db_path=local_db_path,
+                self._password.encode('utf-8'),
+                secrets_path=secrets_path.encode(encoding),
+                local_db_path=local_db_path.encode(encoding),
                 server_url=server_url,
-                cert_file=cert_file,
+                cert_file=cert_file.encode(encoding),
                 auth_token=auth_token)
 
         # XXX All these errors should be handled by soledad itself,
@@ -414,9 +416,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :param provider_config: Provider configuration
         :type provider_config: ProviderConfig
         :param user: User's login
-        :type user: str
+        :type user: unicode
         :param password: User's password
-        :type password: str
+        :type password: unicode
         :param download_if_needed: If True, it will only download
                                    files if the have changed since the
                                    time it was previously downloaded.
