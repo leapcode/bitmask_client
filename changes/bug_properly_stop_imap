@@ -1,0 +1,1 @@
+- Properly stop the imap daemon at logout. Fixes #4199.

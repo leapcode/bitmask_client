@@ -8,3 +8,6 @@
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
+
+leap.mail>=0.3.6
+leap.soledad>=0.4.2
