@@ -192,9 +192,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             # soledad-launcher in the gui.
             raise
 
-        leap_assert(sameProxiedObjects(self._soledad, None)
-                    is not True,
-                   "Null soledad, error while initializing")
+        leap_assert(not sameProxiedObjects(self._soledad, None),
+                    "Null soledad, error while initializing")
 
         # and now, let's sync
         sync_tries = self.MAX_SYNC_RETRIES

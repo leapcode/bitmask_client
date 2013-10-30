@@ -156,7 +156,7 @@ class PreferencesWindow(QtGui.QDialog):
         """
         logger.debug("SRP password changed successfully.")
         try:
-            self._soledad.change_passphrase(str(new_password))
+            self._soledad.change_passphrase(new_password)
             logger.debug("Soledad password changed successfully.")
         except NoStorageSecret:
             logger.debug(

@@ -880,8 +880,8 @@ class MainWindow(QtGui.QMainWindow):
         leap_assert(self._provider_config, "We need a provider config!")
 
         if data[self._provider_bootstrapper.PASSED_KEY]:
-            username = self._login_widget.get_user().encode("utf8")
-            password = self._login_widget.get_password().encode("utf8")
+            username = self._login_widget.get_user()
+            password = self._login_widget.get_password()
 
             if self._srp_auth is None:
                 self._srp_auth = SRPAuth(self._provider_config)
