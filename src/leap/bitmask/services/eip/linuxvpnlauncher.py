@@ -61,9 +61,13 @@ def _is_auth_agent_running():
     :return: True if it's running, False if it's not.
     :rtype: boolean
     """
-    ps = 'ps aux | grep polkit-%s-authentication-agent-1'
-    opts = (ps % case for case in ['[g]nome', '[k]de'])
-    is_running = map(lambda l: commands.getoutput(l), opts)
+    # the [x] thing is to avoid grep match itself
+    polkit_options = [
+        'ps aux | grep polkit-[g]nome-authentication-agent-1',
+        'ps aux | grep polkit-[k]de-authentication-agent-1',
+        'ps aux | grep [l]xpolkit'
+    ]
+    is_running = [commands.getoutput(cmd) for cmd in polkit_options]
     return any(is_running)
 
 

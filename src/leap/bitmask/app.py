@@ -54,6 +54,7 @@ from leap.bitmask.util import leap_argparse
 from leap.bitmask.util import log_silencer
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
+from leap.bitmask.platform_init import IS_WIN
 from leap.common.events import server as event_server
 
 import codecs
@@ -99,7 +100,8 @@ def add_logger_handlers(debug=False, logfile=None):
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
 
-    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    log_format = ('%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s '
+                  '- %(levelname)s - %(message)s')
     formatter = logging.Formatter(log_format)
 
     # Console handler
@@ -140,12 +142,15 @@ def replace_stdout_stderr_with_logging(logger):
         - the twisted log output
     with a custom one that writes to the logger.
     """
-    sys.stdout = StreamToLogger(logger, logging.DEBUG)
-    sys.stderr = StreamToLogger(logger, logging.ERROR)
+    # Disabling this on windows since it breaks ALL THE THINGS
+    # The issue for this is #4149
+    if not IS_WIN:
+        sys.stdout = StreamToLogger(logger, logging.DEBUG)
+        sys.stderr = StreamToLogger(logger, logging.ERROR)
 
-    # Replace twisted's logger to use our custom output.
-    from twisted.python import log
-    log.startLogging(sys.stdout)
+        # Replace twisted's logger to use our custom output.
+        from twisted.python import log
+        log.startLogging(sys.stdout)
 
 
 def main():

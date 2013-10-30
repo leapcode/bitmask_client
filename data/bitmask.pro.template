@@ -1,0 +1,9 @@
+{header}
+
+SOURCES += {sources}
+
+FORMS += {forms}
+
+# where to generate ts files -- tx will pick from here
+# original file, english
+TRANSLATIONS    += ts/en_US.ts

@@ -1,3 +1,41 @@
+0.3.5 Oct 18 -- the "I can stand on one foot" release:
+  o In case of Soledad failure, display to the user that there was a
+    problem. Closes #4025.
+  o Widget squashing problem in wizard checking a new provider. Closes
+    #4058.
+  o Remember last domain used to login. Closes #4116.
+  o Display first run wizard, regardless of pinned providers. Closes
+    #4143.
+  o Show EIP status 'ON' in the systray tooltip when is
+    connected. Related to #3998.
+  o Catch u1db errors during soledad initialization.
+  o Disable --danger flag on release versions. Closes #4124.
+  o Display mail status in the tray icon as an enabled item. Fixes
+    #4036.
+  o Only show N unread Emails when N > 0. Fixes #4098.
+  o Hide login error message when the user interacts with the widgets
+    to fix the potential problem. Fixes #4022.
+  o Add call to `make` to the bootstrap script.
+  o Improve GUI based on QA rounds. Fixes #4041 and #4042.
+  o Increase the amount of retries for the authentication request
+    session. Fixes #4037.
+  o Rename EIP to Encrypted Internet in its preference panel. Fixes
+    #4057.
+  o Disable stdout redirection on Windows for the time being since it
+    breaks the bundle.
+  o Default UP_SCRIPT and DOWN_SCRIPT to None and only add that
+    parameter to the vpn command if not None.
+  o Look for gpg on windows with the .exe extension.
+  o Change the Util menu to be named File in OSX. Fixes #4039.
+  o Show more context information in the logs. Closes #3923.
+  o Automate internationalization process, create project file
+    dynamically on make. Closes #3925.
+  o Add support for running lxde polkit agent. Closes #4028.
+  o Added Vietnamese and English (United Kingdom) translations.
+  o Implements openvpn observer. Closes: #3901
+  o Reconnect EIP if network down. Closes #3790
+  o Reconnect if tls-restart. Closes: #3262
+
 0.3.4 Oct 4 -- the "look at my new makeup" release:
   o Fixes a bug where you cannot login to a different provider once
     you logged in to another one. Fixes #3695.

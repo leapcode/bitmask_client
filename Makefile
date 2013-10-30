@@ -47,6 +47,7 @@ resources : $(COMPILED_RESOURCES)
 ui : $(COMPILED_UI)
 
 translations:
+	data/make_project_file.py
 	$(PYLUP) $(PROJFILE)
 	$(LRELE) $(TRANSLAT_DIR)/*.ts
 
