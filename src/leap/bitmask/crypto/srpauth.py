@@ -217,10 +217,9 @@ class SRPAuth(QtCore.QObject):
             """
             logger.debug("Authentication preprocessing...")
 
-            self._srp_user = self._srp.User(username,
-                                            password,
-                                            self._hashfun,
-                                            self._ng)
+            self._srp_user = self._srp.User(username.encode('utf-8'),
+                                            password.encode('utf-8'),
+                                            self._hashfun, self._ng)
             _, A = self._srp_user.start_authentication()
 
             self._srp_a = A
@@ -487,7 +486,8 @@ class SRPAuth(QtCore.QObject):
                 self.get_uid())
 
             salt, verifier = self._srp.create_salted_verification_key(
-                self._username, new_password, self._hashfun, self._ng)
+                self._username.encode('utf-8'), new_password.encode('utf-8'),
+                self._hashfun, self._ng)
 
             cookies = {self.SESSION_ID_KEY: self.get_session_id()}
             headers = {
@@ -518,9 +518,9 @@ class SRPAuth(QtCore.QObject):
             Might raise SRPAuthenticationError
 
             :param username: username for this session
-            :type username: str
+            :type username: unicode
             :param password: password for this user
-            :type password: str
+            :type password: unicode
 
             :returns: A defer on a different thread
             :rtype: twisted.internet.defer.Deferred
