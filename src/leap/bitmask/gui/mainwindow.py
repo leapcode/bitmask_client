@@ -20,8 +20,6 @@ Main window for Bitmask.
 import logging
 import os
 
-import keyring
-
 from PySide import QtCore, QtGui
 from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject, sameProxiedObjects
@@ -87,9 +85,6 @@ class MainWindow(QtGui.QMainWindow):
     # StackedWidget indexes
     LOGIN_INDEX = 0
     EIP_STATUS_INDEX = 1
-
-    # Keyring
-    KEYRING_KEY = "bitmask"
 
     OPENVPN_SERVICE = "openvpn"
     MX_SERVICE = "mx"
@@ -579,30 +574,8 @@ class MainWindow(QtGui.QMainWindow):
 
             saved_user = self._settings.get_user()
 
-            try:
-                username, domain = saved_user.split('@')
-            except (ValueError, AttributeError) as e:
-                # if the saved_user does not contain an '@' or its None
-                logger.error('Username@provider malformed. %r' % (e, ))
-                saved_user = None
-
             if saved_user is not None and has_keyring():
-                # fill the username
-                self._login_widget.set_user(username)
-
-                self._login_widget.set_remember(True)
-
-                saved_password = None
-                try:
-                    saved_password = keyring.get_password(self.KEYRING_KEY,
-                                                          saved_user
-                                                          .encode("utf8"))
-                except ValueError, e:
-                    logger.debug("Incorrect Password. %r." % (e,))
-
-                if saved_password is not None:
-                    self._login_widget.set_password(
-                        saved_password.decode("utf8"))
+                if self._login_widget.load_user_from_keyring(saved_user):
                     self._login()
 
     def _hide_unsupported_services(self):
