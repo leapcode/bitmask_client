@@ -48,6 +48,8 @@ class IMAPControl(object):
         """
         self.imap_machine = None
         self.imap_service = None
+        self.imap_port = None
+        self.imap_factory = None
         self.imap_connection = None
 
         leap_register(signal=leap_events.IMAP_SERVICE_STARTED,
@@ -81,7 +83,9 @@ class IMAPControl(object):
 
         if self.imap_service is None:
             # first time.
-            self.imap_service = imap.start_imap_service(
+            self.imap_service, \
+            self.imap_port, \
+            self.imap_factory = imap.start_imap_service(
                 self._soledad,
                 self._keymanager)
         else:
@@ -90,17 +94,18 @@ class IMAPControl(object):
 
     def stop_imap_service(self):
         """
-        Stops imap service.
-
-        There is a subtle difference here:
-        we are just stopping the fetcher here,
-        but in the smtp case we are stopping the factory.
+        Stops imap service (fetcher, factory and port).
         """
         self.imap_connection.qtsigs.disconnecting_signal.emit()
         # TODO We should homogenize both services.
         if self.imap_service is not None:
             logger.debug('Stopping imap service.')
+            # Stop the loop call in the fetcher
             self.imap_service.stop()
+            # Stop listening on the IMAP port
+            self.imap_port.stopListening()
+            # Stop the protocol
+            self.imap_factory.doStop()
 
     def fetch_incoming_mail(self):
         """
@@ -208,11 +213,7 @@ class SMTPControl(object):
 
     def stop_smtp_service(self):
         """
-        Stops the smtp service.
-
-        There is a subtle difference here:
-        we are stopping the factory for the smtp service here,
-        but in the imap case we are just stopping the fetcher.
+        Stops the smtp service (port and factory).
         """
         self.smtp_connection.qtsigs.disconnecting_signal.emit()
         # TODO We should homogenize both services.
