@@ -1,2 +1,2 @@
-  - Remove autostart eip option from settings panel, rely on last used
-    setting. Closes #4132.
+- Remove autostart eip option from settings panel, rely on last used
+  setting. Closes #4132.
