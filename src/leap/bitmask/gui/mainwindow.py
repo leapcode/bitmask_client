@@ -545,6 +545,8 @@ class MainWindow(QtGui.QMainWindow):
         if IS_MAC:
             self.raise_()
 
+        self._hide_unsupported_services()
+
         if self._wizard:
             possible_username = self._wizard.get_username()
             possible_password = self._wizard.get_password()
@@ -602,6 +604,30 @@ class MainWindow(QtGui.QMainWindow):
                     self._login_widget.set_password(
                         saved_password.decode("utf8"))
                     self._login()
+
+    def _hide_unsupported_services(self):
+        """
+        Given a set of configured providers, it creates a set of
+        available services among all of them and displays the service
+        widgets of only those.
+
+        This means, for example, that with just one provider with EIP
+        only, the mail widget won't be displayed.
+        """
+        providers = self._settings.get_configured_providers()
+
+        services = set()
+
+        for prov in providers:
+            provider_config = ProviderConfig()
+            loaded = provider_config.load(
+                provider.get_provider_path(prov))
+            if loaded:
+                for service in provider_config.get_services():
+                    services.add(service)
+
+        self.ui.eipWidget.setVisible(self.OPENVPN_SERVICE in services)
+        self.ui.mailWidget.setVisible(self.MX_SERVICE in services)
 
     #
     # systray
@@ -882,6 +908,8 @@ class MainWindow(QtGui.QMainWindow):
         if data[self._provider_bootstrapper.PASSED_KEY]:
             username = self._login_widget.get_user()
             password = self._login_widget.get_password()
+
+            self._hide_unsupported_services()
 
             if self._srp_auth is None:
                 self._srp_auth = SRPAuth(self._provider_config)
