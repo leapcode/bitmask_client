@@ -1,3 +1,10 @@
+bitmask (0.3.5) unstable; urgency=low
+
+  * Update to 0.3.5 release.
+  * Freeze reported version to 0.3.4 using freeze_debianver
+
+ -- Ben Carrillo <ben@futeisha.org>  Wed, 30 Oct 2013 16:35:10 -0200
+
 bitmask (0.3.4) unstable; urgency=low
 
   * Update to 0.3.4 release.
