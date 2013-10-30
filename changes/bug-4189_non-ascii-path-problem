@@ -1,1 +1,1 @@
-  o Fix problem with non-ascii paths. Closes #4189.
+- Fix problem with non-ascii paths. Closes #4189.
