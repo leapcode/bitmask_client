@@ -49,6 +49,9 @@ class LoginWidget(QtGui.QWidget):
 
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
+    # Keyring
+    KEYRING_KEY = "bitmask"
+
     def __init__(self, settings, parent=None):
         """
         Constructs the LoginWidget.
@@ -177,7 +180,7 @@ class LoginWidget(QtGui.QWidget):
         Sets the password for the widget
 
         :param password: password to set
-        :type password: str
+        :type password: unicode
         """
         self.ui.lnPassword.setText(password)
 
@@ -366,3 +369,41 @@ class LoginWidget(QtGui.QWidget):
         self.ui.btnLogout.setText(self.tr("Logout"))
         self.ui.btnLogout.setEnabled(True)
         self.ui.clblErrorMsg.hide()
+
+    def load_user_from_keyring(self, saved_user):
+        """
+        Tries to load a user from the keyring, returns True if it was
+        loaded successfully, False otherwise.
+
+        :param saved_user: String containing the saved username as
+                           user@domain
+        :type saved_user: unicode
+
+        :rtype: bool
+        """
+        leap_assert_type(saved_user, unicode)
+
+        try:
+            username, domain = saved_user.split('@')
+        except ValueError as e:
+            # if the saved_user does not contain an '@'
+            logger.error('Username@provider malformed. %r' % (e, ))
+            return False
+
+        self.set_user(username)
+
+        self.set_remember(True)
+
+        saved_password = None
+        try:
+            saved_password = keyring.get_password(self.KEYRING_KEY,
+                                                  saved_user
+                                                  .encode("utf8"))
+        except ValueError as e:
+            logger.debug("Incorrect Password. %r." % (e,))
+
+        if saved_password is not None:
+            self.set_password(saved_password)
+            return True
+
+        return False

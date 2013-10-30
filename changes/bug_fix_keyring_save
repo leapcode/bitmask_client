@@ -1,0 +1,2 @@
+  - Refactor keyring handling and make it properly save user and
+    password. Fixes #4190.
