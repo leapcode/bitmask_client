@@ -446,13 +446,11 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        preferences_window = PreferencesWindow(self, self._srp_auth)
+        preferences_window = PreferencesWindow(self, self._srp_auth,
+                                               self._provider_config)
 
-        if sameProxiedObjects(self._soledad, None):
-            preferences_window.set_soledad_ready(self._soledad)
-        else:
-            self.soledad_ready.connect(
-                lambda: preferences_window.set_soledad_ready(self._soledad))
+        self.soledad_ready.connect(
+            lambda: preferences_window.set_soledad_ready(self._soledad))
 
         preferences_window.show()
 

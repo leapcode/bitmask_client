@@ -40,12 +40,14 @@ class PreferencesWindow(QtGui.QDialog):
     """
     Window that displays the preferences.
     """
-    def __init__(self, parent, srp_auth):
+    def __init__(self, parent, srp_auth, provider_config):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
         :param srp_auth: SRPAuth object configured in the main app.
         :type srp_auth: SRPAuth
+        :param provider_config: ProviderConfig object.
+        :type provider_config: ProviderConfig
         """
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
@@ -72,6 +74,35 @@ class PreferencesWindow(QtGui.QDialog):
         else:
             self._add_configured_providers()
 
+        pw_enabled = False
+
+        # check if the user is logged in
+        if srp_auth is not None and srp_auth.get_session_id() is not None:
+            # check if provider has 'mx' ...
+            if provider_config.provides_mx():
+                domain = provider_config.get_domain()
+                enabled_services = self._settings.get_enabled_services(domain)
+                mx_name = get_service_display_name('mx')
+
+                # ... and if the user have it enabled
+                if 'mx' not in enabled_services:
+                    msg = self.tr("You need to enable {0} in order to change "
+                                  "the password.".format(mx_name))
+                    self._set_password_change_status(msg, error=True)
+                else:
+                    msg = self.tr(
+                        "You need to wait until {0} is ready in "
+                        "order to change the password.".format(mx_name))
+                    self._set_password_change_status(msg)
+            else:
+                pw_enabled = True
+        else:
+            msg = self.tr(
+                "In order to change your password you need to be logged in.")
+            self._set_password_change_status(msg)
+
+        self.ui.gbPasswordChange.setEnabled(pw_enabled)
+
     def set_soledad_ready(self, soledad):
         """
         SLOT
@@ -84,6 +115,7 @@ class PreferencesWindow(QtGui.QDialog):
         :type soledad: Soledad
         """
         self._soledad = soledad
+        self.ui.lblPasswordChangeStatus.setVisible(False)
         self.ui.gbPasswordChange.setEnabled(True)
 
     def _set_password_change_status(self, status, error=False, success=False):
@@ -97,6 +129,9 @@ class PreferencesWindow(QtGui.QDialog):
             status = "<font color='red'><b>%s</b></font>" % (status,)
         elif success:
             status = "<font color='green'><b>%s</b></font>" % (status,)
+
+        if not self.ui.gbPasswordChange.isEnabled():
+            status = "<font color='black'>%s</font>" % (status,)
 
         self.ui.lblPasswordChangeStatus.setVisible(True)
         self.ui.lblPasswordChangeStatus.setText(status)
