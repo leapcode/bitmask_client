@@ -77,10 +77,11 @@ class PreferencesWindow(QtGui.QDialog):
         pw_enabled = False
 
         # check if the user is logged in
-        if srp_auth is not None and srp_auth.get_session_id() is not None:
+        if srp_auth is not None and srp_auth.get_token() is not None:
             # check if provider has 'mx' ...
+            domain = provider_config.get_domain()
+            self._select_provider_by_name(domain)
             if provider_config.provides_mx():
-                domain = provider_config.get_domain()
                 enabled_services = self._settings.get_enabled_services(domain)
                 mx_name = get_service_display_name('mx')
 
@@ -252,6 +253,16 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui.cbProvidersServices.clear()
         for provider in self._settings.get_configured_providers():
             self.ui.cbProvidersServices.addItem(provider)
+
+    def _select_provider_by_name(self, name):
+        """
+        Given a provider name/domain, selects it in the combobox.
+
+        :param name: name or domain for the provider
+        :type name: str
+        """
+        provider_index = self.ui.cbProvidersServices.findText(name)
+        self.ui.cbProvidersServices.setCurrentIndex(provider_index)
 
     def _service_selection_changed(self, service, state):
         """
