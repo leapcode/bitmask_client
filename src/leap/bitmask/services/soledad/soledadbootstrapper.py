@@ -283,7 +283,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Raises SoledadSyncError if not successful.
         """
         try:
-            logger.error("trying to sync soledad....")
+            logger.msg("trying to sync soledad....")
             self._soledad.sync()
         except SSLError as exc:
             logger.error("%r" % (exc,))
