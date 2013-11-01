@@ -41,7 +41,7 @@ from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
-from leap.soledad.client import Soledad
+from leap.soledad.client import Soledad, BootstrapSequenceError
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +260,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
             logger.debug("SOLEDAD initialization TIMED OUT...")
             self.soledad_timeout.emit()
         except socket.error as exc:
-            logger.error("Socket error while initializing soledad")
+            logger.warning("Socket error while initializing soledad")
+            self.soledad_timeout.emit()
+        except BootstrapSequenceError as exc:
+            logger.warning("Error while initializing soledad")
             self.soledad_timeout.emit()
 
         # unrecoverable
