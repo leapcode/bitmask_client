@@ -364,9 +364,7 @@ class MailStatusWidget(QtGui.QWidget):
         ext_status = None
 
         if req.event == proto.IMAP_UNREAD_MAIL:
-
             if self._started:
-                print "printing foo"
                 if req.content != "0":
                     self._set_mail_status(self.tr("%s Unread Emails") %
                                           (req.content,), ready=2)
