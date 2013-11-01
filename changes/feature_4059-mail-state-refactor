@@ -1,1 +1,0 @@
-- Refactor mail connections to use state machine. Closes: #4059

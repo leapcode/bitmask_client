@@ -1,1 +1,0 @@
-- Add a command to setup.py to freeze the versions reported under debian branches. Closes: #4315

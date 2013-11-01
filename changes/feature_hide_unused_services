@@ -1,2 +1,0 @@
-- Hide the GUI for services that are not supported on the set of
-  configured providers. Closes #4170.

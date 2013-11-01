@@ -3,6 +3,29 @@
 History
 -------
 
+0.3.6 Nov 1 -- the "bạn có thể đọc này?" release:
+- Fix problem changing a non-ascii password. Closes #4003.
+- Enable password change in the client only if it has started the
+  correct services. Closes #4093.
+- Select the current logged in provider in the preferences
+  window. Closes #4117.
+- Fix problem with non-ascii paths. Closes #4189.
+- Capture soledad boostrap errors after latest soledad changes.
+- Refactor keyring handling and make it properly save user and
+  password. Fixes #4190.
+- Properly stop the imap daemon at logout. Fixes #4199.
+- Align left the speed and transferred displays for EIP. Fixes #4204.
+- Remove autostart eip option from settings panel, rely on last used
+  setting. Closes #4132.
+- Add support for requests 1.1.0 (raring). Closes: #4308
+- Refactor mail connections to use state machine. Closes: #4059
+- Add a command to setup.py to freeze the versions reported under
+  debian branches. Closes: #4315
+- Use coloredlogs handler if present (for development, not a
+  requirement).
+- Hide the GUI for services that are not supported on the set of
+  configured providers. Closes #4170.
+
 0.3.5 Oct 18 -- the "I can stand on one foot" release:
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
