@@ -39,7 +39,6 @@
 # M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
 # M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
 #                (thanks to: http://www.glassgiant.com/ascii/)
-
 import logging
 import signal
 import sys
@@ -105,9 +104,16 @@ def add_logger_handlers(debug=False, logfile=None):
     formatter = logging.Formatter(log_format)
 
     # Console handler
-    console = logging.StreamHandler()
-    console.setLevel(level)
-    console.setFormatter(formatter)
+    try:
+        import coloredlogs
+        console = coloredlogs.ColoredStreamHandler(level=level)
+    except ImportError:
+        console = logging.StreamHandler()
+        console.setLevel(level)
+        console.setFormatter(formatter)
+        using_coloredlog = False
+    else:
+        using_coloredlog = True
 
     silencer = log_silencer.SelectiveSilencerFilter()
     console.addFilter(silencer)
@@ -130,6 +136,9 @@ def add_logger_handlers(debug=False, logfile=None):
         fileh.addFilter(silencer)
         logger.addHandler(fileh)
         logger.debug('File handler plugged!')
+
+    if not using_coloredlog:
+        replace_stdout_stderr_with_logging(logger)
 
     return logger
 
@@ -185,7 +194,6 @@ def main():
     BaseConfig.standalone = standalone
 
     logger = add_logger_handlers(debug, logfile)
-    replace_stdout_stderr_with_logging(logger)
 
     # And then we import all the other stuff
     from leap.bitmask.gui import locale_rc

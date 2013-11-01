@@ -269,6 +269,10 @@ class EIPStatusWidget(QtGui.QWidget):
         :type error: bool
         """
         leap_assert_type(error, bool)
+        if error:
+            logger.error(status)
+        else:
+            logger.debug(status)
         self._eip_status = status
         if error:
             status = "<font color='red'>%s</font>" % (status,)

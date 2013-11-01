@@ -23,6 +23,7 @@ import psutil
 import psutil.error
 import shutil
 import socket
+import sys
 
 from itertools import chain, repeat
 
@@ -864,15 +865,26 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         """
         Gets the vpn command from the aproppriate launcher.
 
-        Might throw: VPNLauncherException, OpenVPNNotFoundException.
+        Might throw:
+            VPNLauncherException,
+            OpenVPNNotFoundException.
+
+        :rtype: list of str
         """
-        cmd = self._launcher.get_vpn_command(
+        command = self._launcher.get_vpn_command(
             eipconfig=self._eipconfig,
             providerconfig=self._providerconfig,
             socket_host=self._socket_host,
             socket_port=self._socket_port,
             openvpn_verb=self._openvpn_verb)
-        return map(str, cmd)
+
+        encoding = sys.getfilesystemencoding()
+        for i, c in enumerate(command):
+            if not isinstance(c, str):
+                command[i] = c.encode(encoding)
+
+        logger.debug("Running VPN with command: {0}".format(command))
+        return command
 
     # shutdown
 

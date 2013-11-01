@@ -41,9 +41,10 @@ def get_mail_check_period():
     try:
         period = int(period_str)
     except (ValueError, TypeError):
-        logger.warning("BAD value found for %s: %s" % (
-            INCOMING_CHECK_PERIOD_ENV,
-            period_str))
+        if period is not None:
+            logger.warning("BAD value found for %s: %s" % (
+                INCOMING_CHECK_PERIOD_ENV,
+                period_str))
     except Exception as exc:
         logger.warning("Unhandled error while getting %s: %r" % (
             INCOMING_CHECK_PERIOD_ENV,

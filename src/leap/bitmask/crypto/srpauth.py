@@ -17,6 +17,7 @@
 
 import binascii
 import logging
+import sys
 
 import requests
 import srp
@@ -31,6 +32,7 @@ from PySide import QtCore
 from twisted.internet import threads
 
 from leap.bitmask.util import request_helpers as reqhelper
+from leap.bitmask.util.compat import requests_has_max_retries
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.common.check import leap_assert
 from leap.common.events import signal as events_signal
@@ -184,7 +186,11 @@ class SRPAuth(QtCore.QObject):
             # NOTE: This is a workaround for the moment, the server
             # side seems to return correctly every time, but it fails
             # on the client end.
-            self._session.mount('https://', HTTPAdapter(max_retries=30))
+            if requests_has_max_retries:
+                adapter = HTTPAdapter(max_retries=30)
+            else:
+                adapter = HTTPAdapter()
+            self._session.mount('https://', adapter)
 
         def _safe_unhexlify(self, val):
             """
@@ -211,10 +217,9 @@ class SRPAuth(QtCore.QObject):
             """
             logger.debug("Authentication preprocessing...")
 
-            self._srp_user = self._srp.User(username,
-                                            password,
-                                            self._hashfun,
-                                            self._ng)
+            self._srp_user = self._srp.User(username.encode('utf-8'),
+                                            password.encode('utf-8'),
+                                            self._hashfun, self._ng)
             _, A = self._srp_user.start_authentication()
 
             self._srp_a = A
@@ -249,10 +254,13 @@ class SRPAuth(QtCore.QObject):
                     (self._provider_config.get_api_uri(),
                      self._provider_config.get_api_version(),
                      "sessions")
+
+                ca_cert_path = self._provider_config.get_ca_cert_path()
+                ca_cert_path = ca_cert_path.encode(sys.getfilesystemencoding())
+
                 init_session = self._session.post(sessions_url,
                                                   data=auth_data,
-                                                  verify=self._provider_config.
-                                                  get_ca_cert_path(),
+                                                  verify=ca_cert_path,
                                                   timeout=REQUEST_TIMEOUT)
                 # Clean up A value, we don't need it anymore
                 self._srp_a = None
@@ -478,7 +486,8 @@ class SRPAuth(QtCore.QObject):
                 self.get_uid())
 
             salt, verifier = self._srp.create_salted_verification_key(
-                self._username, new_password, self._hashfun, self._ng)
+                self._username.encode('utf-8'), new_password.encode('utf-8'),
+                self._hashfun, self._ng)
 
             cookies = {self.SESSION_ID_KEY: self.get_session_id()}
             headers = {
@@ -509,9 +518,9 @@ class SRPAuth(QtCore.QObject):
             Might raise SRPAuthenticationError
 
             :param username: username for this session
-            :type username: str
+            :type username: unicode
             :param password: password for this user
-            :type password: str
+            :type password: unicode
 
             :returns: A defer on a different thread
             :rtype: twisted.internet.defer.Deferred

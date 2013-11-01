@@ -20,6 +20,7 @@ Provider bootstrapping
 import logging
 import socket
 import os
+import sys
 
 import requests
 
@@ -125,9 +126,13 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # err --- but we can do it after a failure, to diagnose what went
         # wrong. Right now we're just adding connection overhead. -- kali
 
+        verify = self.verify
+        if verify:
+            verify = self.verify.encode(sys.getfilesystemencoding())
+
         try:
             res = self._session.get("https://%s" % (self._domain,),
-                                    verify=self.verify,
+                                    verify=verify,
                                     timeout=REQUEST_TIMEOUT)
             res.raise_for_status()
         except requests.exceptions.SSLError as exc:
@@ -180,6 +185,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
                 # no ca? then download from main domain again.
                 pass
 
+        if verify:
+            verify = verify.encode(sys.getfilesystemencoding())
         logger.debug("Requesting for provider.json... "
                      "uri: {0}, verify: {1}, headers: {2}".format(
                          uri, verify, headers))
@@ -336,9 +343,9 @@ class ProviderBootstrapper(AbstractBootstrapper):
 
         test_uri = "%s/%s/cert" % (self._provider_config.get_api_uri(),
                                    self._provider_config.get_api_version())
-        res = self._session.get(test_uri,
-                                verify=self._provider_config
-                                .get_ca_cert_path(),
+        ca_cert_path = self._provider_config.get_ca_cert_path()
+        ca_cert_path = ca_cert_path.encode(sys.getfilesystemencoding())
+        res = self._session.get(test_uri, verify=ca_cert_path,
                                 timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
 

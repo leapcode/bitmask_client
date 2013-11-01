@@ -41,9 +41,6 @@ The different services should declare a ServiceConnection class that
 inherits from AbstractLEAPConnection, so an instance of such class
 can be used to inform the StateMachineBuilder of the particularities
 of the state transitions for each particular connection.
-
-In the future, we will extend this class to allow composites in connections,
-so we can apply conditional logic to the transitions.
 """
 
 
@@ -79,12 +76,7 @@ class AbstractLEAPConnection(object):
         """
         return self._qtsigs
 
-    # XXX for conditional transitions with composites,
-    #     we might want to add
-    #     a field with dependencies: what this connection
-    #     needs for (ON) state.
-    # XXX Look also at child states in the state machine.
-    #depends = ()
+    components = None
 
     # Signals that derived classes
     # have to implement.

@@ -21,6 +21,7 @@ import commands
 import logging
 import os
 import subprocess
+import sys
 import time
 
 from leap.bitmask.config import flags
@@ -231,6 +232,8 @@ class LinuxVPNLauncher(VPNLauncher):
 
         :rtype: dict
         """
+        ld_library_path = os.path.join(get_path_prefix(), "..", "lib")
+        ld_library_path.encode(sys.getfilesystemencoding())
         return {
-            "LD_LIBRARY_PATH": os.path.join(get_path_prefix(), "..", "lib")
+            "LD_LIBRARY_PATH": ld_library_path
         }

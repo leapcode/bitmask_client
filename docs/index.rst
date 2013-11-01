@@ -44,6 +44,7 @@ If you want to contribute to the project, we wrote this for you.
 .. toctree::
    :maxdepth: 1
 
+   dev/quickstart
    dev/environment
    dev/tests
    dev/workflow

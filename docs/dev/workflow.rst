@@ -90,3 +90,8 @@ Other methods
 -------------
 
 Feel free to use any other methods like format-patch and mail or whatever method you prefer, although we recommend you follow the same workflow as we do.
+
+Contributors
+------------
+
+Please, add yourself to ``dev/authors.rst`` if you contribute code to Bitmask.
