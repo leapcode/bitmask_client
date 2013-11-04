@@ -4,6 +4,8 @@ History
 -------
 
 0.3.6 Nov 1 -- the "bạn có thể đọc này?" release:
++++++++++++++++++++++++++++++++++++++++++++++++++
+
 - Fix problem changing a non-ascii password. Closes #4003.
 - Enable password change in the client only if it has started the
   correct services. Closes #4093.
