@@ -50,6 +50,7 @@ If you want to contribute to the project, we wrote this for you.
    dev/workflow
    dev/resources
    dev/internationalization
+   dev/encodings
 
 .. dev/internals
    dev/authors
