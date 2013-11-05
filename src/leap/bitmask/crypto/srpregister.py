@@ -108,7 +108,8 @@ class SRPRegister(QtCore.QObject):
         :rparam: (ok, request)
         """
 
-        username = username.lower()
+        username = username.lower().encode('utf-8')
+        password = password.encode('utf-8')
 
         salt, verifier = self._srp.create_salted_verification_key(
             username,
@@ -140,8 +141,7 @@ class SRPRegister(QtCore.QObject):
                                      verify=self._provider_config.
                                      get_ca_cert_path())
 
-        except (requests.exceptions.SSLError,
-                requests.exceptions.ConnectionError) as exc:
+        except requests.exceptions.RequestExceptions as exc:
             logger.error(exc.message)
             ok = False
         else:
