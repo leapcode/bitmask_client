@@ -280,7 +280,8 @@ class Wizard(QtGui.QWizard):
             old_username = self._username
             self._username = None
             self._password = None
-            error_msg = self.tr("Unknown error")
+            error_msg = self.tr("Something has gone wrong. "
+                                "Please try again.")
             try:
                 content, _ = get_content(req)
                 json_content = json.loads(content)
