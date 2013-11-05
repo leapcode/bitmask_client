@@ -226,9 +226,7 @@ class Wizard(QtGui.QWizard):
                 self._registration_finished)
 
             threads.deferToThread(
-                partial(register.register_user,
-                        username.encode("utf8"),
-                        password.encode("utf8")))
+                partial(register.register_user, username, password))
 
             self._username = username
             self._password = password

@@ -108,7 +108,8 @@ class SRPRegister(QtCore.QObject):
         :rparam: (ok, request)
         """
 
-        username = username.lower()
+        username = username.lower().encode('utf-8')
+        password = password.encode('utf-8')
 
         salt, verifier = self._srp.create_salted_verification_key(
             username,
