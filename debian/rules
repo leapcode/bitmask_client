@@ -59,7 +59,7 @@ override_dh_installdocs:
 #dh_installdocs build/sphinx/html
 
 override_dh_installchangelogs:
-	 dh_installchangelogs CHANGELOG
+	 dh_installchangelogs CHANGELOG.rst
 
 override_dh_auto_clean:
 	dh_auto_clean

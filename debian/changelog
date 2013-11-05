@@ -1,7 +1,14 @@
+bitmask (0.3.6) unstable; urgency=low
+
+  * Update to 0.3.6 release. 
+  * Install CHANGELOG.rst after it was renamed.
+
+ -- Ben Carrillo <ben@futeisha.org>  Tue, 05 Nov 2013 11:41:39 -0200
+
 bitmask (0.3.5) unstable; urgency=low
 
   * Update to 0.3.5 release.
-  * Freeze reported version to 0.3.4 using freeze_debianver
+  * Freeze reported version to 0.3.5 using freeze_debianver
 
  -- Ben Carrillo <ben@futeisha.org>  Wed, 30 Oct 2013 16:35:10 -0200
 
