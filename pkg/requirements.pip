@@ -6,7 +6,7 @@
 # Use LEAP_VENV_SKIP_PYSIDE to avoid installing it!
 
 argparse
-requests
+requests>=1.1.0
 srp>=1.0.2
 pyopenssl
 python-dateutil
@@ -16,11 +16,12 @@ twisted
 qt4reactor
 python-daemon # this should not be needed for Windows.
 keyring
+zope.proxy
 
 leap.common>=0.3.4
-leap.soledad.client>=0.4.0
+leap.soledad.client>=0.4.2
 leap.keymanager>=0.3.4
-leap.mail>=0.3.5
+leap.mail>=0.3.6
 
 # Remove this when u1db fixes its dependency on oauth
 oauth

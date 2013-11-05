@@ -169,11 +169,12 @@ class ProviderConfig(BaseConfig):
                                   checking if the cert exists because we
                                   are about to write it.
         :type about_to_download: bool
+
+        :rtype: unicode
         """
 
         cert_path = os.path.join(get_path_prefix(), "leap", "providers",
-                                 self.get_domain(),
-                                 "keys", "ca", "cacert.pem")
+                                 self.get_domain(), "keys", "ca", "cacert.pem")
 
         if not about_to_download:
             cert_exists = os.path.exists(cert_path)

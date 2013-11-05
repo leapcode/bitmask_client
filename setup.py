@@ -216,25 +216,8 @@ setup(
     cmdclass=cmdclass,
     description=("The Internet Encryption Toolkit: "
                  "Encrypted Internet Proxy and Encrypted Mail."),
-    # XXX unify the long_description on a file of its own, so we
-    # can reuse it easily.
-    long_description=(
-        "Bitmask is the multiplatform desktop client for the LEAP Platform."
-        "\n"
-        "The LEAP Encryption Access Project develops "
-        "a multi-year plan to secure everyday communication.\n "
-        "The Encrypted Internet Proxy (EIP) provides circumvention, location "
-        "anonymization, and traffic encryption in a hassle-free, "
-        "automatically self-configuring fashion.\n"
-        "Encrypted Mail offers automatic encryption and decryption for "
-        "both outgoing and incoming email, adding public key cryptography "
-        "to your mail without you ever having to worry about key distribution "
-        "or signature verification. \n"
-        "The Encrypted Mail services will run local SMTP and IMAP proxies "
-        "that, once you configure the mail client of your choice, will "
-        "automatically encrypt and decrypt your email using GPG encryption "
-        "under the hood."
-    ),
+    long_description=open('README.rst').read() + '\n\n\n' +
+    open('CHANGELOG.rst').read(),
     classifiers=trove_classifiers,
     install_requires=parsed_reqs,
     test_suite='nose.collector',

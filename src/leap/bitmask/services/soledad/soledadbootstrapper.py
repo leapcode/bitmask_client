@@ -20,11 +20,13 @@ Soledad bootstrapping
 import logging
 import os
 import socket
+import sys
 
 from ssl import SSLError
 
 from PySide import QtCore
 from u1db import errors as u1db_errors
+from zope.proxy import sameProxiedObjects
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -39,7 +41,7 @@ from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
-from leap.soledad.client import Soledad
+from leap.soledad.client import Soledad, BootstrapSequenceError
 
 logger = logging.getLogger(__name__)
 
@@ -190,8 +192,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             # soledad-launcher in the gui.
             raise
 
-        leap_check(self._soledad is not None,
-                   "Null soledad, error while initializing")
+        leap_assert(not sameProxiedObjects(self._soledad, None),
+                    "Null soledad, error while initializing")
 
         # and now, let's sync
         sync_tries = self.MAX_SYNC_RETRIES
@@ -239,14 +241,15 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         # TODO: If selected server fails, retry with another host
         # (issue #3309)
+        encoding = sys.getfilesystemencoding()
         try:
             self._soledad = Soledad(
                 uuid,
-                self._password.encode("utf-8"),
-                secrets_path=secrets_path,
-                local_db_path=local_db_path,
+                self._password,
+                secrets_path=secrets_path.encode(encoding),
+                local_db_path=local_db_path.encode(encoding),
                 server_url=server_url,
-                cert_file=cert_file,
+                cert_file=cert_file.encode(encoding),
                 auth_token=auth_token)
 
         # XXX All these errors should be handled by soledad itself,
@@ -257,7 +260,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
             logger.debug("SOLEDAD initialization TIMED OUT...")
             self.soledad_timeout.emit()
         except socket.error as exc:
-            logger.error("Socket error while initializing soledad")
+            logger.warning("Socket error while initializing soledad")
+            self.soledad_timeout.emit()
+        except BootstrapSequenceError as exc:
+            logger.warning("Error while initializing soledad")
             self.soledad_timeout.emit()
 
         # unrecoverable
@@ -280,7 +286,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Raises SoledadSyncError if not successful.
         """
         try:
-            logger.error("trying to sync soledad....")
+            logger.debug("trying to sync soledad....")
             self._soledad.sync()
         except SSLError as exc:
             logger.error("%r" % (exc,))
@@ -412,9 +418,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :param provider_config: Provider configuration
         :type provider_config: ProviderConfig
         :param user: User's login
-        :type user: str
+        :type user: unicode
         :param password: User's password
-        :type password: str
+        :type password: unicode
         :param download_if_needed: If True, it will only download
                                    files if the have changed since the
                                    time it was previously downloaded.

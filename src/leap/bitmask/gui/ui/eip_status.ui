@@ -185,6 +185,9 @@
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
             </property>
+            <property name="styleSheet">
+             <string notr="true">text-align: left;</string>
+            </property>
             <property name="text">
              <string>0.0 KB/s</string>
             </property>
@@ -248,6 +251,9 @@
             </property>
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
+            </property>
+            <property name="styleSheet">
+             <string notr="true">text-align: left;</string>
             </property>
             <property name="text">
              <string>0.0 KB/s</string>
