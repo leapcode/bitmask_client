@@ -141,7 +141,7 @@ class SRPRegister(QtCore.QObject):
                                      verify=self._provider_config.
                                      get_ca_cert_path())
 
-        except requests.exceptions.RequestExceptions as exc:
+        except requests.exceptions.RequestException as exc:
             logger.error(exc.message)
             ok = False
         else:
