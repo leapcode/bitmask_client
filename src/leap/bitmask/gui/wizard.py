@@ -111,8 +111,9 @@ class Wizard(QtGui.QWizard):
 
         self.currentIdChanged.connect(self._current_id_changed)
 
-        self.ui.lnProvider.textChanged.connect(
-            self._enable_check)
+        self.ui.lnProvider.textChanged.connect(self._enable_check)
+        self.ui.rbNewProvider.toggled.connect(
+            lambda x: self._enable_check())
 
         self.ui.lblUser.returnPressed.connect(
             self._focus_password)
@@ -193,8 +194,19 @@ class Wizard(QtGui.QWizard):
     def get_services(self):
         return self._selected_services
 
-    def _enable_check(self, text):
-        self.ui.btnCheck.setEnabled(len(self.ui.lnProvider.text()) != 0)
+    @QtCore.Slot()
+    def _enable_check(self):
+        """
+        SLOT
+        TRIGGER:
+            self.ui.lnProvider.textChanged
+
+        Enables/disables the 'check' button in the SELECT_PROVIDER_PAGE
+        depending on the lnProvider content.
+        """
+        enabled = len(self.ui.lnProvider.text()) != 0
+        enabled = enabled and self.ui.rbNewProvider.isChecked()
+        self.ui.btnCheck.setEnabled(enabled)
         self._reset_provider_check()
 
     def _focus_password(self):
@@ -555,8 +567,9 @@ class Wizard(QtGui.QWizard):
         Prepares the pages when they appear
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
-            self._reset_provider_check()
-            self._enable_check("")
+            skip = self.ui.rbExistingProvider.isChecked()
+            self._enable_check()
+            self._skip_provider_checks(skip)
 
         if pageId == self.SETUP_PROVIDER_PAGE:
             self._reset_provider_setup()
