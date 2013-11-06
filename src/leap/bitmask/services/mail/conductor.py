@@ -81,16 +81,12 @@ class IMAPControl(object):
                     "We need a non-null keymanager for initializing imap "
                     "service")
 
-        if self.imap_service is None:
-            # first time.
-            self.imap_service, \
-            self.imap_port, \
+        self.imap_service, self.imap_port, \
             self.imap_factory = imap.start_imap_service(
                 self._soledad,
-                self._keymanager)
-        else:
-            # we have the fetcher. just start it.
-            self.imap_service.start_loop()
+                self._keymanager,
+                userid=self.userid)
+        self.imap_service.start_loop()
 
     def stop_imap_service(self):
         """
@@ -339,10 +335,24 @@ class MailConductor(IMAPControl, SMTPControl):
         SMTPControl.__init__(self)
         self._soledad = soledad
         self._keymanager = keymanager
-
         self._mail_machine = None
-
         self._mail_connection = mail_connection.MailConnection()
+
+        self.userid = None
+
+    @property
+    def userid(self):
+        return self._userid
+
+    @userid.setter
+    def _userid(self, userid):
+        """
+        Sets the user id this conductor is configured for.
+
+        :param userid: the user id, in the form "user@provider"
+        :type userid: str
+        """
+        self._userid = userid
 
     def start_mail_machine(self, **kwargs):
         """
@@ -354,15 +364,10 @@ class MailConductor(IMAPControl, SMTPControl):
 
         # we have instantiated the connections while building the composite
         # machines, and we have to use the qtsigs instantiated there.
-        # XXX we could probably use a proxy here too to make the thing
-        # transparent.
         self.set_imap_connection(imap.conn)
         self.set_smtp_connection(smtp.conn)
 
         self._mail_machine = mail
-        # XXX -------------------
-        # need to keep a reference?
-        #self._mail_events = mail.events
         self._mail_machine.start()
 
         self._imap_machine = imap
