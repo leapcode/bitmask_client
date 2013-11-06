@@ -334,7 +334,7 @@ class MainWindow(QtGui.QMainWindow):
         self.eip_machine = None
         # start event machines
         self.start_eip_machine()
-        self._mail_conductor.start_mail_machine(parent=self)
+        self._mail_conductor.start_mail_machine()
 
         if self._first_run():
             self._wizard_firstrun = True
@@ -674,10 +674,9 @@ class MainWindow(QtGui.QMainWindow):
         Toggles the window visibility
         """
         visible = self.isVisible() and self.isActiveWindow()
-        qApp = QtCore.QCoreApplication.instance()
 
         if not visible:
-            qApp.setQuitOnLastWindowClosed(True)
+            QtGui.QApplication.setQuitOnLastWindowClosed(True)
             self.show()
             self.activateWindow()
             self.raise_()
@@ -685,7 +684,7 @@ class MainWindow(QtGui.QMainWindow):
             # We set this in order to avoid dialogs shutting down the
             # app on close, as they will be the only visible window.
             # e.g.: PreferencesWindow, LoggerWindow
-            qApp.setQuitOnLastWindowClosed(False)
+            QtGui.QApplication.setQuitOnLastWindowClosed(False)
             self.hide()
 
         # Wait a bit until the window visibility has changed so
@@ -1657,8 +1656,7 @@ class MainWindow(QtGui.QMainWindow):
         # UI stuff.
 
         # Set this in case that the app is hidden
-        qApp = QtCore.QCoreApplication.instance()
-        qApp.setQuitOnLastWindowClosed(True)
+        QtGui.QApplication.setQuitOnLastWindowClosed(True)
 
         self._cleanup_and_quit()
 
