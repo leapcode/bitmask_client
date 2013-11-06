@@ -147,6 +147,24 @@ class Wizard(QtGui.QWizard):
 
         self._load_configured_providers()
 
+        self._provider_checks_ok = False
+        self.finished.connect(self._wizard_finished)
+
+    @QtCore.Slot()
+    def _wizard_finished(self):
+        """
+        SLOT
+        TRIGGER:
+            self.finished
+
+        This method is called when the wizard is accepted or rejected.
+        Here we do the cleanup needed to use the wizard again reusing the
+        instance.
+        """
+        self._provider_checks_ok = False
+        self.ui.lnProvider.setText('')
+        self.ui.grpCheckProvider.setVisible(False)
+
     def _load_configured_providers(self):
         """
         Loads the configured providers into the wizard providers combo box.
@@ -195,7 +213,7 @@ class Wizard(QtGui.QWizard):
         return self._selected_services
 
     @QtCore.Slot()
-    def _enable_check(self):
+    def _enable_check(self, reset=True):
         """
         SLOT
         TRIGGER:
@@ -207,7 +225,9 @@ class Wizard(QtGui.QWizard):
         enabled = len(self.ui.lnProvider.text()) != 0
         enabled = enabled and self.ui.rbNewProvider.isChecked()
         self.ui.btnCheck.setEnabled(enabled)
-        self._reset_provider_check()
+
+        if reset:
+            self._reset_provider_check()
 
     def _focus_password(self):
         """
@@ -350,6 +370,8 @@ class Wizard(QtGui.QWizard):
         if len(self.ui.lnProvider.text()) == 0:
             return
 
+        self._provider_checks_ok = False
+
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
         self.ui.lnProvider.setEnabled(False)
@@ -459,6 +481,7 @@ class Wizard(QtGui.QWizard):
                                                    "provider.json")):
             self._complete_task(data, self.ui.lblProviderInfo,
                                 True, self.SELECT_PROVIDER_PAGE)
+            self._provider_checks_ok = True
         else:
             new_data = {
                 self._provider_bootstrapper.PASSED_KEY: False,
@@ -568,8 +591,11 @@ class Wizard(QtGui.QWizard):
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
             skip = self.ui.rbExistingProvider.isChecked()
-            self._enable_check()
-            self._skip_provider_checks(skip)
+            if not self._provider_checks_ok:
+                self._enable_check()
+                self._skip_provider_checks(skip)
+            else:
+                self._enable_check(reset=False)
 
         if pageId == self.SETUP_PROVIDER_PAGE:
             self._reset_provider_setup()
