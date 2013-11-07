@@ -36,6 +36,7 @@ from leap.bitmask.gui import statemachines
 from leap.bitmask.gui.eip_status import EIPStatusWidget
 from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.wizard import Wizard
+from leap.bitmask.gui.systray import SysTray
 
 from leap.bitmask import provider
 from leap.bitmask.platform_init import IS_WIN, IS_MAC
@@ -628,12 +629,13 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_mail_status)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_quit)
-        self._systray = QtGui.QSystemTrayIcon(self)
+        self._systray = SysTray(self)
         self._systray.setContextMenu(systrayMenu)
         self._systray.setIcon(self._eip_status.ERROR_ICON_TRAY)
         self._systray.setVisible(True)
         self._systray.activated.connect(self._tray_activated)
 
+        self._mail_status.set_systray(self._systray)
         self._eip_status.set_systray(self._systray)
 
     def _tray_activated(self, reason=None):

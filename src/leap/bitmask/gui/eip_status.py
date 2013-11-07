@@ -183,21 +183,22 @@ class EIPStatusWidget(QtGui.QWidget):
 
     def set_systray(self, systray):
         """
-        Sets the systray object to use.
+        Sets the systray object to use and adds the service line for EIP.
 
         :param systray: Systray object
         :type systray: QtGui.QSystemTrayIcon
         """
         leap_assert_type(systray, QtGui.QSystemTrayIcon)
         self._systray = systray
-        self._systray.setToolTip(self.tr("All services are OFF"))
+        eip_status = self.tr("{0}: OFF").format(self._service_name)
+        self._systray.set_service_tooltip(EIP_SERVICE, eip_status)
 
     def _update_systray_tooltip(self):
         """
-        Updates the system tray icon tooltip using the eip and mx status.
+        Updates the system tray tooltip using the eip status.
         """
-        status = self.tr("Encrypted Internet: {0}").format(self._eip_status)
-        self._systray.setToolTip(status)
+        eip_status = u"{0}: {1}".format(self._service_name, self._eip_status)
+        self._systray.set_service_tooltip(EIP_SERVICE, eip_status)
 
     def set_action_eip_startstop(self, action_eip_startstop):
         """
@@ -395,10 +396,8 @@ class EIPStatusWidget(QtGui.QWidget):
             # the UI won't update properly
             QtCore.QTimer.singleShot(
                 0, self.eipconnection.qtsigs.do_disconnect_signal)
-            QtCore.QTimer.singleShot(0, partial(self.set_eip_status,
-                                                self.tr("Unable to start VPN, "
-                                                        "it's already "
-                                                        "running.")))
+            msg = self.tr("Unable to start VPN, it's already running.")
+            QtCore.QTimer.singleShot(0, partial(self.set_eip_status, msg))
         else:
             self.set_eip_status(status)
 

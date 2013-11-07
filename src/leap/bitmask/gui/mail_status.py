@@ -152,29 +152,22 @@ class MailStatusWidget(QtGui.QWidget):
 
     def set_systray(self, systray):
         """
-        Sets the systray object to use.
+        Sets the systray object to use and adds the service line for MX.
 
         :param systray: Systray object
         :type systray: QtGui.QSystemTrayIcon
         """
         leap_assert_type(systray, QtGui.QSystemTrayIcon)
         self._systray = systray
-        self._systray.setToolTip(self.tr("All services are OFF"))
+        mx_status = self.tr("{0}: OFF").format(self._service_name)
+        self._systray.set_service_tooltip(MX_SERVICE, mx_status)
 
     def _update_systray_tooltip(self):
         """
-        Updates the system tray icon tooltip using the eip and mx status.
+        Updates the system tray tooltip using the mx status.
         """
-        # TODO: Figure out how to handle this with the two status in different
-        # classes
-        # XXX right now we could connect the state transition signals of the
-        # two connection machines (EIP/Mail) to a class that keeps track of the
-        # state -- kali
-        # status = self.tr("Encrypted Internet: {0}").format(self._eip_status)
-        # status += '\n'
-        # status += self.tr("Mail is {0}").format(self._mx_status)
-        # self._systray.setToolTip(status)
-        pass
+        mx_status = u"{0}: {1}".format(self._service_name, self._mx_status)
+        self._systray.set_service_tooltip(MX_SERVICE, mx_status)
 
     def set_action_mail_status(self, action_mail_status):
         """
