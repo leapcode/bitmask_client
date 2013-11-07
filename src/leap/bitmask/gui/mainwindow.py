@@ -904,7 +904,6 @@ class MainWindow(QtGui.QMainWindow):
         Once the user is properly authenticated, try starting the EIP
         service
         """
-
         # In general we want to "filter" likely complicated error
         # messages, but in this case, the messages make more sense as
         # they come. Since they are "Unknown user" or "Unknown
@@ -913,19 +912,20 @@ class MainWindow(QtGui.QMainWindow):
 
         if ok:
             self._logged_user = self._login_widget.get_user()
-            # We leave a bit of room for the user to see the
-            # "Succeeded" message and then we switch to the EIP status
-            # panel
-            QtCore.QTimer.singleShot(1000, self._switch_to_status)
+            user = self._logged_user
+            domain = self._provider_config.get_domain()
+            userid = "%s@%s" % (user, domain)
+            logger.debug("USERID: " % userid)
+            self._mail_conductor.userid = userid
             self._login_defer = None
+            self._start_eip_bootstrap()
         else:
             self._login_widget.set_enabled(True)
 
-    def _switch_to_status(self):
-        # TODO this method name is confusing as hell.
+    def _start_eip_bootstrap(self):
         """
         Changes the stackedWidget index to the EIP status one and
-        triggers the eip bootstrapping
+        triggers the eip bootstrapping.
         """
 
         self._login_widget.logged_in()
@@ -948,6 +948,8 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._mail_status.set_disabled()
 
+        # XXX the config should be downloaded from the start_eip
+        # method.
         self._download_eip_config()
 
     ###################################################################

@@ -1,0 +1,1 @@
+- Initialize mail service with the userid after login, to allow multiple accounts. Closes: #4394
