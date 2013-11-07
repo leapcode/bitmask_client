@@ -1,0 +1,2 @@
+- Remember provider checks in wizard, do not re-run them if the user goes back
+  and forth through the wizard. Closes #3814 and #3815.
