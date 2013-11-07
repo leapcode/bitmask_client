@@ -197,8 +197,8 @@ class SMTPControl(object):
         # TODO remove hard-coded port and let leap.mail set
         # the specific default.
         self.smtp_connection.qtsigs.connecting_signal.emit()
-        from leap.mail.smtp import setup_smtp_relay
-        self._smtp_service, self._smtp_port = setup_smtp_relay(
+        from leap.mail.smtp import setup_smtp_gateway
+        self._smtp_service, self._smtp_port = setup_smtp_gateway(
             port=2013,
             userid=self.userid,
             keymanager=self._keymanager,
