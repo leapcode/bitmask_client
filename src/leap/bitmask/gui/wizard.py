@@ -148,6 +148,7 @@ class Wizard(QtGui.QWizard):
         self._load_configured_providers()
 
         self._provider_checks_ok = False
+        self._provider_setup_ok = False
         self.finished.connect(self._wizard_finished)
 
     @QtCore.Slot()
@@ -162,6 +163,7 @@ class Wizard(QtGui.QWizard):
         instance.
         """
         self._provider_checks_ok = False
+        self._provider_setup_ok = False
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
 
@@ -372,6 +374,10 @@ class Wizard(QtGui.QWizard):
 
         self._provider_checks_ok = False
 
+        # just in case that the user has already setup a provider and
+        # go 'back' to check a provider
+        self._provider_setup_ok = False
+
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
         self.ui.lnProvider.setEnabled(False)
@@ -533,6 +539,7 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblCheckApiCert,
                             True, self.SETUP_PROVIDER_PAGE)
+        self._provider_setup_ok = True
 
     def _service_selection_changed(self, service, state):
         """
@@ -598,14 +605,14 @@ class Wizard(QtGui.QWizard):
                 self._enable_check(reset=False)
 
         if pageId == self.SETUP_PROVIDER_PAGE:
-            self._reset_provider_setup()
-            self.page(pageId).setSubTitle(self.tr("Gathering configuration "
-                                                  "options for %s") %
-                                          (self._provider_config
-                                           .get_name(),))
-            self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
-            self._provider_setup_defer = self._provider_bootstrapper.\
-                run_provider_setup_checks(self._provider_config)
+            if not self._provider_setup_ok:
+                self._reset_provider_setup()
+                sub_title = self.tr("Gathering configuration options for {0}")
+                sub_title = sub_title.format(self._provider_config.get_name())
+                self.page(pageId).setSubTitle(sub_title)
+                self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
+                self._provider_setup_defer = self._provider_bootstrapper.\
+                    run_provider_setup_checks(self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             self.page(pageId).setSubTitle(self.tr("Description of services "
