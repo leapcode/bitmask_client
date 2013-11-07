@@ -200,6 +200,7 @@ class SMTPControl(object):
         from leap.mail.smtp import setup_smtp_relay
         self._smtp_service, self._smtp_port = setup_smtp_relay(
             port=2013,
+            userid=self.userid,
             keymanager=self._keymanager,
             smtp_host=host,
             smtp_port=port,
@@ -345,7 +346,7 @@ class MailConductor(IMAPControl, SMTPControl):
         return self._userid
 
     @userid.setter
-    def _userid(self, userid):
+    def userid(self, userid):
         """
         Sets the user id this conductor is configured for.
 

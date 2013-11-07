@@ -915,7 +915,6 @@ class MainWindow(QtGui.QMainWindow):
             user = self._logged_user
             domain = self._provider_config.get_domain()
             userid = "%s@%s" % (user, domain)
-            logger.debug("USERID: " % userid)
             self._mail_conductor.userid = userid
             self._login_defer = None
             self._start_eip_bootstrap()
