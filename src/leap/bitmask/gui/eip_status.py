@@ -197,8 +197,10 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         Updates the system tray tooltip using the eip status.
         """
-        eip_status = u"{0}: {1}".format(self._service_name, self._eip_status)
-        self._systray.set_service_tooltip(EIP_SERVICE, eip_status)
+        if self._systray is not None:
+            eip_status = u"{0}: {1}".format(
+                self._service_name, self._eip_status)
+            self._systray.set_service_tooltip(EIP_SERVICE, eip_status)
 
     def set_action_eip_startstop(self, action_eip_startstop):
         """
