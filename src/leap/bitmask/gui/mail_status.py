@@ -166,8 +166,9 @@ class MailStatusWidget(QtGui.QWidget):
         """
         Updates the system tray tooltip using the mx status.
         """
-        mx_status = u"{0}: {1}".format(self._service_name, self._mx_status)
-        self._systray.set_service_tooltip(MX_SERVICE, mx_status)
+        if self._systray is not None:
+            mx_status = u"{0}: {1}".format(self._service_name, self._mx_status)
+            self._systray.set_service_tooltip(MX_SERVICE, mx_status)
 
     def set_action_mail_status(self, action_mail_status):
         """
