@@ -22,6 +22,7 @@ import logging
 from PySide import QtCore, QtGui
 
 from leap.bitmask.platform_init import IS_LINUX
+from leap.bitmask.services import get_service_display_name, MX_SERVICE
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
@@ -58,6 +59,7 @@ class MailStatusWidget(QtGui.QWidget):
 
         # set systray tooltip status
         self._mx_status = ""
+        self._service_name = get_service_display_name(MX_SERVICE)
 
         # Set the Mail status icons
         self.CONNECTING_ICON = None
@@ -213,7 +215,8 @@ class MailStatusWidget(QtGui.QWidget):
         icon = self.ERROR_ICON
         if ready == 0:
             self.ui.lblMailStatus.setText(
-                self.tr("You must be logged in to use encrypted email."))
+                self.tr("You must be logged in to use {0}.").format(
+                    self._service_name))
         elif ready == 1:
             icon = self.CONNECTING_ICON
             self._mx_status = self.tr('Starting..')
@@ -436,5 +439,6 @@ class MailStatusWidget(QtGui.QWidget):
         Displays the correct UI for the disabled state.
         """
         self._disabled = True
-        self._set_mail_status(
-            self.tr("You must be logged in to use encrypted email."), -1)
+        status = self.tr("You must be logged in to use {0}.").format(
+            self._service_name)
+        self._set_mail_status(status, -1)

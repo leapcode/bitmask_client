@@ -26,6 +26,7 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask.services.eip.connection import EIPConnection
 from leap.bitmask.services.eip.vpnprocess import VPNManager
+from leap.bitmask.services import get_service_display_name, EIP_SERVICE
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.util.averages import RateMovingAverage
 from leap.common.check import leap_assert_type
@@ -58,6 +59,7 @@ class EIPStatusWidget(QtGui.QWidget):
 
         # set systray tooltip status
         self._eip_status = ""
+        self._service_name = get_service_display_name(EIP_SERVICE)
 
         self.ui.eip_bandwidth.hide()
 
@@ -245,7 +247,7 @@ class EIPStatusWidget(QtGui.QWidget):
         # probably the best thing would be to make a transitional
         # transition there, but that's more involved.
         self.eip_button.hide()
-        msg = self.tr("You must login to use Encrypted Internet")
+        msg = self.tr("You must login to use {0}".format(self._service_name))
         self.eip_label.setText(msg)
 
     @QtCore.Slot()
@@ -418,14 +420,15 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         selected_pixmap = self.ERROR_ICON
         selected_pixmap_tray = self.ERROR_ICON_TRAY
-        tray_message = self.tr("Encrypted Internet: OFF")
+        tray_message = self.tr("{0}: OFF".format(self._service_name))
         if status in ("WAIT", "AUTH", "GET_CONFIG",
                       "RECONNECTING", "ASSIGN_IP"):
             selected_pixmap = self.CONNECTING_ICON
             selected_pixmap_tray = self.CONNECTING_ICON_TRAY
-            tray_message = self.tr("Encrypted Internet: Starting...")
+            tray_message = self.tr("{0}: Starting...").format(
+                self._service_name)
         elif status in ("CONNECTED"):
-            tray_message = self.tr("Encrypted Internet: ON")
+            tray_message = self.tr("{0}: ON".format(self._service_name))
             selected_pixmap = self.CONNECTED_ICON
             selected_pixmap_tray = self.CONNECTED_ICON_TRAY
             self._eip_status = 'ON'
