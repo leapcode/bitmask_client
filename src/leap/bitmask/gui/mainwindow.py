@@ -45,6 +45,7 @@ from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 
 from leap.bitmask.services.mail import conductor as mail_conductor
 
+from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
@@ -86,9 +87,6 @@ class MainWindow(QtGui.QMainWindow):
     # StackedWidget indexes
     LOGIN_INDEX = 0
     EIP_STATUS_INDEX = 1
-
-    OPENVPN_SERVICE = "openvpn"
-    MX_SERVICE = "mx"
 
     # Signals
     eip_needs_login = QtCore.Signal([])
@@ -598,8 +596,8 @@ class MainWindow(QtGui.QMainWindow):
                 for service in provider_config.get_services():
                     services.add(service)
 
-        self.ui.eipWidget.setVisible(self.OPENVPN_SERVICE in services)
-        self.ui.mailWidget.setVisible(self.MX_SERVICE in services)
+        self.ui.eipWidget.setVisible(EIP_SERVICE in services)
+        self.ui.mailWidget.setVisible(MX_SERVICE in services)
 
     #
     # systray
@@ -938,7 +936,7 @@ class MainWindow(QtGui.QMainWindow):
         # TODO separate UI from logic.
         # TODO soledad should check if we want to run only over EIP.
         if self._provider_config.provides_mx() and \
-           self._enabled_services.count(self.MX_SERVICE) > 0:
+           self._enabled_services.count(MX_SERVICE) > 0:
             self._mail_status.about_to_start()
 
             self._soledad_bootstrapper.run_soledad_setup_checks(
@@ -1039,7 +1037,7 @@ class MainWindow(QtGui.QMainWindow):
         # TODO for simmetry, this should be called start_smtp_service
         # (and delegate all the checks to the conductor)
         if self._provider_config.provides_mx() and \
-                self._enabled_services.count(self.MX_SERVICE) > 0:
+                self._enabled_services.count(MX_SERVICE) > 0:
             self._mail_conductor.smtp_bootstrapper.run_smtp_setup_checks(
                 self._provider_config,
                 self._mail_conductor.smtp_config,
@@ -1068,7 +1066,7 @@ class MainWindow(QtGui.QMainWindow):
             self.soledad_ready
         """
         if self._provider_config.provides_mx() and \
-                self._enabled_services.count(self.MX_SERVICE) > 0:
+                self._enabled_services.count(MX_SERVICE) > 0:
             self._mail_conductor.start_imap_service()
 
     def _on_mail_client_logged_in(self, req):
@@ -1418,7 +1416,7 @@ class MainWindow(QtGui.QMainWindow):
         provider_config = self._get_best_provider_config()
 
         if provider_config.provides_eip() and \
-                self._enabled_services.count(self.OPENVPN_SERVICE) > 0 and \
+                self._enabled_services.count(EIP_SERVICE) > 0 and \
                 not self._already_started_eip:
 
             # XXX this should be handled by the state machine.
@@ -1429,7 +1427,7 @@ class MainWindow(QtGui.QMainWindow):
                 download_if_needed=True)
             self._already_started_eip = True
         elif not self._already_started_eip:
-            if self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
+            if self._enabled_services.count(EIP_SERVICE) > 0:
                 self._eip_status.set_eip_status(
                     self.tr("Not supported"),
                     error=True)
