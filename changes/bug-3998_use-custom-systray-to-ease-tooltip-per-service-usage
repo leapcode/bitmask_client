@@ -1,0 +1,2 @@
+- Use custom SysTray in order to display per-service tooltip easily.
+  Closes #3998.

@@ -22,6 +22,7 @@ import logging
 from PySide import QtCore, QtGui
 
 from leap.bitmask.platform_init import IS_LINUX
+from leap.bitmask.services import get_service_display_name, MX_SERVICE
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
@@ -58,6 +59,7 @@ class MailStatusWidget(QtGui.QWidget):
 
         # set systray tooltip status
         self._mx_status = ""
+        self._service_name = get_service_display_name(MX_SERVICE)
 
         # Set the Mail status icons
         self.CONNECTING_ICON = None
@@ -150,29 +152,22 @@ class MailStatusWidget(QtGui.QWidget):
 
     def set_systray(self, systray):
         """
-        Sets the systray object to use.
+        Sets the systray object to use and adds the service line for MX.
 
         :param systray: Systray object
         :type systray: QtGui.QSystemTrayIcon
         """
         leap_assert_type(systray, QtGui.QSystemTrayIcon)
         self._systray = systray
-        self._systray.setToolTip(self.tr("All services are OFF"))
+        mx_status = self.tr("{0}: OFF").format(self._service_name)
+        self._systray.set_service_tooltip(MX_SERVICE, mx_status)
 
     def _update_systray_tooltip(self):
         """
-        Updates the system tray icon tooltip using the eip and mx status.
+        Updates the system tray tooltip using the mx status.
         """
-        # TODO: Figure out how to handle this with the two status in different
-        # classes
-        # XXX right now we could connect the state transition signals of the
-        # two connection machines (EIP/Mail) to a class that keeps track of the
-        # state -- kali
-        # status = self.tr("Encrypted Internet: {0}").format(self._eip_status)
-        # status += '\n'
-        # status += self.tr("Mail is {0}").format(self._mx_status)
-        # self._systray.setToolTip(status)
-        pass
+        mx_status = u"{0}: {1}".format(self._service_name, self._mx_status)
+        self._systray.set_service_tooltip(MX_SERVICE, mx_status)
 
     def set_action_mail_status(self, action_mail_status):
         """
@@ -213,7 +208,8 @@ class MailStatusWidget(QtGui.QWidget):
         icon = self.ERROR_ICON
         if ready == 0:
             self.ui.lblMailStatus.setText(
-                self.tr("You must be logged in to use encrypted email."))
+                self.tr("You must be logged in to use {0}.").format(
+                    self._service_name))
         elif ready == 1:
             icon = self.CONNECTING_ICON
             self._mx_status = self.tr('Starting..')
@@ -436,5 +432,6 @@ class MailStatusWidget(QtGui.QWidget):
         Displays the correct UI for the disabled state.
         """
         self._disabled = True
-        self._set_mail_status(
-            self.tr("You must be logged in to use encrypted email."), -1)
+        status = self.tr("You must be logged in to use {0}.").format(
+            self._service_name)
+        self._set_mail_status(status, -1)
