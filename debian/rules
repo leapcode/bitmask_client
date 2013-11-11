@@ -66,4 +66,4 @@ override_dh_auto_clean:
 	rm -rf build
 	rm -rf docs/_build 
 	rm -rf *.egg-info
-	rm docs/man/bitmask.1
+	rm -f docs/man/bitmask.1
