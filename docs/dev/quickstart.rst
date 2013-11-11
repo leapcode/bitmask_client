@@ -61,7 +61,7 @@ also install the needed dependencies::
 
 Compile the resource files::
 
-    (bitmask)$ make resources
+    (bitmask)$ make
 
 Copy necessary files into system folders, with root privileges::
 
