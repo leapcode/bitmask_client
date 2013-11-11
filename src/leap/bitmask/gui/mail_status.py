@@ -294,8 +294,7 @@ class MailStatusWidget(QtGui.QWidget):
         #     ext_status = self.tr("Key not found!")
         elif req.event == proto.KEYMANAGER_STARTED_KEY_GENERATION:
             ext_status = self.tr(
-                "Generating new key, please wait... \n"
-                "(this may take up to 10 minutes depending on the machine)")
+                "Generating new key, this may take a few minutes.")
         elif req.event == proto.KEYMANAGER_FINISHED_KEY_GENERATION:
             ext_status = self.tr("Finished generating key!")
         elif req.event == proto.KEYMANAGER_DONE_UPLOADING_KEYS:
