@@ -27,4 +27,14 @@ License: GPL-3+ OpenSSL
  this exception statement from all source files in the program, then
  also delete it here.
 
+Files: debian/*
+Copyright: 2013 Ben Carrillo <ben@futeisha.org>
+License: GPL3+
+ This file is released under the GNU GPL, version 3 or a later revision.
+ For further details see the COPYING file.
+ .
+ On Debian systems, the full text of the GNU General Public
+ License version 3 can be found in the file
+ `/usr/share/common-licenses/GPL-3'.
+
 # REVIEW-ME This needs a licensecheck -r run !!! -- kali
