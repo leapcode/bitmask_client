@@ -367,6 +367,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             api_version=self._provider_config.get_api_version(),
             uid=srp_auth.get_uid(),
             gpgbinary=self._get_gpg_bin_path())
+        # make sure key is in server
+        self._keymanager.send_key(openpgp.OpenPGPKey)
 
     def _gen_key(self, _):
         """
@@ -393,7 +395,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         try:
             self._keymanager.gen_key(openpgp.OpenPGPKey)
         except Exception as exc:
-            logger.error("error while generating key!")
+            logger.error("Error while generating key!")
             logger.exception(exc)
             raise
 
@@ -401,7 +403,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         try:
             self._keymanager.send_key(openpgp.OpenPGPKey)
         except Exception as exc:
-            logger.error("error while sending key!")
+            logger.error("Error while sending key!")
             logger.exception(exc)
             raise
 
