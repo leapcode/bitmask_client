@@ -28,6 +28,8 @@ from PySide import QtCore
 from u1db import errors as u1db_errors
 from zope.proxy import sameProxiedObjects
 
+from twisted.internet.threads import deferToThread
+
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
@@ -194,7 +196,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         leap_assert(not sameProxiedObjects(self._soledad, None),
                     "Null soledad, error while initializing")
+        self.deferred = deferToThread(self._do_soledad_sync)
 
+    def _do_soledad_sync(self):
+        """
+        Does several retries to get an initial soledad sync.
+        """
         # and now, let's sync
         sync_tries = self.MAX_SYNC_RETRIES
         while sync_tries > 0:
