@@ -364,19 +364,32 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         srp_auth = self.srpauth
         logger.debug('initializing keymanager...')
-        self._keymanager = KeyManager(
-            address,
-            "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
-            self._soledad,
-            #token=srp_auth.get_token(),  # TODO: enable token usage
-            session_id=srp_auth.get_session_id(),
-            ca_cert_path=self._provider_config.get_ca_cert_path(),
-            api_uri=self._provider_config.get_api_uri(),
-            api_version=self._provider_config.get_api_version(),
-            uid=srp_auth.get_uid(),
-            gpgbinary=self._get_gpg_bin_path())
+        try:
+            self._keymanager = KeyManager(
+                address,
+                "https://nicknym.%s:6425" % (
+                    self._provider_config.get_domain(),),
+                self._soledad,
+                #token=srp_auth.get_token(),  # TODO: enable token usage
+                session_id=srp_auth.get_session_id(),
+                ca_cert_path=self._provider_config.get_ca_cert_path(),
+                api_uri=self._provider_config.get_api_uri(),
+                api_version=self._provider_config.get_api_version(),
+                uid=srp_auth.get_uid(),
+                gpgbinary=self._get_gpg_bin_path())
+        except Exception as exc:
+            logger.exception(exc)
+            raise
+
+        logger.debug('sending key to server...')
+
         # make sure key is in server
-        self._keymanager.send_key(openpgp.OpenPGPKey)
+        try:
+            self._keymanager.send_key(openpgp.OpenPGPKey)
+        except Exception as exc:
+            logger.error("Error sending key to server.")
+            logger.exception(exc)
+            # but we do not raise
 
     def _gen_key(self, _):
         """
