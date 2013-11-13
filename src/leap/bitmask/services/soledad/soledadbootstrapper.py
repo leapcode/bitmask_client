@@ -207,10 +207,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         while sync_tries > 0:
             try:
                 self._try_soledad_sync()
-
-                # at this point, sometimes the client
-                # gets stuck and does not progress to
-                # the _gen_key step. XXX investigate.
                 logger.debug("Soledad has been synced.")
                 # so long, and thanks for all the fish
                 return
@@ -266,26 +262,32 @@ class SoledadBootstrapper(AbstractBootstrapper):
         except socket.timeout:
             logger.debug("SOLEDAD initialization TIMED OUT...")
             self.soledad_timeout.emit()
+            raise
         except socket.error as exc:
             logger.warning("Socket error while initializing soledad")
             self.soledad_timeout.emit()
+            raise
         except BootstrapSequenceError as exc:
             logger.warning("Error while initializing soledad")
             self.soledad_timeout.emit()
+            raise
 
         # unrecoverable
         except u1db_errors.Unauthorized:
             logger.error("Error while initializing soledad "
                          "(unauthorized).")
             self.soledad_failed.emit()
+            raise
         except u1db_errors.HTTPError as exc:
             logger.exception("Error whie initializing soledad "
                              "(HTTPError)")
             self.soledad_failed.emit()
+            raise
         except Exception as exc:
             logger.exception("Unhandled error while initializating "
                              "soledad: %r" % (exc,))
             self.soledad_failed.emit()
+            raise
 
     def _try_soledad_sync(self):
         """
@@ -299,9 +301,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             logger.error("%r" % (exc,))
             raise SoledadSyncError("Failed to sync soledad")
         except Exception as exc:
-            logger.exception("Unhandled error while syncing"
+            logger.exception("Unhandled error while syncing "
                              "soledad: %r" % (exc,))
-            self.soledad_failed.emit()
             raise SoledadSyncError("Failed to sync soledad")
 
     def _download_config(self):

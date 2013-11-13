@@ -98,6 +98,7 @@ class IMAPControl(object):
             logger.debug('Stopping imap service.')
             # Stop the loop call in the fetcher
             self.imap_service.stop()
+            self.imap_service = None
             # Stop listening on the IMAP port
             self.imap_port.stopListening()
             # Stop the protocol
@@ -107,7 +108,6 @@ class IMAPControl(object):
         """
         Fetches incoming mail.
         """
-        # TODO have a mutex over fetch operation.
         if self.imap_service:
             logger.debug('Client connected, fetching mail...')
             self.imap_service.fetch()
