@@ -42,7 +42,7 @@ class PreferencesWindow(QtGui.QDialog):
     """
     Window that displays the preferences.
     """
-    def __init__(self, parent, srp_auth, provider_config):
+    def __init__(self, parent, srp_auth, provider_config, soledad):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
@@ -50,13 +50,15 @@ class PreferencesWindow(QtGui.QDialog):
         :type srp_auth: SRPAuth
         :param provider_config: ProviderConfig object.
         :type provider_config: ProviderConfig
+        :param soledad: Soledad instance
+        :type soledad: Soledad
         """
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
         self._srp_auth = srp_auth
         self._settings = LeapSettings()
-        self._soledad = None
+        self._soledad = soledad
 
         # Load UI
         self.ui = Ui_Preferences()
@@ -94,10 +96,14 @@ class PreferencesWindow(QtGui.QDialog):
                                   "the password.".format(mx_name))
                     self._set_password_change_status(msg, error=True)
                 else:
-                    msg = self.tr(
-                        "You need to wait until {0} is ready in "
-                        "order to change the password.".format(mx_name))
-                    self._set_password_change_status(msg)
+                    if sameProxiedObjects(self._soledad, None):
+                        msg = self.tr(
+                            "You need to wait until {0} is ready in "
+                            "order to change the password.".format(mx_name))
+                        self._set_password_change_status(msg)
+                    else:
+                        # Soledad is bootstrapped
+                        pw_enabled = True
             else:
                 pw_enabled = True
         else:
@@ -107,18 +113,14 @@ class PreferencesWindow(QtGui.QDialog):
 
         self.ui.gbPasswordChange.setEnabled(pw_enabled)
 
-    def set_soledad_ready(self, soledad):
+    def set_soledad_ready(self):
         """
         SLOT
         TRIGGERS:
             parent.soledad_ready
 
-        It sets the soledad object as ready to use.
-
-        :param soledad: Soledad object configured in the main app.
-        :type soledad: Soledad
+        It notifies when the soledad object as ready to use.
         """
-        self._soledad = soledad
         self.ui.lblPasswordChangeStatus.setVisible(False)
         self.ui.gbPasswordChange.setEnabled(True)
 
