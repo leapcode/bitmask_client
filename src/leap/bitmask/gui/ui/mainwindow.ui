@@ -75,7 +75,7 @@
          <x>0</x>
          <y>0</y>
          <width>524</width>
-         <height>636</height>
+         <height>651</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -380,7 +380,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
      <x>0</x>
      <y>0</y>
      <width>524</width>
-     <height>22</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -388,6 +388,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
      <string>&amp;Bitmask</string>
     </property>
     <addaction name="action_create_new_account"/>
+    <addaction name="action_advanced_key_management"/>
     <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
@@ -437,6 +438,14 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
   <action name="action_create_new_account">
    <property name="text">
     <string>Create a new account...</string>
+   </property>
+  </action>
+  <action name="action_advanced_key_management">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Advanced Key Management</string>
    </property>
   </action>
  </widget>

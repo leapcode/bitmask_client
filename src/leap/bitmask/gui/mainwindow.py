@@ -29,6 +29,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.gui.loggerwindow import LoggerWindow
+from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.login import LoginWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.eip_preferenceswindow import EIPPreferencesWindow
@@ -252,6 +253,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_create_new_account.triggered.connect(
             self._launch_wizard)
 
+        self.ui.action_advanced_key_management.triggered.connect(
+            self._show_AKM)
+
         if IS_MAC:
             self.ui.menuFile.menuAction().setText(self.tr("File"))
 
@@ -436,6 +440,20 @@ class MainWindow(QtGui.QMainWindow):
                     not self._logger_window.isVisible())
         else:
             self._logger_window.setVisible(not self._logger_window.isVisible())
+
+    def _show_AKM(self):
+        """
+        SLOT
+        TRIGGERS:
+            self.ui.action_advanced_key_management.triggered
+
+        Displays the Advanced Key Management dialog.
+        """
+        domain = self._login_widget.get_selected_provider()
+        logged_user = "{0}@{1}".format(self._logged_user, domain)
+        self._akm = AdvancedKeyManagement(
+            logged_user, self._keymanager, self._soledad)
+        self._akm.show()
 
     def _show_preferences(self):
         """
@@ -1521,6 +1539,7 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         self._soledad_bootstrapper.cancel_bootstrap()
+        setProxiedObject(self._soledad, None)
 
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
