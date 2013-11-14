@@ -22,7 +22,9 @@ import os
 import logging
 
 from functools import partial
+
 from PySide import QtCore, QtGui
+from zope.proxy import sameProxiedObjects
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
@@ -31,7 +33,7 @@ from leap.bitmask.crypto.srpauth import SRPAuthBadUserOrPassword
 from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services import get_supported
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.services import get_service_display_name
+from leap.bitmask.services import get_service_display_name, MX_SERVICE
 
 logger = logging.getLogger(__name__)
 
@@ -81,12 +83,13 @@ class PreferencesWindow(QtGui.QDialog):
             # check if provider has 'mx' ...
             domain = provider_config.get_domain()
             self._select_provider_by_name(domain)
+
             if provider_config.provides_mx():
                 enabled_services = self._settings.get_enabled_services(domain)
-                mx_name = get_service_display_name('mx')
+                mx_name = get_service_display_name(MX_SERVICE)
 
                 # ... and if the user have it enabled
-                if 'mx' not in enabled_services:
+                if MX_SERVICE not in enabled_services:
                     msg = self.tr("You need to enable {0} in order to change "
                                   "the password.".format(mx_name))
                     self._set_password_change_status(msg, error=True)
