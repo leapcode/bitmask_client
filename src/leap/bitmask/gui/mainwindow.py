@@ -446,11 +446,10 @@ class MainWindow(QtGui.QMainWindow):
         Displays the preferences window.
         """
         preferences_window = PreferencesWindow(self, self._srp_auth,
-                                               self._provider_config)
+                                               self._provider_config,
+                                               self._soledad)
 
-        self.soledad_ready.connect(
-            lambda: preferences_window.set_soledad_ready(self._soledad))
-
+        self.soledad_ready.connect(preferences_window.set_soledad_ready)
         preferences_window.show()
 
     def _show_eip_preferences(self):
