@@ -1,2 +1,0 @@
-- Escape logs with html contents so they get displayed in plaintext
-  on the log viewer. Closes #4146.

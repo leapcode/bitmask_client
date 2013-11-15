@@ -1,2 +1,0 @@
-  o Send user's key to nickserver whenever keymanager is initialized. Closes
-    #4364.

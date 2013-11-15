@@ -3,6 +3,31 @@
 History
 -------
 
+0.3.7 Nov 15 -- the "The Big Lebowsky" release:
++++++++++++++++++++++++++++++++++++++++++++++++
+- Use custom SysTray in order to display per-service tooltip easily.
+  Closes #3998.
+- Escape logs with html contents so they get displayed in plaintext
+  on the log viewer. Closes #4146.
+- Wizard now behaves correctly in provider selection after click
+  'cancel' or 'back'. Closes #4148.
+- Handle Timeout errors during register process. Closes #4358.
+- Send user's key to nickserver whenever keymanager is
+  initialized. Closes #4364.
+- Password change dialog is now properly enabled. Closes #4449.
+- Remember provider checks in wizard, do not re-run them if the user
+  goes back and forth through the wizard. Closes #3814 and #3815.
+- Improve compatibility with OSX Mavericks. Fixes #4379.
+- Initialize mail service with the userid after login, to allow
+  multiple accounts. Closes: #4394
+- Give SMTP the current logged in userid. Related to #3952.
+- Do not wait for initial soledad sync to complete to launch mail
+  services. Closes: #4452
+- Add hint to user about the duration of the key generation. Closes
+  #3958.
+- Add advanced key management feature. Closes #4448.
+- Properly log EIP status changes.
+
 0.3.6 Nov 1 -- the "bạn có thể đọc này?" release:
 +++++++++++++++++++++++++++++++++++++++++++++++++
 

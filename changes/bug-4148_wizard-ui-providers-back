@@ -1,2 +1,0 @@
-- Wizard now behaves correctly in provider selection after click 'cancel' or
-  'back'. Closes #4148.
