@@ -81,16 +81,12 @@ class IMAPControl(object):
                     "We need a non-null keymanager for initializing imap "
                     "service")
 
-        if self.imap_service is None:
-            # first time.
-            self.imap_service, \
-            self.imap_port, \
+        self.imap_service, self.imap_port, \
             self.imap_factory = imap.start_imap_service(
                 self._soledad,
-                self._keymanager)
-        else:
-            # we have the fetcher. just start it.
-            self.imap_service.start_loop()
+                self._keymanager,
+                userid=self.userid)
+        self.imap_service.start_loop()
 
     def stop_imap_service(self):
         """
@@ -102,6 +98,7 @@ class IMAPControl(object):
             logger.debug('Stopping imap service.')
             # Stop the loop call in the fetcher
             self.imap_service.stop()
+            self.imap_service = None
             # Stop listening on the IMAP port
             self.imap_port.stopListening()
             # Stop the protocol
@@ -111,7 +108,6 @@ class IMAPControl(object):
         """
         Fetches incoming mail.
         """
-        # TODO have a mutex over fetch operation.
         if self.imap_service:
             logger.debug('Client connected, fetching mail...')
             self.imap_service.fetch()
@@ -201,9 +197,10 @@ class SMTPControl(object):
         # TODO remove hard-coded port and let leap.mail set
         # the specific default.
         self.smtp_connection.qtsigs.connecting_signal.emit()
-        from leap.mail.smtp import setup_smtp_relay
-        self._smtp_service, self._smtp_port = setup_smtp_relay(
+        from leap.mail.smtp import setup_smtp_gateway
+        self._smtp_service, self._smtp_port = setup_smtp_gateway(
             port=2013,
+            userid=self.userid,
             keymanager=self._keymanager,
             smtp_host=host,
             smtp_port=port,
@@ -339,10 +336,24 @@ class MailConductor(IMAPControl, SMTPControl):
         SMTPControl.__init__(self)
         self._soledad = soledad
         self._keymanager = keymanager
-
         self._mail_machine = None
-
         self._mail_connection = mail_connection.MailConnection()
+
+        self.userid = None
+
+    @property
+    def userid(self):
+        return self._userid
+
+    @userid.setter
+    def userid(self, userid):
+        """
+        Sets the user id this conductor is configured for.
+
+        :param userid: the user id, in the form "user@provider"
+        :type userid: str
+        """
+        self._userid = userid
 
     def start_mail_machine(self, **kwargs):
         """
@@ -354,15 +365,10 @@ class MailConductor(IMAPControl, SMTPControl):
 
         # we have instantiated the connections while building the composite
         # machines, and we have to use the qtsigs instantiated there.
-        # XXX we could probably use a proxy here too to make the thing
-        # transparent.
         self.set_imap_connection(imap.conn)
         self.set_smtp_connection(smtp.conn)
 
         self._mail_machine = mail
-        # XXX -------------------
-        # need to keep a reference?
-        #self._mail_events = mail.events
         self._mail_machine.start()
 
         self._imap_machine = imap

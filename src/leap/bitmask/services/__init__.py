@@ -37,7 +37,9 @@ from leap.common.files import get_mtime
 logger = logging.getLogger(__name__)
 
 
-DEPLOYED = ["openvpn", "mx"]
+EIP_SERVICE = u"openvpn"
+MX_SERVICE = u"mx"
+DEPLOYED = [EIP_SERVICE, MX_SERVICE]
 
 
 def get_service_display_name(service):

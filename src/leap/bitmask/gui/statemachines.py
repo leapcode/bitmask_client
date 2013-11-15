@@ -357,7 +357,7 @@ class ConnectionMachineBuilder(object):
         parent = kwargs.get('parent', None)
 
         # 1. create machine
-        machine = CompositeMachine(parent=parent)
+        machine = CompositeMachine()
 
         # 2. create states
         off = States.Off(conn.qtsigs.disconnected_signal,

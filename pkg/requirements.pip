@@ -20,8 +20,8 @@ zope.proxy
 
 leap.common>=0.3.4
 leap.soledad.client>=0.4.2
-leap.keymanager>=0.3.4
-leap.mail>=0.3.6
+leap.keymanager>=0.3.6
+leap.mail>=0.3.7
 
 # Remove this when u1db fixes its dependency on oauth
 oauth

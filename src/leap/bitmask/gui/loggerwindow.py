@@ -19,6 +19,7 @@
 History log window
 """
 import logging
+import cgi
 
 from PySide import QtGui
 
@@ -90,7 +91,7 @@ class LoggerWindow(QtGui.QDialog):
             logging.CRITICAL: "background: red; color: white; font: bold;"
         }
         level = log[LeapLogHandler.RECORD_KEY].levelno
-        message = log[LeapLogHandler.MESSAGE_KEY]
+        message = cgi.escape(log[LeapLogHandler.MESSAGE_KEY])
 
         if self._logs_to_display[level]:
             open_tag = "<tr style='" + html_style[level] + "'>"

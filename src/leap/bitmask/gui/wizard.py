@@ -111,8 +111,9 @@ class Wizard(QtGui.QWizard):
 
         self.currentIdChanged.connect(self._current_id_changed)
 
-        self.ui.lnProvider.textChanged.connect(
-            self._enable_check)
+        self.ui.lnProvider.textChanged.connect(self._enable_check)
+        self.ui.rbNewProvider.toggled.connect(
+            lambda x: self._enable_check())
 
         self.ui.lblUser.returnPressed.connect(
             self._focus_password)
@@ -145,6 +146,26 @@ class Wizard(QtGui.QWizard):
         self.ui.lblProviderPolicy.setVisible(False)
 
         self._load_configured_providers()
+
+        self._provider_checks_ok = False
+        self._provider_setup_ok = False
+        self.finished.connect(self._wizard_finished)
+
+    @QtCore.Slot()
+    def _wizard_finished(self):
+        """
+        SLOT
+        TRIGGER:
+            self.finished
+
+        This method is called when the wizard is accepted or rejected.
+        Here we do the cleanup needed to use the wizard again reusing the
+        instance.
+        """
+        self._provider_checks_ok = False
+        self._provider_setup_ok = False
+        self.ui.lnProvider.setText('')
+        self.ui.grpCheckProvider.setVisible(False)
 
     def _load_configured_providers(self):
         """
@@ -193,9 +214,22 @@ class Wizard(QtGui.QWizard):
     def get_services(self):
         return self._selected_services
 
-    def _enable_check(self, text):
-        self.ui.btnCheck.setEnabled(len(self.ui.lnProvider.text()) != 0)
-        self._reset_provider_check()
+    @QtCore.Slot()
+    def _enable_check(self, reset=True):
+        """
+        SLOT
+        TRIGGER:
+            self.ui.lnProvider.textChanged
+
+        Enables/disables the 'check' button in the SELECT_PROVIDER_PAGE
+        depending on the lnProvider content.
+        """
+        enabled = len(self.ui.lnProvider.text()) != 0
+        enabled = enabled and self.ui.rbNewProvider.isChecked()
+        self.ui.btnCheck.setEnabled(enabled)
+
+        if reset:
+            self._reset_provider_check()
 
     def _focus_password(self):
         """
@@ -226,9 +260,7 @@ class Wizard(QtGui.QWizard):
                 self._registration_finished)
 
             threads.deferToThread(
-                partial(register.register_user,
-                        username.encode("utf8"),
-                        password.encode("utf8")))
+                partial(register.register_user, username, password))
 
             self._username = username
             self._password = password
@@ -282,7 +314,8 @@ class Wizard(QtGui.QWizard):
             old_username = self._username
             self._username = None
             self._password = None
-            error_msg = self.tr("Unknown error")
+            error_msg = self.tr("Something has gone wrong. "
+                                "Please try again.")
             try:
                 content, _ = get_content(req)
                 json_content = json.loads(content)
@@ -338,6 +371,12 @@ class Wizard(QtGui.QWizard):
         """
         if len(self.ui.lnProvider.text()) == 0:
             return
+
+        self._provider_checks_ok = False
+
+        # just in case that the user has already setup a provider and
+        # go 'back' to check a provider
+        self._provider_setup_ok = False
 
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
@@ -448,6 +487,7 @@ class Wizard(QtGui.QWizard):
                                                    "provider.json")):
             self._complete_task(data, self.ui.lblProviderInfo,
                                 True, self.SELECT_PROVIDER_PAGE)
+            self._provider_checks_ok = True
         else:
             new_data = {
                 self._provider_bootstrapper.PASSED_KEY: False,
@@ -499,6 +539,7 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblCheckApiCert,
                             True, self.SETUP_PROVIDER_PAGE)
+        self._provider_setup_ok = True
 
     def _service_selection_changed(self, service, state):
         """
@@ -556,18 +597,22 @@ class Wizard(QtGui.QWizard):
         Prepares the pages when they appear
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
-            self._reset_provider_check()
-            self._enable_check("")
+            skip = self.ui.rbExistingProvider.isChecked()
+            if not self._provider_checks_ok:
+                self._enable_check()
+                self._skip_provider_checks(skip)
+            else:
+                self._enable_check(reset=False)
 
         if pageId == self.SETUP_PROVIDER_PAGE:
-            self._reset_provider_setup()
-            self.page(pageId).setSubTitle(self.tr("Gathering configuration "
-                                                  "options for %s") %
-                                          (self._provider_config
-                                           .get_name(),))
-            self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
-            self._provider_setup_defer = self._provider_bootstrapper.\
-                run_provider_setup_checks(self._provider_config)
+            if not self._provider_setup_ok:
+                self._reset_provider_setup()
+                sub_title = self.tr("Gathering configuration options for {0}")
+                sub_title = sub_title.format(self._provider_config.get_name())
+                self.page(pageId).setSubTitle(sub_title)
+                self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
+                self._provider_setup_defer = self._provider_bootstrapper.\
+                    run_provider_setup_checks(self._provider_config)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             self.page(pageId).setSubTitle(self.tr("Description of services "

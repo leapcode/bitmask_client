@@ -29,6 +29,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.gui.loggerwindow import LoggerWindow
+from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.login import LoginWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.eip_preferenceswindow import EIPPreferencesWindow
@@ -36,6 +37,7 @@ from leap.bitmask.gui import statemachines
 from leap.bitmask.gui.eip_status import EIPStatusWidget
 from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.wizard import Wizard
+from leap.bitmask.gui.systray import SysTray
 
 from leap.bitmask import provider
 from leap.bitmask.platform_init import IS_WIN, IS_MAC
@@ -44,6 +46,7 @@ from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 
 from leap.bitmask.services.mail import conductor as mail_conductor
 
+from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
@@ -85,9 +88,6 @@ class MainWindow(QtGui.QMainWindow):
     # StackedWidget indexes
     LOGIN_INDEX = 0
     EIP_STATUS_INDEX = 1
-
-    OPENVPN_SERVICE = "openvpn"
-    MX_SERVICE = "mx"
 
     # Signals
     eip_needs_login = QtCore.Signal([])
@@ -253,6 +253,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_create_new_account.triggered.connect(
             self._launch_wizard)
 
+        self.ui.action_advanced_key_management.triggered.connect(
+            self._show_AKM)
+
         if IS_MAC:
             self.ui.menuFile.menuAction().setText(self.tr("File"))
 
@@ -334,7 +337,7 @@ class MainWindow(QtGui.QMainWindow):
         self.eip_machine = None
         # start event machines
         self.start_eip_machine()
-        self._mail_conductor.start_mail_machine(parent=self)
+        self._mail_conductor.start_mail_machine()
 
         if self._first_run():
             self._wizard_firstrun = True
@@ -438,6 +441,20 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._logger_window.setVisible(not self._logger_window.isVisible())
 
+    def _show_AKM(self):
+        """
+        SLOT
+        TRIGGERS:
+            self.ui.action_advanced_key_management.triggered
+
+        Displays the Advanced Key Management dialog.
+        """
+        domain = self._login_widget.get_selected_provider()
+        logged_user = "{0}@{1}".format(self._logged_user, domain)
+        self._akm = AdvancedKeyManagement(
+            logged_user, self._keymanager, self._soledad)
+        self._akm.show()
+
     def _show_preferences(self):
         """
         SLOT
@@ -447,11 +464,10 @@ class MainWindow(QtGui.QMainWindow):
         Displays the preferences window.
         """
         preferences_window = PreferencesWindow(self, self._srp_auth,
-                                               self._provider_config)
+                                               self._provider_config,
+                                               self._soledad)
 
-        self.soledad_ready.connect(
-            lambda: preferences_window.set_soledad_ready(self._soledad))
-
+        self.soledad_ready.connect(preferences_window.set_soledad_ready)
         preferences_window.show()
 
     def _show_eip_preferences(self):
@@ -597,8 +613,8 @@ class MainWindow(QtGui.QMainWindow):
                 for service in provider_config.get_services():
                     services.add(service)
 
-        self.ui.eipWidget.setVisible(self.OPENVPN_SERVICE in services)
-        self.ui.mailWidget.setVisible(self.MX_SERVICE in services)
+        self.ui.eipWidget.setVisible(EIP_SERVICE in services)
+        self.ui.mailWidget.setVisible(MX_SERVICE in services)
 
     #
     # systray
@@ -628,12 +644,13 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_mail_status)
         systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_quit)
-        self._systray = QtGui.QSystemTrayIcon(self)
+        self._systray = SysTray(self)
         self._systray.setContextMenu(systrayMenu)
         self._systray.setIcon(self._eip_status.ERROR_ICON_TRAY)
         self._systray.setVisible(True)
         self._systray.activated.connect(self._tray_activated)
 
+        self._mail_status.set_systray(self._systray)
         self._eip_status.set_systray(self._systray)
 
     def _tray_activated(self, reason=None):
@@ -674,10 +691,9 @@ class MainWindow(QtGui.QMainWindow):
         Toggles the window visibility
         """
         visible = self.isVisible() and self.isActiveWindow()
-        qApp = QtCore.QCoreApplication.instance()
 
         if not visible:
-            qApp.setQuitOnLastWindowClosed(True)
+            QtGui.QApplication.setQuitOnLastWindowClosed(True)
             self.show()
             self.activateWindow()
             self.raise_()
@@ -685,7 +701,7 @@ class MainWindow(QtGui.QMainWindow):
             # We set this in order to avoid dialogs shutting down the
             # app on close, as they will be the only visible window.
             # e.g.: PreferencesWindow, LoggerWindow
-            qApp.setQuitOnLastWindowClosed(False)
+            QtGui.QApplication.setQuitOnLastWindowClosed(False)
             self.hide()
 
         # Wait a bit until the window visibility has changed so
@@ -905,7 +921,6 @@ class MainWindow(QtGui.QMainWindow):
         Once the user is properly authenticated, try starting the EIP
         service
         """
-
         # In general we want to "filter" likely complicated error
         # messages, but in this case, the messages make more sense as
         # they come. Since they are "Unknown user" or "Unknown
@@ -914,19 +929,19 @@ class MainWindow(QtGui.QMainWindow):
 
         if ok:
             self._logged_user = self._login_widget.get_user()
-            # We leave a bit of room for the user to see the
-            # "Succeeded" message and then we switch to the EIP status
-            # panel
-            QtCore.QTimer.singleShot(1000, self._switch_to_status)
+            user = self._logged_user
+            domain = self._provider_config.get_domain()
+            userid = "%s@%s" % (user, domain)
+            self._mail_conductor.userid = userid
             self._login_defer = None
+            self._start_eip_bootstrap()
         else:
             self._login_widget.set_enabled(True)
 
-    def _switch_to_status(self):
-        # TODO this method name is confusing as hell.
+    def _start_eip_bootstrap(self):
         """
         Changes the stackedWidget index to the EIP status one and
-        triggers the eip bootstrapping
+        triggers the eip bootstrapping.
         """
 
         self._login_widget.logged_in()
@@ -938,7 +953,7 @@ class MainWindow(QtGui.QMainWindow):
         # TODO separate UI from logic.
         # TODO soledad should check if we want to run only over EIP.
         if self._provider_config.provides_mx() and \
-           self._enabled_services.count(self.MX_SERVICE) > 0:
+           self._enabled_services.count(MX_SERVICE) > 0:
             self._mail_status.about_to_start()
 
             self._soledad_bootstrapper.run_soledad_setup_checks(
@@ -949,6 +964,8 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._mail_status.set_disabled()
 
+        # XXX the config should be downloaded from the start_eip
+        # method.
         self._download_eip_config()
 
     ###################################################################
@@ -1037,7 +1054,7 @@ class MainWindow(QtGui.QMainWindow):
         # TODO for simmetry, this should be called start_smtp_service
         # (and delegate all the checks to the conductor)
         if self._provider_config.provides_mx() and \
-                self._enabled_services.count(self.MX_SERVICE) > 0:
+                self._enabled_services.count(MX_SERVICE) > 0:
             self._mail_conductor.smtp_bootstrapper.run_smtp_setup_checks(
                 self._provider_config,
                 self._mail_conductor.smtp_config,
@@ -1066,7 +1083,7 @@ class MainWindow(QtGui.QMainWindow):
             self.soledad_ready
         """
         if self._provider_config.provides_mx() and \
-                self._enabled_services.count(self.MX_SERVICE) > 0:
+                self._enabled_services.count(MX_SERVICE) > 0:
             self._mail_conductor.start_imap_service()
 
     def _on_mail_client_logged_in(self, req):
@@ -1416,7 +1433,7 @@ class MainWindow(QtGui.QMainWindow):
         provider_config = self._get_best_provider_config()
 
         if provider_config.provides_eip() and \
-                self._enabled_services.count(self.OPENVPN_SERVICE) > 0 and \
+                self._enabled_services.count(EIP_SERVICE) > 0 and \
                 not self._already_started_eip:
 
             # XXX this should be handled by the state machine.
@@ -1427,7 +1444,7 @@ class MainWindow(QtGui.QMainWindow):
                 download_if_needed=True)
             self._already_started_eip = True
         elif not self._already_started_eip:
-            if self._enabled_services.count(self.OPENVPN_SERVICE) > 0:
+            if self._enabled_services.count(EIP_SERVICE) > 0:
                 self._eip_status.set_eip_status(
                     self.tr("Not supported"),
                     error=True)
@@ -1522,6 +1539,7 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         self._soledad_bootstrapper.cancel_bootstrap()
+        setProxiedObject(self._soledad, None)
 
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
@@ -1657,8 +1675,7 @@ class MainWindow(QtGui.QMainWindow):
         # UI stuff.
 
         # Set this in case that the app is hidden
-        qApp = QtCore.QCoreApplication.instance()
-        qApp.setQuitOnLastWindowClosed(True)
+        QtGui.QApplication.setQuitOnLastWindowClosed(True)
 
         self._cleanup_and_quit()
 

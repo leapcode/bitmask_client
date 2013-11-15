@@ -38,12 +38,21 @@ clone_repos() {
     echo "${cc_green}Status: $status...${cc_normal}"
     set -x  # show commands
 
-    # clone the leap.se repos
-    git clone ssh://gitolite@leap.se/bitmask_client
-    git clone ssh://gitolite@leap.se/leap_pycommon
-    git clone ssh://gitolite@leap.se/soledad
-    git clone ssh://gitolite@leap.se/keymanager
-    git clone ssh://gitolite@leap.se/leap_mail
+    if [[ "$1" == "ro" ]]; then
+        # read-only remotes:
+        git clone https://leap.se/git/bitmask_client
+        git clone https://leap.se/git/leap_pycommon
+        git clone https://leap.se/git/soledad
+        git clone https://leap.se/git/keymanager
+        git clone https://leap.se/git/leap_mail
+    else
+        # read-write remotes:
+        git clone ssh://gitolite@leap.se/bitmask_client
+        git clone ssh://gitolite@leap.se/leap_pycommon
+        git clone ssh://gitolite@leap.se/soledad
+        git clone ssh://gitolite@leap.se/keymanager
+        git clone ssh://gitolite@leap.se/leap_mail
+    fi
 
     set +x
     echo "${cc_green}Status: $status done!${cc_normal}"
@@ -129,7 +138,7 @@ finish(){
 }
 
 initialize() {
-    clone_repos
+    clone_repos $1
     checkout_develop
     create_venv
     setup_develop
@@ -169,6 +178,7 @@ help() {
     echo "Usage: $0 {init | update | help}"
     echo
     echo "   init : Initialize repositories, create virtualenv and \`python setup.py develop\` all."
+    echo "          You can use \`init ro\` in order to use the https remotes if you don't have rw access."
     echo " update : Update the repositories and install new deps (if needed)."
     echo "    run : Runs the client (any extra parameters will be sent to the app)."
     echo "   help : Show this help"
@@ -177,7 +187,7 @@ help() {
 
 case "$1" in
     init)
-        initialize
+        initialize $2
         ;;
     update)
         update

@@ -28,6 +28,8 @@ from PySide import QtCore
 from u1db import errors as u1db_errors
 from zope.proxy import sameProxiedObjects
 
+from twisted.internet.threads import deferToThread
+
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
@@ -194,16 +196,17 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         leap_assert(not sameProxiedObjects(self._soledad, None),
                     "Null soledad, error while initializing")
+        self.deferred = deferToThread(self._do_soledad_sync)
 
+    def _do_soledad_sync(self):
+        """
+        Does several retries to get an initial soledad sync.
+        """
         # and now, let's sync
         sync_tries = self.MAX_SYNC_RETRIES
         while sync_tries > 0:
             try:
                 self._try_soledad_sync()
-
-                # at this point, sometimes the client
-                # gets stuck and does not progress to
-                # the _gen_key step. XXX investigate.
                 logger.debug("Soledad has been synced.")
                 # so long, and thanks for all the fish
                 return
@@ -259,26 +262,32 @@ class SoledadBootstrapper(AbstractBootstrapper):
         except socket.timeout:
             logger.debug("SOLEDAD initialization TIMED OUT...")
             self.soledad_timeout.emit()
+            raise
         except socket.error as exc:
             logger.warning("Socket error while initializing soledad")
             self.soledad_timeout.emit()
+            raise
         except BootstrapSequenceError as exc:
             logger.warning("Error while initializing soledad")
             self.soledad_timeout.emit()
+            raise
 
         # unrecoverable
         except u1db_errors.Unauthorized:
             logger.error("Error while initializing soledad "
                          "(unauthorized).")
             self.soledad_failed.emit()
+            raise
         except u1db_errors.HTTPError as exc:
             logger.exception("Error whie initializing soledad "
                              "(HTTPError)")
             self.soledad_failed.emit()
+            raise
         except Exception as exc:
             logger.exception("Unhandled error while initializating "
                              "soledad: %r" % (exc,))
             self.soledad_failed.emit()
+            raise
 
     def _try_soledad_sync(self):
         """
@@ -292,9 +301,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
             logger.error("%r" % (exc,))
             raise SoledadSyncError("Failed to sync soledad")
         except Exception as exc:
-            logger.exception("Unhandled error while syncing"
+            logger.exception("Unhandled error while syncing "
                              "soledad: %r" % (exc,))
-            self.soledad_failed.emit()
             raise SoledadSyncError("Failed to sync soledad")
 
     def _download_config(self):
@@ -356,17 +364,32 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         srp_auth = self.srpauth
         logger.debug('initializing keymanager...')
-        self._keymanager = KeyManager(
-            address,
-            "https://nicknym.%s:6425" % (self._provider_config.get_domain(),),
-            self._soledad,
-            #token=srp_auth.get_token(),  # TODO: enable token usage
-            session_id=srp_auth.get_session_id(),
-            ca_cert_path=self._provider_config.get_ca_cert_path(),
-            api_uri=self._provider_config.get_api_uri(),
-            api_version=self._provider_config.get_api_version(),
-            uid=srp_auth.get_uid(),
-            gpgbinary=self._get_gpg_bin_path())
+        try:
+            self._keymanager = KeyManager(
+                address,
+                "https://nicknym.%s:6425" % (
+                    self._provider_config.get_domain(),),
+                self._soledad,
+                #token=srp_auth.get_token(),  # TODO: enable token usage
+                session_id=srp_auth.get_session_id(),
+                ca_cert_path=self._provider_config.get_ca_cert_path(),
+                api_uri=self._provider_config.get_api_uri(),
+                api_version=self._provider_config.get_api_version(),
+                uid=srp_auth.get_uid(),
+                gpgbinary=self._get_gpg_bin_path())
+        except Exception as exc:
+            logger.exception(exc)
+            raise
+
+        logger.debug('sending key to server...')
+
+        # make sure key is in server
+        try:
+            self._keymanager.send_key(openpgp.OpenPGPKey)
+        except Exception as exc:
+            logger.error("Error sending key to server.")
+            logger.exception(exc)
+            # but we do not raise
 
     def _gen_key(self, _):
         """
@@ -393,7 +416,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         try:
             self._keymanager.gen_key(openpgp.OpenPGPKey)
         except Exception as exc:
-            logger.error("error while generating key!")
+            logger.error("Error while generating key!")
             logger.exception(exc)
             raise
 
@@ -401,7 +424,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         try:
             self._keymanager.send_key(openpgp.OpenPGPKey)
         except Exception as exc:
-            logger.error("error while sending key!")
+            logger.error("Error while sending key!")
             logger.exception(exc)
             raise
 
