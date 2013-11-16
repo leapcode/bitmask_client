@@ -1,8 +1,8 @@
-﻿ANNOUNCING Bitmask, the internet encryption toolkit, release 0.3.5
+﻿ANNOUNCING Bitmask, the internet encryption toolkit, release 0.3.7
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.3.5  of Bitmask,  the Internet Encryption  Toolkit, codename
-"I can stand on one foot".
+version 0.3.7  of Bitmask,  the Internet Encryption  Toolkit, codename
+"The Big Lebowsky".
 
 https://downloads.leap.se/client/
 
@@ -34,14 +34,9 @@ NOT trust your life to it (yet!).
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask 0.3.5 is a bugfix release  but it also has improvements to the
-UI design,  it's still a work  in progress since it  will change after
-testing in this release, but  it's progressing nicely.  We have again,
-better mail  support, with detached  signatures and compliance  with a
-couple of RFC. You can refer to the CHANGELOG for the meat.
-
-We also  re-added support for  Windows, although  it might be  a bumpy
-ride until we smooth the corners a little bit more.
+Bitmask  0.3.7 improves  greatly  its mail  support  and stability  in
+general, among other various bug fixes. You can refer to the CHANGELOG
+for the meat.
 
 As always,  you can  connect to the  Encrypted Internet  Proxy service
 offered by a  provider of your choice, and enjoy  a encrypted internet
@@ -98,6 +93,6 @@ beyond any border.
 
 The LEAP team,
 
-Oct 18, 2013
+Nov 15, 2013
 Somewhere in the middle of the intertubes.
 EOF

@@ -19,7 +19,7 @@ TRANSLAT_DIR = data/translations
 PROJFILE = data/bitmask.pro
 
 #UI files to compile
-UI_FILES = loggerwindow.ui mainwindow.ui wizard.ui login.ui preferences.ui eip_status.ui mail_status.ui eippreferences.ui
+UI_FILES = loggerwindow.ui mainwindow.ui wizard.ui login.ui preferences.ui eip_status.ui mail_status.ui eippreferences.ui advanced_key_management.ui
 #Qt resource files to compile
 RESOURCES = locale.qrc loggerwindow.qrc mainwindow.qrc icons.qrc
 

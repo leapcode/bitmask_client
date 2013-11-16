@@ -581,6 +581,7 @@ class SRPAuth(QtCore.QObject):
             else:
                 self.set_session_id(None)
                 self.set_uid(None)
+                self.set_token(None)
                 # Also reset the session
                 self._session = self._fetcher.session()
                 logger.debug("Successfully logged out.")
