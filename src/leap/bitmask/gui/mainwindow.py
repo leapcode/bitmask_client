@@ -366,6 +366,7 @@ class MainWindow(QtGui.QMainWindow):
                 # if we don't have any provider configured (included a pinned
                 # one) we can't use the application, so quit.
                 self.quit()
+            self.eip_needs_login.emit()
         else:
             self._finish_init()
 
@@ -574,6 +575,9 @@ class MainWindow(QtGui.QMainWindow):
             if possible_password is not None:
                 self._login_widget.set_password(possible_password)
                 self._login()
+            else:
+                self.eip_needs_login.emit()
+
             self._wizard = None
         else:
             self._try_autostart_eip()
