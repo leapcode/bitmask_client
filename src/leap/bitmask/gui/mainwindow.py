@@ -367,8 +367,11 @@ class MainWindow(QtGui.QMainWindow):
             # if we don't have any provider configured (included a pinned
             # one) we can't use the application, so quit.
             self.quit()
-
-        self.eip_needs_login.emit()
+        else:
+            # This happens if the user finishes the provider
+            # setup but does not register
+            self._wizard = None
+            self._finish_init()
 
     def _launch_wizard(self):
         """
