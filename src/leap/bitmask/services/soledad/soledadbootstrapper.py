@@ -196,7 +196,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         leap_assert(not sameProxiedObjects(self._soledad, None),
                     "Null soledad, error while initializing")
-        self.deferred = deferToThread(self._do_soledad_sync)
+        self._do_soledad_sync()
 
     def _do_soledad_sync(self):
         """
