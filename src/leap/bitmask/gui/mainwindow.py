@@ -358,17 +358,17 @@ class MainWindow(QtGui.QMainWindow):
 
         Called if the wizard has been cancelled or closed before
         finishing.
+        This is executed for the first run wizard only. Any other execution of
+        the wizard won't reach this point.
         """
-        if self._wizard_firstrun:
-            providers = self._settings.get_configured_providers()
-            has_provider_on_disk = len(providers) != 0
-            if not has_provider_on_disk:
-                # if we don't have any provider configured (included a pinned
-                # one) we can't use the application, so quit.
-                self.quit()
-            self.eip_needs_login.emit()
-        else:
-            self._finish_init()
+        providers = self._settings.get_configured_providers()
+        has_provider_on_disk = len(providers) != 0
+        if not has_provider_on_disk:
+            # if we don't have any provider configured (included a pinned
+            # one) we can't use the application, so quit.
+            self.quit()
+
+        self.eip_needs_login.emit()
 
     def _launch_wizard(self):
         """
@@ -539,8 +539,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
           self._wizard.accepted
 
-        Also called at the end of the constructor if not first run,
-        and after _rejected_wizard if not first run.
+        Also called at the end of the constructor if not first run.
 
         Implements the behavior after either constructing the
         mainwindow object, loading the saved user/password, or after
