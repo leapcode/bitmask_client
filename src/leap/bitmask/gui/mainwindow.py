@@ -1455,6 +1455,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.tr("Not supported"),
                     error=True)
             else:
+                self._eip_status.disable_eip_start()
                 self._eip_status.set_eip_status(self.tr("Disabled"))
 
     def _finish_eip_bootstrap(self, data):
