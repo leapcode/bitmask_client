@@ -22,7 +22,7 @@ import os
 
 from PySide import QtCore, QtGui
 from twisted.internet import threads
-from zope.proxy import ProxyBase, setProxiedObject, sameProxiedObjects
+from zope.proxy import ProxyBase, setProxiedObject
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config.leapsettings import LeapSettings
