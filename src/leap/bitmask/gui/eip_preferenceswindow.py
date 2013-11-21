@@ -28,6 +28,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.gui.ui_eippreferences import Ui_EIPPreferences
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
+from leap.bitmask.services.eip.eipconfig import get_eipconfig_path
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.lblProvidersGatewayStatus.setVisible(False)
 
         # Connections
-        self.ui.cbProvidersGateway.currentIndexChanged[unicode].connect(
+        self.ui.cbProvidersGateway.currentIndexChanged[int].connect(
             self._populate_gateways)
 
         self.ui.cbGateways.currentIndexChanged[unicode].connect(
@@ -93,7 +94,11 @@ class EIPPreferencesWindow(QtGui.QDialog):
             return
 
         for provider in providers:
-            self.ui.cbProvidersGateway.addItem(provider)
+            label = provider
+            eip_config_path = get_eipconfig_path(provider, relative=False)
+            if not os.path.isfile(eip_config_path):
+                label = provider + self.tr(" (uninitialized)")
+            self.ui.cbProvidersGateway.addItem(label, userData=provider)
 
     def _save_selected_gateway(self, provider):
         """
@@ -120,7 +125,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
             "Gateway settings for provider '{0}' saved.").format(provider)
         self._set_providers_gateway_status(msg, success=True)
 
-    def _populate_gateways(self, domain):
+    def _populate_gateways(self, domain_idx):
         """
         SLOT
         TRIGGERS:
@@ -129,14 +134,28 @@ class EIPPreferencesWindow(QtGui.QDialog):
         Loads the gateways that the provider provides into the UI for
         the user to select.
 
-        :param domain: the domain of the provider to load gateways from.
-        :type domain: str
+        :param domain: the domain index of the provider to load gateways from.
+        :type domain: int
         """
         # We hide the maybe-visible status label after a change
         self.ui.lblProvidersGatewayStatus.setVisible(False)
 
-        if not domain:
+        if domain_idx == -1:
             return
+
+        domain = self.ui.cbProvidersGateway.itemData(domain_idx)
+
+        if not os.path.isfile(get_eipconfig_path(domain, relative=False)):
+            self._set_providers_gateway_status(
+                self.tr("This is an uninitialized provider, "
+                        "please log in first."),
+                error=True)
+            self.ui.pbSaveGateway.setEnabled(False)
+            self.ui.cbGateways.setEnabled(False)
+            return
+        else:
+            self.ui.pbSaveGateway.setEnabled(True)
+            self.ui.cbGateways.setEnabled(True)
 
         try:
             # disconnect previously connected save method
@@ -151,11 +170,9 @@ class EIPPreferencesWindow(QtGui.QDialog):
         eip_config = EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
 
-        eip_config_path = os.path.join("leap", "providers",
-                                       domain, "eip-service.json")
         api_version = provider_config.get_api_version()
         eip_config.set_api_version(api_version)
-        eip_loaded = eip_config.load(eip_config_path)
+        eip_loaded = eip_config.load(get_eipconfig_path(domain))
 
         if not eip_loaded or provider_config is None:
             self._set_providers_gateway_status(

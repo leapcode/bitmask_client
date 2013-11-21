@@ -22,7 +22,7 @@ import os
 
 from PySide import QtCore, QtGui
 from twisted.internet import threads
-from zope.proxy import ProxyBase, setProxiedObject, sameProxiedObjects
+from zope.proxy import ProxyBase, setProxiedObject
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config.leapsettings import LeapSettings
@@ -358,15 +358,19 @@ class MainWindow(QtGui.QMainWindow):
 
         Called if the wizard has been cancelled or closed before
         finishing.
+        This is executed for the first run wizard only. Any other execution of
+        the wizard won't reach this point.
         """
-        if self._wizard_firstrun:
-            providers = self._settings.get_configured_providers()
-            has_provider_on_disk = len(providers) != 0
-            if not has_provider_on_disk:
-                # if we don't have any provider configured (included a pinned
-                # one) we can't use the application, so quit.
-                self.quit()
+        providers = self._settings.get_configured_providers()
+        has_provider_on_disk = len(providers) != 0
+        if not has_provider_on_disk:
+            # if we don't have any provider configured (included a pinned
+            # one) we can't use the application, so quit.
+            self.quit()
         else:
+            # This happens if the user finishes the provider
+            # setup but does not register
+            self._wizard = None
             self._finish_init()
 
     def _launch_wizard(self):
@@ -538,8 +542,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
           self._wizard.accepted
 
-        Also called at the end of the constructor if not first run,
-        and after _rejected_wizard if not first run.
+        Also called at the end of the constructor if not first run.
 
         Implements the behavior after either constructing the
         mainwindow object, loading the saved user/password, or after
@@ -574,6 +577,9 @@ class MainWindow(QtGui.QMainWindow):
             if possible_password is not None:
                 self._login_widget.set_password(possible_password)
                 self._login()
+            else:
+                self.eip_needs_login.emit()
+
             self._wizard = None
         else:
             self._try_autostart_eip()
@@ -1449,6 +1455,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.tr("Not supported"),
                     error=True)
             else:
+                self._eip_status.disable_eip_start()
                 self._eip_status.set_eip_status(self.tr("Disabled"))
 
     def _finish_eip_bootstrap(self, data):
