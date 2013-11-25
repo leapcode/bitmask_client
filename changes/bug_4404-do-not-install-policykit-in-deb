@@ -1,0 +1,1 @@
+- Avoid attempt to install policykit file in debian package. Closes: #4404

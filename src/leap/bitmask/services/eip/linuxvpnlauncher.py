@@ -148,18 +148,21 @@ class LinuxVPNLauncher(VPNLauncher):
     def missing_other_files(kls):
         """
         'Extend' the VPNLauncher's missing_other_files to check if the polkit
-        files is outdated. If the polkit file that is in OTHER_FILES exists but
-        is not up to date, it is added to the missing list.
+        files is outdated, in the case of an standalone bundle.
+        If the polkit file that is in OTHER_FILES exists but is not up to date,
+        it is added to the missing list.
 
         :returns: a list of missing files
         :rtype: list of str
         """
         # we use `super` in order to send the class to use
         missing = super(LinuxVPNLauncher, kls).missing_other_files()
-        polkit_file = LinuxPolicyChecker.get_polkit_path()
-        if polkit_file not in missing:
-            if privilege_policies.is_policy_outdated(kls.OPENVPN_BIN_PATH):
-                missing.append(polkit_file)
+
+        if flags.STANDALONE is True:
+            polkit_file = LinuxPolicyChecker.get_polkit_path()
+            if polkit_file not in missing:
+                if privilege_policies.is_policy_outdated(kls.OPENVPN_BIN_PATH):
+                    missing.append(polkit_file)
 
         return missing
 
