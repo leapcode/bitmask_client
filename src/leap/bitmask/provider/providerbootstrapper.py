@@ -105,7 +105,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         Checks that the name resolution for the provider name works
         """
         leap_assert(self._domain, "Cannot check DNS without a domain")
-        logger.debug("Checking name resolution for %s" % (self._domain))
+        logger.debug("Checking name resolution for %r" % (self._domain))
 
         # We don't skip this check, since it's basic for the whole
         # system to work
@@ -119,7 +119,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         checks out
         """
         leap_assert(self._domain, "Cannot check HTTPS without a domain")
-        logger.debug("Checking https for %s" % (self._domain))
+        logger.debug("Checking https for %r" % (self._domain))
 
         # We don't skip this check, since it's basic for the whole
         # system to work.
@@ -154,7 +154,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         """
         leap_assert(self._domain,
                     "Cannot download provider info without a domain")
-        logger.debug("Downloading provider info for %s" % (self._domain))
+        logger.debug("Downloading provider info for %r" % (self._domain))
 
         # --------------------------------------------------------------
         # TODO factor out with the download routines in services.
@@ -228,7 +228,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         Populates the check queue.
 
         :param domain: domain to check
-        :type domain: str
+        :type domain: unicode
 
         :param download_if_needed: if True, makes the checks do not
                                    overwrite already downloaded data
@@ -271,7 +271,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         leap_assert(self._provider_config, "Cannot download the ca cert "
                     "without a provider config!")
 
-        logger.debug("Downloading ca cert for %s at %s" %
+        logger.debug("Downloading ca cert for %r at %r" %
                      (self._domain, self._provider_config.get_ca_cert_uri()))
 
         if not self._should_proceed_cert():
@@ -302,7 +302,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         leap_assert(self._provider_config, "Cannot check the ca cert "
                     "without a provider config!")
 
-        logger.debug("Checking ca fingerprint for %s and cert %s" %
+        logger.debug("Checking ca fingerprint for %r and cert %r" %
                      (self._domain,
                       self._provider_config.get_ca_cert_path()))
 
