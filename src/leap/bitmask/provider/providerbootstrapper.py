@@ -111,7 +111,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # system to work
         # err --- but we can do it after a failure, to diagnose what went
         # wrong. Right now we're just adding connection overhead. -- kali
-        socket.gethostbyname(self._domain)
+        socket.gethostbyname(self._domain.encode('idna'))
 
     def _check_https(self, *args):
         """
@@ -131,8 +131,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
             verify = self.verify.encode(sys.getfilesystemencoding())
 
         try:
-            res = self._session.get("https://%s" % (self._domain,),
-                                    verify=verify,
+            uri = "https://{0}".format(self._domain.encode('idna'))
+            res = self._session.get(uri, verify=verify,
                                     timeout=REQUEST_TIMEOUT)
             res.raise_for_status()
         except requests.exceptions.SSLError as exc:
@@ -190,7 +190,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         logger.debug("Requesting for provider.json... "
                      "uri: {0}, verify: {1}, headers: {2}".format(
                          uri, verify, headers))
-        res = self._session.get(uri, verify=verify,
+        res = self._session.get(uri.encode('idna'), verify=verify,
                                 headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         logger.debug("Request status code: {0}".format(res.status_code))
