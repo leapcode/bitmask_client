@@ -77,7 +77,7 @@ def _try_to_launch_agent():
     Tries to launch a polkit daemon.
     """
     env = None
-    if flags.STANDALONE is True:
+    if flags.STANDALONE:
         env = {"PYTHONPATH": os.path.abspath('../../../../lib/')}
     try:
         # We need to quote the command because subprocess call
@@ -158,7 +158,7 @@ class LinuxVPNLauncher(VPNLauncher):
         # we use `super` in order to send the class to use
         missing = super(LinuxVPNLauncher, kls).missing_other_files()
 
-        if flags.STANDALONE is True:
+        if flags.STANDALONE:
             polkit_file = LinuxPolicyChecker.get_polkit_path()
             if polkit_file not in missing:
                 if privilege_policies.is_policy_outdated(kls.OPENVPN_BIN_PATH):
