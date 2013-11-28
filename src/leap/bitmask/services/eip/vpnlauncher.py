@@ -147,7 +147,8 @@ class VPNLauncher(object):
         args = []
 
         args += [
-            '--setenv', "LEAPOPENVPN", "1"
+            '--setenv', "LEAPOPENVPN", "1",
+            '--nobind'
         ]
 
         if openvpn_verb is not None:
