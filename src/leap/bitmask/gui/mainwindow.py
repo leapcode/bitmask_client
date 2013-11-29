@@ -1652,9 +1652,9 @@ class MainWindow(QtGui.QMainWindow):
                 # XXX this can timeout after loong time: See #3368
                 self._srp_auth.logout()
 
-        if self._soledad:
+        if self._soledad_bootstrapper.soledad is not None:
             logger.debug("Closing soledad...")
-            self._soledad.close()
+            self._soledad_bootstrapper.soledad.close()
         else:
             logger.error("No instance of soledad was found.")
 

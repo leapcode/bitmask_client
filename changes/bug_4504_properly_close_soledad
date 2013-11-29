@@ -1,0 +1,1 @@
+- Properly close Soledad at quit time. Fixes #4504.
