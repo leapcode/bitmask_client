@@ -161,10 +161,10 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # Watch out! We're handling the verify paramenter differently here.
 
         headers = {}
+        domain = self._domain.encode(sys.getfilesystemencoding())
         provider_json = os.path.join(util.get_path_prefix(),
-                                     "leap",
-                                     "providers",
-                                     self._domain, "provider.json")
+                                     "leap", "providers", domain,
+                                     "provider.json")
         mtime = get_mtime(provider_json)
 
         if self._download_if_needed and mtime:
@@ -206,10 +206,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
 
             provider_config = ProviderConfig()
             provider_config.load(data=provider_definition, mtime=mtime)
-            provider_config.save(["leap",
-                                  "providers",
-                                  self._domain,
-                                  "provider.json"])
+            provider_config.save(["leap", "providers",
+                                  domain, "provider.json"])
 
             api_version = provider_config.get_api_version()
             if SupportedAPIs.supports(api_version):
