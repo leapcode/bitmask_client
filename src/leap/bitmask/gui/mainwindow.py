@@ -1369,8 +1369,7 @@ class MainWindow(QtGui.QMainWindow):
         Sets eip status to off
         """
         # XXX this should be handled by the state machine.
-        self._eip_status.set_eip_status(self.tr("EIP has stopped"),
-                                        error=error)
+        self._eip_status.set_eip_status("", error=error)
         self._eip_status.set_eip_status_icon("error")
 
     def _eip_finished(self, exitCode):
