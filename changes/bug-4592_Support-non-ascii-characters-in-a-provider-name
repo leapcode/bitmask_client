@@ -1,0 +1,1 @@
+- Support non-ascii characters in a provider name. Closes #4952.
