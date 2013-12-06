@@ -5,6 +5,9 @@ Bitmask
 
 .. image:: https://pypip.in/v/leap.bitmask/badge.png
         :target: https://crate.io/packages/leap.bitmask
+.. image:: https://pypip.in/d/leap.bitmask/badge.png
+.. image:: http://lemur.leap.se:8010/png?builder=bitmask-linux-quick
+
 
 **Bitmask** is the multiplatform desktop client for the services offered by
 `the LEAP Platform`_.
