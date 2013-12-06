@@ -1,2 +1,0 @@
-- Make the preferences window selects the current selected provider in the
-  login widget even if the user is not logged in. Closes #4490.

@@ -1,2 +1,0 @@
-- Do not show the generic message "EIP has stopped" since it's
-  redundant. Fixes #4632.

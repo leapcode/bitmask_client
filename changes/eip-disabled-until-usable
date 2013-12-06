@@ -1,7 +1,0 @@
-- Disable Turn On EIP until we have an usable provider. Closes #4523.
-- Load provider if the wizard was rejected and the setup was completed.
-- Disable Turn On EIP if the "Encrypted Internet" service is disabled.
-  Closes #4555.
-- If EIP service is disabled display 'Disabled' instead of 'You need to login
-  to use Encrypted Internet'.
-- Disable eip-config until we have configured the provider. Closes #4422.

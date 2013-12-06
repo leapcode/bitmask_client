@@ -1,2 +1,0 @@
-- Add --nobind as a VPN parameter to prevent binding on local
-  addresses. Fixes #4543.
