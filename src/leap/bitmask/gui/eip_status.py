@@ -77,6 +77,10 @@ class EIPStatusWidget(QtGui.QWidget):
 
         self._provider = ""
 
+        # Action for the systray
+        self._eip_disabled_action = QtGui.QAction(
+            "{0} is {1}".format(self._service_name, self.tr("disabled")), self)
+
     def _make_status_clickable(self):
         """
         Makes upload and download figures clickable.
@@ -252,6 +256,15 @@ class EIPStatusWidget(QtGui.QWidget):
         self.eip_button.hide()
         msg = self.tr("You must login to use {0}".format(self._service_name))
         self.eip_label.setText(msg)
+        self._eip_status_menu.setTitle("{0} is {1}".format(
+            self._service_name, self.tr("disabled")))
+
+        # Replace EIP tray menu with an action that displays a "disabled" text
+        menu = self._systray.contextMenu()
+        menu.insertAction(
+            self._eip_status_menu.menuAction(),
+            self._eip_disabled_action)
+        self._eip_status_menu.menuAction().setVisible(False)
 
     @QtCore.Slot()
     def enable_eip_start(self):
@@ -261,6 +274,11 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         logger.debug('Showing EIP start button')
         self.eip_button.show()
+
+        # Restore the eip action menu
+        menu = self._systray.contextMenu()
+        menu.removeAction(self._eip_disabled_action)
+        self._eip_status_menu.menuAction().setVisible(True)
 
     # XXX disable (later) --------------------------
     def set_eip_status(self, status, error=False):

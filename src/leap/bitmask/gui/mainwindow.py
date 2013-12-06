@@ -44,6 +44,8 @@ from leap.bitmask.platform_init import IS_WIN, IS_MAC
 from leap.bitmask.platform_init.initializers import init_platform
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 
+from leap.bitmask.services import get_service_display_name, EIP_SERVICE
+
 from leap.bitmask.services.mail import conductor as mail_conductor
 
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
@@ -338,6 +340,8 @@ class MainWindow(QtGui.QMainWindow):
         # start event machines
         self.start_eip_machine()
         self._mail_conductor.start_mail_machine()
+
+        self._eip_name = get_service_display_name(EIP_SERVICE)
 
         if self._first_run():
             self._wizard_firstrun = True
@@ -643,7 +647,8 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
 
-        eip_menu = systrayMenu.addMenu(self.tr("Encrypted Internet: OFF"))
+        eip_status_label = "{0}: {1}".format(self._eip_name, self.tr("OFF"))
+        eip_menu = systrayMenu.addMenu(eip_status_label)
         eip_menu.addAction(self._action_eip_startstop)
         self._eip_status.set_eip_status_menu(eip_menu)
         systrayMenu.addSeparator()
@@ -1230,10 +1235,9 @@ class MainWindow(QtGui.QMainWindow):
             provider_config, self._eip_config, provider)
 
         if not loaded:
-            self._eip_status.set_eip_status(
-                self.tr("Could not load Encrypted Internet "
-                        "Configuration."),
-                error=True)
+            eip_status_label = self.tr("Could not load {0} configuration.")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
             # signal connection aborted to state machine
             qtsigs = self._eip_connection.qtsigs
             qtsigs.connection_aborted_signal.emit()
@@ -1270,9 +1274,9 @@ class MainWindow(QtGui.QMainWindow):
             self._set_eipstatus_off()
         except EIPNoTunKextLoaded:
             self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet cannot be started because "
+                self.tr("{0} cannot be started because "
                         "the tuntap extension is not installed properly "
-                        "in your system."))
+                        "in your system.").format(self._eip_name))
             self._set_eipstatus_off()
         except EIPNoPkexecAvailable:
             self._eip_status.set_eip_status(
@@ -1407,17 +1411,18 @@ class MainWindow(QtGui.QMainWindow):
 
         # XXX check if these exitCodes are pkexec/cocoasudo specific
         if exitCode in (126, 127):
-            self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet could not be launched "
-                        "because you did not authenticate properly."),
-                error=True)
+            eip_status_label = self.tr(
+                "{0} could not be launched "
+                "because you did not authenticate properly.")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
             self._vpn.killit()
             signal = qtsigs.connection_aborted_signal
 
         elif exitCode != 0 or not self.user_stopped_eip:
-            self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet finished in an "
-                        "unexpected manner!"), error=True)
+            eip_status_label = self.tr("{0} finished in an unexpected manner!")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
             signal = qtsigs.connection_died_signal
 
         if exitCode == 0 and IS_MAC:
@@ -1486,10 +1491,9 @@ class MainWindow(QtGui.QMainWindow):
             # DO START EIP Connection!
             self._eip_connection.qtsigs.do_connect_signal.emit()
         else:
-            self._eip_status.set_eip_status(
-                self.tr("Could not load Encrypted Internet "
-                        "Configuration."),
-                error=True)
+            eip_status_label = self.tr("Could not load {0} configuration.")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
 
     def _eip_intermediate_stage(self, data):
         # TODO missing param
