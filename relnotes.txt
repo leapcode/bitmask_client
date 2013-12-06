@@ -1,8 +1,8 @@
 ﻿ANNOUNCING Bitmask, the internet encryption toolkit, release 0.3.7
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.3.7  of Bitmask,  the Internet Encryption  Toolkit, codename
-"The Big Lebowsky".
+version 0.3.8  of Bitmask,  the Internet Encryption  Toolkit, codename
+"Three week child".
 
 https://downloads.leap.se/client/
 
@@ -34,7 +34,7 @@ NOT trust your life to it (yet!).
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask  0.3.7 improves  greatly  its mail  support  and stability  in
+Bitmask  0.3.8 improves  greatly  its mail  support  and stability  in
 general, among other various bug fixes. You can refer to the CHANGELOG
 for the meat.
 
@@ -93,6 +93,6 @@ beyond any border.
 
 The LEAP team,
 
-Nov 15, 2013
+Dec 6, 2013
 Somewhere in the middle of the intertubes.
 EOF

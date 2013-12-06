@@ -1,9 +1,9 @@
 #!/bin/bash
 
-set -eu
+set -e
 
 function usage {
-  echo "Usage: $0 [OPTION]..."
+  echo "Usage: $0 [OPTION]...[@virtualenv-name]"
   echo "Run leap-client test suite"
   echo ""
   echo "  -V, --virtual-env        Always use virtualenv.  Install automatically if not present"
@@ -22,6 +22,8 @@ function usage {
   echo "Note: with no options specified, the script will try to run the tests in a virtual environment,"
   echo "      If no virtualenv is found, the script will ask if you would like to create one.  If you "
   echo "      prefer to run tests NOT in a virtual environment, simply pass the -N option."
+  echo "      If you pass @virtualenv-name, the given virtualenv will be used as long as "
+  echo "      virtualenvwrapper.sh can be found in the PATH."
   exit
 }
 
@@ -37,6 +39,7 @@ function process_option {
     -c|--coverage) coverage=1;;
     -A|--all) alltests=1;;
     -i|--progressive) progressive=1;;
+    @*) venvwrapper=1; source_venv=`echo $1 | cut -c 2-`;;
     -*) noseopts="$noseopts $1";;
     *) noseargs="$noseargs $1"
   esac
@@ -44,6 +47,7 @@ function process_option {
 
 venv=.venv
 with_venv=pkg/tools/with_venv.sh
+with_venvwrapper=pkg/tools/with_venvwrapper.sh
 always_venv=0
 never_venv=0
 force=0
@@ -51,6 +55,8 @@ no_site_packages=0
 installvenvopts=
 noseargs=
 noseopts=
+venvwrapper=0
+source_venv=
 wrapper=""
 just_pep8=0
 no_pep8=0
@@ -82,9 +88,19 @@ if [ $progressive -eq 1 ]; then
     noseopts="$noseopts --with-progressive"
 fi
 
-
 function run_tests {
   echo "running tests..."
+
+  if [ $venvwrapper -eq 1 ]; then
+	  VIRTUAL_ENV=$WORKON_HOME/$source_venv
+	  wrapper="$with_venvwrapper $source_venv"
+
+  fi
+
+  #NOSETESTS="nosetests leap --exclude=soledad* $noseopts $noseargs"
+  NOSETESTS="$VIRTUAL_ENV/bin/nosetests . $noseopts $noseargs"
+  #--with-coverage --cover-package=leap"
+
   # Just run the test suites in current environment
   echo "NOSETESTS=$NOSETESTS"
   ${wrapper} $NOSETESTS
@@ -98,6 +114,7 @@ function run_pep8 {
   srcfiles="src/leap"
   # Just run PEP8 in current environment
   pep8_opts="--ignore=E202,W602 --exclude=*_rc.py,ui_*,_version.py --repeat"
+
   ${wrapper} pep8 ${pep8_opts} ${srcfiles}
 }
 
@@ -105,9 +122,6 @@ function run_pep8 {
 # in the current debhelper build process,
 # so I exclude the topmost tests
 
-#NOSETESTS="nosetests leap --exclude=soledad* $noseopts $noseargs"
-NOSETESTS="$VIRTUAL_ENV/bin/nosetests . $noseopts $noseargs"
-#--with-coverage --cover-package=leap"
 
 if [ $never_venv -eq 0 ]
 then
