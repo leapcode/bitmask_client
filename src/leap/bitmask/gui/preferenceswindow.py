@@ -42,7 +42,7 @@ class PreferencesWindow(QtGui.QDialog):
     """
     Window that displays the preferences.
     """
-    def __init__(self, parent, srp_auth, provider_config, soledad):
+    def __init__(self, parent, srp_auth, provider_config, soledad, domain):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
@@ -52,6 +52,8 @@ class PreferencesWindow(QtGui.QDialog):
         :type provider_config: ProviderConfig
         :param soledad: Soledad instance
         :type soledad: Soledad
+        :param domain: the selected domain in the login widget
+        :type domain: unicode
         """
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
@@ -83,9 +85,6 @@ class PreferencesWindow(QtGui.QDialog):
         # check if the user is logged in
         if srp_auth is not None and srp_auth.get_token() is not None:
             # check if provider has 'mx' ...
-            domain = provider_config.get_domain()
-            self._select_provider_by_name(domain)
-
             if provider_config.provides_mx():
                 enabled_services = self._settings.get_enabled_services(domain)
                 mx_name = get_service_display_name(MX_SERVICE)
@@ -110,6 +109,8 @@ class PreferencesWindow(QtGui.QDialog):
             msg = self.tr(
                 "In order to change your password you need to be logged in.")
             self._set_password_change_status(msg)
+
+        self._select_provider_by_name(domain)
 
         self.ui.gbPasswordChange.setEnabled(pw_enabled)
 
