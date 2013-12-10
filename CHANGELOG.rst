@@ -3,6 +3,30 @@
 History
 -------
 
+0.3.8 Dec 6 -- the "Three week child" release:
++++++++++++++++++++++++++++++++++++++++++++++++
+- Make the preferences window selects the current selected provider in
+  the login widget even if the user is not logged in. Closes #4490.
+- Support non-ascii characters in a provider name. Closes #4952.
+- Disable Turn On EIP in tray if the service is disabled. Closes #4630.
+- Do not show the generic message "EIP has stopped" since it's
+  redundant. Fixes #4632.
+- Avoid attempt to install policykit file in debian package. Closes:
+  #4404
+- Properly close Soledad at quit time. Fixes #4504.
+- Fix soledad bootstrap subtasks order. Closes #4537.
+- Add --nobind as a VPN parameter to prevent binding on local
+  addresses. Fixes #4543.
+- Disable Turn On EIP until we have an usable provider. Closes #4523.
+- Load provider if the wizard was rejected and the setup was
+  completed.
+- Disable Turn On EIP if the "Encrypted Internet" service is disabled.
+  Closes #4555.
+- If EIP service is disabled display 'Disabled' instead of 'You need
+  to login to use Encrypted Internet'.
+- Disable eip-config until we have configured the provider. Closes
+  #4422.
+
 0.3.7 Nov 15 -- the "The Big Lebowsky" release:
 +++++++++++++++++++++++++++++++++++++++++++++++
 - Use custom SysTray in order to display per-service tooltip easily.

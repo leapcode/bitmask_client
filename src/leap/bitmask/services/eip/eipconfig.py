@@ -33,17 +33,25 @@ from leap.common.check import leap_assert, leap_assert_type
 logger = logging.getLogger(__name__)
 
 
-def get_eipconfig_path(domain):
+def get_eipconfig_path(domain, relative=True):
     """
-    Returns relative path for EIP config.
+    Returns relative or absolute path for EIP config.
 
     :param domain: the domain to which this eipconfig belongs to.
     :type domain: str
+    :param relative: defines whether the path should be relative or absolute.
+    :type relative: bool
     :returns: the path
     :rtype: str
     """
     leap_assert(domain is not None, "get_eipconfig_path: We need a domain")
-    return os.path.join("leap", "providers", domain, "eip-service.json")
+
+    path = os.path.join("leap", "providers", domain, "eip-service.json")
+
+    if not relative:
+        path = os.path.join(get_path_prefix(), path)
+
+    return path
 
 
 def load_eipconfig_if_needed(provider_config, eip_config, domain):

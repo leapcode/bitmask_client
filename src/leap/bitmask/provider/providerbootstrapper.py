@@ -105,13 +105,13 @@ class ProviderBootstrapper(AbstractBootstrapper):
         Checks that the name resolution for the provider name works
         """
         leap_assert(self._domain, "Cannot check DNS without a domain")
-        logger.debug("Checking name resolution for %s" % (self._domain))
+        logger.debug("Checking name resolution for %r" % (self._domain))
 
         # We don't skip this check, since it's basic for the whole
         # system to work
         # err --- but we can do it after a failure, to diagnose what went
         # wrong. Right now we're just adding connection overhead. -- kali
-        socket.gethostbyname(self._domain)
+        socket.gethostbyname(self._domain.encode('idna'))
 
     def _check_https(self, *args):
         """
@@ -119,7 +119,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         checks out
         """
         leap_assert(self._domain, "Cannot check HTTPS without a domain")
-        logger.debug("Checking https for %s" % (self._domain))
+        logger.debug("Checking https for %r" % (self._domain))
 
         # We don't skip this check, since it's basic for the whole
         # system to work.
@@ -131,8 +131,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
             verify = self.verify.encode(sys.getfilesystemencoding())
 
         try:
-            res = self._session.get("https://%s" % (self._domain,),
-                                    verify=verify,
+            uri = "https://{0}".format(self._domain.encode('idna'))
+            res = self._session.get(uri, verify=verify,
                                     timeout=REQUEST_TIMEOUT)
             res.raise_for_status()
         except requests.exceptions.SSLError as exc:
@@ -154,17 +154,17 @@ class ProviderBootstrapper(AbstractBootstrapper):
         """
         leap_assert(self._domain,
                     "Cannot download provider info without a domain")
-        logger.debug("Downloading provider info for %s" % (self._domain))
+        logger.debug("Downloading provider info for %r" % (self._domain))
 
         # --------------------------------------------------------------
         # TODO factor out with the download routines in services.
         # Watch out! We're handling the verify paramenter differently here.
 
         headers = {}
+        domain = self._domain.encode(sys.getfilesystemencoding())
         provider_json = os.path.join(util.get_path_prefix(),
-                                     "leap",
-                                     "providers",
-                                     self._domain, "provider.json")
+                                     "leap", "providers", domain,
+                                     "provider.json")
         mtime = get_mtime(provider_json)
 
         if self._download_if_needed and mtime:
@@ -190,7 +190,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         logger.debug("Requesting for provider.json... "
                      "uri: {0}, verify: {1}, headers: {2}".format(
                          uri, verify, headers))
-        res = self._session.get(uri, verify=verify,
+        res = self._session.get(uri.encode('idna'), verify=verify,
                                 headers=headers, timeout=REQUEST_TIMEOUT)
         res.raise_for_status()
         logger.debug("Request status code: {0}".format(res.status_code))
@@ -206,10 +206,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
 
             provider_config = ProviderConfig()
             provider_config.load(data=provider_definition, mtime=mtime)
-            provider_config.save(["leap",
-                                  "providers",
-                                  self._domain,
-                                  "provider.json"])
+            provider_config.save(["leap", "providers",
+                                  domain, "provider.json"])
 
             api_version = provider_config.get_api_version()
             if SupportedAPIs.supports(api_version):
@@ -228,7 +226,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         Populates the check queue.
 
         :param domain: domain to check
-        :type domain: str
+        :type domain: unicode
 
         :param download_if_needed: if True, makes the checks do not
                                    overwrite already downloaded data
@@ -271,7 +269,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         leap_assert(self._provider_config, "Cannot download the ca cert "
                     "without a provider config!")
 
-        logger.debug("Downloading ca cert for %s at %s" %
+        logger.debug("Downloading ca cert for %r at %r" %
                      (self._domain, self._provider_config.get_ca_cert_uri()))
 
         if not self._should_proceed_cert():
@@ -302,7 +300,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         leap_assert(self._provider_config, "Cannot check the ca cert "
                     "without a provider config!")
 
-        logger.debug("Checking ca fingerprint for %s and cert %s" %
+        logger.debug("Checking ca fingerprint for %r and cert %r" %
                      (self._domain,
                       self._provider_config.get_ca_cert_path()))
 

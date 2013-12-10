@@ -22,7 +22,7 @@ import os
 
 from PySide import QtCore, QtGui
 from twisted.internet import threads
-from zope.proxy import ProxyBase, setProxiedObject, sameProxiedObjects
+from zope.proxy import ProxyBase, setProxiedObject
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config.leapsettings import LeapSettings
@@ -43,6 +43,8 @@ from leap.bitmask import provider
 from leap.bitmask.platform_init import IS_WIN, IS_MAC
 from leap.bitmask.platform_init.initializers import init_platform
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+
+from leap.bitmask.services import get_service_display_name, EIP_SERVICE
 
 from leap.bitmask.services.mail import conductor as mail_conductor
 
@@ -339,6 +341,8 @@ class MainWindow(QtGui.QMainWindow):
         self.start_eip_machine()
         self._mail_conductor.start_mail_machine()
 
+        self._eip_name = get_service_display_name(EIP_SERVICE)
+
         if self._first_run():
             self._wizard_firstrun = True
             self._wizard = Wizard(bypass_checks=bypass_checks)
@@ -358,15 +362,19 @@ class MainWindow(QtGui.QMainWindow):
 
         Called if the wizard has been cancelled or closed before
         finishing.
+        This is executed for the first run wizard only. Any other execution of
+        the wizard won't reach this point.
         """
-        if self._wizard_firstrun:
-            providers = self._settings.get_configured_providers()
-            has_provider_on_disk = len(providers) != 0
-            if not has_provider_on_disk:
-                # if we don't have any provider configured (included a pinned
-                # one) we can't use the application, so quit.
-                self.quit()
+        providers = self._settings.get_configured_providers()
+        has_provider_on_disk = len(providers) != 0
+        if not has_provider_on_disk:
+            # if we don't have any provider configured (included a pinned
+            # one) we can't use the application, so quit.
+            self.quit()
         else:
+            # This happens if the user finishes the provider
+            # setup but does not register
+            self._wizard = None
             self._finish_init()
 
     def _launch_wizard(self):
@@ -463,9 +471,9 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        preferences_window = PreferencesWindow(self, self._srp_auth,
-                                               self._provider_config,
-                                               self._soledad)
+        preferences_window = PreferencesWindow(
+            self, self._srp_auth, self._provider_config, self._soledad,
+            self._login_widget.get_selected_provider())
 
         self.soledad_ready.connect(preferences_window.set_soledad_ready)
         preferences_window.show()
@@ -538,8 +546,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
           self._wizard.accepted
 
-        Also called at the end of the constructor if not first run,
-        and after _rejected_wizard if not first run.
+        Also called at the end of the constructor if not first run.
 
         Implements the behavior after either constructing the
         mainwindow object, loading the saved user/password, or after
@@ -574,6 +581,9 @@ class MainWindow(QtGui.QMainWindow):
             if possible_password is not None:
                 self._login_widget.set_password(possible_password)
                 self._login()
+            else:
+                self.eip_needs_login.emit()
+
             self._wizard = None
         else:
             self._try_autostart_eip()
@@ -637,7 +647,8 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
 
-        eip_menu = systrayMenu.addMenu(self.tr("Encrypted Internet: OFF"))
+        eip_status_label = "{0}: {1}".format(self._eip_name, self.tr("OFF"))
+        eip_menu = systrayMenu.addMenu(eip_status_label)
         eip_menu.addAction(self._action_eip_startstop)
         self._eip_status.set_eip_status_menu(eip_menu)
         systrayMenu.addSeparator()
@@ -1224,10 +1235,9 @@ class MainWindow(QtGui.QMainWindow):
             provider_config, self._eip_config, provider)
 
         if not loaded:
-            self._eip_status.set_eip_status(
-                self.tr("Could not load Encrypted Internet "
-                        "Configuration."),
-                error=True)
+            eip_status_label = self.tr("Could not load {0} configuration.")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
             # signal connection aborted to state machine
             qtsigs = self._eip_connection.qtsigs
             qtsigs.connection_aborted_signal.emit()
@@ -1264,9 +1274,9 @@ class MainWindow(QtGui.QMainWindow):
             self._set_eipstatus_off()
         except EIPNoTunKextLoaded:
             self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet cannot be started because "
+                self.tr("{0} cannot be started because "
                         "the tuntap extension is not installed properly "
-                        "in your system."))
+                        "in your system.").format(self._eip_name))
             self._set_eipstatus_off()
         except EIPNoPkexecAvailable:
             self._eip_status.set_eip_status(
@@ -1363,8 +1373,7 @@ class MainWindow(QtGui.QMainWindow):
         Sets eip status to off
         """
         # XXX this should be handled by the state machine.
-        self._eip_status.set_eip_status(self.tr("EIP has stopped"),
-                                        error=error)
+        self._eip_status.set_eip_status("", error=error)
         self._eip_status.set_eip_status_icon("error")
 
     def _eip_finished(self, exitCode):
@@ -1402,17 +1411,18 @@ class MainWindow(QtGui.QMainWindow):
 
         # XXX check if these exitCodes are pkexec/cocoasudo specific
         if exitCode in (126, 127):
-            self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet could not be launched "
-                        "because you did not authenticate properly."),
-                error=True)
+            eip_status_label = self.tr(
+                "{0} could not be launched "
+                "because you did not authenticate properly.")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
             self._vpn.killit()
             signal = qtsigs.connection_aborted_signal
 
         elif exitCode != 0 or not self.user_stopped_eip:
-            self._eip_status.set_eip_status(
-                self.tr("Encrypted Internet finished in an "
-                        "unexpected manner!"), error=True)
+            eip_status_label = self.tr("{0} finished in an unexpected manner!")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
             signal = qtsigs.connection_died_signal
 
         if exitCode == 0 and IS_MAC:
@@ -1449,6 +1459,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.tr("Not supported"),
                     error=True)
             else:
+                self._eip_status.disable_eip_start()
                 self._eip_status.set_eip_status(self.tr("Disabled"))
 
     def _finish_eip_bootstrap(self, data):
@@ -1480,10 +1491,9 @@ class MainWindow(QtGui.QMainWindow):
             # DO START EIP Connection!
             self._eip_connection.qtsigs.do_connect_signal.emit()
         else:
-            self._eip_status.set_eip_status(
-                self.tr("Could not load Encrypted Internet "
-                        "Configuration."),
-                error=True)
+            eip_status_label = self.tr("Could not load {0} configuration.")
+            eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.set_eip_status(eip_status_label, error=True)
 
     def _eip_intermediate_stage(self, data):
         # TODO missing param
@@ -1645,9 +1655,9 @@ class MainWindow(QtGui.QMainWindow):
                 # XXX this can timeout after loong time: See #3368
                 self._srp_auth.logout()
 
-        if self._soledad:
+        if self._soledad_bootstrapper.soledad is not None:
             logger.debug("Closing soledad...")
-            self._soledad.close()
+            self._soledad_bootstrapper.soledad.close()
         else:
             logger.error("No instance of soledad was found.")
 
