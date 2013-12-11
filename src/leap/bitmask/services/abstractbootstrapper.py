@@ -25,6 +25,8 @@ import requests
 from functools import partial
 
 from PySide import QtCore
+
+from twisted.python import log
 from twisted.internet import threads
 
 from leap.common.check import leap_assert, leap_assert_type
@@ -40,10 +42,13 @@ class AbstractBootstrapper(QtCore.QObject):
     PASSED_KEY = "passed"
     ERROR_KEY = "error"
 
-    def __init__(self, bypass_checks=False):
+    def __init__(self, signaler=None, bypass_checks=False):
         """
         Constructor for the abstract bootstrapper
 
+        :param signaler: Signaler object used to receive notifications
+                         from the backend
+        :type signaler: Signaler
         :param bypass_checks: Set to true if the app should bypass
                               first round of checks for CA
                               certificates at bootstrap
@@ -71,6 +76,7 @@ class AbstractBootstrapper(QtCore.QObject):
         self._bypass_checks = bypass_checks
         self._signal_to_emit = None
         self._err_msg = None
+        self._signaler = signaler
 
     def _gui_errback(self, failure):
         """
@@ -89,10 +95,20 @@ class AbstractBootstrapper(QtCore.QObject):
             err_msg = self._err_msg \
                 if self._err_msg is not None \
                 else str(failure.value)
-            self._signal_to_emit.emit({
+            data = {
                 self.PASSED_KEY: False,
                 self.ERROR_KEY: err_msg
-            })
+            }
+            # TODO: Remove this check when all the bootstrappers are
+            # in the backend form
+            if isinstance(self._signal_to_emit, basestring):
+                if self._signaler is not None:
+                    self._signaler.signal(self._signal_to_emit, data)
+                else:
+                    logger.warning("Tried to notify but no signaler found")
+            else:
+                self._signal_to_emit.emit(data)
+            log.err(failure)
             failure.trap(Exception)
 
     def _errback(self, failure, signal=None):
@@ -127,8 +143,15 @@ class AbstractBootstrapper(QtCore.QObject):
         :param signal: Signal to emit if it fails here first
         :type signal: QtCore.SignalInstance
         """
-        if signal:
-            signal.emit({self.PASSED_KEY: True, self.ERROR_KEY: ""})
+        if signal is not None:
+            data = {self.PASSED_KEY: True, self.ERROR_KEY: ""}
+            if isinstance(signal, basestring):
+                if self._signaler is not None:
+                    self._signaler.signal(signal, data)
+                else:
+                    logger.warning("Tried to notify but no signaler found")
+            else:
+                signal.emit(data)
 
     def _callback_threader(self, cb, res, *args, **kwargs):
         return threads.deferToThread(cb, res, *args, **kwargs)

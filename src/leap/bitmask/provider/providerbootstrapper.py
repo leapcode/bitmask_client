@@ -24,8 +24,6 @@ import sys
 
 import requests
 
-from PySide import QtCore
-
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
 from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask import util
@@ -61,25 +59,19 @@ class ProviderBootstrapper(AbstractBootstrapper):
     If a check fails, the subsequent checks are not executed
     """
 
-    # All dicts returned are of the form
-    # {"passed": bool, "error": str}
-    name_resolution = QtCore.Signal(dict)
-    https_connection = QtCore.Signal(dict)
-    download_provider_info = QtCore.Signal(dict)
-
-    download_ca_cert = QtCore.Signal(dict)
-    check_ca_fingerprint = QtCore.Signal(dict)
-    check_api_certificate = QtCore.Signal(dict)
-
-    def __init__(self, bypass_checks=False):
+    def __init__(self, signaler=None, bypass_checks=False):
         """
         Constructor for provider bootstrapper object
 
+        :param signaler: Signaler object used to receive notifications
+                         from the backend
+        :type signaler: Signaler
         :param bypass_checks: Set to true if the app should bypass
-        first round of checks for CA certificates at bootstrap
+                              first round of checks for CA
+                              certificates at bootstrap
         :type bypass_checks: bool
         """
-        AbstractBootstrapper.__init__(self, bypass_checks)
+        AbstractBootstrapper.__init__(self, signaler, bypass_checks)
 
         self._domain = None
         self._provider_config = None
@@ -238,9 +230,11 @@ class ProviderBootstrapper(AbstractBootstrapper):
         self._download_if_needed = download_if_needed
 
         cb_chain = [
-            (self._check_name_resolution, self.name_resolution),
-            (self._check_https, self.https_connection),
-            (self._download_provider_info, self.download_provider_info)
+            (self._check_name_resolution,
+             self._signaler.PROV_NAME_RESOLUTION_KEY),
+            (self._check_https, self._signaler.PROV_HTTPS_CONNECTION_KEY),
+            (self._download_provider_info,
+             self._signaler.PROV_DOWNLOAD_PROVIDER_INFO_KEY)
         ]
 
         return self.addCallbackChain(cb_chain)
@@ -367,9 +361,11 @@ class ProviderBootstrapper(AbstractBootstrapper):
         self._download_if_needed = download_if_needed
 
         cb_chain = [
-            (self._download_ca_cert, self.download_ca_cert),
-            (self._check_ca_fingerprint, self.check_ca_fingerprint),
-            (self._check_api_certificate, self.check_api_certificate)
+            (self._download_ca_cert, self._signaler.PROV_DOWNLOAD_CA_CERT_KEY),
+            (self._check_ca_fingerprint,
+             self._signaler.PROV_CHECK_CA_FINGERPRINT_KEY),
+            (self._check_api_certificate,
+             self._signaler.PROV_CHECK_API_CERTIFICATE_KEY)
         ]
 
         return self.addCallbackChain(cb_chain)
