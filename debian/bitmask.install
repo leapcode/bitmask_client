@@ -1,3 +1,4 @@
 pkg/linux/polkit/net.openvpn.gui.leap.policy usr/share/polkit-1/actions/
 debian/bitmask.xpm usr/share/pixmaps
 debian/bitmask.desktop usr/share/applications
+debian/icons/hicolor usr/share/icons

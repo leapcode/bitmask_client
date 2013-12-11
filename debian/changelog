@@ -1,6 +1,7 @@
 bitmask (0.3.8.1) unstable; urgency=medium
 
   * Add desktop file
+  * Add icons and triggers for rebuilding icon cache
 
  -- Micah Anderson <micah@debian.org>  Wed, 11 Dec 2013 10:29:26 -0500
 
