@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Encoding=UTF-8
+Type=Application
+Name=Bitmask
+Comment=Secure Communication
+Comment[es]=Secure Communication
+Comment[de]=Secure Communication
+Exec=bitmask %U
+Terminal=false
+Icon=bitmask
+Categories=Network;Application;
+StartupNotify=true
+X-AppInstall-Package=bitmask
