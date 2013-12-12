@@ -25,6 +25,9 @@
    </property>
    <item>
     <layout class="QGridLayout" name="gridLayout">
+     <property name="verticalSpacing">
+      <number>0</number>
+     </property>
      <item row="0" column="2">
       <widget class="QPushButton" name="btnEipStartStop">
        <property name="text">
@@ -75,13 +78,6 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="font">
-        <font>
-         <pointsize>14</pointsize>
-         <weight>75</weight>
-         <bold>true</bold>
-        </font>
-       </property>
        <property name="text">
         <string>Traffic is being routed in the clear</string>
        </property>
@@ -124,12 +120,6 @@
      </item>
      <item row="2" column="1" colspan="3">
       <widget class="QWidget" name="eip_bandwidth" native="true">
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>32</height>
-        </size>
-       </property>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
          <number>0</number>
@@ -145,16 +135,6 @@
           <property name="sizeConstraint">
            <enum>QLayout::SetDefaultConstraint</enum>
           </property>
-          <item>
-           <widget class="QLabel" name="label_5">
-            <property name="text">
-             <string/>
-            </property>
-            <property name="pixmap">
-             <pixmap resource="../../../../../data/resources/icons.qrc">:/images/light/16/down-arrow.png</pixmap>
-            </property>
-           </widget>
-          </item>
           <item>
            <widget class="QPushButton" name="btnDownload">
             <property name="sizePolicy">
@@ -175,24 +155,17 @@
               <height>16777215</height>
              </size>
             </property>
-            <property name="font">
-             <font>
-              <pointsize>11</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">text-align: left;</string>
             </property>
             <property name="text">
              <string>0.0 KB/s</string>
             </property>
             <property name="flat">
              <bool>true</bool>
+            </property>
+            <property name="icon">
+             <pixmap resource="../../../../../data/resources/icons.qrc">:/images/light/16/down-arrow.png</pixmap>
             </property>
            </widget>
           </item>
@@ -206,21 +179,11 @@
             </property>
             <property name="sizeHint" stdset="0">
              <size>
-              <width>10</width>
+              <width>20</width>
               <height>20</height>
              </size>
             </property>
            </spacer>
-          </item>
-          <item>
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string/>
-            </property>
-            <property name="pixmap">
-             <pixmap resource="../../../../../data/resources/icons.qrc">:/images/light/16/up-arrow.png</pixmap>
-            </property>
-           </widget>
           </item>
           <item alignment="Qt::AlignLeft">
            <widget class="QPushButton" name="btnUpload">
@@ -242,24 +205,17 @@
               <height>16777215</height>
              </size>
             </property>
-            <property name="font">
-             <font>
-              <pointsize>11</pointsize>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
             <property name="cursor">
              <cursorShape>PointingHandCursor</cursorShape>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">text-align: left;</string>
             </property>
             <property name="text">
              <string>0.0 KB/s</string>
             </property>
             <property name="flat">
              <bool>true</bool>
+            </property>
+            <property name="icon">
+             <pixmap resource="../../../../../data/resources/icons.qrc">:/images/light/16/up-arrow.png</pixmap>
             </property>
            </widget>
           </item>
@@ -271,7 +227,7 @@
             <property name="sizeHint" stdset="0">
              <size>
               <width>0</width>
-              <height>20</height>
+              <height>0</height>
              </size>
             </property>
            </spacer>
