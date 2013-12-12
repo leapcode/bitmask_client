@@ -334,7 +334,6 @@
    <addaction name="menuFile"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="action_preferences">
    <property name="enabled">
     <bool>true</bool>
