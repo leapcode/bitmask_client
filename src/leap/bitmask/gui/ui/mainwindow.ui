@@ -85,82 +85,74 @@
         <property name="margin">
          <number>0</number>
         </property>
+
+        <!-- LOGIN -->
+        <item>
+         <widget class="QFrame" name="frame">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgba(0,0,0,20); border-bottom: 1px solid rgba(0,0,0,30);</string>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <property name="leftMargin">
+            <number>24</number>
+           </property>
+           <property name="rightMargin">
+            <number>24</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="lblLoginProvider">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="styleSheet">
+              <string notr="true">background-color: rgba(255, 255, 255, 0); border: none;</string>
+             </property>
+             <property name="text">
+              <string>Please Log In</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <layout class="QVBoxLayout" name="loginLayout">
+          <property name="topMargin">
+           <number>12</number>
+          </property>
+         </layout>
+        </item>
+
+        <item>
+         <widget class="Line" name="lineUnderLogin">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+
+        <!-- EIP -->
         <item>
          <widget class="QWidget" name="eipWidget" native="true">
-          <layout class="QVBoxLayout" name="verticalLayout_2">
+          <layout class="QVBoxLayout" name="eipVerticalLayout">
            <property name="spacing">
             <number>0</number>
            </property>
            <property name="margin">
             <number>0</number>
            </property>
-           <item>
-            <widget class="QFrame" name="frame_2">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">QFrame{background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(160, 160, 160, 128), stop:1 rgba(255, 255, 255, 0));}</string>
-             </property>
-             <layout class="QHBoxLayout" name="horizontalLayout_3">
-              <property name="leftMargin">
-               <number>24</number>
-              </property>
-              <property name="rightMargin">
-               <number>24</number>
-              </property>
-              <item>
-               <widget class="QLabel" name="label_2">
-                <property name="font">
-                 <font>
-                  <pointsize>16</pointsize>
-                  <weight>75</weight>
-                  <bold>true</bold>
-                 </font>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
-                </property>
-                <property name="text">
-                 <string>Encrypted Internet</string>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QPushButton" name="btnEIPPreferences">
-                <property name="maximumSize">
-                 <size>
-                  <width>48</width>
-                  <height>20</height>
-                 </size>
-                </property>
-                <property name="styleSheet">
-                 <string notr="true"/>
-                </property>
-                <property name="text">
-                 <string/>
-                </property>
-                <property name="icon">
-                 <iconset resource="../../../../../data/resources/mainwindow.qrc">
-                  <normaloff>:/images/black/32/gear.png</normaloff>:/images/black/32/gear.png</iconset>
-                </property>
-                <property name="autoDefault">
-                 <bool>false</bool>
-                </property>
-                <property name="default">
-                 <bool>false</bool>
-                </property>
-                <property name="flat">
-                 <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
            <item>
             <layout class="QVBoxLayout" name="eipLayout">
              <property name="leftMargin">
@@ -180,90 +172,16 @@
           </layout>
          </widget>
         </item>
+
         <item>
-         <widget class="Line" name="line">
+         <widget class="Line" name="lineUnderEIP">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QFrame" name="frame">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="autoFillBackground">
-           <bool>false</bool>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">QFrame{
-background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(160, 160, 160, 128), stop:1 rgba(255, 255, 255, 0));
-}</string>
-          </property>
-          <layout class="QHBoxLayout" name="horizontalLayout">
-           <property name="leftMargin">
-            <number>24</number>
-           </property>
-           <property name="rightMargin">
-            <number>24</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="lblLoginProvider">
-             <property name="font">
-              <font>
-               <pointsize>16</pointsize>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="styleSheet">
-              <string notr="true">background-color: rgba(255, 255, 255, 0);</string>
-             </property>
-             <property name="text">
-              <string>Login</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="btnPreferences">
-             <property name="maximumSize">
-              <size>
-               <width>48</width>
-               <height>20</height>
-              </size>
-             </property>
-             <property name="styleSheet">
-              <string notr="true"/>
-             </property>
-             <property name="text">
-              <string/>
-             </property>
-             <property name="icon">
-              <iconset resource="../../../../../data/resources/mainwindow.qrc">
-               <normaloff>:/images/black/32/gear.png</normaloff>:/images/black/32/gear.png</iconset>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="loginLayout">
-          <property name="topMargin">
-           <number>12</number>
-          </property>
-         </layout>
-        </item>
-        <item>
-         <widget class="Line" name="line_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-         </widget>
-        </item>
+
+        <!-- EMAIL -->
         <item>
          <widget class="QWidget" name="mailWidget" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -286,6 +204,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
           </layout>
          </widget>
         </item>
+
+        <item>
+         <widget class="Line" name="lineUnderEmail">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+
         <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
@@ -390,6 +317,9 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
     <addaction name="action_create_new_account"/>
     <addaction name="action_advanced_key_management"/>
     <addaction name="separator"/>
+    <addaction name="action_preferences"/>
+    <addaction name="action_eip_preferences"/>
+    <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -406,8 +336,16 @@ background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgb
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="action_preferences">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
-    <string>Preferences...</string>
+    <string>Account Preferences...</string>
+   </property>
+  </action>
+  <action name="action_eip_preferences">
+   <property name="text">
+    <string>Internet Preferences...</string>
    </property>
   </action>
   <action name="action_quit">
