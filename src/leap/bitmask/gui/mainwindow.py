@@ -471,12 +471,49 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        preferences_window = PreferencesWindow(
+        preferences = PreferencesWindow(
             self, self._srp_auth, self._provider_config, self._soledad,
             self._login_widget.get_selected_provider())
 
-        self.soledad_ready.connect(preferences_window.set_soledad_ready)
-        preferences_window.show()
+        self.soledad_ready.connect(preferences.set_soledad_ready)
+        preferences.show()
+        preferences.preferences_saved.connect(self._update_eip_enabled_status)
+
+    def _update_eip_enabled_status(self):
+        """
+        SLOT
+        TRIGGER:
+            PreferencesWindow.preferences_saved
+
+        Enable or disable the EIP start/stop actions and stop EIP if the user
+        disabled that service.
+
+        :returns: if the eip actions were enabled or disabled
+        :rtype: bool
+        """
+        settings = self._settings
+        default_provider = settings.get_defaultprovider()
+        enabled_services = []
+        if default_provider is not None:
+            enabled_services = settings.get_enabled_services(default_provider)
+
+        eip_enabled = False
+        if EIP_SERVICE in enabled_services:
+            should_autostart = settings.get_autostart_eip()
+            if should_autostart and default_provider is not None:
+                self._eip_status.enable_eip_start()
+                self._eip_status.set_eip_status("")
+                eip_enabled = True
+            else:
+                # we don't have an usable provider
+                # so the user needs to log in first
+                self._eip_status.disable_eip_start()
+        else:
+            self._stop_eip()
+            self._eip_status.disable_eip_start()
+            self._eip_status.set_eip_status(self.tr("Disabled"))
+
+        return eip_enabled
 
     def _show_eip_preferences(self):
         """
@@ -1177,21 +1214,10 @@ class MainWindow(QtGui.QMainWindow):
         """
         settings = self._settings
 
-        should_autostart = settings.get_autostart_eip()
-        if not should_autostart:
-            logger.debug('Will not autostart EIP since it is setup '
-                         'to not to do it')
-            self.eip_needs_login.emit()
+        if not self._update_eip_enabled_status():
             return
 
         default_provider = settings.get_defaultprovider()
-
-        if default_provider is None:
-            logger.info("Cannot autostart Encrypted Internet because there is "
-                        "no default provider configured")
-            self.eip_needs_login.emit()
-            return
-
         self._enabled_services = settings.get_enabled_services(
             default_provider)
 
