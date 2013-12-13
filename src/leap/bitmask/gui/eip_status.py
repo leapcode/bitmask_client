@@ -41,8 +41,8 @@ class EIPStatusWidget(QtGui.QWidget):
     EIP Status widget that displays the current state of the EIP service
     """
     DISPLAY_TRAFFIC_RATES = True
-    RATE_STR = "%14.2f KB/s"
-    TOTAL_STR = "%14.2f Kb"
+    RATE_STR = "%1.2f KB/s"
+    TOTAL_STR = "%1.2f Kb"
 
     eip_connection_connected = QtCore.Signal()
 

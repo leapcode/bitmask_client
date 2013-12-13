@@ -248,6 +248,8 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad_bootstrapper.soledad_failed.connect(
             self._mail_status.set_soledad_failed)
 
+        self.ui.action_preferences.triggered.connect(self._show_preferences)
+        self.ui.action_eip_preferences.triggered.connect(self._show_eip_preferences)
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
@@ -279,8 +281,9 @@ class MainWindow(QtGui.QMainWindow):
         self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
         self._action_visible.triggered.connect(self._toggle_visible)
 
-        self.ui.btnPreferences.clicked.connect(self._show_preferences)
-        self.ui.btnEIPPreferences.clicked.connect(self._show_eip_preferences)
+        # disable buttons for now, may come back later.
+        # self.ui.btnPreferences.clicked.connect(self._show_preferences)
+        # self.ui.btnEIPPreferences.clicked.connect(self._show_eip_preferences)
 
         self._enabled_services = []
 
@@ -467,7 +470,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self.ui.btnPreferences.clicked
+          self.ui.btnPreferences.clicked (disabled for now)
+          self.ui.action_preferences
 
         Displays the preferences window.
         """
@@ -520,6 +524,7 @@ class MainWindow(QtGui.QMainWindow):
         SLOT
         TRIGGERS:
           self.ui.btnEIPPreferences.clicked
+          self.ui.action_eip_preferences (disabled for now)
 
         Displays the EIP preferences window.
         """
