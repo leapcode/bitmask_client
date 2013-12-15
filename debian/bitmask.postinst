@@ -4,26 +4,23 @@ set -e
 case "$1" in
     configure)
 	if [ -e /usr/share/icons/hicolor/icon-theme.cache ]; then
-	rm /usr/share/icons/hicolor/icon-theme.cache
+	    rm /usr/share/icons/hicolor/icon-theme.cache
 	fi
 	if [ -x /usr/bin/gtk-update-icon-cache-3.0 ]; then
-	gtk-update-icon-cache-3.0 -q -t -f /usr/share/icons/hicolor
+	    gtk-update-icon-cache-3.0 -q -t -f /usr/share/icons/hicolor
 	elif [ -x /usr/bin/gtk-update-icon-cache ]; then
-	gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor
+	    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor
 	fi
-    ;;
-
+        ;;
+    triggered)
+        exit 0
+        ;;
     abort-upgrade|abort-remove|abort-deconfigure)
-    ;;
-
+        ;;
     *)
         echo "postinst called with unknown argument \`$1'" >&2
         exit 1
-    ;;
+        ;;
 esac
-
-if [ "$1" = "triggered" ]; then
-    exit 0
-fi
 
 #DEBHELPER#
