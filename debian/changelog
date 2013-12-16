@@ -1,3 +1,10 @@
+bitmask (0.3.8.4) unstable; urgency=medium
+
+  * Remove bitmask.trigger and bitmask.postinst, I misunderstood how
+    the triggers worked
+
+ -- Micah Anderson <micah@debian.org>  Mon, 16 Dec 2013 10:04:32 -0500
+
 bitmask (0.3.8.3) unstable; urgency=low
 
   * Fix postinst trigger
