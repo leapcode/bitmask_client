@@ -55,6 +55,7 @@ from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
 from leap.common.events import server as event_server
+from leap.mail import __version__ as MAIL_VERSION
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
@@ -170,6 +171,7 @@ def main():
 
     if opts.version:
         print "Bitmask version: %s" % (VERSION,)
+        print "leap.mail version: %s" % (MAIL_VERSION,)
         sys.exit(0)
 
     standalone = opts.standalone
@@ -217,6 +219,7 @@ def main():
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('Bitmask version %s', VERSION)
+    logger.info('leap.mail version %s', MAIL_VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')
