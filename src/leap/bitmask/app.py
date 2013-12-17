@@ -54,6 +54,7 @@ from leap.bitmask.util import log_silencer
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
+from leap.bitmask.services.mail.repair import repair_account
 from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
 
@@ -172,6 +173,10 @@ def main():
     if opts.version:
         print "Bitmask version: %s" % (VERSION,)
         print "leap.mail version: %s" % (MAIL_VERSION,)
+        sys.exit(0)
+
+    if opts.acct_to_repair:
+        repair_account(opts.acct_to_repair)
         sys.exit(0)
 
     standalone = opts.standalone

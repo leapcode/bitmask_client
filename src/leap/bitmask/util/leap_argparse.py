@@ -51,6 +51,12 @@ Launches Bitmask""", epilog=epilog)
                         'searching')
     parser.add_argument('-V', '--version', action="store_true",
                         help='Displays Bitmask version and exits')
+    parser.add_argument('-r', '--repair-mailboxes', metavar="user@provider",
+                        nargs='?',
+                        action="store", dest="acct_to_repair",
+                        help='Repair mailboxes for a given account. '
+                             'Use when upgrading versions after a schema '
+                             'change.')
 
     # Not in use, we might want to reintroduce them.
     #parser.add_argument('-i', '--no-provider-checks',
