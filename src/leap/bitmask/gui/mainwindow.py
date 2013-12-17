@@ -249,7 +249,8 @@ class MainWindow(QtGui.QMainWindow):
             self._mail_status.set_soledad_failed)
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
-        self.ui.action_eip_preferences.triggered.connect(self._show_eip_preferences)
+        self.ui.action_eip_preferences.triggered.connect(
+            self._show_eip_preferences)
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
