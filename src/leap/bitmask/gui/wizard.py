@@ -597,6 +597,7 @@ class Wizard(QtGui.QWizard):
         Prepares the pages when they appear
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
+            self._clear_register_widgets()
             skip = self.ui.rbExistingProvider.isChecked()
             if not self._provider_checks_ok:
                 self._enable_check()
@@ -670,3 +671,12 @@ class Wizard(QtGui.QWizard):
                     return self.SERVICES_PAGE
 
         return QtGui.QWizard.nextId(self)
+
+    def _clear_register_widgets(self):
+        """
+        Clears the widgets that my be filled and a possible error message.
+        """
+        self._set_register_status("")
+        self.ui.lblUser.setText("")
+        self.ui.lblPassword.setText("")
+        self.ui.lblPassword2.setText("")

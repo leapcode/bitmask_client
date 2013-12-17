@@ -1,0 +1,2 @@
+- Reset registration error and input widgets if the user goes back to provider
+  selection in wizard. Closes #4742.
