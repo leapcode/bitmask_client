@@ -1,0 +1,3 @@
+- Add --repair-mailboxes command line option. It will be needed to migrate
+  existing account after a data schema changes, like it will be happening for
+  0.5.0. Closes: #4792
