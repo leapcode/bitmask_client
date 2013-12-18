@@ -18,9 +18,9 @@
 Main window for Bitmask.
 """
 import logging
-import os
 
 from PySide import QtCore, QtGui
+from functools import partial
 from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject
 
@@ -42,9 +42,10 @@ from leap.bitmask.gui.systray import SysTray
 from leap.bitmask import provider
 from leap.bitmask.platform_init import IS_WIN, IS_MAC
 from leap.bitmask.platform_init.initializers import init_platform
-from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 
-from leap.bitmask.services import get_service_display_name, EIP_SERVICE
+from leap.bitmask import backend
+
+from leap.bitmask.services import get_service_display_name
 
 from leap.bitmask.services.mail import conductor as mail_conductor
 
@@ -138,6 +139,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        self._backend = backend.Backend(bypass_checks)
+        self._backend.start()
+
         self._settings = LeapSettings()
 
         self._login_widget = LoginWidget(
@@ -180,7 +184,10 @@ class MainWindow(QtGui.QMainWindow):
 
         # This is loaded only once, there's a bug when doing that more
         # than once
-        self._provider_config = ProviderConfig()
+        # XXX HACK!! But we need it as long as we are using
+        # provider_config in here
+        self._provider_config = (
+            self._backend._components["provider"]._provider_config)
         # Used for automatic start of EIP
         self._provisional_provider_config = ProviderConfig()
         self._eip_config = eipconfig.EIPConfig()
@@ -191,25 +198,7 @@ class MainWindow(QtGui.QMainWindow):
         self._srp_auth = None
         self._logged_user = None
 
-        # This thread is always running, although it's quite
-        # lightweight when it's done setting up provider
-        # configuration and certificate.
-        self._provider_bootstrapper = ProviderBootstrapper(bypass_checks)
-
-        # Intermediate stages, only do something if there was an error
-        self._provider_bootstrapper.name_resolution.connect(
-            self._intermediate_stage)
-        self._provider_bootstrapper.https_connection.connect(
-            self._intermediate_stage)
-        self._provider_bootstrapper.download_ca_cert.connect(
-            self._intermediate_stage)
-
-        # Important stages, loads the provider config and checks
-        # certificates
-        self._provider_bootstrapper.download_provider_info.connect(
-            self._load_provider_config)
-        self._provider_bootstrapper.check_api_certificate.connect(
-            self._provider_config_loaded)
+        self._backend_connect()
 
         # This thread is similar to the provider bootstrapper
         self._eip_bootstrapper = EIPBootstrapper()
@@ -349,7 +338,9 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._first_run():
             self._wizard_firstrun = True
-            self._wizard = Wizard(bypass_checks=bypass_checks)
+            self._backend_disconnect()
+            self._wizard = Wizard(backend=self._backend,
+                                  bypass_checks=bypass_checks)
             # Give this window time to finish init and then show the wizard
             QtCore.QTimer.singleShot(1, self._launch_wizard)
             self._wizard.accepted.connect(self._finish_init)
@@ -358,6 +349,47 @@ class MainWindow(QtGui.QMainWindow):
             # during finish_init, we disable the eip start button
             # so this has to be done after eip_machine is started
             self._finish_init()
+
+    def _backend_connect(self):
+        """
+        Helper to connect to backend signals
+        """
+        self._backend.signaler.prov_name_resolution.connect(
+            self._intermediate_stage)
+        self._backend.signaler.prov_https_connection.connect(
+            self._intermediate_stage)
+        self._backend.signaler.prov_download_ca_cert.connect(
+            self._intermediate_stage)
+
+        self._backend.signaler.prov_download_provider_info.connect(
+            self._load_provider_config)
+        self._backend.signaler.prov_check_api_certificate.connect(
+            self._provider_config_loaded)
+
+        # Only used at login, no need to disconnect this like we do
+        # with the other
+        self._backend.signaler.prov_problem_with_provider.connect(
+            partial(self._login_widget.set_status,
+                    self.tr("Unable to login: Problem with provider")))
+
+    def _backend_disconnect(self):
+        """
+        Helper to disconnect from backend signals.
+
+        Some signals are emitted from the wizard, and we want to
+        ignore those.
+        """
+        self._backend.signaler.prov_name_resolution.disconnect(
+            self._intermediate_stage)
+        self._backend.signaler.prov_https_connection.disconnect(
+            self._intermediate_stage)
+        self._backend.signaler.prov_download_ca_cert.disconnect(
+            self._intermediate_stage)
+
+        self._backend.signaler.prov_download_provider_info.disconnect(
+            self._load_provider_config)
+        self._backend.signaler.prov_check_api_certificate.disconnect(
+            self._provider_config_loaded)
 
     def _rejected_wizard(self):
         """
@@ -379,6 +411,7 @@ class MainWindow(QtGui.QMainWindow):
             # This happens if the user finishes the provider
             # setup but does not register
             self._wizard = None
+            self._backend_connect()
             self._finish_init()
 
     def _launch_wizard(self):
@@ -394,7 +427,9 @@ class MainWindow(QtGui.QMainWindow):
         there.
         """
         if self._wizard is None:
-            self._wizard = Wizard(bypass_checks=self._bypass_checks)
+            self._backend_disconnect()
+            self._wizard = Wizard(backend=self._backend,
+                                  bypass_checks=self._bypass_checks)
             self._wizard.accepted.connect(self._finish_init)
             self._wizard.rejected.connect(self._wizard.close)
 
@@ -628,6 +663,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.eip_needs_login.emit()
 
             self._wizard = None
+            self._backend_connect()
         else:
             self._try_autostart_eip()
 
@@ -856,14 +892,12 @@ class MainWindow(QtGui.QMainWindow):
         # XXX should rename this provider, name clash.
         provider = self._login_widget.get_selected_provider()
 
-        pb = self._provider_bootstrapper
-        d = pb.run_provider_select_checks(provider, download_if_needed=True)
-        self._download_provider_defer = d
+        self._backend.setup_provider(provider)
 
     def _load_provider_config(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.download_provider_info
+        TRIGGER: self._backend.signaler.prov_download_provider_info
 
         Once the provider config has been downloaded, this loads the
         self._provider_config instance with it and starts the second
@@ -873,31 +907,13 @@ class MainWindow(QtGui.QMainWindow):
         run_provider_select_checks
         :type data: dict
         """
-        if data[self._provider_bootstrapper.PASSED_KEY]:
-            # XXX should rename this provider, name clash.
-            provider = self._login_widget.get_selected_provider()
-
-            # If there's no loaded provider or
-            # we want to connect to other provider...
-            if (not self._provider_config.loaded() or
-                    self._provider_config.get_domain() != provider):
-                self._provider_config.load(
-                    os.path.join("leap", "providers",
-                                 provider, "provider.json"))
-
-            if self._provider_config.loaded():
-                self._provider_bootstrapper.run_provider_setup_checks(
-                    self._provider_config,
-                    download_if_needed=True)
-            else:
-                self._login_widget.set_status(
-                    self.tr("Unable to login: Problem with provider"))
-                logger.error("Could not load provider configuration.")
-                self._login_widget.set_enabled(True)
+        if data[self._backend.PASSED_KEY]:
+            selected_provider = self._login_widget.get_selected_provider()
+            self._backend.provider_bootstrap(selected_provider)
         else:
             self._login_widget.set_status(
                 self.tr("Unable to login: Problem with provider"))
-            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
+            logger.error(data[self._backend.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
     def _login(self):
@@ -939,14 +955,14 @@ class MainWindow(QtGui.QMainWindow):
     def _provider_config_loaded(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.check_api_certificate
+        TRIGGER: self._backend.signaler.prov_check_api_certificate
 
         Once the provider configuration is loaded, this starts the SRP
         authentication
         """
         leap_assert(self._provider_config, "We need a provider config!")
 
-        if data[self._provider_bootstrapper.PASSED_KEY]:
+        if data[self._backend.PASSED_KEY]:
             username = self._login_widget.get_user()
             password = self._login_widget.get_password()
 
@@ -964,7 +980,7 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._login_widget.set_status(
                 "Unable to login: Problem with provider")
-            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
+            logger.error(data[self._backend.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
     def _authentication_finished(self, ok, message):
@@ -1538,11 +1554,11 @@ class MainWindow(QtGui.QMainWindow):
         This is used for intermediate bootstrapping stages, in case
         they fail.
         """
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        passed = data[self._backend.PASSED_KEY]
         if not passed:
             self._login_widget.set_status(
                 self.tr("Unable to connect: Problem with provider"))
-            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
+            logger.error(data[self._backend.ERROR_KEY])
             self._already_started_eip = False
 
     # end of EIP methods ---------------------------------------------
@@ -1615,21 +1631,21 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self._provider_bootstrapper.name_resolution
-          self._provider_bootstrapper.https_connection
-          self._provider_bootstrapper.download_ca_cert
+          self._backend.signaler.prov_name_resolution
+          self._backend.signaler.prov_https_connection
+          self._backend.signaler.prov_download_ca_cert
           self._eip_bootstrapper.download_config
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
         they fail.
         """
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        passed = data[self._backend.PASSED_KEY]
         if not passed:
             self._login_widget.set_enabled(True)
             self._login_widget.set_status(
                 self.tr("Unable to connect: Problem with provider"))
-            logger.error(data[self._provider_bootstrapper.ERROR_KEY])
+            logger.error(data[self._backend.ERROR_KEY])
 
     #
     # window handling methods
@@ -1719,6 +1735,7 @@ class MainWindow(QtGui.QMainWindow):
         # Set this in case that the app is hidden
         QtGui.QApplication.setQuitOnLastWindowClosed(True)
 
+        self._backend.stop()
         self._cleanup_and_quit()
 
         self._really_quit = True
