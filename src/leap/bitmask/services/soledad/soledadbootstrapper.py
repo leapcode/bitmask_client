@@ -59,6 +59,33 @@ class SoledadInitError(Exception):
     message = "Error while initializing Soledad"
 
 
+def get_db_paths(uuid):
+    """
+    Returns the secrets and local db paths needed for soledad
+    initialization
+
+    :param uuid: uuid for user
+    :type uuid: str
+
+    :return: a tuple with secrets, local_db paths
+    :rtype: tuple
+    """
+    prefix = os.path.join(get_path_prefix(), "leap", "soledad")
+    secrets = "%s/%s.secret" % (prefix, uuid)
+    local_db = "%s/%s.db" % (prefix, uuid)
+
+    # We remove an empty file if found to avoid complains
+    # about the db not being properly initialized
+    if is_file(local_db) and is_empty_file(local_db):
+        try:
+            os.remove(local_db)
+        except OSError:
+            logger.warning(
+                "Could not remove empty file %s"
+                % local_db)
+    return secrets, local_db
+
+
 class SoledadBootstrapper(AbstractBootstrapper):
     """
     Soledad init procedure
@@ -127,31 +154,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         self._soledad_retries += 1
 
-    def _get_db_paths(self, uuid):
-        """
-        Returns the secrets and local db paths needed for soledad
-        initialization
-
-        :param uuid: uuid for user
-        :type uuid: str
-
-        :return: a tuple with secrets, local_db paths
-        :rtype: tuple
-        """
-        prefix = os.path.join(get_path_prefix(), "leap", "soledad")
-        secrets = "%s/%s.secret" % (prefix, uuid)
-        local_db = "%s/%s.db" % (prefix, uuid)
-
-        # We remove an empty file if found to avoid complains
-        # about the db not being properly initialized
-        if is_file(local_db) and is_empty_file(local_db):
-            try:
-                os.remove(local_db)
-            except OSError:
-                logger.warning("Could not remove empty file %s"
-                               % local_db)
-        return secrets, local_db
-
     # initialization
 
     def load_and_sync_soledad(self):
@@ -163,7 +165,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         uuid = self.srpauth.get_uid()
         token = self.srpauth.get_token()
 
-        secrets_path, local_db_path = self._get_db_paths(uuid)
+        secrets_path, local_db_path = get_db_paths(uuid)
 
         # TODO: Select server based on timezone (issue #3308)
         server_dict = self._soledad_config.get_hosts()
