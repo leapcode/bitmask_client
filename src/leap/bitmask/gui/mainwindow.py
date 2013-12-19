@@ -999,7 +999,7 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         self._login_widget.logged_in()
-        self.ui.lblLoginProvider.setText(self._provider_config.get_name())
+        self.ui.lblLoginProvider.setText(self._provider_config.get_domain())
 
         self._enabled_services = self._settings.get_enabled_services(
             self._provider_config.get_domain())
