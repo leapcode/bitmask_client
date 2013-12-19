@@ -95,7 +95,7 @@ class DarwinVPNLauncher(VPNLauncher):
         resources_path = os.path.abspath(
             os.path.join(os.getcwd(), "../../Contents/Resources"))
 
-        return os.path.join(resources_path, "leap-client.tiff")
+        return os.path.join(resources_path, "bitmask.tiff")
 
     @classmethod
     def get_cocoasudo_ovpn_cmd(kls):
