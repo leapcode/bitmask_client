@@ -30,3 +30,5 @@ WARNING: You should NOT use this kind of flags unless you're sure of what
 #   - search for binaries inside the bundled app instead of the system ones.
 #     e.g.: openvpn, gpg
 STANDALONE = False
+
+MAIL_LOGFILE = None

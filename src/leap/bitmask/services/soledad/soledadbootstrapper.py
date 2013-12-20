@@ -302,6 +302,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         except SSLError as exc:
             logger.error("%r" % (exc,))
             raise SoledadSyncError("Failed to sync soledad")
+        except u1db_errors.InvalidGeneration as exc:
+            logger.error("%r" % (exc,))
+            raise SoledadSyncError("u1db: InvalidGeneration")
+
         except Exception as exc:
             logger.exception("Unhandled error while syncing "
                              "soledad: %r" % (exc,))

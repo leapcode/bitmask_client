@@ -41,6 +41,11 @@ Launches Bitmask""", epilog=epilog)
                         action="store", dest="log_file",
                         #type=argparse.FileType('w'),
                         help='optional log file')
+    parser.add_argument('-m', '--mail-logfile',
+                        metavar="MAIL LOG FILE", nargs='?',
+                        action="store", dest="mail_log_file",
+                        #type=argparse.FileType('w'),
+                        help='optional log file for email')
     parser.add_argument('--openvpn-verbosity', nargs='?',
                         type=int,
                         action="store", dest="openvpn_verb",
