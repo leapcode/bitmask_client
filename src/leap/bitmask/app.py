@@ -183,6 +183,7 @@ def main():
     bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
     logfile = opts.log_file
+    mail_logfile = opts.mail_log_file
     openvpn_verb = opts.openvpn_verb
 
     try:
@@ -198,6 +199,7 @@ def main():
     from leap.bitmask.config import flags
     from leap.common.config.baseconfig import BaseConfig
     flags.STANDALONE = standalone
+    flags.MAIL_LOGFILE = mail_logfile
     BaseConfig.standalone = standalone
 
     logger = add_logger_handlers(debug, logfile)

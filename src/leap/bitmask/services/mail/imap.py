@@ -19,10 +19,10 @@ Initialization of imap service
 """
 import logging
 import os
-#import sys
+import sys
 
 from leap.mail.imap.service import imap
-#from twisted.python import log
+from twisted.python import log
 
 logger = logging.getLogger(__name__)
 
@@ -58,15 +58,15 @@ def start_imap_service(*args, **kwargs):
 
     :returns: twisted.internet.task.LoopingCall instance
     """
+    from leap.bitmask.config import flags
     logger.debug('Launching imap service')
 
     override_period = get_mail_check_period()
     if override_period:
         kwargs['check_period'] = override_period
 
-    # Uncomment the next two lines to get a separate debugging log
-    # TODO handle this by a separate flag.
-    #log.startLogging(open('/tmp/leap-imap.log', 'w'))
-    #log.startLogging(sys.stdout)
+    if flags.MAIL_LOGFILE:
+        log.startLogging(open(flags.MAIL_LOGFILE, 'w'))
+        log.startLogging(sys.stdout)
 
     return imap.run_service(*args, **kwargs)
