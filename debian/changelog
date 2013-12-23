@@ -1,3 +1,10 @@
+bitmask (0.5.0) unstable; urgency=low
+
+  * Update to 0.5.0 rc release (first unified release, together with
+    soledad and mx).
+
+ -- Ben Carrillo <ben@futeisha.org>  Mon, 23 Dec 2013 02:35:34 -0400
+
 bitmask (0.3.8.4) unstable; urgency=medium
 
   * Remove bitmask.trigger and bitmask.postinst, I misunderstood how
