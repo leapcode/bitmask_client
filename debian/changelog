@@ -1,7 +1,7 @@
 bitmask (0.5.0) unstable; urgency=low
 
   * Update to 0.5.0 rc release (first unified release, together with
-    soledad and mx).
+    soledad and mx). This should actually have been called 0.5.0~rc.
 
  -- Ben Carrillo <ben@futeisha.org>  Mon, 23 Dec 2013 02:35:34 -0400
 
