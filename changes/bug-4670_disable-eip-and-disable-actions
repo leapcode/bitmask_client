@@ -1,0 +1,2 @@
+- Disable and stop EIP when you set EIP as disabled in the preferences dialog.
+  Closes #4670.

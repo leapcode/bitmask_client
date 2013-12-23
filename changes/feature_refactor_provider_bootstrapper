@@ -1,0 +1,2 @@
+- Refactor ProviderBootstrapper out of the UI modules to a Backend
+  module, obscuring all the details.

@@ -215,7 +215,7 @@
        <number>0</number>
       </property>
       <property name="bottomMargin">
-       <number>24</number>
+       <number>0</number>
       </property>
       <item row="1" column="1">
        <spacer name="horizontalSpacer">
@@ -255,7 +255,7 @@
        <widget class="QLabel" name="lblLoginStatus">
         <property name="styleSheet">
          <string notr="true">color: rgb(132, 132, 132);
-font: 75 12pt &quot;Lucida Grande&quot;;</string>
+font: 75 12pt;</string>
         </property>
         <property name="text">
          <string/>

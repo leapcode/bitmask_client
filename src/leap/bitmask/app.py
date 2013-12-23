@@ -54,7 +54,9 @@ from leap.bitmask.util import log_silencer
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
+from leap.bitmask.services.mail.repair import repair_account
 from leap.common.events import server as event_server
+from leap.mail import __version__ as MAIL_VERSION
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
@@ -170,12 +172,18 @@ def main():
 
     if opts.version:
         print "Bitmask version: %s" % (VERSION,)
+        print "leap.mail version: %s" % (MAIL_VERSION,)
+        sys.exit(0)
+
+    if opts.acct_to_repair:
+        repair_account(opts.acct_to_repair)
         sys.exit(0)
 
     standalone = opts.standalone
     bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
     logfile = opts.log_file
+    mail_logfile = opts.mail_log_file
     openvpn_verb = opts.openvpn_verb
 
     try:
@@ -191,6 +199,7 @@ def main():
     from leap.bitmask.config import flags
     from leap.common.config.baseconfig import BaseConfig
     flags.STANDALONE = standalone
+    flags.MAIL_LOGFILE = mail_logfile
     BaseConfig.standalone = standalone
 
     logger = add_logger_handlers(debug, logfile)
@@ -217,6 +226,7 @@ def main():
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('Bitmask version %s', VERSION)
+    logger.info('leap.mail version %s', MAIL_VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')

@@ -1,0 +1,2 @@
+- Display domain for provider the user has just logged in. Fixes
+  #4631.

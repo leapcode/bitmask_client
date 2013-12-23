@@ -41,6 +41,11 @@ Launches Bitmask""", epilog=epilog)
                         action="store", dest="log_file",
                         #type=argparse.FileType('w'),
                         help='optional log file')
+    parser.add_argument('-m', '--mail-logfile',
+                        metavar="MAIL LOG FILE", nargs='?',
+                        action="store", dest="mail_log_file",
+                        #type=argparse.FileType('w'),
+                        help='optional log file for email')
     parser.add_argument('--openvpn-verbosity', nargs='?',
                         type=int,
                         action="store", dest="openvpn_verb",
@@ -51,6 +56,12 @@ Launches Bitmask""", epilog=epilog)
                         'searching')
     parser.add_argument('-V', '--version', action="store_true",
                         help='Displays Bitmask version and exits')
+    parser.add_argument('-r', '--repair-mailboxes', metavar="user@provider",
+                        nargs='?',
+                        action="store", dest="acct_to_repair",
+                        help='Repair mailboxes for a given account. '
+                             'Use when upgrading versions after a schema '
+                             'change.')
 
     # Not in use, we might want to reintroduce them.
     #parser.add_argument('-i', '--no-provider-checks',

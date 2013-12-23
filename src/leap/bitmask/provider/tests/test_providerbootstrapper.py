@@ -42,6 +42,7 @@ from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.provider.providerbootstrapper import UnsupportedProviderAPI
 from leap.bitmask.provider.providerbootstrapper import WrongFingerprint
 from leap.bitmask.provider.supportedapis import SupportedAPIs
+from leap.bitmask.backend import Signaler
 from leap.bitmask import util
 from leap.common.files import mkdir_p
 from leap.common.testing.https_server import where
@@ -50,7 +51,7 @@ from leap.common.testing.basetest import BaseLeapTest
 
 class ProviderBootstrapperTest(BaseLeapTest):
     def setUp(self):
-        self.pb = ProviderBootstrapper()
+        self.pb = ProviderBootstrapper(Signaler())
 
     def tearDown(self):
         pass
