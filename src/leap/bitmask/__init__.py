@@ -56,6 +56,7 @@ __short_version__ = "unknown"
 try:
     from leap.bitmask._version import get_versions
     __version__ = get_versions()['version']
+    __version_hash__ = get_versions()['full']
     IS_RELEASE_VERSION = _is_release_version(__version__)
     del get_versions
 except ImportError:
