@@ -25,6 +25,7 @@ from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject
 
 from leap.bitmask import __version__ as VERSION
+from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
@@ -829,7 +830,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         QtGui.QMessageBox.about(
             self, self.tr("About Bitmask - %s") % (VERSION,),
-            self.tr("Version: <b>%s</b><br>"
+            self.tr("Version: <b>%s</b> (%s)<br>"
                     "<br>"
                     "Bitmask is the Desktop client application for "
                     "the LEAP platform, supporting encrypted internet "
@@ -842,7 +843,7 @@ class MainWindow(QtGui.QMainWindow):
                     "and widely available. <br>"
                     "<br>"
                     "<a href='https://leap.se'>More about LEAP"
-                    "</a>") % (VERSION,))
+                    "</a>") % (VERSION, VERSION_HASH[:10]))
 
     def changeEvent(self, e):
         """
