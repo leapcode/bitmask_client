@@ -20,6 +20,7 @@ Main window for Bitmask.
 import logging
 
 from PySide import QtCore, QtGui
+from datetime import datetime
 from functools import partial
 from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject
@@ -828,10 +829,13 @@ class MainWindow(QtGui.QMainWindow):
 
         Display the About Bitmask dialog
         """
+        today = datetime.now().date()
+        greet = ("Happy New 1984!... or not ;)<br><br>"
+                 if today.month == 1 and today.day < 15 else "")
         QtGui.QMessageBox.about(
             self, self.tr("About Bitmask - %s") % (VERSION,),
             self.tr("Version: <b>%s</b> (%s)<br>"
-                    "<br>"
+                    "<br>%s"
                     "Bitmask is the Desktop client application for "
                     "the LEAP platform, supporting encrypted internet "
                     "proxy, secure email, and secure chat (coming soon).<br>"
@@ -843,7 +847,7 @@ class MainWindow(QtGui.QMainWindow):
                     "and widely available. <br>"
                     "<br>"
                     "<a href='https://leap.se'>More about LEAP"
-                    "</a>") % (VERSION, VERSION_HASH[:10]))
+                    "</a>") % (VERSION, VERSION_HASH[:10], greet))
 
     def changeEvent(self, e):
         """
@@ -1070,6 +1074,8 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug("Retrying soledad connection.")
         if self._soledad_bootstrapper.should_retry_initialization():
             self._soledad_bootstrapper.increment_retries_count()
+            # XXX should cancel the existing socket --- this
+            # is avoiding a clean termination.
             threads.deferToThread(
                 self._soledad_bootstrapper.load_and_sync_soledad)
         else:
