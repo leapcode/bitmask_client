@@ -1,0 +1,1 @@
+- Disconnect signals before closing the wizard. Closes #4817.

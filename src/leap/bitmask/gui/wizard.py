@@ -686,3 +686,26 @@ class Wizard(QtGui.QWizard):
         self.ui.lblUser.setText("")
         self.ui.lblPassword.setText("")
         self.ui.lblPassword2.setText("")
+
+    def closeEvent(self, event):
+        """
+        This method is called when the wizard dialog is closed.
+        We disconnect all the backend signals in here.
+        """
+        try:
+            # disconnect backend signals
+            self._backend.signaler.prov_name_resolution.disconnect(
+                self._name_resolution)
+            self._backend.signaler.prov_https_connection.disconnect(
+                self._https_connection)
+            self._backend.signaler.prov_download_provider_info.disconnect(
+                self._download_provider_info)
+
+            self._backend.signaler.prov_download_ca_cert.disconnect(
+                self._download_ca_cert)
+            self._backend.signaler.prov_check_ca_fingerprint.disconnect(
+                self._check_ca_fingerprint)
+            self._backend.signaler.prov_check_api_certificate.disconnect(
+                self._check_api_certificate)
+        except RuntimeError:
+            pass  # Signal was not connected

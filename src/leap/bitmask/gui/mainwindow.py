@@ -414,7 +414,8 @@ class MainWindow(QtGui.QMainWindow):
             # setup but does not register
             self._wizard = None
             self._backend_connect()
-            self._finish_init()
+            if self._wizard_firstrun:
+                self._finish_init()
 
     def _launch_wizard(self):
         """
@@ -433,7 +434,7 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = Wizard(backend=self._backend,
                                   bypass_checks=self._bypass_checks)
             self._wizard.accepted.connect(self._finish_init)
-            self._wizard.rejected.connect(self._wizard.close)
+            self._wizard.rejected.connect(self._rejected_wizard)
 
         self.setVisible(False)
         # Do NOT use exec_, it will use a child event loop!
