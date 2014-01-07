@@ -380,6 +380,9 @@ class MainWindow(QtGui.QMainWindow):
             partial(self._login_widget.set_status,
                     self.tr("Unable to login: Problem with provider")))
 
+        self._backend.signaler.prov_unsupported_client.connect(
+            self._needs_update)
+
     def _backend_disconnect(self):
         """
         Helper to disconnect from backend signals.
@@ -855,6 +858,18 @@ class MainWindow(QtGui.QMainWindow):
                     "<br>"
                     "<a href='https://leap.se'>More about LEAP"
                     "</a>") % (VERSION, VERSION_HASH[:10], greet))
+
+    def _needs_update(self):
+        """
+        Display a warning dialog to inform the user that the app needs update.
+        """
+        url = "https://dl.bitmask.net/"
+        msg = self.tr(
+            "The current client version is not supported "
+            "by this provider.<br>"
+            "Please update to latest version.<br><br>"
+            "You can get the latest version from {0}").format(url)
+        QtGui.QMessageBox.warning(self, self.tr("Update Needed"), msg)
 
     def changeEvent(self, e):
         """

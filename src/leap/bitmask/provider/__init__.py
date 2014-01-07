@@ -18,6 +18,10 @@
 Module initialization for leap.bitmask.provider
 """
 import os
+
+from distutils.version import LooseVersion
+
+from leap.bitmask import __version__ as BITMASK_VERSION
 from leap.common.check import leap_assert
 
 
@@ -32,3 +36,21 @@ def get_provider_path(domain):
     """
     leap_assert(domain is not None, "get_provider_path: We need a domain")
     return os.path.join("leap", "providers", domain, "provider.json")
+
+
+class SupportedClient(object):
+    """
+    Class responsible of checking for client compatibility.
+    """
+
+    @classmethod
+    def supports(self, minimum_version):
+        """
+        :param minimum_version: the version number of the client that
+                                we need to check.
+        :type minimum_version: str
+
+        :returns: True if that version is supported or False otherwise.
+        :return type: bool
+        """
+        return LooseVersion(minimum_version) <= LooseVersion(BITMASK_VERSION)

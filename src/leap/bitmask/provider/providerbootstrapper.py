@@ -30,6 +30,7 @@ from leap.bitmask import util
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.provider.supportedapis import SupportedAPIs
+from leap.bitmask.provider import SupportedClient
 from leap.common import ca_bundle
 from leap.common.certs import get_digest
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
@@ -41,6 +42,14 @@ logger = logging.getLogger(__name__)
 class UnsupportedProviderAPI(Exception):
     """
     Raised when attempting to use a provider with an incompatible API.
+    """
+    pass
+
+
+class UnsupportedClientVersionError(Exception):
+    """
+    Raised when attempting to use a provider with an older
+    client than supported.
     """
     pass
 
@@ -58,6 +67,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
     after they are passed.
     If a check fails, the subsequent checks are not executed
     """
+
+    MIN_CLIENT_VERSION = 'x-minimum-client-version'
 
     def __init__(self, signaler=None, bypass_checks=False):
         """
@@ -187,6 +198,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         res.raise_for_status()
         logger.debug("Request status code: {0}".format(res.status_code))
 
+        min_client_version = res.headers.get(self.MIN_CLIENT_VERSION, '0')
+
         # Not modified
         if res.status_code == 304:
             logger.debug("Provider definition has not been modified")
@@ -194,6 +207,10 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # end refactor, more or less...
         # XXX Watch out, have to check the supported api yet.
         else:
+            if not SupportedClient.supports(min_client_version):
+                self._signaler.signal(self._signaler.PROV_UNSUPPORTED_CLIENT)
+                raise UnsupportedClientVersionError()
+
             provider_definition, mtime = get_content(res)
 
             provider_config = ProviderConfig()
