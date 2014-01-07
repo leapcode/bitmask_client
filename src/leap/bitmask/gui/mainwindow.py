@@ -21,7 +21,6 @@ import logging
 
 from PySide import QtCore, QtGui
 from datetime import datetime
-from functools import partial
 from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject
 
@@ -362,26 +361,19 @@ class MainWindow(QtGui.QMainWindow):
         """
         Helper to connect to backend signals
         """
-        self._backend.signaler.prov_name_resolution.connect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_https_connection.connect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_download_ca_cert.connect(
-            self._intermediate_stage)
+        sig = self._backend.signaler
+        sig.prov_name_resolution.connect(self._intermediate_stage)
+        sig.prov_https_connection.connect(self._intermediate_stage)
+        sig.prov_download_ca_cert.connect(self._intermediate_stage)
 
-        self._backend.signaler.prov_download_provider_info.connect(
-            self._load_provider_config)
-        self._backend.signaler.prov_check_api_certificate.connect(
-            self._provider_config_loaded)
+        sig.prov_download_provider_info.connect(self._load_provider_config)
+        sig.prov_check_api_certificate.connect(self._provider_config_loaded)
 
         # Only used at login, no need to disconnect this like we do
         # with the other
-        self._backend.signaler.prov_problem_with_provider.connect(
-            partial(self._login_widget.set_status,
-                    self.tr("Unable to login: Problem with provider")))
+        sig.prov_problem_with_provider.connect(self._login_problem_provider)
 
-        self._backend.signaler.prov_unsupported_client.connect(
-            self._needs_update)
+        sig.prov_unsupported_client.connect(self._needs_update)
 
     def _backend_disconnect(self):
         """
@@ -390,17 +382,13 @@ class MainWindow(QtGui.QMainWindow):
         Some signals are emitted from the wizard, and we want to
         ignore those.
         """
-        self._backend.signaler.prov_name_resolution.disconnect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_https_connection.disconnect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_download_ca_cert.disconnect(
-            self._intermediate_stage)
+        sig = self._backend.signaler
+        sig.prov_name_resolution.disconnect(self._intermediate_stage)
+        sig.prov_https_connection.disconnect(self._intermediate_stage)
+        sig.prov_download_ca_cert.disconnect(self._intermediate_stage)
 
-        self._backend.signaler.prov_download_provider_info.disconnect(
-            self._load_provider_config)
-        self._backend.signaler.prov_check_api_certificate.disconnect(
-            self._provider_config_loaded)
+        sig.prov_download_provider_info.disconnect(self._load_provider_config)
+        sig.prov_check_api_certificate.disconnect(self._provider_config_loaded)
 
     def _rejected_wizard(self):
         """
@@ -938,10 +926,16 @@ class MainWindow(QtGui.QMainWindow):
             selected_provider = self._login_widget.get_selected_provider()
             self._backend.provider_bootstrap(selected_provider)
         else:
-            self._login_widget.set_status(
-                self.tr("Unable to login: Problem with provider"))
             logger.error(data[self._backend.ERROR_KEY])
             self._login_widget.set_enabled(True)
+
+    def _login_problem_provider(self):
+        """
+        Warns the user about a problem with the provider during login.
+        """
+        self._login_widget.set_status(
+            self.tr("Unable to login: Problem with provider"))
+        self._login_widget.set_enabled(True)
 
     def _login(self):
         """

@@ -228,6 +228,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
                          'Found: {1}.').format(api_supported, api_version)
 
                 logger.error(error)
+                self._signaler.signal(
+                    self._signaler.PROV_PROBLEM_WITH_PROVIDER_KEY)
                 raise UnsupportedProviderAPI(error)
 
     def run_provider_select_checks(self, domain, download_if_needed=False):

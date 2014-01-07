@@ -206,7 +206,7 @@ class Signaler(QtCore.QObject):
     PROV_DOWNLOAD_CA_CERT_KEY = "prov_download_ca_cert"
     PROV_CHECK_CA_FINGERPRINT_KEY = "prov_check_ca_fingerprint"
     PROV_CHECK_API_CERTIFICATE_KEY = "prov_check_api_certificate"
-    PROV_PROV_PROBLEM_WITH_PROVIER_KEY = "prov_problem_with_provider"
+    PROV_PROBLEM_WITH_PROVIDER_KEY = "prov_problem_with_provider"
     PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
 
     def __init__(self):
@@ -223,7 +223,7 @@ class Signaler(QtCore.QObject):
             self.PROV_DOWNLOAD_CA_CERT_KEY,
             self.PROV_CHECK_CA_FINGERPRINT_KEY,
             self.PROV_CHECK_API_CERTIFICATE_KEY,
-            self.PROV_PROV_PROBLEM_WITH_PROVIER_KEY,
+            self.PROV_PROBLEM_WITH_PROVIDER_KEY,
             self.PROV_UNSUPPORTED_CLIENT
         ]
 
