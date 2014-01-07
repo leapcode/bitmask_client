@@ -105,6 +105,9 @@ class MainWindow(QtGui.QMainWindow):
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
 
+    # We give EIP some time to come up before starting soledad anyway
+    EIP_TIMEOUT = 60000  # in milliseconds
+
     def __init__(self, quit_callback,
                  openvpn_verb=1,
                  bypass_checks=False):
@@ -179,6 +182,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self._eip_status.eip_connection_connected.connect(
             self._on_eip_connected)
+        self._eip_status.eip_connection_connected.connect(
+            self._maybe_run_soledad_setup_checks)
         self.eip_needs_login.connect(
             self._eip_status.disable_eip_start)
         self.eip_needs_login.connect(
@@ -195,6 +200,7 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_config = eipconfig.EIPConfig()
 
         self._already_started_eip = False
+        self._already_started_soledad = False
 
         # This is created once we have a valid provider config
         self._srp_auth = None
@@ -1027,22 +1033,27 @@ class MainWindow(QtGui.QMainWindow):
             self._provider_config.get_domain())
 
         # TODO separate UI from logic.
-        # TODO soledad should check if we want to run only over EIP.
         if self._provider_config.provides_mx() and \
            self._enabled_services.count(MX_SERVICE) > 0:
             self._mail_status.about_to_start()
+        else:
+            self._mail_status.set_disabled()
 
+        self._maybe_start_eip()
+
+    def _maybe_run_soledad_setup_checks(self):
+        """
+        """
+        # TODO soledad should check if we want to run only over EIP.
+        if self._already_started_soledad is False \
+                and self._logged_user is not None:
+            self._already_started_soledad = True
             self._soledad_bootstrapper.run_soledad_setup_checks(
                 self._provider_config,
                 self._login_widget.get_user(),
                 self._login_widget.get_password(),
                 download_if_needed=True)
-        else:
-            self._mail_status.set_disabled()
 
-        # XXX the config should be downloaded from the start_eip
-        # method.
-        self._download_eip_config()
 
     ###################################################################
     # Service control methods: soledad
@@ -1258,7 +1269,7 @@ class MainWindow(QtGui.QMainWindow):
             # it adds some delay.
             # Maybe if it's the first run in a session,
             # or we can try only if it fails.
-            self._download_eip_config()
+            self._maybe_start_eip()
         else:
             # XXX: Display a proper message to the user
             self.eip_needs_login.emit()
@@ -1490,9 +1501,10 @@ class MainWindow(QtGui.QMainWindow):
 
     # eip boostrapping, config etc...
 
-    def _download_eip_config(self):
+    def _maybe_start_eip(self):
         """
-        Starts the EIP bootstrapping sequence
+        Start the EIP bootstrapping sequence if the client is configured to
+        do so.
         """
         leap_assert(self._eip_bootstrapper, "We need an eip bootstrapper!")
 
@@ -1509,14 +1521,22 @@ class MainWindow(QtGui.QMainWindow):
                 provider_config,
                 download_if_needed=True)
             self._already_started_eip = True
-        elif not self._already_started_eip:
-            if self._enabled_services.count(EIP_SERVICE) > 0:
-                self._eip_status.set_eip_status(
-                    self.tr("Not supported"),
-                    error=True)
-            else:
-                self._eip_status.disable_eip_start()
-                self._eip_status.set_eip_status(self.tr("Disabled"))
+            # we want to start soledad anyway after a certain timeout if eip
+            # fails to come up
+            QtCore.QTimer.singleShot(
+                self.EIP_TIMEOUT,
+                self._maybe_run_soledad_setup_checks)
+        else:
+            if not self._already_started_eip:
+                if self._enabled_services.count(EIP_SERVICE) > 0:
+                    self._eip_status.set_eip_status(
+                        self.tr("Not supported"),
+                        error=True)
+                else:
+                    self._eip_status.disable_eip_start()
+                    self._eip_status.set_eip_status(self.tr("Disabled"))
+            # eip will not start, so we start soledad anyway
+            self._maybe_run_soledad_setup_checks()
 
     def _finish_eip_bootstrap(self, data):
         """
@@ -1606,6 +1626,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self._soledad_bootstrapper.cancel_bootstrap()
         setProxiedObject(self._soledad, None)
+
+        # reset soledad status flag
+        self._already_started_soledad = False
 
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
