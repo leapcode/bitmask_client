@@ -1,0 +1,1 @@
+- Make first Soledad sync wait for EIP to come up after logging in (#4885).
