@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Module initialization for leap.bitmask.provider
+Provider utilities.
 """
 import os
 
@@ -23,6 +23,10 @@ from distutils.version import LooseVersion
 
 from leap.bitmask import __version__ as BITMASK_VERSION
 from leap.common.check import leap_assert
+
+
+# The currently supported API versions by the client.
+SUPPORTED_APIS = ["1"]
 
 
 def get_provider_path(domain):
@@ -38,19 +42,24 @@ def get_provider_path(domain):
     return os.path.join("leap", "providers", domain, "provider.json")
 
 
-class SupportedClient(object):
+def supports_api(api_version):
     """
-    Class responsible of checking for client compatibility.
+    :param api_version: the version number of the api that we need to check
+    :type api_version: str
+
+    :returns: if that version is supported or not.
+    :return type: bool
     """
+    return api_version in SUPPORTED_APIS
 
-    @classmethod
-    def supports(self, minimum_version):
-        """
-        :param minimum_version: the version number of the client that
-                                we need to check.
-        :type minimum_version: str
 
-        :returns: True if that version is supported or False otherwise.
-        :return type: bool
-        """
-        return LooseVersion(minimum_version) <= LooseVersion(BITMASK_VERSION)
+def supports_client(minimum_version):
+    """
+    :param minimum_version: the version number of the client that
+                            we need to check.
+    :type minimum_version: str
+
+    :returns: True if that version is supported or False otherwise.
+    :return type: bool
+    """
+    return LooseVersion(minimum_version) <= LooseVersion(BITMASK_VERSION)

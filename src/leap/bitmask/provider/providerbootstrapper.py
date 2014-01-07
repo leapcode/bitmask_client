@@ -29,8 +29,7 @@ from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask import util
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
-from leap.bitmask.provider.supportedapis import SupportedAPIs
-from leap.bitmask.provider import SupportedClient
+from leap.bitmask import provider
 from leap.common import ca_bundle
 from leap.common.certs import get_digest
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
@@ -207,7 +206,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # end refactor, more or less...
         # XXX Watch out, have to check the supported api yet.
         else:
-            if not SupportedClient.supports(min_client_version):
+            if not provider.supports_client(min_client_version):
                 self._signaler.signal(self._signaler.PROV_UNSUPPORTED_CLIENT)
                 raise UnsupportedClientVersionError()
 
@@ -219,10 +218,10 @@ class ProviderBootstrapper(AbstractBootstrapper):
                                   domain, "provider.json"])
 
             api_version = provider_config.get_api_version()
-            if SupportedAPIs.supports(api_version):
+            if provider.supports_api(api_version):
                 logger.debug("Provider definition has been modified")
             else:
-                api_supported = ', '.join(SupportedAPIs.SUPPORTED_APIS)
+                api_supported = ', '.join(provider.SUPPORTED_APIS)
                 error = ('Unsupported provider API version. '
                          'Supported versions are: {0}. '
                          'Found: {1}.').format(api_supported, api_version)

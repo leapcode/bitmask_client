@@ -36,17 +36,17 @@ from nose.twistedtools import deferred, reactor
 from twisted.internet import threads
 from requests.models import Response
 
+from leap.bitmask import provider
+from leap.bitmask import util
+from leap.bitmask.backend import Signaler
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.tests import fake_provider
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.provider.providerbootstrapper import UnsupportedProviderAPI
 from leap.bitmask.provider.providerbootstrapper import WrongFingerprint
-from leap.bitmask.provider.supportedapis import SupportedAPIs
-from leap.bitmask.backend import Signaler
-from leap.bitmask import util
 from leap.common.files import mkdir_p
-from leap.common.testing.https_server import where
 from leap.common.testing.basetest import BaseLeapTest
+from leap.common.testing.https_server import where
 
 
 class ProviderBootstrapperTest(BaseLeapTest):
@@ -489,7 +489,7 @@ class ProviderBootstrapperActiveTest(unittest.TestCase):
         'leap.bitmask.config.providerconfig.ProviderConfig.get_ca_cert_path',
         lambda x: where('cacert.pem'))
     def test_download_provider_info_unsupported_api(self):
-        self._setup_provider_config_with(SupportedAPIs.SUPPORTED_APIS[0],
+        self._setup_provider_config_with(provider.SUPPORTED_APIS[0],
                                          tempfile.mkdtemp())
         self._setup_providerbootstrapper(False)
         self._produce_dummy_provider_json()
