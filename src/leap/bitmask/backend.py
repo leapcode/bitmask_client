@@ -195,6 +195,7 @@ class Signaler(QtCore.QObject):
     prov_problem_with_provider = QtCore.Signal(object)
 
     prov_unsupported_client = QtCore.Signal(object)
+    prov_unsupported_api = QtCore.Signal(object)
 
     # These will exist both in the backend and the front end.
     # The frontend might choose to not "interpret" all the signals
@@ -208,6 +209,7 @@ class Signaler(QtCore.QObject):
     PROV_CHECK_API_CERTIFICATE_KEY = "prov_check_api_certificate"
     PROV_PROBLEM_WITH_PROVIDER_KEY = "prov_problem_with_provider"
     PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
+    PROV_UNSUPPORTED_API = "prov_unsupported_api"
 
     def __init__(self):
         """
@@ -224,7 +226,8 @@ class Signaler(QtCore.QObject):
             self.PROV_CHECK_CA_FINGERPRINT_KEY,
             self.PROV_CHECK_API_CERTIFICATE_KEY,
             self.PROV_PROBLEM_WITH_PROVIDER_KEY,
-            self.PROV_UNSUPPORTED_CLIENT
+            self.PROV_UNSUPPORTED_CLIENT,
+            self.PROV_UNSUPPORTED_API
         ]
 
         for sig in signals:

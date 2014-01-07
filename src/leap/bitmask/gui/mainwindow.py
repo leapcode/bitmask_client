@@ -374,6 +374,7 @@ class MainWindow(QtGui.QMainWindow):
         sig.prov_problem_with_provider.connect(self._login_problem_provider)
 
         sig.prov_unsupported_client.connect(self._needs_update)
+        sig.prov_unsupported_api.connect(self._incompatible_api)
 
     def _backend_disconnect(self):
         """
@@ -858,6 +859,16 @@ class MainWindow(QtGui.QMainWindow):
             "Please update to latest version.<br><br>"
             "You can get the latest version from {0}").format(url)
         QtGui.QMessageBox.warning(self, self.tr("Update Needed"), msg)
+
+    def _incompatible_api(self):
+        """
+        Display a warning dialog to inform the user that the provider has an
+        incompatible API.
+        """
+        msg = self.tr(
+            "This provider is not compatible with the client.<br><br>"
+            "Error: API version incompatible.")
+        QtGui.QMessageBox.warning(self, self.tr("Incompatible Provider"), msg)
 
     def changeEvent(self, e):
         """
