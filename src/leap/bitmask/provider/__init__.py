@@ -19,7 +19,7 @@ Provider utilities.
 """
 import os
 
-from distutils.version import LooseVersion
+from pkg_resources import parse_version
 
 from leap.bitmask import __version__ as BITMASK_VERSION
 from leap.common.check import leap_assert
@@ -62,4 +62,4 @@ def supports_client(minimum_version):
     :returns: True if that version is supported or False otherwise.
     :return type: bool
     """
-    return LooseVersion(minimum_version) <= LooseVersion(BITMASK_VERSION)
+    return parse_version(minimum_version) <= parse_version(BITMASK_VERSION)
