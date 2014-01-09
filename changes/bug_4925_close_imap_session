@@ -1,0 +1,1 @@
+- Properly reset imap session on logout. Closes: #4925
