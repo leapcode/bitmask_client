@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # app.py
-# Copyright (C) 2013 LEAP
+# Copyright (C) 2013, 2014 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -168,6 +168,7 @@ def main():
     """
     Starts the main event loop and launches the main window.
     """
+    # TODO move boilerplate outa here!
     _, opts = leap_argparse.init_leapc_args()
 
     if opts.version:
@@ -180,6 +181,7 @@ def main():
         sys.exit(0)
 
     standalone = opts.standalone
+    offline = opts.offline
     bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
     logfile = opts.log_file
@@ -199,6 +201,7 @@ def main():
     from leap.bitmask.config import flags
     from leap.common.config.baseconfig import BaseConfig
     flags.STANDALONE = standalone
+    flags.OFFLINE = offline
     flags.MAIL_LOGFILE = mail_logfile
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
