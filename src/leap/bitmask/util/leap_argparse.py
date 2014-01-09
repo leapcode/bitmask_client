@@ -62,6 +62,14 @@ Launches Bitmask""", epilog=epilog)
                         help='Repair mailboxes for a given account. '
                              'Use when upgrading versions after a schema '
                              'change.')
+    parser.add_argument('-N', '--no-app-version-check', default=True,
+                        action="store_false", dest="app_version_check",
+                        help='Skip the app version compatibility check with '
+                        'the provider.')
+    parser.add_argument('-M', '--no-api-version-check', default=True,
+                        action="store_false", dest="api_version_check",
+                        help='Skip the api version compatibility check with '
+                        'the provider.')
 
     # Not in use, we might want to reintroduce them.
     #parser.add_argument('-i', '--no-provider-checks',

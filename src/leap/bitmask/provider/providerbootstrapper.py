@@ -24,6 +24,7 @@ import sys
 
 import requests
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
 from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask import util
@@ -206,9 +207,11 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # end refactor, more or less...
         # XXX Watch out, have to check the supported api yet.
         else:
-            if not provider.supports_client(min_client_version):
-                self._signaler.signal(self._signaler.PROV_UNSUPPORTED_CLIENT)
-                raise UnsupportedClientVersionError()
+            if flags.APP_VERSION_CHECK:
+                if not provider.supports_client(min_client_version):
+                    self._signaler.signal(
+                        self._signaler.PROV_UNSUPPORTED_CLIENT)
+                    raise UnsupportedClientVersionError()
 
             provider_definition, mtime = get_content(res)
 
@@ -217,18 +220,19 @@ class ProviderBootstrapper(AbstractBootstrapper):
             provider_config.save(["leap", "providers",
                                   domain, "provider.json"])
 
-            api_version = provider_config.get_api_version()
-            if provider.supports_api(api_version):
-                logger.debug("Provider definition has been modified")
-            else:
-                api_supported = ', '.join(provider.SUPPORTED_APIS)
-                error = ('Unsupported provider API version. '
-                         'Supported versions are: {0}. '
-                         'Found: {1}.').format(api_supported, api_version)
+            if flags.API_VERSION_CHECK:
+                api_version = provider_config.get_api_version()
+                if provider.supports_api(api_version):
+                    logger.debug("Provider definition has been modified")
+                else:
+                    api_supported = ', '.join(provider.SUPPORTED_APIS)
+                    error = ('Unsupported provider API version. '
+                             'Supported versions are: {0}. '
+                             'Found: {1}.').format(api_supported, api_version)
 
-                logger.error(error)
-                self._signaler.signal(self._signaler.PROV_UNSUPPORTED_API)
-                raise UnsupportedProviderAPI(error)
+                    logger.error(error)
+                    self._signaler.signal(self._signaler.PROV_UNSUPPORTED_API)
+                    raise UnsupportedProviderAPI(error)
 
     def run_provider_select_checks(self, domain, download_if_needed=False):
         """

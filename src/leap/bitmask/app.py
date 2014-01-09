@@ -200,6 +200,9 @@ def main():
     from leap.common.config.baseconfig import BaseConfig
     flags.STANDALONE = standalone
     flags.MAIL_LOGFILE = mail_logfile
+    flags.APP_VERSION_CHECK = opts.app_version_check
+    flags.API_VERSION_CHECK = opts.api_version_check
+
     BaseConfig.standalone = standalone
 
     logger = add_logger_handlers(debug, logfile)
