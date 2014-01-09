@@ -194,6 +194,9 @@ class Signaler(QtCore.QObject):
 
     prov_problem_with_provider = QtCore.Signal(object)
 
+    prov_unsupported_client = QtCore.Signal(object)
+    prov_unsupported_api = QtCore.Signal(object)
+
     # These will exist both in the backend and the front end.
     # The frontend might choose to not "interpret" all the signals
     # from the backend, but the backend needs to have all the signals
@@ -204,7 +207,9 @@ class Signaler(QtCore.QObject):
     PROV_DOWNLOAD_CA_CERT_KEY = "prov_download_ca_cert"
     PROV_CHECK_CA_FINGERPRINT_KEY = "prov_check_ca_fingerprint"
     PROV_CHECK_API_CERTIFICATE_KEY = "prov_check_api_certificate"
-    PROV_PROV_PROBLEM_WITH_PROVIER_KEY = "prov_problem_with_provider"
+    PROV_PROBLEM_WITH_PROVIDER_KEY = "prov_problem_with_provider"
+    PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
+    PROV_UNSUPPORTED_API = "prov_unsupported_api"
 
     def __init__(self):
         """
@@ -220,7 +225,9 @@ class Signaler(QtCore.QObject):
             self.PROV_DOWNLOAD_CA_CERT_KEY,
             self.PROV_CHECK_CA_FINGERPRINT_KEY,
             self.PROV_CHECK_API_CERTIFICATE_KEY,
-            self.PROV_PROV_PROBLEM_WITH_PROVIER_KEY
+            self.PROV_PROBLEM_WITH_PROVIDER_KEY,
+            self.PROV_UNSUPPORTED_CLIENT,
+            self.PROV_UNSUPPORTED_API
         ]
 
         for sig in signals:
@@ -243,6 +250,11 @@ class Signaler(QtCore.QObject):
         # will do zmq.send_multipart, and the frontend version will be
         # similar to this
         log.msg("Signaling %s :: %s" % (key, data))
+
+        # for some reason emitting 'None' gives a segmentation fault.
+        if data is None:
+            data = ''
+
         try:
             self._signals[key].emit(data)
         except KeyError:
