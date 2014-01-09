@@ -27,41 +27,29 @@ def build_parser():
     All the options for the leap arg parser
     Some of these could be switched on only if debug flag is present!
     """
-    epilog = "Copyright 2012-2013 The LEAP Encryption Access Project"
+    epilog = "Copyright 2012-2014 The LEAP Encryption Access Project"
     parser = argparse.ArgumentParser(description="""
-Launches Bitmask""", epilog=epilog)
+Launches the Bitmask client.""", epilog=epilog)
     parser.add_argument('-d', '--debug', action="store_true",
-                        help=("Launches Bitmask in debug mode, writing debug"
-                              "info to stdout"))
-    if not IS_RELEASE_VERSION:
-        help_text = "Bypasses the certificate check for bootstrap"
-        parser.add_argument('--danger', action="store_true", help=help_text)
+                        help=("Launches Bitmask in debug mode, writing debug "
+                              "info to stdout."))
+    parser.add_argument('-V', '--version', action="store_true",
+                        help='Displays Bitmask version and exits.')
 
+    # files
     parser.add_argument('-l', '--logfile', metavar="LOG FILE", nargs='?',
                         action="store", dest="log_file",
-                        #type=argparse.FileType('w'),
-                        help='optional log file')
+                        help='Optional log file.')
     parser.add_argument('-m', '--mail-logfile',
                         metavar="MAIL LOG FILE", nargs='?',
                         action="store", dest="mail_log_file",
-                        #type=argparse.FileType('w'),
-                        help='optional log file for email')
-    parser.add_argument('--openvpn-verbosity', nargs='?',
-                        type=int,
-                        action="store", dest="openvpn_verb",
-                        help='verbosity level for openvpn logs [1-6]')
+                        help='Optional log file for email.')
+
+    # flags
     parser.add_argument('-s', '--standalone', action="store_true",
-                        help='Makes Bitmask use standalone'
-                        'directories for configuration and binary'
-                        'searching')
-    parser.add_argument('-V', '--version', action="store_true",
-                        help='Displays Bitmask version and exits')
-    parser.add_argument('-r', '--repair-mailboxes', metavar="user@provider",
-                        nargs='?',
-                        action="store", dest="acct_to_repair",
-                        help='Repair mailboxes for a given account. '
-                             'Use when upgrading versions after a schema '
-                             'change.')
+                        help='Makes Bitmask use standalone '
+                        'directories for configuration and binary '
+                        'searching.')
     parser.add_argument('-N', '--no-app-version-check', default=True,
                         action="store_false", dest="app_version_check",
                         help='Skip the app version compatibility check with '
@@ -70,6 +58,29 @@ Launches Bitmask""", epilog=epilog)
                         action="store_false", dest="api_version_check",
                         help='Skip the api version compatibility check with '
                         'the provider.')
+
+    # openvpn options
+    parser.add_argument('--openvpn-verbosity', nargs='?',
+                        type=int,
+                        action="store", dest="openvpn_verb",
+                        help='Verbosity level for openvpn logs [1-6]')
+
+    # mail stuff
+    parser.add_argument('-o', '--offline', action="store_true",
+                        help='Starts Bitmask in offline mode: will not '
+                             'try to sync with remote replicas for email.')
+    parser.add_argument('-r', '--repair-mailboxes', metavar="user@provider",
+                        nargs='?',
+                        action="store", dest="acct_to_repair",
+                        help='Repair mailboxes for a given account. '
+                             'Use when upgrading versions after a schema '
+                             'change.')
+
+    if not IS_RELEASE_VERSION:
+        help_text = ("Bypasses the certificate check during provider "
+                     "bootstraping, for debugging development servers. "
+                     "Use at your own risk!")
+        parser.add_argument('--danger', action="store_true", help=help_text)
 
     # Not in use, we might want to reintroduce them.
     #parser.add_argument('-i', '--no-provider-checks',
