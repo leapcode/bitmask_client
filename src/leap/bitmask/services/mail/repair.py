@@ -28,7 +28,7 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.util import get_path_prefix
 from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
 
-from leap.mail.imap.server import SoledadBackedAccount
+from leap.mail.imap.account import SoledadBackedAccount
 from leap.soledad.client import Soledad
 
 logger = logging.getLogger(__name__)
@@ -145,11 +145,11 @@ class MBOXPlumber(object):
 
         self.acct = SoledadBackedAccount(self.userid, self.sol)
         for mbox_name in self.acct.mailboxes:
-            self.repair_mbox(mbox_name)
+            self.repair_mbox_uids(mbox_name)
         print "done."
         self.exit()
 
-    def repair_mbox(self, mbox_name):
+    def repair_mbox_uids(self, mbox_name):
         """
         Repairs indexes for a given mbox
 
@@ -176,7 +176,8 @@ class MBOXPlumber(object):
             old_uid = doc.content['uid']
             doc.content['uid'] = mindex
             self.sol.put_doc(doc)
-            print "%s -> %s (%s)" % (mindex, doc.content['uid'], old_uid)
+            if mindex != old_uid:
+                print "%s -> %s (%s)" % (mindex, doc.content['uid'], old_uid)
 
         old_last_uid = mbox.last_uid
         mbox.last_uid = len_mbox
