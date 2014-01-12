@@ -31,18 +31,45 @@ OBSOLETE_KEYRINGS = [
     PlaintextKeyring
 ]
 
+canuse = lambda kr: kr is not None and kr.__class__ not in OBSOLETE_KEYRINGS
+
+
+def _get_keyring_with_fallback():
+    """
+    Get the default keyring, and if obsolete try to pick SecretService keyring
+    if available.
+
+    This is a workaround for the cases in which the keyring module chooses
+    an insecure keyring by default (ie, inside a virtualenv).
+    """
+    kr = keyring.get_keyring()
+    if not canuse(kr):
+        try:
+            kr_klass = keyring.backends.SecretService
+            kr = kr_klass.Keyring()
+        except AttributeError:
+            logger.warning("Keyring cannot find SecretService Backend")
+    logger.debug("Selected keyring: %s" % (kr.__class__,))
+    if not canuse(kr):
+        logger.debug("Not using default keyring since it is obsolete")
+    return kr
+
 
 def has_keyring():
     """
-    Returns whether we have an useful keyring to use.
+    Return whether we have an useful keyring to use.
 
     :rtype: bool
     """
-    kr = keyring.get_keyring()
-    klass = kr.__class__
-    logger.debug("Selected keyring: %s" % (klass,))
+    kr = _get_keyring_with_fallback()
+    return canuse(kr)
 
-    canuse = kr is not None and klass not in OBSOLETE_KEYRINGS
-    if not canuse:
-        logger.debug("Not using this keyring since it is obsolete")
-    return canuse
+
+def get_keyring():
+    """
+    Return an usable keyring.
+
+    :rtype: keyringBackend or None
+    """
+    kr = _get_keyring_with_fallback()
+    return kr if canuse(kr) else None
