@@ -31,6 +31,7 @@ from requests.adapters import HTTPAdapter
 from PySide import QtCore
 from twisted.internet import threads
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.util import request_helpers as reqhelper
 from leap.bitmask.util.compat import requests_has_max_retries
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
@@ -147,6 +148,7 @@ class SRPAuth(QtCore.QObject):
                         "We need a provider config to authenticate")
 
             self._provider_config = provider_config
+            self._settings = LeapSettings()
 
             # **************************************************** #
             # Dependency injection helpers, override this for more
@@ -161,8 +163,8 @@ class SRPAuth(QtCore.QObject):
 
             self._session_id = None
             self._session_id_lock = QtCore.QMutex()
-            self._uid = None
-            self._uid_lock = QtCore.QMutex()
+            self._uuid = None
+            self._uuid_lock = QtCore.QMutex()
             self._token = None
             self._token_lock = QtCore.QMutex()
 
@@ -394,24 +396,24 @@ class SRPAuth(QtCore.QObject):
             """
             try:
                 M2 = json_content.get("M2", None)
-                uid = json_content.get("id", None)
+                uuid = json_content.get("id", None)
                 token = json_content.get("token", None)
             except Exception as e:
                 logger.error(e)
                 raise SRPAuthBadDataFromServer("Something went wrong with the "
                                                "login")
 
-            self.set_uid(uid)
+            self.set_uuid(uuid)
             self.set_token(token)
 
-            if M2 is None or self.get_uid() is None:
+            if M2 is None or self.get_uuid() is None:
                 logger.error("Something went wrong. Content = %r" %
                              (json_content,))
                 raise SRPAuthBadDataFromServer(self.tr("Problem getting data "
                                                        "from server"))
 
             events_signal(
-                proto.CLIENT_UID, content=uid,
+                proto.CLIENT_UID, content=uuid,
                 reqcbk=lambda req, res: None)  # make the rpc call async
 
             return M2
@@ -475,7 +477,7 @@ class SRPAuth(QtCore.QObject):
             :param new_password: the new password for the user
             :type new_password: str
             """
-            leap_assert(self.get_uid() is not None)
+            leap_assert(self.get_uuid() is not None)
 
             if current_password != self._password:
                 raise SRPAuthBadUserOrPassword
@@ -483,7 +485,7 @@ class SRPAuth(QtCore.QObject):
             url = "%s/%s/users/%s.json" % (
                 self._provider_config.get_api_uri(),
                 self._provider_config.get_api_version(),
-                self.get_uid())
+                self.get_uuid())
 
             salt, verifier = self._srp.create_salted_verification_key(
                 self._username.encode('utf-8'), new_password.encode('utf-8'),
@@ -580,7 +582,7 @@ class SRPAuth(QtCore.QObject):
                 raise
             else:
                 self.set_session_id(None)
-                self.set_uid(None)
+                self.set_uuid(None)
                 self.set_token(None)
                 # Also reset the session
                 self._session = self._fetcher.session()
@@ -594,13 +596,16 @@ class SRPAuth(QtCore.QObject):
             QtCore.QMutexLocker(self._session_id_lock)
             return self._session_id
 
-        def set_uid(self, uid):
-            QtCore.QMutexLocker(self._uid_lock)
-            self._uid = uid
+        def set_uuid(self, uuid):
+            QtCore.QMutexLocker(self._uuid_lock)
+            full_uid = "%s@%s" % (
+                self._username, self._provider_config.get_domain())
+            self._settings.set_uuid(full_uid, uuid)
+            self._uuid = uuid
 
-        def get_uid(self):
-            QtCore.QMutexLocker(self._uid_lock)
-            return self._uid
+        def get_uuid(self):
+            QtCore.QMutexLocker(self._uuid_lock)
+            return self._uuid
 
         def set_token(self, token):
             QtCore.QMutexLocker(self._token_lock)
@@ -676,7 +681,7 @@ class SRPAuth(QtCore.QObject):
 
         :rtype: str or None
         """
-        if self.get_uid() is None:
+        if self.get_uuid() is None:
             return None
         return self.__instance._username
 
@@ -705,8 +710,8 @@ class SRPAuth(QtCore.QObject):
     def get_session_id(self):
         return self.__instance.get_session_id()
 
-    def get_uid(self):
-        return self.__instance.get_uid()
+    def get_uuid(self):
+        return self.__instance.get_uuid()
 
     def get_token(self):
         return self.__instance.get_token()

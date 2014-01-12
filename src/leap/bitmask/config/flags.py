@@ -41,3 +41,7 @@ MAIL_LOGFILE = None
 #     since it's not released yet, and it is compatible with a newer provider.
 APP_VERSION_CHECK = True
 API_VERSION_CHECK = True
+
+# Offline mode?
+# Used for skipping soledad bootstrapping/syncs.
+OFFLINE = False

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # mainwindow.py
-# Copyright (C) 2013 LEAP
+# Copyright (C) 2013, 2014 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ from zope.proxy import ProxyBase, setProxiedObject
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
@@ -68,6 +69,7 @@ from leap.bitmask.services.eip.darwinvpnlauncher import EIPNoTunKextLoaded
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
 
+from leap.bitmask.util import make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 
@@ -95,6 +97,7 @@ class MainWindow(QtGui.QMainWindow):
 
     # Signals
     eip_needs_login = QtCore.Signal([])
+    offline_mode_bypass_login = QtCore.Signal([])
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
@@ -137,12 +140,11 @@ class MainWindow(QtGui.QMainWindow):
         # end register leap events ####################################
 
         self._quit_callback = quit_callback
-
         self._updates_content = ""
 
+        # setup UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
         self._backend = backend.Backend(bypass_checks)
         self._backend.start()
 
@@ -183,6 +185,9 @@ class MainWindow(QtGui.QMainWindow):
             self._on_eip_connected)
         self._eip_status.eip_connection_connected.connect(
             self._maybe_run_soledad_setup_checks)
+        self.offline_mode_bypass_login.connect(
+            self._maybe_run_soledad_setup_checks)
+
         self.eip_needs_login.connect(
             self._eip_status.disable_eip_start)
         self.eip_needs_login.connect(
@@ -204,6 +209,7 @@ class MainWindow(QtGui.QMainWindow):
         # This is created once we have a valid provider config
         self._srp_auth = None
         self._logged_user = None
+        self._logged_in_offline = False
 
         self._backend_connect()
 
@@ -238,6 +244,8 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad_bootstrapper.download_config.connect(
             self._soledad_intermediate_stage)
         self._soledad_bootstrapper.gen_key.connect(
+            self._soledad_bootstrapped_stage)
+        self._soledad_bootstrapper.local_only_ready.connect(
             self._soledad_bootstrapped_stage)
         self._soledad_bootstrapper.soledad_timeout.connect(
             self._retry_soledad_connection)
@@ -284,8 +292,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self._enabled_services = []
 
-        self._center_window()
+        # last minute UI manipulations
 
+        self._center_window()
         self.ui.lblNewUpdates.setVisible(False)
         self.ui.btnMore.setVisible(False)
         #########################################
@@ -294,6 +303,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.btnMore.resize(0, 0)
         #########################################
         self.ui.btnMore.clicked.connect(self._updates_details)
+        if flags.OFFLINE is True:
+            self._set_label_offline()
 
         # Services signals/slots connection
         self.new_updates.connect(self._react_to_new_updates)
@@ -706,6 +717,19 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.eipWidget.setVisible(EIP_SERVICE in services)
         self.ui.mailWidget.setVisible(MX_SERVICE in services)
 
+    def _set_label_offline(self):
+        """
+        Set the login label to reflect offline status.
+        """
+        if self._logged_in_offline:
+            provider = ""
+        else:
+            provider = self.ui.lblLoginProvider.text()
+
+        self.ui.lblLoginProvider.setText(
+            provider +
+            self.tr(" (offline mode)"))
+
     #
     # systray
     #
@@ -857,7 +881,8 @@ class MainWindow(QtGui.QMainWindow):
             "The current client version is not supported "
             "by this provider.<br>"
             "Please update to latest version.<br><br>"
-            "You can get the latest version from {0}").format(url)
+            "You can get the latest version from "
+            "<a href='{0}'>{1}</a>").format(url, url)
         QtGui.QMessageBox.warning(self, self.tr("Update Needed"), msg)
 
     def _incompatible_api(self):
@@ -917,7 +942,6 @@ class MainWindow(QtGui.QMainWindow):
         """
         # XXX should rename this provider, name clash.
         provider = self._login_widget.get_selected_provider()
-
         self._backend.setup_provider(provider)
 
     def _load_provider_config(self, data):
@@ -930,7 +954,7 @@ class MainWindow(QtGui.QMainWindow):
         part of the bootstrapping sequence
 
         :param data: result from the last stage of the
-        run_provider_select_checks
+                     run_provider_select_checks
         :type data: dict
         """
         if data[self._backend.PASSED_KEY]:
@@ -959,10 +983,21 @@ class MainWindow(QtGui.QMainWindow):
         start the SRP authentication, and as the last step
         bootstrapping the EIP service
         """
-        leap_assert(self._provider_config, "We need a provider config")
-
-        if self._login_widget.start_login():
-            self._download_provider_config()
+        # TODO most of this could ve handled by the login widget,
+        # but we'd have to move lblLoginProvider into the widget itself,
+        # instead of having it as a top-level attribute.
+        if flags.OFFLINE is True:
+            logger.debug("OFFLINE mode! bypassing remote login")
+            # TODO reminder, we're not handling logout for offline
+            # mode.
+            self._login_widget.logged_in()
+            self._logged_in_offline = True
+            self._set_label_offline()
+            self.offline_mode_bypass_login.emit()
+        else:
+            leap_assert(self._provider_config, "We need a provider config")
+            if self._login_widget.start_login():
+                self._download_provider_config()
 
     def _cancel_login(self):
         """
@@ -1033,8 +1068,8 @@ class MainWindow(QtGui.QMainWindow):
             self._logged_user = self._login_widget.get_user()
             user = self._logged_user
             domain = self._provider_config.get_domain()
-            userid = "%s@%s" % (user, domain)
-            self._mail_conductor.userid = userid
+            full_user_id = make_address(user, domain)
+            self._mail_conductor.userid = full_user_id
             self._login_defer = None
             self._start_eip_bootstrap()
         else:
@@ -1047,7 +1082,8 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         self._login_widget.logged_in()
-        self.ui.lblLoginProvider.setText(self._provider_config.get_domain())
+        provider = self._provider_config.get_domain()
+        self.ui.lblLoginProvider.setText(provider)
 
         self._enabled_services = self._settings.get_enabled_services(
             self._provider_config.get_domain())
@@ -1063,17 +1099,42 @@ class MainWindow(QtGui.QMainWindow):
 
     def _maybe_run_soledad_setup_checks(self):
         """
+        Conditionally start Soledad.
         """
-        # TODO soledad should check if we want to run only over EIP.
-        if self._already_started_soledad is False \
-                and self._logged_user is not None:
-            self._already_started_soledad = True
-            self._soledad_bootstrapper.run_soledad_setup_checks(
-                self._provider_config,
-                self._login_widget.get_user(),
-                self._login_widget.get_password(),
-                download_if_needed=True)
+        # TODO split.
+        if self._already_started_soledad is True:
+            return
 
+        username = self._login_widget.get_user()
+        password = unicode(self._login_widget.get_password())
+        provider_domain = self._login_widget.get_selected_provider()
+
+        sb = self._soledad_bootstrapper
+        if flags.OFFLINE is True:
+            provider_domain = self._login_widget.get_selected_provider()
+            sb._password = password
+
+            self._provisional_provider_config.load(
+                provider.get_provider_path(provider_domain))
+
+            full_user_id = make_address(username, provider_domain)
+            uuid = self._settings.get_uuid(full_user_id)
+            self._mail_conductor.userid = full_user_id
+
+            if uuid is None:
+                # We don't need more visibility at the moment,
+                # this is mostly for internal use/debug for now.
+                logger.warning("Sorry! Log-in at least one time.")
+                return
+            fun = sb.load_offline_soledad
+            fun(full_user_id, password, uuid)
+        else:
+            provider_config = self._provider_config
+
+            if self._logged_user is not None:
+                fun = sb.run_soledad_setup_checks
+                fun(provider_config, username, password,
+                    download_if_needed=True)
 
     ###################################################################
     # Service control methods: soledad
@@ -1119,6 +1180,7 @@ class MainWindow(QtGui.QMainWindow):
         SLOT
         TRIGGERS:
           self._soledad_bootstrapper.gen_key
+          self._soledad_bootstrapper.local_only_ready
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
@@ -1160,6 +1222,10 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.soledad_ready
         """
+        if flags.OFFLINE is True:
+            logger.debug("not starting smtp in offline mode")
+            return
+
         # TODO for simmetry, this should be called start_smtp_service
         # (and delegate all the checks to the conductor)
         if self._provider_config.provides_mx() and \
@@ -1191,9 +1257,24 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.soledad_ready
         """
+        # TODO in the OFFLINE mode we should also modify the  rules
+        # in the mail state machine so it shows that imap is active
+        # (but not smtp since it's not yet ready for offline use)
+        start_fun = self._mail_conductor.start_imap_service
+        if flags.OFFLINE is True:
+            provider_domain = self._login_widget.get_selected_provider()
+            self._provider_config.load(
+                provider.get_provider_path(provider_domain))
+        provides_mx = self._provider_config.provides_mx()
+
+        if flags.OFFLINE is True and provides_mx:
+            start_fun()
+            return
+
+        enabled_services = self._enabled_services
         if self._provider_config.provides_mx() and \
-                self._enabled_services.count(MX_SERVICE) > 0:
-            self._mail_conductor.start_imap_service()
+                enabled_services.count(MX_SERVICE) > 0:
+            start_fun()
 
     def _on_mail_client_logged_in(self, req):
         """
@@ -1423,8 +1504,9 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._logged_user:
             self._eip_status.set_provider(
-                "%s@%s" % (self._logged_user,
-                           self._get_best_provider_config().get_domain()))
+                make_address(
+                    self._logged_user,
+                    self._get_best_provider_config().get_domain()))
         self._eip_status.eip_stopped()
 
     @QtCore.Slot()
@@ -1643,7 +1725,6 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts the logout sequence
         """
-
         self._soledad_bootstrapper.cancel_bootstrap()
         setProxiedObject(self._soledad, None)
 

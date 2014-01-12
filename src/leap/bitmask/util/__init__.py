@@ -76,3 +76,16 @@ def is_empty_file(path):
     Returns True if the file at path is empty.
     """
     return os.stat(path).st_size is 0
+
+
+def make_address(user, provider):
+    """
+    Return a full identifier for an user, as a email-like
+    identifier.
+
+    :param user: the username
+    :type user: basestring
+    :param provider: the provider domain
+    :type provider: basestring
+    """
+    return "%s@%s" % (user, provider)
