@@ -881,7 +881,8 @@ class MainWindow(QtGui.QMainWindow):
             "The current client version is not supported "
             "by this provider.<br>"
             "Please update to latest version.<br><br>"
-            "You can get the latest version from {0}").format(url)
+            "You can get the latest version from "
+            "<a href='{0}'>{1}</a>").format(url, url)
         QtGui.QMessageBox.warning(self, self.tr("Update Needed"), msg)
 
     def _incompatible_api(self):
