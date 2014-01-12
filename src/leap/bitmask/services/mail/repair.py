@@ -131,16 +131,20 @@ class MBOXPlumber(object):
         Gets the user id for this account.
         """
         print "Got authenticated."
-        self.uid = self.srp.get_uid()
-        if not self.uid:
-            print "Got BAD UID from provider!"
+
+        # XXX this won't be needed anymore after we keep a local
+        # cache of user uuids, so we'll be able to pick it from
+        # there.
+        self.uuid = self.srp.get_uuid()
+        if not self.uuid:
+            print "Got BAD UUID from provider!"
             return self.exit()
-        print "UID: %s" % (self.uid)
+        print "UUID: %s" % (self.uuid)
 
         secrets, localdb = get_db_paths(self.uid)
 
         self.sol = initialize_soledad(
-            self.uid, self.userid, self.passwd,
+            self.uuid, self.userid, self.passwd,
             secrets, localdb, "/tmp", "/tmp")
 
         self.acct = SoledadBackedAccount(self.userid, self.sol)

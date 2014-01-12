@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # leapsettings.py
-# Copyright (C) 2013 LEAP
+# Copyright (C) 2013, 2014 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,9 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
-QSettings abstraction
+QSettings abstraction.
 """
 import os
 import logging
@@ -70,6 +69,7 @@ class LeapSettings(object):
     GATEWAY_KEY = "Gateway"
     PINNED_KEY = "Pinned"
     SKIPFIRSTRUN_KEY = "SkipFirstRun"
+    UUIDFORUSER_KEY = "%s/%s_uuid"
 
     # values
     GATEWAY_AUTOMATIC = "Automatic"
@@ -353,3 +353,31 @@ class LeapSettings(object):
         """
         leap_assert_type(skip, bool)
         self._settings.setValue(self.SKIPFIRSTRUN_KEY, skip)
+
+    def get_uuid(self, username):
+        """
+        Gets the uuid for a given username.
+
+        :param username: the full user identifier in the form user@provider
+        :type username: basestring
+        """
+        leap_assert("@" in username,
+                    "Expected username in the form user@provider")
+        user, provider = username.split('@')
+        return self._settings.value(
+            self.UUIDFORUSER_KEY % (provider, user), "")
+
+    def set_uuid(self, username, value):
+        """
+        Sets the uuid for a given username.
+
+        :param username: the full user identifier in the form user@provider
+        :type username: basestring
+        :param value: the uuid to save
+        :type value: basestring
+        """
+        leap_assert("@" in username,
+                    "Expected username in the form user@provider")
+        user, provider = username.split('@')
+        leap_assert(len(value) > 0, "We cannot save an empty uuid")
+        self._settings.setValue(self.UUIDFORUSER_KEY % (provider, user), value)

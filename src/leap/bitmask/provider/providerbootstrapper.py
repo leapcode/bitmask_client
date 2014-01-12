@@ -208,6 +208,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # XXX Watch out, have to check the supported api yet.
         else:
             if flags.APP_VERSION_CHECK:
+                # TODO split
                 if not provider.supports_client(min_client_version):
                     self._signaler.signal(
                         self._signaler.PROV_UNSUPPORTED_CLIENT)
@@ -221,6 +222,7 @@ class ProviderBootstrapper(AbstractBootstrapper):
                                   domain, "provider.json"])
 
             if flags.API_VERSION_CHECK:
+                # TODO split
                 api_version = provider_config.get_api_version()
                 if provider.supports_api(api_version):
                     logger.debug("Provider definition has been modified")

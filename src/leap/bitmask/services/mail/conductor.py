@@ -72,6 +72,8 @@ class IMAPControl(object):
         """
         Starts imap service.
         """
+        from leap.bitmask.config import flags
+
         logger.debug('Starting imap service')
         leap_assert(sameProxiedObjects(self._soledad, None)
                     is not True,
@@ -81,12 +83,17 @@ class IMAPControl(object):
                     "We need a non-null keymanager for initializing imap "
                     "service")
 
+        offline = flags.OFFLINE
         self.imap_service, self.imap_port, \
             self.imap_factory = imap.start_imap_service(
                 self._soledad,
                 self._keymanager,
-                userid=self.userid)
-        self.imap_service.start_loop()
+                userid=self.userid,
+                offline=offline)
+
+        if offline is False:
+            logger.debug("Starting loop")
+            self.imap_service.start_loop()
 
     def stop_imap_service(self):
         """
@@ -339,7 +346,7 @@ class MailConductor(IMAPControl, SMTPControl):
         self._mail_machine = None
         self._mail_connection = mail_connection.MailConnection()
 
-        self.userid = None
+        self._userid = None
 
     @property
     def userid(self):
