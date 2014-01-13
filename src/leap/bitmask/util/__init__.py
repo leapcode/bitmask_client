@@ -18,24 +18,45 @@
 Some small and handy functions.
 """
 import datetime
+import itertools
 import os
 
 from leap.bitmask.config import flags
 from leap.common.config import get_path_prefix as common_get_path_prefix
 
-
-def get_path_prefix():
-    return common_get_path_prefix(flags.STANDALONE)
+# functional goodies for a healthier life:
+# We'll give your money back if it does not alleviate the eye strain, at least.
 
 
 def first(things):
     """
     Return the head of a collection.
+
+    :param things: a sequence to extract the head from.
+    :type things: sequence
+    :return: object, or None
     """
     try:
         return things[0]
     except (IndexError, TypeError):
         return None
+
+
+def flatten(things):
+    """
+    Return a generator iterating through a flattened sequence.
+
+    :param things: a nested sequence, eg, a list of lists.
+    :type things: sequence
+    :rtype: generator
+    """
+    return itertools.chain(*things)
+
+
+# leap repetitive chores
+
+def get_path_prefix():
+    return common_get_path_prefix(flags.STANDALONE)
 
 
 def get_modification_ts(path):
