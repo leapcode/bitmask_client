@@ -115,7 +115,7 @@ setup_develop() {
     # do a setup develop in every package
     for package in $PACKAGES; do
         cd $REPOS_ROOT/$package
-        python setup.py develop
+        python setup.py develop --always-unzip
     done
 
     # hack to solve gnupg version problem
