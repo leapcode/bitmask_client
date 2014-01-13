@@ -75,6 +75,11 @@ Launches the Bitmask client.""", epilog=epilog)
                         help='Repair mailboxes for a given account. '
                              'Use when upgrading versions after a schema '
                              'change.')
+    parser.add_argument('--import-maildir', metavar="/path/to/Maildir",
+                        nargs='?',
+                        action="store", dest="maildir",
+                        help='Import the given maildir. Use with the --mdir '
+                             'flag to import to folders other than INBOX.')
 
     if not IS_RELEASE_VERSION:
         help_text = ("Bypasses the certificate check during provider "

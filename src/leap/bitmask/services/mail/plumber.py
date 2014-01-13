@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-# repair.py
-# Copyright (C) 2013 LEAP
+# plumber.py
+# Copyright (C) 2013, 2014  LEAP
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Utils for repairing mailbox indexes.
+Utils for manipulating local mailboxes.
 """
 import logging
 import getpass
@@ -217,7 +217,12 @@ if __name__ == "__main__":
 
     logging.basicConfig()
 
-    if len(sys.argv) != 2:
-        print "Usage: repair <username>"
+    if len(sys.argv) != 3:
+        print "Usage: plumber [repair|import] <username>"
         sys.exit(1)
-    repair_account(sys.argv[1])
+
+    # this would be better with a dict if it grows
+    if sys.argv[1] == "repair":
+        repair_account(sys.argv[2])
+    if sys.argv[1] == "import":
+        print "Not implemented yet."
