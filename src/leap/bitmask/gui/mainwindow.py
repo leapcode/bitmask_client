@@ -1754,9 +1754,8 @@ class MainWindow(QtGui.QMainWindow):
             self._mail_status.mail_state_disabled()
 
         else:
-            self._login_widget.set_login_status(
-                self.tr("Something went wrong with the logout."),
-                error=True)
+            self._login_widget.set_status(
+                self.tr("Something went wrong with the logout."))
 
     def _intermediate_stage(self, data):
         # TODO this method name is confusing as hell.
