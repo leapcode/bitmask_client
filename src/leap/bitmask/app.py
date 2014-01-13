@@ -80,7 +80,7 @@ def install_qtreactor(logger):
     logger.debug("Qt4 reactor installed")
 
 
-def add_logger_handlers(debug=False, logfile=None):
+def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
     """
     Create the logger and attach the handlers.
 
@@ -117,6 +117,9 @@ def add_logger_handlers(debug=False, logfile=None):
     else:
         using_coloredlog = True
 
+    if using_coloredlog:
+        replace_stdout = False
+
     silencer = log_silencer.SelectiveSilencerFilter()
     console.addFilter(silencer)
     logger.addHandler(console)
@@ -139,7 +142,7 @@ def add_logger_handlers(debug=False, logfile=None):
         logger.addHandler(fileh)
         logger.debug('File handler plugged!')
 
-    if not using_coloredlog:
+    if replace_stdout:
         replace_stdout_stderr_with_logging(logger)
 
     return logger
@@ -164,18 +167,22 @@ def replace_stdout_stderr_with_logging(logger):
         log.startLogging(sys.stdout)
 
 
-def main():
+def do_display_version(opts):
     """
-    Starts the main event loop and launches the main window.
+    Display version and exit.
     """
-    # TODO move boilerplate outa here!
-    _, opts = leap_argparse.init_leapc_args()
-
+    # TODO move to a different module: commands?
     if opts.version:
         print "Bitmask version: %s" % (VERSION,)
         print "leap.mail version: %s" % (MAIL_VERSION,)
         sys.exit(0)
 
+
+def do_mail_plumbing(opts):
+    """
+    Analize options and do mailbox plumbing if requested.
+    """
+    # TODO move to a different module: commands?
     if opts.repair:
         plumber.repair_account(opts.acct)
         sys.exit(0)
@@ -184,6 +191,15 @@ def main():
         sys.exit(0)
     # XXX catch when import is used w/o acct
 
+
+def main():
+    """
+    Starts the main event loop and launches the main window.
+    """
+    # TODO move boilerplate outa here!
+    _, opts = leap_argparse.init_leapc_args()
+    do_display_version(opts)
+
     standalone = opts.standalone
     offline = opts.offline
     bypass_checks = getattr(opts, 'danger', False)
@@ -191,12 +207,6 @@ def main():
     logfile = opts.log_file
     mail_logfile = opts.mail_log_file
     openvpn_verb = opts.openvpn_verb
-
-    try:
-        event_server.ensure_server(event_server.SERVER_PORT)
-    except Exception as e:
-        # We don't even have logger configured in here
-        print "Could not ensure server: %r" % (e,)
 
     #############################################################
     # Given how paths and bundling works, we need to delay the imports
@@ -212,9 +222,25 @@ def main():
 
     BaseConfig.standalone = standalone
 
-    logger = add_logger_handlers(debug, logfile)
+    replace_stdout = True
+    if opts.repair or opts.import_maildir:
+        # We don't want too much clutter on the comand mode
+        # this could be more generic with a Command class.
+        replace_stdout = False
+    logger = add_logger_handlers(debug, logfile, replace_stdout)
+
+    # ok, we got logging in place, we can satisfy mail plumbing requests
+    # and show logs there. it normally will exit there if we got that path.
+    do_mail_plumbing(opts)
+
+    try:
+        event_server.ensure_server(event_server.SERVER_PORT)
+    except Exception as e:
+        # We don't even have logger configured in here
+        print "Could not ensure server: %r" % (e,)
 
     # And then we import all the other stuff
+    # I think it's safe to import at the top by now -- kali
     from leap.bitmask.gui import locale_rc
     from leap.bitmask.gui import twisted_main
     from leap.bitmask.gui.mainwindow import MainWindow
@@ -225,6 +251,7 @@ def main():
     # pylint: avoid unused import
     assert(locale_rc)
 
+    # TODO move to a different module: commands?
     if not we_are_the_one_and_only():
         # Bitmask is already running
         logger.warning("Tried to launch more than one instance "
