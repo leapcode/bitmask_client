@@ -69,17 +69,22 @@ Launches the Bitmask client.""", epilog=epilog)
     parser.add_argument('-o', '--offline', action="store_true",
                         help='Starts Bitmask in offline mode: will not '
                              'try to sync with remote replicas for email.')
-    parser.add_argument('-r', '--repair-mailboxes', metavar="user@provider",
+
+    parser.add_argument('--acct', metavar="user@provider",
                         nargs='?',
-                        action="store", dest="acct_to_repair",
+                        action="store", dest="acct",
+                        help='Manipulate mailboxes for this account')
+    parser.add_argument('-r', '--repair-mailboxes', default=False,
+                        action="store_true", dest="repair",
                         help='Repair mailboxes for a given account. '
                              'Use when upgrading versions after a schema '
-                             'change.')
+                             'change. Use with --acct')
     parser.add_argument('--import-maildir', metavar="/path/to/Maildir",
                         nargs='?',
-                        action="store", dest="maildir",
-                        help='Import the given maildir. Use with the --mdir '
-                             'flag to import to folders other than INBOX.')
+                        action="store", dest="import_maildir",
+                        help='Import the given maildir. Use with the '
+                             '--to-mbox flag to import to folders other '
+                             'than INBOX. Use with --acct')
 
     if not IS_RELEASE_VERSION:
         help_text = ("Bypasses the certificate check during provider "

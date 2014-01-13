@@ -22,10 +22,13 @@ import getpass
 import os
 
 from collections import defaultdict
+from functools import partial
+
+from twisted.internet import defer
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.util import get_path_prefix
+from leap.bitmask.util import flatten, get_path_prefix
 from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
 
 from leap.mail.imap.account import SoledadBackedAccount
@@ -89,20 +92,23 @@ class MBOXPlumber(object):
     that can be invoked when data migration in the client is needed.
     """
 
-    def __init__(self, userid, passwd):
+    def __init__(self, userid, passwd, mdir=None):
         """
-        Initializes the plumber with all that's needed to authenticate
+        Initialize the plumber with all that's needed to authenticate
         against the provider.
 
         :param userid: user identifier, foo@bar
         :type userid: basestring
         :param passwd: the soledad passphrase
         :type passwd: basestring
+        :param mdir: a path to a maildir to import
+        :type mdir: str or None
         """
         self.userid = userid
         self.passwd = passwd
         user, provider = userid.split('@')
         self.user = user
+        self.mdir = mdir
         self.sol = None
         self._settings = LeapSettings()
 
@@ -116,9 +122,9 @@ class MBOXPlumber(object):
             print "could not load provider config!"
             return self.exit()
 
-    def repair_account(self, *args):
+    def _init_local_soledad(self):
         """
-        Gets the user id for this account.
+        Initialize local Soledad instance.
         """
         self.uuid = self._settings.get_uuid(self.userid)
         if not self.uuid:
@@ -131,8 +137,16 @@ class MBOXPlumber(object):
         self.sol = initialize_soledad(
             self.uuid, self.userid, self.passwd,
             secrets, localdb, "/tmp", "/tmp")
-
         self.acct = SoledadBackedAccount(self.userid, self.sol)
+    #
+    # Account repairing
+    #
+
+    def repair_account(self, *args):
+        """
+        Repair mbox uids for all mboxes in this account.
+        """
+        self._init_local_soledad()
         for mbox_name in self.acct.mailboxes:
             self.repair_mbox_uids(mbox_name)
         print "done."
@@ -140,7 +154,7 @@ class MBOXPlumber(object):
 
     def repair_mbox_uids(self, mbox_name):
         """
-        Repairs indexes for a given mbox
+        Repair indexes for a given mbox.
 
         :param mbox_name: mailbox to repair
         :type mbox_name: basestring
@@ -159,6 +173,7 @@ class MBOXPlumber(object):
             print "Mbox does not need repair."
             return
 
+        # XXX CHANGE? ----
         msgs = mbox.messages.get_all()
         for zindex, doc in enumerate(msgs):
             mindex = zindex + 1
@@ -174,7 +189,7 @@ class MBOXPlumber(object):
 
     def _has_dupes(self, sequence):
         """
-        Returns True if the given sequence of ints has duplicates.
+        Return True if the given sequence of ints has duplicates.
 
         :param sequence: a sequence of ints
         :type sequence: sequence
@@ -186,6 +201,71 @@ class MBOXPlumber(object):
             if d[uid] != 1:
                 return True
         return False
+
+    #
+    # Maildir import
+    #
+    def import_mail(self, mail_filename):
+        """
+        Import a single mail into a mailbox.
+
+        :param mbox: the Mailbox instance to save in.
+        :type mbox: SoledadMailbox
+        :param mail_filename: the filename to the mail file to save
+        :type mail_filename: basestring
+        :return: a deferred
+        """
+        def saved(_):
+            print "message added"
+
+        with open(mail_filename) as f:
+            mail_string = f.read()
+            uid = self._mbox.getUIDNext()
+            print "saving with UID: %s" % uid
+            d = self._mbox.messages.add_msg(mail_string, uid=uid)
+        return d
+
+    def import_maildir(self, mbox_name="INBOX"):
+        """
+        Import all mails in a maildir.
+
+        We will process all subfolders as beloging
+        to the same mailbox (cur, new, tmp).
+        """
+        # TODO parse hierarchical subfolders into
+        # inferior mailboxes.
+
+        if not os.path.isdir(self.mdir):
+            print "ERROR: maildir path does not exist."
+            return
+
+        self._init_local_soledad()
+        mbox = self.acct.getMailbox(mbox_name)
+        self._mbox = mbox
+        len_mbox = mbox.getMessageCount()
+
+        mail_files_g = flatten(
+            map(partial(os.path.join, f), files)
+            for f, _, files in os.walk(self.mdir))
+
+        # we only coerce the generator to give the
+        # len, but we could skip than and inform at the end.
+        mail_files = list(mail_files_g)
+        print "Got %s mails to import into %s (%s)" % (
+            len(mail_files), mbox_name, len_mbox)
+
+        def all_saved(_):
+            print "all messages imported"
+
+        deferreds = []
+        for f_name in mail_files:
+            deferreds.append(self.import_mail(f_name))
+        d1 = defer.gatherResults(deferreds, consumeErrors=False)
+        d1.addCallback(all_saved)
+        d1.addCallback(self._cbExit)
+
+    def _cbExit(self, ignored):
+        return self.exit()
 
     def exit(self):
         from twisted.internet import reactor
@@ -200,7 +280,8 @@ class MBOXPlumber(object):
 
 def repair_account(userid):
     """
-    Starts repair process for a given account.
+    Start repair process for a given account.
+
     :param userid: the user id (email-like)
     """
     from twisted.internet import reactor
@@ -209,6 +290,21 @@ def repair_account(userid):
     # go mario!
     plumber = MBOXPlumber(userid, passwd)
     reactor.callLater(1, plumber.repair_account)
+    reactor.run()
+
+
+def import_maildir(userid, maildir_path):
+    """
+    Start import-maildir process for a given account.
+
+    :param userid: the user id (email-like)
+    """
+    from twisted.internet import reactor
+    passwd = unicode(getpass.getpass("Passphrase: "))
+
+    # go mario!
+    plumber = MBOXPlumber(userid, passwd, mdir=maildir_path)
+    reactor.callLater(1, plumber.import_maildir)
     reactor.run()
 
 
