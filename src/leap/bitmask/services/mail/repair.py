@@ -23,8 +23,8 @@ import os
 
 from collections import defaultdict
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.util import get_path_prefix
 from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
 
@@ -104,6 +104,8 @@ class MBOXPlumber(object):
         user, provider = userid.split('@')
         self.user = user
         self.sol = None
+        self._settings = LeapSettings()
+
         provider_config_path = os.path.join(
             get_path_prefix(),
             "leap", "providers",
@@ -114,34 +116,17 @@ class MBOXPlumber(object):
             print "could not load provider config!"
             return self.exit()
 
-        self.srp = SRPAuth(provider_config)
-        self.srp.authentication_finished.connect(self.repair_account)
-
-    def start_auth(self):
-        """
-        returns the user identifier for a given provider.
-
-        :param provider: the provider to which we authenticate against.
-        """
-        print "Authenticating with provider..."
-        self.d = self.srp.authenticate(self.user, self.passwd)
-
     def repair_account(self, *args):
         """
         Gets the user id for this account.
         """
-        print "Got authenticated."
-
-        # XXX this won't be needed anymore after we keep a local
-        # cache of user uuids, so we'll be able to pick it from
-        # there.
-        self.uuid = self.srp.get_uuid()
+        self.uuid = self._settings.get_uuid(self.userid)
         if not self.uuid:
-            print "Got BAD UUID from provider!"
+            print "Cannot get UUID from settings. Log in at least once."
             return self.exit()
         print "UUID: %s" % (self.uuid)
 
-        secrets, localdb = get_db_paths(self.uid)
+        secrets, localdb = get_db_paths(self.uuid)
 
         self.sol = initialize_soledad(
             self.uuid, self.userid, self.passwd,
@@ -168,7 +153,7 @@ class MBOXPlumber(object):
         print "There are %s messages" % (len_mbox,)
 
         last_ok = True if mbox.last_uid == len_mbox else False
-        uids_iter = (doc.content['uid'] for doc in mbox.messages.get_all())
+        uids_iter = mbox.messages.all_msg_iter()
         dupes = self._has_dupes(uids_iter)
         if last_ok and not dupes:
             print "Mbox does not need repair."
@@ -204,7 +189,6 @@ class MBOXPlumber(object):
 
     def exit(self):
         from twisted.internet import reactor
-        self.d.cancel()
         if self.sol:
             self.sol.close()
         try:
@@ -224,7 +208,7 @@ def repair_account(userid):
 
     # go mario!
     plumber = MBOXPlumber(userid, passwd)
-    reactor.callLater(1, plumber.start_auth)
+    reactor.callLater(1, plumber.repair_account)
     reactor.run()
 
 
