@@ -1,0 +1,1 @@
+- Fix logout error message, display it similarly to other errors in the app. Closes #4942.

@@ -327,7 +327,6 @@ class LoginWidget(QtGui.QWidget):
         self.ui.logged_widget.show()
         self.ui.lblUser.setText(make_address(
             self.get_user(), self.get_selected_provider()))
-        self.set_login_status("")
 
         if flags.OFFLINE is False:
             self.logged_in_signal.emit()
@@ -345,22 +344,6 @@ class LoginWidget(QtGui.QWidget):
         self.set_password("")
         self.set_enabled(True)
         self.set_status("", error=False)
-
-    def set_login_status(self, msg, error=False):
-        """
-        Sets the status label for the logged in state.
-
-        :param msg: status message
-        :type msg: str or unicode
-        :param error: if the status is an erroneous one, then set this
-                      to True
-        :type error: bool
-        """
-        leap_assert_type(error, bool)
-        if error:
-            msg = "<font color='red'><b>%s</b></font>" % (msg,)
-        self.ui.lblLoginStatus.setText(msg)
-        self.ui.lblLoginStatus.show()
 
     def start_logout(self):
         """
