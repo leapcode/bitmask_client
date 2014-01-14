@@ -81,6 +81,8 @@ from leap.common.check import leap_assert
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
 
+from leap.mail.imap.service.imap import IMAP_PORT
+
 from ui_mainwindow import Ui_MainWindow
 
 logger = logging.getLogger(__name__)
@@ -259,6 +261,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
+        self.ui.action_help.triggered.connect(self._help)
         self.ui.action_create_new_account.triggered.connect(
             self._launch_wizard)
 
@@ -871,6 +874,33 @@ class MainWindow(QtGui.QMainWindow):
                     "<br>"
                     "<a href='https://leap.se'>More about LEAP"
                     "</a>") % (VERSION, VERSION_HASH[:10], greet))
+
+    def _help(self):
+        """
+        SLOT
+        TRIGGERS: self.ui.action_help.triggered
+
+        Display the Bitmask help dialog.
+        """
+        # TODO: don't hardcode!
+        smtp_port = 2013
+
+        url = ("<a href='https://addons.mozilla.org/es/thunderbird/"
+               "addon/bitmask/'>bitmask addon</a>")
+
+        msg = (
+            "<strong>Instructions to use mail:</strong><br>"
+            "If you use Thunderbird you can use the Bitmask extension helper. "
+            "Search for 'Bitmask' in the add-on manager or download it "
+            "from: {0}.<br><br>"
+            "You can configure bitmask manually with this options:<br>"
+            "<em>"
+            "   Incoming -> IMAP, port: {1}<br>"
+            "   Outgoing -> SMTP, port: {2}<br>"
+            "   Username -> your bitmask username.<br>"
+            "   Password -> leave it empty."
+            "</em>").format(url, IMAP_PORT, smtp_port)
+        QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
     def _needs_update(self):
         """
