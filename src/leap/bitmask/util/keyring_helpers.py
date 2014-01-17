@@ -19,19 +19,23 @@ Keyring helpers.
 """
 import logging
 
-import keyring
+try:
+    import keyring
+    from keyring.backends.file import EncryptedKeyring, PlaintextKeyring
+    OBSOLETE_KEYRINGS = [
+        EncryptedKeyring,
+        PlaintextKeyring
+    ]
+    canuse = lambda kr: (kr is not None
+                         and kr.__class__ not in OBSOLETE_KEYRINGS)
 
-from keyring.backends.file import EncryptedKeyring, PlaintextKeyring
+except Exception:
+    # Problems when importing keyring! It might be a problem binding to the
+    # dbus socket, or stuff like that.
+    keyring = None
+
 
 logger = logging.getLogger(__name__)
-
-
-OBSOLETE_KEYRINGS = [
-    EncryptedKeyring,
-    PlaintextKeyring
-]
-
-canuse = lambda kr: kr is not None and kr.__class__ not in OBSOLETE_KEYRINGS
 
 
 def _get_keyring_with_fallback():
@@ -42,6 +46,8 @@ def _get_keyring_with_fallback():
     This is a workaround for the cases in which the keyring module chooses
     an insecure keyring by default (ie, inside a virtualenv).
     """
+    if not keyring:
+        return None
     kr = keyring.get_keyring()
     if not canuse(kr):
         try:
@@ -61,6 +67,8 @@ def has_keyring():
 
     :rtype: bool
     """
+    if not keyring:
+        return False
     kr = _get_keyring_with_fallback()
     return canuse(kr)
 
@@ -71,5 +79,7 @@ def get_keyring():
 
     :rtype: keyringBackend or None
     """
+    if not keyring:
+        return False
     kr = _get_keyring_with_fallback()
     return kr if canuse(kr) else None
