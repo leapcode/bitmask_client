@@ -1,0 +1,1 @@
+- Disable Advanced Key Manager import feature since it's experimental and may cause data loss. Closes #4877.
