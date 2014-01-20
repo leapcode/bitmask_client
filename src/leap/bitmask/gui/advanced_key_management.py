@@ -48,6 +48,9 @@ class AdvancedKeyManagement(QtGui.QWidget):
         self.ui = Ui_AdvancedKeyManagement()
         self.ui.setupUi(self)
 
+        # XXX: Temporarily disable the key import.
+        self.ui.pbImportKeys.setVisible(False)
+
         # if Soledad is not started yet
         if sameProxiedObjects(soledad, None):
             self.ui.gbMyKeyPair.setEnabled(False)
@@ -57,12 +60,13 @@ class AdvancedKeyManagement(QtGui.QWidget):
             msg = msg.format(get_service_display_name(MX_SERVICE))
             self.ui.lblStatus.setText(msg)
             return
-        else:
-            msg = self.tr(
-                "<span style='color:#ff0000;'>WARNING</span>:<br>"
-                "This is an experimental feature, you can lose access to "
-                "existing e-mails.")
-            self.ui.lblStatus.setText(msg)
+        # XXX: since import is disabled this is no longer a dangerous feature.
+        # else:
+        #     msg = self.tr(
+        #         "<span style='color:#ff0000;'>WARNING</span>:<br>"
+        #         "This is an experimental feature, you can lose access to "
+        #         "existing e-mails.")
+        #     self.ui.lblStatus.setText(msg)
 
         self._keymanager = keymanager
         self._soledad = soledad
