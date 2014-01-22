@@ -205,6 +205,10 @@ class Wizard(QtGui.QWizard):
             random.shuffle(pinned)  # don't prioritize alphabetically
             self.ui.cbProviders.addItems(pinned)
 
+        # We have configured providers, so by default we select the
+        # 'Use existing provider' option.
+        self.ui.rbExistingProvider.setChecked(True)
+
     def get_domain(self):
         return self._domain
 
