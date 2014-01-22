@@ -888,7 +888,7 @@ class MainWindow(QtGui.QMainWindow):
         url = ("<a href='https://addons.mozilla.org/es/thunderbird/"
                "addon/bitmask/'>bitmask addon</a>")
 
-        msg = (
+        msg = self.tr(
             "<strong>Instructions to use mail:</strong><br>"
             "If you use Thunderbird you can use the Bitmask extension helper. "
             "Search for 'Bitmask' in the add-on manager or download it "
@@ -898,7 +898,8 @@ class MainWindow(QtGui.QMainWindow):
             "   Incoming -> IMAP, port: {1}<br>"
             "   Outgoing -> SMTP, port: {2}<br>"
             "   Username -> your bitmask username.<br>"
-            "   Password -> leave it empty."
+            "   Password -> does not matter, use any text. "
+            " Just don't leave it empty and don't use your account's password."
             "</em>").format(url, IMAP_PORT, smtp_port)
         QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
