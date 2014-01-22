@@ -269,24 +269,10 @@
        <string>Configure or select a provider</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="0">
-        <widget class="QRadioButton" name="rbNewProvider">
-         <property name="text">
-          <string>Configure new provider:</string>
-         </property>
-         <property name="checked">
-          <bool>true</bool>
-         </property>
-        </widget>
+       <item row="5" column="1">
+        <widget class="QLineEdit" name="lnProvider"/>
        </item>
-       <item row="2" column="0">
-        <widget class="QRadioButton" name="rbExistingProvider">
-         <property name="text">
-          <string>Use existing one:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>https://</string>
@@ -296,13 +282,30 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="lnProvider"/>
+       <item row="4" column="0">
+        <widget class="QRadioButton" name="rbNewProvider">
+         <property name="text">
+          <string>Configure new provider:</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
        </item>
-       <item row="1" column="2">
+       <item row="5" column="2">
         <widget class="QPushButton" name="btnCheck">
          <property name="text">
           <string>Check</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QRadioButton" name="rbExistingProvider">
+         <property name="text">
+          <string>Use existing one:</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -820,8 +823,8 @@
    <slot>setFocus()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>167</x>
-     <y>192</y>
+     <x>174</x>
+     <y>174</y>
     </hint>
     <hint type="destinationlabel">
      <x>265</x>
@@ -836,12 +839,12 @@
    <slot>setFocus()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>171</x>
-     <y>164</y>
+     <x>174</x>
+     <y>227</y>
     </hint>
     <hint type="destinationlabel">
-     <x>246</x>
-     <y>164</y>
+     <x>425</x>
+     <y>254</y>
     </hint>
    </hints>
   </connection>
@@ -852,12 +855,12 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>169</x>
-     <y>196</y>
+     <x>174</x>
+     <y>174</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>163</y>
+     <x>454</x>
+     <y>254</y>
     </hint>
    </hints>
   </connection>
@@ -868,8 +871,8 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>169</x>
-     <y>162</y>
+     <x>174</x>
+     <y>227</y>
     </hint>
     <hint type="destinationlabel">
      <x>269</x>
@@ -884,12 +887,12 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>154</x>
-     <y>193</y>
+     <x>169</x>
+     <y>174</y>
     </hint>
     <hint type="destinationlabel">
-     <x>498</x>
-     <y>170</y>
+     <x>520</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>
