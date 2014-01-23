@@ -17,7 +17,6 @@
 """
 First run wizard
 """
-import os
 import logging
 import json
 import random
@@ -30,10 +29,11 @@ from twisted.internet import threads
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpregister import SRPRegister
+from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services import get_service_display_name, get_supported
-from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.password import basic_password_checks
+from leap.bitmask.util.request_helpers import get_content
 
 from ui_wizard import Ui_Wizard
 
@@ -491,10 +491,7 @@ class Wizard(QtGui.QWizard):
         check. Since this check is the last of this set, it also
         completes the page if passed
         """
-        if self._provider_config.load(os.path.join("leap",
-                                                   "providers",
-                                                   self._domain,
-                                                   "provider.json")):
+        if self._provider_config.load(get_provider_path(self._domain)):
             self._complete_task(data, self.ui.lblProviderInfo,
                                 True, self.SELECT_PROVIDER_PAGE)
             self._provider_checks_ok = True

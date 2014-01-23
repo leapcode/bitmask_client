@@ -18,7 +18,6 @@
 Backend for everything
 """
 import logging
-import os
 
 from Queue import Queue, Empty
 
@@ -29,6 +28,7 @@ from twisted.python import log
 import zope.interface
 
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 
 # Frontend side
@@ -155,9 +155,7 @@ class Provider(object):
         # we want to connect to other provider...
         if (not self._provider_config.loaded() or
                 self._provider_config.get_domain() != provider):
-            self._provider_config.load(
-                os.path.join("leap", "providers",
-                             provider, "provider.json"))
+            self._provider_config.load(get_provider_path(provider))
 
         if self._provider_config.loaded():
             d = self._provider_bootstrapper.run_provider_setup_checks(

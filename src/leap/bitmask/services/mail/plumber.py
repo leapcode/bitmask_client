@@ -17,8 +17,8 @@
 """
 Utils for manipulating local mailboxes.
 """
-import logging
 import getpass
+import logging
 import os
 
 from collections import defaultdict
@@ -28,8 +28,9 @@ from twisted.internet import defer
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.util import flatten, get_path_prefix
+from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
+from leap.bitmask.util import flatten, get_path_prefix
 
 from leap.mail.imap.account import SoledadBackedAccount
 from leap.soledad.client import Soledad
@@ -112,10 +113,8 @@ class MBOXPlumber(object):
         self.sol = None
         self._settings = LeapSettings()
 
-        provider_config_path = os.path.join(
-            get_path_prefix(),
-            "leap", "providers",
-            provider, "provider.json")
+        provider_config_path = os.path.join(get_path_prefix(),
+                                            get_provider_path(provider))
         provider_config = ProviderConfig()
         loaded = provider_config.load(provider_config_path)
         if not loaded:
