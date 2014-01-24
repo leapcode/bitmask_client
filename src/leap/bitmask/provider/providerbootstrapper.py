@@ -24,17 +24,18 @@ import sys
 
 import requests
 
+from leap.bitmask import provider
+from leap.bitmask import util
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
-from leap.bitmask.util.request_helpers import get_content
-from leap.bitmask import util
-from leap.bitmask.util.constants import REQUEST_TIMEOUT
+from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
-from leap.bitmask import provider
+from leap.bitmask.util.constants import REQUEST_TIMEOUT
+from leap.bitmask.util.request_helpers import get_content
 from leap.common import ca_bundle
 from leap.common.certs import get_digest
-from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.common.check import leap_assert, leap_assert_type, leap_check
+from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 
 logger = logging.getLogger(__name__)
 
@@ -166,8 +167,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         headers = {}
         domain = self._domain.encode(sys.getfilesystemencoding())
         provider_json = os.path.join(util.get_path_prefix(),
-                                     "leap", "providers", domain,
-                                     "provider.json")
+                                     get_provider_path(domain))
+
         mtime = get_mtime(provider_json)
 
         if self._download_if_needed and mtime:
