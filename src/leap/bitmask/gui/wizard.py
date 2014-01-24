@@ -70,8 +70,6 @@ class Wizard(QtGui.QWizard):
         self.ui = Ui_Wizard()
         self.ui.setupUi(self)
 
-        self._backend = backend
-
         self.setPixmap(QtGui.QWizard.LogoPixmap,
                        QtGui.QPixmap(":/images/mask-icon.png"))
 
@@ -90,19 +88,8 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.clicked.connect(self._check_provider)
         self.ui.lnProvider.returnPressed.connect(self._check_provider)
 
-        self._backend.signaler.prov_name_resolution.connect(
-            self._name_resolution)
-        self._backend.signaler.prov_https_connection.connect(
-            self._https_connection)
-        self._backend.signaler.prov_download_provider_info.connect(
-            self._download_provider_info)
-
-        self._backend.signaler.prov_download_ca_cert.connect(
-            self._download_ca_cert)
-        self._backend.signaler.prov_check_ca_fingerprint.connect(
-            self._check_ca_fingerprint)
-        self._backend.signaler.prov_check_api_certificate.connect(
-            self._check_api_certificate)
+        self._backend = backend
+        self._backend_connect()
 
         self._domain = None
         # HACK!! We need provider_config for the time being, it'll be
@@ -172,6 +159,7 @@ class Wizard(QtGui.QWizard):
         self._provider_setup_ok = False
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
+        self._backend_disconnect()
 
     def _load_configured_providers(self):
         """
@@ -688,25 +676,36 @@ class Wizard(QtGui.QWizard):
         self.ui.lblPassword.setText("")
         self.ui.lblPassword2.setText("")
 
-    def closeEvent(self, event):
+    def _backend_connect(self):
+        """
+        Connects all the backend signals with the wizard.
+        """
+        sig = self._backend.signaler
+        sig.prov_name_resolution.connect(self._name_resolution)
+        sig.prov_https_connection.connect(self._https_connection)
+        sig.prov_download_provider_info.connect(self._download_provider_info)
+
+        sig.prov_download_ca_cert.connect(self._download_ca_cert)
+        sig.prov_check_ca_fingerprint.connect(self._check_ca_fingerprint)
+        sig.prov_check_api_certificate.connect(self._check_api_certificate)
+
+    def _backend_disconnect(self):
         """
         This method is called when the wizard dialog is closed.
         We disconnect all the backend signals in here.
         """
+        sig = self._backend.signaler
         try:
             # disconnect backend signals
-            self._backend.signaler.prov_name_resolution.disconnect(
-                self._name_resolution)
-            self._backend.signaler.prov_https_connection.disconnect(
-                self._https_connection)
-            self._backend.signaler.prov_download_provider_info.disconnect(
+            sig.prov_name_resolution.disconnect(self._name_resolution)
+            sig.prov_https_connection.disconnect(self._https_connection)
+            sig.prov_download_provider_info.disconnect(
                 self._download_provider_info)
 
-            self._backend.signaler.prov_download_ca_cert.disconnect(
-                self._download_ca_cert)
-            self._backend.signaler.prov_check_ca_fingerprint.disconnect(
+            sig.prov_download_ca_cert.disconnect(self._download_ca_cert)
+            sig.prov_check_ca_fingerprint.disconnect(
                 self._check_ca_fingerprint)
-            self._backend.signaler.prov_check_api_certificate.disconnect(
+            sig.prov_check_api_certificate.disconnect(
                 self._check_api_certificate)
         except RuntimeError:
             pass  # Signal was not connected
