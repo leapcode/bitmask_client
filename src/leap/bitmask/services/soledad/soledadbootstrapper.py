@@ -26,6 +26,7 @@ from ssl import SSLError
 
 from PySide import QtCore
 from u1db import errors as u1db_errors
+from twisted.internet import threads
 from zope.proxy import sameProxiedObjects
 
 from leap.bitmask.config import flags
@@ -288,7 +289,18 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self._init_keymanager(self._address)
             self.local_only_ready.emit({self.PASSED_KEY: True})
         else:
-            self._do_soledad_sync()
+            try:
+                address = make_address(
+                    self._user, self._provider_config.get_domain())
+                self._init_keymanager(address)
+                self._keymanager.get_key(
+                    address, openpgp.OpenPGPKey,
+                    private=True, fetch_remote=False)
+                threads.deferToThread(self._do_soledad_sync)
+            except KeyNotFound:
+                logger.debug("Key not found. Generating key for %s" %
+                             (address,))
+                self._do_soledad_sync()
 
     def _pick_server(self, uuid):
         """
@@ -546,7 +558,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         address = make_address(
             self._user, self._provider_config.get_domain())
-        self._init_keymanager(address)
         logger.debug("Retrieving key for %s" % (address,))
 
         try:

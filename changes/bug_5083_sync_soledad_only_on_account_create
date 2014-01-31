@@ -1,0 +1,3 @@
+- Sync Soledad before bootstrapping mail only if the key for the user
+  is not found locally. Otherwise, defer to thread and
+  continue. Closes #5083
