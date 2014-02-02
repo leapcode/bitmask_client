@@ -101,8 +101,9 @@ def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
 
-    log_format = ('%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s '
-                  '- %(levelname)s - %(message)s')
+    # levelname length == 8, since 'CRITICAL' is the longest
+    log_format = ('%(asctime)s - %(levelname)-8s - '
+                  'L#%(lineno)-4s : %(name)s:%(funcName)s() - %(message)s')
     formatter = logging.Formatter(log_format)
 
     # Console handler
