@@ -50,7 +50,7 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.util import leap_argparse
-from leap.bitmask.util import log_silencer
+from leap.bitmask.util import log_silencer, LOG_FORMAT
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
@@ -100,11 +100,7 @@ def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
     # Create logger and formatter
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
-
-    # levelname length == 8, since 'CRITICAL' is the longest
-    log_format = ('%(asctime)s - %(levelname)-8s - '
-                  'L#%(lineno)-4s : %(name)s:%(funcName)s() - %(message)s')
-    formatter = logging.Formatter(log_format)
+    formatter = logging.Formatter(LOG_FORMAT)
 
     # Console handler
     try:

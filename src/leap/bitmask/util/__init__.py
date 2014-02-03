@@ -28,6 +28,11 @@ from leap.common.config import get_path_prefix as common_get_path_prefix
 # We'll give your money back if it does not alleviate the eye strain, at least.
 
 
+# levelname length == 8, since 'CRITICAL' is the longest
+LOG_FORMAT = ('%(asctime)s - %(levelname)-8s - '
+              'L#%(lineno)-4s : %(name)s:%(funcName)s() - %(message)s')
+
+
 def first(things):
     """
     Return the head of a collection.

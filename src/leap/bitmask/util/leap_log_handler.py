@@ -21,6 +21,8 @@ import logging
 
 from PySide import QtCore
 
+from leap.bitmask.util import LOG_FORMAT
+
 
 class LogHandler(logging.Handler):
     """
@@ -52,10 +54,7 @@ class LogHandler(logging.Handler):
         :param logging_level: the debug level to define the color.
         :type logging_level: str.
         """
-        log_format = ('%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s '
-                      '- %(levelname)s - %(message)s')
-        formatter = logging.Formatter(log_format)
-
+        formatter = logging.Formatter(LOG_FORMAT)
         return formatter
 
     def emit(self, logRecord):
