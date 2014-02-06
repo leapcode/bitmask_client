@@ -372,12 +372,16 @@ class LeapSettings(object):
         Sets the uuid for a given username.
 
         :param username: the full user identifier in the form user@provider
-        :type username: basestring
-        :param value: the uuid to save
-        :type value: basestring
+        :type username: str or unicode
+        :param value: the uuid to save or None to remove it
+        :type value: str or unicode or None
         """
         leap_assert("@" in username,
                     "Expected username in the form user@provider")
         user, provider = username.split('@')
-        leap_assert(len(value) > 0, "We cannot save an empty uuid")
-        self._settings.setValue(self.UUIDFORUSER_KEY % (provider, user), value)
+        key = self.UUIDFORUSER_KEY % (provider, user)
+        if value is None:
+            self._settings.remove(key)
+        else:
+            leap_assert(len(value) > 0, "We cannot save an empty uuid")
+            self._settings.setValue(key, value)
