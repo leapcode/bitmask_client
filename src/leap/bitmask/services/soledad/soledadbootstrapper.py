@@ -508,10 +508,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if flags.OFFLINE is True:
             args = (address, "https://localhost", self._soledad)
             kwargs = {
-                "session_id":  "",
-                "ca_cert_path":  "",
-                "api_uri":  "",
-                "api_version":  "",
+                "session_id": "",
+                "ca_cert_path": "",
+                "api_uri": "",
+                "api_version": "",
                 "uid": self._uuid,
                 "gpgbinary": self._get_gpg_bin_path()
             }

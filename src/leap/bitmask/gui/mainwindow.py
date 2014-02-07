@@ -20,8 +20,9 @@ Main window for Bitmask.
 import logging
 
 from threading import Condition
-from PySide import QtCore, QtGui
 from datetime import datetime
+
+from PySide import QtCore, QtGui
 from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject
 

@@ -280,7 +280,6 @@ class FakeSession(Resource):
         if HAMK is None:
             print '[server] verification failed!!!'
             raise Exception("Authentication failed!")
-            #import ipdb;ipdb.set_trace()
 
         assert svr.authenticated()
         print "***"
