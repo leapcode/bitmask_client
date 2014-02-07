@@ -893,7 +893,7 @@ class MainWindow(QtGui.QMainWindow):
             "If you use Thunderbird you can use the Bitmask extension helper. "
             "Search for 'Bitmask' in the add-on manager or download it "
             "from: {0}.<br><br>"
-            "You can configure bitmask manually with this options:<br>"
+            "You can configure Bitmask manually with these options:<br>"
             "<em>"
             "   Incoming -> IMAP, port: {1}<br>"
             "   Outgoing -> SMTP, port: {2}<br>"
