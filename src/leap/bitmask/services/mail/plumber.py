@@ -33,6 +33,8 @@ from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
 from leap.bitmask.util import flatten, get_path_prefix
 
 from leap.mail.imap.account import SoledadBackedAccount
+from leap.mail.imap.memorystore import MemoryStore
+from leap.mail.imap.soledadstore import SoledadStore
 from leap.soledad.client import Soledad
 
 logger = logging.getLogger(__name__)
@@ -128,7 +130,8 @@ class MBOXPlumber(object):
         self.uuid = self._settings.get_uuid(self.userid)
         if not self.uuid:
             print "Cannot get UUID from settings. Log in at least once."
-            return self.exit()
+            return False
+
         print "UUID: %s" % (self.uuid)
 
         secrets, localdb = get_db_paths(self.uuid)
@@ -136,7 +139,13 @@ class MBOXPlumber(object):
         self.sol = initialize_soledad(
             self.uuid, self.userid, self.passwd,
             secrets, localdb, "/tmp", "/tmp")
-        self.acct = SoledadBackedAccount(self.userid, self.sol)
+        memstore = MemoryStore(
+            permanent_store=SoledadStore(self.sol),
+            write_period=5)
+        self.acct = SoledadBackedAccount(self.userid, self.sol,
+                                         memstore=memstore)
+        return True
+
     #
     # Account repairing
     #
@@ -145,7 +154,10 @@ class MBOXPlumber(object):
         """
         Repair mbox uids for all mboxes in this account.
         """
-        self._init_local_soledad()
+        init = self._init_local_soledad()
+        if not init:
+            return self.exit()
+
         for mbox_name in self.acct.mailboxes:
             self.repair_mbox_uids(mbox_name)
         print "done."
@@ -219,9 +231,10 @@ class MBOXPlumber(object):
 
         with open(mail_filename) as f:
             mail_string = f.read()
-            uid = self._mbox.getUIDNext()
-            print "saving with UID: %s" % uid
-            d = self._mbox.messages.add_msg(mail_string, uid=uid)
+            #uid = self._mbox.getUIDNext()
+            #print "saving with UID: %s" % uid
+            d = self._mbox.messages.add_msg(
+                mail_string, notify_on_disk=True)
         return d
 
     def import_maildir(self, mbox_name="INBOX"):
@@ -238,7 +251,10 @@ class MBOXPlumber(object):
             print "ERROR: maildir path does not exist."
             return
 
-        self._init_local_soledad()
+        init = self._init_local_soledad()
+        if not init:
+            return self.exit()
+
         mbox = self.acct.getMailbox(mbox_name)
         self._mbox = mbox
         len_mbox = mbox.getMessageCount()
@@ -259,6 +275,8 @@ class MBOXPlumber(object):
         deferreds = []
         for f_name in mail_files:
             deferreds.append(self.import_mail(f_name))
+        print "deferreds: ", deferreds
+
         d1 = defer.gatherResults(deferreds, consumeErrors=False)
         d1.addCallback(all_saved)
         d1.addCallback(self._cbExit)
@@ -268,9 +286,9 @@ class MBOXPlumber(object):
 
     def exit(self):
         from twisted.internet import reactor
-        if self.sol:
-            self.sol.close()
         try:
+            if self.sol:
+                self.sol.close()
             reactor.stop()
         except Exception:
             pass
