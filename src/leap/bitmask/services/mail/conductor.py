@@ -95,9 +95,13 @@ class IMAPControl(object):
             logger.debug("Starting loop")
             self.imap_service.start_loop()
 
-    def stop_imap_service(self):
+    def stop_imap_service(self, cv):
         """
         Stops imap service (fetcher, factory and port).
+
+        :param cv: A condition variable to which we can signal when imap
+                   indeed stops.
+        :type cv: threading.Condition
         """
         self.imap_connection.qtsigs.disconnecting_signal.emit()
         # TODO We should homogenize both services.
@@ -110,7 +114,13 @@ class IMAPControl(object):
             self.imap_port.stopListening()
             # Stop the protocol
             self.imap_factory.theAccount.closed = True
-            self.imap_factory.doStop()
+            self.imap_factory.doStop(cv)
+        else:
+            # main window does not have to wait because there's no service to
+            # be stopped, so we release the condition variable
+            cv.acquire()
+            cv.notify()
+            cv.release()
 
     def fetch_incoming_mail(self):
         """

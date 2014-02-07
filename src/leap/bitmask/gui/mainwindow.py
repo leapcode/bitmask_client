@@ -19,6 +19,7 @@ Main window for Bitmask.
 """
 import logging
 
+from threading import Condition
 from PySide import QtCore, QtGui
 from datetime import datetime
 from twisted.internet import threads
@@ -111,6 +112,9 @@ class MainWindow(QtGui.QMainWindow):
 
     # We give EIP some time to come up before starting soledad anyway
     EIP_TIMEOUT = 60000  # in milliseconds
+
+    # We give each service some time to come to a halt before forcing quit
+    SERVICE_STOP_TIMEOUT = 20
 
     def __init__(self, quit_callback,
                  openvpn_verb=1,
@@ -1330,8 +1334,13 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.logout
         """
+        cv = Condition()
+        cv.acquire()
         # TODO call stop_mail_service
-        self._mail_conductor.stop_imap_service()
+        threads.deferToThread(self._mail_conductor.stop_imap_service, cv)
+        # and wait for it to be stopped
+        logger.debug('Waiting for imap service to stop.')
+        cv.wait(self.SERVICE_STOP_TIMEOUT)
 
     # end service control methods (imap)
 
@@ -1857,7 +1866,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('About to quit, doing cleanup...')
 
-        self._mail_conductor.stop_imap_service()
+        self._stop_imap_service()
 
         if self._srp_auth is not None:
             if self._srp_auth.get_session_id() is not None or \
@@ -1899,7 +1908,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._backend.stop()
         self._cleanup_and_quit()
-
         self._really_quit = True
 
         if self._wizard:

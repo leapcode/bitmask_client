@@ -1,0 +1,1 @@
+- Ensure IMAP flushes data to disk before quitting. Closes #5095.
