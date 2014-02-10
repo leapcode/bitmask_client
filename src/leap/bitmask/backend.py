@@ -141,6 +141,14 @@ class Provider(object):
         self._download_provider_defer = d
         return d
 
+    def cancel_setup_provider(self):
+        """
+        Cancel the ongoing setup provider defer (if any).
+        """
+        d = self._download_provider_defer
+        if d is not None:
+            d.cancel()
+
     def bootstrap(self, provider):
         """
         Second stage of bootstrapping for a provider.
@@ -195,6 +203,8 @@ class Signaler(QtCore.QObject):
     prov_unsupported_client = QtCore.Signal(object)
     prov_unsupported_api = QtCore.Signal(object)
 
+    prov_cancelled_setup = QtCore.Signal(object)
+
     # These will exist both in the backend and the front end.
     # The frontend might choose to not "interpret" all the signals
     # from the backend, but the backend needs to have all the signals
@@ -208,6 +218,7 @@ class Signaler(QtCore.QObject):
     PROV_PROBLEM_WITH_PROVIDER_KEY = "prov_problem_with_provider"
     PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
     PROV_UNSUPPORTED_API = "prov_unsupported_api"
+    PROV_CANCELLED_SETUP = "prov_cancelled_setup"
 
     def __init__(self):
         """
@@ -225,7 +236,8 @@ class Signaler(QtCore.QObject):
             self.PROV_CHECK_API_CERTIFICATE_KEY,
             self.PROV_PROBLEM_WITH_PROVIDER_KEY,
             self.PROV_UNSUPPORTED_CLIENT,
-            self.PROV_UNSUPPORTED_API
+            self.PROV_UNSUPPORTED_API,
+            self.PROV_CANCELLED_SETUP,
         ]
 
         for sig in signals:
@@ -355,17 +367,20 @@ class Backend(object):
             # cmd is: component, method, signalback, *args
             func = getattr(self._components[cmd[0]], cmd[1])
             d = func(*cmd[3:])
-            # A call might not have a callback signal, but if it does,
-            # we add it to the chain
-            if cmd[2] is not None:
-                d.addCallbacks(self._signal_back, log.err, cmd[2])
-            d.addCallbacks(self._done_action, log.err,
-                           callbackKeywords={"d": d})
-            d.addErrback(log.err)
-            self._ongoing_defers.append(d)
+            if d is not None:  # d may be None if a defer chain is cancelled.
+                # A call might not have a callback signal, but if it does,
+                # we add it to the chain
+                if cmd[2] is not None:
+                    d.addCallbacks(self._signal_back, log.err, cmd[2])
+                d.addCallbacks(self._done_action, log.err,
+                               callbackKeywords={"d": d})
+                d.addErrback(log.err)
+                self._ongoing_defers.append(d)
         except Empty:
             # If it's just empty we don't have anything to do.
             pass
+        except defer.CancelledError:
+            logger.debug("defer cancelled somewhere (CancelledError).")
         except Exception:
             # But we log the rest
             log.err()
@@ -386,6 +401,9 @@ class Backend(object):
 
     def setup_provider(self, provider):
         self._call_queue.put(("provider", "setup_provider", None, provider))
+
+    def cancel_setup_provider(self):
+        self._call_queue.put(("provider", "cancel_setup_provider", None))
 
     def provider_bootstrap(self, provider):
         self._call_queue.put(("provider", "bootstrap", None, provider))

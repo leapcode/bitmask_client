@@ -617,4 +617,4 @@ class SoledadBootstrapper(AbstractBootstrapper):
             (self._gen_key, self.gen_key)
         ]
 
-        self.addCallbackChain(cb_chain)
+        return self.addCallbackChain(cb_chain)

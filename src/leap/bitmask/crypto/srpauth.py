@@ -655,7 +655,6 @@ class SRPAuth(QtCore.QObject):
         username = username.lower()
         d = self.__instance.authenticate(username, password)
         d.addCallback(self._gui_notify)
-        d.addErrback(self._errback)
         return d
 
     def change_password(self, current_password, new_password):
@@ -694,18 +693,6 @@ class SRPAuth(QtCore.QObject):
         """
         logger.debug("Successful login!")
         self.authentication_finished.emit(True, self.tr("Succeeded"))
-
-    def _errback(self, failure):
-        """
-        General errback for the whole login process. Will notify the
-        UI with the proper signal.
-
-        :param failure: Failure object captured from a callback.
-        :type failure: twisted.python.failure.Failure
-        """
-        logger.error("Error logging in %s" % (failure,))
-        self.authentication_finished.emit(False, "%s" % (failure.value,))
-        failure.trap(Exception)
 
     def get_session_id(self):
         return self.__instance.get_session_id()

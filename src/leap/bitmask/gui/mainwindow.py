@@ -23,8 +23,9 @@ from threading import Condition
 from datetime import datetime
 
 from PySide import QtCore, QtGui
-from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject
+from twisted.internet import threads
+from twisted.internet.defer import CancelledError
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
@@ -342,7 +343,7 @@ class MainWindow(QtGui.QMainWindow):
         self._keymanager = ProxyBase(None)
 
         self._login_defer = None
-        self._download_provider_defer = None
+        self._soledad_defer = None
 
         self._mail_conductor = mail_conductor.MailConductor(
             self._soledad, self._keymanager)
@@ -394,6 +395,8 @@ class MainWindow(QtGui.QMainWindow):
 
         sig.prov_unsupported_client.connect(self._needs_update)
         sig.prov_unsupported_api.connect(self._incompatible_api)
+
+        sig.prov_cancelled_setup.connect(self._set_login_cancelled)
 
     def _backend_disconnect(self):
         """
@@ -1035,6 +1038,25 @@ class MainWindow(QtGui.QMainWindow):
             if self._login_widget.start_login():
                 self._download_provider_config()
 
+    def _login_errback(self, failure):
+        """
+        Error handler for the srpauth.authenticate method.
+
+        :param failure: failure object that Twisted generates
+        :type failure: twisted.python.failure.Failure
+        """
+        # NOTE: this behavior needs to be managed through the signaler,
+        # as we are doing with the prov_cancelled_setup signal.
+        # After we move srpauth to the backend, we need to update this.
+        logger.error("Error logging in, {0!r}".format(failure))
+        if failure.check(CancelledError):
+            logger.debug("Defer cancelled.")
+            failure.trap(Exception)
+            self._set_login_cancelled()
+        else:
+            self._login_widget.set_status(str(failure.value))
+            self._login_widget.set_enabled(True)
+
     def _cancel_login(self):
         """
         SLOT
@@ -1043,17 +1065,29 @@ class MainWindow(QtGui.QMainWindow):
 
         Stops the login sequence.
         """
-        logger.debug("Cancelling log in.")
+        logger.debug("Cancelling setup provider defer.")
+        self._backend.cancel_setup_provider()
 
-        if self._download_provider_defer:
-            logger.debug("Cancelling download provider defer.")
-            self._download_provider_defer.cancel()
-
-        if self._login_defer:
+        if self._login_defer is not None:
             logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
 
+        if self._soledad_defer is not None:
+            logger.debug("Cancelling soledad defer.")
+            self._soledad_defer.cancel()
+
+    def _set_login_cancelled(self):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.prov_cancelled_setup fired by
+            self._backend.cancel_setup_provider()
+
+        This method re-enables the login widget and display a message for
+        the cancelled operation.
+        """
         self._login_widget.set_status(self.tr("Log in cancelled by the user."))
+        self._login_widget.set_enabled(True)
 
     def _provider_config_loaded(self, data):
         """
@@ -1080,6 +1114,7 @@ class MainWindow(QtGui.QMainWindow):
 
             # TODO Add errback!
             self._login_defer = self._srp_auth.authenticate(username, password)
+            self._login_defer.addErrback(self._login_errback)
         else:
             self._login_widget.set_status(
                 "Unable to login: Problem with provider")
@@ -1168,8 +1203,8 @@ class MainWindow(QtGui.QMainWindow):
             provider_config = self._provider_config
 
             if self._logged_user is not None:
-                fun = sb.run_soledad_setup_checks
-                fun(provider_config, username, password,
+                self._soledad_defer = sb.run_soledad_setup_checks(
+                    provider_config, username, password,
                     download_if_needed=True)
 
     ###################################################################
@@ -1243,6 +1278,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Ok, now soledad is ready, so we can allow other things that
         # depend on soledad to start.
+        self._soledad_defer = None
 
         # this will trigger start_imap_service
         # and start_smtp_boostrapping
@@ -1814,9 +1850,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._backend.PASSED_KEY]
         if not passed:
+            msg = self.tr("Unable to connect: Problem with provider")
+            self._login_widget.set_status(msg)
             self._login_widget.set_enabled(True)
-            self._login_widget.set_status(
-                self.tr("Unable to connect: Problem with provider"))
             logger.error(data[self._backend.ERROR_KEY])
 
     #
@@ -1888,9 +1924,12 @@ class MainWindow(QtGui.QMainWindow):
             logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
 
-        if self._download_provider_defer:
-            logger.debug("Cancelling download provider defer.")
-            self._download_provider_defer.cancel()
+        logger.debug("Cancelling setup provider defer.")
+        self._backend.cancel_setup_provider()
+
+        if self._soledad_defer is not None:
+            logger.debug("Cancelling soledad defer.")
+            self._soledad_defer.cancel()
 
         # TODO missing any more cancels?
 
