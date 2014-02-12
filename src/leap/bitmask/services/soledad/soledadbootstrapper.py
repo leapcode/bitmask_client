@@ -20,6 +20,7 @@ Soledad bootstrapping
 import logging
 import os
 import socket
+import sqlite3
 import sys
 
 from ssl import SSLError
@@ -348,6 +349,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 # ubuntu folks.
                 sync_tries -= 1
                 continue
+            except Exception as e:
+                logger.exception("Unhandled error while syncing "
+                                 "soledad: %r" % (e,))
+                break
 
         # reached bottom, failed to sync
         # and there's nothing we can do...
@@ -435,7 +440,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         except u1db_errors.InvalidGeneration as exc:
             logger.error("%r" % (exc,))
             raise SoledadSyncError("u1db: InvalidGeneration")
-
+        except sqlite3.ProgrammingError as e:
+            logger.exception("%r" % (e,))
+            raise
         except Exception as exc:
             logger.exception("Unhandled error while syncing "
                              "soledad: %r" % (exc,))
