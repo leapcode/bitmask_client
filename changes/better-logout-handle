@@ -1,0 +1,2 @@
+- Fix logging out typo, closes #4815.
+- Improve logout action, related to #5131.

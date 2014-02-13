@@ -1112,7 +1112,6 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth.logout_finished.connect(
                     self._done_logging_out)
 
-            # TODO Add errback!
             self._login_defer = self._srp_auth.authenticate(username, password)
             self._login_defer.addErrback(self._login_errback)
         else:
@@ -1143,6 +1142,13 @@ class MainWindow(QtGui.QMainWindow):
             self._mail_conductor.userid = full_user_id
             self._login_defer = None
             self._start_eip_bootstrap()
+
+            # if soledad/mail is enabled:
+            if MX_SERVICE in self._enabled_services:
+                btn_enabled = self._login_widget.set_logout_btn_enabled
+                btn_enabled(False)
+                self.soledad_ready.connect(lambda: btn_enabled(True))
+                self.soledad_failed.connect(lambda: btn_enabled(True))
         else:
             self._login_widget.set_enabled(True)
 
@@ -1804,6 +1810,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._soledad_bootstrapper.cancel_bootstrap()
         setProxiedObject(self._soledad, None)
+        if self._soledad_defer is not None:
+            logger.debug("Cancelling soledad defer.")
+            self._soledad_defer.cancel()
 
         # reset soledad status flag
         self._already_started_soledad = False
