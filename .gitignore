@@ -3,6 +3,7 @@
 *.pyc
 *.log
 *.lprof
+*.pstats
 *.*~
 .*
 *_rc.py

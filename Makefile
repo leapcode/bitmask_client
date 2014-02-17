@@ -64,5 +64,8 @@ manpages:
 apidocs:
 	@sphinx-apidoc -o docs/api src/leap/bitmask
 
+mailprofile:
+	gprof2dot -f pstats /tmp/leap_mail_profile.pstats -n 0.2 -e 0.2 | dot -Tpdf -o /tmp/leap_mail_profile.pdf
+
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
