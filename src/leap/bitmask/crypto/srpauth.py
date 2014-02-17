@@ -600,7 +600,8 @@ class SRPAuth(QtCore.QObject):
             QtCore.QMutexLocker(self._uuid_lock)
             full_uid = "%s@%s" % (
                 self._username, self._provider_config.get_domain())
-            self._settings.set_uuid(full_uid, uuid)
+            if uuid is not None:  # avoid removing the uuid from settings
+                self._settings.set_uuid(full_uid, uuid)
             self._uuid = uuid
 
         def get_uuid(self):
