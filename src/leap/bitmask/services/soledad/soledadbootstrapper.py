@@ -287,13 +287,13 @@ class SoledadBootstrapper(AbstractBootstrapper):
                     "Null soledad, error while initializing")
 
         if flags.OFFLINE is True:
-            self._init_keymanager(self._address)
+            self._init_keymanager(self._address, token)
             self.local_only_ready.emit({self.PASSED_KEY: True})
         else:
             try:
                 address = make_address(
                     self._user, self._provider_config.get_domain())
-                self._init_keymanager(address)
+                self._init_keymanager(address, token)
                 self._keymanager.get_key(
                     address, openpgp.OpenPGPKey,
                     private=True, fetch_remote=False)
@@ -502,12 +502,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
         leap_check(gpgbin is not None, "Could not find gpg binary")
         return gpgbin
 
-    def _init_keymanager(self, address):
+    def _init_keymanager(self, address, token):
         """
         Initialize the keymanager.
 
         :param address: the address to initialize the keymanager with.
         :type address: str
+        :param token: the auth token for accessing webapp.
+        :type token: str
         """
         srp_auth = self.srpauth
         logger.debug('initializing keymanager...')
@@ -515,7 +517,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if flags.OFFLINE is True:
             args = (address, "https://localhost", self._soledad)
             kwargs = {
-                "session_id": "",
                 "ca_cert_path": "",
                 "api_uri": "",
                 "api_version": "",
@@ -530,7 +531,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 self._soledad
             )
             kwargs = {
-                "session_id": srp_auth.get_session_id(),
+                "token": token,
                 "ca_cert_path": self._provider_config.get_ca_cert_path(),
                 "api_uri": self._provider_config.get_api_uri(),
                 "api_version": self._provider_config.get_api_version(),
@@ -539,15 +540,20 @@ class SoledadBootstrapper(AbstractBootstrapper):
             }
         try:
             self._keymanager = KeyManager(*args, **kwargs)
+        except KeyNotFound:
+            logger.debug('key for %s not found.' % address)
         except Exception as exc:
             logger.exception(exc)
             raise
 
         if flags.OFFLINE is False:
             # make sure key is in server
-            logger.debug('sending key to server...')
+            logger.debug('Trying to send key to server...')
             try:
                 self._keymanager.send_key(openpgp.OpenPGPKey)
+            except KeyNotFound:
+                logger.debug('No key found for %s, will generate soon.'
+                             % address)
             except Exception as exc:
                 logger.error("Error sending key to server.")
                 logger.exception(exc)
