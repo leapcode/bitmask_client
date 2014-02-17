@@ -46,6 +46,7 @@ class SelectiveSilencerFilter(logging.Filter):
     # to us.
     SILENCER_RULES = (
         'leap.common.events',
+        'leap.common.decorators',
     )
 
     def __init__(self):
