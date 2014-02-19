@@ -39,6 +39,10 @@ COMPILED_RESOURCES = $(RESOURCES:%.qrc=$(COMPILED_DIR)/%_rc.py)
 
 DEBVER = $(shell dpkg-parsechangelog | sed -ne 's,Version: ,,p')
 
+ifndef EDITOR
+	export EDITOR=vim
+endif
+
 #
 
 all : resources ui
@@ -66,6 +70,12 @@ apidocs:
 
 mailprofile:
 	gprof2dot -f pstats /tmp/leap_mail_profile.pstats -n 0.2 -e 0.2 | dot -Tpdf -o /tmp/leap_mail_profile.pdf
+
+do_lineprof:
+	LEAP_PROFILE_IMAPCMD=1 LEAP_MAIL_MANHOLE=1 kernprof.py -l src/leap/bitmask/app.py --offline --debug
+
+view_lineprof:
+	@python -m line_profiler app.py.lprof | $(EDITOR) -
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
