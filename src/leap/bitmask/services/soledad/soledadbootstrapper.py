@@ -20,15 +20,16 @@ Soledad bootstrapping
 import logging
 import os
 import socket
-import sqlite3
 import sys
 
 from ssl import SSLError
+from sqlite3 import ProgrammingError as sqlite_ProgrammingError
 
 from PySide import QtCore
 from u1db import errors as u1db_errors
 from twisted.internet import threads
 from zope.proxy import sameProxiedObjects
+from pysqlcipher.dbapi2 import ProgrammingError as sqlcipher_ProgrammingError
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -440,7 +441,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         except u1db_errors.InvalidGeneration as exc:
             logger.error("%r" % (exc,))
             raise SoledadSyncError("u1db: InvalidGeneration")
-        except sqlite3.ProgrammingError as e:
+        except (sqlite_ProgrammingError, sqlcipher_ProgrammingError) as e:
             logger.exception("%r" % (e,))
             raise
         except Exception as exc:
