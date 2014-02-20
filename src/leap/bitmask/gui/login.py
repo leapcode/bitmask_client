@@ -222,6 +222,15 @@ class LoginWidget(QtGui.QWidget):
 
         self._set_cancel(not enabled)
 
+    def set_logout_btn_enabled(self, enabled):
+        """
+        Enables or disables the logout button.
+
+        :param enabled: wether they should be enabled or not
+        :type enabled: bool
+        """
+        self.ui.btnLogout.setEnabled(enabled)
+
     def _set_cancel(self, enabled=False):
         """
         Enables or disables the cancel action in the "log in" process.
@@ -349,7 +358,7 @@ class LoginWidget(QtGui.QWidget):
         """
         Sets the widgets to the logging out state
         """
-        self.ui.btnLogout.setText(self.tr("Loggin out..."))
+        self.ui.btnLogout.setText(self.tr("Logging out..."))
         self.ui.btnLogout.setEnabled(False)
 
     def done_logout(self):
