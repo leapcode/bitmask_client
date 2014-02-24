@@ -674,8 +674,16 @@ Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
 
 --------------------------------------------------------------------------------
+We are "embedding" PastebinAPI class since currently the installation through
+pip does not work.
 
-Leap-client also uses third party icons:
+file: src/leap/bitmask/util/pastebin.py
+License: GPL
+Author: Ian Havelock
+website: https://github.com/Morrolan/PastebinAPI
+--------------------------------------------------------------------------------
+
+Bitmask also uses third party icons:
 
 ---
 data/images/Arrow-Up-32.png
