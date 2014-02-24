@@ -1148,7 +1148,8 @@ class MainWindow(QtGui.QMainWindow):
                 btn_enabled = self._login_widget.set_logout_btn_enabled
                 btn_enabled(False)
                 self.soledad_ready.connect(lambda: btn_enabled(True))
-                self.soledad_failed.connect(lambda: btn_enabled(True))
+                self._soledad_bootstrapper.soledad_failed.connect(
+                    lambda: btn_enabled(True))
         else:
             self._login_widget.set_enabled(True)
 
