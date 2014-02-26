@@ -362,12 +362,17 @@ class MailStatusWidget(QtGui.QWidget):
         ext_status = None
 
         if req.event == proto.IMAP_UNREAD_MAIL:
+            # By now, the semantics of the UNREAD_MAIL event are
+            # limited to mails with the Unread flag *in the Inbox".
+            # We could make this configurable to include all unread mail
+            # or all unread mail in subscribed folders.
             if self._started:
                 count = req.content
                 if count != "0":
-                    status = self.tr("{0} Unread Emails").format(count)
+                    status = self.tr("{0} Unread Emails "
+                                     "in your Inbox").format(count)
                     if count == "1":
-                        status = self.tr("1 Unread Email")
+                        status = self.tr("1 Unread Email in your Inbox")
 
                     self._set_mail_status(status, ready=2)
                 else:
