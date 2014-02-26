@@ -178,6 +178,21 @@ class LoggerWindow(QtGui.QDialog):
         else:
             logger.debug('Log not saved!')
 
+    def _set_pastebin_sending(self, sending):
+        """
+        Define the status of the pastebin button.
+        Change the text and enable/disable according to the current action.
+
+        :param sending: if we are sending to pastebin or not.
+        :type sending: bool
+        """
+        if sending:
+            self.ui.btnPastebin.setText(self.tr("Sending to pastebin..."))
+            self.ui.btnPastebin.setEnabled(False)
+        else:
+            self.ui.btnPastebin.setText(self.tr("Send to Pastebin.com"))
+            self.ui.btnPastebin.setEnabled(True)
+
     def _pastebin_this(self):
         """
         Send the current log history to pastebin.com and gives the user a link
@@ -192,6 +207,10 @@ class LoggerWindow(QtGui.QDialog):
             link = pb.paste(PASTEBIN_API_DEV_KEY, content,
                             paste_name="Bitmask log",
                             paste_expire_date='1W')
+
+            # convert to 'raw' link
+            link = "http://pastebin.com/raw.php?i=" + link.split('/')[-1]
+
             return link
 
         def pastebin_ok(link):
@@ -206,6 +225,7 @@ class LoggerWindow(QtGui.QDialog):
             logger.debug(msg)
             show_info = lambda: QtGui.QMessageBox.information(
                 self, self.tr("Pastebin OK"), msg)
+            self._set_pastebin_sending(False)
             self.reactor.callLater(0, show_info)
 
         def pastebin_err(failure):
@@ -219,9 +239,11 @@ class LoggerWindow(QtGui.QDialog):
             msg = self.tr("Sending logs to Pastebin failed!")
             show_err = lambda: QtGui.QMessageBox.error(
                 self, self.tr("Pastebin Error"), msg)
+            self._set_pastebin_sending(False)
             self.reactor.callLater(0, show_err)
             failure.trap(PastebinError)
 
+        self._set_pastebin_sending(True)
         d = threads.deferToThread(do_pastebin)
         d.addCallback(pastebin_ok)
         d.addErrback(pastebin_err)
