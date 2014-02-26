@@ -237,7 +237,7 @@ class LoggerWindow(QtGui.QDialog):
             """
             logger.error(repr(failure))
             msg = self.tr("Sending logs to Pastebin failed!")
-            show_err = lambda: QtGui.QMessageBox.error(
+            show_err = lambda: QtGui.QMessageBox.critical(
                 self, self.tr("Pastebin Error"), msg)
             self._set_pastebin_sending(False)
             self.reactor.callLater(0, show_err)
