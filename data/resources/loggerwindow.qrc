@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>../images/pastebin.png</file>
     <file>../images/oxygen-icons/edit-bomb.png</file>
     <file>../images/oxygen-icons/document-save-as.png</file>
     <file>../images/oxygen-icons/dialog-information.png</file>

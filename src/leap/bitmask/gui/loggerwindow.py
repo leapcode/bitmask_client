@@ -22,10 +22,13 @@ import logging
 import cgi
 
 from PySide import QtGui
+from twisted.internet import threads
 
 from ui_loggerwindow import Ui_LoggerWindow
 
+from leap.bitmask.util.constants import PASTEBIN_API_DEV_KEY
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
+from leap.bitmask.util.pastebin import PastebinAPI, PastebinError
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -42,6 +45,9 @@ class LoggerWindow(QtGui.QDialog):
         :param handler: Custom handler that supports history and signal.
         :type handler: LeapLogHandler.
         """
+        from twisted.internet import reactor
+        self.reactor = reactor
+
         QtGui.QDialog.__init__(self)
         leap_assert(handler, "We need a handler for the logger window")
         leap_assert_type(handler, LeapLogHandler)
@@ -59,8 +65,10 @@ class LoggerWindow(QtGui.QDialog):
         self.ui.btnCritical.toggled.connect(self._load_history)
         self.ui.leFilterBy.textEdited.connect(self._filter_by)
         self.ui.cbCaseInsensitive.stateChanged.connect(self._load_history)
+        self.ui.btnPastebin.clicked.connect(self._pastebin_this)
 
         self._current_filter = ""
+        self._current_history = ""
 
         # Load logging history and connect logger with the widget
         self._logging_handler = handler
@@ -116,8 +124,13 @@ class LoggerWindow(QtGui.QDialog):
         self._set_logs_to_display()
         self.ui.txtLogHistory.clear()
         history = self._logging_handler.log_history
+        current_history = []
         for line in history:
             self._add_log_line(line)
+            message = cgi.escape(line[LeapLogHandler.MESSAGE_KEY])
+            current_history.append(message)
+
+        self._current_history = "\n".join(current_history)
 
     def _set_logs_to_display(self):
         """
@@ -164,3 +177,73 @@ class LoggerWindow(QtGui.QDialog):
                 logger.error("Error saving log file: %r" % (e, ))
         else:
             logger.debug('Log not saved!')
+
+    def _set_pastebin_sending(self, sending):
+        """
+        Define the status of the pastebin button.
+        Change the text and enable/disable according to the current action.
+
+        :param sending: if we are sending to pastebin or not.
+        :type sending: bool
+        """
+        if sending:
+            self.ui.btnPastebin.setText(self.tr("Sending to pastebin..."))
+            self.ui.btnPastebin.setEnabled(False)
+        else:
+            self.ui.btnPastebin.setText(self.tr("Send to Pastebin.com"))
+            self.ui.btnPastebin.setEnabled(True)
+
+    def _pastebin_this(self):
+        """
+        Send the current log history to pastebin.com and gives the user a link
+        to see it.
+        """
+        def do_pastebin():
+            """
+            Send content to pastebin and return the link.
+            """
+            content = self._current_history
+            pb = PastebinAPI()
+            link = pb.paste(PASTEBIN_API_DEV_KEY, content,
+                            paste_name="Bitmask log",
+                            paste_expire_date='1W')
+
+            # convert to 'raw' link
+            link = "http://pastebin.com/raw.php?i=" + link.split('/')[-1]
+
+            return link
+
+        def pastebin_ok(link):
+            """
+            Callback handler for `do_pastebin`.
+
+            :param link: the recently created pastebin link.
+            :type link: str
+            """
+            msg = self.tr("Your pastebin link <a href='{0}'>{0}</a>")
+            msg = msg.format(link)
+            logger.debug(msg)
+            show_info = lambda: QtGui.QMessageBox.information(
+                self, self.tr("Pastebin OK"), msg)
+            self._set_pastebin_sending(False)
+            self.reactor.callLater(0, show_info)
+
+        def pastebin_err(failure):
+            """
+            Errback handler for `do_pastebin`.
+
+            :param failure: the failure that triggered the errback.
+            :type failure: twisted.python.failure.Failure
+            """
+            logger.error(repr(failure))
+            msg = self.tr("Sending logs to Pastebin failed!")
+            show_err = lambda: QtGui.QMessageBox.error(
+                self, self.tr("Pastebin Error"), msg)
+            self._set_pastebin_sending(False)
+            self.reactor.callLater(0, show_err)
+            failure.trap(PastebinError)
+
+        self._set_pastebin_sending(True)
+        d = threads.deferToThread(do_pastebin)
+        d.addCallback(pastebin_ok)
+        d.addErrback(pastebin_err)

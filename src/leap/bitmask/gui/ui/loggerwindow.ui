@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>648</width>
-    <height>469</height>
+    <width>769</width>
+    <height>464</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -151,6 +151,17 @@
        <property name="icon">
         <iconset resource="../../../../../data/resources/loggerwindow.qrc">
          <normaloff>:/images/oxygen-icons/document-save-as.png</normaloff>:/images/oxygen-icons/document-save-as.png</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnPastebin">
+       <property name="text">
+        <string>Send to Pastebin.com</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../../../../../data/resources/loggerwindow.qrc">
+         <normaloff>:/images/pastebin.png</normaloff>:/images/pastebin.png</iconset>
        </property>
       </widget>
      </item>
