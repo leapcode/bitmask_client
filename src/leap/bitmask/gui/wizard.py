@@ -223,7 +223,7 @@ class Wizard(QtGui.QWizard):
         depending on the lnProvider content.
         """
         enabled = len(self.ui.lnProvider.text()) != 0
-        enabled = enabled and self.ui.rbNewProvider.isChecked()
+        enabled = enabled or self.ui.rbExistingProvider.isChecked()
         self.ui.btnCheck.setEnabled(enabled)
 
         if reset:
@@ -367,8 +367,10 @@ class Wizard(QtGui.QWizard):
 
         Starts the checks for a given provider
         """
-        if len(self.ui.lnProvider.text()) == 0:
-            return
+        if self.ui.rbNewProvider.isChecked():
+            self._domain = self.ui.lnProvider.text()
+        else:
+            self._domain = self.ui.cbProviders.currentText()
 
         self._provider_checks_ok = False
 
@@ -380,7 +382,6 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.setEnabled(False)
         self.ui.lnProvider.setEnabled(False)
         self.button(QtGui.QWizard.BackButton).clearFocus()
-        self._domain = self.ui.lnProvider.text()
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_select_defer = self._backend.\
@@ -401,8 +402,6 @@ class Wizard(QtGui.QWizard):
         if skip:
             self._reset_provider_check()
 
-        self.page(self.SELECT_PROVIDER_PAGE).set_completed(skip)
-        self.button(QtGui.QWizard.NextButton).setEnabled(skip)
         self._use_existing_provider = skip
 
     def _complete_task(self, data, label, complete=False, complete_page=-1):

@@ -269,20 +269,7 @@
        <string>Configure or select a provider</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
-       <item row="5" column="1">
-        <widget class="QLineEdit" name="lnProvider"/>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>https://</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
+       <item row="1" column="0">
         <widget class="QRadioButton" name="rbNewProvider">
          <property name="text">
           <string>Configure new provider:</string>
@@ -292,14 +279,27 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="2">
-        <widget class="QPushButton" name="btnCheck">
-         <property name="text">
-          <string>Check</string>
+       <item row="0" column="2">
+        <widget class="QComboBox" name="cbProviders">
+         <property name="enabled">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="1" column="1">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>https://</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="lnProvider"/>
+       </item>
+       <item row="0" column="0">
         <widget class="QRadioButton" name="rbExistingProvider">
          <property name="text">
           <string>Use existing one:</string>
@@ -309,7 +309,7 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="0" column="1">
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>https://</string>
@@ -319,12 +319,29 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QComboBox" name="cbProviders">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+       <item row="2" column="2">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnCheck">
+           <property name="text">
+            <string>Check</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -859,8 +876,8 @@
      <y>174</y>
     </hint>
     <hint type="destinationlabel">
-     <x>454</x>
-     <y>254</y>
+     <x>450</x>
+     <y>266</y>
     </hint>
    </hints>
   </connection>
@@ -884,7 +901,7 @@
    <sender>rbExistingProvider</sender>
    <signal>toggled(bool)</signal>
    <receiver>btnCheck</receiver>
-   <slot>setDisabled(bool)</slot>
+   <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>169</x>
