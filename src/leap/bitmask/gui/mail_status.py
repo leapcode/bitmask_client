@@ -213,7 +213,7 @@ class MailStatusWidget(QtGui.QWidget):
                     self._service_name))
         elif ready == 1:
             icon = self.CONNECTING_ICON
-            self._mx_status = self.tr('Starting..')
+            self._mx_status = self.tr('Starting…')
             tray_status = self.tr('Mail is starting')
         elif ready >= 2:
             icon = self.CONNECTED_ICON
