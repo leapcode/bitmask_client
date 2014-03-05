@@ -43,6 +43,10 @@ ifndef EDITOR
 	export EDITOR=vim
 endif
 
+ifndef RESOURCE_TIME
+	export RESOURCE_TIME=10
+endif
+
 #
 
 all : resources ui
@@ -76,6 +80,10 @@ do_lineprof:
 
 view_lineprof:
 	@python -m line_profiler app.py.lprof | $(EDITOR) -
+
+resource_graph:
+	./pkg/scripts/monitor_resource.zsh `pgrep bitmask` $(RESOURCE_TIME)
+	display bitmask-resources.png
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
