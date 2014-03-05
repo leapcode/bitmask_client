@@ -1065,16 +1065,24 @@ class MainWindow(QtGui.QMainWindow):
 
         Stops the login sequence.
         """
-        logger.debug("Cancelling setup provider defer.")
+        logger.debug("Cancelling log in.")
+        self._cancel_ongoing_defers()
+
+    def _cancel_ongoing_defers(self):
+        """
+        Cancel the running defers to avoid app blocking.
+        """
         self._backend.cancel_setup_provider()
 
         if self._login_defer is not None:
             logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
+            self._login_defer = None
 
         if self._soledad_defer is not None:
             logger.debug("Cancelling soledad defer.")
             self._soledad_defer.cancel()
+            self._soledad_defer = None
 
     def _set_login_cancelled(self):
         """
@@ -1811,9 +1819,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._soledad_bootstrapper.cancel_bootstrap()
         setProxiedObject(self._soledad, None)
-        if self._soledad_defer is not None:
-            logger.debug("Cancelling soledad defer.")
-            self._soledad_defer.cancel()
+
+        self._cancel_ongoing_defers()
 
         # reset soledad status flag
         self._already_started_soledad = False
@@ -1930,16 +1937,7 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Terminating vpn')
         self._vpn.terminate(shutdown=True)
 
-        if self._login_defer:
-            logger.debug("Cancelling login defer.")
-            self._login_defer.cancel()
-
-        logger.debug("Cancelling setup provider defer.")
-        self._backend.cancel_setup_provider()
-
-        if self._soledad_defer is not None:
-            logger.debug("Cancelling soledad defer.")
-            self._soledad_defer.cancel()
+        self._cancel_ongoing_defers()
 
         # TODO missing any more cancels?
 
