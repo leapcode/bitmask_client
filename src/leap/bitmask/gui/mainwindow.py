@@ -587,7 +587,8 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the EIP preferences window.
         """
-        EIPPreferencesWindow(self).show()
+        domain = self._login_widget.get_selected_provider()
+        EIPPreferencesWindow(self, domain).show()
 
     #
     # updates
