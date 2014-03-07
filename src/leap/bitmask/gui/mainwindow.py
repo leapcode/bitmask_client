@@ -134,6 +134,7 @@ class MainWindow(QtGui.QMainWindow):
         :type bypass_checks: bool
         """
         QtGui.QMainWindow.__init__(self)
+        self.menuBar().setNativeMenuBar(False)
 
         # register leap events ########################################
         register(signal=proto.UPDATER_NEW_UPDATES,
