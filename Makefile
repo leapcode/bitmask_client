@@ -82,6 +82,7 @@ view_lineprof:
 	@python -m line_profiler app.py.lprof | $(EDITOR) -
 
 resource_graph:
+	#./pkg/scripts/monitor_resource.zsh `pgrep twistd` $(RESOURCE_TIME)
 	./pkg/scripts/monitor_resource.zsh `pgrep bitmask` $(RESOURCE_TIME)
 	display bitmask-resources.png
 
