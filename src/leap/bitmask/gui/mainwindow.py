@@ -1247,8 +1247,7 @@ class MainWindow(QtGui.QMainWindow):
             self._soledad_bootstrapper.increment_retries_count()
             # XXX should cancel the existing socket --- this
             # is avoiding a clean termination.
-            threads.deferToThread(
-                self._soledad_bootstrapper.load_and_sync_soledad)
+            self._maybe_run_soledad_setup_checks()
         else:
             logger.warning("Max number of soledad initialization "
                            "retries reached.")
