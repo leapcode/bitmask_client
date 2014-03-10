@@ -4,6 +4,7 @@
 *.log
 *.lprof
 *.pstats
+*.data
 *.*~
 .*
 *_rc.py
@@ -33,3 +34,4 @@ config/*
 CHANGELOG~
 
 data/bitmask.pro
+bitmask-resources.png

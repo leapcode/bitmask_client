@@ -233,6 +233,11 @@ def main():
         # We don't even have logger configured in here
         print "Could not ensure server: %r" % (e,)
 
+    PLAY_NICE = os.environ.get("LEAP_NICE")
+    if PLAY_NICE and PLAY_NICE.isdigit():
+        nice = os.nice(int(PLAY_NICE))
+        logger.info("Setting NICE: %s" % nice)
+
     # And then we import all the other stuff
     # I think it's safe to import at the top by now -- kali
     from leap.bitmask.gui import locale_rc
