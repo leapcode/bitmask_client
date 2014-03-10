@@ -18,13 +18,14 @@
 Main window for Bitmask.
 """
 import logging
+import socket
 
 from threading import Condition
 from datetime import datetime
 
 from PySide import QtCore, QtGui
 from zope.proxy import ProxyBase, setProxiedObject
-from twisted.internet import threads
+from twisted.internet import reactor, threads
 from twisted.internet.defer import CancelledError
 
 from leap.bitmask import __version__ as VERSION
@@ -1455,6 +1456,55 @@ class MainWindow(QtGui.QMainWindow):
         After the refactor to EIPConductor this should not be necessary.
         """
         self._eip_connection.qtsigs.connected_signal.emit()
+
+        # check for connectivity
+        provider_config = self._get_best_provider_config()
+        domain = provider_config.get_domain()
+        self._check_name_resolution(domain)
+
+    def _check_name_resolution(self, domain):
+        """
+        Check if we can resolve the given domain name.
+
+        :param domain: the domain to check.
+        :type domain: str
+        """
+        def do_check():
+            """
+            Try to resolve the domain name.
+            """
+            socket.gethostbyname(domain.encode('idna'))
+
+        def check_err(failure):
+            """
+            Errback handler for `do_check`.
+
+            :param failure: the failure that triggered the errback.
+            :type failure: twisted.python.failure.Failure
+            """
+            logger.error(repr(failure))
+            logger.error("Can't resolve hostname.")
+
+            msg = self.tr(
+                "The server at {0} can't be found, because the DNS lookup "
+                "failed. DNS is the network service that translates a "
+                "website's name to its Internet address. Either your computer "
+                "is having trouble connecting to the network, or you are "
+                "missing some helper files that are needed to securely use "
+                "DNS while {1} is active. To install these helper files, quit "
+                "this application and start it again."
+            ).format(domain, self._eip_name)
+
+            show_err = lambda: QtGui.QMessageBox.critical(
+                self, self.tr("Connection Error"), msg)
+            reactor.callLater(0, show_err)
+
+            # python 2.7.4 raises socket.error
+            # python 2.7.5 raises socket.gaierror
+            failure.trap(socket.gaierror, socket.error)
+
+        d = threads.deferToThread(do_check)
+        d.addErrback(check_err)
 
     def _try_autostart_eip(self):
         """
