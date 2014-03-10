@@ -13,7 +13,6 @@ python-dateutil
 psutil
 ipaddr
 twisted
-qt4reactor
 python-daemon # this should not be needed for Windows.
 keyring
 zope.proxy

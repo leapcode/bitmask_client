@@ -58,6 +58,9 @@ from leap.bitmask.services.mail import plumber
 from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
 
+from twisted.internet import reactor
+from twisted.internet.task import LoopingCall
+
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
@@ -72,12 +75,6 @@ def sigint_handler(*args, **kwargs):
         logger.debug("SIGINT catched. shutting down...")
     mainwindow = args[0]
     mainwindow.quit()
-
-
-def install_qtreactor(logger):
-    import qt4reactor
-    qt4reactor.install()
-    logger.debug("Qt4 reactor installed")
 
 
 def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
@@ -274,9 +271,6 @@ def main():
 
     app = QtGui.QApplication(sys.argv)
 
-    # install the qt4reactor.
-    install_qtreactor(logger)
-
     # To test:
     # $ LANG=es ./app.py
     locale = QtCore.QLocale.system().name()
@@ -319,8 +313,9 @@ def main():
     #tx_app = leap_services()
     #assert(tx_app)
 
-    # Run main loop
-    twisted_main.start(app)
+    l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
+    l.start(0.01)
+    reactor.run()
 
 if __name__ == "__main__":
     main()
