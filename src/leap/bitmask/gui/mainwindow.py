@@ -32,7 +32,10 @@ from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
+
+from leap.bitmask.crypto import srpauth
 from leap.bitmask.crypto.srpauth import SRPAuth
+
 from leap.bitmask.gui.loggerwindow import LoggerWindow
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.login import LoginWidget
@@ -1051,13 +1054,30 @@ class MainWindow(QtGui.QMainWindow):
         # as we are doing with the prov_cancelled_setup signal.
         # After we move srpauth to the backend, we need to update this.
         logger.error("Error logging in, {0!r}".format(failure))
+
         if failure.check(CancelledError):
             logger.debug("Defer cancelled.")
             failure.trap(Exception)
             self._set_login_cancelled()
+            return
+        elif failure.check(srpauth.SRPAuthBadUserOrPassword):
+            msg = self.tr("Invalid username or password.")
+        elif failure.check(srpauth.SRPAuthBadStatusCode,
+                           srpauth.SRPAuthenticationError,
+                           srpauth.SRPAuthVerificationFailed,
+                           srpauth.SRPAuthNoSessionId,
+                           srpauth.SRPAuthNoSalt, srpauth.SRPAuthNoB,
+                           srpauth.SRPAuthBadDataFromServer,
+                           srpauth.SRPAuthJSONDecodeError):
+            msg = self.tr("There was a server problem with authentication.")
+        elif failure.check(srpauth.SRPAuthConnectionError):
+            msg = self.tr("Could not establish a connection.")
         else:
-            self._login_widget.set_status(str(failure.value))
-            self._login_widget.set_enabled(True)
+            # this shouldn't happen, but just in case.
+            msg = self.tr("Unknown error: {0!r}".format(failure.value))
+
+        self._login_widget.set_status(msg)
+        self._login_widget.set_enabled(True)
 
     def _cancel_login(self):
         """
