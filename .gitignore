@@ -5,6 +5,7 @@
 *.lprof
 *.pstats
 *.data
+*.cprofile
 *.*~
 .*
 *_rc.py
