@@ -1,0 +1,1 @@
+- Move error messages from srpauth to the GUI and refactor signals. Closes #5219.
