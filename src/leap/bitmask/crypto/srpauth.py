@@ -604,8 +604,9 @@ class SRPAuth(QtCore.QObject):
 
     __instance = None
 
-    authentication_finished = QtCore.Signal(bool, str)
-    logout_finished = QtCore.Signal(bool, str)
+    authentication_finished = QtCore.Signal()
+    logout_ok = QtCore.Signal()
+    logout_error = QtCore.Signal()
 
     def __init__(self, provider_config):
         """
@@ -679,7 +680,7 @@ class SRPAuth(QtCore.QObject):
         :type _: IGNORED
         """
         logger.debug("Successful login!")
-        self.authentication_finished.emit(True, self.tr("Succeeded"))
+        self.authentication_finished.emit()
 
     def get_session_id(self):
         return self.__instance.get_session_id()
@@ -697,8 +698,10 @@ class SRPAuth(QtCore.QObject):
         """
         try:
             self.__instance.logout()
-            self.logout_finished.emit(True, self.tr("Succeeded"))
+            logger.debug("Logout success")
+            self.logout_ok.emit()
             return True
         except Exception as e:
-            self.logout_finished.emit(False, "%s" % (e,))
+            logger.debug("Logout error: {0!r}".format(e))
+            self.logout_error.emit()
         return False
