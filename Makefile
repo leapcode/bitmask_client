@@ -72,6 +72,12 @@ manpages:
 apidocs:
 	@sphinx-apidoc -o docs/api src/leap/bitmask
 
+do_cprofile:
+	python -m cProfile -o bitmask.cprofile src/leap/bitmask/app.py --debug -N
+
+view_cprofile:
+	cprofilev bitmask.cprofile
+
 mailprofile:
 	gprof2dot -f pstats /tmp/leap_mail_profile.pstats -n 0.2 -e 0.2 | dot -Tpdf -o /tmp/leap_mail_profile.pdf
 
