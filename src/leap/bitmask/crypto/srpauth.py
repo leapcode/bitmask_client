@@ -171,9 +171,6 @@ class SRPAuth(QtCore.QObject):
             self._srp_user = None
             self._srp_a = None
 
-            # Error msg displayed if the username or the password is invalid
-            self._WRONG_USER_PASS = self.tr("Invalid username or password.")
-
             # User credentials stored for password changing checks
             self._username = None
             self._password = None
@@ -267,14 +264,11 @@ class SRPAuth(QtCore.QObject):
                 # Clean up A value, we don't need it anymore
                 self._srp_a = None
             except requests.exceptions.ConnectionError as e:
-                logger.error("No connection made (salt): %r" %
-                             (e,))
-                raise SRPAuthConnectionError("Could not establish a "
-                                             "connection")
+                logger.error("No connection made (salt): {0!r}".format(e))
+                raise SRPAuthConnectionError()
             except Exception as e:
                 logger.error("Unknown error: %r" % (e,))
-                raise SRPAuthenticationError("Unknown error: %r" %
-                                             (e,))
+                raise SRPAuthenticationError()
 
             content, mtime = reqhelper.get_content(init_session)
 
@@ -283,23 +277,22 @@ class SRPAuth(QtCore.QObject):
                              "Status code = %r. Content: %r" %
                              (init_session.status_code, content))
                 if init_session.status_code == 422:
-                    raise SRPAuthBadUserOrPassword(self._WRONG_USER_PASS)
+                    logger.error("Invalid username or password.")
+                    raise SRPAuthBadUserOrPassword()
 
-                raise SRPAuthBadStatusCode(self.tr("There was a problem with"
-                                                   " authentication"))
+                logger.error("There was a problem with authentication.")
+                raise SRPAuthBadStatusCode()
 
             json_content = json.loads(content)
             salt = json_content.get("salt", None)
             B = json_content.get("B", None)
 
             if salt is None:
-                logger.error("No salt parameter sent")
-                raise SRPAuthNoSalt(self.tr("The server did not send "
-                                            "the salt parameter"))
+                logger.error("The server didn't send the salt parameter.")
+                raise SRPAuthNoSalt()
             if B is None:
-                logger.error("No B parameter sent")
-                raise SRPAuthNoB(self.tr("The server did not send "
-                                         "the B parameter"))
+                logger.error("The server didn't send the B parameter.")
+                raise SRPAuthNoB()
 
             return salt, B
 
@@ -330,8 +323,7 @@ class SRPAuth(QtCore.QObject):
                 unhex_B = self._safe_unhexlify(B)
             except (TypeError, ValueError) as e:
                 logger.error("Bad data from server: %r" % (e,))
-                raise SRPAuthBadDataFromServer(
-                    self.tr("The data sent from the server had errors"))
+                raise SRPAuthBadDataFromServer()
             M = self._srp_user.process_challenge(unhex_salt, unhex_B)
 
             auth_url = "%s/%s/%s/%s" % (self._provider_config.get_api_uri(),
@@ -352,13 +344,13 @@ class SRPAuth(QtCore.QObject):
                                                 timeout=REQUEST_TIMEOUT)
             except requests.exceptions.ConnectionError as e:
                 logger.error("No connection made (HAMK): %r" % (e,))
-                raise SRPAuthConnectionError(self.tr("Could not connect to "
-                                                     "the server"))
+                raise SRPAuthConnectionError()
 
             try:
                 content, mtime = reqhelper.get_content(auth_result)
             except JSONDecodeError:
-                raise SRPAuthJSONDecodeError("Bad JSON content in auth result")
+                logger.error("Bad JSON content in auth result.")
+                raise SRPAuthJSONDecodeError()
 
             if auth_result.status_code == 422:
                 error = ""
@@ -372,14 +364,13 @@ class SRPAuth(QtCore.QObject):
                                  "received: %s", (content,))
                 logger.error("[%s] Wrong password (HAMK): [%s]" %
                              (auth_result.status_code, error))
-                raise SRPAuthBadUserOrPassword(self._WRONG_USER_PASS)
+                raise SRPAuthBadUserOrPassword()
 
             if auth_result.status_code not in (200,):
                 logger.error("No valid response (HAMK): "
                              "Status code = %s. Content = %r" %
                              (auth_result.status_code, content))
-                raise SRPAuthBadStatusCode(self.tr("Unknown error (%s)") %
-                                           (auth_result.status_code,))
+                raise SRPAuthBadStatusCode()
 
             return json.loads(content)
 
@@ -400,8 +391,7 @@ class SRPAuth(QtCore.QObject):
                 token = json_content.get("token", None)
             except Exception as e:
                 logger.error(e)
-                raise SRPAuthBadDataFromServer("Something went wrong with the "
-                                               "login")
+                raise SRPAuthBadDataFromServer()
 
             self.set_uuid(uuid)
             self.set_token(token)
@@ -409,8 +399,7 @@ class SRPAuth(QtCore.QObject):
             if M2 is None or self.get_uuid() is None:
                 logger.error("Something went wrong. Content = %r" %
                              (json_content,))
-                raise SRPAuthBadDataFromServer(self.tr("Problem getting data "
-                                                       "from server"))
+                raise SRPAuthBadDataFromServer()
 
             events_signal(
                 proto.CLIENT_UID, content=uuid,
@@ -436,22 +425,19 @@ class SRPAuth(QtCore.QObject):
                 unhex_M2 = self._safe_unhexlify(M2)
             except TypeError:
                 logger.error("Bad data from server (HAWK)")
-                raise SRPAuthBadDataFromServer(self.tr("Bad data from server"))
+                raise SRPAuthBadDataFromServer()
 
             self._srp_user.verify_session(unhex_M2)
 
             if not self._srp_user.authenticated():
-                logger.error("Auth verification failed")
-                raise SRPAuthVerificationFailed(self.tr("Auth verification "
-                                                        "failed"))
+                logger.error("Auth verification failed.")
+                raise SRPAuthVerificationFailed()
             logger.debug("Session verified.")
 
             session_id = self._session.cookies.get(self.SESSION_ID_KEY, None)
             if not session_id:
                 logger.error("Bad cookie from server (missing _session_id)")
-                raise SRPAuthNoSessionId(self.tr("Session cookie "
-                                                 "verification "
-                                                 "failed"))
+                raise SRPAuthNoSessionId()
 
             events_signal(
                 proto.CLIENT_SESSION_ID, content=session_id,
@@ -618,8 +604,9 @@ class SRPAuth(QtCore.QObject):
 
     __instance = None
 
-    authentication_finished = QtCore.Signal(bool, str)
-    logout_finished = QtCore.Signal(bool, str)
+    authentication_finished = QtCore.Signal()
+    logout_ok = QtCore.Signal()
+    logout_error = QtCore.Signal()
 
     def __init__(self, provider_config):
         """
@@ -693,7 +680,7 @@ class SRPAuth(QtCore.QObject):
         :type _: IGNORED
         """
         logger.debug("Successful login!")
-        self.authentication_finished.emit(True, self.tr("Succeeded"))
+        self.authentication_finished.emit()
 
     def get_session_id(self):
         return self.__instance.get_session_id()
@@ -711,8 +698,10 @@ class SRPAuth(QtCore.QObject):
         """
         try:
             self.__instance.logout()
-            self.logout_finished.emit(True, self.tr("Succeeded"))
+            logger.debug("Logout success")
+            self.logout_ok.emit()
             return True
         except Exception as e:
-            self.logout_finished.emit(False, "%s" % (e,))
+            logger.debug("Logout error: {0!r}".format(e))
+            self.logout_error.emit()
         return False

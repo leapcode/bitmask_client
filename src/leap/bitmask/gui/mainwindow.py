@@ -32,7 +32,10 @@ from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
+
+from leap.bitmask.crypto import srpauth
 from leap.bitmask.crypto.srpauth import SRPAuth
+
 from leap.bitmask.gui.loggerwindow import LoggerWindow
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.login import LoginWidget
@@ -1051,13 +1054,30 @@ class MainWindow(QtGui.QMainWindow):
         # as we are doing with the prov_cancelled_setup signal.
         # After we move srpauth to the backend, we need to update this.
         logger.error("Error logging in, {0!r}".format(failure))
+
         if failure.check(CancelledError):
             logger.debug("Defer cancelled.")
             failure.trap(Exception)
             self._set_login_cancelled()
+            return
+        elif failure.check(srpauth.SRPAuthBadUserOrPassword):
+            msg = self.tr("Invalid username or password.")
+        elif failure.check(srpauth.SRPAuthBadStatusCode,
+                           srpauth.SRPAuthenticationError,
+                           srpauth.SRPAuthVerificationFailed,
+                           srpauth.SRPAuthNoSessionId,
+                           srpauth.SRPAuthNoSalt, srpauth.SRPAuthNoB,
+                           srpauth.SRPAuthBadDataFromServer,
+                           srpauth.SRPAuthJSONDecodeError):
+            msg = self.tr("There was a server problem with authentication.")
+        elif failure.check(srpauth.SRPAuthConnectionError):
+            msg = self.tr("Could not establish a connection.")
         else:
-            self._login_widget.set_status(str(failure.value))
-            self._login_widget.set_enabled(True)
+            # this shouldn't happen, but just in case.
+            msg = self.tr("Unknown error: {0!r}".format(failure.value))
+
+        self._login_widget.set_status(msg)
+        self._login_widget.set_enabled(True)
 
     def _cancel_login(self):
         """
@@ -1119,8 +1139,8 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth = SRPAuth(self._provider_config)
                 self._srp_auth.authentication_finished.connect(
                     self._authentication_finished)
-                self._srp_auth.logout_finished.connect(
-                    self._done_logging_out)
+                self._srp_auth.logout_ok.connect(self._logout_ok)
+                self._srp_auth.logout_error.connect(self._logout_error)
 
             self._login_defer = self._srp_auth.authenticate(username, password)
             self._login_defer.addErrback(self._login_errback)
@@ -1130,7 +1150,7 @@ class MainWindow(QtGui.QMainWindow):
             logger.error(data[self._backend.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
-    def _authentication_finished(self, ok, message):
+    def _authentication_finished(self):
         """
         SLOT
         TRIGGER: self._srp_auth.authentication_finished
@@ -1138,30 +1158,23 @@ class MainWindow(QtGui.QMainWindow):
         Once the user is properly authenticated, try starting the EIP
         service
         """
-        # In general we want to "filter" likely complicated error
-        # messages, but in this case, the messages make more sense as
-        # they come. Since they are "Unknown user" or "Unknown
-        # password"
-        self._login_widget.set_status(message, error=not ok)
+        self._login_widget.set_status(self.tr("Succeeded"), error=False)
 
-        if ok:
-            self._logged_user = self._login_widget.get_user()
-            user = self._logged_user
-            domain = self._provider_config.get_domain()
-            full_user_id = make_address(user, domain)
-            self._mail_conductor.userid = full_user_id
-            self._login_defer = None
-            self._start_eip_bootstrap()
+        self._logged_user = self._login_widget.get_user()
+        user = self._logged_user
+        domain = self._provider_config.get_domain()
+        full_user_id = make_address(user, domain)
+        self._mail_conductor.userid = full_user_id
+        self._login_defer = None
+        self._start_eip_bootstrap()
 
-            # if soledad/mail is enabled:
-            if MX_SERVICE in self._enabled_services:
-                btn_enabled = self._login_widget.set_logout_btn_enabled
-                btn_enabled(False)
-                self.soledad_ready.connect(lambda: btn_enabled(True))
-                self._soledad_bootstrapper.soledad_failed.connect(
-                    lambda: btn_enabled(True))
-        else:
-            self._login_widget.set_enabled(True)
+        # if soledad/mail is enabled:
+        if MX_SERVICE in self._enabled_services:
+            btn_enabled = self._login_widget.set_logout_btn_enabled
+            btn_enabled(False)
+            self.soledad_ready.connect(lambda: btn_enabled(True))
+            self._soledad_bootstrapper.soledad_failed.connect(
+                lambda: btn_enabled(True))
 
     def _start_eip_bootstrap(self):
         """
@@ -1831,11 +1844,22 @@ class MainWindow(QtGui.QMainWindow):
         threads.deferToThread(self._srp_auth.logout)
         self.logout.emit()
 
-    def _done_logging_out(self, ok, message):
-        # TODO missing params in docstring
+    def _logout_error(self):
         """
         SLOT
-        TRIGGER: self._srp_auth.logout_finished
+        TRIGGER: self._srp_auth.logout_error
+
+        Inform the user about a logout error.
+        """
+        self._login_widget.done_logout()
+        self.ui.lblLoginProvider.setText(self.tr("Login"))
+        self._login_widget.set_status(
+            self.tr("Something went wrong with the logout."))
+
+    def _logout_ok(self):
+        """
+        SLOT
+        TRIGGER: self._srp_auth.logout_ok
 
         Switches the stackedWidget back to the login stage after
         logging out
@@ -1843,14 +1867,9 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.done_logout()
         self.ui.lblLoginProvider.setText(self.tr("Login"))
 
-        if ok:
-            self._logged_user = None
-            self._login_widget.logged_out()
-            self._mail_status.mail_state_disabled()
-
-        else:
-            self._login_widget.set_status(
-                self.tr("Something went wrong with the logout."))
+        self._logged_user = None
+        self._login_widget.logged_out()
+        self._mail_status.mail_state_disabled()
 
     def _intermediate_stage(self, data):
         # TODO this method name is confusing as hell.
