@@ -1,0 +1,1 @@
+- Use version checks in the wizard when the user choose to use an existing provider. Closes #5048.
