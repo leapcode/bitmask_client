@@ -46,7 +46,7 @@ With a Debian based system, to be able to run Bitmask you need to run the follow
 
     $ sudo apt-get install git python-dev python-setuptools
     python-virtualenv python-pip python-openssl libsqlite3-dev g++ openvpn
-    pyside-tools python-pyside 
+    pyside-tools python-pyside libffi-dev
 
 Installing
 -----------
