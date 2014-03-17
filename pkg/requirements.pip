@@ -10,7 +10,7 @@ requests>=1.1.0
 srp>=1.0.2
 pyopenssl
 python-dateutil
-psutil
+psutil==1.2.1
 ipaddr
 twisted
 python-daemon # this should not be needed for Windows.
