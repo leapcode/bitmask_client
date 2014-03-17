@@ -325,7 +325,8 @@ class Backend(object):
         Stops the looping call and tries to cancel all the defers.
         """
         log.msg("Stopping worker...")
-        self._lc.stop()
+        if self._lc.running:
+            self._lc.stop()
         while len(self._ongoing_defers) > 0:
             d = self._ongoing_defers.pop()
             d.cancel()
@@ -392,7 +393,8 @@ class Backend(object):
         :param d: defer to remove
         :type d: twisted.internet.defer.Deferred
         """
-        self._ongoing_defers.remove(d)
+        if d in self._ongoing_defers:
+            self._ongoing_defers.remove(d)
 
     # XXX: Temporal interface until we migrate to zmq
     # We simulate the calls to zmq.send_multipart. Once we separate
