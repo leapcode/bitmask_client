@@ -44,6 +44,7 @@ from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
+from leap.soledad.common.errors import InvalidAuthTokenError
 from leap.soledad.client import Soledad, BootstrapSequenceError
 
 logger = logging.getLogger(__name__)
@@ -139,6 +140,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
     gen_key = QtCore.Signal(dict)
     local_only_ready = QtCore.Signal(dict)
     soledad_timeout = QtCore.Signal()
+    soledad_invalid_auth_token = QtCore.Signal()
     soledad_failed = QtCore.Signal()
 
     def __init__(self):
@@ -258,6 +260,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         return server_url, cert_file
 
+    def _soledad_sync_errback(self, failure):
+        failure.trap(InvalidAuthTokenError)
+        # in the case of an invalid token we have already turned off mail and
+        # warned the user in _do_soledad_sync()
+
+
     def load_and_sync_soledad(self, uuid=None, offline=False):
         """
         Once everthing is in the right place, we instantiate and sync
@@ -298,7 +306,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 self._keymanager.get_key(
                     address, openpgp.OpenPGPKey,
                     private=True, fetch_remote=False)
-                threads.deferToThread(self._do_soledad_sync)
+                d = threads.deferToThread(self._do_soledad_sync)
+                d.addErrback(self._soledad_sync_errback)
             except KeyNotFound:
                 logger.debug("Key not found. Generating key for %s" %
                              (address,))
@@ -350,6 +359,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 # ubuntu folks.
                 sync_tries -= 1
                 continue
+            except InvalidAuthTokenError:
+                self.soledad_invalid_auth_token.emit()
+                raise
             except Exception as e:
                 logger.exception("Unhandled error while syncing "
                                  "soledad: %r" % (e,))
@@ -443,6 +455,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
             raise SoledadSyncError("u1db: InvalidGeneration")
         except (sqlite_ProgrammingError, sqlcipher_ProgrammingError) as e:
             logger.exception("%r" % (e,))
+            raise
+        except InvalidAuthTokenError:
+            # token is invalid, probably expired
+            logger.error('Invalid auth token while trying to sync Soledad')
             raise
         except Exception as exc:
             logger.exception("Unhandled error while syncing "

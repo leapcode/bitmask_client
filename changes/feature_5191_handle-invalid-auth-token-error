@@ -1,0 +1,2 @@
+- Handle invalid auth tokens when syncing Soledad, and show an error on the
+  GUI (#5191).
