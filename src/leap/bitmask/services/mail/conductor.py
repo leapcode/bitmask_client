@@ -35,6 +35,7 @@ from leap.common.check import leap_assert
 from leap.common.events import register as leap_register
 from leap.common.events import events_pb2 as leap_events
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -406,3 +407,4 @@ class MailConductor(IMAPControl, SMTPControl):
         qtsigs.connecting_signal.connect(widget.mail_state_connecting)
         qtsigs.disconnecting_signal.connect(widget.mail_state_disconnecting)
         qtsigs.disconnected_signal.connect(widget.mail_state_disconnected)
+        qtsigs.soledad_invalid_auth_token.connect(widget.soledad_invalid_auth_token)

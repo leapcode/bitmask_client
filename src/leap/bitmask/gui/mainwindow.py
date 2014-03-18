@@ -262,6 +262,8 @@ class MainWindow(QtGui.QMainWindow):
             self._soledad_bootstrapped_stage)
         self._soledad_bootstrapper.soledad_timeout.connect(
             self._retry_soledad_connection)
+        self._soledad_bootstrapper.soledad_invalid_auth_token.connect(
+            self._mail_status.set_soledad_invalid_auth_token)
         self._soledad_bootstrapper.soledad_failed.connect(
             self._mail_status.set_soledad_failed)
 
