@@ -18,22 +18,18 @@
 First run wizard
 """
 import logging
-import json
 import random
 
 from functools import partial
 
 from PySide import QtCore, QtGui
-from twisted.internet import threads
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services import get_service_display_name, get_supported
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.password import basic_password_checks
-from leap.bitmask.util.request_helpers import get_content
 
 from ui_wizard import Ui_Wizard
 
@@ -253,16 +249,11 @@ class Wizard(QtGui.QWizard):
 
         ok, msg = basic_password_checks(username, password, password2)
         if ok:
-            register = SRPRegister(provider_config=self._provider_config)
-            register.registration_finished.connect(
-                self._registration_finished)
+            self._set_register_status(self.tr("Starting registration..."))
 
-            threads.deferToThread(
-                partial(register.register_user, username, password))
-
+            self._backend.register_user(self._domain, username, password)
             self._username = username
             self._password = password
-            self._set_register_status(self.tr("Starting registration..."))
         else:
             self._set_register_status(msg, error=True)
             self._focus_password()
@@ -289,42 +280,59 @@ class Wizard(QtGui.QWizard):
         # register button
         self.ui.btnRegister.setVisible(visible)
 
-    def _registration_finished(self, ok, req):
-        if ok:
-            user_domain = self._username + "@" + self._domain
-            message = "<font color='green'><h3>"
-            message += self.tr("User %s successfully registered.") % (
-                user_domain, )
-            message += "</h3></font>"
-            self._set_register_status(message)
+    def _registration_finished(self):
+        """
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_registration_finished
 
-            self.ui.lblPassword2.clearFocus()
-            self._set_registration_fields_visibility(False)
+        The registration has finished successfully, so we do some final steps.
+        """
+        user_domain = self._username + "@" + self._domain
+        message = "<font color='green'><h3>"
+        message += self.tr("User %s successfully registered.") % (
+            user_domain, )
+        message += "</h3></font>"
+        self._set_register_status(message)
 
-            # Allow the user to remember his password
-            if has_keyring():
-                self.ui.chkRemember.setVisible(True)
-                self.ui.chkRemember.setEnabled(True)
+        self.ui.lblPassword2.clearFocus()
+        self._set_registration_fields_visibility(False)
 
-            self.page(self.REGISTER_USER_PAGE).set_completed()
-            self.button(QtGui.QWizard.BackButton).setEnabled(False)
-        else:
-            old_username = self._username
-            self._username = None
-            self._password = None
-            error_msg = self.tr("Something has gone wrong. "
-                                "Please try again.")
-            try:
-                content, _ = get_content(req)
-                json_content = json.loads(content)
-                error_msg = json_content.get("errors").get("login")[0]
-                if not error_msg.istitle():
-                    error_msg = "%s %s" % (old_username, error_msg)
-            except Exception as e:
-                logger.error("Unknown error: %r" % (e,))
+        # Allow the user to remember his password
+        if has_keyring():
+            self.ui.chkRemember.setVisible(True)
+            self.ui.chkRemember.setEnabled(True)
 
-            self._set_register_status(error_msg, error=True)
-            self.ui.btnRegister.setEnabled(True)
+        self.page(self.REGISTER_USER_PAGE).set_completed()
+        self.button(QtGui.QWizard.BackButton).setEnabled(False)
+
+    def _registration_failed(self):
+        """
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_registration_failed
+
+        The registration has failed, so we report the problem.
+        """
+        self._username = self._password = None
+
+        error_msg = self.tr("Something has gone wrong. Please try again.")
+        self._set_register_status(error_msg, error=True)
+        self.ui.btnRegister.setEnabled(True)
+
+    def _registration_taken(self):
+        """
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_registration_taken
+
+        The requested username is taken, warn the user about that.
+        """
+        self._username = self._password = None
+
+        error_msg = self.tr("The requested username is taken, choose another.")
+        self._set_register_status(error_msg, error=True)
+        self.ui.btnRegister.setEnabled(True)
 
     def _set_register_status(self, status, error=False):
         """
@@ -687,6 +695,10 @@ class Wizard(QtGui.QWizard):
         sig.prov_download_ca_cert.connect(self._download_ca_cert)
         sig.prov_check_ca_fingerprint.connect(self._check_ca_fingerprint)
         sig.prov_check_api_certificate.connect(self._check_api_certificate)
+
+        sig.srp_registration_finished.connect(self._registration_finished)
+        sig.srp_registration_failed.connect(self._registration_failed)
+        sig.srp_registration_taken.connect(self._registration_taken)
 
     def _backend_disconnect(self):
         """
