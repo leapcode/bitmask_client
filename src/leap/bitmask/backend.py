@@ -40,6 +40,26 @@ from PySide import QtCore
 logger = logging.getLogger(__name__)
 
 
+def get_provider_config(config, domain):
+    """
+    Return the ProviderConfig object for the given domain.
+    If it is already loaded in `config`, then don't reload.
+
+    :param config: a ProviderConfig object
+    :type conig: ProviderConfig
+    :param domain: the domain which config is required.
+    :type domain: unicode
+
+    :returns: True if the config was loaded successfully, False otherwise.
+    :rtype: bool
+    """
+    # TODO: see ProviderConfig.get_provider_config
+    if (not config.loaded() or config.get_domain() != domain):
+        config.load(get_provider_path(domain))
+
+    return config.loaded()
+
+
 class ILEAPComponent(zope.interface.Interface):
     """
     Interface that every component for the backend should comply to
@@ -129,7 +149,6 @@ class Provider(object):
         self._provider_bootstrapper = ProviderBootstrapper(signaler,
                                                            bypass_checks)
         self._download_provider_defer = None
-        self._provider_config = ProviderConfig()
 
     def setup_provider(self, provider):
         """
@@ -167,13 +186,8 @@ class Provider(object):
         """
         d = None
 
-        # If there's no loaded provider or
-        # we want to connect to other provider...
-        if (not self._provider_config.loaded() or
-                self._provider_config.get_domain() != provider):
-            self._provider_config.load(get_provider_path(provider))
-
-        if self._provider_config.loaded():
+        config = ProviderConfig()
+        if get_provider_config(config, provider):
             d = self._provider_bootstrapper.run_provider_setup_checks(
                 self._provider_config,
                 download_if_needed=True)
@@ -206,7 +220,6 @@ class Register(object):
         object.__init__(self)
         self.key = "register"
         self._signaler = signaler
-        self._provider_config = ProviderConfig()
 
     def register_user(self, domain, username, password):
         """
@@ -222,15 +235,10 @@ class Register(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        # If there's no loaded provider or
-        # we want to connect to other provider...
-        if (not self._provider_config.loaded() or
-                self._provider_config.get_domain() != domain):
-            self._provider_config.load(get_provider_path(domain))
-
-        if self._provider_config.loaded():
+        config = ProviderConfig()
+        if get_provider_config(config, domain):
             srpregister = SRPRegister(signaler=self._signaler,
-                                      provider_config=self._provider_config)
+                                      provider_config=config)
             return threads.deferToThread(
                 partial(srpregister.register_user, username, password))
         else:
