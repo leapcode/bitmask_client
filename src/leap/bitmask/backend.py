@@ -19,6 +19,7 @@ Backend for everything
 """
 import logging
 
+from functools import partial
 from Queue import Queue, Empty
 
 from twisted.internet import threads, defer
@@ -28,6 +29,7 @@ from twisted.python import log
 import zope.interface
 
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 
@@ -134,6 +136,9 @@ class Provider(object):
 
         :param provider: URL for the provider
         :type provider: unicode
+
+        :returns: the defer for the operation running in a thread.
+        :rtype: twisted.internet.defer.Deferred
         """
         log.msg("Setting up provider %s..." % (provider.encode("idna"),))
         pb = self._provider_bootstrapper
@@ -155,8 +160,10 @@ class Provider(object):
 
         :param provider: URL for the provider
         :type provider: unicode
-        """
 
+        :returns: the defer for the operation running in a thread.
+        :rtype: twisted.internet.defer.Deferred
+        """
         d = None
 
         # If there's no loaded provider or
@@ -180,6 +187,57 @@ class Provider(object):
         return d
 
 
+class Register(object):
+    """
+    Interfaces with setup and bootstrapping operations for a provider
+    """
+
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, signaler=None):
+        """
+        Constructor for the Register component
+
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        object.__init__(self)
+        self.key = "register"
+        self._signaler = signaler
+        self._provider_config = ProviderConfig()
+
+    def register_user(self, domain, username, password):
+        """
+        Register a user using the domain and password given as parameters.
+
+        :param domain: the domain we need to register the user.
+        :type domain: unicode
+        :param username: the user name
+        :type username: unicode
+        :param password: the password for the username
+        :type password: unicode
+
+        :returns: the defer for the operation running in a thread.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        # If there's no loaded provider or
+        # we want to connect to other provider...
+        if (not self._provider_config.loaded() or
+                self._provider_config.get_domain() != domain):
+            self._provider_config.load(get_provider_path(domain))
+
+        if self._provider_config.loaded():
+            srpregister = SRPRegister(signaler=self._signaler,
+                                      provider_config=self._provider_config)
+            return threads.deferToThread(
+                partial(srpregister.register_user, username, password))
+        else:
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.srp_registration_failed)
+            logger.error("Could not load provider configuration.")
+
+
 class Signaler(QtCore.QObject):
     """
     Signaler object, handles converting string commands to Qt signals.
@@ -188,8 +246,9 @@ class Signaler(QtCore.QObject):
     live in the frontend.
     """
 
-    # Signals for the ProviderBootstrapper
+    ####################
     # These will only exist in the frontend
+    # Signals for the ProviderBootstrapper
     prov_name_resolution = QtCore.Signal(object)
     prov_https_connection = QtCore.Signal(object)
     prov_download_provider_info = QtCore.Signal(object)
@@ -205,7 +264,13 @@ class Signaler(QtCore.QObject):
 
     prov_cancelled_setup = QtCore.Signal(object)
 
-    # These will exist both in the backend and the front end.
+    # Signals for SRPRegister
+    srp_registration_finished = QtCore.Signal(object)
+    srp_registration_failed = QtCore.Signal(object)
+    srp_registration_taken = QtCore.Signal(object)
+
+    ####################
+    # These will exist both in the backend AND the front end.
     # The frontend might choose to not "interpret" all the signals
     # from the backend, but the backend needs to have all the signals
     # it's going to emit defined here
@@ -219,6 +284,10 @@ class Signaler(QtCore.QObject):
     PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
     PROV_UNSUPPORTED_API = "prov_unsupported_api"
     PROV_CANCELLED_SETUP = "prov_cancelled_setup"
+
+    SRP_REGISTRATION_FINISHED = "srp_registration_finished"
+    SRP_REGISTRATION_FAILED = "srp_registration_failed"
+    SRP_REGISTRATION_TAKEN = "srp_registration_taken"
 
     def __init__(self):
         """
@@ -238,6 +307,10 @@ class Signaler(QtCore.QObject):
             self.PROV_UNSUPPORTED_CLIENT,
             self.PROV_UNSUPPORTED_API,
             self.PROV_CANCELLED_SETUP,
+
+            self.SRP_REGISTRATION_FINISHED,
+            self.SRP_REGISTRATION_FAILED,
+            self.SRP_REGISTRATION_TAKEN,
         ]
 
         for sig in signals:
@@ -296,6 +369,7 @@ class Backend(object):
 
         # Component registration
         self._register(Provider(self._signaler, bypass_checks))
+        self._register(Register(self._signaler))
 
         # We have a looping call on a thread executing all the
         # commands in queue. Right now this queue is an actual Queue
@@ -409,3 +483,7 @@ class Backend(object):
 
     def provider_bootstrap(self, provider):
         self._call_queue.put(("provider", "bootstrap", None, provider))
+
+    def register_user(self, provider, username, password):
+        self._call_queue.put(("register", "register_user", None, provider,
+                              username, password))

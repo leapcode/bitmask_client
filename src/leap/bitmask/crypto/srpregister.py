@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import binascii
+import json
 import logging
 
 import requests
@@ -26,6 +27,7 @@ from urlparse import urlparse
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.util.constants import SIGNUP_TIMEOUT
+from leap.bitmask.util.request_helpers import get_content
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -40,16 +42,22 @@ class SRPRegister(QtCore.QObject):
     USER_VERIFIER_KEY = 'user[password_verifier]'
     USER_SALT_KEY = 'user[password_salt]'
 
+    STATUS_OK = (200, 201)
+    STATUS_TAKEN = 422
+    STATUS_ERROR = -999  # Custom error status
+
     registration_finished = QtCore.Signal(bool, object)
 
-    def __init__(self,
-                 provider_config=None,
-                 register_path="users"):
+    def __init__(self, signaler=None,
+                 provider_config=None, register_path="users"):
         """
         Constructor
 
+        :param signaler: Signaler object used to receive notifications
+                         from the backend
+        :type signaler: Signaler
         :param provider_config: provider configuration instance,
-        properly loaded
+                                properly loaded
         :type privider_config: ProviderConfig
         :param register_path: webapp path for registering users
         :type register_path; str
@@ -59,6 +67,7 @@ class SRPRegister(QtCore.QObject):
         leap_assert_type(provider_config, ProviderConfig)
 
         self._provider_config = provider_config
+        self._signaler = signaler
 
         # **************************************************** #
         # Dependency injection helpers, override this for more
@@ -104,8 +113,8 @@ class SRPRegister(QtCore.QObject):
         :param password: password for this username
         :type password: str
 
-        :rtype: tuple
-        :rparam: (ok, request)
+        :returns: if the registration went ok or not.
+        :rtype: bool
         """
 
         username = username.lower().encode('utf-8')
@@ -129,11 +138,7 @@ class SRPRegister(QtCore.QObject):
         logger.debug("Will try to register user = %s" % (username,))
 
         ok = False
-        # This should be None, but we don't like when PySide segfaults,
-        # so it something else.
-        # To reproduce it, just do:
-        # self.registration_finished.emit(False, None)
-        req = []
+        req = None
         try:
             req = self._session.post(uri,
                                      data=user_data,
@@ -143,12 +148,44 @@ class SRPRegister(QtCore.QObject):
 
         except requests.exceptions.RequestException as exc:
             logger.error(exc.message)
-            ok = False
         else:
             ok = req.ok
 
-        self.registration_finished.emit(ok, req)
+        status_code = self.STATUS_ERROR
+        if req is not None:
+            status_code = req.status_code
+        self._emit_result(status_code)
+
+        if not ok:
+            try:
+                content, _ = get_content(req)
+                json_content = json.loads(content)
+                error_msg = json_content.get("errors").get("login")[0]
+                if not error_msg.istitle():
+                    error_msg = "%s %s" % (username, error_msg)
+                logger.error(error_msg)
+            except Exception as e:
+                logger.error("Unknown error: %r" % (e, ))
+
         return ok
+
+    def _emit_result(self, status_code):
+        """
+        Emit the corresponding signal depending on the status code.
+
+        :param status_code: the status code received.
+        :type status_code: int or str
+        """
+        logger.debug("Status code is: {0}".format(status_code))
+        if self._signaler is None:
+            return
+
+        if status_code in self.STATUS_OK:
+            self._signaler.signal(self._signaler.SRP_REGISTRATION_FINISHED)
+        elif status_code == self.STATUS_TAKEN:
+            self._signaler.signal(self._signaler.SRP_REGISTRATION_TAKEN)
+        else:
+            self._signaler.signal(self._signaler.SRP_REGISTRATION_FAILED)
 
 
 if __name__ == "__main__":
