@@ -30,6 +30,7 @@ from requests.adapters import HTTPAdapter
 
 from PySide import QtCore
 from twisted.internet import threads
+from twisted.internet.defer import CancelledError
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.util import request_helpers as reqhelper
@@ -135,12 +136,15 @@ class SRPAuth(QtCore.QObject):
         USER_SALT_KEY = 'user[password_salt]'
         AUTHORIZATION_KEY = "Authorization"
 
-        def __init__(self, provider_config):
+        def __init__(self, provider_config, signaler=None):
             """
             Constructor for SRPAuth implementation
 
-            :param server: Server to which we will authenticate
-            :type server: str
+            :param provider_config: ProviderConfig needed to authenticate.
+            :type provider_config: ProviderConfig
+            :param signaler: Signaler object used to receive notifications
+                            from the backend
+            :type signaler: Signaler
             """
             QtCore.QObject.__init__(self)
 
@@ -148,6 +152,7 @@ class SRPAuth(QtCore.QObject):
                         "We need a provider config to authenticate")
 
             self._provider_config = provider_config
+            self._signaler = signaler
             self._settings = LeapSettings()
 
             # **************************************************** #
@@ -448,7 +453,7 @@ class SRPAuth(QtCore.QObject):
         def _threader(self, cb, res, *args, **kwargs):
             return threads.deferToThread(cb, res, *args, **kwargs)
 
-        def change_password(self, current_password, new_password):
+        def _change_password(self, current_password, new_password):
             """
             Changes the password for the currently logged user if the current
             password match.
@@ -499,6 +504,43 @@ class SRPAuth(QtCore.QObject):
 
             self._password = new_password
 
+        def change_password(self, current_password, new_password):
+            """
+            Changes the password for the currently logged user if the current
+            password match.
+            It requires to be authenticated.
+
+            :param current_password: the current password for the logged user.
+            :type current_password: str
+            :param new_password: the new password for the user
+            :type new_password: str
+            """
+            d = threads.deferToThread(
+                self._change_password, current_password, new_password)
+            d.addCallback(self._change_password_ok)
+            d.addErrback(self._change_password_error)
+
+        def _change_password_ok(self, _):
+            """
+            Password change callback.
+            """
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.SRP_PASSWORD_CHANGE_OK)
+
+        def _change_password_error(self, failure):
+            """
+            Password change errback.
+            """
+            logger.debug(
+                "Error changing password. Failure: {0}".format(failure))
+            if self._signaler is None:
+                return
+
+            if failure.check(SRPAuthBadUserOrPassword):
+                self._signaler.signal(self._signaler.SRP_PASSWORD_CHANGE_BADPW)
+            else:
+                self._signaler.signal(self._signaler.SRP_PASSWORD_CHANGE_ERROR)
+
         def authenticate(self, username, password):
             """
             Executes the whole authentication process for a user
@@ -539,7 +581,48 @@ class SRPAuth(QtCore.QObject):
             d.addCallback(partial(self._threader,
                                   self._verify_session))
 
+            d.addCallback(self._authenticate_ok)
+            d.addErrback(self._authenticate_error)
             return d
+
+        def _authenticate_ok(self, _):
+            """
+            Callback that notifies that the authentication was successful.
+
+            :param _: IGNORED, output from the previous callback (None)
+            :type _: IGNORED
+            """
+            logger.debug("Successful login!")
+            self._signaler.signal(self._signaler.SRP_AUTH_OK)
+
+        def _authenticate_error(self, failure):
+            """
+            Error handler for the srpauth.authenticate method.
+
+            :param failure: failure object that Twisted generates
+            :type failure: twisted.python.failure.Failure
+            """
+            logger.error("Error logging in, {0!r}".format(failure))
+
+            signal = None
+            if failure.check(CancelledError):
+                logger.debug("Defer cancelled.")
+                failure.trap(Exception)
+                return
+
+            if self._signaler is None:
+                return
+
+            if failure.check(SRPAuthBadUserOrPassword):
+                signal = self._signaler.SRP_AUTH_BAD_USER_OR_PASSWORD
+            elif failure.check(SRPAuthConnectionError):
+                signal = self._signaler.SRP_AUTH_CONNECTION_ERROR
+            elif failure.check(SRPAuthenticationError):
+                signal = self._signaler.SRP_AUTH_SERVER_ERROR
+            else:
+                signal = self._signaler.SRP_AUTH_ERROR
+
+            self._signaler.signal(signal)
 
         def logout(self):
             """
@@ -565,6 +648,8 @@ class SRPAuth(QtCore.QObject):
             except Exception as e:
                 logger.warning("Something went wrong with the logout: %r" %
                                (e,))
+                if self._signaler is not None:
+                    self._signaler.signal(self._signaler.SRP_LOGOUT_ERROR)
                 raise
             else:
                 self.set_session_id(None)
@@ -573,6 +658,8 @@ class SRPAuth(QtCore.QObject):
                 # Also reset the session
                 self._session = self._fetcher.session()
                 logger.debug("Successfully logged out.")
+                if self._signaler is not None:
+                    self._signaler.signal(self._signaler.SRP_LOGOUT_OK)
 
         def set_session_id(self, session_id):
             QtCore.QMutexLocker(self._session_id_lock)
@@ -604,20 +691,22 @@ class SRPAuth(QtCore.QObject):
 
     __instance = None
 
-    authentication_finished = QtCore.Signal()
-    logout_ok = QtCore.Signal()
-    logout_error = QtCore.Signal()
-
-    def __init__(self, provider_config):
+    def __init__(self, provider_config, signaler=None):
         """
-        Creates a singleton instance if needed
+        Create a singleton instance if needed
+
+        :param provider_config: ProviderConfig needed to authenticate.
+        :type provider_config: ProviderConfig
+        :param signaler: Signaler object used to send notifications
+                         from the backend
+        :type signaler: Signaler
         """
         QtCore.QObject.__init__(self)
 
         # Check whether we already have an instance
         if SRPAuth.__instance is None:
             # Create and remember instance
-            SRPAuth.__instance = SRPAuth.__impl(provider_config)
+            SRPAuth.__instance = SRPAuth.__impl(provider_config, signaler)
 
         # Store instance reference as the only member in the handle
         self.__dict__['_SRPAuth__instance'] = SRPAuth.__instance
@@ -642,8 +731,19 @@ class SRPAuth(QtCore.QObject):
         """
         username = username.lower()
         d = self.__instance.authenticate(username, password)
-        d.addCallback(self._gui_notify)
         return d
+
+    def is_authenticated(self):
+        """
+        Return whether the user is authenticated or not.
+
+        :rtype: bool
+        """
+        user = self.__instance._srp_user
+        if user is not None:
+            return self.__instance.authenticated()
+
+        return False
 
     def change_password(self, current_password, new_password):
         """
@@ -657,8 +757,7 @@ class SRPAuth(QtCore.QObject):
         :returns: a defer to interact with.
         :rtype: twisted.internet.defer.Deferred
         """
-        d = threads.deferToThread(
-            self.__instance.change_password, current_password, new_password)
+        d = self.__instance.change_password(current_password, new_password)
         return d
 
     def get_username(self):
@@ -671,16 +770,6 @@ class SRPAuth(QtCore.QObject):
         if self.get_uuid() is None:
             return None
         return self.__instance._username
-
-    def _gui_notify(self, _):
-        """
-        Callback that notifies the UI with the proper signal.
-
-        :param _: IGNORED, output from the previous callback (None)
-        :type _: IGNORED
-        """
-        logger.debug("Successful login!")
-        self.authentication_finished.emit()
 
     def get_session_id(self):
         return self.__instance.get_session_id()
@@ -699,9 +788,7 @@ class SRPAuth(QtCore.QObject):
         try:
             self.__instance.logout()
             logger.debug("Logout success")
-            self.logout_ok.emit()
             return True
         except Exception as e:
             logger.debug("Logout error: {0!r}".format(e))
-            self.logout_error.emit()
         return False

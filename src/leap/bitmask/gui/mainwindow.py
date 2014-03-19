@@ -20,22 +20,19 @@ Main window for Bitmask.
 import logging
 import socket
 
+from functools import partial
 from threading import Condition
 from datetime import datetime
 
 from PySide import QtCore, QtGui
 from zope.proxy import ProxyBase, setProxiedObject
 from twisted.internet import reactor, threads
-from twisted.internet.defer import CancelledError
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
-
-from leap.bitmask.crypto import srpauth
-from leap.bitmask.crypto.srpauth import SRPAuth
 
 from leap.bitmask.gui.loggerwindow import LoggerWindow
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
@@ -213,8 +210,8 @@ class MainWindow(QtGui.QMainWindow):
         # than once
         # XXX HACK!! But we need it as long as we are using
         # provider_config in here
-        self._provider_config = (
-            self._backend._components["provider"]._provider_config)
+        self._provider_config = self._backend.get_provider_config()
+
         # Used for automatic start of EIP
         self._provisional_provider_config = ProviderConfig()
         self._eip_config = eipconfig.EIPConfig()
@@ -342,7 +339,6 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad = ProxyBase(None)
         self._keymanager = ProxyBase(None)
 
-        self._login_defer = None
         self._soledad_defer = None
 
         self._mail_conductor = mail_conductor.MailConductor(
@@ -377,6 +373,18 @@ class MainWindow(QtGui.QMainWindow):
             # so this has to be done after eip_machine is started
             self._finish_init()
 
+    def _not_logged_in_error(self):
+        """
+        Handle the 'not logged in' backend error if we try to do an operation
+        that requires to be logged in.
+        """
+        logger.critical("You are trying to do an operation that requires "
+                        "log in first.")
+        QtGui.QMessageBox.critical(
+            self, self.tr("Application error"),
+            self.tr("You are trying to do an operation "
+                    "that requires logging in first."))
+
     def _backend_connect(self):
         """
         Helper to connect to backend signals
@@ -400,6 +408,34 @@ class MainWindow(QtGui.QMainWindow):
 
         sig.eip_download_config.connect(self._eip_intermediate_stage)
         sig.eip_download_client_certificate.connect(self._finish_eip_bootstrap)
+
+        # Authentication related signals
+        sig.srp_auth_ok.connect(self._authentication_finished)
+
+        auth_error = partial(
+            self._authentication_error,
+            self.tr("Unknown error."))
+        sig.srp_auth_error.connect(auth_error)
+
+        auth_server_error = partial(
+            self._authentication_error,
+            self.tr("There was a server problem with authentication."))
+        sig.srp_auth_server_error.connect(auth_server_error)
+
+        auth_connection_error = partial(
+            self._authentication_error,
+            self.tr("Could not establish a connection."))
+        sig.srp_auth_connection_error.connect(auth_connection_error)
+
+        auth_bad_user_or_password = partial(
+            self._authentication_error,
+            self.tr("Invalid username or password."))
+        sig.srp_auth_bad_user_or_password.connect(auth_bad_user_or_password)
+
+        sig.srp_logout_ok.connect(self._logout_ok)
+        sig.srp_logout_error.connect(self._logout_error)
+
+        sig.srp_not_logged_in_error.connect(self._not_logged_in_error)
 
     def _backend_disconnect(self):
         """
@@ -538,7 +574,7 @@ class MainWindow(QtGui.QMainWindow):
         Displays the preferences window.
         """
         preferences = PreferencesWindow(
-            self, self._srp_auth, self._provider_config, self._soledad,
+            self, self._backend, self._provider_config, self._soledad,
             self._login_widget.get_selected_provider())
 
         self.soledad_ready.connect(preferences.set_soledad_ready)
@@ -1050,39 +1086,20 @@ class MainWindow(QtGui.QMainWindow):
             if self._login_widget.start_login():
                 self._download_provider_config()
 
-    def _login_errback(self, failure):
+    def _authentication_error(self, msg):
         """
-        Error handler for the srpauth.authenticate method.
+        SLOT
+        TRIGGERS:
+            Signaler.srp_auth_error
+            Signaler.srp_auth_server_error
+            Signaler.srp_auth_connection_error
+            Signaler.srp_auth_bad_user_or_password
 
-        :param failure: failure object that Twisted generates
-        :type failure: twisted.python.failure.Failure
+        Handle the authentication errors.
+
+        :param msg: the message to show to the user.
+        :type msg: unicode
         """
-        # NOTE: this behavior needs to be managed through the signaler,
-        # as we are doing with the prov_cancelled_setup signal.
-        # After we move srpauth to the backend, we need to update this.
-        logger.error("Error logging in, {0!r}".format(failure))
-
-        if failure.check(CancelledError):
-            logger.debug("Defer cancelled.")
-            failure.trap(Exception)
-            self._set_login_cancelled()
-            return
-        elif failure.check(srpauth.SRPAuthBadUserOrPassword):
-            msg = self.tr("Invalid username or password.")
-        elif failure.check(srpauth.SRPAuthBadStatusCode,
-                           srpauth.SRPAuthenticationError,
-                           srpauth.SRPAuthVerificationFailed,
-                           srpauth.SRPAuthNoSessionId,
-                           srpauth.SRPAuthNoSalt, srpauth.SRPAuthNoB,
-                           srpauth.SRPAuthBadDataFromServer,
-                           srpauth.SRPAuthJSONDecodeError):
-            msg = self.tr("There was a server problem with authentication.")
-        elif failure.check(srpauth.SRPAuthConnectionError):
-            msg = self.tr("Could not establish a connection.")
-        else:
-            # this shouldn't happen, but just in case.
-            msg = self.tr("Unknown error: {0!r}".format(failure.value))
-
         self._login_widget.set_status(msg)
         self._login_widget.set_enabled(True)
 
@@ -1101,12 +1118,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         Cancel the running defers to avoid app blocking.
         """
+        # XXX: Should we stop all the backend defers?
         self._backend.cancel_setup_provider()
-
-        if self._login_defer is not None:
-            logger.debug("Cancelling login defer.")
-            self._login_defer.cancel()
-            self._login_defer = None
+        self._backend.cancel_login()
 
         if self._soledad_defer is not None:
             logger.debug("Cancelling soledad defer.")
@@ -1142,15 +1156,8 @@ class MainWindow(QtGui.QMainWindow):
 
             self._hide_unsupported_services()
 
-            if self._srp_auth is None:
-                self._srp_auth = SRPAuth(self._provider_config)
-                self._srp_auth.authentication_finished.connect(
-                    self._authentication_finished)
-                self._srp_auth.logout_ok.connect(self._logout_ok)
-                self._srp_auth.logout_error.connect(self._logout_error)
-
-            self._login_defer = self._srp_auth.authenticate(username, password)
-            self._login_defer.addErrback(self._login_errback)
+            domain = self._provider_config.get_domain()
+            self._backend.login(domain, username, password)
         else:
             self._login_widget.set_status(
                 "Unable to login: Problem with provider")
@@ -1172,7 +1179,6 @@ class MainWindow(QtGui.QMainWindow):
         domain = self._provider_config.get_domain()
         full_user_id = make_address(user, domain)
         self._mail_conductor.userid = full_user_id
-        self._login_defer = None
         self._start_eip_bootstrap()
 
         # if soledad/mail is enabled:
@@ -1916,7 +1922,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
-        threads.deferToThread(self._srp_auth.logout)
+        self._backend.logout()
         self.logout.emit()
 
     def _logout_error(self):
@@ -2017,11 +2023,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self._stop_imap_service()
 
-        if self._srp_auth is not None:
-            if self._srp_auth.get_session_id() is not None or \
-               self._srp_auth.get_token() is not None:
-                # XXX this can timeout after loong time: See #3368
-                self._srp_auth.logout()
+        if self._logged_user is not None:
+            self._backend.logout()
 
         if self._soledad_bootstrapper.soledad is not None:
             logger.debug("Closing soledad...")

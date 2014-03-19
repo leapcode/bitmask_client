@@ -29,7 +29,6 @@ from leap.bitmask.provider import get_provider_path
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.soledad.client import NoStorageSecret
-from leap.bitmask.crypto.srpauth import SRPAuthBadUserOrPassword
 from leap.bitmask.util.password import basic_password_checks
 from leap.bitmask.services import get_supported
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -44,12 +43,12 @@ class PreferencesWindow(QtGui.QDialog):
     """
     preferences_saved = QtCore.Signal()
 
-    def __init__(self, parent, srp_auth, provider_config, soledad, domain):
+    def __init__(self, parent, backend, provider_config, soledad, domain):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
-        :param srp_auth: SRPAuth object configured in the main app.
-        :type srp_auth: SRPAuth
+        :param backend: Backend being used
+        :type backend: Backend
         :param provider_config: ProviderConfig object.
         :type provider_config: ProviderConfig
         :param soledad: Soledad instance
@@ -60,9 +59,13 @@ class PreferencesWindow(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
-        self._srp_auth = srp_auth
+        self._backend = backend
         self._settings = LeapSettings()
         self._soledad = soledad
+        self._provider_config = provider_config
+        self._domain = domain
+
+        self._backend_connect()
 
         # Load UI
         self.ui = Ui_Preferences()
@@ -82,39 +85,56 @@ class PreferencesWindow(QtGui.QDialog):
         else:
             self._add_configured_providers()
 
-        pw_enabled = False
-
-        # check if the user is logged in
-        if srp_auth is not None and srp_auth.get_token() is not None:
-            # check if provider has 'mx' ...
-            if provider_config.provides_mx():
-                enabled_services = self._settings.get_enabled_services(domain)
-                mx_name = get_service_display_name(MX_SERVICE)
-
-                # ... and if the user have it enabled
-                if MX_SERVICE not in enabled_services:
-                    msg = self.tr("You need to enable {0} in order to change "
-                                  "the password.".format(mx_name))
-                    self._set_password_change_status(msg, error=True)
-                else:
-                    if sameProxiedObjects(self._soledad, None):
-                        msg = self.tr(
-                            "You need to wait until {0} is ready in "
-                            "order to change the password.".format(mx_name))
-                        self._set_password_change_status(msg)
-                    else:
-                        # Soledad is bootstrapped
-                        pw_enabled = True
-            else:
-                pw_enabled = True
-        else:
-            msg = self.tr(
-                "In order to change your password you need to be logged in.")
-            self._set_password_change_status(msg)
+        self._backend.get_logged_in_status()
 
         self._select_provider_by_name(domain)
 
+    def _is_logged_in(self):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.srp_status_logged_in
+
+        Actions to perform is the user is logged in.
+        """
+        settings = self._settings
+        pw_enabled = True
+
+        # check if provider has 'mx' ...
+        # TODO: we should move this to the backend.
+        if self._provider_config.provides_mx():
+            enabled_services = settings.get_enabled_services(self._domain)
+            mx_name = get_service_display_name(MX_SERVICE)
+
+            # ... and if the user have it enabled
+            if MX_SERVICE not in enabled_services:
+                msg = self.tr("You need to enable {0} in order to change "
+                              "the password.".format(mx_name))
+                self._set_password_change_status(msg, error=True)
+                pw_enabled = False
+            else:
+                # check if Soledad is bootstrapped
+                if sameProxiedObjects(self._soledad, None):
+                    msg = self.tr(
+                        "You need to wait until {0} is ready in "
+                        "order to change the password.".format(mx_name))
+                    self._set_password_change_status(msg)
+                    pw_enabled = False
+
         self.ui.gbPasswordChange.setEnabled(pw_enabled)
+
+    def _not_logged_in(self):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.srp_status_not_logged_in
+
+        Actions to perform if the user is not logged in.
+        """
+        msg = self.tr(
+            "In order to change your password you need to be logged in.")
+        self._set_password_change_status(msg)
+        self.ui.gbPasswordChange.setEnabled(False)
 
     def set_soledad_ready(self):
         """
@@ -185,19 +205,17 @@ class PreferencesWindow(QtGui.QDialog):
             return
 
         self._set_changing_password(True)
-        d = self._srp_auth.change_password(current_password, new_password)
-        d.addCallback(partial(self._change_password_success, new_password))
-        d.addErrback(self._change_password_problem)
+        self._backend.change_password(current_password, new_password)
 
-    def _change_password_success(self, new_password, _):
+    def _change_password_ok(self):
         """
-        Callback used to display a successfully performed action.
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_password_change_ok
 
-        :param new_password: the new password for the user.
-        :type new_password: str.
-        :param _: the returned data from self._srp_auth.change_password
-                  Ignored
+        Callback used to display a successfully changed password.
         """
+        new_password = self.ui.leNewPassword.text()
         logger.debug("SRP password changed successfully.")
         try:
             self._soledad.change_passphrase(new_password)
@@ -211,24 +229,21 @@ class PreferencesWindow(QtGui.QDialog):
         self._clear_password_inputs()
         self._set_changing_password(False)
 
-    def _change_password_problem(self, failure):
+    def _change_password_problem(self, msg):
         """
-        Errback called if there was a problem with the deferred.
-        Also is used to display an error message.
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_password_change_error
+          self._backend.signaler.srp_password_change_badpw
 
-        :param failure: the cause of the method failed.
-        :type failure: twisted.python.Failure
+        Callback used to display an error on changing password.
+
+        :param msg: the message to show to the user.
+        :type msg: unicode
         """
-        logger.error("Error changing password: %s", (failure, ))
-        problem = self.tr("There was a problem changing the password.")
-
-        if failure.check(SRPAuthBadUserOrPassword):
-            problem = self.tr("You did not enter a correct current password.")
-
-        self._set_password_change_status(problem, error=True)
-
+        logger.error("Error changing password")
+        self._set_password_change_status(msg, error=True)
         self._set_changing_password(False)
-        failure.trap(Exception)
 
     def _clear_password_inputs(self):
         """
@@ -387,3 +402,24 @@ class PreferencesWindow(QtGui.QDialog):
             provider_config = None
 
         return provider_config
+
+    def _backend_connect(self):
+        """
+        Helper to connect to backend signals
+        """
+        sig = self._backend.signaler
+
+        sig.srp_status_logged_in.connect(self._is_logged_in)
+        sig.srp_status_not_logged_in.connect(self._not_logged_in)
+
+        sig.srp_password_change_ok.connect(self._change_password_ok)
+
+        pwd_change_error = partial(
+            self._change_password_problem,
+            self.tr("There was a problem changing the password."))
+        sig.srp_password_change_error.connect(pwd_change_error)
+
+        pwd_change_badpw = partial(
+            self._change_password_problem,
+            self.tr("You did not enter a correct current password."))
+        sig.srp_password_change_badpw.connect(pwd_change_badpw)

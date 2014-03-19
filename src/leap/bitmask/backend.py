@@ -29,6 +29,7 @@ from twisted.python import log
 import zope.interface
 
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
@@ -149,6 +150,7 @@ class Provider(object):
         self._provider_bootstrapper = ProviderBootstrapper(signaler,
                                                            bypass_checks)
         self._download_provider_defer = None
+        self._provider_config = ProviderConfig()
 
     def setup_provider(self, provider):
         """
@@ -186,7 +188,7 @@ class Provider(object):
         """
         d = None
 
-        config = ProviderConfig()
+        config = self._provider_config
         if get_provider_config(config, provider):
             d = self._provider_bootstrapper.run_provider_setup_checks(
                 self._provider_config,
@@ -245,6 +247,113 @@ class Register(object):
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.srp_registration_failed)
             logger.error("Could not load provider configuration.")
+
+
+class Authenticate(object):
+    """
+    Interfaces with setup and bootstrapping operations for a provider
+    """
+
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, signaler=None):
+        """
+        Constructor for the Authenticate component
+
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        object.__init__(self)
+        self.key = "authenticate"
+        self._signaler = signaler
+        self._srp_auth = None
+
+    def login(self, domain, username, password):
+        """
+        Executes the whole authentication process for a user
+
+        :param domain: the domain where we need to authenticate.
+        :type domain: unicode
+        :param username: username for this session
+        :type username: str
+        :param password: password for this user
+        :type password: str
+
+        :returns: the defer for the operation running in a thread.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        config = ProviderConfig()
+        if get_provider_config(config, domain):
+            self._srp_auth = SRPAuth(config, self._signaler)
+            self._login_defer = self._srp_auth.authenticate(username, password)
+            return self._login_defer
+        else:
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.srp_auth_error)
+            logger.error("Could not load provider configuration.")
+
+    def cancel_login(self):
+        """
+        Cancel the ongoing login defer (if any).
+        """
+        d = self._login_defer
+        if d is not None:
+            d.cancel()
+
+    def change_password(self, current_password, new_password):
+        """
+        Changes the user's password.
+
+        :param current_password: the current password of the user.
+        :type current_password: str
+        :param new_password: the new password for the user.
+        :type new_password: str
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        if not self._is_logged_in():
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.SRP_NOT_LOGGED_IN_ERROR)
+            return
+
+        return self._srp_auth.change_password(current_password, new_password)
+
+    def logout(self):
+        """
+        Logs out the current session.
+        Expects a session_id to exists, might raise AssertionError
+        """
+        if not self._is_logged_in():
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.SRP_NOT_LOGGED_IN_ERROR)
+            return
+
+        self._srp_auth.logout()
+
+    def _is_logged_in(self):
+        """
+        Return whether the user is logged in or not.
+
+        :rtype: bool
+        """
+        return self._srp_auth.is_authenticated()
+
+    def get_logged_in_status(self):
+        """
+        Signals if the user is currently logged in or not.
+        """
+        if self._signaler is None:
+            return
+
+        signal = None
+        if self._is_logged_in():
+            signal = self._signaler.SRP_STATUS_LOGGED_IN
+        else:
+            signal = self._signaler.SRP_STATUS_NOT_LOGGED_IN
+
+        self._signaler.signal(signal)
 
 
 class EIP(object):
@@ -338,6 +447,21 @@ class Signaler(QtCore.QObject):
 
     eip_cancelled_setup = QtCore.Signal(object)
 
+    # Signals for SRPAuth
+    srp_auth_ok = QtCore.Signal(object)
+    srp_auth_error = QtCore.Signal(object)
+    srp_auth_server_error = QtCore.Signal(object)
+    srp_auth_connection_error = QtCore.Signal(object)
+    srp_auth_bad_user_or_password = QtCore.Signal(object)
+    srp_logout_ok = QtCore.Signal(object)
+    srp_logout_error = QtCore.Signal(object)
+    srp_password_change_ok = QtCore.Signal(object)
+    srp_password_change_error = QtCore.Signal(object)
+    srp_password_change_badpw = QtCore.Signal(object)
+    srp_not_logged_in_error = QtCore.Signal(object)
+    srp_status_logged_in = QtCore.Signal(object)
+    srp_status_not_logged_in = QtCore.Signal(object)
+
     ####################
     # These will exist both in the backend AND the front end.
     # The frontend might choose to not "interpret" all the signals
@@ -357,6 +481,19 @@ class Signaler(QtCore.QObject):
     SRP_REGISTRATION_FINISHED = "srp_registration_finished"
     SRP_REGISTRATION_FAILED = "srp_registration_failed"
     SRP_REGISTRATION_TAKEN = "srp_registration_taken"
+    SRP_AUTH_OK = "srp_auth_ok"
+    SRP_AUTH_ERROR = "srp_auth_error"
+    SRP_AUTH_SERVER_ERROR = "srp_auth_server_error"
+    SRP_AUTH_CONNECTION_ERROR = "srp_auth_connection_error"
+    SRP_AUTH_BAD_USER_OR_PASSWORD = "srp_auth_bad_user_or_password"
+    SRP_LOGOUT_OK = "srp_logout_ok"
+    SRP_LOGOUT_ERROR = "srp_logout_error"
+    SRP_PASSWORD_CHANGE_OK = "srp_password_change_ok"
+    SRP_PASSWORD_CHANGE_ERROR = "srp_password_change_error"
+    SRP_PASSWORD_CHANGE_BADPW = "srp_password_change_badpw"
+    SRP_NOT_LOGGED_IN_ERROR = "srp_not_logged_in_error"
+    SRP_STATUS_LOGGED_IN = "srp_status_logged_in"
+    SRP_STATUS_NOT_LOGGED_IN = "srp_status_not_logged_in"
 
     # TODO change the name of "download_config" signal to
     # something less confusing (config_ready maybe)
@@ -396,6 +533,20 @@ class Signaler(QtCore.QObject):
             self.EIP_DOWNLOAD_CONFIG,
             self.EIP_DOWNLOAD_CLIENT_CERTIFICATE,
             self.EIP_CANCELLED_SETUP,
+
+            self.SRP_AUTH_OK,
+            self.SRP_AUTH_ERROR,
+            self.SRP_AUTH_SERVER_ERROR,
+            self.SRP_AUTH_CONNECTION_ERROR,
+            self.SRP_AUTH_BAD_USER_OR_PASSWORD,
+            self.SRP_LOGOUT_OK,
+            self.SRP_LOGOUT_ERROR,
+            self.SRP_PASSWORD_CHANGE_OK,
+            self.SRP_PASSWORD_CHANGE_ERROR,
+            self.SRP_PASSWORD_CHANGE_BADPW,
+            self.SRP_NOT_LOGGED_IN_ERROR,
+            self.SRP_STATUS_LOGGED_IN,
+            self.SRP_STATUS_NOT_LOGGED_IN,
         ]
 
         for sig in signals:
@@ -455,6 +606,7 @@ class Backend(object):
         # Component registration
         self._register(Provider(self._signaler, bypass_checks))
         self._register(Register(self._signaler))
+        self._register(Authenticate(self._signaler))
         self._register(EIP(self._signaler))
 
         # We have a looping call on a thread executing all the
@@ -579,3 +731,48 @@ class Backend(object):
 
     def cancel_setup_eip(self):
         self._call_queue.put(("eip", "cancel_setup_eip", None))
+
+    def login(self, provider, username, password):
+        self._call_queue.put(("authenticate", "login", None, provider,
+                              username, password))
+
+    def logout(self):
+        self._call_queue.put(("authenticate", "logout", None))
+
+    def cancel_login(self):
+        self._call_queue.put(("authenticate", "cancel_login", None))
+
+    def change_password(self, current_password, new_password):
+        self._call_queue.put(("authenticate", "change_password", None,
+                              current_password, new_password))
+
+    def get_logged_in_status(self):
+        self._call_queue.put(("authenticate", "get_logged_in_status", None))
+
+    ###########################################################################
+    # XXX HACK: this section is meant to be a place to hold methods and
+    # variables needed in the meantime while we migrate all to the backend.
+
+    def srpauth_get_username(self):
+        srp_auth = self._components["authenticate"]._srp_auth
+        if srp_auth is not None:
+            return srp_auth.get_username()
+
+    def srpauth_get_session_id(self):
+        srp_auth = self._components["authenticate"]._srp_auth
+        if srp_auth is not None:
+            return srp_auth.get_session_id()
+
+    def srpauth_get_uuid(self):
+        srp_auth = self._components["authenticate"]._srp_auth
+        if srp_auth is not None:
+            return srp_auth.get_uuid()
+
+    def srpauth_get_token(self):
+        srp_auth = self._components["authenticate"]._srp_auth
+        if srp_auth is not None:
+            return srp_auth.get_token()
+
+    def get_provider_config(self):
+        provider_config = self._components["provider"]._provider_config
+        return provider_config

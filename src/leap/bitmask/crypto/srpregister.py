@@ -46,8 +46,6 @@ class SRPRegister(QtCore.QObject):
     STATUS_TAKEN = 422
     STATUS_ERROR = -999  # Custom error status
 
-    registration_finished = QtCore.Signal(bool, object)
-
     def __init__(self, signaler=None,
                  provider_config=None, register_path="users"):
         """
