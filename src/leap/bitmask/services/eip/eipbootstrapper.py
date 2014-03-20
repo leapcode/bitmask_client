@@ -20,8 +20,6 @@ EIP bootstrapping
 import logging
 import os
 
-from PySide import QtCore
-
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.certs import download_client_cert
 from leap.bitmask.services import download_service_config
@@ -41,17 +39,21 @@ class EIPBootstrapper(AbstractBootstrapper):
     If a check fails, the subsequent checks are not executed
     """
 
-    # All dicts returned are of the form
-    # {"passed": bool, "error": str}
-    download_config = QtCore.Signal(dict)
-    download_client_certificate = QtCore.Signal(dict)
+    def __init__(self, signaler=None):
+        """
+        Constructor for the EIP bootstrapper object
 
-    def __init__(self):
-        AbstractBootstrapper.__init__(self)
+        :param signaler: Signaler object used to receive notifications
+                         from the backend
+        :type signaler: Signaler
+        """
+        AbstractBootstrapper.__init__(self, signaler)
 
         self._provider_config = None
         self._eip_config = None
         self._download_if_needed = False
+        if signaler is not None:
+            self._cancel_signal = signaler.EIP_CANCELLED_SETUP
 
     def _download_config(self, *args):
         """
@@ -114,9 +116,9 @@ class EIPBootstrapper(AbstractBootstrapper):
         self._download_if_needed = download_if_needed
 
         cb_chain = [
-            (self._download_config, self.download_config),
+            (self._download_config, self._signaler.EIP_DOWNLOAD_CONFIG),
             (self._download_client_certificates,
-             self.download_client_certificate)
+             self._signaler.EIP_DOWNLOAD_CLIENT_CERTIFICATE)
         ]
 
         return self.addCallbackChain(cb_chain)

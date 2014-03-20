@@ -61,7 +61,6 @@ from leap.bitmask.services.mail import conductor as mail_conductor
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
-from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.bitmask.services.eip.connection import EIPConnection
 from leap.bitmask.services.eip.vpnprocess import VPN
 from leap.bitmask.services.eip.vpnprocess import OpenVPNAlreadyRunning
@@ -229,17 +228,6 @@ class MainWindow(QtGui.QMainWindow):
         self._logged_in_offline = False
 
         self._backend_connect()
-
-        # This thread is similar to the provider bootstrapper
-        self._eip_bootstrapper = EIPBootstrapper()
-
-        # EIP signals ---- move to eip conductor.
-        # TODO change the name of "download_config" signal to
-        # something less confusing (config_ready maybe)
-        self._eip_bootstrapper.download_config.connect(
-            self._eip_intermediate_stage)
-        self._eip_bootstrapper.download_client_certificate.connect(
-            self._finish_eip_bootstrap)
 
         self._vpn = VPN(openvpn_verb=openvpn_verb)
 
@@ -409,6 +397,9 @@ class MainWindow(QtGui.QMainWindow):
         sig.prov_unsupported_api.connect(self._incompatible_api)
 
         sig.prov_cancelled_setup.connect(self._set_login_cancelled)
+
+        sig.eip_download_config.connect(self._eip_intermediate_stage)
+        sig.eip_download_client_certificate.connect(self._finish_eip_bootstrap)
 
     def _backend_disconnect(self):
         """
@@ -1802,17 +1793,16 @@ class MainWindow(QtGui.QMainWindow):
         Start the EIP bootstrapping sequence if the client is configured to
         do so.
         """
-        leap_assert(self._eip_bootstrapper, "We need an eip bootstrapper!")
-
         provider_config = self._get_best_provider_config()
 
         if self._provides_eip_and_enabled() and not self._already_started_eip:
             # XXX this should be handled by the state machine.
             self._eip_status.set_eip_status(
                 self.tr("Starting..."))
-            self._eip_bootstrapper.run_eip_setup_checks(
-                provider_config,
-                download_if_needed=True)
+
+            domain = self._login_widget.get_selected_provider()
+            self._backend.setup_eip(domain)
+
             self._already_started_eip = True
             # we want to start soledad anyway after a certain timeout if eip
             # fails to come up
@@ -1834,18 +1824,18 @@ class MainWindow(QtGui.QMainWindow):
     def _finish_eip_bootstrap(self, data):
         """
         SLOT
-        TRIGGER: self._eip_bootstrapper.download_client_certificate
+        TRIGGER: self._backend.signaler.eip_download_client_certificate
 
         Starts the VPN thread if the eip configuration is properly
         loaded
         """
         leap_assert(self._eip_config, "We need an eip config!")
-        passed = data[self._eip_bootstrapper.PASSED_KEY]
+        passed = data[self._backend.PASSED_KEY]
 
         if not passed:
             error_msg = self.tr("There was a problem with the provider")
             self._eip_status.set_eip_status(error_msg, error=True)
-            logger.error(data[self._eip_bootstrapper.ERROR_KEY])
+            logger.error(data[self._backend.ERROR_KEY])
             self._already_started_eip = False
             return
 
@@ -1869,7 +1859,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self._eip_bootstrapper.download_config
+          self._backend.signaler.eip_download_config
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
@@ -1964,7 +1954,7 @@ class MainWindow(QtGui.QMainWindow):
           self._backend.signaler.prov_name_resolution
           self._backend.signaler.prov_https_connection
           self._backend.signaler.prov_download_ca_cert
-          self._eip_bootstrapper.download_config
+          self._backend.signaler.eip_download_config
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case

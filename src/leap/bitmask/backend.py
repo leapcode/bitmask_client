@@ -32,6 +32,7 @@ from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 
 # Frontend side
 from PySide import QtCore
@@ -238,6 +239,60 @@ class Register(object):
             logger.error("Could not load provider configuration.")
 
 
+class EIP(object):
+    """
+    Interfaces with setup and launch of EIP
+    """
+
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, signaler=None):
+        """
+        Constructor for the EIP component
+
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        object.__init__(self)
+        self.key = "eip"
+        self._eip_bootstrapper = EIPBootstrapper(signaler)
+        self._eip_setup_defer = None
+        self._provider_config = ProviderConfig()
+
+    def setup_eip(self, domain):
+        """
+        Initiates the setup for a provider
+
+        :param domain: URL for the provider
+        :type domain: unicode
+
+        :returns: the defer for the operation running in a thread.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        if (not self._provider_config.loaded() or
+                self._provider_config.get_domain() != domain):
+            self._provider_config.load(get_provider_path(domain))
+
+        if self._provider_config.loaded():
+            log.msg("")
+            eb = self._eip_bootstrapper
+            d = eb.run_eip_setup_checks(self._provider_config,
+                                        download_if_needed=True)
+            self._eip_setup_defer = d
+            return d
+        else:
+            raise Exception("No provider setup loaded")
+
+    def cancel_setup_eip(self):
+        """
+        Cancel the ongoing setup eip defer (if any).
+        """
+        d = self._eip_setup_defer
+        if d is not None:
+            d.cancel()
+
+
 class Signaler(QtCore.QObject):
     """
     Signaler object, handles converting string commands to Qt signals.
@@ -269,6 +324,12 @@ class Signaler(QtCore.QObject):
     srp_registration_failed = QtCore.Signal(object)
     srp_registration_taken = QtCore.Signal(object)
 
+    # Signals for EIP
+    eip_download_config = QtCore.Signal(object)
+    eip_download_client_certificate = QtCore.Signal(object)
+
+    eip_cancelled_setup = QtCore.Signal(object)
+
     ####################
     # These will exist both in the backend AND the front end.
     # The frontend might choose to not "interpret" all the signals
@@ -288,6 +349,18 @@ class Signaler(QtCore.QObject):
     SRP_REGISTRATION_FINISHED = "srp_registration_finished"
     SRP_REGISTRATION_FAILED = "srp_registration_failed"
     SRP_REGISTRATION_TAKEN = "srp_registration_taken"
+
+    # TODO change the name of "download_config" signal to
+    # something less confusing (config_ready maybe)
+    EIP_DOWNLOAD_CONFIG = "eip_download_config"
+    EIP_DOWNLOAD_CLIENT_CERTIFICATE = "eip_download_client_certificate"
+    EIP_CANCELLED_SETUP = "eip_cancelled_setup"
+
+    # TODO change the name of "download_config" signal to
+    # something less confusing (config_ready maybe)
+    EIP_DOWNLOAD_CONFIG = "eip_download_config"
+    EIP_DOWNLOAD_CLIENT_CERTIFICATE = "eip_download_client_certificate"
+    EIP_CANCELLED_SETUP = "eip_cancelled_setup"
 
     def __init__(self):
         """
@@ -311,6 +384,10 @@ class Signaler(QtCore.QObject):
             self.SRP_REGISTRATION_FINISHED,
             self.SRP_REGISTRATION_FAILED,
             self.SRP_REGISTRATION_TAKEN,
+
+            self.EIP_DOWNLOAD_CONFIG,
+            self.EIP_DOWNLOAD_CLIENT_CERTIFICATE,
+            self.EIP_CANCELLED_SETUP,
         ]
 
         for sig in signals:
@@ -370,6 +447,7 @@ class Backend(object):
         # Component registration
         self._register(Provider(self._signaler, bypass_checks))
         self._register(Register(self._signaler))
+        self._register(EIP(self._signaler))
 
         # We have a looping call on a thread executing all the
         # commands in queue. Right now this queue is an actual Queue
@@ -487,3 +565,9 @@ class Backend(object):
     def register_user(self, provider, username, password):
         self._call_queue.put(("register", "register_user", None, provider,
                               username, password))
+
+    def setup_eip(self, provider):
+        self._call_queue.put(("eip", "setup_eip", None, provider))
+
+    def cancel_setup_eip(self):
+        self._call_queue.put(("eip", "cancel_setup_eip", None))
