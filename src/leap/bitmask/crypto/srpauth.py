@@ -17,6 +17,7 @@
 
 import binascii
 import logging
+import threading
 import sys
 
 import requests
@@ -28,7 +29,6 @@ from simplejson.decoder import JSONDecodeError
 from functools import partial
 from requests.adapters import HTTPAdapter
 
-from PySide import QtCore
 from twisted.internet import threads
 from twisted.internet.defer import CancelledError
 
@@ -118,12 +118,12 @@ class SRPAuthNoSessionId(SRPAuthenticationError):
     pass
 
 
-class SRPAuth(QtCore.QObject):
+class SRPAuth(object):
     """
     SRPAuth singleton
     """
 
-    class __impl(QtCore.QObject):
+    class __impl(object):
         """
         Implementation of the SRPAuth interface
         """
@@ -146,8 +146,6 @@ class SRPAuth(QtCore.QObject):
                             from the backend
             :type signaler: Signaler
             """
-            QtCore.QObject.__init__(self)
-
             leap_assert(provider_config,
                         "We need a provider config to authenticate")
 
@@ -167,11 +165,11 @@ class SRPAuth(QtCore.QObject):
             self._reset_session()
 
             self._session_id = None
-            self._session_id_lock = QtCore.QMutex()
+            self._session_id_lock = threading.Lock()
             self._uuid = None
-            self._uuid_lock = QtCore.QMutex()
+            self._uuid_lock = threading.Lock()
             self._token = None
-            self._token_lock = QtCore.QMutex()
+            self._token_lock = threading.Lock()
 
             self._srp_user = None
             self._srp_a = None
@@ -662,32 +660,32 @@ class SRPAuth(QtCore.QObject):
                     self._signaler.signal(self._signaler.SRP_LOGOUT_OK)
 
         def set_session_id(self, session_id):
-            QtCore.QMutexLocker(self._session_id_lock)
-            self._session_id = session_id
+            with self._session_id_lock:
+                self._session_id = session_id
 
         def get_session_id(self):
-            QtCore.QMutexLocker(self._session_id_lock)
-            return self._session_id
+            with self._session_id_lock:
+                return self._session_id
 
         def set_uuid(self, uuid):
-            QtCore.QMutexLocker(self._uuid_lock)
-            full_uid = "%s@%s" % (
-                self._username, self._provider_config.get_domain())
-            if uuid is not None:  # avoid removing the uuid from settings
-                self._settings.set_uuid(full_uid, uuid)
-            self._uuid = uuid
+            with self._uuid_lock:
+                full_uid = "%s@%s" % (
+                    self._username, self._provider_config.get_domain())
+                if uuid is not None:  # avoid removing the uuid from settings
+                    self._settings.set_uuid(full_uid, uuid)
+                self._uuid = uuid
 
         def get_uuid(self):
-            QtCore.QMutexLocker(self._uuid_lock)
-            return self._uuid
+            with self._uuid_lock:
+                return self._uuid
 
         def set_token(self, token):
-            QtCore.QMutexLocker(self._token_lock)
-            self._token = token
+            with self._token_lock:
+                self._token = token
 
         def get_token(self):
-            QtCore.QMutexLocker(self._token_lock)
-            return self._token
+            with self._token_lock:
+                return self._token
 
     __instance = None
 
@@ -701,8 +699,6 @@ class SRPAuth(QtCore.QObject):
                          from the backend
         :type signaler: Signaler
         """
-        QtCore.QObject.__init__(self)
-
         # Check whether we already have an instance
         if SRPAuth.__instance is None:
             # Create and remember instance
