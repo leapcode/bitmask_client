@@ -20,7 +20,6 @@ Main window for Bitmask.
 import logging
 import socket
 
-from functools import partial
 from threading import Condition
 from datetime import datetime
 
@@ -224,6 +223,7 @@ class MainWindow(QtGui.QMainWindow):
         self._logged_user = None
         self._logged_in_offline = False
 
+        self._backend_connected_signals = {}
         self._backend_connect()
 
         self._vpn = VPN(openvpn_verb=openvpn_verb)
@@ -361,7 +361,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._first_run():
             self._wizard_firstrun = True
-            self._backend_disconnect()
+            self._disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
                                   bypass_checks=bypass_checks)
             # Give this window time to finish init and then show the wizard
@@ -385,72 +385,88 @@ class MainWindow(QtGui.QMainWindow):
             self.tr("You are trying to do an operation "
                     "that requires logging in first."))
 
+    def _connect_and_track(self, signal, method):
+        """
+        Helper to connect signals and keep track of them.
+
+        :param signal: the signal to connect to.
+        :type signal: QtCore.Signal
+        :param method: the method to call when the signal is triggered.
+        :type method: callable, Slot or Signal
+        """
+        self._backend_connected_signals[signal] = method
+        signal.connect(method)
+
     def _backend_connect(self):
         """
         Helper to connect to backend signals
         """
         sig = self._backend.signaler
-        sig.prov_name_resolution.connect(self._intermediate_stage)
-        sig.prov_https_connection.connect(self._intermediate_stage)
-        sig.prov_download_ca_cert.connect(self._intermediate_stage)
+        self._connect_and_track(sig.prov_name_resolution,
+                                self._intermediate_stage)
+        self._connect_and_track(sig.prov_https_connection,
+                                self._intermediate_stage)
+        self._connect_and_track(sig.prov_download_ca_cert,
+                                self._intermediate_stage)
 
-        sig.prov_download_provider_info.connect(self._load_provider_config)
-        sig.prov_check_api_certificate.connect(self._provider_config_loaded)
+        self._connect_and_track(sig.prov_download_provider_info,
+                                self._load_provider_config)
+        self._connect_and_track(sig.prov_check_api_certificate,
+                                self._provider_config_loaded)
 
-        # Only used at login, no need to disconnect this like we do
-        # with the other
-        sig.prov_problem_with_provider.connect(self._login_problem_provider)
+        self._connect_and_track(sig.prov_problem_with_provider,
+                                self._login_problem_provider)
 
+        self._connect_and_track(sig.prov_cancelled_setup,
+                                self._set_login_cancelled)
+
+        self._connect_and_track(sig.srp_auth_ok, self._authentication_finished)
+
+        auth_error = (
+            lambda: self._authentication_error(self.tr("Unknown error.")))
+        self._connect_and_track(sig.srp_auth_error, auth_error)
+
+        auth_server_error = (
+            lambda: self._authentication_error(
+                self.tr("There was a server problem with authentication.")))
+        self._connect_and_track(sig.srp_auth_server_error, auth_server_error)
+
+        auth_connection_error = (
+            lambda: self._authentication_error(
+                self.tr("Could not establish a connection.")))
+        self._connect_and_track(sig.srp_auth_connection_error,
+                                auth_connection_error)
+
+        auth_bad_user_or_password = (
+            lambda: self._authentication_error(
+                self.tr("Invalid username or password.")))
+        self._connect_and_track(sig.srp_auth_bad_user_or_password,
+                                auth_bad_user_or_password)
+
+        self._connect_and_track(sig.srp_logout_ok, self._logout_ok)
+        self._connect_and_track(sig.srp_logout_error, self._logout_error)
+
+        self._connect_and_track(sig.srp_not_logged_in_error,
+                                self._not_logged_in_error)
+
+        # We don't want to disconnect some signals so don't track them:
         sig.prov_unsupported_client.connect(self._needs_update)
         sig.prov_unsupported_api.connect(self._incompatible_api)
 
-        sig.prov_cancelled_setup.connect(self._set_login_cancelled)
-
-        sig.eip_download_config.connect(self._eip_intermediate_stage)
-        sig.eip_download_client_certificate.connect(self._finish_eip_bootstrap)
-
-        # Authentication related signals
-        sig.srp_auth_ok.connect(self._authentication_finished)
-
-        auth_error = partial(
-            self._authentication_error,
-            self.tr("Unknown error."))
-        sig.srp_auth_error.connect(auth_error)
-
-        auth_server_error = partial(
-            self._authentication_error,
-            self.tr("There was a server problem with authentication."))
-        sig.srp_auth_server_error.connect(auth_server_error)
-
-        auth_connection_error = partial(
-            self._authentication_error,
-            self.tr("Could not establish a connection."))
-        sig.srp_auth_connection_error.connect(auth_connection_error)
-
-        auth_bad_user_or_password = partial(
-            self._authentication_error,
-            self.tr("Invalid username or password."))
-        sig.srp_auth_bad_user_or_password.connect(auth_bad_user_or_password)
-
-        sig.srp_logout_ok.connect(self._logout_ok)
-        sig.srp_logout_error.connect(self._logout_error)
-
-        sig.srp_not_logged_in_error.connect(self._not_logged_in_error)
-
-    def _backend_disconnect(self):
+    def _disconnect_and_untrack(self):
         """
-        Helper to disconnect from backend signals.
+        Helper to disconnect the tracked signals.
 
         Some signals are emitted from the wizard, and we want to
         ignore those.
         """
-        sig = self._backend.signaler
-        sig.prov_name_resolution.disconnect(self._intermediate_stage)
-        sig.prov_https_connection.disconnect(self._intermediate_stage)
-        sig.prov_download_ca_cert.disconnect(self._intermediate_stage)
+        for signal, method in self._backend_connected_signals.items():
+            try:
+                signal.disconnect(method)
+            except RuntimeError:
+                pass  # Signal was not connected
 
-        sig.prov_download_provider_info.disconnect(self._load_provider_config)
-        sig.prov_check_api_certificate.disconnect(self._provider_config_loaded)
+        self._backend_connected_signals = {}
 
     def _rejected_wizard(self):
         """
@@ -489,7 +505,7 @@ class MainWindow(QtGui.QMainWindow):
         there.
         """
         if self._wizard is None:
-            self._backend_disconnect()
+            self._disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
                                   bypass_checks=self._bypass_checks)
             self._wizard.accepted.connect(self._finish_init)
