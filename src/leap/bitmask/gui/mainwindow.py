@@ -1099,6 +1099,7 @@ class MainWindow(QtGui.QMainWindow):
             self.offline_mode_bypass_login.emit()
         else:
             leap_assert(self._provider_config, "We need a provider config")
+            self.ui.action_create_new_account.setEnabled(False)
             if self._login_widget.start_login():
                 self._download_provider_config()
 
@@ -1118,6 +1119,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._login_widget.set_status(msg)
         self._login_widget.set_enabled(True)
+        self.ui.action_create_new_account.setEnabled(True)
 
     def _cancel_login(self):
         """
@@ -1196,6 +1198,7 @@ class MainWindow(QtGui.QMainWindow):
         full_user_id = make_address(user, domain)
         self._mail_conductor.userid = full_user_id
         self._start_eip_bootstrap()
+        self.ui.action_create_new_account.setEnabled(True)
 
         # if soledad/mail is enabled:
         if MX_SERVICE in self._enabled_services:
