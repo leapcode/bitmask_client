@@ -131,8 +131,6 @@ class Provider(object):
 
     zope.interface.implements(ILEAPComponent)
 
-    PROBLEM_SIGNAL = "prov_problem_with_provider"
-
     def __init__(self, signaler=None, bypass_checks=False):
         """
         Constructor for the Provider component
@@ -195,7 +193,8 @@ class Provider(object):
                 download_if_needed=True)
         else:
             if self._signaler is not None:
-                self._signaler.signal(self.PROBLEM_SIGNAL)
+                self._signaler.signal(
+                    self._signaler.PROV_PROBLEM_WITH_PROVIDER_KEY)
             logger.error("Could not load provider configuration.")
             self._login_widget.set_enabled(True)
 
