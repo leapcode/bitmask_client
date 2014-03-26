@@ -387,11 +387,8 @@ class EIP(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        if (not self._provider_config.loaded() or
-                self._provider_config.get_domain() != domain):
-            self._provider_config.load(get_provider_path(domain))
-
-        if self._provider_config.loaded():
+        config = self._provider_config
+        if get_provider_config(config, domain):
             log.msg("")
             eb = self._eip_bootstrapper
             d = eb.run_eip_setup_checks(self._provider_config,
