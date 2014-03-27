@@ -244,7 +244,7 @@ class Register(object):
                 partial(srpregister.register_user, username, password))
         else:
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.srp_registration_failed)
+                self._signaler.signal(self._signaler.SRP_REGISTRATION_FAILED)
             logger.error("Could not load provider configuration.")
 
 
@@ -289,7 +289,7 @@ class Authenticate(object):
             return self._login_defer
         else:
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.srp_auth_error)
+                self._signaler.signal(self._signaler.SRP_AUTH_ERROR)
             logger.error("Could not load provider configuration.")
 
     def cancel_login(self):
