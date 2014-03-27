@@ -33,7 +33,12 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services.eip import eipconfig
+from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
+
+from leap.bitmask.services.eip import vpnlauncher, vpnprocess
+from leap.bitmask.services.eip import linuxvpnlauncher, darwinvpnlauncher
 
 # Frontend side
 from PySide import QtCore
@@ -248,6 +253,140 @@ class Register(object):
             logger.error("Could not load provider configuration.")
 
 
+class EIP(object):
+    """
+    Interfaces with setup and launch of EIP
+    """
+
+    zope.interface.implements(ILEAPService)
+
+    def __init__(self, signaler=None):
+        """
+        Constructor for the EIP component
+
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        object.__init__(self)
+        self.key = "eip"
+        self._signaler = signaler
+        self._eip_bootstrapper = EIPBootstrapper(signaler)
+        self._eip_setup_defer = None
+        self._provider_config = ProviderConfig()
+
+        self._vpn = vpnprocess.VPN(signaler=signaler)
+
+    def setup_eip(self, domain):
+        """
+        Initiates the setup for a provider
+
+        :param domain: URL for the provider
+        :type domain: unicode
+
+        :returns: the defer for the operation running in a thread.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        config = self._provider_config
+        if get_provider_config(config, domain):
+            eb = self._eip_bootstrapper
+            d = eb.run_eip_setup_checks(self._provider_config,
+                                        download_if_needed=True)
+            self._eip_setup_defer = d
+            return d
+        else:
+            raise Exception("No provider setup loaded")
+
+    def cancel_setup_eip(self):
+        """
+        Cancel the ongoing setup eip defer (if any).
+        """
+        d = self._eip_setup_defer
+        if d is not None:
+            d.cancel()
+
+    def _start_eip(self):
+        """
+        Starts EIP
+        """
+        provider_config = self._provider_config
+        eip_config = eipconfig.EIPConfig()
+        domain = provider_config.get_domain()
+
+        loaded = eipconfig.load_eipconfig_if_needed(
+            provider_config, eip_config, domain)
+
+        if not loaded:
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.EIP_CONNECTION_ABORTED)
+            logger.error("Tried to start EIP but cannot find any "
+                         "available provider!")
+            return
+
+        host, port = get_openvpn_management()
+        self._vpn.start(eipconfig=eip_config,
+                        providerconfig=provider_config,
+                        socket_host=host, socket_port=port)
+
+    def start(self):
+        """
+        Starts the service.
+        """
+        signaler = self._signaler
+
+        if not self._provider_config.loaded():
+            # This means that the user didn't call setup_eip first.
+            self._signaler.signal(signaler.BACKEND_BAD_CALL)
+            return
+
+        try:
+            self._start_eip()
+        except vpnprocess.OpenVPNAlreadyRunning:
+            signaler.signal(signaler.EIP_OPEN_VPN_ALREADY_RUNNING)
+        except vpnprocess.AlienOpenVPNAlreadyRunning:
+            signaler.signal(signaler.EIP_ALIEN_OPEN_VPN_ALREADY_RUNNING)
+        except vpnlauncher.OpenVPNNotFoundException:
+            signaler.signal(signaler.EIP_OPEN_VPN_NOT_FOUND_ERROR)
+        except vpnlauncher.VPNLauncherException:
+            # TODO: this seems to be used for 'gateway not found' only.
+            #       see vpnlauncher.py
+            signaler.signal(signaler.EIP_VPN_LAUNCHER_EXCEPTION)
+        except linuxvpnlauncher.EIPNoPolkitAuthAgentAvailable:
+            signaler.signal(signaler.EIP_NO_POLKIT_AGENT_ERROR)
+        except linuxvpnlauncher.EIPNoPkexecAvailable:
+            signaler.signal(signaler.EIP_NO_PKEXEC_ERROR)
+        except darwinvpnlauncher.EIPNoTunKextLoaded:
+            signaler.signal(signaler.EIP_NO_TUN_KEXT_ERROR)
+        except Exception as e:
+            logger.error("Unexpected problem: {0!r}".format(e))
+        else:
+            # TODO: are we connected here?
+            signaler.signal(signaler.EIP_CONNECTED)
+
+    def stop(self, shutdown=False):
+        """
+        Stops the service.
+        """
+        self._vpn.terminate(shutdown)
+
+    def terminate(self):
+        """
+        Terminates the service, not necessarily in a nice way.
+        """
+        self._vpn.killit()
+
+    def status(self):
+        """
+        Returns a json object with the current status for the service.
+
+        :rtype: object (list, str, dict)
+        """
+        # XXX: Use a namedtuple or a specific object instead of a json
+        # object, since parsing it will be problematic otherwise.
+        # It has to be something easily serializable though.
+        pass
+
+
 class Authenticate(object):
     """
     Interfaces with setup and bootstrapping operations for a provider
@@ -355,57 +494,6 @@ class Authenticate(object):
         self._signaler.signal(signal)
 
 
-class EIP(object):
-    """
-    Interfaces with setup and launch of EIP
-    """
-
-    zope.interface.implements(ILEAPComponent)
-
-    def __init__(self, signaler=None):
-        """
-        Constructor for the EIP component
-
-        :param signaler: Object in charge of handling communication
-                         back to the frontend
-        :type signaler: Signaler
-        """
-        object.__init__(self)
-        self.key = "eip"
-        self._eip_bootstrapper = EIPBootstrapper(signaler)
-        self._eip_setup_defer = None
-        self._provider_config = ProviderConfig()
-
-    def setup_eip(self, domain):
-        """
-        Initiates the setup for a provider
-
-        :param domain: URL for the provider
-        :type domain: unicode
-
-        :returns: the defer for the operation running in a thread.
-        :rtype: twisted.internet.defer.Deferred
-        """
-        config = self._provider_config
-        if get_provider_config(config, domain):
-            log.msg("")
-            eb = self._eip_bootstrapper
-            d = eb.run_eip_setup_checks(self._provider_config,
-                                        download_if_needed=True)
-            self._eip_setup_defer = d
-            return d
-        else:
-            raise Exception("No provider setup loaded")
-
-    def cancel_setup_eip(self):
-        """
-        Cancel the ongoing setup eip defer (if any).
-        """
-        d = self._eip_setup_defer
-        if d is not None:
-            d.cancel()
-
-
 class Signaler(QtCore.QObject):
     """
     Signaler object, handles converting string commands to Qt signals.
@@ -437,7 +525,7 @@ class Signaler(QtCore.QObject):
     srp_registration_failed = QtCore.Signal(object)
     srp_registration_taken = QtCore.Signal(object)
 
-    # Signals for EIP
+    # Signals for EIP bootstrapping
     eip_download_config = QtCore.Signal(object)
     eip_download_client_certificate = QtCore.Signal(object)
 
@@ -457,6 +545,35 @@ class Signaler(QtCore.QObject):
     srp_not_logged_in_error = QtCore.Signal(object)
     srp_status_logged_in = QtCore.Signal(object)
     srp_status_not_logged_in = QtCore.Signal(object)
+
+    # Signals for EIP
+    eip_connected = QtCore.Signal(object)
+    eip_disconnected = QtCore.Signal(object)
+    eip_connection_died = QtCore.Signal(object)
+    eip_connection_aborted = QtCore.Signal(object)
+
+    # EIP problems
+    eip_no_polkit_agent_error = QtCore.Signal(object)
+    eip_no_tun_kext_error = QtCore.Signal(object)
+    eip_no_pkexec_error = QtCore.Signal(object)
+    eip_openvpn_not_found_error = QtCore.Signal(object)
+    eip_openvpn_already_running = QtCore.Signal(object)
+    eip_alien_openvpn_already_running = QtCore.Signal(object)
+    eip_vpn_launcher_exception = QtCore.Signal(object)
+
+    # signals from parsing openvpn output
+    eip_network_unreachable = QtCore.Signal(object)
+    eip_process_restart_tls = QtCore.Signal(object)
+    eip_process_restart_ping = QtCore.Signal(object)
+
+    # signals from vpnprocess.py
+    eip_state_changed = QtCore.Signal(dict)
+    eip_status_changed = QtCore.Signal(dict)
+    eip_process_finished = QtCore.Signal(int)
+
+    # This signal is used to warn the backend user that is doing something
+    # wrong
+    backend_bad_call = QtCore.Signal(object)
 
     ####################
     # These will exist both in the backend AND the front end.
@@ -497,11 +614,27 @@ class Signaler(QtCore.QObject):
     EIP_DOWNLOAD_CLIENT_CERTIFICATE = "eip_download_client_certificate"
     EIP_CANCELLED_SETUP = "eip_cancelled_setup"
 
-    # TODO change the name of "download_config" signal to
-    # something less confusing (config_ready maybe)
-    EIP_DOWNLOAD_CONFIG = "eip_download_config"
-    EIP_DOWNLOAD_CLIENT_CERTIFICATE = "eip_download_client_certificate"
-    EIP_CANCELLED_SETUP = "eip_cancelled_setup"
+    EIP_CONNECTED = "eip_connected"
+    EIP_DISCONNECTED = "eip_disconnected"
+    EIP_CONNECTION_DIED = "eip_connection_died"
+    EIP_CONNECTION_ABORTED = "eip_connection_aborted"
+    EIP_NO_POLKIT_AGENT_ERROR = "eip_no_polkit_agent_error"
+    EIP_NO_TUN_KEXT_ERROR = "eip_no_tun_kext_error"
+    EIP_NO_PKEXEC_ERROR = "eip_no_pkexec_error"
+    EIP_OPENVPN_NOT_FOUND_ERROR = "eip_openvpn_not_found_error"
+    EIP_OPENVPN_ALREADY_RUNNING = "eip_openvpn_already_running"
+    EIP_ALIEN_OPENVPN_ALREADY_RUNNING = "eip_alien_openvpn_already_running"
+    EIP_VPN_LAUNCHER_EXCEPTION = "eip_vpn_launcher_exception"
+
+    EIP_NETWORK_UNREACHABLE = "eip_network_unreachable"
+    EIP_PROCESS_RESTART_TLS = "eip_process_restart_tls"
+    EIP_PROCESS_RESTART_PING = "eip_process_restart_ping"
+
+    EIP_STATE_CHANGED = "eip_state_changed"
+    EIP_STATUS_CHANGED = "eip_status_changed"
+    EIP_PROCESS_FINISHED = "eip_process_finished"
+
+    BACKEND_BAD_CALL = "backend_bad_call"
 
     def __init__(self):
         """
@@ -530,6 +663,26 @@ class Signaler(QtCore.QObject):
             self.EIP_DOWNLOAD_CLIENT_CERTIFICATE,
             self.EIP_CANCELLED_SETUP,
 
+            self.EIP_CONNECTED,
+            self.EIP_DISCONNECTED,
+            self.EIP_CONNECTION_DIED,
+            self.EIP_CONNECTION_ABORTED,
+            self.EIP_NO_POLKIT_AGENT_ERROR,
+            self.EIP_NO_TUN_KEXT_ERROR,
+            self.EIP_NO_PKEXEC_ERROR,
+            self.EIP_OPENVPN_NOT_FOUND_ERROR,
+            self.EIP_OPENVPN_ALREADY_RUNNING,
+            self.EIP_ALIEN_OPENVPN_ALREADY_RUNNING,
+            self.EIP_VPN_LAUNCHER_EXCEPTION,
+
+            self.EIP_NETWORK_UNREACHABLE,
+            self.EIP_PROCESS_RESTART_TLS,
+            self.EIP_PROCESS_RESTART_PING,
+
+            self.EIP_STATE_CHANGED,
+            self.EIP_STATUS_CHANGED,
+            self.EIP_PROCESS_FINISHED,
+
             self.SRP_AUTH_OK,
             self.SRP_AUTH_ERROR,
             self.SRP_AUTH_SERVER_ERROR,
@@ -543,6 +696,8 @@ class Signaler(QtCore.QObject):
             self.SRP_NOT_LOGGED_IN_ERROR,
             self.SRP_STATUS_LOGGED_IN,
             self.SRP_STATUS_NOT_LOGGED_IN,
+
+            self.BACKEND_BAD_CALL,
         ]
 
         for sig in signals:
@@ -727,6 +882,15 @@ class Backend(object):
 
     def cancel_setup_eip(self):
         self._call_queue.put(("eip", "cancel_setup_eip", None))
+
+    def start_eip(self):
+        self._call_queue.put(("eip", "start", None))
+
+    def stop_eip(self, shutdown=False):
+        self._call_queue.put(("eip", "stop", None, shutdown))
+
+    def terminate_eip(self):
+        self._call_queue.put(("eip", "terminate", None))
 
     def login(self, provider, username, password):
         self._call_queue.put(("authenticate", "login", None, provider,
