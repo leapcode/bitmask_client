@@ -749,26 +749,6 @@ class Backend(object):
     # XXX HACK: this section is meant to be a place to hold methods and
     # variables needed in the meantime while we migrate all to the backend.
 
-    def srpauth_get_username(self):
-        srp_auth = self._components["authenticate"]._srp_auth
-        if srp_auth is not None:
-            return srp_auth.get_username()
-
-    def srpauth_get_session_id(self):
-        srp_auth = self._components["authenticate"]._srp_auth
-        if srp_auth is not None:
-            return srp_auth.get_session_id()
-
-    def srpauth_get_uuid(self):
-        srp_auth = self._components["authenticate"]._srp_auth
-        if srp_auth is not None:
-            return srp_auth.get_uuid()
-
-    def srpauth_get_token(self):
-        srp_auth = self._components["authenticate"]._srp_auth
-        if srp_auth is not None:
-            return srp_auth.get_token()
-
     def get_provider_config(self):
         provider_config = self._components["provider"]._provider_config
         return provider_config
