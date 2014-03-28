@@ -200,7 +200,6 @@ def main():
     debug = opts.debug
     logfile = opts.log_file
     mail_logfile = opts.mail_log_file
-    openvpn_verb = opts.openvpn_verb
     start_hidden = opts.start_hidden
 
     #############################################################
@@ -214,6 +213,7 @@ def main():
     flags.MAIL_LOGFILE = mail_logfile
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
+    flags.OPENVPN_VERBOSITY = opts.openvpn_verb
 
     flags.CA_CERT_FILE = opts.ca_cert_file
 
@@ -307,7 +307,6 @@ def main():
 
     window = MainWindow(
         lambda: twisted_main.quit(app),
-        openvpn_verb=openvpn_verb,
         bypass_checks=bypass_checks,
         start_hidden=start_hidden)
 

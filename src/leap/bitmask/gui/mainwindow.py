@@ -118,7 +118,6 @@ class MainWindow(QtGui.QMainWindow):
     SERVICE_STOP_TIMEOUT = 20
 
     def __init__(self, quit_callback,
-                 openvpn_verb=1,
                  bypass_checks=False,
                  start_hidden=False):
         """
@@ -226,7 +225,7 @@ class MainWindow(QtGui.QMainWindow):
         self._backend_connected_signals = {}
         self._backend_connect()
 
-        self._vpn = VPN(openvpn_verb=openvpn_verb)
+        self._vpn = VPN()
 
         # connect vpn process signals
         self._vpn.qtsigs.state_changed.connect(

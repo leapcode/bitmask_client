@@ -46,7 +46,9 @@ API_VERSION_CHECK = True
 # Used for skipping soledad bootstrapping/syncs.
 OFFLINE = False
 
-
 # CA cert path
 # used to allow self signed certs in requests that needs SSL
 CA_CERT_FILE = None
+
+# OpenVPN verbosity level
+OPENVPN_VERBOSITY = 1

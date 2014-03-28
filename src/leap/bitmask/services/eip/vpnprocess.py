@@ -35,6 +35,7 @@ except ImportError:
 
 from PySide import QtCore
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
@@ -183,8 +184,7 @@ class VPN(object):
         self._reactor = reactor
         self._qtsigs = VPNSignals()
 
-        # XXX should get it from config.flags
-        self._openvpn_verb = kwargs.get(self.OPENVPN_VERB, None)
+        self._openvpn_verb = flags.OPENVPN_VERBOSITY
 
     @property
     def qtsigs(self):
