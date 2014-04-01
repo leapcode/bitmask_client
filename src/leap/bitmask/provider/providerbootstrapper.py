@@ -99,9 +99,14 @@ class ProviderBootstrapper(AbstractBootstrapper):
         :rtype: bool or str
         """
         if self._bypass_checks:
-            verify = False
+            return False
+
+        cert = flags.CA_CERT_FILE
+        if cert is not None:
+            verify = cert
         else:
             verify = ca_bundle.where()
+
         return verify
 
     def _check_name_resolution(self):

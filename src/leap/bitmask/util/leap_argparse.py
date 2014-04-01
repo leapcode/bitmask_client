@@ -93,6 +93,12 @@ def build_parser():
                      "Use at your own risk!")
         parser.add_argument('--danger', action="store_true", help=help_text)
 
+    # optional cert file used to check domains with self signed certs.
+    parser.add_argument('--ca-cert-file', metavar="/path/to/cacert.pem",
+                        nargs='?', action="store", dest="ca_cert_file",
+                        help='Uses the given cert file to verify '
+                             'against domains.')
+
     # Not in use, we might want to reintroduce them.
     #parser.add_argument('-i', '--no-provider-checks',
                         #action="store_true", default=False,
