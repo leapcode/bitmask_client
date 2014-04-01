@@ -27,9 +27,10 @@ def build_parser():
     All the options for the leap arg parser
     Some of these could be switched on only if debug flag is present!
     """
-    epilog = "Copyright 2012-2014 The LEAP Encryption Access Project"
-    parser = argparse.ArgumentParser(description="""
-Launches the Bitmask client.""", epilog=epilog)
+    parser = argparse.ArgumentParser(
+        description="Launches the Bitmask client.",
+        epilog="Copyright 2012-2014 The LEAP Encryption Access Project")
+
     parser.add_argument('-d', '--debug', action="store_true",
                         help=("Launches Bitmask in debug mode, writing debug "
                               "info to stdout."))
