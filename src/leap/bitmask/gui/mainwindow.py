@@ -1193,13 +1193,34 @@ class MainWindow(QtGui.QMainWindow):
             self._provider_config.get_domain())
 
         # TODO separate UI from logic.
-        if self._provider_config.provides_mx() and \
-           self._enabled_services.count(MX_SERVICE) > 0:
+        if self._provides_mx_and_enabled():
             self._mail_status.about_to_start()
         else:
             self._mail_status.set_disabled()
 
         self._maybe_start_eip()
+
+    def _provides_mx_and_enabled(self):
+        """
+        Defines if the current provider provides mx and if we have it enabled.
+
+        :returns: True if provides and is enabled, False otherwise
+        :rtype: bool
+        """
+        provider_config = self._get_best_provider_config()
+        return (provider_config.provides_mx() and
+                MX_SERVICE in self._enabled_services)
+
+    def _provides_eip_and_enabled(self):
+        """
+        Defines if the current provider provides eip and if we have it enabled.
+
+        :returns: True if provides and is enabled, False otherwise
+        :rtype: bool
+        """
+        provider_config = self._get_best_provider_config()
+        return (provider_config.provides_eip() and
+                EIP_SERVICE in self._enabled_services)
 
     def _maybe_run_soledad_setup_checks(self):
         """
@@ -1332,8 +1353,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # TODO for simmetry, this should be called start_smtp_service
         # (and delegate all the checks to the conductor)
-        if self._provider_config.provides_mx() and \
-                self._enabled_services.count(MX_SERVICE) > 0:
+        if self._provides_mx_and_enabled():
             self._mail_conductor.smtp_bootstrapper.run_smtp_setup_checks(
                 self._provider_config,
                 self._mail_conductor.smtp_config,
@@ -1375,9 +1395,7 @@ class MainWindow(QtGui.QMainWindow):
             start_fun()
             return
 
-        enabled_services = self._enabled_services
-        if self._provider_config.provides_mx() and \
-                enabled_services.count(MX_SERVICE) > 0:
+        if self._provides_mx_and_enabled():
             start_fun()
 
     def _on_mail_client_logged_in(self, req):
@@ -1770,10 +1788,7 @@ class MainWindow(QtGui.QMainWindow):
 
         provider_config = self._get_best_provider_config()
 
-        if provider_config.provides_eip() and \
-                self._enabled_services.count(EIP_SERVICE) > 0 and \
-                not self._already_started_eip:
-
+        if self._provides_eip_and_enabled() and not self._already_started_eip:
             # XXX this should be handled by the state machine.
             self._eip_status.set_eip_status(
                 self.tr("Starting..."))
@@ -1788,7 +1803,7 @@ class MainWindow(QtGui.QMainWindow):
                 self._maybe_run_soledad_setup_checks)
         else:
             if not self._already_started_eip:
-                if self._enabled_services.count(EIP_SERVICE) > 0:
+                if EIP_SERVICE in self._enabled_services:
                     self._eip_status.set_eip_status(
                         self.tr("Not supported"),
                         error=True)
