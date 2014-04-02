@@ -229,7 +229,7 @@ setup(
     author_email='info@leap.se',
     maintainer='Kali Kaneko',
     maintainer_email='kali@leap.se',
-    url='https://bitmask.rtfd.org',
+    url='https://bitmask.net',
     download_url=DOWNLOAD_URL,
     license='GPL-3+',
     packages=find_packages(
