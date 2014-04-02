@@ -127,7 +127,7 @@ class LoggerWindow(QtGui.QDialog):
         current_history = []
         for line in history:
             self._add_log_line(line)
-            message = cgi.escape(line[LeapLogHandler.MESSAGE_KEY])
+            message = line[LeapLogHandler.MESSAGE_KEY]
             current_history.append(message)
 
         self._current_history = "\n".join(current_history)
@@ -222,7 +222,6 @@ class LoggerWindow(QtGui.QDialog):
             """
             msg = self.tr("Your pastebin link <a href='{0}'>{0}</a>")
             msg = msg.format(link)
-            logger.debug(msg)
             show_info = lambda: QtGui.QMessageBox.information(
                 self, self.tr("Pastebin OK"), msg)
             self._set_pastebin_sending(False)
