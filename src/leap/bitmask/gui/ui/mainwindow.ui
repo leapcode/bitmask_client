@@ -75,7 +75,7 @@
          <x>0</x>
          <y>0</y>
          <width>524</width>
-         <height>651</height>
+         <height>667</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -85,8 +85,6 @@
         <property name="margin">
          <number>0</number>
         </property>
-
-        <!-- LOGIN -->
         <item>
          <widget class="QFrame" name="frame">
           <property name="sizePolicy">
@@ -134,7 +132,6 @@
           </property>
          </layout>
         </item>
-
         <item>
          <widget class="Line" name="lineUnderLogin">
           <property name="orientation">
@@ -142,8 +139,6 @@
           </property>
          </widget>
         </item>
-
-        <!-- EIP -->
         <item>
          <widget class="QWidget" name="eipWidget" native="true">
           <layout class="QVBoxLayout" name="eipVerticalLayout">
@@ -172,7 +167,6 @@
           </layout>
          </widget>
         </item>
-
         <item>
          <widget class="Line" name="lineUnderEIP">
           <property name="orientation">
@@ -180,8 +174,6 @@
           </property>
          </widget>
         </item>
-
-        <!-- EMAIL -->
         <item>
          <widget class="QWidget" name="mailWidget" native="true">
           <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -204,7 +196,6 @@
           </layout>
          </widget>
         </item>
-
         <item>
          <widget class="Line" name="lineUnderEmail">
           <property name="orientation">
@@ -212,7 +203,6 @@
           </property>
          </widget>
         </item>
-
         <item>
          <spacer name="verticalSpacer">
           <property name="orientation">
@@ -307,7 +297,7 @@
      <x>0</x>
      <y>0</y>
      <width>524</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -324,7 +314,7 @@
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
-     <string>Help</string>
+     <string>&amp;Help</string>
     </property>
     <addaction name="action_help"/>
     <addaction name="action_show_logs"/>
