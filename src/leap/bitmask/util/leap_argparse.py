@@ -27,9 +27,10 @@ def build_parser():
     All the options for the leap arg parser
     Some of these could be switched on only if debug flag is present!
     """
-    epilog = "Copyright 2012-2014 The LEAP Encryption Access Project"
-    parser = argparse.ArgumentParser(description="""
-Launches the Bitmask client.""", epilog=epilog)
+    parser = argparse.ArgumentParser(
+        description="Launches the Bitmask client.",
+        epilog="Copyright 2012-2014 The LEAP Encryption Access Project")
+
     parser.add_argument('-d', '--debug', action="store_true",
                         help=("Launches Bitmask in debug mode, writing debug "
                               "info to stdout."))
@@ -91,6 +92,12 @@ Launches the Bitmask client.""", epilog=epilog)
                      "bootstraping, for debugging development servers. "
                      "Use at your own risk!")
         parser.add_argument('--danger', action="store_true", help=help_text)
+
+    # optional cert file used to check domains with self signed certs.
+    parser.add_argument('--ca-cert-file', metavar="/path/to/cacert.pem",
+                        nargs='?', action="store", dest="ca_cert_file",
+                        help='Uses the given cert file to verify '
+                             'against domains.')
 
     # Not in use, we might want to reintroduce them.
     #parser.add_argument('-i', '--no-provider-checks',

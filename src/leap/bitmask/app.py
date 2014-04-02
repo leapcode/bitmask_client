@@ -214,6 +214,8 @@ def main():
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
 
+    flags.CA_CERT_FILE = opts.ca_cert_file
+
     BaseConfig.standalone = standalone
 
     replace_stdout = True
