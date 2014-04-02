@@ -1230,6 +1230,9 @@ class MainWindow(QtGui.QMainWindow):
         if self._already_started_soledad is True:
             return
 
+        if not self._provides_mx_and_enabled():
+            return
+
         username = self._login_widget.get_user()
         password = unicode(self._login_widget.get_password())
         provider_domain = self._login_widget.get_selected_provider()
