@@ -103,6 +103,8 @@ class Wizard(QtGui.QWizard):
         self.ui.lnProvider.textChanged.connect(self._enable_check)
         self.ui.rbNewProvider.toggled.connect(
             lambda x: self._enable_check())
+        self.ui.cbProviders.currentIndexChanged[int].connect(
+            self._reset_provider_check)
 
         self.ui.lblUser.returnPressed.connect(
             self._focus_password)
