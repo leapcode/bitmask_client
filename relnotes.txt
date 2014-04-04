@@ -1,8 +1,8 @@
-﻿ANNOUNCING Bitmask, the internet encryption toolkit, release 0.3.7
+﻿ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.5.0
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.3.8  of Bitmask,  the Internet Encryption  Toolkit, codename
-"Three week child".
+version 0.5.0  of Bitmask,  the Internet Encryption  Toolkit, codename
+"Long time no see".
 
 https://downloads.leap.se/client/
 
@@ -30,11 +30,11 @@ http://bitmask.rtfd.org/
 WARNING: This is still  part of a beta release of  our software, a lot
 of testing and auditing is still needed, so indeed use it, and feed us
 back, fork it  and contribute to its development, but  by any means DO
-NOT trust your life to it (yet!).
+NOT trust your life to it.
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask  0.3.8 improves  greatly  its mail  support  and stability  in
+Bitmask  0.5.0 improves  greatly  its mail  support  and stability  in
 general, among other various bug fixes. You can refer to the CHANGELOG
 for the meat.
 
@@ -65,14 +65,16 @@ the two.
 INSTALLATION
 
 We distribute the current version of Bitmask as standalone bundles for
-GNU/Linux and OSX, but it is likely  that you are able to run it under
-other systems,  specially if you are  skillful and patience is  one of
-your virtues.
+GNU/Linux, OSX and Windows, but it is likely  that you are able to run
+it under other systems, specially if you are  skillful and patience is
+one of your virtues.
 
 Have a look at "docs/user/install.rst".
 
-Packages will be soon provided for  debian and ubuntu, and the release
-of windows bundles will be resumed shortly.
+Packages  are  also  provided  for  debian  and  ubuntu,  add the leap
+repository to your apt sources:
+
+deb http://deb.leap.se/debian wheezy main
 
 We will  love to hear  if you are  interested in help  making packages
 available for any other system.
@@ -93,6 +95,6 @@ beyond any border.
 
 The LEAP team,
 
-Dec 6, 2013
+Apr 4, 2014
 Somewhere in the middle of the intertubes.
 EOF

@@ -215,28 +215,8 @@
        <number>0</number>
       </property>
       <property name="bottomMargin">
-       <number>24</number>
+       <number>0</number>
       </property>
-      <item row="1" column="1">
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="btnLogout">
-        <property name="text">
-         <string>Logout</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0" colspan="2">
        <widget class="QLabel" name="lblUser">
         <property name="font">
@@ -251,16 +231,25 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QLabel" name="lblLoginStatus">
-        <property name="styleSheet">
-         <string notr="true">color: rgb(132, 132, 132);
-font: 75 12pt &quot;Lucida Grande&quot;;</string>
-        </property>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="btnLogout">
         <property name="text">
-         <string/>
+         <string>Logout</string>
         </property>
        </widget>
+      </item>
+      <item row="1" column="1">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
      </layout>
     </widget>

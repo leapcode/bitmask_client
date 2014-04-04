@@ -70,7 +70,7 @@ SETVAR
           R="${R}nameserver $NS
 "
   done
-  mv /etc/resolv.conf /etc/resolv.conf.bak
+  cp /etc/resolv.conf /etc/resolv.conf.bak
   echo "$comment
 $custom_head
 $R
@@ -79,8 +79,8 @@ $custom_tail" > /etc/resolv.conf
 
 function down() {
   if [ -f /etc/resolv.conf.bak ] ; then
-    unlink /etc/resolv.conf
-    mv /etc/resolv.conf.bak /etc/resolv.conf
+    cat /etc/resolv.conf.bak > /etc/resolv.conf
+    rm /etc/resolv.conf.bak
   fi
 }
 

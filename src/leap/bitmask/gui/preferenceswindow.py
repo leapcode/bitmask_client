@@ -18,7 +18,6 @@
 """
 Preferences window
 """
-import os
 import logging
 
 from functools import partial
@@ -26,6 +25,7 @@ from functools import partial
 from PySide import QtCore, QtGui
 from zope.proxy import sameProxiedObjects
 
+from leap.bitmask.provider import get_provider_path
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.soledad.client import NoStorageSecret
@@ -42,6 +42,8 @@ class PreferencesWindow(QtGui.QDialog):
     """
     Window that displays the preferences.
     """
+    preferences_saved = QtCore.Signal()
+
     def __init__(self, parent, srp_auth, provider_config, soledad, domain):
         """
         :param parent: parent object of the PreferencesWindow.
@@ -369,6 +371,7 @@ class PreferencesWindow(QtGui.QDialog):
             "Services settings for provider '{0}' saved.".format(provider))
         logger.debug(msg)
         self._set_providers_services_status(msg, success=True)
+        self.preferences_saved.emit()
 
     def _get_provider_config(self, domain):
         """
@@ -380,10 +383,7 @@ class PreferencesWindow(QtGui.QDialog):
         :rtype: ProviderConfig or None if there is a problem loading the config
         """
         provider_config = ProviderConfig()
-        provider_config_path = os.path.join(
-            "leap", "providers", domain, "provider.json")
-
-        if not provider_config.load(provider_config_path):
+        if not provider_config.load(get_provider_path(domain)):
             provider_config = None
 
         return provider_config

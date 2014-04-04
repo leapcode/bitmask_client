@@ -22,7 +22,7 @@ import os
 import logging
 
 from functools import partial
-from PySide import QtGui
+from PySide import QtCore, QtGui
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -37,10 +37,12 @@ class EIPPreferencesWindow(QtGui.QDialog):
     """
     Window that displays the EIP preferences.
     """
-    def __init__(self, parent):
+    def __init__(self, parent, domain):
         """
         :param parent: parent object of the EIPPreferencesWindow.
-        :parent type: QWidget
+        :type parent: QWidget
+        :param domain: the selected by default domain.
+        :type domain: unicode
         """
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
@@ -59,7 +61,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.cbGateways.currentIndexChanged[unicode].connect(
             lambda x: self.ui.lblProvidersGatewayStatus.setVisible(False))
 
-        self._add_configured_providers()
+        self._add_configured_providers(domain)
 
     def _set_providers_gateway_status(self, status, success=False,
                                       error=False):
@@ -83,9 +85,12 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.lblProvidersGatewayStatus.setVisible(True)
         self.ui.lblProvidersGatewayStatus.setText(status)
 
-    def _add_configured_providers(self):
+    def _add_configured_providers(self, domain=None):
         """
         Add the client's configured providers to the providers combo boxes.
+
+        :param domain: the domain to be selected by default.
+        :type domain: unicode
         """
         self.ui.cbProvidersGateway.clear()
         providers = self._settings.get_configured_providers()
@@ -99,6 +104,12 @@ class EIPPreferencesWindow(QtGui.QDialog):
             if not os.path.isfile(eip_config_path):
                 label = provider + self.tr(" (uninitialized)")
             self.ui.cbProvidersGateway.addItem(label, userData=provider)
+
+        # Select provider by name
+        if domain is not None:
+            provider_index = self.ui.cbProvidersGateway.findText(
+                domain, QtCore.Qt.MatchStartsWith)
+            self.ui.cbProvidersGateway.setCurrentIndex(provider_index)
 
     def _save_selected_gateway(self, provider):
         """

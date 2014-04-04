@@ -19,30 +19,67 @@ Keyring helpers.
 """
 import logging
 
-import keyring
+try:
+    import keyring
+    from keyring.backends.file import EncryptedKeyring, PlaintextKeyring
+    OBSOLETE_KEYRINGS = [
+        EncryptedKeyring,
+        PlaintextKeyring
+    ]
+    canuse = lambda kr: (kr is not None
+                         and kr.__class__ not in OBSOLETE_KEYRINGS)
 
-from keyring.backends.file import EncryptedKeyring, PlaintextKeyring
+except Exception:
+    # Problems when importing keyring! It might be a problem binding to the
+    # dbus socket, or stuff like that.
+    keyring = None
+
 
 logger = logging.getLogger(__name__)
 
 
-OBSOLETE_KEYRINGS = [
-    EncryptedKeyring,
-    PlaintextKeyring
-]
+def _get_keyring_with_fallback():
+    """
+    Get the default keyring, and if obsolete try to pick SecretService keyring
+    if available.
+
+    This is a workaround for the cases in which the keyring module chooses
+    an insecure keyring by default (ie, inside a virtualenv).
+    """
+    if not keyring:
+        return None
+    kr = keyring.get_keyring()
+    if not canuse(kr):
+        try:
+            kr_klass = keyring.backends.SecretService
+            kr = kr_klass.Keyring()
+        except AttributeError:
+            logger.warning("Keyring cannot find SecretService Backend")
+    logger.debug("Selected keyring: %s" % (kr.__class__,))
+    if not canuse(kr):
+        logger.debug("Not using default keyring since it is obsolete")
+    return kr
 
 
 def has_keyring():
     """
-    Returns whether we have an useful keyring to use.
+    Return whether we have an useful keyring to use.
 
     :rtype: bool
     """
-    kr = keyring.get_keyring()
-    klass = kr.__class__
-    logger.debug("Selected keyring: %s" % (klass,))
+    if not keyring:
+        return False
+    kr = _get_keyring_with_fallback()
+    return canuse(kr)
 
-    canuse = kr is not None and klass not in OBSOLETE_KEYRINGS
-    if not canuse:
-        logger.debug("Not using this keyring since it is obsolete")
-    return canuse
+
+def get_keyring():
+    """
+    Return an usable keyring.
+
+    :rtype: keyringBackend or None
+    """
+    if not keyring:
+        return False
+    kr = _get_keyring_with_fallback()
+    return kr if canuse(kr) else None

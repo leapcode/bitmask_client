@@ -48,20 +48,25 @@ class AdvancedKeyManagement(QtGui.QWidget):
         self.ui = Ui_AdvancedKeyManagement()
         self.ui.setupUi(self)
 
+        # XXX: Temporarily disable the key import.
+        self.ui.pbImportKeys.setVisible(False)
+
         # if Soledad is not started yet
         if sameProxiedObjects(soledad, None):
-            self.ui.container.setEnabled(False)
+            self.ui.gbMyKeyPair.setEnabled(False)
+            self.ui.gbStoredPublicKeys.setEnabled(False)
             msg = self.tr("<span style='color:#0000FF;'>NOTE</span>: "
                           "To use this, you need to enable/start {0}.")
             msg = msg.format(get_service_display_name(MX_SERVICE))
             self.ui.lblStatus.setText(msg)
             return
-        else:
-            msg = self.tr(
-                "<span style='color:#ff0000;'>WARNING</span>:<br>"
-                "This is an experimental feature, you can lose access to "
-                "existing e-mails.")
-            self.ui.lblStatus.setText(msg)
+        # XXX: since import is disabled this is no longer a dangerous feature.
+        # else:
+        #     msg = self.tr(
+        #         "<span style='color:#ff0000;'>WARNING</span>:<br>"
+        #         "This is an experimental feature, you can lose access to "
+        #         "existing e-mails.")
+        #     self.ui.lblStatus.setText(msg)
 
         self._keymanager = keymanager
         self._soledad = soledad
@@ -78,6 +83,12 @@ class AdvancedKeyManagement(QtGui.QWidget):
         # set up connections
         self.ui.pbImportKeys.clicked.connect(self._import_keys)
         self.ui.pbExportKeys.clicked.connect(self._export_keys)
+
+        # Stretch columns to content
+        self.ui.twPublicKeys.horizontalHeader().setResizeMode(
+            0, QtGui.QHeaderView.Stretch)
+
+        self._list_keys()
 
     def _import_keys(self):
         """
@@ -183,3 +194,16 @@ class AdvancedKeyManagement(QtGui.QWidget):
                 return
         else:
             logger.debug('Export canceled by the user.')
+
+    def _list_keys(self):
+        """
+        Loads all the public keys stored in the local db to the keys table.
+        """
+        keys = self._keymanager.get_all_keys_in_local_db()
+
+        keys_table = self.ui.twPublicKeys
+        for key in keys:
+            row = keys_table.rowCount()
+            keys_table.insertRow(row)
+            keys_table.setItem(row, 0, QtGui.QTableWidgetItem(key.address))
+            keys_table.setItem(row, 1, QtGui.QTableWidgetItem(key.key_id))

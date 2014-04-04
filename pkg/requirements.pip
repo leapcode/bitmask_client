@@ -10,10 +10,9 @@ requests>=1.1.0
 srp>=1.0.2
 pyopenssl
 python-dateutil
-psutil
+psutil==1.2.1
 ipaddr
 twisted
-qt4reactor
 python-daemon # this should not be needed for Windows.
 keyring
 zope.proxy
@@ -21,7 +20,7 @@ zope.proxy
 leap.common>=0.3.4
 leap.soledad.client>=0.4.2
 leap.keymanager>=0.3.6
-leap.mail>=0.3.7
+leap.mail>=0.3.9
 
 # Remove this when u1db fixes its dependency on oauth
 oauth

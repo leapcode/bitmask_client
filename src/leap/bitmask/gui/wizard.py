@@ -17,22 +17,17 @@
 """
 First run wizard
 """
-import os
 import logging
-import json
 import random
 
 from functools import partial
 
 from PySide import QtCore, QtGui
-from twisted.internet import threads
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.crypto.srpregister import SRPRegister
-from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services import get_service_display_name, get_supported
-from leap.bitmask.util.request_helpers import get_content
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.password import basic_password_checks
 
@@ -55,12 +50,15 @@ class Wizard(QtGui.QWizard):
 
     BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
-    def __init__(self, bypass_checks=False):
+    def __init__(self, backend, bypass_checks=False):
         """
         Constructor for the main Wizard.
 
+        :param backend: Backend being used
+        :type backend: Backend
         :param bypass_checks: Set to true if the app should bypass
-        first round of checks for CA certificates at bootstrap
+                              first round of checks for CA
+                              certificates at bootstrap
         :type bypass_checks: bool
         """
         QtGui.QWizard.__init__(self)
@@ -86,23 +84,14 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.clicked.connect(self._check_provider)
         self.ui.lnProvider.returnPressed.connect(self._check_provider)
 
-        self._provider_bootstrapper = ProviderBootstrapper(bypass_checks)
-        self._provider_bootstrapper.name_resolution.connect(
-            self._name_resolution)
-        self._provider_bootstrapper.https_connection.connect(
-            self._https_connection)
-        self._provider_bootstrapper.download_provider_info.connect(
-            self._download_provider_info)
-
-        self._provider_bootstrapper.download_ca_cert.connect(
-            self._download_ca_cert)
-        self._provider_bootstrapper.check_ca_fingerprint.connect(
-            self._check_ca_fingerprint)
-        self._provider_bootstrapper.check_api_certificate.connect(
-            self._check_api_certificate)
+        self._backend = backend
+        self._backend_connect()
 
         self._domain = None
-        self._provider_config = ProviderConfig()
+        # HACK!! We need provider_config for the time being, it'll be
+        # removed
+        self._provider_config = (
+            self._backend._components["provider"]._provider_config)
 
         # We will store a reference to the defers for eventual use
         # (eg, to cancel them) but not doing anything with them right now.
@@ -114,6 +103,8 @@ class Wizard(QtGui.QWizard):
         self.ui.lnProvider.textChanged.connect(self._enable_check)
         self.ui.rbNewProvider.toggled.connect(
             lambda x: self._enable_check())
+        self.ui.cbProviders.currentIndexChanged[int].connect(
+            self._reset_provider_check)
 
         self.ui.lblUser.returnPressed.connect(
             self._focus_password)
@@ -166,6 +157,7 @@ class Wizard(QtGui.QWizard):
         self._provider_setup_ok = False
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
+        self._backend_disconnect()
 
     def _load_configured_providers(self):
         """
@@ -199,6 +191,10 @@ class Wizard(QtGui.QWizard):
             random.shuffle(pinned)  # don't prioritize alphabetically
             self.ui.cbProviders.addItems(pinned)
 
+        # We have configured providers, so by default we select the
+        # 'Use existing provider' option.
+        self.ui.rbExistingProvider.setChecked(True)
+
     def get_domain(self):
         return self._domain
 
@@ -225,7 +221,7 @@ class Wizard(QtGui.QWizard):
         depending on the lnProvider content.
         """
         enabled = len(self.ui.lnProvider.text()) != 0
-        enabled = enabled and self.ui.rbNewProvider.isChecked()
+        enabled = enabled or self.ui.rbExistingProvider.isChecked()
         self.ui.btnCheck.setEnabled(enabled)
 
         if reset:
@@ -255,16 +251,11 @@ class Wizard(QtGui.QWizard):
 
         ok, msg = basic_password_checks(username, password, password2)
         if ok:
-            register = SRPRegister(provider_config=self._provider_config)
-            register.registration_finished.connect(
-                self._registration_finished)
+            self._set_register_status(self.tr("Starting registration..."))
 
-            threads.deferToThread(
-                partial(register.register_user, username, password))
-
+            self._backend.register_user(self._domain, username, password)
             self._username = username
             self._password = password
-            self._set_register_status(self.tr("Starting registration..."))
         else:
             self._set_register_status(msg, error=True)
             self._focus_password()
@@ -291,42 +282,59 @@ class Wizard(QtGui.QWizard):
         # register button
         self.ui.btnRegister.setVisible(visible)
 
-    def _registration_finished(self, ok, req):
-        if ok:
-            user_domain = self._username + "@" + self._domain
-            message = "<font color='green'><h3>"
-            message += self.tr("User %s successfully registered.") % (
-                user_domain, )
-            message += "</h3></font>"
-            self._set_register_status(message)
+    def _registration_finished(self):
+        """
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_registration_finished
 
-            self.ui.lblPassword2.clearFocus()
-            self._set_registration_fields_visibility(False)
+        The registration has finished successfully, so we do some final steps.
+        """
+        user_domain = self._username + "@" + self._domain
+        message = "<font color='green'><h3>"
+        message += self.tr("User %s successfully registered.") % (
+            user_domain, )
+        message += "</h3></font>"
+        self._set_register_status(message)
 
-            # Allow the user to remember his password
-            if has_keyring():
-                self.ui.chkRemember.setVisible(True)
-                self.ui.chkRemember.setEnabled(True)
+        self.ui.lblPassword2.clearFocus()
+        self._set_registration_fields_visibility(False)
 
-            self.page(self.REGISTER_USER_PAGE).set_completed()
-            self.button(QtGui.QWizard.BackButton).setEnabled(False)
-        else:
-            old_username = self._username
-            self._username = None
-            self._password = None
-            error_msg = self.tr("Something has gone wrong. "
-                                "Please try again.")
-            try:
-                content, _ = get_content(req)
-                json_content = json.loads(content)
-                error_msg = json_content.get("errors").get("login")[0]
-                if not error_msg.istitle():
-                    error_msg = "%s %s" % (old_username, error_msg)
-            except Exception as e:
-                logger.error("Unknown error: %r" % (e,))
+        # Allow the user to remember his password
+        if has_keyring():
+            self.ui.chkRemember.setVisible(True)
+            self.ui.chkRemember.setEnabled(True)
 
-            self._set_register_status(error_msg, error=True)
-            self.ui.btnRegister.setEnabled(True)
+        self.page(self.REGISTER_USER_PAGE).set_completed()
+        self.button(QtGui.QWizard.BackButton).setEnabled(False)
+
+    def _registration_failed(self):
+        """
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_registration_failed
+
+        The registration has failed, so we report the problem.
+        """
+        self._username = self._password = None
+
+        error_msg = self.tr("Something has gone wrong. Please try again.")
+        self._set_register_status(error_msg, error=True)
+        self.ui.btnRegister.setEnabled(True)
+
+    def _registration_taken(self):
+        """
+        SLOT
+        TRIGGERS:
+          self._backend.signaler.srp_registration_taken
+
+        The requested username is taken, warn the user about that.
+        """
+        self._username = self._password = None
+
+        error_msg = self.tr("The requested username is taken, choose another.")
+        self._set_register_status(error_msg, error=True)
+        self.ui.btnRegister.setEnabled(True)
 
     def _set_register_status(self, status, error=False):
         """
@@ -369,8 +377,10 @@ class Wizard(QtGui.QWizard):
 
         Starts the checks for a given provider
         """
-        if len(self.ui.lnProvider.text()) == 0:
-            return
+        if self.ui.rbNewProvider.isChecked():
+            self._domain = self.ui.lnProvider.text()
+        else:
+            self._domain = self.ui.cbProviders.currentText()
 
         self._provider_checks_ok = False
 
@@ -382,11 +392,10 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.setEnabled(False)
         self.ui.lnProvider.setEnabled(False)
         self.button(QtGui.QWizard.BackButton).clearFocus()
-        self._domain = self.ui.lnProvider.text()
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
-        self._provider_select_defer = self._provider_bootstrapper.\
-            run_provider_select_checks(self._domain)
+        self._provider_select_defer = self._backend.\
+            setup_provider(self._domain)
 
     def _skip_provider_checks(self, skip):
         """
@@ -403,8 +412,6 @@ class Wizard(QtGui.QWizard):
         if skip:
             self._reset_provider_check()
 
-        self.page(self.SELECT_PROVIDER_PAGE).set_completed(skip)
-        self.button(QtGui.QWizard.NextButton).setEnabled(skip)
         self._use_existing_provider = skip
 
     def _complete_task(self, data, label, complete=False, complete_page=-1):
@@ -423,8 +430,8 @@ class Wizard(QtGui.QWizard):
         :param complete_page: page id to complete
         :type complete_page: int
         """
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
-        error = data[self._provider_bootstrapper.ERROR_KEY]
+        passed = data[self._backend.PASSED_KEY]
+        error = data[self._backend.ERROR_KEY]
         if passed:
             label.setPixmap(self.OK_ICON)
             if complete:
@@ -437,13 +444,13 @@ class Wizard(QtGui.QWizard):
     def _name_resolution(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.name_resolution
+        TRIGGER: self._backend.signaler.prov_name_resolution
 
         Sets the status for the name resolution check
         """
         self._complete_task(data, self.ui.lblNameResolution)
         status = ""
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        passed = data[self._backend.PASSED_KEY]
         if not passed:
             status = self.tr("<font color='red'><b>Non-existent "
                              "provider</b></font>")
@@ -456,16 +463,16 @@ class Wizard(QtGui.QWizard):
     def _https_connection(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.https_connection
+        TRIGGER: self._backend.signaler.prov_https_connection
 
         Sets the status for the https connection check
         """
         self._complete_task(data, self.ui.lblHTTPS)
         status = ""
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        passed = data[self._backend.PASSED_KEY]
         if not passed:
             status = self.tr("<font color='red'><b>%s</b></font>") \
-                % (data[self._provider_bootstrapper.ERROR_KEY])
+                % (data[self._backend.ERROR_KEY])
             self.ui.lblProviderSelectStatus.setText(status)
         else:
             self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
@@ -475,29 +482,26 @@ class Wizard(QtGui.QWizard):
     def _download_provider_info(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.download_provider_info
+        TRIGGER: self._backend.signaler.prov_download_provider_info
 
         Sets the status for the provider information download
         check. Since this check is the last of this set, it also
         completes the page if passed
         """
-        if self._provider_config.load(os.path.join("leap",
-                                                   "providers",
-                                                   self._domain,
-                                                   "provider.json")):
+        if self._provider_config.load(get_provider_path(self._domain)):
             self._complete_task(data, self.ui.lblProviderInfo,
                                 True, self.SELECT_PROVIDER_PAGE)
             self._provider_checks_ok = True
         else:
             new_data = {
-                self._provider_bootstrapper.PASSED_KEY: False,
-                self._provider_bootstrapper.ERROR_KEY:
+                self._backend.PASSED_KEY: False,
+                self._backend.ERROR_KEY:
                 self.tr("Unable to load provider configuration")
             }
             self._complete_task(new_data, self.ui.lblProviderInfo)
 
         status = ""
-        if not data[self._provider_bootstrapper.PASSED_KEY]:
+        if not data[self._backend.PASSED_KEY]:
             status = self.tr("<font color='red'><b>Not a valid provider"
                              "</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
@@ -507,31 +511,31 @@ class Wizard(QtGui.QWizard):
     def _download_ca_cert(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.download_ca_cert
+        TRIGGER: self._backend.signaler.prov_download_ca_cert
 
         Sets the status for the download of the CA certificate check
         """
         self._complete_task(data, self.ui.lblDownloadCaCert)
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        passed = data[self._backend.PASSED_KEY]
         if passed:
             self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
 
     def _check_ca_fingerprint(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.check_ca_fingerprint
+        TRIGGER: self._backend.signaler.prov_check_ca_fingerprint
 
         Sets the status for the CA fingerprint check
         """
         self._complete_task(data, self.ui.lblCheckCaFpr)
-        passed = data[self._provider_bootstrapper.PASSED_KEY]
+        passed = data[self._backend.PASSED_KEY]
         if passed:
             self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 
     def _check_api_certificate(self, data):
         """
         SLOT
-        TRIGGER: self._provider_bootstrapper.check_api_certificate
+        TRIGGER: self._backend.signaler.prov_check_api_certificate
 
         Sets the status for the API certificate check. Also finishes
         the provider bootstrapper thread since it's not needed anymore
@@ -597,6 +601,7 @@ class Wizard(QtGui.QWizard):
         Prepares the pages when they appear
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
+            self._clear_register_widgets()
             skip = self.ui.rbExistingProvider.isChecked()
             if not self._provider_checks_ok:
                 self._enable_check()
@@ -611,8 +616,8 @@ class Wizard(QtGui.QWizard):
                 sub_title = sub_title.format(self._provider_config.get_name())
                 self.page(pageId).setSubTitle(sub_title)
                 self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
-                self._provider_setup_defer = self._provider_bootstrapper.\
-                    run_provider_setup_checks(self._provider_config)
+                self._provider_setup_defer = self._backend.\
+                    provider_bootstrap(self._domain)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             self.page(pageId).setSubTitle(self.tr("Description of services "
@@ -670,3 +675,50 @@ class Wizard(QtGui.QWizard):
                     return self.SERVICES_PAGE
 
         return QtGui.QWizard.nextId(self)
+
+    def _clear_register_widgets(self):
+        """
+        Clears the widgets that my be filled and a possible error message.
+        """
+        self._set_register_status("")
+        self.ui.lblUser.setText("")
+        self.ui.lblPassword.setText("")
+        self.ui.lblPassword2.setText("")
+
+    def _backend_connect(self):
+        """
+        Connects all the backend signals with the wizard.
+        """
+        sig = self._backend.signaler
+        sig.prov_name_resolution.connect(self._name_resolution)
+        sig.prov_https_connection.connect(self._https_connection)
+        sig.prov_download_provider_info.connect(self._download_provider_info)
+
+        sig.prov_download_ca_cert.connect(self._download_ca_cert)
+        sig.prov_check_ca_fingerprint.connect(self._check_ca_fingerprint)
+        sig.prov_check_api_certificate.connect(self._check_api_certificate)
+
+        sig.srp_registration_finished.connect(self._registration_finished)
+        sig.srp_registration_failed.connect(self._registration_failed)
+        sig.srp_registration_taken.connect(self._registration_taken)
+
+    def _backend_disconnect(self):
+        """
+        This method is called when the wizard dialog is closed.
+        We disconnect all the backend signals in here.
+        """
+        sig = self._backend.signaler
+        try:
+            # disconnect backend signals
+            sig.prov_name_resolution.disconnect(self._name_resolution)
+            sig.prov_https_connection.disconnect(self._https_connection)
+            sig.prov_download_provider_info.disconnect(
+                self._download_provider_info)
+
+            sig.prov_download_ca_cert.disconnect(self._download_ca_cert)
+            sig.prov_check_ca_fingerprint.disconnect(
+                self._check_ca_fingerprint)
+            sig.prov_check_api_certificate.disconnect(
+                self._check_api_certificate)
+        except RuntimeError:
+            pass  # Signal was not connected

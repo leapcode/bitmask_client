@@ -30,3 +30,23 @@ WARNING: You should NOT use this kind of flags unless you're sure of what
 #   - search for binaries inside the bundled app instead of the system ones.
 #     e.g.: openvpn, gpg
 STANDALONE = False
+
+MAIL_LOGFILE = None
+
+# The APP/API version check flags are used to provide a way to skip
+# that checks.
+# This can be used for:
+#   - allow the use of a client that is not compatible with a provider.
+#   - use a development version of the client with an older version number
+#     since it's not released yet, and it is compatible with a newer provider.
+APP_VERSION_CHECK = True
+API_VERSION_CHECK = True
+
+# Offline mode?
+# Used for skipping soledad bootstrapping/syncs.
+OFFLINE = False
+
+
+# CA cert path
+# used to allow self signed certs in requests that needs SSL
+CA_CERT_FILE = None

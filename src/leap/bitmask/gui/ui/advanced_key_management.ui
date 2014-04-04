@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>431</width>
-    <height>188</height>
+    <width>504</width>
+    <height>546</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,10 +17,13 @@
    <iconset resource="../../../../../data/resources/mainwindow.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3">
-   <item row="0" column="0">
-    <widget class="QWidget" name="container" native="true">
-     <layout class="QGridLayout" name="gridLayout_2">
+  <layout class="QGridLayout" name="gridLayout_4">
+   <item row="1" column="0" colspan="2">
+    <widget class="QGroupBox" name="gbMyKeyPair">
+     <property name="title">
+      <string>My key pair</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
        <widget class="QLabel" name="label">
         <property name="text">
@@ -90,20 +93,7 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <spacer name="verticalSpacer">
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>20</width>
-          <height>40</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="4" column="0" colspan="2">
+      <item row="3" column="0" colspan="2">
        <layout class="QGridLayout" name="gridLayout">
         <item row="1" column="1">
          <widget class="QPushButton" name="pbExportKeys">
@@ -135,9 +125,56 @@
        </layout>
       </item>
      </layout>
+     <zorder>leKeyID</zorder>
+     <zorder>leUser</zorder>
+     <zorder>leFingerprint</zorder>
+     <zorder>label_3</zorder>
+     <zorder>label_5</zorder>
+     <zorder>label</zorder>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="2" column="0" colspan="2">
+    <widget class="QGroupBox" name="gbStoredPublicKeys">
+     <property name="title">
+      <string>Stored public keys</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QTableWidget" name="twPublicKeys">
+        <property name="editTriggers">
+         <set>QAbstractItemView::NoEditTriggers</set>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::SingleSelection</enum>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectRows</enum>
+        </property>
+        <property name="textElideMode">
+         <enum>Qt::ElideRight</enum>
+        </property>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>true</bool>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>Email</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Key ID</string>
+         </property>
+        </column>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0" colspan="2">
     <widget class="QLabel" name="lblStatus">
      <property name="text">
       <string/>

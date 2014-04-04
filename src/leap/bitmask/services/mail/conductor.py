@@ -35,6 +35,7 @@ from leap.common.check import leap_assert
 from leap.common.events import register as leap_register
 from leap.common.events import events_pb2 as leap_events
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -72,6 +73,8 @@ class IMAPControl(object):
         """
         Starts imap service.
         """
+        from leap.bitmask.config import flags
+
         logger.debug('Starting imap service')
         leap_assert(sameProxiedObjects(self._soledad, None)
                     is not True,
@@ -81,16 +84,25 @@ class IMAPControl(object):
                     "We need a non-null keymanager for initializing imap "
                     "service")
 
+        offline = flags.OFFLINE
         self.imap_service, self.imap_port, \
             self.imap_factory = imap.start_imap_service(
                 self._soledad,
                 self._keymanager,
-                userid=self.userid)
-        self.imap_service.start_loop()
+                userid=self.userid,
+                offline=offline)
 
-    def stop_imap_service(self):
+        if offline is False:
+            logger.debug("Starting loop")
+            self.imap_service.start_loop()
+
+    def stop_imap_service(self, cv):
         """
         Stops imap service (fetcher, factory and port).
+
+        :param cv: A condition variable to which we can signal when imap
+                   indeed stops.
+        :type cv: threading.Condition
         """
         self.imap_connection.qtsigs.disconnecting_signal.emit()
         # TODO We should homogenize both services.
@@ -102,7 +114,14 @@ class IMAPControl(object):
             # Stop listening on the IMAP port
             self.imap_port.stopListening()
             # Stop the protocol
-            self.imap_factory.doStop()
+            self.imap_factory.theAccount.closed = True
+            self.imap_factory.doStop(cv)
+        else:
+            # main window does not have to wait because there's no service to
+            # be stopped, so we release the condition variable
+            cv.acquire()
+            cv.notify()
+            cv.release()
 
     def fetch_incoming_mail(self):
         """
@@ -339,7 +358,7 @@ class MailConductor(IMAPControl, SMTPControl):
         self._mail_machine = None
         self._mail_connection = mail_connection.MailConnection()
 
-        self.userid = None
+        self._userid = None
 
     @property
     def userid(self):
@@ -388,3 +407,4 @@ class MailConductor(IMAPControl, SMTPControl):
         qtsigs.connecting_signal.connect(widget.mail_state_connecting)
         qtsigs.disconnecting_signal.connect(widget.mail_state_disconnecting)
         qtsigs.disconnected_signal.connect(widget.mail_state_disconnected)
+        qtsigs.soledad_invalid_auth_token.connect(widget.soledad_invalid_auth_token)

@@ -19,12 +19,13 @@ Login widget implementation
 """
 import logging
 
-import keyring
-
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
+from leap.bitmask.config import flags
+from leap.bitmask.util import make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.bitmask.util.keyring_helpers import get_keyring
 from leap.common.check import leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -221,6 +222,15 @@ class LoginWidget(QtGui.QWidget):
 
         self._set_cancel(not enabled)
 
+    def set_logout_btn_enabled(self, enabled):
+        """
+        Enables or disables the logout button.
+
+        :param enabled: wether they should be enabled or not
+        :type enabled: bool
+        """
+        self.ui.btnLogout.setEnabled(enabled)
+
     def _set_cancel(self, enabled=False):
         """
         Enables or disables the cancel action in the "log in" process.
@@ -304,14 +314,15 @@ class LoginWidget(QtGui.QWidget):
         if self.get_remember() and has_keyring():
             # in the keyring and in the settings
             # we store the value 'usename@provider'
-            username_domain = (username + '@' + provider).encode("utf8")
+            full_user_id = make_address(username, provider).encode("utf8")
             try:
+                keyring = get_keyring()
                 keyring.set_password(self.KEYRING_KEY,
-                                     username_domain,
+                                     full_user_id,
                                      password.encode("utf8"))
                 # Only save the username if it was saved correctly in
                 # the keyring
-                self._settings.set_user(username_domain)
+                self._settings.set_user(full_user_id)
             except Exception as e:
                 logger.exception("Problem saving data to keyring. %r"
                                  % (e,))
@@ -323,15 +334,19 @@ class LoginWidget(QtGui.QWidget):
         """
         self.ui.login_widget.hide()
         self.ui.logged_widget.show()
-        self.ui.lblUser.setText("%s@%s" % (self.get_user(),
-                                           self.get_selected_provider()))
-        self.set_login_status("")
-        self.logged_in_signal.emit()
+        self.ui.lblUser.setText(make_address(
+            self.get_user(), self.get_selected_provider()))
+
+        if flags.OFFLINE is False:
+            self.logged_in_signal.emit()
 
     def logged_out(self):
         """
         Sets the widgets to the logged out state
         """
+        # TODO consider "logging out offline" too...
+        # how that would be ???
+
         self.ui.login_widget.show()
         self.ui.logged_widget.hide()
 
@@ -339,27 +354,11 @@ class LoginWidget(QtGui.QWidget):
         self.set_enabled(True)
         self.set_status("", error=False)
 
-    def set_login_status(self, msg, error=False):
-        """
-        Sets the status label for the logged in state.
-
-        :param msg: status message
-        :type msg: str or unicode
-        :param error: if the status is an erroneous one, then set this
-                      to True
-        :type error: bool
-        """
-        leap_assert_type(error, bool)
-        if error:
-            msg = "<font color='red'><b>%s</b></font>" % (msg,)
-        self.ui.lblLoginStatus.setText(msg)
-        self.ui.lblLoginStatus.show()
-
     def start_logout(self):
         """
         Sets the widgets to the logging out state
         """
-        self.ui.btnLogout.setText(self.tr("Loggin out..."))
+        self.ui.btnLogout.setText(self.tr("Logging out..."))
         self.ui.btnLogout.setEnabled(False)
 
     def done_logout(self):
@@ -396,6 +395,7 @@ class LoginWidget(QtGui.QWidget):
 
         saved_password = None
         try:
+            keyring = get_keyring()
             saved_password = keyring.get_password(self.KEYRING_KEY,
                                                   saved_user
                                                   .encode("utf8"))
