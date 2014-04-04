@@ -49,7 +49,7 @@ from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.systray import SysTray
 
 from leap.bitmask import provider
-from leap.bitmask.platform_init import IS_WIN, IS_MAC
+from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
 
 from leap.bitmask import backend
@@ -157,7 +157,7 @@ class MainWindow(QtGui.QMainWindow):
         # setup UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.menuBar().setNativeMenuBar(True)
+        self.menuBar().setNativeMenuBar(not IS_LINUX)
         self._backend = backend.Backend(bypass_checks)
         self._backend.start()
 
