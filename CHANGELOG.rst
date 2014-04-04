@@ -3,6 +3,101 @@
 History
 -------
 
+2014
+====
+
+0.5.0 Apr 4 -- the "Long time no see" release:
+++++++++++++++++++++++++++++++++++++++++++++++
+- Fix logging out typo, closes #4815.
+- Improve logout action, related to #5131.
+- In case of soledad bootstrap error (e.g.: network failure), re run
+  all the setup process.
+- Correct resolvconf usage. Avoids permanent break of
+  resolv.conf. Closes #4633.
+- Disable and stop EIP when you set EIP as disabled in the preferences
+  dialog. Closes #4670.
+- Advanced Key Management: add view for stored public keys. Closes
+  #4734.
+- Reset registration error and input widgets if the user goes back to
+  provider selection in wizard. Closes #4742.
+- Disconnect signals before closing the wizard. Closes #4817.
+- Fix logout error message, display it similarly to other errors in
+  the app. Closes #4942.
+- Client should say 1 unread email, not emails. Closes #4952.
+- Update menu name in Wizard. Closes #4984.
+- Config help menu: do not use an empty password. Closes #4985.
+- Handle wizard close correctly. Closes #4986.
+- Fix "Something went wrong with the logout" misleading error in every
+  logout. Closes #4995 and #5071.
+- Use version checks in the wizard when the user choose to use an
+  existing provider. Closes #5048.
+- Move error messages from srpauth to the GUI and refactor
+  signals. Closes #5219.
+- Fix psutil version to avoid conflicts with gnupg required
+  version. Closes #5309.
+- Update bitmask url in PKG-INFO. Closes #5395.
+- Disable 'next' button if the checks passed but the provider is
+  changed. Closes #5396.
+- Do not start soledad and mail if the mail service is
+  disabled. Closes #5411.
+- Don't escape logs for pastebin. Closes #5433.
+- Handle closed Soledad database on quit, speedup exit. Closes #5130.
+- Catch shutdown errors. Closes: #5313
+- Properly reset imap session on logout. Closes: #4925
+- Sync Soledad before bootstrapping mail only if the key for the user
+  is not found locally. Otherwise, defer to thread and
+  continue. Closes #5083.
+- Set as selected default for the eip preferences window the item
+  selented in the bitmask main window. Closes #5153.
+- Cancel login does not work or needs to be pressed twice. Closes
+  #4869, #4973.
+- Fail gracefully against keyring import errors.
+- Update requirements and code for the new psutil version.
+- Use Bitmask icon instead of LEAP's for the super user dialog in
+  OSX. Fixes #4273.
+- Workaround a bug in Ubuntu where the menu is not displayed in the
+  global menu bar. Fixes #5420.
+- Wizard: select by default the use of an existing provider if we have
+  configured at least one. Closes #4488.
+- Add in-app indication of how to connect to local imap and
+  smtp. Closes #4530.
+- Warn the user on incompatible api error.
+- Warn the user if is using an old app version. Closes #4636.
+- Minor UI changes: re-arrange main window so that the login widget is
+  at the top and preferences are available under the menu.
+- Disable Advanced Key Manager import feature since it's experimental
+  and may cause data loss. Closes #4877.
+- Offline mode for debugging. Closes: #4943
+- Add pastebin button to upload logs from the logs window to ease bug
+  report. Closes #5163.
+- Add support for self signed certs. Closes #5391.
+- Add hotkey for the Help menu. Closes #5401.
+- Add --repair-mailboxes command line option. It will be needed to
+  migrate existing account after a data schema changes, like it will
+  be happening for 0.5.0. Closes #4792.
+- Make first Soledad sync wait for EIP to come up after logging in.
+  Fixes #4885.
+- Ensure IMAP flushes data to disk before quitting. Closes #5095.
+- Update key manager auth to interact with webapp v2. Fixes #5120.
+- Handle invalid auth tokens when syncing Soledad, and show an error
+  on the GUI. Fixes #5191.
+- After connecting EIP check for DNS resolution and warn the user on
+  error. Closes #5301.
+- Display domain for provider the user has just logged in. Fixes
+  #4631.
+- Add ability to import a maildir into a local mailbox.
+- Add ability to write mail logs to a separate file.
+- Show hash info in About bitmask (for debian versions).
+- Add the appname in the reported version string.
+- Move/refactor SRPRegister to the backend.
+- Add ability to nice application via environment variable.
+- Refactor ProviderBootstrapper out of the UI modules to a Backend
+  module, obscuring all the details.
+- Remove qt4reactor as a dependency.
+
+2013
+====
+
 0.3.8 Dec 6 -- the "Three week child" release:
 +++++++++++++++++++++++++++++++++++++++++++++++
 - Make the preferences window selects the current selected provider in

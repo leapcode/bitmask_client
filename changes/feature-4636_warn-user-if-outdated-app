@@ -1,2 +1,0 @@
-- Warn the user on incompatible api error.
-- Warn the user if is using an old app version. Closes #4636.

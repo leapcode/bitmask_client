@@ -1,1 +1,0 @@
-- After connecting EIP check for DNS resolution and warn the user on error. Closes #5301.

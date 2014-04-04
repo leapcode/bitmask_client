@@ -1,1 +1,0 @@
-- Wizard: select by default the use of an existing provider if we have configured at least one. Closes #4488.

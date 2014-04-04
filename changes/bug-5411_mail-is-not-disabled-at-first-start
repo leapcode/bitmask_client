@@ -1,1 +1,0 @@
-- Do not start soledad and mail if the mail service is disabled. Closes #5411.

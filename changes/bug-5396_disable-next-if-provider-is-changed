@@ -1,1 +1,0 @@
-- Disable 'next' button if the checks passed but the provider is changed. Closes #5396.

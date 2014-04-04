@@ -1,1 +1,0 @@
-- Fix "Something went wrong with the logout" misleading error in every logout. Closes #4995 and #5071.
