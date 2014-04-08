@@ -18,6 +18,7 @@
 Backend for everything
 """
 import logging
+import os
 
 from functools import partial
 from Queue import Queue, Empty
@@ -386,6 +387,75 @@ class EIP(object):
         # It has to be something easily serializable though.
         pass
 
+    def _provider_is_initialized(self, domain):
+        """
+        Returns if the given domain is initialized or not.
+
+        :param domain: the domain to check
+        :type domain: str
+
+        :returns: True if is initialized, False otherwise.
+        :rtype: bool
+        """
+        eipconfig_path = eipconfig.get_eipconfig_path(domain, relative=False)
+        if os.path.isfile(eipconfig_path):
+            return True
+        else:
+            return False
+
+    def get_initialized_providers(self, domains):
+        """
+        Signals a list of the given domains and if they are initialized or not.
+
+        :param domains: the list of domains to check.
+        :type domain: list of str
+
+        :signal type: list of tuples (str, bool)
+        """
+        filtered_domains = []
+        for domain in domains:
+            is_initialized = self._provider_is_initialized(domain)
+            filtered_domains.append((domain, is_initialized))
+
+        if self._signaler is not None:
+            self._signaler.signal(self._signaler.EIP_GET_INITIALIZED_PROVIDERS,
+                                  filtered_domains)
+
+    def get_gateways_list(self, domain):
+        """
+        Signals a list of gateways for the given provider.
+
+        :param domain: the domain to get the gateways.
+        :type domain: str
+
+        :signal type: list of str
+        """
+        if not self._provider_is_initialized(domain):
+            if self._signaler is not None:
+                self._signaler.signal(
+                    self._signaler.EIP_UNINITIALIZED_PROVIDER)
+            return
+
+        eip_config = eipconfig.EIPConfig()
+        provider_config = ProviderConfig.get_provider_config(domain)
+
+        api_version = provider_config.get_api_version()
+        eip_config.set_api_version(api_version)
+        eip_loaded = eip_config.load(eipconfig.get_eipconfig_path(domain))
+
+        # check for other problems
+        if not eip_loaded or provider_config is None:
+            if self._signaler is not None:
+                self._signaler.signal(
+                    self._signaler.EIP_GET_GATEWAYS_LIST_ERROR)
+            return
+
+        gateways = eipconfig.VPNGatewaySelector(eip_config).get_gateways_list()
+
+        if self._signaler is not None:
+            self._signaler.signal(
+                self._signaler.EIP_GET_GATEWAYS_LIST, gateways)
+
 
 class Authenticate(object):
     """
@@ -561,6 +631,11 @@ class Signaler(QtCore.QObject):
     eip_alien_openvpn_already_running = QtCore.Signal(object)
     eip_vpn_launcher_exception = QtCore.Signal(object)
 
+    eip_get_gateways_list = QtCore.Signal(object)
+    eip_get_gateways_list_error = QtCore.Signal(object)
+    eip_uninitialized_provider = QtCore.Signal(object)
+    eip_get_initialized_providers = QtCore.Signal(object)
+
     # signals from parsing openvpn output
     eip_network_unreachable = QtCore.Signal(object)
     eip_process_restart_tls = QtCore.Signal(object)
@@ -626,6 +701,11 @@ class Signaler(QtCore.QObject):
     EIP_ALIEN_OPENVPN_ALREADY_RUNNING = "eip_alien_openvpn_already_running"
     EIP_VPN_LAUNCHER_EXCEPTION = "eip_vpn_launcher_exception"
 
+    EIP_GET_GATEWAYS_LIST = "eip_get_gateways_list"
+    EIP_GET_GATEWAYS_LIST_ERROR = "eip_get_gateways_list_error"
+    EIP_UNINITIALIZED_PROVIDER = "eip_uninitialized_provider"
+    EIP_GET_INITIALIZED_PROVIDERS = "eip_get_initialized_providers"
+
     EIP_NETWORK_UNREACHABLE = "eip_network_unreachable"
     EIP_PROCESS_RESTART_TLS = "eip_process_restart_tls"
     EIP_PROCESS_RESTART_PING = "eip_process_restart_ping"
@@ -674,6 +754,11 @@ class Signaler(QtCore.QObject):
             self.EIP_OPENVPN_ALREADY_RUNNING,
             self.EIP_ALIEN_OPENVPN_ALREADY_RUNNING,
             self.EIP_VPN_LAUNCHER_EXCEPTION,
+
+            self.EIP_GET_GATEWAYS_LIST,
+            self.EIP_GET_GATEWAYS_LIST_ERROR,
+            self.EIP_UNINITIALIZED_PROVIDER,
+            self.EIP_GET_INITIALIZED_PROVIDERS,
 
             self.EIP_NETWORK_UNREACHABLE,
             self.EIP_PROCESS_RESTART_TLS,
@@ -891,6 +976,13 @@ class Backend(object):
 
     def terminate_eip(self):
         self._call_queue.put(("eip", "terminate", None))
+
+    def eip_get_gateways_list(self, domain):
+        self._call_queue.put(("eip", "get_gateways_list", None, domain))
+
+    def eip_get_initialized_providers(self, domains):
+        self._call_queue.put(("eip", "get_initialized_providers",
+                              None, domains))
 
     def login(self, provider, username, password):
         self._call_queue.put(("authenticate", "login", None, provider,
