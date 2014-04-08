@@ -87,7 +87,7 @@ our intensive bug-reeducation program.
 
 HACKING
 
-You can find us in the #leap-dev channel on the freenode network.
+You can find us in the #leap channel on the freenode network.
 
 If you are lucky enough, you can also spot us drinking mate, sleepless
 in night  trains, rooftops,  rainforests, lonely islands  and, always,
