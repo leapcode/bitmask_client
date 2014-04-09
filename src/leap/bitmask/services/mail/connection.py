@@ -93,6 +93,8 @@ class MailConnectionSignals(QtCore.QObject):
     connection_died_signal = QtCore.Signal()
     connection_aborted_signal = QtCore.Signal()
 
+    soledad_invalid_auth_token = QtCore.Signal()
+
 
 class MailConnection(AbstractLEAPConnection):
 

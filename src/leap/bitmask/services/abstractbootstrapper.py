@@ -28,6 +28,7 @@ from PySide import QtCore
 
 from twisted.python import log
 from twisted.internet import threads
+from twisted.internet.defer import CancelledError
 
 from leap.common.check import leap_assert, leap_assert_type
 
@@ -91,6 +92,12 @@ class AbstractBootstrapper(QtCore.QObject):
         :param failure: failure object that Twisted generates
         :type failure: twisted.python.failure.Failure
         """
+        if failure.check(CancelledError):
+            logger.debug("Defer cancelled.")
+            failure.trap(Exception)
+            self._signaler.signal(self._signaler.PROV_CANCELLED_SETUP)
+            return
+
         if self._signal_to_emit:
             err_msg = self._err_msg \
                 if self._err_msg is not None \

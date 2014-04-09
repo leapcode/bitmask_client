@@ -18,24 +18,50 @@
 Some small and handy functions.
 """
 import datetime
+import itertools
 import os
 
 from leap.bitmask.config import flags
 from leap.common.config import get_path_prefix as common_get_path_prefix
 
+# functional goodies for a healthier life:
+# We'll give your money back if it does not alleviate the eye strain, at least.
 
-def get_path_prefix():
-    return common_get_path_prefix(flags.STANDALONE)
+
+# levelname length == 8, since 'CRITICAL' is the longest
+LOG_FORMAT = ('%(asctime)s - %(levelname)-8s - '
+              'L#%(lineno)-4s : %(name)s:%(funcName)s() - %(message)s')
 
 
 def first(things):
     """
     Return the head of a collection.
+
+    :param things: a sequence to extract the head from.
+    :type things: sequence
+    :return: object, or None
     """
     try:
         return things[0]
     except (IndexError, TypeError):
         return None
+
+
+def flatten(things):
+    """
+    Return a generator iterating through a flattened sequence.
+
+    :param things: a nested sequence, eg, a list of lists.
+    :type things: sequence
+    :rtype: generator
+    """
+    return itertools.chain(*things)
+
+
+# leap repetitive chores
+
+def get_path_prefix():
+    return common_get_path_prefix(flags.STANDALONE)
 
 
 def get_modification_ts(path):
@@ -76,3 +102,16 @@ def is_empty_file(path):
     Returns True if the file at path is empty.
     """
     return os.stat(path).st_size is 0
+
+
+def make_address(user, provider):
+    """
+    Return a full identifier for an user, as a email-like
+    identifier.
+
+    :param user: the username
+    :type user: basestring
+    :param provider: the provider domain
+    :type provider: basestring
+    """
+    return "%s@%s" % (user, provider)

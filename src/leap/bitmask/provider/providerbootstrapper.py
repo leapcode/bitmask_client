@@ -24,16 +24,18 @@ import sys
 
 import requests
 
-from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
-from leap.bitmask.util.request_helpers import get_content
+from leap.bitmask import provider
 from leap.bitmask import util
-from leap.bitmask.util.constants import REQUEST_TIMEOUT
+from leap.bitmask.config import flags
+from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
+from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
-from leap.bitmask.provider.supportedapis import SupportedAPIs
+from leap.bitmask.util.constants import REQUEST_TIMEOUT
+from leap.bitmask.util.request_helpers import get_content
 from leap.common import ca_bundle
 from leap.common.certs import get_digest
-from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 from leap.common.check import leap_assert, leap_assert_type, leap_check
+from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 
 logger = logging.getLogger(__name__)
 
@@ -41,6 +43,14 @@ logger = logging.getLogger(__name__)
 class UnsupportedProviderAPI(Exception):
     """
     Raised when attempting to use a provider with an incompatible API.
+    """
+    pass
+
+
+class UnsupportedClientVersionError(Exception):
+    """
+    Raised when attempting to use a provider with an older
+    client than supported.
     """
     pass
 
@@ -58,6 +68,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
     after they are passed.
     If a check fails, the subsequent checks are not executed
     """
+
+    MIN_CLIENT_VERSION = 'x-minimum-client-version'
 
     def __init__(self, signaler=None, bypass_checks=False):
         """
@@ -87,9 +99,14 @@ class ProviderBootstrapper(AbstractBootstrapper):
         :rtype: bool or str
         """
         if self._bypass_checks:
-            verify = False
+            return False
+
+        cert = flags.CA_CERT_FILE
+        if cert is not None:
+            verify = cert
         else:
             verify = ca_bundle.where()
+
         return verify
 
     def _check_name_resolution(self):
@@ -155,8 +172,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         headers = {}
         domain = self._domain.encode(sys.getfilesystemencoding())
         provider_json = os.path.join(util.get_path_prefix(),
-                                     "leap", "providers", domain,
-                                     "provider.json")
+                                     get_provider_path(domain))
+
         mtime = get_mtime(provider_json)
 
         if self._download_if_needed and mtime:
@@ -187,6 +204,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         res.raise_for_status()
         logger.debug("Request status code: {0}".format(res.status_code))
 
+        min_client_version = res.headers.get(self.MIN_CLIENT_VERSION, '0')
+
         # Not modified
         if res.status_code == 304:
             logger.debug("Provider definition has not been modified")
@@ -194,6 +213,13 @@ class ProviderBootstrapper(AbstractBootstrapper):
         # end refactor, more or less...
         # XXX Watch out, have to check the supported api yet.
         else:
+            if flags.APP_VERSION_CHECK:
+                # TODO split
+                if not provider.supports_client(min_client_version):
+                    self._signaler.signal(
+                        self._signaler.PROV_UNSUPPORTED_CLIENT)
+                    raise UnsupportedClientVersionError()
+
             provider_definition, mtime = get_content(res)
 
             provider_config = ProviderConfig()
@@ -201,17 +227,20 @@ class ProviderBootstrapper(AbstractBootstrapper):
             provider_config.save(["leap", "providers",
                                   domain, "provider.json"])
 
-            api_version = provider_config.get_api_version()
-            if SupportedAPIs.supports(api_version):
-                logger.debug("Provider definition has been modified")
-            else:
-                api_supported = ', '.join(SupportedAPIs.SUPPORTED_APIS)
-                error = ('Unsupported provider API version. '
-                         'Supported versions are: {0}. '
-                         'Found: {1}.').format(api_supported, api_version)
+            if flags.API_VERSION_CHECK:
+                # TODO split
+                api_version = provider_config.get_api_version()
+                if provider.supports_api(api_version):
+                    logger.debug("Provider definition has been modified")
+                else:
+                    api_supported = ', '.join(provider.SUPPORTED_APIS)
+                    error = ('Unsupported provider API version. '
+                             'Supported versions are: {0}. '
+                             'Found: {1}.').format(api_supported, api_version)
 
-                logger.error(error)
-                raise UnsupportedProviderAPI(error)
+                    logger.error(error)
+                    self._signaler.signal(self._signaler.PROV_UNSUPPORTED_API)
+                    raise UnsupportedProviderAPI(error)
 
     def run_provider_select_checks(self, domain, download_if_needed=False):
         """

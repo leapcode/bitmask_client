@@ -59,7 +59,7 @@
     <item row="0" column="0">
      <widget class="QLabel" name="label_3">
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Now we will guide you through some configuration that is needed before you can connect for the first time.&lt;/p&gt;&lt;p&gt;If you ever need to modify these options again, you can find the wizard in the &lt;span style=&quot; font-style:italic;&quot;&gt;'Settings'&lt;/span&gt; menu from the main window.&lt;/p&gt;&lt;p&gt;Do you want to &lt;span style=&quot; font-weight:600;&quot;&gt;sign up&lt;/span&gt; for a new account, or &lt;span style=&quot; font-weight:600;&quot;&gt;log in&lt;/span&gt; with an already existing username?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Now we will guide you through some configuration that is needed before you can connect for the first time.&lt;/p&gt;&lt;p&gt;If you ever need to modify these options again, you can find the wizard in the &lt;span style=&quot; font-style:italic;&quot;&gt;'Bitmask -&amp;gt; Create new account...'&lt;/span&gt; menu from the main window.&lt;/p&gt;&lt;p&gt;Do you want to &lt;span style=&quot; font-weight:600;&quot;&gt;sign up&lt;/span&gt; for a new account, or &lt;span style=&quot; font-weight:600;&quot;&gt;log in&lt;/span&gt; with an already existing username?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="textFormat">
        <enum>Qt::RichText</enum>
@@ -269,7 +269,7 @@
        <string>Configure or select a provider</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_5">
-       <item row="0" column="0">
+       <item row="1" column="0">
         <widget class="QRadioButton" name="rbNewProvider">
          <property name="text">
           <string>Configure new provider:</string>
@@ -279,14 +279,14 @@
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
-        <widget class="QRadioButton" name="rbExistingProvider">
-         <property name="text">
-          <string>Use existing one:</string>
+       <item row="0" column="2">
+        <widget class="QComboBox" name="cbProviders">
+         <property name="enabled">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="1" column="1">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>https://</string>
@@ -296,17 +296,20 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="1" column="2">
         <widget class="QLineEdit" name="lnProvider"/>
        </item>
-       <item row="1" column="2">
-        <widget class="QPushButton" name="btnCheck">
+       <item row="0" column="0">
+        <widget class="QRadioButton" name="rbExistingProvider">
          <property name="text">
-          <string>Check</string>
+          <string>Use existing one:</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="0" column="1">
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>https://</string>
@@ -316,12 +319,29 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
-        <widget class="QComboBox" name="cbProviders">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+       <item row="2" column="2">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnCheck">
+           <property name="text">
+            <string>Check</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -820,8 +840,8 @@
    <slot>setFocus()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>167</x>
-     <y>192</y>
+     <x>174</x>
+     <y>174</y>
     </hint>
     <hint type="destinationlabel">
      <x>265</x>
@@ -836,12 +856,12 @@
    <slot>setFocus()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>171</x>
-     <y>164</y>
+     <x>174</x>
+     <y>227</y>
     </hint>
     <hint type="destinationlabel">
-     <x>246</x>
-     <y>164</y>
+     <x>425</x>
+     <y>254</y>
     </hint>
    </hints>
   </connection>
@@ -852,12 +872,12 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>169</x>
-     <y>196</y>
+     <x>174</x>
+     <y>174</y>
     </hint>
     <hint type="destinationlabel">
-     <x>327</x>
-     <y>163</y>
+     <x>450</x>
+     <y>266</y>
     </hint>
    </hints>
   </connection>
@@ -868,8 +888,8 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>169</x>
-     <y>162</y>
+     <x>174</x>
+     <y>227</y>
     </hint>
     <hint type="destinationlabel">
      <x>269</x>
@@ -881,15 +901,15 @@
    <sender>rbExistingProvider</sender>
    <signal>toggled(bool)</signal>
    <receiver>btnCheck</receiver>
-   <slot>setDisabled(bool)</slot>
+   <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>154</x>
-     <y>193</y>
+     <x>169</x>
+     <y>174</y>
     </hint>
     <hint type="destinationlabel">
-     <x>498</x>
-     <y>170</y>
+     <x>520</x>
+     <y>255</y>
     </hint>
    </hints>
   </connection>

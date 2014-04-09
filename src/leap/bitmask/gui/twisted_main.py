@@ -27,24 +27,6 @@ from twisted.internet import error
 logger = logging.getLogger(__name__)
 
 
-def start(app):
-    """
-    Start the mainloop.
-
-    :param app: the main qt QApplication instance.
-    :type app: QtCore.QApplication
-    """
-    from twisted.internet import reactor
-    logger.debug('starting twisted reactor')
-
-    # this seems to be troublesome under some
-    # unidentified settings.
-    #reactor.run()
-
-    reactor.runReturn()
-    app.exec_()
-
-
 def quit(app):
     """
     Stop the mainloop.

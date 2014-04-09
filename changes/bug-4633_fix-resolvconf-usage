@@ -1,1 +1,0 @@
-- Correct resolvconf usage. Avoids permanent break of resolv.conf. Closes #4633.

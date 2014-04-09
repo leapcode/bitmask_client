@@ -19,13 +19,19 @@ VPN Manager, spawned in a custom processProtocol.
 """
 import logging
 import os
-import psutil
-import psutil.error
 import shutil
 import socket
 import sys
 
 from itertools import chain, repeat
+
+import psutil
+try:
+    # psutil < 2.0.0
+    from psutil.error import AccessDenied as psutil_AccessDenied
+except ImportError:
+    # psutil >= 2.0.0
+    from psutil import AccessDenied as psutil_AccessDenied
 
 from PySide import QtCore
 
@@ -672,7 +678,7 @@ class VPNManager(object):
                 if any(map(lambda s: s.find("LEAPOPENVPN") != -1, p.cmdline)):
                     openvpn_process = p
                     break
-            except psutil.error.AccessDenied:
+            except psutil_AccessDenied:
                 pass
         return openvpn_process
 

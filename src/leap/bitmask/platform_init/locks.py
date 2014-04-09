@@ -83,8 +83,6 @@ if platform_init.IS_UNIX:
                 flock(self._fd, LOCK_EX | LOCK_NB)
             except IOError as exc:
                 # could not get the lock
-                #import ipdb; ipdb.set_trace()
-
                 if exc.args[0] in (errno.EDEADLK, errno.EAGAIN):
                     # errno 11 or 35
                     # Resource temporarily unavailable

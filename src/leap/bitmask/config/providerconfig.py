@@ -21,11 +21,12 @@ Provider configuration
 import logging
 import os
 
-from leap.common.check import leap_check
-from leap.common.config.baseconfig import BaseConfig, LocalizedKey
+from leap.bitmask import provider
 from leap.bitmask.config.provider_spec import leap_provider_spec
 from leap.bitmask.services import get_service_display_name
 from leap.bitmask.util import get_path_prefix
+from leap.common.check import leap_check
+from leap.common.config.baseconfig import BaseConfig, LocalizedKey
 
 logger = logging.getLogger(__name__)
 
@@ -55,10 +56,7 @@ class ProviderConfig(BaseConfig):
         :rtype: ProviderConfig or None if there is a problem loading the config
         """
         provider_config = ProviderConfig()
-        provider_config_path = os.path.join(
-            "leap", "providers", domain, "provider.json")
-
-        if not provider_config.load(provider_config_path):
+        if not provider_config.load(provider.get_provider_path(domain)):
             provider_config = None
 
         return provider_config

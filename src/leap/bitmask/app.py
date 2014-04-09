@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # app.py
-# Copyright (C) 2013 LEAP
+# Copyright (C) 2013, 2014 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,13 +50,16 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.util import leap_argparse
-from leap.bitmask.util import log_silencer
+from leap.bitmask.util import log_silencer, LOG_FORMAT
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
-from leap.bitmask.services.mail.repair import repair_account
+from leap.bitmask.services.mail import plumber
 from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
+
+from twisted.internet import reactor
+from twisted.internet.task import LoopingCall
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
@@ -74,13 +77,7 @@ def sigint_handler(*args, **kwargs):
     mainwindow.quit()
 
 
-def install_qtreactor(logger):
-    import qt4reactor
-    qt4reactor.install()
-    logger.debug("Qt4 reactor installed")
-
-
-def add_logger_handlers(debug=False, logfile=None):
+def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
     """
     Create the logger and attach the handlers.
 
@@ -100,10 +97,7 @@ def add_logger_handlers(debug=False, logfile=None):
     # Create logger and formatter
     logger = logging.getLogger(name='leap')
     logger.setLevel(level)
-
-    log_format = ('%(asctime)s - %(name)s:%(funcName)s:L#%(lineno)s '
-                  '- %(levelname)s - %(message)s')
-    formatter = logging.Formatter(log_format)
+    formatter = logging.Formatter(LOG_FORMAT)
 
     # Console handler
     try:
@@ -116,6 +110,9 @@ def add_logger_handlers(debug=False, logfile=None):
         using_coloredlog = False
     else:
         using_coloredlog = True
+
+    if using_coloredlog:
+        replace_stdout = False
 
     silencer = log_silencer.SelectiveSilencerFilter()
     console.addFilter(silencer)
@@ -139,7 +136,7 @@ def add_logger_handlers(debug=False, logfile=None):
         logger.addHandler(fileh)
         logger.debug('File handler plugged!')
 
-    if not using_coloredlog:
+    if replace_stdout:
         replace_stdout_stderr_with_logging(logger)
 
     return logger
@@ -164,33 +161,46 @@ def replace_stdout_stderr_with_logging(logger):
         log.startLogging(sys.stdout)
 
 
-def main():
+def do_display_version(opts):
     """
-    Starts the main event loop and launches the main window.
+    Display version and exit.
     """
-    _, opts = leap_argparse.init_leapc_args()
-
+    # TODO move to a different module: commands?
     if opts.version:
         print "Bitmask version: %s" % (VERSION,)
         print "leap.mail version: %s" % (MAIL_VERSION,)
         sys.exit(0)
 
-    if opts.acct_to_repair:
-        repair_account(opts.acct_to_repair)
+
+def do_mail_plumbing(opts):
+    """
+    Analize options and do mailbox plumbing if requested.
+    """
+    # TODO move to a different module: commands?
+    if opts.repair:
+        plumber.repair_account(opts.acct)
         sys.exit(0)
+    if opts.import_maildir and opts.acct:
+        plumber.import_maildir(opts.acct, opts.import_maildir)
+        sys.exit(0)
+    # XXX catch when import is used w/o acct
+
+
+def main():
+    """
+    Starts the main event loop and launches the main window.
+    """
+    # TODO move boilerplate outa here!
+    _, opts = leap_argparse.init_leapc_args()
+    do_display_version(opts)
 
     standalone = opts.standalone
+    offline = opts.offline
     bypass_checks = getattr(opts, 'danger', False)
     debug = opts.debug
     logfile = opts.log_file
     mail_logfile = opts.mail_log_file
     openvpn_verb = opts.openvpn_verb
-
-    try:
-        event_server.ensure_server(event_server.SERVER_PORT)
-    except Exception as e:
-        # We don't even have logger configured in here
-        print "Could not ensure server: %r" % (e,)
 
     #############################################################
     # Given how paths and bundling works, we need to delay the imports
@@ -199,12 +209,39 @@ def main():
     from leap.bitmask.config import flags
     from leap.common.config.baseconfig import BaseConfig
     flags.STANDALONE = standalone
+    flags.OFFLINE = offline
     flags.MAIL_LOGFILE = mail_logfile
+    flags.APP_VERSION_CHECK = opts.app_version_check
+    flags.API_VERSION_CHECK = opts.api_version_check
+
+    flags.CA_CERT_FILE = opts.ca_cert_file
+
     BaseConfig.standalone = standalone
 
-    logger = add_logger_handlers(debug, logfile)
+    replace_stdout = True
+    if opts.repair or opts.import_maildir:
+        # We don't want too much clutter on the comand mode
+        # this could be more generic with a Command class.
+        replace_stdout = False
+    logger = add_logger_handlers(debug, logfile, replace_stdout)
+
+    # ok, we got logging in place, we can satisfy mail plumbing requests
+    # and show logs there. it normally will exit there if we got that path.
+    do_mail_plumbing(opts)
+
+    try:
+        event_server.ensure_server(event_server.SERVER_PORT)
+    except Exception as e:
+        # We don't even have logger configured in here
+        print "Could not ensure server: %r" % (e,)
+
+    PLAY_NICE = os.environ.get("LEAP_NICE")
+    if PLAY_NICE and PLAY_NICE.isdigit():
+        nice = os.nice(int(PLAY_NICE))
+        logger.info("Setting NICE: %s" % nice)
 
     # And then we import all the other stuff
+    # I think it's safe to import at the top by now -- kali
     from leap.bitmask.gui import locale_rc
     from leap.bitmask.gui import twisted_main
     from leap.bitmask.gui.mainwindow import MainWindow
@@ -215,6 +252,7 @@ def main():
     # pylint: avoid unused import
     assert(locale_rc)
 
+    # TODO move to a different module: commands?
     if not we_are_the_one_and_only():
         # Bitmask is already running
         logger.warning("Tried to launch more than one instance "
@@ -239,9 +277,6 @@ def main():
         sys.argv.append("Cleanlooks")
 
     app = QtGui.QApplication(sys.argv)
-
-    # install the qt4reactor.
-    install_qtreactor(logger)
 
     # To test:
     # $ LANG=es ./app.py
@@ -285,8 +320,9 @@ def main():
     #tx_app = leap_services()
     #assert(tx_app)
 
-    # Run main loop
-    twisted_main.start(app)
+    l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
+    l.start(0.01)
+    reactor.run()
 
 if __name__ == "__main__":
     main()

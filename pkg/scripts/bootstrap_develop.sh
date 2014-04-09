@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ######################################################################
 set -e  # Exit immediately if a command exits with a non-zero status.
+
 REPOSITORIES="bitmask_client leap_pycommon soledad keymanager leap_mail"
 PACKAGES="leap_pycommon keymanager soledad/common soledad/client soledad/server leap_mail bitmask_client"
 REPOS_ROOT=`pwd`  # Root path for all the needed repositories
@@ -40,19 +41,15 @@ clone_repos() {
 
     if [[ "$1" == "ro" ]]; then
         # read-only remotes:
-        git clone https://leap.se/git/bitmask_client
-        git clone https://leap.se/git/leap_pycommon
-        git clone https://leap.se/git/soledad
-        git clone https://leap.se/git/keymanager
-        git clone https://leap.se/git/leap_mail
+        src="https://leap.se/git"
     else
         # read-write remotes:
-        git clone ssh://gitolite@leap.se/bitmask_client
-        git clone ssh://gitolite@leap.se/leap_pycommon
-        git clone ssh://gitolite@leap.se/soledad
-        git clone ssh://gitolite@leap.se/keymanager
-        git clone ssh://gitolite@leap.se/leap_mail
+        src="ssh://gitolite@leap.se"
     fi
+
+    for repo in $REPOSITORIES; do
+        [ ! -d $repo ] && git clone $src/$repo
+    done
 
     set +x
     echo "${cc_green}Status: $status done!${cc_normal}"
@@ -115,7 +112,7 @@ setup_develop() {
     # do a setup develop in every package
     for package in $PACKAGES; do
         cd $REPOS_ROOT/$package
-        python setup.py develop
+        python setup.py develop --always-unzip
     done
 
     # hack to solve gnupg version problem
@@ -163,10 +160,12 @@ update() {
 }
 
 run() {
+    shift  # remove 'run' from arg list
+    passthrough_args=$@
     echo "${cc_green}Status: running client...${cc_normal}"
     source bitmask.venv/bin/activate
     set -x
-    python bitmask_client/src/leap/bitmask/app.py -d $*
+    python bitmask_client/src/leap/bitmask/app.py -d $passthrough_args
     set +x
 }
 
@@ -175,7 +174,7 @@ help() {
     echo "Bootstraps the environment to start developing the bitmask client"
     echo "with all the needed repositories and dependencies."
     echo
-    echo "Usage: $0 {init | update | help}"
+    echo "Usage: $0 {init | update | run | help}"
     echo
     echo "   init : Initialize repositories, create virtualenv and \`python setup.py develop\` all."
     echo "          You can use \`init ro\` in order to use the https remotes if you don't have rw access."
@@ -193,7 +192,7 @@ case "$1" in
         update
         ;;
     run)
-        run
+        run "$@"
         ;;
     *)
         help

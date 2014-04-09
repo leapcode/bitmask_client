@@ -248,10 +248,10 @@ class EIPStatusWidget(QtGui.QWidget):
         Triggered when a default provider_config has not been found.
         Disables the start button and adds instructions to the user.
         """
-        logger.debug('Hiding EIP start button')
+        #logger.debug('Hiding EIP start button')
         # you might be tempted to change this for a .setEnabled(False).
         # it won't work. it's under the claws of the state machine.
-        # probably the best thing would be to make a transitional
+        # probably the best thing would be to make a conditional
         # transition there, but that's more involved.
         self.eip_button.hide()
         msg = self.tr("You must login to use {0}".format(self._service_name))
@@ -272,7 +272,7 @@ class EIPStatusWidget(QtGui.QWidget):
         Triggered after a successful login.
         Enables the start button.
         """
-        logger.debug('Showing EIP start button')
+        #logger.debug('Showing EIP start button')
         self.eip_button.show()
 
         # Restore the eip action menu

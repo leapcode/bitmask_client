@@ -520,9 +520,9 @@ class SRPAuthTestCase(unittest.TestCase):
         m2 = self.auth_backend._extract_data(test_data)
 
         self.assertEqual(m2, test_m2)
-        self.assertEqual(self.auth_backend.get_uid(), test_uid)
-        self.assertEqual(self.auth_backend.get_uid(),
-                         self.auth.get_uid())
+        self.assertEqual(self.auth_backend.get_uuid(), test_uid)
+        self.assertEqual(self.auth_backend.get_uuid(),
+                         self.auth.get_uuid())
         self.assertEqual(self.auth_backend.get_token(), test_token)
         self.assertEqual(self.auth_backend.get_token(),
                          self.auth.get_token())
@@ -691,7 +691,7 @@ class SRPAuthTestCase(unittest.TestCase):
             old_session = self.auth_backend._session
             self.auth_backend.logout()
             self.assertIsNone(self.auth_backend.get_session_id())
-            self.assertIsNone(self.auth_backend.get_uid())
+            self.assertIsNone(self.auth_backend.get_uuid())
             self.assertNotEqual(old_session, self.auth_backend._session)
 
         d = threads.deferToThread(wrapper)

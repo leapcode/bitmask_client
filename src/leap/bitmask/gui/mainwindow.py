@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # mainwindow.py
-# Copyright (C) 2013 LEAP
+# Copyright (C) 2013, 2014 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,16 +18,25 @@
 Main window for Bitmask.
 """
 import logging
+import socket
+
+from threading import Condition
+from datetime import datetime
 
 from PySide import QtCore, QtGui
-from functools import partial
-from twisted.internet import threads
 from zope.proxy import ProxyBase, setProxiedObject
+from twisted.internet import reactor, threads
+from twisted.internet.defer import CancelledError
 
 from leap.bitmask import __version__ as VERSION
+from leap.bitmask import __version_hash__ as VERSION_HASH
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
+
+from leap.bitmask.crypto import srpauth
 from leap.bitmask.crypto.srpauth import SRPAuth
+
 from leap.bitmask.gui.loggerwindow import LoggerWindow
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.login import LoginWidget
@@ -40,7 +49,7 @@ from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.systray import SysTray
 
 from leap.bitmask import provider
-from leap.bitmask.platform_init import IS_WIN, IS_MAC
+from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
 
 from leap.bitmask import backend
@@ -67,6 +76,7 @@ from leap.bitmask.services.eip.darwinvpnlauncher import EIPNoTunKextLoaded
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
 
+from leap.bitmask.util import make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
 
@@ -77,6 +87,8 @@ if IS_WIN:
 from leap.common.check import leap_assert
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
+
+from leap.mail.imap.service.imap import IMAP_PORT
 
 from ui_mainwindow import Ui_MainWindow
 
@@ -94,6 +106,7 @@ class MainWindow(QtGui.QMainWindow):
 
     # Signals
     eip_needs_login = QtCore.Signal([])
+    offline_mode_bypass_login = QtCore.Signal([])
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
@@ -102,6 +115,12 @@ class MainWindow(QtGui.QMainWindow):
 
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
+
+    # We give EIP some time to come up before starting soledad anyway
+    EIP_TIMEOUT = 60000  # in milliseconds
+
+    # We give each service some time to come to a halt before forcing quit
+    SERVICE_STOP_TIMEOUT = 20
 
     def __init__(self, quit_callback,
                  openvpn_verb=1,
@@ -133,12 +152,12 @@ class MainWindow(QtGui.QMainWindow):
         # end register leap events ####################################
 
         self._quit_callback = quit_callback
-
         self._updates_content = ""
 
+        # setup UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-
+        self.menuBar().setNativeMenuBar(not IS_LINUX)
         self._backend = backend.Backend(bypass_checks)
         self._backend.start()
 
@@ -177,6 +196,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self._eip_status.eip_connection_connected.connect(
             self._on_eip_connected)
+        self._eip_status.eip_connection_connected.connect(
+            self._maybe_run_soledad_setup_checks)
+        self.offline_mode_bypass_login.connect(
+            self._maybe_run_soledad_setup_checks)
+
         self.eip_needs_login.connect(
             self._eip_status.disable_eip_start)
         self.eip_needs_login.connect(
@@ -193,10 +217,12 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_config = eipconfig.EIPConfig()
 
         self._already_started_eip = False
+        self._already_started_soledad = False
 
         # This is created once we have a valid provider config
         self._srp_auth = None
         self._logged_user = None
+        self._logged_in_offline = False
 
         self._backend_connect()
 
@@ -232,8 +258,12 @@ class MainWindow(QtGui.QMainWindow):
             self._soledad_intermediate_stage)
         self._soledad_bootstrapper.gen_key.connect(
             self._soledad_bootstrapped_stage)
+        self._soledad_bootstrapper.local_only_ready.connect(
+            self._soledad_bootstrapped_stage)
         self._soledad_bootstrapper.soledad_timeout.connect(
             self._retry_soledad_connection)
+        self._soledad_bootstrapper.soledad_invalid_auth_token.connect(
+            self._mail_status.set_soledad_invalid_auth_token)
         self._soledad_bootstrapper.soledad_failed.connect(
             self._mail_status.set_soledad_failed)
 
@@ -244,6 +274,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
+        self.ui.action_help.triggered.connect(self._help)
         self.ui.action_create_new_account.triggered.connect(
             self._launch_wizard)
 
@@ -277,8 +308,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self._enabled_services = []
 
-        self._center_window()
+        # last minute UI manipulations
 
+        self._center_window()
         self.ui.lblNewUpdates.setVisible(False)
         self.ui.btnMore.setVisible(False)
         #########################################
@@ -287,6 +319,8 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.btnMore.resize(0, 0)
         #########################################
         self.ui.btnMore.clicked.connect(self._updates_details)
+        if flags.OFFLINE is True:
+            self._set_label_offline()
 
         # Services signals/slots connection
         self.new_updates.connect(self._react_to_new_updates)
@@ -316,7 +350,7 @@ class MainWindow(QtGui.QMainWindow):
         self._keymanager = ProxyBase(None)
 
         self._login_defer = None
-        self._download_provider_defer = None
+        self._soledad_defer = None
 
         self._mail_conductor = mail_conductor.MailConductor(
             self._soledad, self._keymanager)
@@ -354,23 +388,22 @@ class MainWindow(QtGui.QMainWindow):
         """
         Helper to connect to backend signals
         """
-        self._backend.signaler.prov_name_resolution.connect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_https_connection.connect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_download_ca_cert.connect(
-            self._intermediate_stage)
+        sig = self._backend.signaler
+        sig.prov_name_resolution.connect(self._intermediate_stage)
+        sig.prov_https_connection.connect(self._intermediate_stage)
+        sig.prov_download_ca_cert.connect(self._intermediate_stage)
 
-        self._backend.signaler.prov_download_provider_info.connect(
-            self._load_provider_config)
-        self._backend.signaler.prov_check_api_certificate.connect(
-            self._provider_config_loaded)
+        sig.prov_download_provider_info.connect(self._load_provider_config)
+        sig.prov_check_api_certificate.connect(self._provider_config_loaded)
 
         # Only used at login, no need to disconnect this like we do
         # with the other
-        self._backend.signaler.prov_problem_with_provider.connect(
-            partial(self._login_widget.set_status,
-                    self.tr("Unable to login: Problem with provider")))
+        sig.prov_problem_with_provider.connect(self._login_problem_provider)
+
+        sig.prov_unsupported_client.connect(self._needs_update)
+        sig.prov_unsupported_api.connect(self._incompatible_api)
+
+        sig.prov_cancelled_setup.connect(self._set_login_cancelled)
 
     def _backend_disconnect(self):
         """
@@ -379,17 +412,13 @@ class MainWindow(QtGui.QMainWindow):
         Some signals are emitted from the wizard, and we want to
         ignore those.
         """
-        self._backend.signaler.prov_name_resolution.disconnect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_https_connection.disconnect(
-            self._intermediate_stage)
-        self._backend.signaler.prov_download_ca_cert.disconnect(
-            self._intermediate_stage)
+        sig = self._backend.signaler
+        sig.prov_name_resolution.disconnect(self._intermediate_stage)
+        sig.prov_https_connection.disconnect(self._intermediate_stage)
+        sig.prov_download_ca_cert.disconnect(self._intermediate_stage)
 
-        self._backend.signaler.prov_download_provider_info.disconnect(
-            self._load_provider_config)
-        self._backend.signaler.prov_check_api_certificate.disconnect(
-            self._provider_config_loaded)
+        sig.prov_download_provider_info.disconnect(self._load_provider_config)
+        sig.prov_check_api_certificate.disconnect(self._provider_config_loaded)
 
     def _rejected_wizard(self):
         """
@@ -412,7 +441,8 @@ class MainWindow(QtGui.QMainWindow):
             # setup but does not register
             self._wizard = None
             self._backend_connect()
-            self._finish_init()
+            if self._wizard_firstrun:
+                self._finish_init()
 
     def _launch_wizard(self):
         """
@@ -431,7 +461,7 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = Wizard(backend=self._backend,
                                   bypass_checks=self._bypass_checks)
             self._wizard.accepted.connect(self._finish_init)
-            self._wizard.rejected.connect(self._wizard.close)
+            self._wizard.rejected.connect(self._rejected_wizard)
 
         self.setVisible(False)
         # Do NOT use exec_, it will use a child event loop!
@@ -564,7 +594,8 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the EIP preferences window.
         """
-        EIPPreferencesWindow(self).show()
+        domain = self._login_widget.get_selected_provider()
+        EIPPreferencesWindow(self, domain).show()
 
     #
     # updates
@@ -705,6 +736,19 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.eipWidget.setVisible(EIP_SERVICE in services)
         self.ui.mailWidget.setVisible(MX_SERVICE in services)
 
+    def _set_label_offline(self):
+        """
+        Set the login label to reflect offline status.
+        """
+        if self._logged_in_offline:
+            provider = ""
+        else:
+            provider = self.ui.lblLoginProvider.text()
+
+        self.ui.lblLoginProvider.setText(
+            provider +
+            self.tr(" (offline mode)"))
+
     #
     # systray
     #
@@ -827,10 +871,13 @@ class MainWindow(QtGui.QMainWindow):
 
         Display the About Bitmask dialog
         """
+        today = datetime.now().date()
+        greet = ("Happy New 1984!... or not ;)<br><br>"
+                 if today.month == 1 and today.day < 15 else "")
         QtGui.QMessageBox.about(
             self, self.tr("About Bitmask - %s") % (VERSION,),
-            self.tr("Version: <b>%s</b><br>"
-                    "<br>"
+            self.tr("Version: <b>%s</b> (%s)<br>"
+                    "<br>%s"
                     "Bitmask is the Desktop client application for "
                     "the LEAP platform, supporting encrypted internet "
                     "proxy, secure email, and secure chat (coming soon).<br>"
@@ -842,7 +889,58 @@ class MainWindow(QtGui.QMainWindow):
                     "and widely available. <br>"
                     "<br>"
                     "<a href='https://leap.se'>More about LEAP"
-                    "</a>") % (VERSION,))
+                    "</a>") % (VERSION, VERSION_HASH[:10], greet))
+
+    def _help(self):
+        """
+        SLOT
+        TRIGGERS: self.ui.action_help.triggered
+
+        Display the Bitmask help dialog.
+        """
+        # TODO: don't hardcode!
+        smtp_port = 2013
+
+        url = ("<a href='https://addons.mozilla.org/es/thunderbird/"
+               "addon/bitmask/'>bitmask addon</a>")
+
+        msg = self.tr(
+            "<strong>Instructions to use mail:</strong><br>"
+            "If you use Thunderbird you can use the Bitmask extension helper. "
+            "Search for 'Bitmask' in the add-on manager or download it "
+            "from: {0}.<br><br>"
+            "You can configure Bitmask manually with these options:<br>"
+            "<em>"
+            "   Incoming -> IMAP, port: {1}<br>"
+            "   Outgoing -> SMTP, port: {2}<br>"
+            "   Username -> your bitmask username.<br>"
+            "   Password -> does not matter, use any text. "
+            " Just don't leave it empty and don't use your account's password."
+            "</em>").format(url, IMAP_PORT, smtp_port)
+        QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
+
+    def _needs_update(self):
+        """
+        Display a warning dialog to inform the user that the app needs update.
+        """
+        url = "https://dl.bitmask.net/"
+        msg = self.tr(
+            "The current client version is not supported "
+            "by this provider.<br>"
+            "Please update to latest version.<br><br>"
+            "You can get the latest version from "
+            "<a href='{0}'>{1}</a>").format(url, url)
+        QtGui.QMessageBox.warning(self, self.tr("Update Needed"), msg)
+
+    def _incompatible_api(self):
+        """
+        Display a warning dialog to inform the user that the provider has an
+        incompatible API.
+        """
+        msg = self.tr(
+            "This provider is not compatible with the client.<br><br>"
+            "Error: API version incompatible.")
+        QtGui.QMessageBox.warning(self, self.tr("Incompatible Provider"), msg)
 
     def changeEvent(self, e):
         """
@@ -891,7 +989,6 @@ class MainWindow(QtGui.QMainWindow):
         """
         # XXX should rename this provider, name clash.
         provider = self._login_widget.get_selected_provider()
-
         self._backend.setup_provider(provider)
 
     def _load_provider_config(self, data):
@@ -904,17 +1001,23 @@ class MainWindow(QtGui.QMainWindow):
         part of the bootstrapping sequence
 
         :param data: result from the last stage of the
-        run_provider_select_checks
+                     run_provider_select_checks
         :type data: dict
         """
         if data[self._backend.PASSED_KEY]:
             selected_provider = self._login_widget.get_selected_provider()
             self._backend.provider_bootstrap(selected_provider)
         else:
-            self._login_widget.set_status(
-                self.tr("Unable to login: Problem with provider"))
             logger.error(data[self._backend.ERROR_KEY])
             self._login_widget.set_enabled(True)
+
+    def _login_problem_provider(self):
+        """
+        Warns the user about a problem with the provider during login.
+        """
+        self._login_widget.set_status(
+            self.tr("Unable to login: Problem with provider"))
+        self._login_widget.set_enabled(True)
 
     def _login(self):
         """
@@ -927,10 +1030,57 @@ class MainWindow(QtGui.QMainWindow):
         start the SRP authentication, and as the last step
         bootstrapping the EIP service
         """
-        leap_assert(self._provider_config, "We need a provider config")
+        # TODO most of this could ve handled by the login widget,
+        # but we'd have to move lblLoginProvider into the widget itself,
+        # instead of having it as a top-level attribute.
+        if flags.OFFLINE is True:
+            logger.debug("OFFLINE mode! bypassing remote login")
+            # TODO reminder, we're not handling logout for offline
+            # mode.
+            self._login_widget.logged_in()
+            self._logged_in_offline = True
+            self._set_label_offline()
+            self.offline_mode_bypass_login.emit()
+        else:
+            leap_assert(self._provider_config, "We need a provider config")
+            if self._login_widget.start_login():
+                self._download_provider_config()
 
-        if self._login_widget.start_login():
-            self._download_provider_config()
+    def _login_errback(self, failure):
+        """
+        Error handler for the srpauth.authenticate method.
+
+        :param failure: failure object that Twisted generates
+        :type failure: twisted.python.failure.Failure
+        """
+        # NOTE: this behavior needs to be managed through the signaler,
+        # as we are doing with the prov_cancelled_setup signal.
+        # After we move srpauth to the backend, we need to update this.
+        logger.error("Error logging in, {0!r}".format(failure))
+
+        if failure.check(CancelledError):
+            logger.debug("Defer cancelled.")
+            failure.trap(Exception)
+            self._set_login_cancelled()
+            return
+        elif failure.check(srpauth.SRPAuthBadUserOrPassword):
+            msg = self.tr("Invalid username or password.")
+        elif failure.check(srpauth.SRPAuthBadStatusCode,
+                           srpauth.SRPAuthenticationError,
+                           srpauth.SRPAuthVerificationFailed,
+                           srpauth.SRPAuthNoSessionId,
+                           srpauth.SRPAuthNoSalt, srpauth.SRPAuthNoB,
+                           srpauth.SRPAuthBadDataFromServer,
+                           srpauth.SRPAuthJSONDecodeError):
+            msg = self.tr("There was a server problem with authentication.")
+        elif failure.check(srpauth.SRPAuthConnectionError):
+            msg = self.tr("Could not establish a connection.")
+        else:
+            # this shouldn't happen, but just in case.
+            msg = self.tr("Unknown error: {0!r}".format(failure.value))
+
+        self._login_widget.set_status(msg)
+        self._login_widget.set_enabled(True)
 
     def _cancel_login(self):
         """
@@ -941,16 +1091,36 @@ class MainWindow(QtGui.QMainWindow):
         Stops the login sequence.
         """
         logger.debug("Cancelling log in.")
+        self._cancel_ongoing_defers()
 
-        if self._download_provider_defer:
-            logger.debug("Cancelling download provider defer.")
-            self._download_provider_defer.cancel()
+    def _cancel_ongoing_defers(self):
+        """
+        Cancel the running defers to avoid app blocking.
+        """
+        self._backend.cancel_setup_provider()
 
-        if self._login_defer:
+        if self._login_defer is not None:
             logger.debug("Cancelling login defer.")
             self._login_defer.cancel()
+            self._login_defer = None
 
+        if self._soledad_defer is not None:
+            logger.debug("Cancelling soledad defer.")
+            self._soledad_defer.cancel()
+            self._soledad_defer = None
+
+    def _set_login_cancelled(self):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.prov_cancelled_setup fired by
+            self._backend.cancel_setup_provider()
+
+        This method re-enables the login widget and display a message for
+        the cancelled operation.
+        """
         self._login_widget.set_status(self.tr("Log in cancelled by the user."))
+        self._login_widget.set_enabled(True)
 
     def _provider_config_loaded(self, data):
         """
@@ -972,18 +1142,18 @@ class MainWindow(QtGui.QMainWindow):
                 self._srp_auth = SRPAuth(self._provider_config)
                 self._srp_auth.authentication_finished.connect(
                     self._authentication_finished)
-                self._srp_auth.logout_finished.connect(
-                    self._done_logging_out)
+                self._srp_auth.logout_ok.connect(self._logout_ok)
+                self._srp_auth.logout_error.connect(self._logout_error)
 
-            # TODO Add errback!
             self._login_defer = self._srp_auth.authenticate(username, password)
+            self._login_defer.addErrback(self._login_errback)
         else:
             self._login_widget.set_status(
                 "Unable to login: Problem with provider")
             logger.error(data[self._backend.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
-    def _authentication_finished(self, ok, message):
+    def _authentication_finished(self):
         """
         SLOT
         TRIGGER: self._srp_auth.authentication_finished
@@ -991,22 +1161,23 @@ class MainWindow(QtGui.QMainWindow):
         Once the user is properly authenticated, try starting the EIP
         service
         """
-        # In general we want to "filter" likely complicated error
-        # messages, but in this case, the messages make more sense as
-        # they come. Since they are "Unknown user" or "Unknown
-        # password"
-        self._login_widget.set_status(message, error=not ok)
+        self._login_widget.set_status(self.tr("Succeeded"), error=False)
 
-        if ok:
-            self._logged_user = self._login_widget.get_user()
-            user = self._logged_user
-            domain = self._provider_config.get_domain()
-            userid = "%s@%s" % (user, domain)
-            self._mail_conductor.userid = userid
-            self._login_defer = None
-            self._start_eip_bootstrap()
-        else:
-            self._login_widget.set_enabled(True)
+        self._logged_user = self._login_widget.get_user()
+        user = self._logged_user
+        domain = self._provider_config.get_domain()
+        full_user_id = make_address(user, domain)
+        self._mail_conductor.userid = full_user_id
+        self._login_defer = None
+        self._start_eip_bootstrap()
+
+        # if soledad/mail is enabled:
+        if MX_SERVICE in self._enabled_services:
+            btn_enabled = self._login_widget.set_logout_btn_enabled
+            btn_enabled(False)
+            self.soledad_ready.connect(lambda: btn_enabled(True))
+            self._soledad_bootstrapper.soledad_failed.connect(
+                lambda: btn_enabled(True))
 
     def _start_eip_bootstrap(self):
         """
@@ -1015,28 +1186,83 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         self._login_widget.logged_in()
-        self.ui.lblLoginProvider.setText(self._provider_config.get_domain())
+        provider = self._provider_config.get_domain()
+        self.ui.lblLoginProvider.setText(provider)
 
         self._enabled_services = self._settings.get_enabled_services(
             self._provider_config.get_domain())
 
         # TODO separate UI from logic.
-        # TODO soledad should check if we want to run only over EIP.
-        if self._provider_config.provides_mx() and \
-           self._enabled_services.count(MX_SERVICE) > 0:
+        if self._provides_mx_and_enabled():
             self._mail_status.about_to_start()
-
-            self._soledad_bootstrapper.run_soledad_setup_checks(
-                self._provider_config,
-                self._login_widget.get_user(),
-                self._login_widget.get_password(),
-                download_if_needed=True)
         else:
             self._mail_status.set_disabled()
 
-        # XXX the config should be downloaded from the start_eip
-        # method.
-        self._download_eip_config()
+        self._maybe_start_eip()
+
+    def _provides_mx_and_enabled(self):
+        """
+        Defines if the current provider provides mx and if we have it enabled.
+
+        :returns: True if provides and is enabled, False otherwise
+        :rtype: bool
+        """
+        provider_config = self._get_best_provider_config()
+        return (provider_config.provides_mx() and
+                MX_SERVICE in self._enabled_services)
+
+    def _provides_eip_and_enabled(self):
+        """
+        Defines if the current provider provides eip and if we have it enabled.
+
+        :returns: True if provides and is enabled, False otherwise
+        :rtype: bool
+        """
+        provider_config = self._get_best_provider_config()
+        return (provider_config.provides_eip() and
+                EIP_SERVICE in self._enabled_services)
+
+    def _maybe_run_soledad_setup_checks(self):
+        """
+        Conditionally start Soledad.
+        """
+        # TODO split.
+        if self._already_started_soledad is True:
+            return
+
+        if not self._provides_mx_and_enabled():
+            return
+
+        username = self._login_widget.get_user()
+        password = unicode(self._login_widget.get_password())
+        provider_domain = self._login_widget.get_selected_provider()
+
+        sb = self._soledad_bootstrapper
+        if flags.OFFLINE is True:
+            provider_domain = self._login_widget.get_selected_provider()
+            sb._password = password
+
+            self._provisional_provider_config.load(
+                provider.get_provider_path(provider_domain))
+
+            full_user_id = make_address(username, provider_domain)
+            uuid = self._settings.get_uuid(full_user_id)
+            self._mail_conductor.userid = full_user_id
+
+            if uuid is None:
+                # We don't need more visibility at the moment,
+                # this is mostly for internal use/debug for now.
+                logger.warning("Sorry! Log-in at least one time.")
+                return
+            fun = sb.load_offline_soledad
+            fun(full_user_id, password, uuid)
+        else:
+            provider_config = self._provider_config
+
+            if self._logged_user is not None:
+                self._soledad_defer = sb.run_soledad_setup_checks(
+                    provider_config, username, password,
+                    download_if_needed=True)
 
     ###################################################################
     # Service control methods: soledad
@@ -1069,8 +1295,9 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug("Retrying soledad connection.")
         if self._soledad_bootstrapper.should_retry_initialization():
             self._soledad_bootstrapper.increment_retries_count()
-            threads.deferToThread(
-                self._soledad_bootstrapper.load_and_sync_soledad)
+            # XXX should cancel the existing socket --- this
+            # is avoiding a clean termination.
+            self._maybe_run_soledad_setup_checks()
         else:
             logger.warning("Max number of soledad initialization "
                            "retries reached.")
@@ -1080,6 +1307,7 @@ class MainWindow(QtGui.QMainWindow):
         SLOT
         TRIGGERS:
           self._soledad_bootstrapper.gen_key
+          self._soledad_bootstrapper.local_only_ready
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
@@ -1106,6 +1334,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Ok, now soledad is ready, so we can allow other things that
         # depend on soledad to start.
+        self._soledad_defer = None
 
         # this will trigger start_imap_service
         # and start_smtp_boostrapping
@@ -1121,10 +1350,13 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.soledad_ready
         """
+        if flags.OFFLINE is True:
+            logger.debug("not starting smtp in offline mode")
+            return
+
         # TODO for simmetry, this should be called start_smtp_service
         # (and delegate all the checks to the conductor)
-        if self._provider_config.provides_mx() and \
-                self._enabled_services.count(MX_SERVICE) > 0:
+        if self._provides_mx_and_enabled():
             self._mail_conductor.smtp_bootstrapper.run_smtp_setup_checks(
                 self._provider_config,
                 self._mail_conductor.smtp_config,
@@ -1152,9 +1384,22 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.soledad_ready
         """
-        if self._provider_config.provides_mx() and \
-                self._enabled_services.count(MX_SERVICE) > 0:
-            self._mail_conductor.start_imap_service()
+        # TODO in the OFFLINE mode we should also modify the  rules
+        # in the mail state machine so it shows that imap is active
+        # (but not smtp since it's not yet ready for offline use)
+        start_fun = self._mail_conductor.start_imap_service
+        if flags.OFFLINE is True:
+            provider_domain = self._login_widget.get_selected_provider()
+            self._provider_config.load(
+                provider.get_provider_path(provider_domain))
+        provides_mx = self._provider_config.provides_mx()
+
+        if flags.OFFLINE is True and provides_mx:
+            start_fun()
+            return
+
+        if self._provides_mx_and_enabled():
+            start_fun()
 
     def _on_mail_client_logged_in(self, req):
         """
@@ -1179,8 +1424,13 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.logout
         """
+        cv = Condition()
+        cv.acquire()
         # TODO call stop_mail_service
-        self._mail_conductor.stop_imap_service()
+        threads.deferToThread(self._mail_conductor.stop_imap_service, cv)
+        # and wait for it to be stopped
+        logger.debug('Waiting for imap service to stop.')
+        cv.wait(self.SERVICE_STOP_TIMEOUT)
 
     # end service control methods (imap)
 
@@ -1230,6 +1480,55 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._eip_connection.qtsigs.connected_signal.emit()
 
+        # check for connectivity
+        provider_config = self._get_best_provider_config()
+        domain = provider_config.get_domain()
+        self._check_name_resolution(domain)
+
+    def _check_name_resolution(self, domain):
+        """
+        Check if we can resolve the given domain name.
+
+        :param domain: the domain to check.
+        :type domain: str
+        """
+        def do_check():
+            """
+            Try to resolve the domain name.
+            """
+            socket.gethostbyname(domain.encode('idna'))
+
+        def check_err(failure):
+            """
+            Errback handler for `do_check`.
+
+            :param failure: the failure that triggered the errback.
+            :type failure: twisted.python.failure.Failure
+            """
+            logger.error(repr(failure))
+            logger.error("Can't resolve hostname.")
+
+            msg = self.tr(
+                "The server at {0} can't be found, because the DNS lookup "
+                "failed. DNS is the network service that translates a "
+                "website's name to its Internet address. Either your computer "
+                "is having trouble connecting to the network, or you are "
+                "missing some helper files that are needed to securely use "
+                "DNS while {1} is active. To install these helper files, quit "
+                "this application and start it again."
+            ).format(domain, self._eip_name)
+
+            show_err = lambda: QtGui.QMessageBox.critical(
+                self, self.tr("Connection Error"), msg)
+            reactor.callLater(0, show_err)
+
+            # python 2.7.4 raises socket.error
+            # python 2.7.5 raises socket.gaierror
+            failure.trap(socket.gaierror, socket.error)
+
+        d = threads.deferToThread(do_check)
+        d.addErrback(check_err)
+
     def _try_autostart_eip(self):
         """
         Tries to autostart EIP
@@ -1250,7 +1549,7 @@ class MainWindow(QtGui.QMainWindow):
             # it adds some delay.
             # Maybe if it's the first run in a session,
             # or we can try only if it fails.
-            self._download_eip_config()
+            self._maybe_start_eip()
         else:
             # XXX: Display a proper message to the user
             self.eip_needs_login.emit()
@@ -1384,8 +1683,9 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._logged_user:
             self._eip_status.set_provider(
-                "%s@%s" % (self._logged_user,
-                           self._get_best_provider_config().get_domain()))
+                make_address(
+                    self._logged_user,
+                    self._get_best_provider_config().get_domain()))
         self._eip_status.eip_stopped()
 
     @QtCore.Slot()
@@ -1482,18 +1782,16 @@ class MainWindow(QtGui.QMainWindow):
 
     # eip boostrapping, config etc...
 
-    def _download_eip_config(self):
+    def _maybe_start_eip(self):
         """
-        Starts the EIP bootstrapping sequence
+        Start the EIP bootstrapping sequence if the client is configured to
+        do so.
         """
         leap_assert(self._eip_bootstrapper, "We need an eip bootstrapper!")
 
         provider_config = self._get_best_provider_config()
 
-        if provider_config.provides_eip() and \
-                self._enabled_services.count(EIP_SERVICE) > 0 and \
-                not self._already_started_eip:
-
+        if self._provides_eip_and_enabled() and not self._already_started_eip:
             # XXX this should be handled by the state machine.
             self._eip_status.set_eip_status(
                 self.tr("Starting..."))
@@ -1501,14 +1799,22 @@ class MainWindow(QtGui.QMainWindow):
                 provider_config,
                 download_if_needed=True)
             self._already_started_eip = True
-        elif not self._already_started_eip:
-            if self._enabled_services.count(EIP_SERVICE) > 0:
-                self._eip_status.set_eip_status(
-                    self.tr("Not supported"),
-                    error=True)
-            else:
-                self._eip_status.disable_eip_start()
-                self._eip_status.set_eip_status(self.tr("Disabled"))
+            # we want to start soledad anyway after a certain timeout if eip
+            # fails to come up
+            QtCore.QTimer.singleShot(
+                self.EIP_TIMEOUT,
+                self._maybe_run_soledad_setup_checks)
+        else:
+            if not self._already_started_eip:
+                if EIP_SERVICE in self._enabled_services:
+                    self._eip_status.set_eip_status(
+                        self.tr("Not supported"),
+                        error=True)
+                else:
+                    self._eip_status.disable_eip_start()
+                    self._eip_status.set_eip_status(self.tr("Disabled"))
+            # eip will not start, so we start soledad anyway
+            self._maybe_run_soledad_setup_checks()
 
     def _finish_eip_bootstrap(self, data):
         """
@@ -1595,20 +1901,35 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts the logout sequence
         """
-
         self._soledad_bootstrapper.cancel_bootstrap()
         setProxiedObject(self._soledad, None)
+
+        self._cancel_ongoing_defers()
+
+        # reset soledad status flag
+        self._already_started_soledad = False
 
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
         threads.deferToThread(self._srp_auth.logout)
         self.logout.emit()
 
-    def _done_logging_out(self, ok, message):
-        # TODO missing params in docstring
+    def _logout_error(self):
         """
         SLOT
-        TRIGGER: self._srp_auth.logout_finished
+        TRIGGER: self._srp_auth.logout_error
+
+        Inform the user about a logout error.
+        """
+        self._login_widget.done_logout()
+        self.ui.lblLoginProvider.setText(self.tr("Login"))
+        self._login_widget.set_status(
+            self.tr("Something went wrong with the logout."))
+
+    def _logout_ok(self):
+        """
+        SLOT
+        TRIGGER: self._srp_auth.logout_ok
 
         Switches the stackedWidget back to the login stage after
         logging out
@@ -1616,15 +1937,9 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.done_logout()
         self.ui.lblLoginProvider.setText(self.tr("Login"))
 
-        if ok:
-            self._logged_user = None
-            self._login_widget.logged_out()
-            self._mail_status.mail_state_disabled()
-
-        else:
-            self._login_widget.set_login_status(
-                self.tr("Something went wrong with the logout."),
-                error=True)
+        self._logged_user = None
+        self._login_widget.logged_out()
+        self._mail_status.mail_state_disabled()
 
     def _intermediate_stage(self, data):
         # TODO this method name is confusing as hell.
@@ -1642,9 +1957,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._backend.PASSED_KEY]
         if not passed:
+            msg = self.tr("Unable to connect: Problem with provider")
+            self._login_widget.set_status(msg)
             self._login_widget.set_enabled(True)
-            self._login_widget.set_status(
-                self.tr("Unable to connect: Problem with provider"))
             logger.error(data[self._backend.ERROR_KEY])
 
     #
@@ -1695,7 +2010,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('About to quit, doing cleanup...')
 
-        self._mail_conductor.stop_imap_service()
+        self._stop_imap_service()
 
         if self._srp_auth is not None:
             if self._srp_auth.get_session_id() is not None or \
@@ -1712,13 +2027,7 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Terminating vpn')
         self._vpn.terminate(shutdown=True)
 
-        if self._login_defer:
-            logger.debug("Cancelling login defer.")
-            self._login_defer.cancel()
-
-        if self._download_provider_defer:
-            logger.debug("Cancelling download provider defer.")
-            self._download_provider_defer.cancel()
+        self._cancel_ongoing_defers()
 
         # TODO missing any more cancels?
 
@@ -1737,7 +2046,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._backend.stop()
         self._cleanup_and_quit()
-
         self._really_quit = True
 
         if self._wizard:
