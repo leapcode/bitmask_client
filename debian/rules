@@ -63,7 +63,11 @@ override_dh_installchangelogs:
 
 override_dh_auto_clean:
 	dh_auto_clean
+	rm -rf .tox
+	rm -rf bin
 	rm -rf build
+	rm -rf lib/
 	rm -rf docs/_build 
 	rm -rf *.egg-info
 	rm -f docs/man/bitmask.1
+	rm -rf docs/covhtml
