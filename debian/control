@@ -2,7 +2,7 @@ Source: bitmask
 Section: misc
 Priority: extra
 Maintainer: Ben Carrillo <ben@futeisha.org>
-Standards-Version: 3.9.4
+Standards-Version: 3.9.5
 Uploaders: Micah Anderson <micah@debian.org>
 Homepage: https://leap.se
 #Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
