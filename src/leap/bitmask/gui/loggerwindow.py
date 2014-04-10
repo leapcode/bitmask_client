@@ -21,14 +21,14 @@ History log window
 import logging
 import cgi
 
-from PySide import QtGui
+from PySide import QtCore, QtGui
 from twisted.internet import threads
 
 from ui_loggerwindow import Ui_LoggerWindow
 
 from leap.bitmask.util.constants import PASTEBIN_API_DEV_KEY
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
-from leap.bitmask.util.pastebin import PastebinAPI, PastebinError
+from leap.bitmask.util.pastebin import PastebinAPI
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -220,12 +220,16 @@ class LoggerWindow(QtGui.QDialog):
             :param link: the recently created pastebin link.
             :type link: str
             """
+            self._set_pastebin_sending(False)
             msg = self.tr("Your pastebin link <a href='{0}'>{0}</a>")
             msg = msg.format(link)
-            show_info = lambda: QtGui.QMessageBox.information(
-                self, self.tr("Pastebin OK"), msg)
-            self._set_pastebin_sending(False)
-            self.reactor.callLater(0, show_info)
+
+            # We save the dialog in an instance member to avoid dialog being
+            # deleted right after we exit this method
+            self._msgBox = msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Information, self.tr("Pastebin OK"), msg)
+            msgBox.setWindowModality(QtCore.Qt.NonModal)
+            msgBox.show()
 
         def pastebin_err(failure):
             """
@@ -234,13 +238,17 @@ class LoggerWindow(QtGui.QDialog):
             :param failure: the failure that triggered the errback.
             :type failure: twisted.python.failure.Failure
             """
-            logger.error(repr(failure))
-            msg = self.tr("Sending logs to Pastebin failed!")
-            show_err = lambda: QtGui.QMessageBox.critical(
-                self, self.tr("Pastebin Error"), msg)
             self._set_pastebin_sending(False)
-            self.reactor.callLater(0, show_err)
-            failure.trap(PastebinError)
+            logger.error(repr(failure))
+
+            msg = self.tr("Sending logs to Pastebin failed!")
+
+            # We save the dialog in an instance member to avoid dialog being
+            # deleted right after we exit this method
+            self._msgBox = msgBox = QtGui.QMessageBox(
+                QtGui.QMessageBox.Critical, self.tr("Pastebin Error"), msg)
+            msgBox.setWindowModality(QtCore.Qt.NonModal)
+            msgBox.show()
 
         self._set_pastebin_sending(True)
         d = threads.deferToThread(do_pastebin)
