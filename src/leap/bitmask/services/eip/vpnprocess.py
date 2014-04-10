@@ -229,8 +229,11 @@ class VPN(object):
         Sends a kill signal to the process.
         """
         self._stop_pollers()
-        self._vpnproc.aborted = True
-        self._vpnproc.killProcess()
+        if self._vpnproc is None:
+            logger.debug("There's no vpn process running to kill.")
+        else:
+            self._vpnproc.aborted = True
+            self._vpnproc.killProcess()
 
     def terminate(self, shutdown=False):
         """
