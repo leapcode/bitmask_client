@@ -1,0 +1,1 @@
+- Add flag to allow the user to start the app hidden in the tray. Closes #4990.

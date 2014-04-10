@@ -59,6 +59,9 @@ def build_parser():
                         action="store_false", dest="api_version_check",
                         help='Skip the api version compatibility check with '
                         'the provider.')
+    parser.add_argument('-H', '--start-hidden', default=False,
+                        action="store_true", dest="start_hidden",
+                        help='Starts the application just in the taskbar.')
 
     # openvpn options
     parser.add_argument('--openvpn-verbosity', nargs='?',

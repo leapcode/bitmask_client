@@ -201,6 +201,7 @@ def main():
     logfile = opts.log_file
     mail_logfile = opts.mail_log_file
     openvpn_verb = opts.openvpn_verb
+    start_hidden = opts.start_hidden
 
     #############################################################
     # Given how paths and bundling works, we need to delay the imports
@@ -307,7 +308,8 @@ def main():
     window = MainWindow(
         lambda: twisted_main.quit(app),
         openvpn_verb=openvpn_verb,
-        bypass_checks=bypass_checks)
+        bypass_checks=bypass_checks,
+        start_hidden=start_hidden)
 
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
