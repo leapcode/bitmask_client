@@ -124,7 +124,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def __init__(self, quit_callback,
                  openvpn_verb=1,
-                 bypass_checks=False):
+                 bypass_checks=False,
+                 start_hidden=False):
         """
         Constructor for the client main window
 
@@ -136,6 +137,9 @@ class MainWindow(QtGui.QMainWindow):
                               first round of checks for CA
                               certificates at bootstrap
         :type bypass_checks: bool
+        :param start_hidden: Set to true if the app should not show the window
+                             but just the tray.
+        :type start_hidden: bool
         """
         QtGui.QMainWindow.__init__(self)
 
@@ -342,6 +346,7 @@ class MainWindow(QtGui.QMainWindow):
         self._logger_window = None
 
         self._bypass_checks = bypass_checks
+        self._start_hidden = start_hidden
 
         # We initialize Soledad and Keymanager instances as
         # transparent proxies, so we can pass the reference freely
@@ -666,9 +671,11 @@ class MainWindow(QtGui.QMainWindow):
         providers = self._settings.get_configured_providers()
         self._login_widget.set_providers(providers)
         self._show_systray()
-        self.show()
-        if IS_MAC:
-            self.raise_()
+
+        if not self._start_hidden:
+            self.show()
+            if IS_MAC:
+                self.raise_()
 
         self._hide_unsupported_services()
 
@@ -786,6 +793,12 @@ class MainWindow(QtGui.QMainWindow):
 
         self._mail_status.set_systray(self._systray)
         self._eip_status.set_systray(self._systray)
+
+        hello = lambda: self._systray.showMessage(
+            self.tr('Hello!'),
+            self.tr('Bitmask has started in the tray.'))
+        # we wait for the systray to be ready
+        reactor.callLater(1, hello)
 
     def _tray_activated(self, reason=None):
         """
