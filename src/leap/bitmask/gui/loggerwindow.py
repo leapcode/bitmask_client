@@ -28,7 +28,7 @@ from ui_loggerwindow import Ui_LoggerWindow
 
 from leap.bitmask.util.constants import PASTEBIN_API_DEV_KEY
 from leap.bitmask.util.leap_log_handler import LeapLogHandler
-from leap.bitmask.util.pastebin import PastebinAPI
+from leap.bitmask.util import pastebin
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -203,7 +203,7 @@ class LoggerWindow(QtGui.QDialog):
             Send content to pastebin and return the link.
             """
             content = self._current_history
-            pb = PastebinAPI()
+            pb = pastebin.PastebinAPI()
             link = pb.paste(PASTEBIN_API_DEV_KEY, content,
                             paste_name="Bitmask log",
                             paste_expire_date='1W')
@@ -242,6 +242,8 @@ class LoggerWindow(QtGui.QDialog):
             logger.error(repr(failure))
 
             msg = self.tr("Sending logs to Pastebin failed!")
+            if failure.check(pastebin.PostLimitError):
+                msg = self.tr('Maximum posts per day reached')
 
             # We save the dialog in an instance member to avoid dialog being
             # deleted right after we exit this method
