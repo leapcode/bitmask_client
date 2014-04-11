@@ -1,0 +1,1 @@
+- Hide the main window on quit as first thing and show a tooltip to inform that we are closing.

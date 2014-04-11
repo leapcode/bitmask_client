@@ -2041,6 +2041,15 @@ class MainWindow(QtGui.QMainWindow):
         # TODO separate the shutting down of services from the
         # UI stuff.
 
+        # first thing to do quitting, hide the mainwindow and show tooltip.
+        self.hide()
+        self._systray.showMessage(
+            self.tr('Quitting...'),
+            self.tr('The app is quitting, please wait.'))
+
+        # explicitly process events to display tooltip immediately
+        QtCore.QCoreApplication.processEvents()
+
         # Set this in case that the app is hidden
         QtGui.QApplication.setQuitOnLastWindowClosed(True)
 
