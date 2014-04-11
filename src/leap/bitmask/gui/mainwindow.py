@@ -1783,6 +1783,8 @@ class MainWindow(QtGui.QMainWindow):
         elif exitCode != 0 or not self.user_stopped_eip:
             eip_status_label = self.tr("{0} finished in an unexpected manner!")
             eip_status_label = eip_status_label.format(self._eip_name)
+            self._eip_status.eip_stopped()
+            self._eip_status.set_eip_status_icon("error")
             self._eip_status.set_eip_status(eip_status_label, error=True)
             signal = qtsigs.connection_died_signal
 
