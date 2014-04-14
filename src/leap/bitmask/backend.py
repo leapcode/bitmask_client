@@ -82,7 +82,7 @@ class ILEAPService(ILEAPComponent):
 
     def start(self):
         """
-        Starts the service.
+        Start the service.
         """
         pass
 
@@ -94,13 +94,13 @@ class ILEAPService(ILEAPComponent):
 
     def terminate(self):
         """
-        Terminates the service, not necessarily in a nice way.
+        Terminate the service, not necessarily in a nice way.
         """
         pass
 
     def status(self):
         """
-        Returns a json object with the current status for the service.
+        Return a json object with the current status for the service.
 
         :rtype: object (list, str, dict)
         """
@@ -111,7 +111,7 @@ class ILEAPService(ILEAPComponent):
 
     def set_configs(self, keyval):
         """
-        Sets the config parameters for this Service.
+        Set the config parameters for this Service.
 
         :param keyval: values to configure
         :type keyval: dict, {str: str}
@@ -120,7 +120,7 @@ class ILEAPService(ILEAPComponent):
 
     def get_configs(self, keys):
         """
-        Returns the configuration values for the list of keys.
+        Return the configuration values for the list of keys.
 
         :param keys: keys to retrieve
         :type keys: list of str
@@ -158,7 +158,7 @@ class Provider(object):
 
     def setup_provider(self, provider):
         """
-        Initiates the setup for a provider
+        Initiate the setup for a provider
 
         :param provider: URL for the provider
         :type provider: unicode
@@ -280,7 +280,7 @@ class EIP(object):
 
     def setup_eip(self, domain):
         """
-        Initiates the setup for a provider
+        Initiate the setup for a provider
 
         :param domain: URL for the provider
         :type domain: unicode
@@ -308,7 +308,7 @@ class EIP(object):
 
     def _start_eip(self):
         """
-        Starts EIP
+        Start EIP
         """
         provider_config = self._provider_config
         eip_config = eipconfig.EIPConfig()
@@ -331,7 +331,7 @@ class EIP(object):
 
     def start(self):
         """
-        Starts the service.
+        Start the service.
         """
         signaler = self._signaler
 
@@ -366,19 +366,19 @@ class EIP(object):
 
     def stop(self, shutdown=False):
         """
-        Stops the service.
+        Stop the service.
         """
         self._vpn.terminate(shutdown)
 
     def terminate(self):
         """
-        Terminates the service, not necessarily in a nice way.
+        Terminate the service, not necessarily in a nice way.
         """
         self._vpn.killit()
 
     def status(self):
         """
-        Returns a json object with the current status for the service.
+        Return a json object with the current status for the service.
 
         :rtype: object (list, str, dict)
         """
@@ -389,7 +389,7 @@ class EIP(object):
 
     def _provider_is_initialized(self, domain):
         """
-        Returns if the given domain is initialized or not.
+        Return whether the given domain is initialized or not.
 
         :param domain: the domain to check
         :type domain: str
@@ -405,12 +405,13 @@ class EIP(object):
 
     def get_initialized_providers(self, domains):
         """
-        Signals a list of the given domains and if they are initialized or not.
+        Signal a list of the given domains and if they are initialized or not.
 
         :param domains: the list of domains to check.
         :type domain: list of str
 
-        :signal type: list of tuples (str, bool)
+        Signals:
+            eip_get_initialized_providers -> list of tuple(unicode, bool)
         """
         filtered_domains = []
         for domain in domains:
@@ -423,12 +424,15 @@ class EIP(object):
 
     def get_gateways_list(self, domain):
         """
-        Signals a list of gateways for the given provider.
+        Signal a list of gateways for the given provider.
 
         :param domain: the domain to get the gateways.
         :type domain: str
 
-        :signal type: list of str
+        Signals:
+            eip_get_gateways_list -> list of unicode
+            eip_get_gateways_list_error
+            eip_uninitialized_provider
         """
         if not self._provider_is_initialized(domain):
             if self._signaler is not None:
@@ -479,7 +483,7 @@ class Authenticate(object):
 
     def login(self, domain, username, password):
         """
-        Executes the whole authentication process for a user
+        Execute the whole authentication process for a user
 
         :param domain: the domain where we need to authenticate.
         :type domain: unicode
@@ -511,7 +515,7 @@ class Authenticate(object):
 
     def change_password(self, current_password, new_password):
         """
-        Changes the user's password.
+        Change the user's password.
 
         :param current_password: the current password of the user.
         :type current_password: str
@@ -530,7 +534,7 @@ class Authenticate(object):
 
     def logout(self):
         """
-        Logs out the current session.
+        Log out the current session.
         Expects a session_id to exists, might raise AssertionError
         """
         if not self._is_logged_in():
@@ -550,7 +554,7 @@ class Authenticate(object):
 
     def get_logged_in_status(self):
         """
-        Signals if the user is currently logged in or not.
+        Signal if the user is currently logged in or not.
         """
         if self._signaler is None:
             return
@@ -947,55 +951,214 @@ class Backend(object):
     # send_multipart and this backend class will be really simple.
 
     def setup_provider(self, provider):
+        """
+        Initiate the setup for a provider.
+
+        :param provider: URL for the provider
+        :type provider: unicode
+
+        Signals:
+            prov_unsupported_client
+            prov_unsupported_api
+            prov_name_resolution        -> { PASSED_KEY: bool, ERROR_KEY: str }
+            prov_https_connection       -> { PASSED_KEY: bool, ERROR_KEY: str }
+            prov_download_provider_info -> { PASSED_KEY: bool, ERROR_KEY: str }
+        """
         self._call_queue.put(("provider", "setup_provider", None, provider))
 
     def cancel_setup_provider(self):
+        """
+        Cancel the ongoing setup provider (if any).
+        """
         self._call_queue.put(("provider", "cancel_setup_provider", None))
 
     def provider_bootstrap(self, provider):
+        """
+        Second stage of bootstrapping for a provider.
+
+        :param provider: URL for the provider
+        :type provider: unicode
+
+        Signals:
+            prov_problem_with_provider
+            prov_download_ca_cert      -> {PASSED_KEY: bool, ERROR_KEY: str}
+            prov_check_ca_fingerprint  -> {PASSED_KEY: bool, ERROR_KEY: str}
+            prov_check_api_certificate -> {PASSED_KEY: bool, ERROR_KEY: str}
+        """
         self._call_queue.put(("provider", "bootstrap", None, provider))
 
     def register_user(self, provider, username, password):
+        """
+        Register a user using the domain and password given as parameters.
+
+        :param domain: the domain we need to register the user.
+        :type domain: unicode
+        :param username: the user name
+        :type username: unicode
+        :param password: the password for the username
+        :type password: unicode
+
+        Signals:
+            srp_registration_finished
+            srp_registration_taken
+            srp_registration_failed
+        """
         self._call_queue.put(("register", "register_user", None, provider,
                               username, password))
 
     def setup_eip(self, provider):
+        """
+        Initiate the setup for a provider
+
+        :param domain: URL for the provider
+        :type domain: unicode
+
+        Signals:
+            eip_config_ready             -> {PASSED_KEY: bool, ERROR_KEY: str}
+            eip_client_certificate_ready -> {PASSED_KEY: bool, ERROR_KEY: str}
+            eip_cancelled_setup
+        """
         self._call_queue.put(("eip", "setup_eip", None, provider))
 
     def cancel_setup_eip(self):
+        """
+        Cancel the ongoing setup EIP (if any).
+        """
         self._call_queue.put(("eip", "cancel_setup_eip", None))
 
     def start_eip(self):
+        """
+        Start the EIP service.
+
+        Signals:
+            backend_bad_call
+            eip_alien_open_vpn_already_running
+            eip_connected
+            eip_connection_aborted
+            eip_network_unreachable
+            eip_no_pkexec_error
+            eip_no_polkit_agent_error
+            eip_no_tun_kext_error
+            eip_open_vpn_already_running
+            eip_open_vpn_not_found_error
+            eip_process_finished
+            eip_process_restart_ping
+            eip_process_restart_tls
+            eip_state_changed -> str
+            eip_status_changed -> str
+            eip_vpn_launcher_exception
+        """
         self._call_queue.put(("eip", "start", None))
 
     def stop_eip(self, shutdown=False):
+        """
+        Stop the EIP service.
+        """
         self._call_queue.put(("eip", "stop", None, shutdown))
 
     def terminate_eip(self):
+        """
+        Terminate the EIP service, not necessarily in a nice way.
+        """
         self._call_queue.put(("eip", "terminate", None))
 
     def eip_get_gateways_list(self, domain):
+        """
+        Signal a list of gateways for the given provider.
+
+        :param domain: the domain to get the gateways.
+        :type domain: str
+
+        # TODO discuss how to document the expected result object received of
+        # the signal
+        :signal type: list of str
+
+        Signals:
+            eip_get_gateways_list -> list of unicode
+            eip_get_gateways_list_error
+            eip_uninitialized_provider
+        """
         self._call_queue.put(("eip", "get_gateways_list", None, domain))
 
     def eip_get_initialized_providers(self, domains):
+        """
+        Signal a list of the given domains and if they are initialized or not.
+
+        :param domains: the list of domains to check.
+        :type domain: list of str
+
+        Signals:
+            eip_get_initialized_providers -> list of tuple(unicode, bool)
+
+        """
         self._call_queue.put(("eip", "get_initialized_providers",
                               None, domains))
 
     def login(self, provider, username, password):
+        """
+        Execute the whole authentication process for a user
+
+        :param domain: the domain where we need to authenticate.
+        :type domain: unicode
+        :param username: username for this session
+        :type username: str
+        :param password: password for this user
+        :type password: str
+
+        Signals:
+            srp_auth_error
+            srp_auth_ok
+            srp_auth_bad_user_or_password
+            srp_auth_server_error
+            srp_auth_connection_error
+            srp_auth_error
+        """
         self._call_queue.put(("authenticate", "login", None, provider,
                               username, password))
 
     def logout(self):
+        """
+        Log out the current session.
+
+        Signals:
+            srp_logout_ok
+            srp_logout_error
+            srp_not_logged_in_error
+        """
         self._call_queue.put(("authenticate", "logout", None))
 
     def cancel_login(self):
+        """
+        Cancel the ongoing login (if any).
+        """
         self._call_queue.put(("authenticate", "cancel_login", None))
 
     def change_password(self, current_password, new_password):
+        """
+        Change the user's password.
+
+        :param current_password: the current password of the user.
+        :type current_password: str
+        :param new_password: the new password for the user.
+        :type new_password: str
+
+        Signals:
+            srp_not_logged_in_error
+            srp_password_change_ok
+            srp_password_change_badpw
+            srp_password_change_error
+        """
         self._call_queue.put(("authenticate", "change_password", None,
                               current_password, new_password))
 
     def get_logged_in_status(self):
+        """
+        Signal if the user is currently logged in or not.
+
+        Signals:
+            srp_status_logged_in
+            srp_status_not_logged_in
+        """
         self._call_queue.put(("authenticate", "get_logged_in_status", None))
 
     ###########################################################################
