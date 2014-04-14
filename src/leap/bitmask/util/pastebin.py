@@ -27,8 +27,8 @@
 
 
 __ALL__ = ['delete_paste', 'user_details', 'trending', 'pastes_by_user',
-           'generate_user_key', 'legacy_paste', 'paste', 'Pastebin',
-           'PastebinError']
+           'generate_user_key', 'paste', 'Pastebin', 'PastebinError',
+           'PostLimitError']
 
 import urllib
 
@@ -38,6 +38,12 @@ class PastebinError(RuntimeError):
 
     The error message returned by the web application is stored as the Python
     exception message."""
+
+
+class PostLimitError(PastebinError):
+    """The user reached the limit of posts that can do in a day.
+    For more information look at: http://pastebin.com/faq#11a
+    """
 
 
 class PastebinAPI(object):
@@ -66,6 +72,9 @@ class PastebinAPI(object):
 
     # String to determine bad API requests
     _bad_request = 'Bad API request'
+
+    # String to determine if we reached the max post limit per day
+    _post_limit = 'Post limit, maximum pastes per 24h reached'
 
     # Base domain name
     _base_domain = 'pastebin.com'
@@ -708,95 +717,8 @@ class PastebinAPI(object):
         # errors we are likely to encounter
         if response.startswith(self._bad_request):
             raise PastebinError(response)
-        elif not response.startswith(self._prefix_url):
-            raise PastebinError(response)
-
-        return response
-
-    def legacy_paste(self, paste_code,
-                     paste_name=None, paste_private=None,
-                     paste_expire_date=None, paste_format=None):
-        """Unofficial python interface to the Pastebin legacy API.
-
-        Unlike the official API, this one doesn't require an API key, so it's
-        virtually anonymous.
-
-
-        Usage Example::
-            from pastebin import PastebinAPI
-            x = PastebinAPI()
-            url = x.legacy_paste('Snippet of code to paste goes here',
-                                paste_name = 'title of paste',
-                                paste_private = 'unlisted',
-                                paste_expire_date = '10M',
-                                paste_format = 'python')
-            print url
-            http://pastebin.com/tawPUgqY
-
-
-        @type   paste_code: string
-        @param  paste_code: The file or string to paste to body of the
-                            U{http://pastebin.com} paste.
-
-        @type   paste_name: string
-        @param  paste_name: (Optional) Title of the paste.
-            Default is to paste with no title.
-
-        @type   paste_private: string
-        @param  paste_private: (Optional) C{'public'} if the paste is public
-            (visible by everyone), C{'unlisted'} if it's public but not
-            searchable. C{'private'} if the paste is private and not
-            searchable or indexed.
-            The Pastebin FAQ (U{http://pastebin.com/faq}) claims
-            private pastes are not indexed by search engines (aka Google).
-
-        @type   paste_expire_date: string
-        @param  paste_expire_date: (Optional) Expiration date for the paste.
-            Once past this date the paste is deleted automatically. Valid
-            values are found in the L{PastebinAPI.paste_expire_date} class
-            member.
-            If not provided, the paste never expires.
-
-        @type   paste_format: string
-        @param  paste_format: (Optional) Programming language of the code being
-            pasted. This enables syntax highlighting when reading the code in
-            U{http://pastebin.com}. Default is no syntax highlighting (text is
-            just text and not source code).
-
-        @rtype:  string
-        @return: Returns the URL to the newly created paste.
-        """
-
-        # Code snippet to submit
-        argv = {'paste_code': str(paste_code)}
-
-        # Name of the poster
-        if paste_name is not None:
-            argv['paste_name'] = str(paste_name)
-
-        # Is the snippet private?
-        if paste_private is not None:
-            argv['paste_private'] = int(bool(int(paste_private)))
-
-        # Expiration for the snippet
-        if paste_expire_date is not None:
-            paste_expire_date = str(paste_expire_date).strip().upper()
-            argv['paste_expire_date'] = paste_expire_date
-
-        # Syntax highlighting
-        if paste_format is not None:
-            paste_format = str(paste_format).strip().lower()
-            argv['paste_format'] = paste_format
-
-        # lets try to read the URL that we've just built.
-        data = urllib.urlencode(argv)
-        request_string = urllib.urlopen(self._legacy_api_url, data)
-        response = request_string.read()
-
-        # do some basic error checking here so we can gracefully handle any
-        # errors we are likely to encounter
-        if response.startswith(self._bad_request):
-            raise PastebinError(response)
+        elif response.startswith(self._post_limit):
+            raise PostLimitError(response)
         elif not response.startswith(self._prefix_url):
             raise PastebinError(response)
 
@@ -810,5 +732,4 @@ user_details = PastebinAPI.user_details
 trending = PastebinAPI.trending
 pastes_by_user = PastebinAPI.pastes_by_user
 generate_user_key = PastebinAPI.generate_user_key
-legacy_paste = PastebinAPI.legacy_paste
 paste = PastebinAPI.paste
