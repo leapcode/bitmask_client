@@ -804,7 +804,6 @@ class Signaler(QtCore.QObject):
         # Right now it emits Qt signals. The backend version of this
         # will do zmq.send_multipart, and the frontend version will be
         # similar to this
-        log.msg("Signaling %s :: %s" % (key, data))
 
         # for some reason emitting 'None' gives a segmentation fault.
         if data is None:
@@ -813,7 +812,7 @@ class Signaler(QtCore.QObject):
         try:
             self._signals[key].emit(data)
         except KeyError:
-            log.msg("Unknown key for signal %s!" % (key,))
+            log.err("Unknown key for signal %s!" % (key,))
 
 
 class Backend(object):
