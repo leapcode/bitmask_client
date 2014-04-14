@@ -596,8 +596,8 @@ class Signaler(QtCore.QObject):
     srp_registration_taken = QtCore.Signal(object)
 
     # Signals for EIP bootstrapping
-    eip_download_config = QtCore.Signal(object)
-    eip_download_client_certificate = QtCore.Signal(object)
+    eip_config_ready = QtCore.Signal(object)
+    eip_client_certificate_ready = QtCore.Signal(object)
 
     eip_cancelled_setup = QtCore.Signal(object)
 
@@ -683,10 +683,8 @@ class Signaler(QtCore.QObject):
     SRP_STATUS_LOGGED_IN = "srp_status_logged_in"
     SRP_STATUS_NOT_LOGGED_IN = "srp_status_not_logged_in"
 
-    # TODO change the name of "download_config" signal to
-    # something less confusing (config_ready maybe)
-    EIP_DOWNLOAD_CONFIG = "eip_download_config"
-    EIP_DOWNLOAD_CLIENT_CERTIFICATE = "eip_download_client_certificate"
+    EIP_CONFIG_READY = "eip_config_ready"
+    EIP_CLIENT_CERTIFICATE_READY = "eip_client_certificate_ready"
     EIP_CANCELLED_SETUP = "eip_cancelled_setup"
 
     EIP_CONNECTED = "eip_connected"
@@ -739,8 +737,8 @@ class Signaler(QtCore.QObject):
             self.SRP_REGISTRATION_FAILED,
             self.SRP_REGISTRATION_TAKEN,
 
-            self.EIP_DOWNLOAD_CONFIG,
-            self.EIP_DOWNLOAD_CLIENT_CERTIFICATE,
+            self.EIP_CONFIG_READY,
+            self.EIP_CLIENT_CERTIFICATE_READY,
             self.EIP_CANCELLED_SETUP,
 
             self.EIP_CONNECTED,

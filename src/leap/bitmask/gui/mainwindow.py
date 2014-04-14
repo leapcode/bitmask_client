@@ -412,9 +412,9 @@ class MainWindow(QtGui.QMainWindow):
                                 self._not_logged_in_error)
 
         # EIP bootstrap signals
-        self._connect_and_track(sig.eip_download_config,
+        self._connect_and_track(sig.eip_config_ready,
                                 self._eip_intermediate_stage)
-        self._connect_and_track(sig.eip_download_client_certificate,
+        self._connect_and_track(sig.eip_client_certificate_ready,
                                 self._finish_eip_bootstrap)
 
         # We don't want to disconnect some signals so don't track them:
@@ -1825,7 +1825,7 @@ class MainWindow(QtGui.QMainWindow):
     def _finish_eip_bootstrap(self, data):
         """
         SLOT
-        TRIGGER: self._backend.signaler.eip_download_client_certificate
+        TRIGGER: self._backend.signaler.eip_client_certificate_ready
 
         Starts the VPN thread if the eip configuration is properly
         loaded
@@ -1847,7 +1847,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         SLOT
         TRIGGERS:
-          self._backend.signaler.eip_download_config
+          self._backend.signaler.eip_config_ready
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
@@ -1942,7 +1942,7 @@ class MainWindow(QtGui.QMainWindow):
           self._backend.signaler.prov_name_resolution
           self._backend.signaler.prov_https_connection
           self._backend.signaler.prov_download_ca_cert
-          self._backend.signaler.eip_download_config
+          self._backend.signaler.eip_config_ready
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
