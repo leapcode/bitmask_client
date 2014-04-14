@@ -1,0 +1,1 @@
+- Hide the bandwidth widget and update status icon if the openvpn process is killed. Closes #5497.
