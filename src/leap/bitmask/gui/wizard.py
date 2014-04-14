@@ -390,7 +390,13 @@ class Wizard(QtGui.QWizard):
 
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
-        self.ui.lnProvider.setEnabled(False)
+
+        # Disable provider widget
+        if self.ui.rbNewProvider.isChecked():
+            self.ui.lnProvider.setEnabled(False)
+        else:
+            self.ui.cbProviders.setEnabled(False)
+
         self.button(QtGui.QWizard.BackButton).clearFocus()
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
@@ -506,7 +512,12 @@ class Wizard(QtGui.QWizard):
                              "</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(True)
-        self.ui.lnProvider.setEnabled(True)
+
+        # Enable provider widget
+        if self.ui.rbNewProvider.isChecked():
+            self.ui.lnProvider.setEnabled(True)
+        else:
+            self.ui.cbProviders.setEnabled(True)
 
     def _download_ca_cert(self, data):
         """

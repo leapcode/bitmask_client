@@ -1,0 +1,1 @@
+- Disable providers combo box during check and enable combo or line edit depending on radio button. Closes #5495.
