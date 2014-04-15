@@ -149,7 +149,6 @@ class Provider(object):
                               certificates at bootstrap
         :type bypass_checks: bool
         """
-        object.__init__(self)
         self.key = "provider"
         self._provider_bootstrapper = ProviderBootstrapper(signaler,
                                                            bypass_checks)
@@ -224,7 +223,6 @@ class Register(object):
                          back to the frontend
         :type signaler: Signaler
         """
-        object.__init__(self)
         self.key = "register"
         self._signaler = signaler
 
@@ -269,7 +267,6 @@ class EIP(object):
                          back to the frontend
         :type signaler: Signaler
         """
-        object.__init__(self)
         self.key = "eip"
         self._signaler = signaler
         self._eip_bootstrapper = EIPBootstrapper(signaler)
@@ -476,7 +473,6 @@ class Authenticate(object):
                          back to the frontend
         :type signaler: Signaler
         """
-        object.__init__(self)
         self.key = "authenticate"
         self._signaler = signaler
         self._srp_auth = None
@@ -829,8 +825,6 @@ class Backend(object):
         """
         Constructor for the backend.
         """
-        object.__init__(self)
-
         # Components map for the commands received
         self._components = {}
 
