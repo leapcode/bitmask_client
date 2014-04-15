@@ -19,12 +19,21 @@ Main functions for integration of twisted reactor
 """
 import logging
 
-from twisted.internet import error
+from twisted.internet import error, reactor
+from PySide import QtCore
 
 # Resist the temptation of putting the import reactor here,
 # it will raise an "reactor already imported" error.
 
 logger = logging.getLogger(__name__)
+
+
+def stop():
+    logger.debug("Really stoping all the things...")
+    QtCore.QCoreApplication.sendPostedEvents()
+    QtCore.QCoreApplication.flush()
+    reactor.stop()
+    logger.debug("Done stopping all the things.")
 
 
 def quit(app):
@@ -34,9 +43,8 @@ def quit(app):
     :param app: the main qt QApplication instance.
     :type app: QtCore.QApplication
     """
-    from twisted.internet import reactor
     logger.debug('Stopping twisted reactor')
     try:
-        reactor.callLater(0, reactor.stop)
+        reactor.callLater(0, stop)
     except error.ReactorNotRunning:
         logger.debug('Reactor not running')
