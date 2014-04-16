@@ -340,11 +340,11 @@ class EIP(object):
         try:
             self._start_eip()
         except vpnprocess.OpenVPNAlreadyRunning:
-            signaler.signal(signaler.EIP_OPEN_VPN_ALREADY_RUNNING)
+            signaler.signal(signaler.EIP_OPENVPN_ALREADY_RUNNING)
         except vpnprocess.AlienOpenVPNAlreadyRunning:
-            signaler.signal(signaler.EIP_ALIEN_OPEN_VPN_ALREADY_RUNNING)
+            signaler.signal(signaler.EIP_ALIEN_OPENVPN_ALREADY_RUNNING)
         except vpnlauncher.OpenVPNNotFoundException:
-            signaler.signal(signaler.EIP_OPEN_VPN_NOT_FOUND_ERROR)
+            signaler.signal(signaler.EIP_OPENVPN_NOT_FOUND_ERROR)
         except vpnlauncher.VPNLauncherException:
             # TODO: this seems to be used for 'gateway not found' only.
             #       see vpnlauncher.py
@@ -1027,15 +1027,15 @@ class Backend(object):
 
         Signals:
             backend_bad_call
-            eip_alien_open_vpn_already_running
+            eip_alien_openvpn_already_running
             eip_connected
             eip_connection_aborted
             eip_network_unreachable
             eip_no_pkexec_error
             eip_no_polkit_agent_error
             eip_no_tun_kext_error
-            eip_open_vpn_already_running
-            eip_open_vpn_not_found_error
+            eip_openvpn_already_running
+            eip_openvpn_not_found_error
             eip_process_finished
             eip_process_restart_ping
             eip_process_restart_tls
