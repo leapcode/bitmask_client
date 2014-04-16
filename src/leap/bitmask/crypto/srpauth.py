@@ -687,6 +687,18 @@ class SRPAuth(object):
             with self._token_lock:
                 return self._token
 
+        def is_authenticated(self):
+            """
+            Return whether the user is authenticated or not.
+
+            :rtype: bool
+            """
+            user = self._srp_user
+            if user is not None:
+                return user.authenticated()
+
+            return False
+
     __instance = None
 
     def __init__(self, provider_config, signaler=None):
@@ -735,11 +747,7 @@ class SRPAuth(object):
 
         :rtype: bool
         """
-        user = self.__instance._srp_user
-        if user is not None:
-            return self.__instance.authenticated()
-
-        return False
+        return self.__instance.is_authenticated()
 
     def change_password(self, current_password, new_password):
         """
