@@ -457,9 +457,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self._backend_connected_signals = {}
 
+    @QtCore.Slot()
     def _rejected_wizard(self):
         """
-        SLOT
         TRIGGERS: self._wizard.rejected
 
         Called if the wizard has been cancelled or closed before
@@ -481,9 +481,9 @@ class MainWindow(QtGui.QMainWindow):
             if self._wizard_firstrun:
                 self._finish_init()
 
+    @QtCore.Slot()
     def _launch_wizard(self):
         """
-        SLOT
         TRIGGERS:
           self._login_widget.show_wizard
           self.ui.action_wizard.triggered
@@ -509,9 +509,9 @@ class MainWindow(QtGui.QMainWindow):
         self._wizard.finished.connect(self._wizard_finished)
         self._settings.set_skip_first_run(True)
 
+    @QtCore.Slot()
     def _wizard_finished(self):
         """
-        SLOT
         TRIGGERS
           self._wizard.finished
 
@@ -534,9 +534,9 @@ class MainWindow(QtGui.QMainWindow):
                 return h
         return None
 
+    @QtCore.Slot()
     def _show_logger_window(self):
         """
-        SLOT
         TRIGGERS:
           self.ui.action_show_logs.triggered
 
@@ -555,9 +555,9 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._logger_window.setVisible(not self._logger_window.isVisible())
 
+    @QtCore.Slot()
     def _show_AKM(self):
         """
-        SLOT
         TRIGGERS:
             self.ui.action_advanced_key_management.triggered
 
@@ -569,9 +569,9 @@ class MainWindow(QtGui.QMainWindow):
             logged_user, self._keymanager, self._soledad)
         self._akm.show()
 
+    @QtCore.Slot()
     def _show_preferences(self):
         """
-        SLOT
         TRIGGERS:
           self.ui.btnPreferences.clicked (disabled for now)
           self.ui.action_preferences
@@ -586,9 +586,9 @@ class MainWindow(QtGui.QMainWindow):
         preferences.show()
         preferences.preferences_saved.connect(self._update_eip_enabled_status)
 
+    @QtCore.Slot()
     def _update_eip_enabled_status(self):
         """
-        SLOT
         TRIGGER:
             PreferencesWindow.preferences_saved
 
@@ -622,9 +622,9 @@ class MainWindow(QtGui.QMainWindow):
 
         return eip_enabled
 
+    @QtCore.Slot()
     def _show_eip_preferences(self):
         """
-        SLOT
         TRIGGERS:
           self.ui.btnEIPPreferences.clicked
           self.ui.action_eip_preferences (disabled for now)
@@ -647,9 +647,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         self.new_updates.emit(req)
 
+    @QtCore.Slot(object)
     def _react_to_new_updates(self, req):
         """
-        SLOT
         TRIGGER: self._new_updates_available
 
         Displays the new updates label and sets the updates_content
@@ -659,9 +659,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.btnMore.setVisible(True)
         self._updates_content = req.content
 
+    @QtCore.Slot()
     def _updates_details(self):
         """
-        SLOT
         TRIGGER: self.ui.btnMore.clicked
 
         Parses and displays the updates details
@@ -686,9 +686,9 @@ class MainWindow(QtGui.QMainWindow):
                                       self.tr("Updates available"),
                                       msg)
 
+    @QtCore.Slot()
     def _finish_init(self):
         """
-        SLOT
         TRIGGERS:
           self._wizard.accepted
 
@@ -832,9 +832,9 @@ class MainWindow(QtGui.QMainWindow):
         # we wait for the systray to be ready
         reactor.callLater(1, hello)
 
+    @QtCore.Slot(int)
     def _tray_activated(self, reason=None):
         """
-        SLOT
         TRIGGER: self._systray.activated
 
         Displays the context menu from the tray icon
@@ -862,9 +862,9 @@ class MainWindow(QtGui.QMainWindow):
         visible = self.isVisible() and self.isActiveWindow()
         self._action_visible.setText(get_action(visible))
 
+    @QtCore.Slot()
     def _toggle_visible(self):
         """
-        SLOT
         TRIGGER: self._action_visible.triggered
 
         Toggles the window visibility
@@ -909,9 +909,9 @@ class MainWindow(QtGui.QMainWindow):
         if state is not None:
             self.restoreState(state)
 
+    @QtCore.Slot()
     def _about(self):
         """
-        SLOT
         TRIGGERS: self.ui.action_about_leap.triggered
 
         Display the About Bitmask dialog
@@ -936,9 +936,9 @@ class MainWindow(QtGui.QMainWindow):
                     "<a href='https://leap.se'>More about LEAP"
                     "</a>") % (VERSION, VERSION_HASH[:10], greet))
 
+    @QtCore.Slot()
     def _help(self):
         """
-        SLOT
         TRIGGERS: self.ui.action_help.triggered
 
         Display the Bitmask help dialog.
@@ -1036,9 +1036,9 @@ class MainWindow(QtGui.QMainWindow):
         provider = self._login_widget.get_selected_provider()
         self._backend.setup_provider(provider)
 
+    @QtCore.Slot(dict)
     def _load_provider_config(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_download_provider_info
 
         Once the provider config has been downloaded, this loads the
@@ -1064,9 +1064,9 @@ class MainWindow(QtGui.QMainWindow):
             self.tr("Unable to login: Problem with provider"))
         self._login_widget.set_enabled(True)
 
+    @QtCore.Slot()
     def _login(self):
         """
-        SLOT
         TRIGGERS:
           self._login_widget.login
 
@@ -1092,9 +1092,9 @@ class MainWindow(QtGui.QMainWindow):
             if self._login_widget.start_login():
                 self._download_provider_config()
 
+    @QtCore.Slot(unicode)
     def _authentication_error(self, msg):
         """
-        SLOT
         TRIGGERS:
             Signaler.srp_auth_error
             Signaler.srp_auth_server_error
@@ -1110,9 +1110,9 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.set_enabled(True)
         self.ui.action_create_new_account.setEnabled(True)
 
+    @QtCore.Slot()
     def _cancel_login(self):
         """
-        SLOT
         TRIGGERS:
           self._login_widget.cancel_login
 
@@ -1134,9 +1134,9 @@ class MainWindow(QtGui.QMainWindow):
             self._soledad_defer.cancel()
             self._soledad_defer = None
 
+    @QtCore.Slot()
     def _set_login_cancelled(self):
         """
-        SLOT
         TRIGGERS:
             Signaler.prov_cancelled_setup fired by
             self._backend.cancel_setup_provider()
@@ -1147,9 +1147,9 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.set_status(self.tr("Log in cancelled by the user."))
         self._login_widget.set_enabled(True)
 
+    @QtCore.Slot(dict)
     def _provider_config_loaded(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_check_api_certificate
 
         Once the provider configuration is loaded, this starts the SRP
@@ -1171,9 +1171,9 @@ class MainWindow(QtGui.QMainWindow):
             logger.error(data[self._backend.ERROR_KEY])
             self._login_widget.set_enabled(True)
 
+    @QtCore.Slot()
     def _authentication_finished(self):
         """
-        SLOT
         TRIGGER: self._srp_auth.authentication_finished
 
         Once the user is properly authenticated, try starting the EIP
@@ -1285,10 +1285,10 @@ class MainWindow(QtGui.QMainWindow):
     ###################################################################
     # Service control methods: soledad
 
+    @QtCore.Slot(dict)
     def _soledad_intermediate_stage(self, data):
         # TODO missing param docstring
         """
-        SLOT
         TRIGGERS:
           self._soledad_bootstrapper.download_config
 
@@ -1320,9 +1320,9 @@ class MainWindow(QtGui.QMainWindow):
             logger.warning("Max number of soledad initialization "
                            "retries reached.")
 
+    @QtCore.Slot(dict)
     def _soledad_bootstrapped_stage(self, data):
         """
-        SLOT
         TRIGGERS:
           self._soledad_bootstrapper.gen_key
           self._soledad_bootstrapper.local_only_ready
@@ -1364,7 +1364,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _start_smtp_bootstrapping(self):
         """
-        SLOT
         TRIGGERS:
             self.soledad_ready
         """
@@ -1385,7 +1384,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _stop_smtp_service(self):
         """
-        SLOT
         TRIGGERS:
             self.logout
         """
@@ -1398,7 +1396,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _start_imap_service(self):
         """
-        SLOT
         TRIGGERS:
             self.soledad_ready
         """
@@ -1428,7 +1425,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _fetch_incoming_mail(self):
         """
-        SLOT
         TRIGGERS:
             self.mail_client_logged_in
         """
@@ -1438,7 +1434,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _stop_imap_service(self):
         """
-        SLOT
         TRIGGERS:
             self.logout
         """
@@ -1487,7 +1482,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _on_eip_connection_connected(self):
         """
-        SLOT
         TRIGGERS:
             self._eip_status.eip_connection_connected
         Emits the EIPConnection.qtsigs.connected_signal
@@ -1589,9 +1583,9 @@ class MainWindow(QtGui.QMainWindow):
 
         self._backend.start_eip()
 
+    @QtCore.Slot()
     def _on_eip_connection_aborted(self):
         """
-        SLOT
         TRIGGERS:
             Signaler.eip_connection_aborted
         """
@@ -1667,7 +1661,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _stop_eip(self):
         """
-        SLOT
         TRIGGERS:
           self._eip_connection.qtsigs.do_disconnect_signal (via state machine)
 
@@ -1697,7 +1690,6 @@ class MainWindow(QtGui.QMainWindow):
     def _on_eip_network_unreachable(self):
         # XXX Should move to EIP Conductor
         """
-        SLOT
         TRIGGERS:
             self._eip_connection.qtsigs.network_unreachable
 
@@ -1711,7 +1703,7 @@ class MainWindow(QtGui.QMainWindow):
     def _do_eip_restart(self):
         # XXX Should move to EIP Conductor
         """
-        SLOT
+        TRIGGER:
             self._eip_connection.qtsigs.process_restart
 
         Restart the connection.
@@ -1729,9 +1721,9 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_status.set_eip_status("", error=error)
         self._eip_status.set_eip_status_icon("error")
 
+    @QtCore.Slot(int)
     def _eip_finished(self, exitCode):
         """
-        SLOT
         TRIGGERS:
             Signaler.eip_process_finished
 
@@ -1822,9 +1814,9 @@ class MainWindow(QtGui.QMainWindow):
             # eip will not start, so we start soledad anyway
             self._maybe_run_soledad_setup_checks()
 
+    @QtCore.Slot(dict)
     def _finish_eip_bootstrap(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.eip_client_certificate_ready
 
         Starts the VPN thread if the eip configuration is properly
@@ -1842,10 +1834,10 @@ class MainWindow(QtGui.QMainWindow):
         # DO START EIP Connection!
         self._eip_connection.qtsigs.do_connect_signal.emit()
 
+    @QtCore.Slot(dict)
     def _eip_intermediate_stage(self, data):
         # TODO missing param
         """
-        SLOT
         TRIGGERS:
           self._backend.signaler.eip_config_ready
 
@@ -1889,7 +1881,6 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _logout(self):
         """
-        SLOT
         TRIGGER: self._login_widget.logout
 
         Starts the logout sequence
@@ -1907,9 +1898,9 @@ class MainWindow(QtGui.QMainWindow):
         self._backend.logout()
         self.logout.emit()
 
+    @QtCore.Slot()
     def _logout_error(self):
         """
-        SLOT
         TRIGGER: self._srp_auth.logout_error
 
         Inform the user about a logout error.
@@ -1919,9 +1910,9 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.set_status(
             self.tr("Something went wrong with the logout."))
 
+    @QtCore.Slot()
     def _logout_ok(self):
         """
-        SLOT
         TRIGGER: self._srp_auth.logout_ok
 
         Switches the stackedWidget back to the login stage after
@@ -1934,10 +1925,10 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.logged_out()
         self._mail_status.mail_state_disabled()
 
+    @QtCore.Slot(dict)
     def _intermediate_stage(self, data):
         # TODO this method name is confusing as hell.
         """
-        SLOT
         TRIGGERS:
           self._backend.signaler.prov_name_resolution
           self._backend.signaler.prov_https_connection
@@ -1967,9 +1958,9 @@ class MainWindow(QtGui.QMainWindow):
             raise_window_ack()
         self.raise_window.emit()
 
+    @QtCore.Slot()
     def _do_raise_mainwindow(self):
         """
-        SLOT
         TRIGGERS:
             self._on_raise_window_event
 

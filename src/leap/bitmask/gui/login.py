@@ -260,8 +260,8 @@ class LoginWidget(QtGui.QWidget):
         self.ui.lnPassword.setFocus()
 
     def _current_provider_changed(self, param):
+    @QtCore.Slot(int)
         """
-        SLOT
         TRIGGERS: self.ui.cmbProviders.currentIndexChanged
         """
         if param == (self.ui.cmbProviders.count() - 1):

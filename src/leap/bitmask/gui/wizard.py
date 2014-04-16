@@ -145,7 +145,6 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot()
     def _wizard_finished(self):
         """
-        SLOT
         TRIGGER:
             self.finished
 
@@ -210,10 +209,9 @@ class Wizard(QtGui.QWizard):
     def get_services(self):
         return self._selected_services
 
-    @QtCore.Slot()
+    @QtCore.Slot(unicode)
     def _enable_check(self, reset=True):
         """
-        SLOT
         TRIGGER:
             self.ui.lnProvider.textChanged
 
@@ -282,9 +280,9 @@ class Wizard(QtGui.QWizard):
         # register button
         self.ui.btnRegister.setVisible(visible)
 
+    @QtCore.Slot()
     def _registration_finished(self):
         """
-        SLOT
         TRIGGERS:
           self._backend.signaler.srp_registration_finished
 
@@ -308,9 +306,9 @@ class Wizard(QtGui.QWizard):
         self.page(self.REGISTER_USER_PAGE).set_completed()
         self.button(QtGui.QWizard.BackButton).setEnabled(False)
 
+    @QtCore.Slot()
     def _registration_failed(self):
         """
-        SLOT
         TRIGGERS:
           self._backend.signaler.srp_registration_failed
 
@@ -322,9 +320,9 @@ class Wizard(QtGui.QWizard):
         self._set_register_status(error_msg, error=True)
         self.ui.btnRegister.setEnabled(True)
 
+    @QtCore.Slot()
     def _registration_taken(self):
         """
-        SLOT
         TRIGGERS:
           self._backend.signaler.srp_registration_taken
 
@@ -368,9 +366,9 @@ class Wizard(QtGui.QWizard):
         self.ui.lblCheckCaFpr.setPixmap(None)
         self.ui.lblCheckApiCert.setPixmap(None)
 
+    @QtCore.Slot()
     def _check_provider(self):
         """
-        SLOT
         TRIGGERS:
           self.ui.btnCheck.clicked
           self.ui.lnProvider.returnPressed
@@ -403,9 +401,9 @@ class Wizard(QtGui.QWizard):
         self._provider_select_defer = self._backend.\
             setup_provider(self._domain)
 
+    @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
         """
-        SLOT
         Triggered:
             self.ui.rbExistingProvider.toggled
 
@@ -447,9 +445,9 @@ class Wizard(QtGui.QWizard):
             label.setPixmap(self.ERROR_ICON)
             logger.error(error)
 
+    @QtCore.Slot(dict)
     def _name_resolution(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_name_resolution
 
         Sets the status for the name resolution check
@@ -466,9 +464,9 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
 
+    @QtCore.Slot(dict)
     def _https_connection(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_https_connection
 
         Sets the status for the https connection check
@@ -485,9 +483,9 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
 
+    @QtCore.Slot(dict)
     def _download_provider_info(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_download_provider_info
 
         Sets the status for the provider information download
@@ -519,9 +517,9 @@ class Wizard(QtGui.QWizard):
         else:
             self.ui.cbProviders.setEnabled(True)
 
+    @QtCore.Slot(dict)
     def _download_ca_cert(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_download_ca_cert
 
         Sets the status for the download of the CA certificate check
@@ -531,9 +529,9 @@ class Wizard(QtGui.QWizard):
         if passed:
             self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
 
+    @QtCore.Slot(dict)
     def _check_ca_fingerprint(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_check_ca_fingerprint
 
         Sets the status for the CA fingerprint check
@@ -543,9 +541,9 @@ class Wizard(QtGui.QWizard):
         if passed:
             self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 
+    @QtCore.Slot(dict)
     def _check_api_certificate(self, data):
         """
-        SLOT
         TRIGGER: self._backend.signaler.prov_check_api_certificate
 
         Sets the status for the API certificate check. Also finishes
@@ -556,9 +554,9 @@ class Wizard(QtGui.QWizard):
                             True, self.SETUP_PROVIDER_PAGE)
         self._provider_setup_ok = True
 
+    @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
         """
-        SLOT
         TRIGGER: service_checkbox.stateChanged
         Adds the service to the state if the state is checked, removes
         it otherwise
@@ -604,9 +602,9 @@ class Wizard(QtGui.QWizard):
                     self.tr("Something went wrong while trying to "
                             "load service %s" % (service,)))
 
+    @QtCore.Slot(int)
     def _current_id_changed(self, pageId):
         """
-        SLOT
         TRIGGER: self.currentIdChanged
 
         Prepares the pages when they appear

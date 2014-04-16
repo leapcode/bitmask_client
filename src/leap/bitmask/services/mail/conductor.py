@@ -238,10 +238,9 @@ class SMTPControl(object):
             self._smtp_port.stopListening()
             self._smtp_service.doStop()
 
-    @QtCore.Slot()
+    @QtCore.Slot(dict)
     def smtp_bootstrapped_stage(self, data):
         """
-        SLOT
         TRIGGERS:
           self.smtp_bootstrapper.download_config
 
