@@ -546,7 +546,8 @@ class Authenticate(object):
 
         :rtype: bool
         """
-        return self._srp_auth.is_authenticated()
+        return (self._srp_auth is not None and
+                self._srp_auth.is_authenticated())
 
     def get_logged_in_status(self):
         """
