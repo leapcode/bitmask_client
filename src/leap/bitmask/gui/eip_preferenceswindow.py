@@ -18,17 +18,13 @@
 """
 EIP Preferences window
 """
-import os
 import logging
 
 from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask.config.leapsettings import LeapSettings
-from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.gui.ui_eippreferences import Ui_EIPPreferences
-from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
-from leap.bitmask.services.eip.eipconfig import get_eipconfig_path
 
 logger = logging.getLogger(__name__)
 
@@ -37,17 +33,20 @@ class EIPPreferencesWindow(QtGui.QDialog):
     """
     Window that displays the EIP preferences.
     """
-    def __init__(self, parent, domain):
+    def __init__(self, parent, domain, backend):
         """
         :param parent: parent object of the EIPPreferencesWindow.
         :type parent: QWidget
         :param domain: the selected by default domain.
         :type domain: unicode
+        :param backend: Backend being used
+        :type backend: Backend
         """
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
         self._settings = LeapSettings()
+        self._backend = backend
 
         # Load UI
         self.ui = Ui_EIPPreferences()
@@ -61,7 +60,11 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.cbGateways.currentIndexChanged[unicode].connect(
             lambda x: self.ui.lblProvidersGatewayStatus.setVisible(False))
 
-        self._add_configured_providers(domain)
+        self._selected_domain = domain
+        self._configured_providers = []
+
+        self._backend_connect()
+        self._add_configured_providers()
 
     def _set_providers_gateway_status(self, status, success=False,
                                       error=False):
@@ -85,27 +88,41 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.lblProvidersGatewayStatus.setVisible(True)
         self.ui.lblProvidersGatewayStatus.setText(status)
 
-    def _add_configured_providers(self, domain=None):
+    def _add_configured_providers(self):
         """
         Add the client's configured providers to the providers combo boxes.
+        """
+        providers = self._settings.get_configured_providers()
+        if not providers:
+            return
 
-        :param domain: the domain to be selected by default.
-        :type domain: unicode
+        self._backend.eip_get_initialized_providers(providers)
+
+    def _load_providers_in_combo(self, providers):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.eip_get_initialized_providers
+
+        Add the client's configured providers to the providers combo boxes.
+
+        :param providers: the list of providers to add and whether each one is
+                          initialized or not.
+        :type providers: list of tuples (str, bool)
         """
         self.ui.cbProvidersGateway.clear()
-        providers = self._settings.get_configured_providers()
         if not providers:
             self.ui.gbGatewaySelector.setEnabled(False)
             return
 
-        for provider in providers:
+        for provider, is_initialized in providers:
             label = provider
-            eip_config_path = get_eipconfig_path(provider, relative=False)
-            if not os.path.isfile(eip_config_path):
-                label = provider + self.tr(" (uninitialized)")
+            if not is_initialized:
+                label += self.tr(" (uninitialized)")
             self.ui.cbProvidersGateway.addItem(label, userData=provider)
 
         # Select provider by name
+        domain = self._selected_domain
         if domain is not None:
             provider_index = self.ui.cbProvidersGateway.findText(
                 domain, QtCore.Qt.MatchStartsWith)
@@ -155,18 +172,24 @@ class EIPPreferencesWindow(QtGui.QDialog):
             return
 
         domain = self.ui.cbProvidersGateway.itemData(domain_idx)
+        self._selected_domain = domain
 
-        if not os.path.isfile(get_eipconfig_path(domain, relative=False)):
-            self._set_providers_gateway_status(
-                self.tr("This is an uninitialized provider, "
-                        "please log in first."),
-                error=True)
-            self.ui.pbSaveGateway.setEnabled(False)
-            self.ui.cbGateways.setEnabled(False)
-            return
-        else:
-            self.ui.pbSaveGateway.setEnabled(True)
-            self.ui.cbGateways.setEnabled(True)
+        self._backend.eip_get_gateways_list(domain)
+
+    def _update_gateways_list(self, gateways):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.eip_get_gateways_list
+
+        Add the available gateways and select the one stored in configuration
+        file.
+        """
+        self.ui.pbSaveGateway.setEnabled(True)
+        self.ui.cbGateways.setEnabled(True)
+
+        self.ui.cbGateways.clear()
+        self.ui.cbGateways.addItem(self.AUTOMATIC_GATEWAY_LABEL)
 
         try:
             # disconnect previously connected save method
@@ -175,31 +198,13 @@ class EIPPreferencesWindow(QtGui.QDialog):
             pass  # Signal was not connected
 
         # set the proper connection for the 'save' button
+        domain = self._selected_domain
         save_gateway = partial(self._save_selected_gateway, domain)
         self.ui.pbSaveGateway.clicked.connect(save_gateway)
 
-        eip_config = EIPConfig()
-        provider_config = ProviderConfig.get_provider_config(domain)
+        selected_gateway = self._settings.get_selected_gateway(
+            self._selected_domain)
 
-        api_version = provider_config.get_api_version()
-        eip_config.set_api_version(api_version)
-        eip_loaded = eip_config.load(get_eipconfig_path(domain))
-
-        if not eip_loaded or provider_config is None:
-            self._set_providers_gateway_status(
-                self.tr("There was a problem with configuration files."),
-                error=True)
-            return
-
-        gateways = VPNGatewaySelector(eip_config).get_gateways_list()
-        logger.debug(gateways)
-
-        self.ui.cbGateways.clear()
-        self.ui.cbGateways.addItem(self.AUTOMATIC_GATEWAY_LABEL)
-
-        # Add the available gateways and
-        # select the one stored in configuration file.
-        selected_gateway = self._settings.get_selected_gateway(domain)
         index = 0
         for idx, (gw_name, gw_ip) in enumerate(gateways):
             gateway = "{0} ({1})".format(gw_name, gw_ip)
@@ -208,3 +213,42 @@ class EIPPreferencesWindow(QtGui.QDialog):
                 index = idx + 1
 
         self.ui.cbGateways.setCurrentIndex(index)
+
+    def _gateways_list_error(self):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.eip_get_gateways_list_error
+
+        An error has occurred retrieving the gateway list so we inform the
+        user.
+        """
+        self._set_providers_gateway_status(
+            self.tr("There was a problem with configuration files."),
+            error=True)
+        self.ui.pbSaveGateway.setEnabled(False)
+        self.ui.cbGateways.setEnabled(False)
+
+    def _gateways_list_uninitialized(self):
+        """
+        SLOT
+        TRIGGERS:
+            Signaler.eip_uninitialized_provider
+
+        The requested provider in not initialized yet, so we give the user an
+        error msg.
+        """
+        self._set_providers_gateway_status(
+            self.tr("This is an uninitialized provider, please log in first."),
+            error=True)
+        self.ui.pbSaveGateway.setEnabled(False)
+        self.ui.cbGateways.setEnabled(False)
+
+    def _backend_connect(self):
+        sig = self._backend.signaler
+        sig.eip_get_gateways_list.connect(self._update_gateways_list)
+        sig.eip_get_gateways_list_error.connect(self._gateways_list_error)
+        sig.eip_uninitialized_provider.connect(
+            self._gateways_list_uninitialized)
+        sig.eip_get_initialized_providers.connect(
+            self._load_providers_in_combo)

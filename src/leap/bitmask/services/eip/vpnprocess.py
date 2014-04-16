@@ -33,8 +33,7 @@ except ImportError:
     # psutil >= 2.0.0
     from psutil import AccessDenied as psutil_AccessDenied
 
-from PySide import QtCore
-
+from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
@@ -50,28 +49,6 @@ from twisted.internet import protocol
 from twisted.internet import defer
 from twisted.internet import error as internet_error
 from twisted.internet.task import LoopingCall
-
-
-class VPNSignals(QtCore.QObject):
-    """
-    These are the signals that we use to let the UI know
-    about the events we are polling.
-    They are instantiated in the VPN object and passed along
-    till the VPNProcess.
-    """
-    # signals for the process
-    state_changed = QtCore.Signal(dict)
-    status_changed = QtCore.Signal(dict)
-    process_finished = QtCore.Signal(int)
-
-    # signals that come from parsing
-    # openvpn output
-    network_unreachable = QtCore.Signal()
-    process_restart_tls = QtCore.Signal()
-    process_restart_ping = QtCore.Signal()
-
-    def __init__(self):
-        QtCore.QObject.__init__(self)
 
 
 class VPNObserver(object):
@@ -95,14 +72,8 @@ class VPNObserver(object):
             "Initialization Sequence Completed",),
     }
 
-    def __init__(self, qtsigs):
-        """
-        Initializer. Keeps a reference to the passed qtsigs object
-        :param qtsigs: an object containing the different qt signals to
-                       be used to communicate with different parts of
-                       the application (the EIP state machine, for instance).
-        """
-        self._qtsigs = qtsigs
+    def __init__(self, signaler=None):
+        self._signaler = signaler
 
     def watch(self, line):
         """
@@ -123,27 +94,29 @@ class VPNObserver(object):
             return
 
         sig = self._get_signal(event)
-        if sig:
-            sig.emit()
+        if sig is not None:
+            self._signaler.signal(sig)
             return
         else:
-            logger.debug(
-                'We got %s event from openvpn output but we '
-                'could not find a matching signal for it.'
-                % event)
+            logger.debug('We got %s event from openvpn output but we could '
+                         'not find a matching signal for it.' % event)
 
     def _get_signal(self, event):
         """
         Tries to get the matching signal from the eip signals
         objects based on the name of the passed event (in lowercase)
 
-        :param event: the name of the event that we want to get a signal
-                      for
+        :param event: the name of the event that we want to get a signal for
         :type event: str
-        :returns: a QtSignal, or None
-        :rtype: QtSignal or None
+        :returns: a Signaler signal or None
+        :rtype: str or None
         """
-        return getattr(self._qtsigs, event.lower(), None)
+        signals = {
+            "network_unreachable": self._signaler.EIP_NETWORK_UNREACHABLE,
+            "process_restart_tls": self._signaler.EIP_PROCESS_RESTART_TLS,
+            "process_restart_ping": self._signaler.EIP_PROCESS_RESTART_PING,
+        }
+        return signals.get(event.lower())
 
 
 class OpenVPNAlreadyRunning(Exception):
@@ -181,14 +154,9 @@ class VPN(object):
         self._vpnproc = None
         self._pollers = []
         self._reactor = reactor
-        self._qtsigs = VPNSignals()
 
-        # XXX should get it from config.flags
-        self._openvpn_verb = kwargs.get(self.OPENVPN_VERB, None)
-
-    @property
-    def qtsigs(self):
-        return self._qtsigs
+        self._signaler = kwargs['signaler']
+        self._openvpn_verb = flags.OPENVPN_VERBOSITY
 
     def start(self, *args, **kwargs):
         """
@@ -200,14 +168,13 @@ class VPN(object):
         :param kwargs: kwargs to be passed to the VPNProcess
         :type kwargs: dict
         """
+        logger.debug('VPN: start')
         self._stop_pollers()
-        kwargs['qtsigs'] = self.qtsigs
         kwargs['openvpn_verb'] = self._openvpn_verb
+        kwargs['signaler'] = self._signaler
 
         # start the main vpn subprocess
         vpnproc = VPNProcess(*args, **kwargs)
-                             #qtsigs=self.qtsigs,
-                             #openvpn_verb=self._openvpn_verb)
 
         if vpnproc.get_openvpn_process():
             logger.info("Another vpn process is running. Will try to stop it.")
@@ -262,8 +229,11 @@ class VPN(object):
         Sends a kill signal to the process.
         """
         self._stop_pollers()
-        self._vpnproc.aborted = True
-        self._vpnproc.killProcess()
+        if self._vpnproc is None:
+            logger.debug("There's no vpn process running to kill.")
+        else:
+            self._vpnproc.aborted = True
+            self._vpnproc.killProcess()
 
     def terminate(self, shutdown=False):
         """
@@ -328,35 +298,19 @@ class VPNManager(object):
     POLL_TIME = 2.5 if IS_MAC else 1.0
     CONNECTION_RETRY_TIME = 1
 
-    TS_KEY = "ts"
-    STATUS_STEP_KEY = "status_step"
-    OK_KEY = "ok"
-    IP_KEY = "ip"
-    REMOTE_KEY = "remote"
-
-    TUNTAP_READ_KEY = "tun_tap_read"
-    TUNTAP_WRITE_KEY = "tun_tap_write"
-    TCPUDP_READ_KEY = "tcp_udp_read"
-    TCPUDP_WRITE_KEY = "tcp_udp_write"
-    AUTH_READ_KEY = "auth_read"
-
-    def __init__(self, qtsigs=None):
+    def __init__(self, signaler=None):
         """
         Initializes the VPNManager.
 
-        :param qtsigs: a QObject containing the Qt signals used by the UI
-                       to give feedback about state changes.
-        :type qtsigs: QObject
+        :param signaler: Signaler object used to send notifications to the
+                         backend
+        :type signaler: backend.Signaler
         """
         from twisted.internet import reactor
         self._reactor = reactor
         self._tn = None
-        self._qtsigs = qtsigs
+        self._signaler = signaler
         self._aborted = False
-
-    @property
-    def qtsigs(self):
-        return self._qtsigs
 
     @property
     def aborted(self):
@@ -552,17 +506,10 @@ class VPNManager(object):
                 continue
             ts, status_step, ok, ip, remote = parts
 
-            state_dict = {
-                self.TS_KEY: ts,
-                self.STATUS_STEP_KEY: status_step,
-                self.OK_KEY: ok,
-                self.IP_KEY: ip,
-                self.REMOTE_KEY: remote
-            }
-
-            if state_dict != self._last_state:
-                self.qtsigs.state_changed.emit(state_dict)
-                self._last_state = state_dict
+            state = status_step
+            if state != self._last_state:
+                self._signaler.signal(self._signaler.EIP_STATE_CHANGED, state)
+                self._last_state = state
 
     def _parse_status_and_notify(self, output):
         """
@@ -575,9 +522,7 @@ class VPNManager(object):
         """
         tun_tap_read = ""
         tun_tap_write = ""
-        tcp_udp_read = ""
-        tcp_udp_write = ""
-        auth_read = ""
+
         for line in output:
             stripped = line.strip()
             if stripped.endswith("STATISTICS") or stripped == "END":
@@ -585,28 +530,24 @@ class VPNManager(object):
             parts = stripped.split(",")
             if len(parts) < 2:
                 continue
-            if parts[0].strip() == "TUN/TAP read bytes":
-                tun_tap_read = parts[1]
-            elif parts[0].strip() == "TUN/TAP write bytes":
-                tun_tap_write = parts[1]
-            elif parts[0].strip() == "TCP/UDP read bytes":
-                tcp_udp_read = parts[1]
-            elif parts[0].strip() == "TCP/UDP write bytes":
-                tcp_udp_write = parts[1]
-            elif parts[0].strip() == "Auth read bytes":
-                auth_read = parts[1]
 
-        status_dict = {
-            self.TUNTAP_READ_KEY: tun_tap_read,
-            self.TUNTAP_WRITE_KEY: tun_tap_write,
-            self.TCPUDP_READ_KEY: tcp_udp_read,
-            self.TCPUDP_WRITE_KEY: tcp_udp_write,
-            self.AUTH_READ_KEY: auth_read
-        }
+            text, value = parts
+            # text can be:
+            #   "TUN/TAP read bytes"
+            #   "TUN/TAP write bytes"
+            #   "TCP/UDP read bytes"
+            #   "TCP/UDP write bytes"
+            #   "Auth read bytes"
 
-        if status_dict != self._last_status:
-            self.qtsigs.status_changed.emit(status_dict)
-            self._last_status = status_dict
+            if text == "TUN/TAP read bytes":
+                tun_tap_read = value
+            elif text == "TUN/TAP write bytes":
+                tun_tap_write = value
+
+        status = (tun_tap_write, tun_tap_read)
+        if status != self._last_status:
+            self._signaler.signal(self._signaler.EIP_STATUS_CHANGED, status)
+            self._last_status = status
 
     def get_state(self):
         """
@@ -754,7 +695,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
     """
 
     def __init__(self, eipconfig, providerconfig, socket_host, socket_port,
-                 qtsigs, openvpn_verb):
+                 signaler, openvpn_verb):
         """
         :param eipconfig: eip configuration object
         :type eipconfig: EIPConfig
@@ -769,18 +710,17 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
                             socket, or port otherwise
         :type socket_port: str
 
-        :param qtsigs: a QObject containing the Qt signals used to notify the
-                       UI.
-        :type qtsigs: QObject
+        :param signaler: Signaler object used to receive notifications to the
+                         backend
+        :type signaler: backend.Signaler
 
         :param openvpn_verb: the desired level of verbosity in the
                              openvpn invocation
         :type openvpn_verb: int
         """
-        VPNManager.__init__(self, qtsigs=qtsigs)
+        VPNManager.__init__(self, signaler=signaler)
         leap_assert_type(eipconfig, EIPConfig)
         leap_assert_type(providerconfig, ProviderConfig)
-        leap_assert_type(qtsigs, QtCore.QObject)
 
         #leap_assert(not self.isRunning(), "Starting process more than once!")
 
@@ -799,7 +739,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         # the parameter around.
         self._openvpn_verb = openvpn_verb
 
-        self._vpn_observer = VPNObserver(qtsigs)
+        self._vpn_observer = VPNObserver(signaler)
 
     # processProtocol methods
 
@@ -835,7 +775,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         exit_code = reason.value.exitCode
         if isinstance(exit_code, int):
             logger.debug("processExited, status %d" % (exit_code,))
-        self.qtsigs.process_finished.emit(exit_code)
+        self._signaler.signal(self._signaler.EIP_PROCESS_FINISHED, exit_code)
         self._alive = False
 
     def processEnded(self, reason):

@@ -1,0 +1,1 @@
+- Refactor: move SRPAuth to the backend. Closes #5347.
