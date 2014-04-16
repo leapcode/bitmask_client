@@ -1,0 +1,1 @@
+- Properly finish the Qt app before stopping the reactor.
