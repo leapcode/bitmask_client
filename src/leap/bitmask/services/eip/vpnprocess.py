@@ -66,8 +66,9 @@ class VPNObserver(object):
             'Network is unreachable (code=101)',),
         'PROCESS_RESTART_TLS': (
             "SIGUSR1[soft,tls-error]",),
-        'PROCESS_RESTART_PING': (
-            "SIGUSR1[soft,ping-restart]",),
+        # Let ping-restart work as it should
+        # 'PROCESS_RESTART_PING': (
+        #     "SIGUSR1[soft,ping-restart]",),
         'INITIALIZATION_COMPLETED': (
             "Initialization Sequence Completed",),
     }
