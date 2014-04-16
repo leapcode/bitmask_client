@@ -187,7 +187,7 @@ class MailStatusWidget(QtGui.QWidget):
     @QtCore.Slot()
     def set_soledad_failed(self):
         """
-        TRIGGER:
+        TRIGGERS:
             SoledadBootstrapper.soledad_failed
 
         This method is called whenever soledad has a failure.
@@ -198,7 +198,7 @@ class MailStatusWidget(QtGui.QWidget):
     @QtCore.Slot()
     def set_soledad_invalid_auth_token(self):
         """
-        TRIGGER:
+        TRIGGERS:
             SoledadBootstrapper.soledad_invalid_token
 
         This method is called when the auth token is invalid
@@ -253,7 +253,8 @@ class MailStatusWidget(QtGui.QWidget):
     @QtCore.Slot(object)
     def _mail_handle_soledad_events_slot(self, req):
         """
-        TRIGGER: _mail_handle_soledad_events
+        TRIGGERS:
+            _mail_handle_soledad_events
 
         Reacts to an Soledad event
 
@@ -287,7 +288,8 @@ class MailStatusWidget(QtGui.QWidget):
     @QtCore.Slot(object)
     def _mail_handle_keymanager_events_slot(self, req):
         """
-        TRIGGER: _mail_handle_keymanager_events
+        TRIGGERS:
+            _mail_handle_keymanager_events
 
         Reacts to an KeyManager event
 
@@ -333,7 +335,8 @@ class MailStatusWidget(QtGui.QWidget):
     @QtCore.Slot(object)
     def _mail_handle_smtp_events_slot(self, req):
         """
-        TRIGGER: _mail_handle_smtp_events
+        TRIGGERS:
+            _mail_handle_smtp_events
 
         Reacts to an SMTP event
 
@@ -367,7 +370,8 @@ class MailStatusWidget(QtGui.QWidget):
     @QtCore.Slot(object)
     def _mail_handle_imap_events_slot(self, req):
         """
-        TRIGGER: _mail_handle_imap_events
+        TRIGGERS:
+            _mail_handle_imap_events
 
         Reacts to an IMAP event
 

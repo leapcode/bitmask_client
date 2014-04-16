@@ -242,7 +242,7 @@ class SMTPControl(object):
     def smtp_bootstrapped_stage(self, data):
         """
         TRIGGERS:
-          self.smtp_bootstrapper.download_config
+            self.smtp_bootstrapper.download_config
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case

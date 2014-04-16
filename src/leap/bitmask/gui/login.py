@@ -262,7 +262,8 @@ class LoginWidget(QtGui.QWidget):
     def _current_provider_changed(self, param):
     @QtCore.Slot(int)
         """
-        TRIGGERS: self.ui.cmbProviders.currentIndexChanged
+        TRIGGERS:
+            self.ui.cmbProviders.currentIndexChanged
         """
         if param == (self.ui.cmbProviders.count() - 1):
             self.show_wizard.emit()

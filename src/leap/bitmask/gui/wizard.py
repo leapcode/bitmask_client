@@ -145,7 +145,7 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot()
     def _wizard_finished(self):
         """
-        TRIGGER:
+        TRIGGERS:
             self.finished
 
         This method is called when the wizard is accepted or rejected.
@@ -212,7 +212,7 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(unicode)
     def _enable_check(self, reset=True):
         """
-        TRIGGER:
+        TRIGGERS:
             self.ui.lnProvider.textChanged
 
         Enables/disables the 'check' button in the SELECT_PROVIDER_PAGE
@@ -284,7 +284,7 @@ class Wizard(QtGui.QWizard):
     def _registration_finished(self):
         """
         TRIGGERS:
-          self._backend.signaler.srp_registration_finished
+            self._backend.signaler.srp_registration_finished
 
         The registration has finished successfully, so we do some final steps.
         """
@@ -310,7 +310,7 @@ class Wizard(QtGui.QWizard):
     def _registration_failed(self):
         """
         TRIGGERS:
-          self._backend.signaler.srp_registration_failed
+            self._backend.signaler.srp_registration_failed
 
         The registration has failed, so we report the problem.
         """
@@ -324,7 +324,7 @@ class Wizard(QtGui.QWizard):
     def _registration_taken(self):
         """
         TRIGGERS:
-          self._backend.signaler.srp_registration_taken
+            self._backend.signaler.srp_registration_taken
 
         The requested username is taken, warn the user about that.
         """
@@ -370,8 +370,8 @@ class Wizard(QtGui.QWizard):
     def _check_provider(self):
         """
         TRIGGERS:
-          self.ui.btnCheck.clicked
-          self.ui.lnProvider.returnPressed
+            self.ui.btnCheck.clicked
+            self.ui.lnProvider.returnPressed
 
         Starts the checks for a given provider
         """
@@ -404,7 +404,7 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
         """
-        Triggered:
+        TRIGGERS:
             self.ui.rbExistingProvider.toggled
 
         Allows the user to move to the next page without make any checks,
@@ -448,7 +448,8 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(dict)
     def _name_resolution(self, data):
         """
-        TRIGGER: self._backend.signaler.prov_name_resolution
+        TRIGGERS:
+            self._backend.signaler.prov_name_resolution
 
         Sets the status for the name resolution check
         """
@@ -467,7 +468,8 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(dict)
     def _https_connection(self, data):
         """
-        TRIGGER: self._backend.signaler.prov_https_connection
+        TRIGGERS:
+            self._backend.signaler.prov_https_connection
 
         Sets the status for the https connection check
         """
@@ -486,7 +488,8 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(dict)
     def _download_provider_info(self, data):
         """
-        TRIGGER: self._backend.signaler.prov_download_provider_info
+        TRIGGERS:
+            self._backend.signaler.prov_download_provider_info
 
         Sets the status for the provider information download
         check. Since this check is the last of this set, it also
@@ -520,7 +523,8 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(dict)
     def _download_ca_cert(self, data):
         """
-        TRIGGER: self._backend.signaler.prov_download_ca_cert
+        TRIGGERS:
+            self._backend.signaler.prov_download_ca_cert
 
         Sets the status for the download of the CA certificate check
         """
@@ -532,7 +536,8 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(dict)
     def _check_ca_fingerprint(self, data):
         """
-        TRIGGER: self._backend.signaler.prov_check_ca_fingerprint
+        TRIGGERS:
+            self._backend.signaler.prov_check_ca_fingerprint
 
         Sets the status for the CA fingerprint check
         """
@@ -544,7 +549,8 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(dict)
     def _check_api_certificate(self, data):
         """
-        TRIGGER: self._backend.signaler.prov_check_api_certificate
+        TRIGGERS:
+            self._backend.signaler.prov_check_api_certificate
 
         Sets the status for the API certificate check. Also finishes
         the provider bootstrapper thread since it's not needed anymore
@@ -557,7 +563,9 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
         """
-        TRIGGER: service_checkbox.stateChanged
+        TRIGGERS:
+            service_checkbox.stateChanged
+
         Adds the service to the state if the state is checked, removes
         it otherwise
 
@@ -605,7 +613,8 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot(int)
     def _current_id_changed(self, pageId):
         """
-        TRIGGER: self.currentIdChanged
+        TRIGGERS:
+            self.currentIdChanged
 
         Prepares the pages when they appear
         """

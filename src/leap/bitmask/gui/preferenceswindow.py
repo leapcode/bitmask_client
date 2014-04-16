@@ -211,7 +211,7 @@ class PreferencesWindow(QtGui.QDialog):
     def _change_password_ok(self):
         """
         TRIGGERS:
-          self._backend.signaler.srp_password_change_ok
+            self._backend.signaler.srp_password_change_ok
 
         Callback used to display a successfully changed password.
         """
@@ -233,8 +233,8 @@ class PreferencesWindow(QtGui.QDialog):
     def _change_password_problem(self, msg):
         """
         TRIGGERS:
-          self._backend.signaler.srp_password_change_error
-          self._backend.signaler.srp_password_change_badpw
+            self._backend.signaler.srp_password_change_error
+            self._backend.signaler.srp_password_change_badpw
 
         Callback used to display an error on changing password.
 
@@ -290,7 +290,9 @@ class PreferencesWindow(QtGui.QDialog):
     @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
         """
-        TRIGGER: service_checkbox.stateChanged
+        TRIGGERS:
+            service_checkbox.stateChanged
+
         Adds the service to the state if the state is checked, removes
         it otherwise
 
