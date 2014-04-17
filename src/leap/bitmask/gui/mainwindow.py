@@ -652,9 +652,12 @@ class MainWindow(QtGui.QMainWindow):
     def _react_to_new_updates(self, req):
         """
         TRIGGERS:
-            self._new_updates_available
+            self.new_updates
 
         Displays the new updates label and sets the updates_content
+
+        :param req: Request type
+        :type req: leap.common.events.events_pb2.SignalRequest
         """
         self.moveToThread(QtCore.QCoreApplication.instance().thread())
         self.ui.lblNewUpdates.setVisible(True)
@@ -840,6 +843,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         TRIGGERS:
             self._systray.activated
+
+        :param reason: the reason why the tray got activated.
+        :type reason: int
 
         Displays the context menu from the tray icon
         """

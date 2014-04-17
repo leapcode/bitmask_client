@@ -392,6 +392,9 @@ class EIPStatusWidget(QtGui.QWidget):
         Updates the displayed VPN state based on the data provided by
         the VPN thread.
 
+        :param vpn_state: the state of the VPN
+        :type vpn_state: dict
+
         Emits:
             If the vpn_state is connected, we emit EIPConnection.qtsigs.
             connected_signal

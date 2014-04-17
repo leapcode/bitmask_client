@@ -182,6 +182,9 @@ class EIPPreferencesWindow(QtGui.QDialog):
         TRIGGERS:
             Signaler.eip_get_gateways_list
 
+        :param gateways: a list of gateways
+        :type gateways: list of unicode
+
         Add the available gateways and select the one stored in configuration
         file.
         """

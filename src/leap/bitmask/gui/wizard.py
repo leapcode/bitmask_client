@@ -217,6 +217,11 @@ class Wizard(QtGui.QWizard):
 
         Enables/disables the 'check' button in the SELECT_PROVIDER_PAGE
         depending on the lnProvider content.
+
+        :param reset: this contains the text of the line edit, and when is
+                      called directly defines whether we want to reset the
+                      checks.
+        :type reset: unicode or bool
         """
         enabled = len(self.ui.lnProvider.text()) != 0
         enabled = enabled or self.ui.rbExistingProvider.isChecked()
@@ -617,6 +622,9 @@ class Wizard(QtGui.QWizard):
             self.currentIdChanged
 
         Prepares the pages when they appear
+
+        :param pageId: the new current page id.
+        :type pageId: int
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
             self._clear_register_widgets()

@@ -259,13 +259,16 @@ class LoginWidget(QtGui.QWidget):
         """
         self.ui.lnPassword.setFocus()
 
-    def _current_provider_changed(self, param):
     @QtCore.Slot(int)
+    def _current_provider_changed(self, idx):
         """
         TRIGGERS:
             self.ui.cmbProviders.currentIndexChanged
+
+        :param idx: the index of the new selected item
+        :type idx: int
         """
-        if param == (self.ui.cmbProviders.count() - 1):
+        if idx == (self.ui.cmbProviders.count() - 1):
             self.show_wizard.emit()
             # Leave the previously selected provider in the combobox
             prev_provider = 0
@@ -275,7 +278,7 @@ class LoginWidget(QtGui.QWidget):
             self.ui.cmbProviders.setCurrentIndex(prev_provider)
             self.ui.cmbProviders.blockSignals(False)
         else:
-            self._selected_provider_index = param
+            self._selected_provider_index = idx
 
     def start_login(self):
         """
