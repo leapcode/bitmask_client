@@ -89,9 +89,9 @@ class PreferencesWindow(QtGui.QDialog):
 
         self._select_provider_by_name(domain)
 
+    @QtCore.Slot()
     def _is_logged_in(self):
         """
-        SLOT
         TRIGGERS:
             Signaler.srp_status_logged_in
 
@@ -123,9 +123,9 @@ class PreferencesWindow(QtGui.QDialog):
 
         self.ui.gbPasswordChange.setEnabled(pw_enabled)
 
+    @QtCore.Slot()
     def _not_logged_in(self):
         """
-        SLOT
         TRIGGERS:
             Signaler.srp_status_not_logged_in
 
@@ -136,9 +136,9 @@ class PreferencesWindow(QtGui.QDialog):
         self._set_password_change_status(msg)
         self.ui.gbPasswordChange.setEnabled(False)
 
+    @QtCore.Slot()
     def set_soledad_ready(self):
         """
-        SLOT
         TRIGGERS:
             parent.soledad_ready
 
@@ -183,9 +183,9 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui.leNewPassword2.setEnabled(not disable)
         self.ui.pbChangePassword.setEnabled(not disable)
 
+    @QtCore.Slot()
     def _change_password(self):
         """
-        SLOT
         TRIGGERS:
             self.ui.pbChangePassword.clicked
 
@@ -207,11 +207,11 @@ class PreferencesWindow(QtGui.QDialog):
         self._set_changing_password(True)
         self._backend.change_password(current_password, new_password)
 
+    @QtCore.Slot()
     def _change_password_ok(self):
         """
-        SLOT
         TRIGGERS:
-          self._backend.signaler.srp_password_change_ok
+            self._backend.signaler.srp_password_change_ok
 
         Callback used to display a successfully changed password.
         """
@@ -229,12 +229,12 @@ class PreferencesWindow(QtGui.QDialog):
         self._clear_password_inputs()
         self._set_changing_password(False)
 
+    @QtCore.Slot(unicode)
     def _change_password_problem(self, msg):
         """
-        SLOT
         TRIGGERS:
-          self._backend.signaler.srp_password_change_error
-          self._backend.signaler.srp_password_change_badpw
+            self._backend.signaler.srp_password_change_error
+            self._backend.signaler.srp_password_change_badpw
 
         Callback used to display an error on changing password.
 
@@ -287,10 +287,12 @@ class PreferencesWindow(QtGui.QDialog):
         provider_index = self.ui.cbProvidersServices.findText(name)
         self.ui.cbProvidersServices.setCurrentIndex(provider_index)
 
+    @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
         """
-        SLOT
-        TRIGGER: service_checkbox.stateChanged
+        TRIGGERS:
+            service_checkbox.stateChanged
+
         Adds the service to the state if the state is checked, removes
         it otherwise
 
@@ -309,9 +311,9 @@ class PreferencesWindow(QtGui.QDialog):
         # We hide the maybe-visible status label after a change
         self.ui.lblProvidersServicesStatus.setVisible(False)
 
+    @QtCore.Slot(str)
     def _populate_services(self, domain):
         """
-        SLOT
         TRIGGERS:
             self.ui.cbProvidersServices.currentIndexChanged[unicode]
 
@@ -368,9 +370,9 @@ class PreferencesWindow(QtGui.QDialog):
                 logger.error("Something went wrong while trying to "
                              "load service %s" % (service,))
 
+    @QtCore.Slot(str)
     def _save_enabled_services(self, provider):
         """
-        SLOT
         TRIGGERS:
             self.ui.pbSaveServices.clicked
 

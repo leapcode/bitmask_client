@@ -88,11 +88,12 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.btnUpload.clicked.connect(onclicked)
         self.ui.btnDownload.clicked.connect(onclicked)
 
+    @QtCore.Slot()
     def _on_VPN_status_clicked(self):
         """
-        SLOT
-        TRIGGER: self.ui.btnUpload.clicked
-                 self.ui.btnDownload.clicked
+        TRIGGERS:
+            self.ui.btnUpload.clicked
+            self.ui.btnDownload.clicked
 
         Toggles between rate and total throughput display for vpn
         status figures.
@@ -347,10 +348,11 @@ class EIPStatusWidget(QtGui.QWidget):
             self.tr("Traffic is being routed in the clear"))
         self.ui.lblEIPStatus.show()
 
+    @QtCore.Slot(dict)
     def update_vpn_status(self, data=None):
         """
-        SLOT
-            TRIGGER: Signaler.eip_status_changed
+        TRIGGERS:
+            Signaler.eip_status_changed
 
         Updates the download/upload labels based on the data provided by the
         VPN thread.
@@ -381,13 +383,17 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.btnUpload.setText(upload_str)
         self.ui.btnDownload.setText(download_str)
 
+    @QtCore.Slot(dict)
     def update_vpn_state(self, vpn_state):
         """
-        SLOT
-            TRIGGER: Signaler.eip_state_changed
+        TRIGGERS:
+            Signaler.eip_state_changed
 
         Updates the displayed VPN state based on the data provided by
         the VPN thread.
+
+        :param vpn_state: the state of the VPN
+        :type vpn_state: dict
 
         Emits:
             If the vpn_state is connected, we emit EIPConnection.qtsigs.

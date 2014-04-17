@@ -98,9 +98,9 @@ class EIPPreferencesWindow(QtGui.QDialog):
 
         self._backend.eip_get_initialized_providers(providers)
 
+    @QtCore.Slot(list)
     def _load_providers_in_combo(self, providers):
         """
-        SLOT
         TRIGGERS:
             Signaler.eip_get_initialized_providers
 
@@ -128,9 +128,9 @@ class EIPPreferencesWindow(QtGui.QDialog):
                 domain, QtCore.Qt.MatchStartsWith)
             self.ui.cbProvidersGateway.setCurrentIndex(provider_index)
 
+    @QtCore.Slot(str)
     def _save_selected_gateway(self, provider):
         """
-        SLOT
         TRIGGERS:
             self.ui.pbSaveGateway.clicked
 
@@ -153,9 +153,9 @@ class EIPPreferencesWindow(QtGui.QDialog):
             "Gateway settings for provider '{0}' saved.").format(provider)
         self._set_providers_gateway_status(msg, success=True)
 
+    @QtCore.Slot(int)
     def _populate_gateways(self, domain_idx):
         """
-        SLOT
         TRIGGERS:
             self.ui.cbProvidersGateway.currentIndexChanged[unicode]
 
@@ -176,11 +176,14 @@ class EIPPreferencesWindow(QtGui.QDialog):
 
         self._backend.eip_get_gateways_list(domain)
 
+    @QtCore.Slot(list)
     def _update_gateways_list(self, gateways):
         """
-        SLOT
         TRIGGERS:
             Signaler.eip_get_gateways_list
+
+        :param gateways: a list of gateways
+        :type gateways: list of unicode
 
         Add the available gateways and select the one stored in configuration
         file.
@@ -214,9 +217,9 @@ class EIPPreferencesWindow(QtGui.QDialog):
 
         self.ui.cbGateways.setCurrentIndex(index)
 
+    @QtCore.Slot()
     def _gateways_list_error(self):
         """
-        SLOT
         TRIGGERS:
             Signaler.eip_get_gateways_list_error
 
@@ -229,9 +232,9 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.pbSaveGateway.setEnabled(False)
         self.ui.cbGateways.setEnabled(False)
 
+    @QtCore.Slot()
     def _gateways_list_uninitialized(self):
         """
-        SLOT
         TRIGGERS:
             Signaler.eip_uninitialized_provider
 
