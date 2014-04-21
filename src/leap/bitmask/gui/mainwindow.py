@@ -1068,8 +1068,9 @@ class MainWindow(QtGui.QMainWindow):
             self._backend.provider_bootstrap(selected_provider)
         else:
             logger.error(data[self._backend.ERROR_KEY])
-            self._login_widget.set_enabled(True)
+            self._login_problem_provider()
 
+    @QtCore.Slot()
     def _login_problem_provider(self):
         """
         Warns the user about a problem with the provider during login.
@@ -1181,10 +1182,8 @@ class MainWindow(QtGui.QMainWindow):
             domain = self._provider_config.get_domain()
             self._backend.login(domain, username, password)
         else:
-            self._login_widget.set_status(
-                "Unable to login: Problem with provider")
             logger.error(data[self._backend.ERROR_KEY])
-            self._login_widget.set_enabled(True)
+            self._login_problem_provider()
 
     @QtCore.Slot()
     def _authentication_finished(self):
@@ -1803,8 +1802,6 @@ class MainWindow(QtGui.QMainWindow):
         Start the EIP bootstrapping sequence if the client is configured to
         do so.
         """
-        provider_config = self._get_best_provider_config()
-
         if self._provides_eip_and_enabled() and not self._already_started_eip:
             # XXX this should be handled by the state machine.
             self._eip_status.set_eip_status(
@@ -1954,7 +1951,6 @@ class MainWindow(QtGui.QMainWindow):
             self._backend.signaler.prov_name_resolution
             self._backend.signaler.prov_https_connection
             self._backend.signaler.prov_download_ca_cert
-            self._backend.signaler.eip_config_ready
 
         If there was a problem, displays it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
@@ -1962,10 +1958,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[self._backend.PASSED_KEY]
         if not passed:
-            msg = self.tr("Unable to connect: Problem with provider")
-            self._login_widget.set_status(msg)
-            self._login_widget.set_enabled(True)
             logger.error(data[self._backend.ERROR_KEY])
+            self._login_problem_provider()
 
     #
     # window handling methods
