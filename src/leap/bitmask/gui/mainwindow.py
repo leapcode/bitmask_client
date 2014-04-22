@@ -566,9 +566,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         domain = self._login_widget.get_selected_provider()
         logged_user = "{0}@{1}".format(self._logged_user, domain)
-        self._akm = AdvancedKeyManagement(
-            logged_user, self._keymanager, self._soledad)
-        self._akm.show()
+        akm = AdvancedKeyManagement(
+            self, logged_user, self._keymanager, self._soledad)
+        akm.show()
 
     @QtCore.Slot()
     def _show_preferences(self):

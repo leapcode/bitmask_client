@@ -30,12 +30,14 @@ from ui_advanced_key_management import Ui_AdvancedKeyManagement
 logger = logging.getLogger(__name__)
 
 
-class AdvancedKeyManagement(QtGui.QWidget):
+class AdvancedKeyManagement(QtGui.QDialog):
     """
     Advanced Key Management
     """
-    def __init__(self, user, keymanager, soledad):
+    def __init__(self, parent, user, keymanager, soledad):
         """
+        :param parent: parent object of AdvancedKeyManagement.
+        :parent type: QWidget
         :param user: the current logged in user.
         :type user: unicode
         :param keymanager: the existing keymanager instance
@@ -43,7 +45,7 @@ class AdvancedKeyManagement(QtGui.QWidget):
         :param soledad: a loaded instance of Soledad
         :type soledad: Soledad
         """
-        QtGui.QWidget.__init__(self)
+        QtGui.QDialog.__init__(self, parent)
 
         self.ui = Ui_AdvancedKeyManagement()
         self.ui.setupUi(self)
