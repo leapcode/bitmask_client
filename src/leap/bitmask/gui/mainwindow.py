@@ -832,11 +832,12 @@ class MainWindow(QtGui.QMainWindow):
         self._mail_status.set_systray(self._systray)
         self._eip_status.set_systray(self._systray)
 
-        hello = lambda: self._systray.showMessage(
-            self.tr('Hello!'),
-            self.tr('Bitmask has started in the tray.'))
-        # we wait for the systray to be ready
-        reactor.callLater(1, hello)
+        if self._start_hidden:
+            hello = lambda: self._systray.showMessage(
+                self.tr('Hello!'),
+                self.tr('Bitmask has started in the tray.'))
+            # we wait for the systray to be ready
+            reactor.callLater(1, hello)
 
     @QtCore.Slot(int)
     def _tray_activated(self, reason=None):
