@@ -1,0 +1,1 @@
+- Avoid user getting errors if he does a 'ctrl-c' on the wizard during the first run. Closes #5559.
