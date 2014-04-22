@@ -1,0 +1,1 @@
+- Handle provider setup problems and show an error to the user. Closes #5424.
