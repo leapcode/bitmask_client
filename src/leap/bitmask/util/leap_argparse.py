@@ -62,6 +62,10 @@ def build_parser():
     parser.add_argument('-H', '--start-hidden', default=False,
                         action="store_true", dest="start_hidden",
                         help='Starts the application just in the taskbar.')
+    parser.add_argument('-S', '--skip-wizard-checks', default=False,
+                        action="store_true", dest="skip_wizard_checks",
+                        help='Skips the provider checks in the wizard (use '
+                             'for testing purposes only).')
 
     # openvpn options
     parser.add_argument('--openvpn-verbosity', nargs='?',

@@ -24,6 +24,7 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.provider import get_provider_path
@@ -361,7 +362,8 @@ class Wizard(QtGui.QWizard):
         self.ui.lblProviderSelectStatus.setText("")
         self._domain = None
         self.button(QtGui.QWizard.NextButton).setEnabled(False)
-        self.page(self.SELECT_PROVIDER_PAGE).set_completed(False)
+        self.page(self.SELECT_PROVIDER_PAGE).set_completed(
+            flags.SKIP_WIZARD_CHECKS)
 
     def _reset_provider_setup(self):
         """
