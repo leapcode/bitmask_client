@@ -2046,9 +2046,10 @@ class MainWindow(QtGui.QMainWindow):
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
-        self._systray.showMessage(
-            self.tr('Quitting...'),
-            self.tr('The app is quitting, please wait.'))
+        if self._systray is not None:
+            self._systray.showMessage(
+                self.tr('Quitting...'),
+                self.tr('The app is quitting, please wait.'))
 
         # explicitly process events to display tooltip immediately
         QtCore.QCoreApplication.processEvents()
