@@ -43,7 +43,8 @@ class PreferencesWindow(QtGui.QDialog):
     """
     preferences_saved = QtCore.Signal()
 
-    def __init__(self, parent, backend, provider_config, soledad, domain):
+    def __init__(self, parent, backend, provider_config,
+                 soledad, username, domain):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
@@ -53,6 +54,8 @@ class PreferencesWindow(QtGui.QDialog):
         :type provider_config: ProviderConfig
         :param soledad: Soledad instance
         :type soledad: Soledad
+        :param username: the user set in the login widget
+        :type username: unicode
         :param domain: the selected domain in the login widget
         :type domain: unicode
         """
@@ -63,6 +66,7 @@ class PreferencesWindow(QtGui.QDialog):
         self._settings = LeapSettings()
         self._soledad = soledad
         self._provider_config = provider_config
+        self._username = username
         self._domain = domain
 
         self._backend_connect()
@@ -191,7 +195,7 @@ class PreferencesWindow(QtGui.QDialog):
 
         Changes the user's password if the inputboxes are correctly filled.
         """
-        username = self._srp_auth.get_username()
+        username = self._username
         current_password = self.ui.leCurrentPassword.text()
         new_password = self.ui.leNewPassword.text()
         new_password2 = self.ui.leNewPassword2.text()
@@ -416,12 +420,10 @@ class PreferencesWindow(QtGui.QDialog):
 
         sig.srp_password_change_ok.connect(self._change_password_ok)
 
-        pwd_change_error = partial(
-            self._change_password_problem,
+        pwd_change_error = lambda: self._change_password_problem(
             self.tr("There was a problem changing the password."))
         sig.srp_password_change_error.connect(pwd_change_error)
 
-        pwd_change_badpw = partial(
-            self._change_password_problem,
+        pwd_change_badpw = lambda: self._change_password_problem(
             self.tr("You did not enter a correct current password."))
         sig.srp_password_change_badpw.connect(pwd_change_badpw)
