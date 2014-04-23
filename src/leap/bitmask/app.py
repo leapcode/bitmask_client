@@ -214,6 +214,7 @@ def main():
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
     flags.OPENVPN_VERBOSITY = opts.openvpn_verb
+    flags.SKIP_WIZARD_CHECKS = opts.skip_wizard_checks
 
     flags.CA_CERT_FILE = opts.ca_cert_file
 
