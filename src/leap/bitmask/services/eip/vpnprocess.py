@@ -540,11 +540,11 @@ class VPNManager(object):
             #   "Auth read bytes"
 
             if text == "TUN/TAP read bytes":
-                tun_tap_read = value
+                tun_tap_read = value  # download
             elif text == "TUN/TAP write bytes":
-                tun_tap_write = value
+                tun_tap_write = value  # upload
 
-        status = (tun_tap_write, tun_tap_read)
+        status = (tun_tap_read, tun_tap_write)
         if status != self._last_status:
             self._signaler.signal(self._signaler.EIP_STATUS_CHANGED, status)
             self._last_status = status
