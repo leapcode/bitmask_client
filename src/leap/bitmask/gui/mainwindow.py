@@ -1517,9 +1517,14 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._eip_connection.qtsigs.connected_signal.emit()
 
-        # check for connectivity
         provider_config = self._get_best_provider_config()
         domain = provider_config.get_domain()
+
+        self._eip_status.set_provider(domain)
+        self._settings.set_defaultprovider(provider)
+        self._already_started_eip = True
+
+        # check for connectivity
         self._check_name_resolution(domain)
 
     def _check_name_resolution(self, domain):
@@ -1675,13 +1680,6 @@ class MainWindow(QtGui.QMainWindow):
                     "not installed properly in your "
                     "system.").format(self._eip_name))
         self._set_eipstatus_off()
-
-    def _on_eip_connected(self):
-        # XXX move to the state machine too
-        self._eip_status.set_provider(provider)
-
-        self._settings.set_defaultprovider(provider)
-        self._already_started_eip = True
 
     @QtCore.Slot()
     def _stop_eip(self):
