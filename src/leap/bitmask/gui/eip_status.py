@@ -260,11 +260,12 @@ class EIPStatusWidget(QtGui.QWidget):
             self._service_name, self.tr("disabled")))
 
         # Replace EIP tray menu with an action that displays a "disabled" text
-        menu = self._systray.contextMenu()
-        menu.insertAction(
-            self._eip_status_menu.menuAction(),
-            self._eip_disabled_action)
-        self._eip_status_menu.menuAction().setVisible(False)
+        if self.isVisible():
+            menu = self._systray.contextMenu()
+            menu.insertAction(
+                self._eip_status_menu.menuAction(),
+                self._eip_disabled_action)
+            self._eip_status_menu.menuAction().setVisible(False)
 
     @QtCore.Slot()
     def enable_eip_start(self):
@@ -278,7 +279,8 @@ class EIPStatusWidget(QtGui.QWidget):
         # Restore the eip action menu
         menu = self._systray.contextMenu()
         menu.removeAction(self._eip_disabled_action)
-        self._eip_status_menu.menuAction().setVisible(True)
+        if self.isVisible():
+            self._eip_status_menu.menuAction().setVisible(True)
 
     # XXX disable (later) --------------------------
     def set_eip_status(self, status, error=False):
