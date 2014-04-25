@@ -359,8 +359,8 @@ class EIPStatusWidget(QtGui.QWidget):
         If data is None, we just will refresh the display based on the previous
         data.
 
-        :param data: a dictionary with the tcp/udp write and read totals.
-        :type data: dict
+        :param data: a tuple with download/upload totals (download, upload).
+        :type data: tuple
         """
         if data is not None:
             try:

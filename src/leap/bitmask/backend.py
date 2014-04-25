@@ -1040,7 +1040,7 @@ class Backend(object):
             eip_process_restart_ping
             eip_process_restart_tls
             eip_state_changed -> str
-            eip_status_changed -> str
+            eip_status_changed -> tuple of str (download, upload)
             eip_vpn_launcher_exception
         """
         self._call_queue.put(("eip", "start", None))
