@@ -1,0 +1,2 @@
+- Hide services that the current logged in provider does not have. Closes #5550.
+- If we don't have a provider supporting that service we hide the actions along with the widgets. Related to #5550.
