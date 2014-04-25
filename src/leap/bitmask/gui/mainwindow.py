@@ -256,6 +256,8 @@ class MainWindow(QtGui.QMainWindow):
         # self.ui.btnEIPPreferences.clicked.connect(self._show_eip_preferences)
 
         self._enabled_services = []
+        self._ui_mx_visible = True
+        self._ui_eip_visible = True
 
         # last minute UI manipulations
 
@@ -723,7 +725,7 @@ class MainWindow(QtGui.QMainWindow):
             if IS_MAC:
                 self.raise_()
 
-        self._hide_unsupported_services()
+        self._show_hide_unsupported_services()
 
         if self._wizard:
             possible_username = self._wizard.get_username()
@@ -765,7 +767,7 @@ class MainWindow(QtGui.QMainWindow):
                 if self._login_widget.load_user_from_keyring(saved_user):
                     self._login()
 
-    def _hide_unsupported_services(self):
+    def _show_hide_unsupported_services(self):
         """
         Given a set of configured providers, it creates a set of
         available services among all of them and displays the service
@@ -786,8 +788,38 @@ class MainWindow(QtGui.QMainWindow):
                 for service in provider_config.get_services():
                     services.add(service)
 
-        self.ui.eipWidget.setVisible(EIP_SERVICE in services)
-        self.ui.mailWidget.setVisible(MX_SERVICE in services)
+        self._set_eip_visible(EIP_SERVICE in services)
+        self._set_mx_visible(MX_SERVICE in services)
+
+    def _set_mx_visible(self, visible):
+        """
+        Change the visibility of MX_SERVICE related UI components.
+
+        :param visible: whether the components should be visible or not.
+        :type visible: bool
+        """
+        # only update visibility if it is something to change
+        if self._ui_mx_visible ^ visible:
+            self.ui.mailWidget.setVisible(visible)
+            self.ui.lineUnderEmail.setVisible(visible)
+            self._action_mail_status.setVisible(visible)
+            self._ui_mx_visible = visible
+
+    def _set_eip_visible(self, visible):
+        """
+        Change the visibility of EIP_SERVICE related UI components.
+
+        :param visible: whether the components should be visible or not.
+        :type visible: bool
+        """
+        # NOTE: we use xor to avoid the code being run if the visibility hasn't
+        # changed. This is meant to avoid the eip menu being displayed floating
+        # around at start because the systray isn't rendered yet.
+        if self._ui_eip_visible ^ visible:
+            self.ui.eipWidget.setVisible(visible)
+            self.ui.lineUnderEIP.setVisible(visible)
+            self._eip_menu.setVisible(visible)
+            self._ui_eip_visible = visible
 
     def _set_label_offline(self):
         """
@@ -824,7 +856,7 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addSeparator()
 
         eip_status_label = "{0}: {1}".format(self._eip_name, self.tr("OFF"))
-        eip_menu = systrayMenu.addMenu(eip_status_label)
+        self._eip_menu = eip_menu = systrayMenu.addMenu(eip_status_label)
         eip_menu.addAction(self._action_eip_startstop)
         self._eip_status.set_eip_status_menu(eip_menu)
         systrayMenu.addSeparator()
@@ -1186,7 +1218,7 @@ class MainWindow(QtGui.QMainWindow):
             username = self._login_widget.get_user()
             password = self._login_widget.get_password()
 
-            self._hide_unsupported_services()
+            self._show_hide_unsupported_services()
 
             domain = self._provider_config.get_domain()
             self._backend.login(domain, username, password)
@@ -1220,6 +1252,9 @@ class MainWindow(QtGui.QMainWindow):
             self.soledad_ready.connect(lambda: btn_enabled(True))
             self._soledad_bootstrapper.soledad_failed.connect(
                 lambda: btn_enabled(True))
+
+        if not self._get_best_provider_config().provides_mx():
+            self._set_mx_visible(False)
 
     def _start_eip_bootstrap(self):
         """
@@ -1521,7 +1556,7 @@ class MainWindow(QtGui.QMainWindow):
         domain = provider_config.get_domain()
 
         self._eip_status.set_provider(domain)
-        self._settings.set_defaultprovider(provider)
+        self._settings.set_defaultprovider(domain)
         self._already_started_eip = True
 
         # check for connectivity
@@ -1949,6 +1984,8 @@ class MainWindow(QtGui.QMainWindow):
         self._logged_user = None
         self._login_widget.logged_out()
         self._mail_status.mail_state_disabled()
+
+        self._show_hide_unsupported_services()
 
     @QtCore.Slot(dict)
     def _intermediate_stage(self, data):
