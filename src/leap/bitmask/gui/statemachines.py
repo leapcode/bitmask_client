@@ -562,6 +562,8 @@ class ConnectionMachineBuilder(object):
         if action:
             off.assignProperty(
                 action, 'text', off_label)
+            off.assignProperty(
+                action, 'enabled', True)
         off.setObjectName(_OFF)
         states[_OFF] = off
 
