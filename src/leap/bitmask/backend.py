@@ -475,7 +475,7 @@ class Authenticate(object):
         """
         self.key = "authenticate"
         self._signaler = signaler
-        self._srp_auth = None
+        self._srp_auth = SRPAuth(ProviderConfig(), self._signaler)
 
     def login(self, domain, username, password):
         """
