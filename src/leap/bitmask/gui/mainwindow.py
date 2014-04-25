@@ -1521,7 +1521,7 @@ class MainWindow(QtGui.QMainWindow):
         domain = provider_config.get_domain()
 
         self._eip_status.set_provider(domain)
-        self._settings.set_defaultprovider(provider)
+        self._settings.set_defaultprovider(domain)
         self._already_started_eip = True
 
         # check for connectivity
