@@ -31,6 +31,7 @@ from twisted.internet.task import LoopingCall
 from twisted.python import log
 
 import zope.interface
+import zope.proxy
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
@@ -44,6 +45,9 @@ from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 
 from leap.bitmask.services.eip import vpnlauncher, vpnprocess
 from leap.bitmask.services.eip import linuxvpnlauncher, darwinvpnlauncher
+
+from leap.bitmask.services.soledad.soledadbootstrapper import \
+    SoledadBootstrapper
 
 from leap.common import certs as leap_certs
 
@@ -545,6 +549,89 @@ class EIP(object):
                 self._signaler.signal(self._signaler.EIP_CANNOT_START)
 
 
+class Soledad(object):
+    """
+    Interfaces with setup of Soledad.
+    """
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, signaler=None):
+        """
+        Constructor for the Soledad component.
+
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        self.key = "soledad"
+        self._signaler = signaler
+        self._soledad_bootstrapper = SoledadBootstrapper(signaler)
+        self._soledad_defer = None
+
+    def bootstrap(self, username, domain, password):
+        """
+        Bootstrap Soledad with the user credentials.
+
+        Signals:
+            soledad_download_config
+            soledad_gen_key
+
+        :param user: user's login
+        :type user: unicode
+        :param domain: the domain that we are using.
+        :type domain: unicode
+        :param password: user's password
+        :type password: unicode
+        """
+        provider_config = ProviderConfig.get_provider_config(domain)
+        if provider_config is not None:
+            self._soledad_defer = threads.deferToThread(
+                self._soledad_bootstrapper.run_soledad_setup_checks,
+                provider_config, username, password,
+                download_if_needed=True)
+        else:
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.SOLEDAD_BOOTSTRAP_FAILED)
+            logger.error("Could not load provider configuration.")
+
+        return self._soledad_defer
+
+    def load_offline(self, username, password, uuid):
+        """
+        Load the soledad database in offline mode.
+
+        :param username: full user id (user@provider)
+        :type username: str or unicode
+        :param password: the soledad passphrase
+        :type password: unicode
+        :param uuid: the user uuid
+        :type uuid: str or unicode
+
+        Signals:
+            Signaler.soledad_offline_finished
+            Signaler.soledad_offline_failed
+        """
+        self._soledad_bootstrapper.load_offline_soledad(
+            username, password, uuid)
+
+    def cancel_bootstrap(self):
+        """
+        Cancel the ongoing soledad bootstrap (if any).
+        """
+        if self._soledad_defer is not None:
+            logger.debug("Cancelling soledad defer.")
+            self._soledad_defer.cancel()
+            self._soledad_defer = None
+
+    def close(self):
+        """
+        Close soledad database.
+        """
+        soledad = self._soledad_bootstrapper.soledad
+        if soledad is not None:
+            soledad.close()
+
+
 class Authenticate(object):
     """
     Interfaces with setup and bootstrapping operations for a provider
@@ -738,6 +825,14 @@ class Signaler(QtCore.QObject):
     eip_can_start = QtCore.Signal(object)
     eip_cannot_start = QtCore.Signal(object)
 
+    # Signals for Soledad
+    soledad_bootstrap_failed = QtCore.Signal(object)
+    soledad_bootstrap_finished = QtCore.Signal(object)
+    soledad_offline_failed = QtCore.Signal(object)
+    soledad_offline_finished = QtCore.Signal(object)
+    soledad_invalid_auth_token = QtCore.Signal(object)
+    soledad_cancelled_bootstrap = QtCore.Signal(object)
+
     # This signal is used to warn the backend user that is doing something
     # wrong
     backend_bad_call = QtCore.Signal(object)
@@ -806,6 +901,14 @@ class Signaler(QtCore.QObject):
 
     EIP_CAN_START = "eip_can_start"
     EIP_CANNOT_START = "eip_cannot_start"
+
+    SOLEDAD_BOOTSTRAP_FAILED = "soledad_bootstrap_failed"
+    SOLEDAD_BOOTSTRAP_FINISHED = "soledad_bootstrap_finished"
+    SOLEDAD_OFFLINE_FAILED = "soledad_offline_failed"
+    SOLEDAD_OFFLINE_FINISHED = "soledad_offline_finished"
+    SOLEDAD_INVALID_AUTH_TOKEN = "soledad_invalid_auth_token"
+
+    SOLEDAD_CANCELLED_BOOTSTRAP = "soledad_cancelled_bootstrap"
 
     BACKEND_BAD_CALL = "backend_bad_call"
 
@@ -878,6 +981,13 @@ class Signaler(QtCore.QObject):
             self.SRP_STATUS_LOGGED_IN,
             self.SRP_STATUS_NOT_LOGGED_IN,
 
+            self.SOLEDAD_BOOTSTRAP_FAILED,
+            self.SOLEDAD_BOOTSTRAP_FINISHED,
+            self.SOLEDAD_OFFLINE_FAILED,
+            self.SOLEDAD_OFFLINE_FINISHED,
+            self.SOLEDAD_INVALID_AUTH_TOKEN,
+            self.SOLEDAD_CANCELLED_BOOTSTRAP,
+
             self.BACKEND_BAD_CALL,
         ]
 
@@ -937,6 +1047,7 @@ class Backend(object):
         self._register(Register(self._signaler))
         self._register(Authenticate(self._signaler))
         self._register(EIP(self._signaler))
+        self._register(Soledad(self._signaler))
 
         # We have a looping call on a thread executing all the
         # commands in queue. Right now this queue is an actual Queue
@@ -1282,6 +1393,53 @@ class Backend(object):
         """
         self._call_queue.put(("authenticate", "get_logged_in_status", None))
 
+    def soledad_bootstrap(self, username, domain, password):
+        """
+        Bootstrap the soledad database.
+
+        :param username: the user name
+        :type username: unicode
+        :param domain: the domain that we are using.
+        :type domain: unicode
+        :param password: the password for the username
+        :type password: unicode
+
+        Signals:
+            soledad_bootstrap_finished
+            soledad_bootstrap_failed
+            soledad_invalid_auth_token
+        """
+        self._call_queue.put(("soledad", "bootstrap", None,
+                              username, domain, password))
+
+    def load_offline_soledad(self, username, password, uuid):
+        """
+        Load the soledad database in offline mode.
+
+        :param username: full user id (user@provider)
+        :type username: str or unicode
+        :param password: the soledad passphrase
+        :type password: unicode
+        :param uuid: the user uuid
+        :type uuid: str or unicode
+
+        Signals:
+        """
+        self._call_queue.put(("soledad", "load_offline", None,
+                              username, password, uuid))
+
+    def cancel_soledad_bootstrap(self):
+        """
+        Cancel the ongoing soledad bootstrapping process (if any).
+        """
+        self._call_queue.put(("soledad", "cancel_bootstrap", None))
+
+    def close_soledad(self):
+        """
+        Close soledad database.
+        """
+        self._call_queue.put(("soledad", "close", None))
+
     ###########################################################################
     # XXX HACK: this section is meant to be a place to hold methods and
     # variables needed in the meantime while we migrate all to the backend.
@@ -1289,3 +1447,11 @@ class Backend(object):
     def get_provider_config(self):
         provider_config = self._components["provider"]._provider_config
         return provider_config
+
+    def get_soledad(self):
+        soledad = self._components["soledad"]._soledad_bootstrapper._soledad
+        return soledad
+
+    def get_keymanager(self):
+        km = self._components["soledad"]._soledad_bootstrapper._keymanager
+        return km

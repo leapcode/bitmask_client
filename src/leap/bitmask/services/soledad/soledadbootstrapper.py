@@ -25,7 +25,6 @@ import sys
 from ssl import SSLError
 from sqlite3 import ProgrammingError as sqlite_ProgrammingError
 
-from PySide import QtCore
 from u1db import errors as u1db_errors
 from twisted.internet import threads
 from zope.proxy import sameProxiedObjects
@@ -134,16 +133,11 @@ class SoledadBootstrapper(AbstractBootstrapper):
     MAX_INIT_RETRIES = 10
     MAX_SYNC_RETRIES = 10
 
-    # All dicts returned are of the form
-    # {"passed": bool, "error": str}
-    download_config = QtCore.Signal(dict)
-    gen_key = QtCore.Signal(dict)
-    local_only_ready = QtCore.Signal(dict)
-    soledad_invalid_auth_token = QtCore.Signal()
-    soledad_failed = QtCore.Signal()
+    def __init__(self, signaler=None):
+        AbstractBootstrapper.__init__(self, signaler)
 
-    def __init__(self):
-        AbstractBootstrapper.__init__(self)
+        if signaler is not None:
+            self._cancel_signal = signaler.SOLEDAD_CANCELLED_BOOTSTRAP
 
         self._provider_config = None
         self._soledad_config = None
@@ -181,16 +175,22 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Instantiate Soledad for offline use.
 
         :param username: full user id (user@provider)
-        :type username: basestring
+        :type username: str or unicode
         :param password: the soledad passphrase
         :type password: unicode
         :param uuid: the user uuid
-        :type uuid: basestring
+        :type uuid: str or unicode
         """
         print "UUID ", uuid
         self._address = username
+        self._password = password
         self._uuid = uuid
-        return self.load_and_sync_soledad(uuid, offline=True)
+        try:
+            self.load_and_sync_soledad(uuid, offline=True)
+            self._signaler.signal(self._signaler.SOLEDAD_OFFLINE_FINISHED)
+        except Exception:
+            # TODO: we should handle more specific exceptions in here
+            self._signaler.signal(self._signaler.SOLEDAD_OFFLINE_FAILED)
 
     def _get_soledad_local_params(self, uuid, offline=False):
         """
@@ -245,7 +245,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
     def _do_soledad_init(self, uuid, secrets_path, local_db_path,
                          server_url, cert_file, token):
         """
-        Initialize soledad, retry if necessary and emit soledad_failed if we
+        Initialize soledad, retry if necessary and raise an exception if we
         can't succeed.
 
         :param uuid: user identifier
@@ -263,19 +263,22 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :param auth token: auth token
         :type auth_token: str
         """
-        init_tries = self.MAX_INIT_RETRIES
-        while init_tries > 0:
+        init_tries = 1
+        while init_tries <= self.MAX_INIT_RETRIES:
             try:
+                logger.debug("Trying to init soledad....")
                 self._try_soledad_init(
                     uuid, secrets_path, local_db_path,
                     server_url, cert_file, token)
                 logger.debug("Soledad has been initialized.")
                 return
             except Exception:
-                init_tries -= 1
+                init_tries += 1
+                msg = "Init failed, retrying... (retry {0} of {1})".format(
+                    init_tries, self.MAX_INIT_RETRIES)
+                logger.warning(msg)
                 continue
 
-        self.soledad_failed.emit()
         raise SoledadInitError()
 
     def load_and_sync_soledad(self, uuid=None, offline=False):
@@ -306,9 +309,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
         leap_assert(not sameProxiedObjects(self._soledad, None),
                     "Null soledad, error while initializing")
 
-        if flags.OFFLINE is True:
+        if flags.OFFLINE:
             self._init_keymanager(self._address, token)
-            self.local_only_ready.emit({self.PASSED_KEY: True})
         else:
             try:
                 address = make_address(
@@ -353,9 +355,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Do several retries to get an initial soledad sync.
         """
         # and now, let's sync
-        sync_tries = self.MAX_SYNC_RETRIES
-        while sync_tries > 0:
+        sync_tries = 1
+        while sync_tries <= self.MAX_SYNC_RETRIES:
             try:
+                logger.debug("Trying to sync soledad....")
                 self._try_soledad_sync()
                 logger.debug("Soledad has been synced.")
                 # so long, and thanks for all the fish
@@ -368,19 +371,20 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 # retry strategy can be pushed to u1db, or at least
                 # it's something worthy to talk about with the
                 # ubuntu folks.
-                sync_tries -= 1
+                sync_tries += 1
+                msg = "Sync failed, retrying... (retry {0} of {1})".format(
+                    sync_tries, self.MAX_SYNC_RETRIES)
+                logger.warning(msg)
                 continue
             except InvalidAuthTokenError:
-                self.soledad_invalid_auth_token.emit()
+                self._signaler.signal(
+                    self._signaler.SOLEDAD_INVALID_AUTH_TOKEN)
                 raise
             except Exception as e:
                 logger.exception("Unhandled error while syncing "
                                  "soledad: %r" % (e,))
                 break
 
-        # reached bottom, failed to sync
-        # and there's nothing we can do...
-        self.soledad_failed.emit()
         raise SoledadSyncError()
 
     def _try_soledad_init(self, uuid, secrets_path, local_db_path,
@@ -443,7 +447,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Raises SoledadSyncError if not successful.
         """
         try:
-            logger.debug("trying to sync soledad....")
             self._soledad.sync()
         except SSLError as exc:
             logger.error("%r" % (exc,))
@@ -467,7 +470,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         """
         Download the Soledad config for the given provider
         """
-
         leap_assert(self._provider_config,
                     "We need a provider configuration!")
         logger.debug("Downloading Soledad config for %s" %
@@ -479,14 +481,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self._soledad_config,
             self._session,
             self._download_if_needed)
-
-        # soledad config is ok, let's proceed to load and sync soledad
-        # XXX but honestly, this is a pretty strange entry point for that.
-        # it feels like it should be the other way around:
-        # load_and_sync, and from there, if needed, call download_config
-
-        uuid = self.srpauth.get_uuid()
-        self.load_and_sync_soledad(uuid)
 
     def _get_gpg_bin_path(self):
         """
@@ -574,7 +568,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 logger.exception(exc)
                 # but we do not raise
 
-    def _gen_key(self, _):
+    def _gen_key(self):
         """
         Generates the key pair if needed, uploads it to the webapp and
         nickserver
@@ -613,10 +607,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         logger.debug("Key generated successfully.")
 
-    def run_soledad_setup_checks(self,
-                                 provider_config,
-                                 user,
-                                 password,
+    def run_soledad_setup_checks(self, provider_config, user, password,
                                  download_if_needed=False):
         """
         Starts the checks needed for a new soledad setup
@@ -640,9 +631,25 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._user = user
         self._password = password
 
-        cb_chain = [
-            (self._download_config, self.download_config),
-            (self._gen_key, self.gen_key)
-        ]
+        if flags.OFFLINE:
+            signal_finished = self._signaler.SOLEDAD_OFFLINE_FINISHED
+            signal_failed = self._signaler.SOLEDAD_OFFLINE_FAILED
+        else:
+            signal_finished = self._signaler.SOLEDAD_BOOTSTRAP_FINISHED
+            signal_failed = self._signaler.SOLEDAD_BOOTSTRAP_FAILED
 
-        return self.addCallbackChain(cb_chain)
+        try:
+            self._download_config()
+
+            # soledad config is ok, let's proceed to load and sync soledad
+            uuid = self.srpauth.get_uuid()
+            self.load_and_sync_soledad(uuid)
+
+            if not flags.OFFLINE:
+                self._gen_key()
+
+            self._signaler.signal(signal_finished)
+        except Exception as e:
+            # TODO: we should handle more specific exceptions in here
+            logger.exception("Error while bootstrapping Soledad: %r" % (e, ))
+            self._signaler.signal(signal_failed)

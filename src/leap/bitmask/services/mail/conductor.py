@@ -72,11 +72,9 @@ class IMAPControl(object):
         from leap.bitmask.config import flags
 
         logger.debug('Starting imap service')
-        leap_assert(sameProxiedObjects(self._soledad, None)
-                    is not True,
+        leap_assert(not sameProxiedObjects(self._soledad, None),
                     "We need a non-null soledad for initializing imap service")
-        leap_assert(sameProxiedObjects(self._keymanager, None)
-                    is not True,
+        leap_assert(not sameProxiedObjects(self._keymanager, None),
                     "We need a non-null keymanager for initializing imap "
                     "service")
 

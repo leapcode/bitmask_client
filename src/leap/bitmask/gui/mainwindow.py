@@ -57,8 +57,6 @@ from leap.bitmask.services.mail import conductor as mail_conductor
 
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 from leap.bitmask.services.eip.connection import EIPConnection
-from leap.bitmask.services.soledad.soledadbootstrapper import \
-    SoledadBootstrapper
 
 from leap.bitmask.util import make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
@@ -195,7 +193,6 @@ class MainWindow(QtGui.QMainWindow):
         self._provisional_provider_config = ProviderConfig()
 
         self._already_started_eip = False
-        self._already_started_soledad = False
 
         # This is created once we have a valid provider config
         self._srp_auth = None
@@ -204,18 +201,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._backend_connected_signals = {}
         self._backend_connect()
-
-        self._soledad_bootstrapper = SoledadBootstrapper()
-        self._soledad_bootstrapper.download_config.connect(
-            self._soledad_intermediate_stage)
-        self._soledad_bootstrapper.gen_key.connect(
-            self._soledad_bootstrapped_stage)
-        self._soledad_bootstrapper.local_only_ready.connect(
-            self._soledad_bootstrapped_stage)
-        self._soledad_bootstrapper.soledad_invalid_auth_token.connect(
-            self._mail_status.set_soledad_invalid_auth_token)
-        self._soledad_bootstrapper.soledad_failed.connect(
-            self._mail_status.set_soledad_failed)
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
         self.ui.action_eip_preferences.triggered.connect(
@@ -301,8 +286,6 @@ class MainWindow(QtGui.QMainWindow):
         # around.
         self._soledad = ProxyBase(None)
         self._keymanager = ProxyBase(None)
-
-        self._soledad_defer = None
 
         self._mail_conductor = mail_conductor.MailConductor(
             self._soledad, self._keymanager)
@@ -460,6 +443,21 @@ class MainWindow(QtGui.QMainWindow):
 
         sig.eip_can_start.connect(self._backend_can_start_eip)
         sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
+
+        # Soledad signals
+        sig.soledad_bootstrap_failed.connect(
+            self._mail_status.set_soledad_failed)
+        sig.soledad_bootstrap_finished.connect(self._on_soledad_ready)
+
+        sig.soledad_offline_failed.connect(
+            self._mail_status.set_soledad_failed)
+        sig.soledad_offline_finished.connect(self._on_soledad_ready)
+
+        sig.soledad_invalid_auth_token.connect(
+            self._mail_status.set_soledad_invalid_auth_token)
+
+        # TODO: connect this with something
+        # sig.soledad_cancelled_bootstrap.connect()
 
     def _disconnect_and_untrack(self):
         """
@@ -1252,11 +1250,7 @@ class MainWindow(QtGui.QMainWindow):
         # XXX: Should we stop all the backend defers?
         self._backend.cancel_setup_provider()
         self._backend.cancel_login()
-
-        if self._soledad_defer is not None:
-            logger.debug("Cancelling soledad defer.")
-            self._soledad_defer.cancel()
-            self._soledad_defer = None
+        self._backend.cancel_soledad_bootstrap()
 
     @QtCore.Slot()
     def _set_login_cancelled(self):
@@ -1317,9 +1311,9 @@ class MainWindow(QtGui.QMainWindow):
         if MX_SERVICE in self._enabled_services:
             btn_enabled = self._login_widget.set_logout_btn_enabled
             btn_enabled(False)
-            self.soledad_ready.connect(lambda: btn_enabled(True))
-            self._soledad_bootstrapper.soledad_failed.connect(
-                lambda: btn_enabled(True))
+            sig = self._backend.signaler
+            sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
+            sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
         if not self._get_best_provider_config().provides_mx():
             self._set_mx_visible(False)
@@ -1372,9 +1366,6 @@ class MainWindow(QtGui.QMainWindow):
         Conditionally start Soledad.
         """
         # TODO split.
-        if self._already_started_soledad is True:
-            return
-
         if not self._provides_mx_and_enabled():
             return
 
@@ -1382,11 +1373,7 @@ class MainWindow(QtGui.QMainWindow):
         password = unicode(self._login_widget.get_password())
         provider_domain = self._login_widget.get_selected_provider()
 
-        sb = self._soledad_bootstrapper
         if flags.OFFLINE is True:
-            provider_domain = self._login_widget.get_selected_provider()
-            sb._password = password
-
             self._provisional_provider_config.load(
                 provider.get_provider_path(provider_domain))
 
@@ -1399,74 +1386,32 @@ class MainWindow(QtGui.QMainWindow):
                 # this is mostly for internal use/debug for now.
                 logger.warning("Sorry! Log-in at least one time.")
                 return
-            fun = sb.load_offline_soledad
-            fun(full_user_id, password, uuid)
+            self._backend.load_offline_soledad(full_user_id, password, uuid)
         else:
-            provider_config = self._provider_config
-
             if self._logged_user is not None:
-                self._soledad_defer = sb.run_soledad_setup_checks(
-                    provider_config, username, password,
-                    download_if_needed=True)
+                domain = self._provider_config.get_domain()
+                self._backend.soledad_bootstrap(username, domain, password)
 
     ###################################################################
     # Service control methods: soledad
 
-    @QtCore.Slot(dict)
-    def _soledad_intermediate_stage(self, data):
-        # TODO missing param docstring
+    @QtCore.Slot()
+    def _on_soledad_ready(self):
         """
         TRIGGERS:
-            self._soledad_bootstrapper.download_config
+            Signaler.soledad_bootstrap_finished
 
-        If there was a problem, displays it, otherwise it does nothing.
-        This is used for intermediate bootstrapping stages, in case
-        they fail.
+        Actions to take when Soledad is ready.
         """
-        passed = data[self._soledad_bootstrapper.PASSED_KEY]
-        if not passed:
-            # TODO display in the GUI:
-            # should pass signal to a slot in status_panel
-            # that sets the global status
-            logger.error("Soledad failed to start: %s" %
-                         (data[self._soledad_bootstrapper.ERROR_KEY],))
-
-    @QtCore.Slot(dict)
-    def _soledad_bootstrapped_stage(self, data):
-        """
-        TRIGGERS:
-            self._soledad_bootstrapper.gen_key
-            self._soledad_bootstrapper.local_only_ready
-
-        If there was a problem, displays it, otherwise it does nothing.
-        This is used for intermediate bootstrapping stages, in case
-        they fail.
-
-        :param data: result from the bootstrapping stage for Soledad
-        :type data: dict
-        """
-        passed = data[self._soledad_bootstrapper.PASSED_KEY]
-        if not passed:
-            # TODO should actually *display* on the panel.
-            logger.debug("ERROR on soledad bootstrapping:")
-            logger.error("%r" % data[self._soledad_bootstrapper.ERROR_KEY])
-            return
-
         logger.debug("Done bootstrapping Soledad")
 
         # Update the proxy objects to point to
         # the initialized instances.
-        setProxiedObject(self._soledad,
-                         self._soledad_bootstrapper.soledad)
-        setProxiedObject(self._keymanager,
-                         self._soledad_bootstrapper.keymanager)
+        setProxiedObject(self._soledad, self._backend.get_soledad())
+        setProxiedObject(self._keymanager, self._backend.get_keymanager())
 
-        # Ok, now soledad is ready, so we can allow other things that
-        # depend on soledad to start.
-        self._soledad_defer = None
+        self._soledad_started = True
 
-        # this will trigger start_imap_service
-        # and start_smtp_boostrapping
         self.soledad_ready.emit()
 
     ###################################################################
@@ -1991,9 +1936,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._cancel_ongoing_defers()
 
-        # reset soledad status flag
-        self._already_started_soledad = False
-
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
         self._backend.logout()
@@ -2101,11 +2043,7 @@ class MainWindow(QtGui.QMainWindow):
         if self._logged_user is not None:
             self._backend.logout()
 
-        if self._soledad_bootstrapper.soledad is not None:
-            logger.debug("Closing soledad...")
-            self._soledad_bootstrapper.soledad.close()
-        else:
-            logger.error("No instance of soledad was found.")
+        self._backend.close_soledad()
 
         logger.debug('Terminating vpn')
         self._backend.stop_eip(shutdown=True)
