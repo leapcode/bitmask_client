@@ -206,7 +206,7 @@ class LoggerWindow(QtGui.QDialog):
             pb = pastebin.PastebinAPI()
             link = pb.paste(PASTEBIN_API_DEV_KEY, content,
                             paste_name="Bitmask log",
-                            paste_expire_date='1W')
+                            paste_expire_date='1M')
 
             # convert to 'raw' link
             link = "http://pastebin.com/raw.php?i=" + link.split('/')[-1]
