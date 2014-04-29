@@ -197,11 +197,15 @@ class Provider(object):
         """
         d = None
 
+        # TODO: use this commented code when we don't need the provider config
+        # in the maiwindow.
+        # config = ProviderConfig.get_provider_config(provider)
+        # self._provider_config = config
+        # if config is not None:
         config = self._provider_config
         if get_provider_config(config, provider):
             d = self._provider_bootstrapper.run_provider_setup_checks(
-                self._provider_config,
-                download_if_needed=True)
+                config, download_if_needed=True)
         else:
             if self._signaler is not None:
                 self._signaler.signal(
@@ -246,8 +250,9 @@ class Register(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        config = ProviderConfig()
-        if get_provider_config(config, domain):
+        config = ProviderConfig.get_provider_config(domain)
+        self._provider_config = config
+        if config is not None:
             srpregister = SRPRegister(signaler=self._signaler,
                                       provider_config=config)
             return threads.deferToThread(
@@ -294,8 +299,9 @@ class EIP(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        config = self._provider_config
-        if get_provider_config(config, domain):
+        config = ProviderConfig.get_provider_config(domain)
+        self._provider_config = config
+        if config is not None:
             if skip_network:
                 return defer.Deferred()
             eb = self._eip_bootstrapper
@@ -572,8 +578,8 @@ class Authenticate(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        config = ProviderConfig()
-        if get_provider_config(config, domain):
+        config = ProviderConfig.get_provider_config(domain)
+        if config is not None:
             self._srp_auth = SRPAuth(config, self._signaler)
             self._login_defer = self._srp_auth.authenticate(username, password)
             return self._login_defer
