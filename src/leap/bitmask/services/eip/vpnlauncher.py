@@ -226,6 +226,11 @@ class VPNLauncher(object):
                     '--down', '\"%s\"' % (kls.DOWN_SCRIPT,)
                 ]
 
+        args += [
+            '--up-restart',
+            '--persist-tun'
+        ]
+
         ###########################################################
         # For the time being we are disabling the usage of the
         # down-root plugin, because it doesn't quite work as

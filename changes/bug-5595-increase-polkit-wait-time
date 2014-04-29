@@ -1,0 +1,1 @@
+- Increase waiting time to wait for polkit agent to be up. Closes: #5595
