@@ -139,7 +139,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
     download_config = QtCore.Signal(dict)
     gen_key = QtCore.Signal(dict)
     local_only_ready = QtCore.Signal(dict)
-    soledad_timeout = QtCore.Signal()
     soledad_invalid_auth_token = QtCore.Signal()
     soledad_failed = QtCore.Signal()
 
@@ -159,8 +158,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._srpauth = None
         self._soledad = None
 
-        self._soledad_retries = 0
-
     @property
     def keymanager(self):
         return self._keymanager
@@ -176,26 +173,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         leap_assert(self._provider_config is not None,
                     "We need a provider config")
         return SRPAuth(self._provider_config)
-
-    # retries
-
-    def cancel_bootstrap(self):
-        self._soledad_retries = self.MAX_INIT_RETRIES
-
-    def should_retry_initialization(self):
-        """
-        Return True if we should retry the initialization.
-        """
-        logger.debug("current retries: %s, max retries: %s" % (
-            self._soledad_retries,
-            self.MAX_INIT_RETRIES))
-        return self._soledad_retries < self.MAX_INIT_RETRIES
-
-    def increment_retries_count(self):
-        """
-        Increment the count of initialization retries.
-        """
-        self._soledad_retries += 1
 
     # initialization
 
@@ -265,6 +242,41 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # in the case of an invalid token we have already turned off mail and
         # warned the user in _do_soledad_sync()
 
+    def _do_soledad_init(self, uuid, secrets_path, local_db_path,
+                         server_url, cert_file, token):
+        """
+        Initialize soledad, retry if necessary and emit soledad_failed if we
+        can't succeed.
+
+        :param uuid: user identifier
+        :type uuid: str
+        :param secrets_path: path to secrets file
+        :type secrets_path: str
+        :param local_db_path: path to local db file
+        :type local_db_path: str
+        :param server_url: soledad server uri
+        :type server_url: str
+        :param cert_file: path to the certificate of the ca used
+                          to validate the SSL certificate used by the remote
+                          soledad server.
+        :type cert_file: str
+        :param auth token: auth token
+        :type auth_token: str
+        """
+        init_tries = self.MAX_INIT_RETRIES
+        while init_tries > 0:
+            try:
+                self._try_soledad_init(
+                    uuid, secrets_path, local_db_path,
+                    server_url, cert_file, token)
+                logger.debug("Soledad has been initialized.")
+                return
+            except Exception:
+                init_tries -= 1
+                continue
+
+        self.soledad_failed.emit()
+        raise SoledadInitError()
 
     def load_and_sync_soledad(self, uuid=None, offline=False):
         """
@@ -283,10 +295,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         server_url, cert_file = remote_param
 
         try:
-            self._try_soledad_init(
-                uuid, secrets_path, local_db_path,
-                server_url, cert_file, token)
-        except Exception:
+            self._do_soledad_init(uuid, secrets_path, local_db_path,
+                                  server_url, cert_file, token)
+        except SoledadInitError:
             # re-raise the exceptions from try_init,
             # we're currently handling the retries from the
             # soledad-launcher in the gui.
@@ -378,9 +389,13 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Try to initialize soledad.
 
         :param uuid: user identifier
+        :type uuid: str
         :param secrets_path: path to secrets file
+        :type secrets_path: str
         :param local_db_path: path to local db file
+        :type local_db_path: str
         :param server_url: soledad server uri
+        :type server_url: str
         :param cert_file: path to the certificate of the ca used
                           to validate the SSL certificate used by the remote
                           soledad server.
@@ -409,34 +424,17 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # and return a subclass of SoledadInitializationFailed
 
         # recoverable, will guarantee retries
-        except socket.timeout:
-            logger.debug("SOLEDAD initialization TIMED OUT...")
-            self.soledad_timeout.emit()
-            raise
-        except socket.error as exc:
-            logger.warning("Socket error while initializing soledad")
-            self.soledad_timeout.emit()
-            raise
-        except BootstrapSequenceError as exc:
-            logger.warning("Error while initializing soledad")
-            self.soledad_timeout.emit()
+        except (socket.timeout, socket.error, BootstrapSequenceError):
+            logger.warning("Error while initializing Soledad")
             raise
 
         # unrecoverable
-        except u1db_errors.Unauthorized:
-            logger.error("Error while initializing soledad "
-                         "(unauthorized).")
-            self.soledad_failed.emit()
-            raise
-        except u1db_errors.HTTPError as exc:
-            logger.exception("Error while initializing soledad "
-                             "(HTTPError)")
-            self.soledad_failed.emit()
+        except (u1db_errors.Unauthorized, u1db_errors.HTTPError):
+            logger.error("Error while initializing Soledad (u1db error).")
             raise
         except Exception as exc:
             logger.exception("Unhandled error while initializating "
-                             "soledad: %r" % (exc,))
-            self.soledad_failed.emit()
+                             "Soledad: %r" % (exc,))
             raise
 
     def _try_soledad_sync(self):

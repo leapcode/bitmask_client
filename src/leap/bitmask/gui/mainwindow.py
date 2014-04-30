@@ -209,8 +209,6 @@ class MainWindow(QtGui.QMainWindow):
             self._soledad_bootstrapped_stage)
         self._soledad_bootstrapper.local_only_ready.connect(
             self._soledad_bootstrapped_stage)
-        self._soledad_bootstrapper.soledad_timeout.connect(
-            self._retry_soledad_connection)
         self._soledad_bootstrapper.soledad_invalid_auth_token.connect(
             self._mail_status.set_soledad_invalid_auth_token)
         self._soledad_bootstrapper.soledad_failed.connect(
@@ -1362,22 +1360,6 @@ class MainWindow(QtGui.QMainWindow):
             # that sets the global status
             logger.error("Soledad failed to start: %s" %
                          (data[self._soledad_bootstrapper.ERROR_KEY],))
-            self._retry_soledad_connection()
-
-    def _retry_soledad_connection(self):
-        """
-        Retries soledad connection.
-        """
-        # XXX should move logic to soledad boostrapper itself
-        logger.debug("Retrying soledad connection.")
-        if self._soledad_bootstrapper.should_retry_initialization():
-            self._soledad_bootstrapper.increment_retries_count()
-            # XXX should cancel the existing socket --- this
-            # is avoiding a clean termination.
-            self._maybe_run_soledad_setup_checks()
-        else:
-            logger.warning("Max number of soledad initialization "
-                           "retries reached.")
 
     @QtCore.Slot(dict)
     def _soledad_bootstrapped_stage(self, data):
@@ -1943,7 +1925,6 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts the logout sequence
         """
-        self._soledad_bootstrapper.cancel_bootstrap()
         setProxiedObject(self._soledad, None)
 
         self._cancel_ongoing_defers()
