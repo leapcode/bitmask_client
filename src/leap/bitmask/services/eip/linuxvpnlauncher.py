@@ -101,7 +101,12 @@ leapfile = lambda f: "%s/%s" % (SYSTEM_CONFIG, f)
 
 class LinuxVPNLauncher(VPNLauncher):
     PKEXEC_BIN = 'pkexec'
+
+    # FIXME should get the absolute path to openvpn. See #5592
     OPENVPN_BIN = 'openvpn'
+    BITMASK_ROOT = "/usr/sbin/bitmask-root"
+
+    # FIXME get ABSOLUTE PATH
     OPENVPN_BIN_PATH = os.path.join(
         get_path_prefix(), "..", "apps", "eip", OPENVPN_BIN)
 
@@ -114,23 +119,23 @@ class LinuxVPNLauncher(VPNLauncher):
         OPENVPN_DOWN_ROOT_BASE,
         OPENVPN_DOWN_ROOT_FILE)
 
-    UPDOWN_FILE = "vpn-updown"
-
-    # vpn-up and vpn-down are hard-links to vpn-updown
-    UP_FILE = "vpn-up"
-    DOWN_FILE = "vpn-down"
-    UP_SCRIPT = leapfile(UP_FILE)
-    DOWN_SCRIPT = leapfile(DOWN_FILE)
-
+    # XXX Should be able to pick the right resolvconf script
+    # on the fly.
     RESOLV_UPDATE_FILE = "resolv-update"
     RESOLV_UPDATE_SCRIPT = leapfile(RESOLV_UPDATE_FILE)
 
     RESOLVCONF_FILE = "update-resolv-conf"
     RESOLVCONF_SCRIPT = leapfile(RESOLVCONF_FILE)
 
+    UP_SCRIPT = RESOLVCONF_SCRIPT
+    DOWN_SCRIPT = RESOLVCONF_SCRIPT
+
     UPDOWN_FILES = (UP_SCRIPT, DOWN_SCRIPT)
+
+    # XXX GET BOTH POLKIT FILES: the one for vpn and the other for the wrapper
     POLKIT_PATH = LinuxPolicyChecker.get_polkit_path()
-    OTHER_FILES = (POLKIT_PATH, RESOLV_UPDATE_SCRIPT, RESOLVCONF_SCRIPT)
+    OTHER_FILES = (POLKIT_PATH, RESOLV_UPDATE_SCRIPT, RESOLVCONF_SCRIPT,
+                   BITMASK_ROOT)
 
     @classmethod
     def maybe_pkexec(kls):

@@ -21,6 +21,7 @@ import logging
 import os
 import shutil
 import socket
+import subprocess
 import sys
 
 from itertools import chain, repeat
@@ -36,10 +37,11 @@ except ImportError:
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip import get_vpn_launcher
+from leap.bitmask.services.eip import linuxvpnlauncher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.bitmask.services.eip.udstelnet import UDSTelnet
 from leap.bitmask.util import first
-from leap.bitmask.platform_init import IS_MAC
+from leap.bitmask.platform_init import IS_MAC, IS_LINUX
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -181,6 +183,14 @@ class VPN(object):
             logger.info("Another vpn process is running. Will try to stop it.")
             vpnproc.stop_if_already_running()
 
+        # XXX we try to bring the firewall up
+        if IS_LINUX:
+            firewall_up = self._launch_firewall()
+            if not firewall_up:
+                logger.error("Could not bring firewall up, "
+                             "aborting openvpn launch.")
+                return
+
         cmd = vpnproc.getCommand()
         env = os.environ
         for key, val in vpnproc.vpn_env.items():
@@ -197,6 +207,24 @@ class VPN(object):
                      LoopingCall(vpnproc.pollState)]
         self._pollers.extend(poll_list)
         self._start_pollers()
+
+    def _launch_firewall(self):
+        """
+        Launch the firewall using the privileged wrapper.
+
+        :returns: True if the exitcode of calling the root helper in a
+                  subprocess is 0.
+        :rtype: bool
+        """
+        # XXX this is a temporary solution for being able to use the root
+        # helper while we still control the openvpn process.
+
+        # XXX could check for wrapper existence, check it's root owned etc.
+        # XXX could check that the iptables rules are in place.
+
+        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        exitCode = subprocess.call([BM_ROOT, "firewall", "start"])
+        return True if exitCode is 0 else False
 
     def _kill_if_left_alive(self, tries=0):
         """
