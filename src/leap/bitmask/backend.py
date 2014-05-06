@@ -46,6 +46,8 @@ from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.bitmask.services.eip import vpnlauncher, vpnprocess
 from leap.bitmask.services.eip import linuxvpnlauncher, darwinvpnlauncher
 
+from leap.bitmask.services.mail import imap
+
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
 
@@ -630,6 +632,37 @@ class Soledad(object):
         soledad = self._soledad_bootstrapper.soledad
         if soledad is not None:
             soledad.close()
+
+
+class Mail(object):
+    """
+    Interfaces with setup and launch of Mail.
+    """
+
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, signaler=None):
+        """
+        Constructor for the Mail component.
+
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        self.key = "mail"
+        self._signaler = signaler
+
+    def start_smtp_service(self):
+        pass
+
+    def start_imap_service(self, offline=False):
+        pass
+
+    def stop_smtp_service(self):
+        pass
+
+    def stop_imap_service(self):
+        pass
 
 
 class Authenticate(object):

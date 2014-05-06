@@ -87,7 +87,6 @@ class MainWindow(QtGui.QMainWindow):
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
-    mail_client_logged_in = QtCore.Signal([])
     logout = QtCore.Signal([])
 
     # We use this flag to detect abnormal terminations
@@ -122,9 +121,6 @@ class MainWindow(QtGui.QMainWindow):
                  reqcbk=lambda req, resp: None)  # make rpc call async
         register(signal=proto.RAISE_WINDOW,
                  callback=self._on_raise_window_event,
-                 reqcbk=lambda req, resp: None)  # make rpc call async
-        register(signal=proto.IMAP_CLIENT_LOGIN,
-                 callback=self._on_mail_client_logged_in,
                  reqcbk=lambda req, resp: None)  # make rpc call async
         # end register leap events ####################################
 
@@ -265,7 +261,6 @@ class MainWindow(QtGui.QMainWindow):
         # XXX should connect to mail_conductor.start_mail_service instead
         self.soledad_ready.connect(self._start_smtp_bootstrapping)
         self.soledad_ready.connect(self._start_imap_service)
-        self.mail_client_logged_in.connect(self._fetch_incoming_mail)
         self.logout.connect(self._stop_imap_service)
         self.logout.connect(self._stop_smtp_service)
 
@@ -1373,7 +1368,7 @@ class MainWindow(QtGui.QMainWindow):
         password = unicode(self._login_widget.get_password())
         provider_domain = self._login_widget.get_selected_provider()
 
-        if flags.OFFLINE is True:
+        if flags.OFFLINE:
             self._provisional_provider_config.load(
                 provider.get_provider_path(provider_domain))
 
@@ -1455,33 +1450,18 @@ class MainWindow(QtGui.QMainWindow):
         # in the mail state machine so it shows that imap is active
         # (but not smtp since it's not yet ready for offline use)
         start_fun = self._mail_conductor.start_imap_service
-        if flags.OFFLINE is True:
+        if flags.OFFLINE:
             provider_domain = self._login_widget.get_selected_provider()
             self._provider_config.load(
                 provider.get_provider_path(provider_domain))
         provides_mx = self._provider_config.provides_mx()
 
-        if flags.OFFLINE is True and provides_mx:
+        if flags.OFFLINE and provides_mx:
             start_fun()
             return
 
         if self._provides_mx_and_enabled():
             start_fun()
-
-    def _on_mail_client_logged_in(self, req):
-        """
-        Triggers qt signal when client login event is received.
-        """
-        self.mail_client_logged_in.emit()
-
-    @QtCore.Slot()
-    def _fetch_incoming_mail(self):
-        """
-        TRIGGERS:
-            self.mail_client_logged_in
-        """
-        # TODO connect signal directly!!!
-        self._mail_conductor.fetch_incoming_mail()
 
     @QtCore.Slot()
     def _stop_imap_service(self):

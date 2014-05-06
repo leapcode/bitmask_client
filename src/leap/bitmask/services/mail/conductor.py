@@ -19,15 +19,15 @@ Mail Services Conductor
 """
 import logging
 
-from zope.proxy import sameProxiedObjects
+from twisted.internet import threads
 
+from leap.bitmask.config import flags
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
-from leap.bitmask.services.mail import imap
 from leap.bitmask.services.mail.smtpbootstrapper import SMTPBootstrapper
 from leap.bitmask.services.mail.smtpconfig import SMTPConfig
+from leap.bitmask.services.mail.imapcontroller import IMAPController
 
-from leap.common.check import leap_assert
 from leap.common.events import events_pb2 as leap_events
 from leap.common.events import register as leap_register
 
@@ -39,15 +39,20 @@ class IMAPControl(object):
     """
     Methods related to IMAP control.
     """
-    def __init__(self):
+    def __init__(self, soledad, keymanager):
         """
         Initializes smtp variables.
+
+        :param soledad: a transparent proxy that eventually will point to a
+                        Soledad Instance.
+        :type soledad: zope.proxy.ProxyBase
+        :param keymanager: a transparent proxy that eventually will point to a
+                           Keymanager Instance.
+        :type keymanager: zope.proxy.ProxyBase
         """
         self.imap_machine = None
-        self.imap_service = None
-        self.imap_port = None
-        self.imap_factory = None
         self.imap_connection = None
+        self._imap_controller = IMAPController(soledad, keymanager)
 
         leap_register(signal=leap_events.IMAP_SERVICE_STARTED,
                       callback=self._handle_imap_events,
@@ -55,10 +60,13 @@ class IMAPControl(object):
         leap_register(signal=leap_events.IMAP_SERVICE_FAILED_TO_START,
                       callback=self._handle_imap_events,
                       reqcbk=lambda req, resp: None)
+        leap_register(signal=leap_events.IMAP_CLIENT_LOGIN,
+                      callback=self._handle_imap_events,
+                      reqcbk=lambda req, resp: None)
 
     def set_imap_connection(self, imap_connection):
         """
-        Sets the imap connection to an initialized connection.
+        Set the imap connection to an initialized connection.
 
         :param imap_connection: an initialized imap connection
         :type imap_connection: IMAPConnection instance.
@@ -67,65 +75,23 @@ class IMAPControl(object):
 
     def start_imap_service(self):
         """
-        Starts imap service.
+        Start imap service.
         """
-        from leap.bitmask.config import flags
-
-        logger.debug('Starting imap service')
-        leap_assert(not sameProxiedObjects(self._soledad, None),
-                    "We need a non-null soledad for initializing imap service")
-        leap_assert(not sameProxiedObjects(self._keymanager, None),
-                    "We need a non-null keymanager for initializing imap "
-                    "service")
-
-        offline = flags.OFFLINE
-        self.imap_service, self.imap_port, \
-            self.imap_factory = imap.start_imap_service(
-                self._soledad,
-                self._keymanager,
-                userid=self.userid,
-                offline=offline)
-
-        if offline is False:
-            logger.debug("Starting loop")
-            self.imap_service.start_loop()
+        threads.deferToThread(self._imap_controller.start_imap_service,
+                              self.userid, flags.OFFLINE)
 
     def stop_imap_service(self, cv):
         """
-        Stops imap service (fetcher, factory and port).
+        Stop imap service (fetcher, factory and port).
 
         :param cv: A condition variable to which we can signal when imap
                    indeed stops.
         :type cv: threading.Condition
         """
         self.imap_connection.qtsigs.disconnecting_signal.emit()
-        # TODO We should homogenize both services.
-        if self.imap_service is not None:
-            logger.debug('Stopping imap service.')
-            # Stop the loop call in the fetcher
-            self.imap_service.stop()
-            self.imap_service = None
-            # Stop listening on the IMAP port
-            self.imap_port.stopListening()
-            # Stop the protocol
-            self.imap_factory.theAccount.closed = True
-            self.imap_factory.doStop(cv)
-        else:
-            # main window does not have to wait because there's no service to
-            # be stopped, so we release the condition variable
-            cv.acquire()
-            cv.notify()
-            cv.release()
+        logger.debug('Stopping imap service.')
 
-    def fetch_incoming_mail(self):
-        """
-        Fetches incoming mail.
-        """
-        if self.imap_service:
-            logger.debug('Client connected, fetching mail...')
-            self.imap_service.fetch()
-
-    # handle events
+        self._imap_controller.stop_imap_service(cv)
 
     def _handle_imap_events(self, req):
         """
@@ -135,25 +101,31 @@ class IMAPControl(object):
         :type req: leap.common.events.events_pb2.SignalRequest
         """
         if req.event == leap_events.IMAP_SERVICE_STARTED:
-            self.on_imap_connected()
+            self._on_imap_connected()
         elif req.event == leap_events.IMAP_SERVICE_FAILED_TO_START:
-            self.on_imap_failed()
+            self._on_imap_failed()
+        elif req.event == leap_events.IMAP_CLIENT_LOGIN:
+            self._on_mail_client_logged_in()
 
-    # emit connection signals
+    def _on_mail_client_logged_in(self):
+        """
+        On mail client logged in, fetch incoming mail.
+        """
+        self._controller.imap_service_fetch()
 
-    def on_imap_connecting(self):
+    def _on_imap_connecting(self):
         """
         Callback for IMAP connecting state.
         """
         self.imap_connection.qtsigs.connecting_signal.emit()
 
-    def on_imap_connected(self):
+    def _on_imap_connected(self):
         """
         Callback for IMAP connected state.
         """
         self.imap_connection.qtsigs.connected_signal.emit()
 
-    def on_imap_failed(self):
+    def _on_imap_failed(self):
         """
         Callback for IMAP failed state.
         """
@@ -197,7 +169,8 @@ class SMTPControl(object):
         :type download_if_needed: bool
         """
         self.smtp_connection.qtsigs.connecting_signal.emit()
-        self.smtp_bootstrapper.start_smtp_service(
+        threads.deferToThread(
+            self.smtp_bootstrapper.start_smtp_service,
             provider_config, self.smtp_config, self._keymanager,
             self.userid, download_if_needed)
 
@@ -258,12 +231,11 @@ class MailConductor(IMAPControl, SMTPControl):
         :param soledad: a transparent proxy that eventually will point to a
                         Soledad Instance.
         :type soledad: zope.proxy.ProxyBase
-
         :param keymanager: a transparent proxy that eventually will point to a
                            Keymanager Instance.
         :type keymanager: zope.proxy.ProxyBase
         """
-        IMAPControl.__init__(self)
+        IMAPControl.__init__(self, soledad, keymanager)
         SMTPControl.__init__(self)
         self._soledad = soledad
         self._keymanager = keymanager
