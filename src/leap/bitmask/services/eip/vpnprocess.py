@@ -183,7 +183,7 @@ class VPN(object):
             logger.info("Another vpn process is running. Will try to stop it.")
             vpnproc.stop_if_already_running()
 
-        # XXX we try to bring the firewall up
+        # we try to bring the firewall up
         if IS_LINUX:
             gateways = vpnproc.getGateways()
             firewall_up = self._launch_firewall(gateways)
@@ -226,11 +226,18 @@ class VPN(object):
         # XXX could check for wrapper existence, check it's root owned etc.
         # XXX could check that the iptables rules are in place.
 
-        print "LAUNCHING FIREWALL --",  gateways
-
         BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
         exitCode = subprocess.call(["pkexec",
                                     BM_ROOT, "firewall", "start"] + gateways)
+        return True if exitCode is 0 else False
+
+    def _tear_down_firewall(self):
+        """
+        Tear the firewall down using the privileged wrapper.
+        """
+        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        exitCode = subprocess.call(["pkexec",
+                                    BM_ROOT, "firewall", "stop"])
         return True if exitCode is 0 else False
 
     def _kill_if_left_alive(self, tries=0):
@@ -245,6 +252,17 @@ class VPN(object):
         while tries < self.TERMINATE_MAXTRIES:
             if self._vpnproc.transport.pid is None:
                 logger.debug("Process has been happily terminated.")
+
+                # we try to bring the firewall up
+                # XXX We could keep some state to be sure it was the
+                # user who did turn EIP off.
+                if IS_LINUX:
+                    firewall_down = self._tear_down_firewall()
+                    if firewall_down:
+                        logger.debug("Firewall down")
+                    else:
+                        logger.warning("Could not tear firewall down")
+
                 return
             else:
                 logger.debug("Process did not die, waiting...")
