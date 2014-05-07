@@ -561,11 +561,14 @@ def firewall_start(args):
                   "--jump", "ACCEPT")
 
     # block DNS requests to anyone but the service provider or localhost
+    # XXX need to insert ipv6 too ??? -- kali
     ip4tables("--insert", BITMASK_CHAIN, "--protocol", "udp", "--dport", "53",
               "--jump", "REJECT")
-    for allowed_dns in gateways + ["127.0.0.1", "127.0.1.1"]:
-        ip4tables("--insert", "bitmask", "--protocol", "udp", "--dport", "53",
-                  "--destination", allowed_dns, "--jump", "ACCEPT")
+
+    for allowed_dns in [NAMESERVER, "127.0.0.1", "127.0.1.1"]:
+        ip4tables("--insert", BITMASK_CHAIN, "--protocol", "udp",
+                  "--dport", "53", "--destination", allowed_dns,
+                  "--jump", "ACCEPT")
 
 
 def firewall_stop():
