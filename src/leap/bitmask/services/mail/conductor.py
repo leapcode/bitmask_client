@@ -18,22 +18,18 @@
 Mail Services Conductor
 """
 import logging
-import os
 
-from PySide import QtCore
 from zope.proxy import sameProxiedObjects
 
 from leap.bitmask.gui import statemachines
-from leap.bitmask.services.mail import imap
 from leap.bitmask.services.mail import connection as mail_connection
+from leap.bitmask.services.mail import imap
 from leap.bitmask.services.mail.smtpbootstrapper import SMTPBootstrapper
 from leap.bitmask.services.mail.smtpconfig import SMTPConfig
-from leap.bitmask.util import is_file
 
 from leap.common.check import leap_assert
-
-from leap.common.events import register as leap_register
 from leap.common.events import events_pb2 as leap_events
+from leap.common.events import register as leap_register
 
 
 logger = logging.getLogger(__name__)
@@ -167,10 +163,6 @@ class IMAPControl(object):
 
 
 class SMTPControl(object):
-
-    PORT_KEY = "port"
-    IP_KEY = "ip_address"
-
     def __init__(self):
         """
         Initializes smtp variables.
@@ -178,12 +170,8 @@ class SMTPControl(object):
         self.smtp_config = SMTPConfig()
         self.smtp_connection = None
         self.smtp_machine = None
-        self._smtp_service = None
-        self._smtp_port = None
 
         self.smtp_bootstrapper = SMTPBootstrapper()
-        self.smtp_bootstrapper.download_config.connect(
-            self.smtp_bootstrapped_stage)
 
         leap_register(signal=leap_events.SMTP_SERVICE_STARTED,
                       callback=self._handle_smtp_events,
@@ -200,100 +188,27 @@ class SMTPControl(object):
         """
         self.smtp_connection = smtp_connection
 
-    def start_smtp_service(self, host, port, cert):
+    def start_smtp_service(self, provider_config, download_if_needed=False):
         """
-        Starts the smtp service.
+        Starts the SMTP service.
 
-        :param host: the hostname of the remove SMTP server.
-        :type host: str
-        :param port: the port of the remote SMTP server
-        :type port: str
-        :param cert: the client certificate for authentication
-        :type cert: str
+        :param provider_config: Provider configuration
+        :type provider_config: ProviderConfig
+        :param download_if_needed: True if it should check for mtime
+                                   for the file
+        :type download_if_needed: bool
         """
-        # TODO Make the encrypted_only configurable
-        # TODO pick local smtp port in a better way
-        # TODO remove hard-coded port and let leap.mail set
-        # the specific default.
         self.smtp_connection.qtsigs.connecting_signal.emit()
-        from leap.mail.smtp import setup_smtp_gateway
-        self._smtp_service, self._smtp_port = setup_smtp_gateway(
-            port=2013,
-            userid=self.userid,
-            keymanager=self._keymanager,
-            smtp_host=host,
-            smtp_port=port,
-            smtp_cert=cert,
-            smtp_key=cert,
-            encrypted_only=False)
+        self.smtp_bootstrapper.start_smtp_service(
+            provider_config, self.smtp_config, self._keymanager,
+            self.userid, download_if_needed)
 
     def stop_smtp_service(self):
         """
-        Stops the smtp service (port and factory).
+        Stops the SMTP service.
         """
         self.smtp_connection.qtsigs.disconnecting_signal.emit()
-        # TODO We should homogenize both services.
-        if self._smtp_service is not None:
-            logger.debug('Stopping smtp service.')
-            self._smtp_port.stopListening()
-            self._smtp_service.doStop()
-
-    @QtCore.Slot(dict)
-    def smtp_bootstrapped_stage(self, data):
-        """
-        TRIGGERS:
-            self.smtp_bootstrapper.download_config
-
-        If there was a problem, displays it, otherwise it does nothing.
-        This is used for intermediate bootstrapping stages, in case
-        they fail.
-
-        :param data: result from the bootstrapping stage for Soledad
-        :type data: dict
-        """
-        passed = data[self.smtp_bootstrapper.PASSED_KEY]
-        if not passed:
-            logger.error(data[self.smtp_bootstrapper.ERROR_KEY])
-            return
-        logger.debug("Done bootstrapping SMTP")
-        self.check_smtp_config()
-
-    def check_smtp_config(self):
-        """
-        Checks smtp config and tries to download smtp client cert if needed.
-        Currently called when smtp_bootstrapped_stage has successfuly finished.
-        """
-        logger.debug("Checking SMTP config...")
-        leap_assert(self.smtp_bootstrapper._provider_config,
-                    "smtp bootstrapper does not have a provider_config")
-
-        provider_config = self.smtp_bootstrapper._provider_config
-        smtp_config = self.smtp_config
-        hosts = smtp_config.get_hosts()
-        # TODO handle more than one host and define how to choose
-        if len(hosts) > 0:
-            hostname = hosts.keys()[0]
-            logger.debug("Using hostname %s for SMTP" % (hostname,))
-            host = hosts[hostname][self.IP_KEY].encode("utf-8")
-            port = hosts[hostname][self.PORT_KEY]
-
-            client_cert = smtp_config.get_client_cert_path(
-                provider_config,
-                about_to_download=True)
-
-            # XXX change this logic!
-            # check_config should be called from within start_service,
-            # and not the other way around.
-            if not is_file(client_cert):
-                self.smtp_bootstrapper._download_client_certificates()
-            if os.path.isfile(client_cert):
-                self.start_smtp_service(host, port, client_cert)
-            else:
-                logger.warning("Tried to download email client "
-                               "certificate, but could not find any")
-
-        else:
-            logger.warning("No smtp hosts configured")
+        self.smtp_bootstrapper.stop_smtp_service()
 
     # handle smtp events
 
@@ -348,7 +263,7 @@ class MailConductor(IMAPControl, SMTPControl):
 
         :param keymanager: a transparent proxy that eventually will point to a
                            Keymanager Instance.
-        :type soledad: zope.proxy.ProxyBase
+        :type keymanager: zope.proxy.ProxyBase
         """
         IMAPControl.__init__(self)
         SMTPControl.__init__(self)
@@ -406,4 +321,5 @@ class MailConductor(IMAPControl, SMTPControl):
         qtsigs.connecting_signal.connect(widget.mail_state_connecting)
         qtsigs.disconnecting_signal.connect(widget.mail_state_disconnecting)
         qtsigs.disconnected_signal.connect(widget.mail_state_disconnected)
-        qtsigs.soledad_invalid_auth_token.connect(widget.soledad_invalid_auth_token)
+        qtsigs.soledad_invalid_auth_token.connect(
+            widget.soledad_invalid_auth_token)

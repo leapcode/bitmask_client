@@ -1412,13 +1412,9 @@ class MainWindow(QtGui.QMainWindow):
             logger.debug("not starting smtp in offline mode")
             return
 
-        # TODO for simmetry, this should be called start_smtp_service
-        # (and delegate all the checks to the conductor)
         if self._provides_mx_and_enabled():
-            self._mail_conductor.smtp_bootstrapper.run_smtp_setup_checks(
-                self._provider_config,
-                self._mail_conductor.smtp_config,
-                download_if_needed=True)
+            self._mail_conductor.start_smtp_service(self._provider_config,
+                                                    download_if_needed=True)
 
     # XXX --- should remove from here, and connecte directly to the state
     # machine.
