@@ -127,7 +127,6 @@ class VPNLauncher(object):
 
         if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
             gateway_selector = VPNGatewaySelector(eipconfig)
-            print "auto: getting from selector"
             gateways = gateway_selector.get_gateways()
         else:
             gateways = [gateway_conf]

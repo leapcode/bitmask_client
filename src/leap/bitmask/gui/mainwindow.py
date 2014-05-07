@@ -2068,9 +2068,12 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Terminating vpn')
         self._backend.stop_eip(shutdown=True)
 
-        # XXX this *has* to block, since we have some delay in vpn.terminate
-        # it should receive a signal from backend that everything is clear to
-        # proceed, or timeout happened.
+        # XXX this *has* to wait for a reasonable lapse, since we have some
+        # delay in vpn.terminate.
+        # For a better solution it should receive be
+        # signaled from backend that
+        # everything is clear to proceed, or timeout happened.
+        time.sleep(1.5)
 
         self._cancel_ongoing_defers()
 
