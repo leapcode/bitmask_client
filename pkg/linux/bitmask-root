@@ -578,7 +578,7 @@ def firewall_start(args):
                   "--jump", "ACCEPT")
 
     # block DNS requests to anyone but the service provider or localhost
-    # XXX need to insert ipv6 too ??? -- kali
+    # when we actually route ipv6, we will need dns rules for it too
     ip4tables("--insert", BITMASK_CHAIN, "--protocol", "udp", "--dport", "53",
               "--jump", "REJECT")
 
