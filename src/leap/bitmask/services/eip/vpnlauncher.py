@@ -168,16 +168,19 @@ class VPNLauncher(object):
         leap_assert_type(eipconfig, EIPConfig)
         leap_assert_type(providerconfig, ProviderConfig)
 
-        kwargs = {}
-        if flags.STANDALONE:
-            kwargs['path_extension'] = os.path.join(
-                get_path_prefix(), "..", "apps", "eip")
-
-        openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
-        if len(openvpn_possibilities) == 0:
+        # XXX this still has to be changed on osx and windows accordingly
+        #kwargs = {}
+        #openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
+        #if not openvpn_possibilities:
+            #raise OpenVPNNotFoundException()
+        #openvpn = first(openvpn_possibilities)
+        # -----------------------------------------
+        if not os.path.isfile(kls.OPENVPN_BIN_PATH):
+            logger.warning("Could not find openvpn bin in path %s" % (
+                kls.OPENVPN_BIN_PATH))
             raise OpenVPNNotFoundException()
 
-        openvpn = first(openvpn_possibilities)
+        openvpn = kls.OPENVPN_BIN_PATH
         args = []
 
         args += [
@@ -295,13 +298,15 @@ class VPNLauncher(object):
 
         :rtype: list
         """
-        leap_assert(kls.UPDOWN_FILES is not None,
-                    "Need to define UPDOWN_FILES for this particular "
-                    "launcher before calling this method")
-        file_exist = partial(_has_updown_scripts, warn=False)
-        zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
-        missing = filter(lambda (path, exists): exists is False, zipped)
-        return [path for path, exists in missing]
+        # XXX remove when we ditch UPDOWN in osx and win too
+        #leap_assert(kls.UPDOWN_FILES is not None,
+                    #"Need to define UPDOWN_FILES for this particular "
+                    #"launcher before calling this method")
+        #file_exist = partial(_has_updown_scripts, warn=False)
+        #zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
+        #missing = filter(lambda (path, exists): exists is False, zipped)
+        #return [path for path, exists in missing]
+        return []
 
     @classmethod
     def missing_other_files(kls):
