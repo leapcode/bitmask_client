@@ -185,7 +185,8 @@ class VPN(object):
 
         # XXX we try to bring the firewall up
         if IS_LINUX:
-            firewall_up = self._launch_firewall()
+            gateways = vpnproc.getGateways()
+            firewall_up = self._launch_firewall(gateways)
             if not firewall_up:
                 logger.error("Could not bring firewall up, "
                              "aborting openvpn launch.")
@@ -208,9 +209,12 @@ class VPN(object):
         self._pollers.extend(poll_list)
         self._start_pollers()
 
-    def _launch_firewall(self):
+    def _launch_firewall(self, gateways):
         """
         Launch the firewall using the privileged wrapper.
+
+        :param gateways:
+        :type gateways: list
 
         :returns: True if the exitcode of calling the root helper in a
                   subprocess is 0.
@@ -223,7 +227,7 @@ class VPN(object):
         # XXX could check that the iptables rules are in place.
 
         BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
-        exitCode = subprocess.call([BM_ROOT, "firewall", "start"])
+        exitCode = subprocess.call([BM_ROOT, "firewall", "start"] + gateways)
         return True if exitCode is 0 else False
 
     def _kill_if_left_alive(self, tries=0):
@@ -860,6 +864,12 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
 
         logger.debug("Running VPN with command: {0}".format(command))
         return command
+
+    def getGateways(self):
+        gateways = self._launcher.get_gateways(
+            self._eipconfig, self._providerconfig)
+        print "getGateways --> ", gateways
+        return gateways
 
     # shutdown
 

@@ -107,10 +107,43 @@ class VPNLauncher(object):
 
     @classmethod
     @abstractmethod
+    def get_gateways(kls, eipconfig, providerconfig):
+        """
+        Return the selected gateways for a given provider, looking at the EIP
+        config file.
+
+        :param eipconfig: eip configuration object
+        :type eipconfig: EIPConfig
+
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
+
+        :rtype: list
+        """
+        gateways = []
+        leap_settings = LeapSettings()
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
+
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
+
+        if not gateways:
+            logger.error('No gateway was found!')
+            raise VPNLauncherException('No gateway was found!')
+
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
+        return gateways
+
+    @classmethod
+    @abstractmethod
     def get_vpn_command(kls, eipconfig, providerconfig,
                         socket_host, socket_port, openvpn_verb=1):
         """
-        Returns the platform dependant vpn launching command
+        Return the platform-dependant vpn command for launching openvpn.
 
         Might raise:
             OpenVPNNotFoundException,
@@ -154,22 +187,7 @@ class VPNLauncher(object):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateways = []
-        leap_settings = LeapSettings()
-        domain = providerconfig.get_domain()
-        gateway_conf = leap_settings.get_selected_gateway(domain)
-
-        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
-            gateway_selector = VPNGatewaySelector(eipconfig)
-            gateways = gateway_selector.get_gateways()
-        else:
-            gateways = [gateway_conf]
-
-        if not gateways:
-            logger.error('No gateway was found!')
-            raise VPNLauncherException('No gateway was found!')
-
-        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
+        gateways = kls.get_gateways(providerconfig)
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']

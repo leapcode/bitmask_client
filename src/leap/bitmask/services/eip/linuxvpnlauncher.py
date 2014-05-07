@@ -220,6 +220,7 @@ class LinuxVPNLauncher(VPNLauncher):
         # we use `super` in order to send the class to use
         command = super(LinuxVPNLauncher, kls).get_vpn_command(
             eipconfig, providerconfig, socket_host, socket_port, openvpn_verb)
+        command.insert(0, kls.BITMASK_ROOT + "openvpn start")
 
         pkexec = kls.maybe_pkexec()
         if pkexec:
