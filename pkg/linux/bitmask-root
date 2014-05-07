@@ -32,14 +32,15 @@ The `openvpn start` action is special: it calls exec on openvpn and replaces
 the current process.
 """
 # TODO should be tested with python3, which can be the default on some distro.
-
 from __future__ import print_function
+import atexit
 import os
 import re
 import signal
 import socket
 import subprocess
 import sys
+import time
 import traceback
 
 
@@ -227,6 +228,135 @@ def get_process_list():
     return filter(None, res)
 
 
+class Daemon(object):
+    """
+    A generic daemon class.
+    """
+    def __init__(self, pidfile, stdin='/dev/null',
+                 stdout='/dev/null', stderr='/dev/null'):
+        self.stdin = stdin
+        self.stdout = stdout
+        self.stderr = stderr
+        self.pidfile = pidfile
+
+    def daemonize(self):
+        """
+        Do the UNIX double-fork magic, see Stevens' "Advanced
+        Programming in the UNIX Environment" for details (ISBN 0201563177)
+        http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
+        """
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # exit first parent
+                sys.exit(0)
+        except OSError, e:
+            sys.stderr.write(
+                "fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
+            sys.exit(1)
+
+        # decouple from parent environment
+        os.chdir("/")
+        os.setsid()
+        os.umask(0)
+
+        # do second fork
+        try:
+            pid = os.fork()
+            if pid > 0:
+                # exit from second parent
+                sys.exit(0)
+        except OSError, e:
+            sys.stderr.write(
+                "fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
+            sys.exit(1)
+
+        # redirect standard file descriptors
+        sys.stdout.flush()
+        sys.stderr.flush()
+        si = file(self.stdin, 'r')
+        so = file(self.stdout, 'a+')
+        se = file(self.stderr, 'a+', 0)
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
+
+        # write pidfile
+        atexit.register(self.delpid)
+        pid = str(os.getpid())
+        file(self.pidfile, 'w+').write("%s\n" % pid)
+
+    def delpid(self):
+        """
+        Delete the pidfile.
+        """
+        os.remove(self.pidfile)
+
+    def start(self, *args):
+        """
+        Start the daemon.
+        """
+        # Check for a pidfile to see if the daemon already runs
+        try:
+            pf = file(self.pidfile, 'r')
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+
+        if pid:
+            message = "pidfile %s already exist. Daemon already running?\n"
+            sys.stderr.write(message % self.pidfile)
+            sys.exit(1)
+
+        # Start the daemon
+        self.daemonize()
+        self.run(args)
+
+    def stop(self):
+        """
+        Stop the daemon.
+        """
+        # Get the pid from the pidfile
+        try:
+            pf = file(self.pidfile, 'r')
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+
+        if not pid:
+            message = "pidfile %s does not exist. Daemon not running?\n"
+            sys.stderr.write(message % self.pidfile)
+            return  # not an error in a restart
+
+        # Try killing the daemon process
+        try:
+            while 1:
+                os.kill(pid, signal.SIGTERM)
+                time.sleep(0.1)
+        except OSError, err:
+            err = str(err)
+            if err.find("No such process") > 0:
+                if os.path.exists(self.pidfile):
+                    os.remove(self.pidfile)
+            else:
+                print(str(err))
+                sys.exit(1)
+
+    def restart(self):
+        """
+        Restart the daemon.
+        """
+        self.stop()
+        self.start()
+
+    def run(self):
+        """
+        This should  be overridden by derived classes.
+        """
+
+
 def run(command, *args, **options):
     """
     Run an external command.
@@ -383,29 +513,59 @@ def openvpn_stop(args):
 ##
 
 
-def set_dns_nameserver(ip_address):
+class NameserverSetter(Daemon):
     """
-    Add the tunnel DNS server to `resolv.conf`
+    A daemon that will add leap nameserver inside the tunnel
+    to the system `resolv.conf`
+    """
 
-    :param ip_address: the ip to add to `resolv.conf`
-    :type ip_address: str
-    """
-    if os.path.isfile(RESOLVCONF):
-        process = run(RESOLVCONF, "-a", "bitmask", input=True)
-        process.communicate("nameserver %s\n" % ip_address)
-    else:
-        bail("ERROR: package openresolv or resolvconf not installed.")
+    def run(self, *args):
+        """
+        Run when daemonized.
+        """
+        if args:
+            ip_address = args[0]
+            self.set_dns_nameserver(ip_address)
+
+    def set_dns_nameserver(self, ip_address):
+        """
+        Add the tunnel DNS server to `resolv.conf`
+
+        :param ip_address: the ip to add to `resolv.conf`
+        :type ip_address: str
+        """
+        if os.path.isfile(RESOLVCONF):
+            process = run(RESOLVCONF, "-a", "bitmask", input=True)
+            process.communicate("nameserver %s\n" % ip_address)
+        else:
+            bail("ERROR: package openresolv or resolvconf not installed.")
+
+nameserver_setter = NameserverSetter('/tmp/leap-dns-up.pid')
 
 
-def restore_dns_nameserver():
+class NameserverRestorer(Daemon):
     """
-    Remove tunnel DNS server from `resolv.conf`
+    A daemon that will restore the previous nameservers.
     """
-    if os.path.isfile(RESOLVCONF):
-        run(RESOLVCONF, "-d", "bitmask")
-    else:
-        print("%s: ERROR: package openresolv or resolvconf not installed." %
-              (SCRIPT,))
+
+    def run(self):
+        """
+        Run when daemonized.
+        """
+        self.restore_dns_nameserver()
+
+    def restore_dns_nameserver(self):
+        """
+        Remove tunnel DNS server from `resolv.conf`
+        """
+        if os.path.isfile(RESOLVCONF):
+            run(RESOLVCONF, "-d", "bitmask")
+        else:
+            print("%s: ERROR: package openresolv "
+                  "or resolvconf not installed." %
+                  (SCRIPT,))
+
+nameserver_restorer = NameserverRestorer('/tmp/leap-dns-down.pid')
 
 
 ##
@@ -619,16 +779,16 @@ def main():
         elif command == "firewall_start":
             try:
                 firewall_start(args)
-                set_dns_nameserver(NAMESERVER)
+                nameserver_setter.start(NAMESERVER)
             except Exception as ex:
-                restore_dns_nameserver()
+                nameserver_restorer.start()
                 firewall_stop()
                 bail("ERROR: could not start firewall", ex)
 
         elif command == "firewall_stop":
             try:
-                restore_dns_nameserver()
                 firewall_stop()
+                nameserver_restorer.start()
             except Exception as ex:
                 bail("ERROR: could not stop firewall", ex)
 
