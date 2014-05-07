@@ -223,9 +223,6 @@ class VPN(object):
                   subprocess is 0.
         :rtype: bool
         """
-        # XXX this is a temporary solution for being able to use the root
-        # helper while we still control the openvpn process.
-
         # XXX could check for wrapper existence, check it's root owned etc.
         # XXX could check that the iptables rules are in place.
 
@@ -257,8 +254,6 @@ class VPN(object):
                 logger.debug("Process has been happily terminated.")
 
                 # we try to bring the firewall up
-                # XXX We could keep some state to be sure it was the
-                # user who did turn EIP off.
                 if IS_LINUX and self._user_stopped:
                     firewall_down = self._tear_down_firewall()
                     if firewall_down:
@@ -310,11 +305,16 @@ class VPN(object):
 
             # ...but we also trigger a countdown to be unpolite
             # if strictly needed.
-
-            # XXX Watch out! This will fail NOW since we are running
-            # openvpn as root as a workaround for some connection issues.
             reactor.callLater(
                 self.TERMINATE_WAIT, self._kill_if_left_alive)
+
+            if shutdown:
+                if IS_LINUX and self._user_stopped:
+                    firewall_down = self._tear_down_firewall()
+                    if firewall_down:
+                        logger.debug("Firewall down")
+                    else:
+                        logger.warning("Could not tear firewall down")
 
     def _start_pollers(self):
         """
@@ -892,9 +892,13 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         return command
 
     def getGateways(self):
+        """
+        Get the gateways from the appropiate launcher.
+
+        :rtype: list
+        """
         gateways = self._launcher.get_gateways(
             self._eipconfig, self._providerconfig)
-        print "getGateways --> ", gateways
         return gateways
 
     # shutdown

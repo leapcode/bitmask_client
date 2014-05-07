@@ -19,6 +19,7 @@ Main window for Bitmask.
 """
 import logging
 import socket
+import time
 
 from threading import Condition
 from datetime import datetime
@@ -2066,6 +2067,10 @@ class MainWindow(QtGui.QMainWindow):
 
         logger.debug('Terminating vpn')
         self._backend.stop_eip(shutdown=True)
+
+        # XXX this *has* to block, since we have some delay in vpn.terminate
+        # it should receive a signal from backend that everything is clear to
+        # proceed, or timeout happened.
 
         self._cancel_ongoing_defers()
 
