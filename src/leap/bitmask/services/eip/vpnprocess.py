@@ -161,6 +161,8 @@ class VPN(object):
         self._signaler = kwargs['signaler']
         self._openvpn_verb = flags.OPENVPN_VERBOSITY
 
+        self._user_stopped = False
+
     def start(self, *args, **kwargs):
         """
         Starts the openvpn subprocess.
@@ -172,6 +174,7 @@ class VPN(object):
         :type kwargs: dict
         """
         logger.debug('VPN: start')
+        self._user_stopped = False
         self._stop_pollers()
         kwargs['openvpn_verb'] = self._openvpn_verb
         kwargs['signaler'] = self._signaler
@@ -242,7 +245,7 @@ class VPN(object):
 
     def _kill_if_left_alive(self, tries=0):
         """
-        Check if the process is still alive, and sends a
+        Check if the process is still alive, and send a
         SIGKILL after a timeout period.
 
         :param tries: counter of tries, used in recursion
@@ -256,7 +259,7 @@ class VPN(object):
                 # we try to bring the firewall up
                 # XXX We could keep some state to be sure it was the
                 # user who did turn EIP off.
-                if IS_LINUX:
+                if IS_LINUX and self._user_stopped:
                     firewall_down = self._tear_down_firewall()
                     if firewall_down:
                         logger.debug("Firewall down")
@@ -298,6 +301,7 @@ class VPN(object):
         """
         from twisted.internet import reactor
         self._stop_pollers()
+        self._user_stopped = True
 
         # First we try to be polite and send a SIGTERM...
         if self._vpnproc:

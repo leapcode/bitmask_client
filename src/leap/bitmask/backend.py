@@ -1048,6 +1048,9 @@ class Backend(object):
     def stop_eip(self, shutdown=False):
         """
         Stop the EIP service.
+
+        :param shutdown:
+        :type shutdown: bool
         """
         self._call_queue.put(("eip", "stop", None, shutdown))
 

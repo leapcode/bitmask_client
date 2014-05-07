@@ -83,13 +83,10 @@ FIXED_FLAGS = [
     "--tls-client",
     "--remote-cert-tls", "server",
     "--management-signal",
-    "--management", MANAGEMENT_SOCKET, "unix",
-    "--script-security", "1"
+    "--script-security", "1",
     "--user", "nobody",
     "--group", "nogroup",
 ]
-
-#    "--management", MANAGEMENT_SOCKET, "unix",
 
 ALLOWED_FLAGS = {
     "--remote": ["IP", "NUMBER", "PROTO"],
