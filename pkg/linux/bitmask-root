@@ -36,14 +36,12 @@ the current process.
 from __future__ import print_function
 import os
 import re
-import subprocess
+import signal
 import socket
+import subprocess
 import sys
 import traceback
 
-
-# XXX not standard
-import psutil
 
 cmdcheck = subprocess.check_output
 
@@ -209,6 +207,26 @@ def split_list(_list, regex):
     return result
 
 
+def get_process_list():
+    """
+    Get a process list by reading `/proc` filesystem.
+
+    :return: a list of tuples, each containing pid and command string.
+    :rtype: tuple if lists
+    """
+    res = []
+    pids = [pid for pid in os.listdir('/proc') if pid.isdigit()]
+
+    for pid in pids:
+        try:
+            res.append((pid, open(
+                os.path.join(
+                    '/proc', pid, 'cmdline'), 'rb').read()))
+        except IOError:  # proc has already terminated
+            continue
+    return filter(None, res)
+
+
 def run(command, *args, **options):
     """
     Run an external command.
@@ -345,18 +363,20 @@ def openvpn_start(args):
 
 def openvpn_stop(args):
     """
-    Stop openvpn.
+    Stop the openvpn that has likely been launched by bitmask.
 
     :param args: arguments to openvpn
     :type args: list
     """
-    # XXX this deps on psutil, which is not there in the bundle
-    # case. We could try to manually parse proc system.
-    for proc in psutil.process_iter():
-        if LEAPOPENVPN in proc.cmdline:
-            # FIXME naive approach. this will kill try to kill *anythin*, we
-            # should check that the command is openvpn. -- kali
-            proc.terminate()
+    plist = get_process_list()
+    OPENVPN_BIN = get_openvpn_bin()
+    found_leap_openvpn = filter(
+        lambda (p, s): s.startswith(OPENVPN_BIN) and LEAPOPENVPN in s,
+        plist)
+
+    if found_leap_openvpn:
+        pid = found_leap_openvpn[0][0]
+        os.kill(int(pid), signal.SIGTERM)
 
 ##
 ## DNS
