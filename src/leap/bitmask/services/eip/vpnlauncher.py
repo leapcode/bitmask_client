@@ -125,8 +125,11 @@ class VPNLauncher(object):
         domain = providerconfig.get_domain()
         gateway_conf = leap_settings.get_selected_gateway(domain)
 
+        print "GETTING GATEWAYS -----"
+
         if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
             gateway_selector = VPNGatewaySelector(eipconfig)
+            print "auto: getting from selector"
             gateways = gateway_selector.get_gateways()
         else:
             gateways = [gateway_conf]
@@ -187,7 +190,7 @@ class VPNLauncher(object):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateways = kls.get_gateways(providerconfig)
+        gateways = kls.get_gateways(eipconfig, providerconfig)
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']

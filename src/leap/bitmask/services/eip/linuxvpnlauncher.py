@@ -72,7 +72,6 @@ def _is_auth_agent_running():
         'ps aux | grep "[l]xpolkit"'
     ]
     is_running = [commands.getoutput(cmd) for cmd in polkit_options]
-    print "IS RUNNING ->", is_running
     return any(is_running)
 
 
@@ -180,7 +179,6 @@ class LinuxVPNLauncher(VPNLauncher):
         """
         # we use `super` in order to send the class to use
         missing = super(LinuxVPNLauncher, kls).missing_other_files()
-        print "MISSING OTHER", missing
 
         if flags.STANDALONE:
             polkit_file = LinuxPolicyChecker.get_polkit_path()
@@ -220,7 +218,10 @@ class LinuxVPNLauncher(VPNLauncher):
         # we use `super` in order to send the class to use
         command = super(LinuxVPNLauncher, kls).get_vpn_command(
             eipconfig, providerconfig, socket_host, socket_port, openvpn_verb)
-        command.insert(0, kls.BITMASK_ROOT + "openvpn start")
+
+        command.insert(0, kls.BITMASK_ROOT)
+        command.insert(1, "openvpn")
+        command.insert(2, "start")
 
         pkexec = kls.maybe_pkexec()
         if pkexec:

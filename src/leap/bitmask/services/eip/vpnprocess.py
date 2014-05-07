@@ -226,8 +226,11 @@ class VPN(object):
         # XXX could check for wrapper existence, check it's root owned etc.
         # XXX could check that the iptables rules are in place.
 
+        print "LAUNCHING FIREWALL --",  gateways
+
         BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
-        exitCode = subprocess.call([BM_ROOT, "firewall", "start"] + gateways)
+        exitCode = subprocess.call(["pkexec",
+                                    BM_ROOT, "firewall", "start"] + gateways)
         return True if exitCode is 0 else False
 
     def _kill_if_left_alive(self, tries=0):
@@ -862,7 +865,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
             if not isinstance(c, str):
                 command[i] = c.encode(encoding)
 
-        logger.debug("Running VPN with command: {0}".format(command))
+        logger.debug("Running VPN with command: ")
+        logger.debug("{0}".format(" ".join(command)))
         return command
 
     def getGateways(self):
