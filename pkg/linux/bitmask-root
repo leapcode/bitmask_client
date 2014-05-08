@@ -809,6 +809,12 @@ def main():
             except Exception as ex:
                 bail("ERROR: could not stop firewall", ex)
 
+        elif command == "firewall_isup":
+            if ipv4_chain_exists(BITMASK_CHAIN):
+                print("%s: INFO: bitmask firewall is up" % (SCRIPT,))
+            else:
+                bail("INFO: bitmask firewall is down")
+
         else:
             bail("ERROR: No such command")
     else:
