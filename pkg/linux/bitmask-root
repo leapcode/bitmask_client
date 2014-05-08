@@ -57,10 +57,12 @@ BITMASK_CHAIN = "bitmask"
 IP = "/bin/ip"
 IPTABLES = "/sbin/iptables"
 IP6TABLES = "/sbin/ip6tables"
-RESOLVCONF = "/sbin/resolvconf"
+
+RESOLVCONF_SYSTEM_BIN = "/sbin/resolvconf"
+RESOLVCONF_LEAP_BIN = "/usr/local/sbin/leap-resolvconf"
+
 OPENVPN_USER = "nobody"
 OPENVPN_GROUP = "nogroup"
-
 LEAPOPENVPN = "LEAPOPENVPN"
 OPENVPN_SYSTEM_BIN = "/usr/sbin/openvpn"  # Debian location
 OPENVPN_LEAP_BIN = "/usr/sbin/leap-openvpn"  # installed by bundle
@@ -511,6 +513,21 @@ def openvpn_stop(args):
 ##
 ## DNS
 ##
+
+
+def get_resolvconf_bin():
+    """
+    Return the path for either the system resolvconf or the one the
+    bundle has put there.
+    """
+    if os.path.isfile(RESOLVCONF_SYSTEM_BIN):
+        return RESOLVCONF_SYSTEM_BIN
+
+    # the bundle option should be removed from the debian package.
+    if os.path.isfile(RESOLVCONF_LEAP_BIN):
+        return RESOLVCONF_LEAP_BIN
+
+RESOLVCONF = get_resolvconf_bin()
 
 
 class NameserverSetter(Daemon):
