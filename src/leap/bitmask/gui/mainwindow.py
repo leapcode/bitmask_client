@@ -182,6 +182,8 @@ class MainWindow(QtGui.QMainWindow):
         self.eip_needs_login.connect(self._eip_status.disable_eip_start)
         self.eip_needs_login.connect(self._disable_eip_start_action)
 
+        self._trying_to_start_eip = False
+
         # This is loaded only once, there's a bug when doing that more
         # than once
         # XXX HACK!! But we need it as long as we are using
@@ -357,11 +359,24 @@ class MainWindow(QtGui.QMainWindow):
         self._backend_connected_signals[signal] = method
         signal.connect(method)
 
+    def _backend_bad_call(self, data):
+        """
+        Callback for debugging bad backend calls
+
+        :param data: data from the backend about the problem
+        :type data: str
+        """
+        logger.error("Bad call to the backend:")
+        logger.error(data)
+
     def _backend_connect(self):
         """
         Helper to connect to backend signals
         """
         sig = self._backend.signaler
+
+        sig.backend_bad_call.connect(self._backend_bad_call)
+
         self._connect_and_track(sig.prov_name_resolution,
                                 self._intermediate_stage)
         self._connect_and_track(sig.prov_https_connection,
@@ -441,6 +456,9 @@ class MainWindow(QtGui.QMainWindow):
         sig.eip_network_unreachable.connect(self._on_eip_network_unreachable)
         sig.eip_process_restart_tls.connect(self._do_eip_restart)
         sig.eip_process_restart_ping.connect(self._do_eip_restart)
+
+        sig.eip_can_start.connect(self._backend_can_start_eip)
+        sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
 
     def _disconnect_and_untrack(self):
         """
@@ -609,17 +627,43 @@ class MainWindow(QtGui.QMainWindow):
         """
         settings = self._settings
         default_provider = settings.get_defaultprovider()
+
+        if default_provider is None:
+            logger.warning("Trying toupdate eip enabled status but there's no"
+                           " default provider. Disabling EIP for the time"
+                           " being...")
+            self._backend_cannot_start_eip()
+            return
+
+        self._trying_to_start_eip = settings.get_autostart_eip()
+        self._backend.eip_can_start(default_provider)
+
+        # If we don't want to start eip, we leave everything
+        # initialized to quickly start it
+        if not self._trying_to_start_eip:
+            self._backend.setup_eip(default_provider, skip_network=True)
+
+    def _backend_can_start_eip(self):
+        """
+        TRIGGER:
+            self._backend.signaler.eip_can_start
+
+        If EIP can be started right away, and the client is configured
+        to do so, start it. Otherwise it leaves everything in place
+        for the user to click Turn ON.
+        """
+        settings = self._settings
+        default_provider = settings.get_defaultprovider()
         enabled_services = []
         if default_provider is not None:
             enabled_services = settings.get_enabled_services(default_provider)
 
         eip_enabled = False
         if EIP_SERVICE in enabled_services:
-            should_autostart = settings.get_autostart_eip()
-            if should_autostart and default_provider is not None:
+            eip_enabled = True
+            if default_provider is not None:
                 self._eip_status.enable_eip_start()
                 self._eip_status.set_eip_status("")
-                eip_enabled = True
             else:
                 # we don't have an usable provider
                 # so the user needs to log in first
@@ -629,7 +673,32 @@ class MainWindow(QtGui.QMainWindow):
             self._eip_status.disable_eip_start()
             self._eip_status.set_eip_status(self.tr("Disabled"))
 
-        return eip_enabled
+        if eip_enabled and self._trying_to_start_eip:
+            self._trying_to_start_eip = False
+            self._try_autostart_eip()
+
+    def _backend_cannot_start_eip(self):
+        """
+        TRIGGER:
+            self._backend.signaler.eip_cannot_start
+
+        If EIP can't be started right away, get the UI to what it
+        needs to look like and waits for a proper login/eip bootstrap.
+        """
+        settings = self._settings
+        default_provider = settings.get_defaultprovider()
+        enabled_services = []
+        if default_provider is not None:
+            enabled_services = settings.get_enabled_services(default_provider)
+
+        if EIP_SERVICE in enabled_services:
+            # we don't have a usable provider
+            # so the user needs to log in first
+            self._eip_status.disable_eip_start()
+        else:
+            self._stop_eip()
+            self._eip_status.disable_eip_start()
+            self._eip_status.set_eip_status(self.tr("Disabled"))
 
     @QtCore.Slot()
     def _show_eip_preferences(self):
@@ -749,7 +818,7 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = None
             self._backend_connect()
         else:
-            self._try_autostart_eip()
+            self._update_eip_enabled_status()
 
             domain = self._settings.get_provider()
             if domain is not None:
@@ -1589,23 +1658,19 @@ class MainWindow(QtGui.QMainWindow):
         Tries to autostart EIP
         """
         settings = self._settings
-
-        if not self._update_eip_enabled_status():
-            return
-
         default_provider = settings.get_defaultprovider()
         self._enabled_services = settings.get_enabled_services(
             default_provider)
 
         loaded = self._provisional_provider_config.load(
             provider.get_provider_path(default_provider))
-        if loaded:
+        if loaded and settings.get_autostart_eip():
             # XXX I think we should not try to re-download config every time,
             # it adds some delay.
             # Maybe if it's the first run in a session,
             # or we can try only if it fails.
             self._maybe_start_eip()
-        else:
+        elif settings.get_autostart_eip():
             # XXX: Display a proper message to the user
             self.eip_needs_login.emit()
             logger.error("Unable to load %s config, cannot autostart." %
