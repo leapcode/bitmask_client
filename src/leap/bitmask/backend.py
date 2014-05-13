@@ -25,6 +25,7 @@ import time
 from functools import partial
 from Queue import Queue, Empty
 
+from twisted.internet import reactor
 from twisted.internet import threads, defer
 from twisted.internet.task import LoopingCall
 from twisted.python import log
@@ -899,9 +900,17 @@ class Backend(object):
         """
         Stops the looping call and tries to cancel all the defers.
         """
+        reactor.callLater(2, self._stop)
+
+    def _stop(self):
+        """
+        Delayed stopping of worker. Called from `stop`.
+        """
         log.msg("Stopping worker...")
         if self._lc.running:
             self._lc.stop()
+        else:
+            logger.warning("Looping call is not running, cannot stop")
         while len(self._ongoing_defers) > 0:
             d = self._ongoing_defers.pop()
             d.cancel()
