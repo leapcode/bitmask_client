@@ -349,13 +349,22 @@ class MainWindow(QtGui.QMainWindow):
         logger.error("Bad call to the backend:")
         logger.error(data)
 
-    def _backend_connect(self):
+    def _backend_connect(self, only_tracked=False):
         """
-        Helper to connect to backend signals
+        Connect to backend signals.
+
+        We track some signals in order to disconnect them on demand.
+        For instance, in the wizard we need to connect to some signals that are
+        already connected in the mainwindow, so to avoid conflicts we do:
+            - disconnect signals needed in wizard (`_disconnect_and_untrack`)
+            - use wizard
+            - reconnect disconnected signals (we use the `only_tracked` param)
+
+        :param only_tracked: whether or not we should connect only the signals
+                             that we are tracking to disconnect later.
+        :type only_tracked: bool
         """
         sig = self._backend.signaler
-
-        sig.backend_bad_call.connect(self._backend_bad_call)
 
         self._connect_and_track(sig.prov_name_resolution,
                                 self._intermediate_stage)
@@ -412,7 +421,16 @@ class MainWindow(QtGui.QMainWindow):
         self._connect_and_track(sig.eip_client_certificate_ready,
                                 self._finish_eip_bootstrap)
 
+        ###################################################
+        # Add tracked signals above this, untracked bellow!
+        ###################################################
+        if only_tracked:
+            return
+
         # We don't want to disconnect some signals so don't track them:
+
+        sig.backend_bad_call.connect(self._backend_bad_call)
+
         sig.prov_unsupported_client.connect(self._needs_update)
         sig.prov_unsupported_api.connect(self._incompatible_api)
 
@@ -491,7 +509,7 @@ class MainWindow(QtGui.QMainWindow):
             # This happens if the user finishes the provider
             # setup but does not register
             self._wizard = None
-            self._backend_connect()
+            self._backend_connect(only_tracked=True)
             if self._wizard_firstrun:
                 self._finish_init()
 
@@ -811,7 +829,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.eip_needs_login.emit()
 
             self._wizard = None
-            self._backend_connect()
+            self._backend_connect(only_tracked=True)
         else:
             self._update_eip_enabled_status()
 
