@@ -46,7 +46,10 @@ from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.bitmask.services.eip import vpnlauncher, vpnprocess
 from leap.bitmask.services.eip import linuxvpnlauncher, darwinvpnlauncher
 
-from leap.bitmask.services.mail import imap
+
+from leap.bitmask.services.mail.imapcontroller import IMAPController
+from leap.bitmask.services.mail.smtpbootstrapper import SMTPBootstrapper
+from leap.bitmask.services.mail.smtpconfig import SMTPConfig
 
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
@@ -557,15 +560,21 @@ class Soledad(object):
     """
     zope.interface.implements(ILEAPComponent)
 
-    def __init__(self, signaler=None):
+    def __init__(self, soledad_proxy, keymanager_proxy, signaler=None):
         """
         Constructor for the Soledad component.
 
+        :param soledad_proxy: proxy to pass around a Soledad object.
+        :type soledad_proxy: zope.ProxyBase
+        :param keymanager_proxy: proxy to pass around a Keymanager object.
+        :type keymanager_proxy: zope.ProxyBase
         :param signaler: Object in charge of handling communication
                          back to the frontend
         :type signaler: Signaler
         """
         self.key = "soledad"
+        self._soledad_proxy = soledad_proxy
+        self._keymanager_proxy = keymanager_proxy
         self._signaler = signaler
         self._soledad_bootstrapper = SoledadBootstrapper(signaler)
         self._soledad_defer = None
@@ -591,12 +600,23 @@ class Soledad(object):
                 self._soledad_bootstrapper.run_soledad_setup_checks,
                 provider_config, username, password,
                 download_if_needed=True)
+            self._soledad_defer.addCallback(self._set_proxies_cb)
         else:
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.SOLEDAD_BOOTSTRAP_FAILED)
             logger.error("Could not load provider configuration.")
 
         return self._soledad_defer
+
+    def _set_proxies_cb(self, _):
+        """
+        Update the soledad and keymanager proxies to reference the ones created
+        in the bootstrapper.
+        """
+        zope.proxy.setProxiedObject(self._soledad_proxy,
+                                    self._soledad_bootstrapper.soledad)
+        zope.proxy.setProxiedObject(self._keymanager_proxy,
+                                    self._soledad_bootstrapper.keymanager)
 
     def load_offline(self, username, password, uuid):
         """
@@ -641,28 +661,70 @@ class Mail(object):
 
     zope.interface.implements(ILEAPComponent)
 
-    def __init__(self, signaler=None):
+    def __init__(self, soledad_proxy, keymanager_proxy, signaler=None):
         """
         Constructor for the Mail component.
 
+        :param soledad_proxy: proxy to pass around a Soledad object.
+        :type soledad_proxy: zope.ProxyBase
+        :param keymanager_proxy: proxy to pass around a Keymanager object.
+        :type keymanager_proxy: zope.ProxyBase
         :param signaler: Object in charge of handling communication
                          back to the frontend
         :type signaler: Signaler
         """
         self.key = "mail"
         self._signaler = signaler
+        self._soledad_proxy = soledad_proxy
+        self._keymanager_proxy = keymanager_proxy
+        self._imap_controller = IMAPController(self._soledad_proxy,
+                                               self._keymanager_proxy)
+        self._smtp_bootstrapper = SMTPBootstrapper()
+        self._smtp_config = SMTPConfig()
 
-    def start_smtp_service(self):
-        pass
+    def start_smtp_service(self, full_user_id, download_if_needed=False):
+        """
+        Start the SMTP service.
 
-    def start_imap_service(self, offline=False):
-        pass
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param download_if_needed: True if it should check for mtime
+                                   for the file
+        :type download_if_needed: bool
+        """
+        return threads.deferToThread(
+            self._smtp_bootstrapper.start_smtp_service,
+            self._keymanager_proxy, full_user_id, download_if_needed)
+
+    def start_imap_service(self, full_user_id, offline=False):
+        """
+        Start the IMAP service.
+
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param offline: whether imap should start in offline mode or not.
+        :type offline: bool
+        """
+        return threads.deferToThread(
+            self._imap_controller.start_imap_service,
+            full_user_id, offline)
 
     def stop_smtp_service(self):
-        pass
+        """
+        Stop the SMTP service.
+        """
+        return threads.deferToThread(self._smtp_bootstrapper.stop_smtp_service)
 
-    def stop_imap_service(self):
-        pass
+    def stop_imap_service(self, cv):
+        """
+        Stop imap service (fetcher, factory and port).
+
+        :param cv: A condition variable to which we can signal when imap
+                   indeed stops.
+        :type cv: threading.Condition
+        """
+        return threads.deferToThread(
+            self._imap_controller.stop_imap_service, cv)
 
 
 class Authenticate(object):
@@ -1075,12 +1137,22 @@ class Backend(object):
         # Signaler object to translate commands into Qt signals
         self._signaler = Signaler()
 
+        # Objects needed by several components, so we make a proxy and pass
+        # them around
+        self._soledad_proxy = zope.proxy.ProxyBase(None)
+        self._keymanager_proxy = zope.proxy.ProxyBase(None)
+
         # Component registration
         self._register(Provider(self._signaler, bypass_checks))
         self._register(Register(self._signaler))
         self._register(Authenticate(self._signaler))
         self._register(EIP(self._signaler))
-        self._register(Soledad(self._signaler))
+        self._register(Soledad(self._soledad_proxy,
+                               self._keymanager_proxy,
+                               self._signaler))
+        self._register(Mail(self._soledad_proxy,
+                            self._keymanager_proxy,
+                            self._signaler))
 
         # We have a looping call on a thread executing all the
         # commands in queue. Right now this queue is an actual Queue
@@ -1473,11 +1545,54 @@ class Backend(object):
         """
         self._call_queue.put(("soledad", "close", None))
 
+    def start_smtp_service(self, full_user_id, download_if_needed=False):
+        """
+        Start the SMTP service.
+
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param download_if_needed: True if it should check for mtime
+                                   for the file
+        :type download_if_needed: bool
+        """
+        self._call_queue.put(("mail", "start_smtp_service", None,
+                              full_user_id, download_if_needed))
+
+    def start_imap_service(self, full_user_id, offline=False):
+        """
+        Start the IMAP service.
+
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param offline: whether imap should start in offline mode or not.
+        :type offline: bool
+        """
+        self._call_queue.put(("mail", "start_imap_service", None,
+                              full_user_id, offline))
+
+    def stop_smtp_service(self):
+        """
+        Stop the SMTP service.
+        """
+        self._call_queue.put(("mail", "stop_smtp_service", None))
+
+    def stop_imap_service(self, cv):
+        """
+        Stop imap service.
+
+        :param cv: A condition variable to which we can signal when imap
+                   indeed stops.
+        :type cv: threading.Condition
+        """
+        self._call_queue.put(("mail", "stop_imap_service", None, cv))
+
     ###########################################################################
     # XXX HACK: this section is meant to be a place to hold methods and
     # variables needed in the meantime while we migrate all to the backend.
 
     def get_provider_config(self):
+        # TODO: refactor the provider config into a singleton/global loading it
+        # every time from the file.
         provider_config = self._components["provider"]._provider_config
         return provider_config
 

@@ -651,5 +651,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self._signaler.signal(signal_finished)
         except Exception as e:
             # TODO: we should handle more specific exceptions in here
+            self._soledad = None
+            self._keymanager = None
             logger.exception("Error while bootstrapping Soledad: %r" % (e, ))
             self._signaler.signal(signal_failed)

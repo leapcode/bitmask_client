@@ -19,14 +19,9 @@ Mail Services Conductor
 """
 import logging
 
-from twisted.internet import threads
-
 from leap.bitmask.config import flags
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
-from leap.bitmask.services.mail.smtpbootstrapper import SMTPBootstrapper
-from leap.bitmask.services.mail.smtpconfig import SMTPConfig
-from leap.bitmask.services.mail.imapcontroller import IMAPController
 
 from leap.common.events import events_pb2 as leap_events
 from leap.common.events import register as leap_register
@@ -39,20 +34,12 @@ class IMAPControl(object):
     """
     Methods related to IMAP control.
     """
-    def __init__(self, soledad, keymanager):
+    def __init__(self):
         """
         Initializes smtp variables.
-
-        :param soledad: a transparent proxy that eventually will point to a
-                        Soledad Instance.
-        :type soledad: zope.proxy.ProxyBase
-        :param keymanager: a transparent proxy that eventually will point to a
-                           Keymanager Instance.
-        :type keymanager: zope.proxy.ProxyBase
         """
         self.imap_machine = None
         self.imap_connection = None
-        self._imap_controller = IMAPController(soledad, keymanager)
 
         leap_register(signal=leap_events.IMAP_SERVICE_STARTED,
                       callback=self._handle_imap_events,
@@ -77,12 +64,11 @@ class IMAPControl(object):
         """
         Start imap service.
         """
-        threads.deferToThread(self._imap_controller.start_imap_service,
-                              self.userid, flags.OFFLINE)
+        self._backend.start_imap_service(self.userid, flags.OFFLINE)
 
     def stop_imap_service(self, cv):
         """
-        Stop imap service (fetcher, factory and port).
+        Stop imap service.
 
         :param cv: A condition variable to which we can signal when imap
                    indeed stops.
@@ -91,7 +77,7 @@ class IMAPControl(object):
         self.imap_connection.qtsigs.disconnecting_signal.emit()
         logger.debug('Stopping imap service.')
 
-        self._imap_controller.stop_imap_service(cv)
+        self._backend.stop_imap_service(cv)
 
     def _handle_imap_events(self, req):
         """
@@ -137,11 +123,8 @@ class SMTPControl(object):
         """
         Initializes smtp variables.
         """
-        self.smtp_config = SMTPConfig()
         self.smtp_connection = None
         self.smtp_machine = None
-
-        self.smtp_bootstrapper = SMTPBootstrapper()
 
         leap_register(signal=leap_events.SMTP_SERVICE_STARTED,
                       callback=self._handle_smtp_events,
@@ -158,30 +141,23 @@ class SMTPControl(object):
         """
         self.smtp_connection = smtp_connection
 
-    def start_smtp_service(self, provider_config, download_if_needed=False):
+    def start_smtp_service(self, download_if_needed=False):
         """
         Starts the SMTP service.
 
-        :param provider_config: Provider configuration
-        :type provider_config: ProviderConfig
         :param download_if_needed: True if it should check for mtime
                                    for the file
         :type download_if_needed: bool
         """
         self.smtp_connection.qtsigs.connecting_signal.emit()
-        threads.deferToThread(
-            self.smtp_bootstrapper.start_smtp_service,
-            provider_config, self.smtp_config, self._keymanager,
-            self.userid, download_if_needed)
+        self._backend.start_smtp_service(self.userid, download_if_needed)
 
     def stop_smtp_service(self):
         """
         Stops the SMTP service.
         """
         self.smtp_connection.qtsigs.disconnecting_signal.emit()
-        self.smtp_bootstrapper.stop_smtp_service()
-
-    # handle smtp events
+        self._backend.stop_smtp_service()
 
     def _handle_smtp_events(self, req):
         """
@@ -194,8 +170,6 @@ class SMTPControl(object):
             self.on_smtp_connected()
         elif req.event == leap_events.SMTP_SERVICE_FAILED_TO_START:
             self.on_smtp_failed()
-
-    # emit connection signals
 
     def on_smtp_connecting(self):
         """
@@ -224,21 +198,17 @@ class MailConductor(IMAPControl, SMTPControl):
     """
     # XXX We could consider to use composition instead of inheritance here.
 
-    def __init__(self, soledad, keymanager):
+    def __init__(self, backend):
         """
         Initializes the mail conductor.
 
-        :param soledad: a transparent proxy that eventually will point to a
-                        Soledad Instance.
-        :type soledad: zope.proxy.ProxyBase
-        :param keymanager: a transparent proxy that eventually will point to a
-                           Keymanager Instance.
-        :type keymanager: zope.proxy.ProxyBase
+        :param backend: Backend being used
+        :type backend: Backend
         """
-        IMAPControl.__init__(self, soledad, keymanager)
+        IMAPControl.__init__(self)
         SMTPControl.__init__(self)
-        self._soledad = soledad
-        self._keymanager = keymanager
+
+        self._backend = backend
         self._mail_machine = None
         self._mail_connection = mail_connection.MailConnection()
 

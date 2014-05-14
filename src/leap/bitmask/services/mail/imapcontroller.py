@@ -50,6 +50,11 @@ class IMAPController(object):
     def start_imap_service(self, userid, offline=False):
         """
         Start IMAP service.
+
+        :param userid: user id, in the form "user@provider"
+        :type userid: str
+        :param offline: whether imap should start in offline mode or not.
+        :type offline: bool
         """
         logger.debug('Starting imap service')
 

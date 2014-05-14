@@ -282,8 +282,9 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad = ProxyBase(None)
         self._keymanager = ProxyBase(None)
 
-        self._mail_conductor = mail_conductor.MailConductor(
-            self._soledad, self._keymanager)
+        self._mail_conductor = mail_conductor.MailConductor(self._backend)
+        # self._mail_conductor = mail_conductor.MailConductor(
+        #     self._soledad, self._keymanager)
         self._mail_conductor.connect_mail_signals(self._mail_status)
 
         # Eip machine is a public attribute where the state machine for
@@ -1423,8 +1424,7 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         if self._provides_mx_and_enabled():
-            self._mail_conductor.start_smtp_service(self._provider_config,
-                                                    download_if_needed=True)
+            self._mail_conductor.start_smtp_service(download_if_needed=True)
 
     # XXX --- should remove from here, and connecte directly to the state
     # machine.
