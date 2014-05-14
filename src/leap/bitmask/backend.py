@@ -41,6 +41,8 @@ from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 from leap.bitmask.services.eip import vpnlauncher, vpnprocess
 from leap.bitmask.services.eip import linuxvpnlauncher, darwinvpnlauncher
 
+from leap.common import certs as leap_certs
+
 # Frontend side
 from PySide import QtCore
 
@@ -275,18 +277,23 @@ class EIP(object):
 
         self._vpn = vpnprocess.VPN(signaler=signaler)
 
-    def setup_eip(self, domain):
+    def setup_eip(self, domain, skip_network=False):
         """
         Initiate the setup for a provider
 
         :param domain: URL for the provider
         :type domain: unicode
+        :param skip_network: Whether checks that involve network should be done
+                             or not
+        :type skip_network: bool
 
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
         config = self._provider_config
         if get_provider_config(config, domain):
+            if skip_network:
+                return defer.Deferred()
             eb = self._eip_bootstrapper
             d = eb.run_eip_setup_checks(self._provider_config,
                                         download_if_needed=True)
@@ -334,7 +341,8 @@ class EIP(object):
 
         if not self._provider_config.loaded():
             # This means that the user didn't call setup_eip first.
-            self._signaler.signal(signaler.BACKEND_BAD_CALL)
+            self._signaler.signal(signaler.BACKEND_BAD_CALL, "EIP.start(), "
+                                  "no provider loaded")
             return
 
         try:
@@ -456,6 +464,47 @@ class EIP(object):
         if self._signaler is not None:
             self._signaler.signal(
                 self._signaler.EIP_GET_GATEWAYS_LIST, gateways)
+
+    def can_start(self, domain):
+        """
+        Signal whether it has everything that is needed to run EIP or not
+
+        :param domain: the domain for the provider to check
+        :type domain: str
+
+        Signals:
+            eip_can_start
+            eip_cannot_start
+        """
+        try:
+            eip_config = eipconfig.EIPConfig()
+            provider_config = ProviderConfig.get_provider_config(domain)
+
+            api_version = provider_config.get_api_version()
+            eip_config.set_api_version(api_version)
+            eip_loaded = eip_config.load(eipconfig.get_eipconfig_path(domain))
+
+            # check for other problems
+            if not eip_loaded or provider_config is None:
+                raise Exception("Cannot load provider and eip config, cannot "
+                                "autostart")
+
+            client_cert_path = eip_config.\
+                get_client_cert_path(provider_config, about_to_download=False)
+
+            if leap_certs.should_redownload(client_cert_path):
+                raise Exception("The client should redownload the certificate,"
+                                " cannot autostart")
+
+            if not os.path.isfile(client_cert_path):
+                raise Exception("Can't find the certificate, cannot autostart")
+
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.EIP_CAN_START)
+        except Exception as e:
+            logger.exception(e)
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.EIP_CANNOT_START)
 
 
 class Authenticate(object):
@@ -647,6 +696,10 @@ class Signaler(QtCore.QObject):
     eip_status_changed = QtCore.Signal(dict)
     eip_process_finished = QtCore.Signal(int)
 
+    # signals whether the needed files to start EIP exist or not
+    eip_can_start = QtCore.Signal(object)
+    eip_cannot_start = QtCore.Signal(object)
+
     # This signal is used to warn the backend user that is doing something
     # wrong
     backend_bad_call = QtCore.Signal(object)
@@ -713,6 +766,9 @@ class Signaler(QtCore.QObject):
     EIP_STATUS_CHANGED = "eip_status_changed"
     EIP_PROCESS_FINISHED = "eip_process_finished"
 
+    EIP_CAN_START = "eip_can_start"
+    EIP_CANNOT_START = "eip_cannot_start"
+
     BACKEND_BAD_CALL = "backend_bad_call"
 
     def __init__(self):
@@ -766,6 +822,9 @@ class Signaler(QtCore.QObject):
             self.EIP_STATE_CHANGED,
             self.EIP_STATUS_CHANGED,
             self.EIP_PROCESS_FINISHED,
+
+            self.EIP_CAN_START,
+            self.EIP_CANNOT_START,
 
             self.SRP_AUTH_OK,
             self.SRP_AUTH_ERROR,
@@ -1001,19 +1060,23 @@ class Backend(object):
         self._call_queue.put(("register", "register_user", None, provider,
                               username, password))
 
-    def setup_eip(self, provider):
+    def setup_eip(self, provider, skip_network=False):
         """
         Initiate the setup for a provider
 
-        :param domain: URL for the provider
-        :type domain: unicode
+        :param provider: URL for the provider
+        :type provider: unicode
+        :param skip_network: Whether checks that involve network should be done
+                             or not
+        :type skip_network: bool
 
         Signals:
             eip_config_ready             -> {PASSED_KEY: bool, ERROR_KEY: str}
             eip_client_certificate_ready -> {PASSED_KEY: bool, ERROR_KEY: str}
             eip_cancelled_setup
         """
-        self._call_queue.put(("eip", "setup_eip", None, provider))
+        self._call_queue.put(("eip", "setup_eip", None, provider,
+                              skip_network))
 
     def cancel_setup_eip(self):
         """
@@ -1088,6 +1151,20 @@ class Backend(object):
         """
         self._call_queue.put(("eip", "get_initialized_providers",
                               None, domains))
+
+    def eip_can_start(self, domain):
+        """
+        Signal whether it has everything that is needed to run EIP or not
+
+        :param domain: the domain for the provider to check
+        :type domain: str
+
+        Signals:
+            eip_can_start
+            eip_cannot_start
+        """
+        self._call_queue.put(("eip", "can_start",
+                              None, domain))
 
     def login(self, provider, username, password):
         """
