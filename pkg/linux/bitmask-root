@@ -87,6 +87,7 @@ FIXED_FLAGS = [
     "--script-security", "1",
     "--user", "nobody",
     "--group", "nogroup",
+    "--remap-usr1", "SIGTERM",
 ]
 
 ALLOWED_FLAGS = {

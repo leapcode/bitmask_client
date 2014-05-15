@@ -68,9 +68,8 @@ class VPNObserver(object):
             'Network is unreachable (code=101)',),
         'PROCESS_RESTART_TLS': (
             "SIGUSR1[soft,tls-error]",),
-        # Let ping-restart work as it should
-        # 'PROCESS_RESTART_PING': (
-        #     "SIGUSR1[soft,ping-restart]",),
+        'PROCESS_RESTART_PING': (
+            "SIGTERM[soft,ping-restart]",),
         'INITIALIZATION_COMPLETED': (
             "Initialization Sequence Completed",),
     }
@@ -296,7 +295,10 @@ class VPN(object):
         """
         from twisted.internet import reactor
         self._stop_pollers()
-        self._user_stopped = True
+
+        # We assume that the only valid shutodowns are initiated
+        # by an user action.
+        self._user_stopped = shutdown
 
         # First we try to be polite and send a SIGTERM...
         if self._vpnproc:
