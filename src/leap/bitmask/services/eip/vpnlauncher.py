@@ -25,14 +25,12 @@ import stat
 from abc import ABCMeta, abstractmethod
 from functools import partial
 
-from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
-from leap.bitmask.util import first
-from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.files import which
+
 
 logger = logging.getLogger(__name__)
 
@@ -264,15 +262,18 @@ class VPNLauncher(object):
 
         :rtype: list
         """
-        # XXX remove when we ditch UPDOWN in osx and win too
-        #leap_assert(kls.UPDOWN_FILES is not None,
-                    #"Need to define UPDOWN_FILES for this particular "
-                    #"launcher before calling this method")
-        #file_exist = partial(_has_updown_scripts, warn=False)
-        #zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
-        #missing = filter(lambda (path, exists): exists is False, zipped)
-        #return [path for path, exists in missing]
-        return []
+        # FIXME
+        # XXX remove method when we ditch UPDOWN in osx and win too
+        if IS_LINUX:
+            return []
+        else:
+            leap_assert(kls.UPDOWN_FILES is not None,
+                        "Need to define UPDOWN_FILES for this particular "
+                        "launcher before calling this method")
+            file_exist = partial(_has_updown_scripts, warn=False)
+            zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
+            missing = filter(lambda (path, exists): exists is False, zipped)
+            return [path for path, exists in missing]
 
     @classmethod
     def missing_other_files(kls):
