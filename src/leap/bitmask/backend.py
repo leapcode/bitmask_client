@@ -56,6 +56,8 @@ from leap.bitmask.services.soledad.soledadbootstrapper import \
 
 from leap.common import certs as leap_certs
 
+from leap.soledad.client import NoStorageSecret, PassphraseTooShort
+
 # Frontend side
 from PySide import QtCore
 
@@ -644,14 +646,52 @@ class Soledad(object):
             logger.debug("Cancelling soledad defer.")
             self._soledad_defer.cancel()
             self._soledad_defer = None
+            zope.proxy.setProxiedObject(self._soledad_proxy, None)
 
     def close(self):
         """
         Close soledad database.
         """
-        soledad = self._soledad_bootstrapper.soledad
-        if soledad is not None:
-            soledad.close()
+        if not zope.proxy.sameProxiedObjects(self._soledad_proxy, None):
+            self._soledad_proxy.close()
+            zope.proxy.setProxiedObject(self._soledad_proxy, None)
+
+    def _change_password_ok(self, _):
+        """
+        Password change callback.
+        """
+        if self._signaler is not None:
+            self._signaler.signal(self._signaler.SOLEDAD_PASSWORD_CHANGE_OK)
+
+    def _change_password_error(self, failure):
+        """
+        Password change errback.
+
+        :param failure: failure object containing problem.
+        :type failure: twisted.python.failure.Failure
+        """
+        if failure.check(NoStorageSecret):
+            logger.error("No storage secret for password change in Soledad.")
+        if failure.check(PassphraseTooShort):
+            logger.error("Passphrase too short.")
+
+        if self._signaler is not None:
+            self._signaler.signal(self._signaler.SOLEDAD_PASSWORD_CHANGE_ERROR)
+
+    def change_password(self, new_password):
+        """
+        Change the database's password.
+
+        :param new_password: the new password.
+        :type new_password: unicode
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        d = threads.deferToThread(self._soledad_proxy.change_passphrase,
+                                  new_password)
+        d.addCallback(self._change_password_ok)
+        d.addErrback(self._change_password_error)
 
 
 class Mail(object):
@@ -691,6 +731,9 @@ class Mail(object):
         :param download_if_needed: True if it should check for mtime
                                    for the file
         :type download_if_needed: bool
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
         """
         return threads.deferToThread(
             self._smtp_bootstrapper.start_smtp_service,
@@ -704,6 +747,9 @@ class Mail(object):
         :type full_user_id: str
         :param offline: whether imap should start in offline mode or not.
         :type offline: bool
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
         """
         return threads.deferToThread(
             self._imap_controller.start_imap_service,
@@ -712,6 +758,9 @@ class Mail(object):
     def stop_smtp_service(self):
         """
         Stop the SMTP service.
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
         """
         return threads.deferToThread(self._smtp_bootstrapper.stop_smtp_service)
 
@@ -722,6 +771,9 @@ class Mail(object):
         :param cv: A condition variable to which we can signal when imap
                    indeed stops.
         :type cv: threading.Condition
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
         """
         return threads.deferToThread(
             self._imap_controller.stop_imap_service, cv)
@@ -927,6 +979,8 @@ class Signaler(QtCore.QObject):
     soledad_offline_finished = QtCore.Signal(object)
     soledad_invalid_auth_token = QtCore.Signal(object)
     soledad_cancelled_bootstrap = QtCore.Signal(object)
+    soledad_password_change_ok = QtCore.Signal(object)
+    soledad_password_change_error = QtCore.Signal(object)
 
     # This signal is used to warn the backend user that is doing something
     # wrong
@@ -1002,6 +1056,9 @@ class Signaler(QtCore.QObject):
     SOLEDAD_OFFLINE_FAILED = "soledad_offline_failed"
     SOLEDAD_OFFLINE_FINISHED = "soledad_offline_finished"
     SOLEDAD_INVALID_AUTH_TOKEN = "soledad_invalid_auth_token"
+
+    SOLEDAD_PASSWORD_CHANGE_OK = "soledad_password_change_ok"
+    SOLEDAD_PASSWORD_CHANGE_ERROR = "soledad_password_change_error"
 
     SOLEDAD_CANCELLED_BOOTSTRAP = "soledad_cancelled_bootstrap"
 
@@ -1082,6 +1139,9 @@ class Signaler(QtCore.QObject):
             self.SOLEDAD_OFFLINE_FINISHED,
             self.SOLEDAD_INVALID_AUTH_TOKEN,
             self.SOLEDAD_CANCELLED_BOOTSTRAP,
+
+            self.SOLEDAD_PASSWORD_CHANGE_OK,
+            self.SOLEDAD_PASSWORD_CHANGE_ERROR,
 
             self.BACKEND_BAD_CALL,
         ]
@@ -1470,7 +1530,7 @@ class Backend(object):
         """
         self._call_queue.put(("authenticate", "cancel_login", None))
 
-    def change_password(self, current_password, new_password):
+    def auth_change_password(self, current_password, new_password):
         """
         Change the user's password.
 
@@ -1487,6 +1547,22 @@ class Backend(object):
         """
         self._call_queue.put(("authenticate", "change_password", None,
                               current_password, new_password))
+
+    def soledad_change_password(self, new_password):
+        """
+        Change the database's password.
+
+        :param new_password: the new password for the user.
+        :type new_password: unicode
+
+        Signals:
+            srp_not_logged_in_error
+            srp_password_change_ok
+            srp_password_change_badpw
+            srp_password_change_error
+        """
+        self._call_queue.put(("soledad", "change_password", None,
+                              new_password))
 
     def get_logged_in_status(self):
         """

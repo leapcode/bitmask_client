@@ -189,6 +189,7 @@ class MainWindow(QtGui.QMainWindow):
         self._provisional_provider_config = ProviderConfig()
 
         self._already_started_eip = False
+        self._soledad_started = False
 
         # This is created once we have a valid provider config
         self._srp_auth = None
@@ -276,15 +277,9 @@ class MainWindow(QtGui.QMainWindow):
         self._bypass_checks = bypass_checks
         self._start_hidden = start_hidden
 
-        # We initialize Soledad and Keymanager instances as
-        # transparent proxies, so we can pass the reference freely
-        # around.
-        self._soledad = ProxyBase(None)
         self._keymanager = ProxyBase(None)
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
-        # self._mail_conductor = mail_conductor.MailConductor(
-        #     self._soledad, self._keymanager)
         self._mail_conductor.connect_mail_signals(self._mail_status)
 
         # Eip machine is a public attribute where the state machine for
@@ -603,8 +598,8 @@ class MainWindow(QtGui.QMainWindow):
             provider_config = self._get_best_provider_config()
             has_mx = provider_config.provides_mx()
 
-        akm = AdvancedKeyManagement(
-            self, has_mx, logged_user, self._keymanager, self._soledad)
+        akm = AdvancedKeyManagement(self, has_mx, logged_user,
+                                    self._keymanager, self._soledad_started)
         akm.show()
 
     @QtCore.Slot()
@@ -619,8 +614,8 @@ class MainWindow(QtGui.QMainWindow):
         user = self._login_widget.get_user()
         prov = self._login_widget.get_selected_provider()
         preferences = PreferencesWindow(
-            self, self._backend, self._provider_config, self._soledad,
-            user, prov)
+            self, self._backend, self._provider_config,
+            self._soledad_started, user, prov)
 
         self.soledad_ready.connect(preferences.set_soledad_ready)
         preferences.show()
@@ -1265,6 +1260,9 @@ class MainWindow(QtGui.QMainWindow):
         self._backend.cancel_setup_provider()
         self._backend.cancel_login()
         self._backend.cancel_soledad_bootstrap()
+        self._backend.close_soledad()
+
+        self._soledad_started = False
 
     @QtCore.Slot()
     def _set_login_cancelled(self):
@@ -1419,9 +1417,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug("Done bootstrapping Soledad")
 
-        # Update the proxy objects to point to
-        # the initialized instances.
-        setProxiedObject(self._soledad, self._backend.get_soledad())
+        # Update the proxy objects to point to the initialized instances.
+        # setProxiedObject(self._soledad, self._backend.get_soledad())
         setProxiedObject(self._keymanager, self._backend.get_keymanager())
 
         self._soledad_started = True
@@ -1930,8 +1927,6 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts the logout sequence
         """
-        setProxiedObject(self._soledad, None)
-
         self._cancel_ongoing_defers()
 
         # XXX: If other defers are doing authenticated stuff, this
@@ -2040,8 +2035,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._logged_user is not None:
             self._backend.logout()
-
-        self._backend.close_soledad()
 
         logger.debug('Terminating vpn')
         self._backend.stop_eip(shutdown=True)
