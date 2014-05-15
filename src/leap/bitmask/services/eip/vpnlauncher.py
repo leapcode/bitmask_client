@@ -198,11 +198,6 @@ class VPNLauncher(object):
         args += [
             '--client',
             '--dev', 'tun',
-            ##############################################################
-            # persist-tun makes ping-restart fail because it leaves a
-            # broken routing table
-            ##############################################################
-            # '--persist-tun',
             '--persist-key',
             '--tls-client',
             '--remote-cert-tls',
@@ -214,15 +209,6 @@ class VPNLauncher(object):
             args += ['--%s' % (key,), value]
 
         user = getpass.getuser()
-
-        ##############################################################
-        # The down-root plugin fails in some situations, so we don't
-        # drop privs for the time being
-        ##############################################################
-        # args += [
-        #     '--user', user,
-        #     '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
-        # ]
 
         if socket_port == "unix":  # that's always the case for linux
             args += [
@@ -246,25 +232,6 @@ class VPNLauncher(object):
                 args += [
                     '--down', '\"%s\"' % (kls.DOWN_SCRIPT,)
                 ]
-
-        args += [
-            '--up-restart',
-            '--persist-tun'
-        ]
-
-        ###########################################################
-        # For the time being we are disabling the usage of the
-        # down-root plugin, because it doesn't quite work as
-        # expected (i.e. it doesn't run route -del as root
-        # when finishing, so it fails to properly
-        # restart/quit)
-        ###########################################################
-        # if _has_updown_scripts(kls.OPENVPN_DOWN_PLUGIN):
-        #     args += [
-        #         '--plugin', kls.OPENVPN_DOWN_ROOT,
-        #         '\'%s\'' % kls.DOWN_SCRIPT  # for OSX
-        #         '\'script_type=down %s\'' % kls.DOWN_SCRIPT  # for Linux
-        #     ]
 
         args += [
             '--cert', eipconfig.get_client_cert_path(providerconfig),
