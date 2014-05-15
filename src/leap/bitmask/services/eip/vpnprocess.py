@@ -253,7 +253,7 @@ class VPN(object):
             if self._vpnproc.transport.pid is None:
                 logger.debug("Process has been happily terminated.")
 
-                # we try to bring the firewall up
+                # we try to tear the firewall down
                 if IS_LINUX and self._user_stopped:
                     firewall_down = self._tear_down_firewall()
                     if firewall_down:

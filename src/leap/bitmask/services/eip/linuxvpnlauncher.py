@@ -150,21 +150,6 @@ class LinuxVPNLauncher(VPNLauncher):
             logger.warning("System has no pkexec")
             raise EIPNoPkexecAvailable()
 
-    #@classmethod
-    #def missing_other_files(kls):
-        #"""
-        #'Extend' the VPNLauncher's missing_other_files to check if the polkit
-        #files is outdated, in the case of an standalone bundle.
-        #If the polkit file that is in OTHER_FILES exists but is not up to date,
-        #it is added to the missing list.
-#
-        #:returns: a list of missing files
-        #:rtype: list of str
-        #"""
-        # we use `super` in order to send the class to use
-        #missing = super(LinuxVPNLauncher, kls).missing_other_files()
-        #return missing
-
     @classmethod
     def get_vpn_command(kls, eipconfig, providerconfig, socket_host,
                         socket_port="unix", openvpn_verb=1):
