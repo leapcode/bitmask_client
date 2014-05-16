@@ -21,7 +21,6 @@ import logging
 import socket
 import time
 
-from threading import Condition
 from datetime import datetime
 
 from PySide import QtCore, QtGui
@@ -93,10 +92,10 @@ class MainWindow(QtGui.QMainWindow):
     user_stopped_eip = False
 
     # We give EIP some time to come up before starting soledad anyway
-    EIP_TIMEOUT = 60000  # in milliseconds
+    EIP_START_TIMEOUT = 60000  # in milliseconds
 
-    # We give each service some time to come to a halt before forcing quit
-    SERVICE_STOP_TIMEOUT = 20
+    # We give the services some time to a halt before forcing quit.
+    SERVICES_STOP_TIMEOUT = 20
 
     def __init__(self, quit_callback, bypass_checks=False, start_hidden=False):
         """
@@ -262,9 +261,6 @@ class MainWindow(QtGui.QMainWindow):
         # XXX should connect to mail_conductor.start_mail_service instead
         self.soledad_ready.connect(self._start_smtp_bootstrapping)
         self.soledad_ready.connect(self._start_imap_service)
-        self.logout.connect(self._stop_imap_service)
-        self.logout.connect(self._stop_smtp_service)
-
         ################################# end Qt Signals connection ########
 
         init_platform()
@@ -281,6 +277,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
+
+        self.logout.connect(self._mail_conductor.stop_mail_services)
 
         # Eip machine is a public attribute where the state machine for
         # the eip connection will be available to the different components.
@@ -1441,17 +1439,6 @@ class MainWindow(QtGui.QMainWindow):
         if self._provides_mx_and_enabled():
             self._mail_conductor.start_smtp_service(download_if_needed=True)
 
-    # XXX --- should remove from here, and connecte directly to the state
-    # machine.
-    @QtCore.Slot()
-    def _stop_smtp_service(self):
-        """
-        TRIGGERS:
-            self.logout
-        """
-        # TODO call stop_mail_service
-        self._mail_conductor.stop_smtp_service()
-
     ###################################################################
     # Service control methods: imap
 
@@ -1477,20 +1464,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if self._provides_mx_and_enabled():
             start_fun()
-
-    @QtCore.Slot()
-    def _stop_imap_service(self):
-        """
-        TRIGGERS:
-            self.logout
-        """
-        cv = Condition()
-        cv.acquire()
-        # TODO call stop_mail_service
-        threads.deferToThread(self._mail_conductor.stop_imap_service, cv)
-        # and wait for it to be stopped
-        logger.debug('Waiting for imap service to stop.')
-        cv.wait(self.SERVICE_STOP_TIMEOUT)
 
     # end service control methods (imap)
 
@@ -1840,7 +1813,7 @@ class MainWindow(QtGui.QMainWindow):
             # we want to start soledad anyway after a certain timeout if eip
             # fails to come up
             QtCore.QTimer.singleShot(
-                self.EIP_TIMEOUT,
+                self.EIP_START_TIMEOUT,
                 self._maybe_run_soledad_setup_checks)
         else:
             if not self._already_started_eip:
@@ -2015,25 +1988,20 @@ class MainWindow(QtGui.QMainWindow):
     # cleanup and quit methods
     #
 
-    def _cleanup_pidfiles(self):
+    def _stop_services(self):
         """
-        Removes lockfiles on a clean shutdown.
+        Stop services and cancel ongoing actions (if any).
+        """
+        logger.debug('About to quit, doing cleanup.')
 
-        Triggered after aboutToQuit signal.
-        """
-        if IS_WIN:
-            WindowsLock.release_all_locks()
+        self._cancel_ongoing_defers()
 
-    def _cleanup_and_quit(self):
-        """
-        Call all the cleanup actions in a serialized way.
-        Should be called from the quit function.
-        """
-        logger.debug('About to quit, doing cleanup...')
-
-        self._stop_imap_service()
+        logger.debug('Stopping mail services')
+        self._backend.stop_imap_service()
+        self._backend.stop_smtp_service()
 
         if self._logged_user is not None:
+            logger.debug("Doing logout")
             self._backend.logout()
 
         logger.debug('Terminating vpn')
@@ -2042,7 +2010,8 @@ class MainWindow(QtGui.QMainWindow):
         # We need to give some time to the ongoing signals for shutdown
         # to come into action. This needs to be solved using
         # back-communication from backend.
-        QtCore.QTimer.singleShot(3000, self._shutdown)
+        # TODO: handle this, I commented this fix to merge 'cleanly'
+        # QtCore.QTimer.singleShot(3000, self._shutdown)
 
     def _shutdown(self):
         """
@@ -2061,7 +2030,8 @@ class MainWindow(QtGui.QMainWindow):
 
     def quit(self):
         """
-        Cleanup and tidely close the main window before quitting.
+        Start the quit sequence and wait for services to finish.
+        Cleanup and close the main window before quitting.
         """
         # TODO separate the shutting down of services from the
         # UI stuff.
@@ -2074,22 +2044,45 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr('The app is quitting, please wait.'))
 
         # explicitly process events to display tooltip immediately
-        QtCore.QCoreApplication.processEvents()
+        QtCore.QCoreApplication.processEvents(0, 10)
 
-        # Set this in case that the app is hidden
-        QtGui.QApplication.setQuitOnLastWindowClosed(True)
-
-        self._cleanup_and_quit()
-
-        # We queue the call to stop since we need to wait until EIP is stopped.
-        # Otherwise we may exit leaving an unmanaged openvpn process.
-        reactor.callLater(0, self._backend.stop)
-        self._really_quit = True
-
+        # Close other windows if any.
         if self._wizard:
             self._wizard.close()
 
         if self._logger_window:
             self._logger_window.close()
 
+        # Set this in case that the app is hidden
+        QtGui.QApplication.setQuitOnLastWindowClosed(True)
+
+        self._stop_services()
+
+        self._really_quit = True
+
+        # call final_quit when imap is stopped
+        self._backend.signaler.imap_stopped.connect(self.final_quit)
+        # or if we reach the timeout
+        reactor.callLater(self.SERVICES_STOP_TIMEOUT, self._backend.stop)
+
+    @QtCore.Slot()
+    def final_quit(self):
+        """
+        Final steps to quit the app, starting from here we don't care about
+        running services or user interaction, just quitting.
+        """
+        logger.debug('Final quit...')
+
+        try:
+            # disconnect signal if we get here due a timeout.
+            self._backend.signaler.imap_stopped.disconnect(self.final_quit)
+        except RuntimeError:
+            pass  # Signal was not connected
+
+        # Remove lockfiles on a clean shutdown.
+        logger.debug('Cleaning pidfiles')
+        if IS_WIN:
+            WindowsLock.release_all_locks()
+
+        self._backend.stop()
         self.close()

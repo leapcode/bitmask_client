@@ -24,6 +24,7 @@ import time
 
 from functools import partial
 from Queue import Queue, Empty
+from threading import Condition
 
 from twisted.internet import reactor
 from twisted.internet import threads, defer
@@ -698,6 +699,8 @@ class Mail(object):
     """
     Interfaces with setup and launch of Mail.
     """
+    # We give each service some time to come to a halt before forcing quit
+    SERVICE_STOP_TIMEOUT = 20
 
     zope.interface.implements(ILEAPComponent)
 
@@ -764,19 +767,25 @@ class Mail(object):
         """
         return threads.deferToThread(self._smtp_bootstrapper.stop_smtp_service)
 
-    def stop_imap_service(self, cv):
+    def _stop_imap_service(self):
+        """
+        Stop imap and wait until the service is stopped to signal that is done.
+        """
+        cv = Condition()
+        cv.acquire()
+        threads.deferToThread(self._imap_controller.stop_imap_service, cv)
+        logger.debug('Waiting for imap service to stop.')
+        cv.wait(self.SERVICE_STOP_TIMEOUT)
+        self._signaler.signal(self._signaler.IMAP_STOPPED)
+
+    def stop_imap_service(self):
         """
         Stop imap service (fetcher, factory and port).
-
-        :param cv: A condition variable to which we can signal when imap
-                   indeed stops.
-        :type cv: threading.Condition
 
         :returns: a defer to interact with.
         :rtype: twisted.internet.defer.Deferred
         """
-        return threads.deferToThread(
-            self._imap_controller.stop_imap_service, cv)
+        return threads.deferToThread(self._stop_imap_service)
 
 
 class Authenticate(object):
@@ -796,6 +805,7 @@ class Authenticate(object):
         """
         self.key = "authenticate"
         self._signaler = signaler
+        self._login_defer = None
         self._srp_auth = SRPAuth(ProviderConfig(), self._signaler)
 
     def login(self, domain, username, password):
@@ -982,6 +992,9 @@ class Signaler(QtCore.QObject):
     soledad_password_change_ok = QtCore.Signal(object)
     soledad_password_change_error = QtCore.Signal(object)
 
+    # mail related signals
+    imap_stopped = QtCore.Signal(object)
+
     # This signal is used to warn the backend user that is doing something
     # wrong
     backend_bad_call = QtCore.Signal(object)
@@ -1061,6 +1074,8 @@ class Signaler(QtCore.QObject):
     SOLEDAD_PASSWORD_CHANGE_ERROR = "soledad_password_change_error"
 
     SOLEDAD_CANCELLED_BOOTSTRAP = "soledad_cancelled_bootstrap"
+
+    IMAP_STOPPED = "imap_stopped"
 
     BACKEND_BAD_CALL = "backend_bad_call"
 
@@ -1142,6 +1157,8 @@ class Signaler(QtCore.QObject):
 
             self.SOLEDAD_PASSWORD_CHANGE_OK,
             self.SOLEDAD_PASSWORD_CHANGE_ERROR,
+
+            self.IMAP_STOPPED,
 
             self.BACKEND_BAD_CALL,
         ]
@@ -1652,15 +1669,14 @@ class Backend(object):
         """
         self._call_queue.put(("mail", "stop_smtp_service", None))
 
-    def stop_imap_service(self, cv):
+    def stop_imap_service(self):
         """
         Stop imap service.
 
-        :param cv: A condition variable to which we can signal when imap
-                   indeed stops.
-        :type cv: threading.Condition
+        Signals:
+            imap_stopped
         """
-        self._call_queue.put(("mail", "stop_imap_service", None, cv))
+        self._call_queue.put(("mail", "stop_imap_service", None))
 
     ###########################################################################
     # XXX HACK: this section is meant to be a place to hold methods and
