@@ -1,1 +1,0 @@
-- Hardcode paths for openvpn if STANDALONE=True. Related: #5592

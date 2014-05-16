@@ -1,1 +1,0 @@
-- Enable Turn ON button for EIP whenever possible (json and cert are in place). Fixes #5665, #5666.

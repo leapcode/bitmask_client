@@ -1,1 +1,0 @@
-- Use PySide @Slot decorator instead of 'SLOT' docstring. Closes #5506.

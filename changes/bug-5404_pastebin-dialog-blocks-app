@@ -1,1 +1,0 @@
-- Use non blocking dialog so the Pastebin result does not block the app. Closes #5404.
