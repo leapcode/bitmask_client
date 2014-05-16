@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 
 def stop():
-    logger.debug("Really stoping all the things...")
     QtCore.QCoreApplication.sendPostedEvents()
     QtCore.QCoreApplication.flush()
     try:

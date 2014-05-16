@@ -17,12 +17,15 @@
 """
 Backend for everything
 """
+import commands
 import logging
 import os
+import time
 
 from functools import partial
 from Queue import Queue, Empty
 
+from twisted.internet import reactor
 from twisted.internet import threads, defer
 from twisted.internet.task import LoopingCall
 from twisted.python import log
@@ -32,6 +35,7 @@ import zope.interface
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
+from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.services.eip import eipconfig
@@ -374,6 +378,34 @@ class EIP(object):
         Stop the service.
         """
         self._vpn.terminate(shutdown)
+        if IS_LINUX:
+            self._wait_for_firewall_down()
+
+    def _wait_for_firewall_down(self):
+        """
+        Wait for the firewall to come down.
+        """
+        # Due to how we delay the resolvconf action in linux.
+        # XXX this *has* to wait for a reasonable lapse, since we have some
+        # delay in vpn.terminate.
+        # For a better solution it should be signaled from backend that
+        # everything is clear to proceed, or a timeout happened.
+        MAX_FW_WAIT_RETRIES = 25
+        FW_WAIT_STEP = 0.5
+
+        retry = 0
+
+        fw_up_cmd = "pkexec /usr/sbin/bitmask-root firewall isup"
+        fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
+
+        while retry < MAX_FW_WAIT_RETRIES:
+            if fw_is_down():
+                return
+            else:
+                time.sleep(FW_WAIT_STEP)
+                retry += 1
+        logger.warning("After waiting, firewall is not down... "
+                       "You might experience lack of connectivity")
 
     def terminate(self):
         """
@@ -927,9 +959,17 @@ class Backend(object):
         """
         Stops the looping call and tries to cancel all the defers.
         """
+        reactor.callLater(2, self._stop)
+
+    def _stop(self):
+        """
+        Delayed stopping of worker. Called from `stop`.
+        """
         log.msg("Stopping worker...")
         if self._lc.running:
             self._lc.stop()
+        else:
+            logger.warning("Looping call is not running, cannot stop")
         while len(self._ongoing_defers) > 0:
             d = self._ongoing_defers.pop()
             d.cancel()
@@ -1111,6 +1151,9 @@ class Backend(object):
     def stop_eip(self, shutdown=False):
         """
         Stop the EIP service.
+
+        :param shutdown:
+        :type shutdown: bool
         """
         self._call_queue.put(("eip", "stop", None, shutdown))
 

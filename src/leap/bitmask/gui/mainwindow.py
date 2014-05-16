@@ -19,6 +19,7 @@ Main window for Bitmask.
 """
 import logging
 import socket
+import time
 
 from threading import Condition
 from datetime import datetime
@@ -2109,12 +2110,25 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Terminating vpn')
         self._backend.stop_eip(shutdown=True)
 
+        # We need to give some time to the ongoing signals for shutdown
+        # to come into action. This needs to be solved using
+        # back-communication from backend.
+        QtCore.QTimer.singleShot(3000, self._shutdown)
+
+    def _shutdown(self):
+        """
+        Actually shutdown.
+        """
         self._cancel_ongoing_defers()
 
         # TODO missing any more cancels?
 
         logger.debug('Cleaning pidfiles')
         self._cleanup_pidfiles()
+        if self._quit_callback:
+            self._quit_callback()
+
+        logger.debug('Bye.')
 
     def quit(self):
         """
@@ -2150,8 +2164,3 @@ class MainWindow(QtGui.QMainWindow):
             self._logger_window.close()
 
         self.close()
-
-        if self._quit_callback:
-            self._quit_callback()
-
-        logger.debug('Bye.')

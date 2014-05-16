@@ -21,6 +21,7 @@ import logging
 import os
 import shutil
 import socket
+import subprocess
 import sys
 
 from itertools import chain, repeat
@@ -36,10 +37,11 @@ except ImportError:
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services.eip import get_vpn_launcher
+from leap.bitmask.services.eip import linuxvpnlauncher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.bitmask.services.eip.udstelnet import UDSTelnet
 from leap.bitmask.util import first
-from leap.bitmask.platform_init import IS_MAC
+from leap.bitmask.platform_init import IS_MAC, IS_LINUX
 from leap.common.check import leap_assert, leap_assert_type
 
 logger = logging.getLogger(__name__)
@@ -66,9 +68,8 @@ class VPNObserver(object):
             'Network is unreachable (code=101)',),
         'PROCESS_RESTART_TLS': (
             "SIGUSR1[soft,tls-error]",),
-        # Let ping-restart work as it should
-        # 'PROCESS_RESTART_PING': (
-        #     "SIGUSR1[soft,ping-restart]",),
+        'PROCESS_RESTART_PING': (
+            "SIGTERM[soft,ping-restart]",),
         'INITIALIZATION_COMPLETED': (
             "Initialization Sequence Completed",),
     }
@@ -159,6 +160,8 @@ class VPN(object):
         self._signaler = kwargs['signaler']
         self._openvpn_verb = flags.OPENVPN_VERBOSITY
 
+        self._user_stopped = False
+
     def start(self, *args, **kwargs):
         """
         Starts the openvpn subprocess.
@@ -170,6 +173,7 @@ class VPN(object):
         :type kwargs: dict
         """
         logger.debug('VPN: start')
+        self._user_stopped = False
         self._stop_pollers()
         kwargs['openvpn_verb'] = self._openvpn_verb
         kwargs['signaler'] = self._signaler
@@ -180,6 +184,15 @@ class VPN(object):
         if vpnproc.get_openvpn_process():
             logger.info("Another vpn process is running. Will try to stop it.")
             vpnproc.stop_if_already_running()
+
+        # we try to bring the firewall up
+        if IS_LINUX:
+            gateways = vpnproc.getGateways()
+            firewall_up = self._launch_firewall(gateways)
+            if not firewall_up:
+                logger.error("Could not bring firewall up, "
+                             "aborting openvpn launch.")
+                return
 
         cmd = vpnproc.getCommand()
         env = os.environ
@@ -198,9 +211,37 @@ class VPN(object):
         self._pollers.extend(poll_list)
         self._start_pollers()
 
+    def _launch_firewall(self, gateways):
+        """
+        Launch the firewall using the privileged wrapper.
+
+        :param gateways:
+        :type gateways: list
+
+        :returns: True if the exitcode of calling the root helper in a
+                  subprocess is 0.
+        :rtype: bool
+        """
+        # XXX could check for wrapper existence, check it's root owned etc.
+        # XXX could check that the iptables rules are in place.
+
+        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        exitCode = subprocess.call(["pkexec",
+                                    BM_ROOT, "firewall", "start"] + gateways)
+        return True if exitCode is 0 else False
+
+    def _tear_down_firewall(self):
+        """
+        Tear the firewall down using the privileged wrapper.
+        """
+        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        exitCode = subprocess.call(["pkexec",
+                                    BM_ROOT, "firewall", "stop"])
+        return True if exitCode is 0 else False
+
     def _kill_if_left_alive(self, tries=0):
         """
-        Check if the process is still alive, and sends a
+        Check if the process is still alive, and send a
         SIGKILL after a timeout period.
 
         :param tries: counter of tries, used in recursion
@@ -210,6 +251,15 @@ class VPN(object):
         while tries < self.TERMINATE_MAXTRIES:
             if self._vpnproc.transport.pid is None:
                 logger.debug("Process has been happily terminated.")
+
+                # we try to tear the firewall down
+                if IS_LINUX and self._user_stopped:
+                    firewall_down = self._tear_down_firewall()
+                    if firewall_down:
+                        logger.debug("Firewall down")
+                    else:
+                        logger.warning("Could not tear firewall down")
+
                 return
             else:
                 logger.debug("Process did not die, waiting...")
@@ -246,6 +296,10 @@ class VPN(object):
         from twisted.internet import reactor
         self._stop_pollers()
 
+        # We assume that the only valid shutodowns are initiated
+        # by an user action.
+        self._user_stopped = shutdown
+
         # First we try to be polite and send a SIGTERM...
         if self._vpnproc:
             self._sentterm = True
@@ -253,11 +307,16 @@ class VPN(object):
 
             # ...but we also trigger a countdown to be unpolite
             # if strictly needed.
-
-            # XXX Watch out! This will fail NOW since we are running
-            # openvpn as root as a workaround for some connection issues.
             reactor.callLater(
                 self.TERMINATE_WAIT, self._kill_if_left_alive)
+
+            if shutdown:
+                if IS_LINUX and self._user_stopped:
+                    firewall_down = self._tear_down_firewall()
+                    if firewall_down:
+                        logger.debug("Firewall down")
+                    else:
+                        logger.warning("Could not tear firewall down")
 
     def _start_pollers(self):
         """
@@ -830,8 +889,19 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
             if not isinstance(c, str):
                 command[i] = c.encode(encoding)
 
-        logger.debug("Running VPN with command: {0}".format(command))
+        logger.debug("Running VPN with command: ")
+        logger.debug("{0}".format(" ".join(command)))
         return command
+
+    def getGateways(self):
+        """
+        Get the gateways from the appropiate launcher.
+
+        :rtype: list
+        """
+        gateways = self._launcher.get_gateways(
+            self._eipconfig, self._providerconfig)
+        return gateways
 
     # shutdown
 
