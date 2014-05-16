@@ -1,8 +1,8 @@
-﻿ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.5.0
+﻿ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.5.1
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.5.0  of Bitmask,  the Internet Encryption  Toolkit, codename
-"Long time no see".
+version 0.5.1  of Bitmask,  the Internet Encryption  Toolkit, codename
+"lil less leaky".
 
 https://downloads.leap.se/client/
 
@@ -16,6 +16,15 @@ Encrypted Internet Proxy and Encrypted Mail.
 The   Encrypted  Internet   Proxy  provides   circumvention,  location
 anonymization, and traffic encryption  in a hassle-free, automatically
 self-configuring fashion.
+
+WARNING (LINUX  ONLY): If  you ever run  into the situation  where you
+cannot  access  internet, open  the  terminal  and  run the  following
+command:
+
+$ pkexec /usr/sbin/bitmask-root firewall stop
+
+If for  some reason that  doesn't work, you  will need to  reboot your
+computer.
 
 Encrypted  Mail offers  automatic encryption  and decryption  for both
 outgoing and  incoming email, adding  public key cryptography  to your
@@ -34,13 +43,17 @@ NOT trust your life to it.
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask  0.5.0 improves  greatly  its mail  support  and stability  in
+Bitmask  0.5.1 improves  greatly  its mail  support  and stability  in
 general, among other various bug fixes. You can refer to the CHANGELOG
 for the meat.
 
 As always,  you can  connect to the  Encrypted Internet  Proxy service
 offered by a  provider of your choice, and enjoy  a encrypted internet
 connection that the spying eyes can only track back to your provider.
+
+Encrypted Internet on Linux now  helps you don't shoot yourself in the
+foot  by   leaking  traffic  outside  of  the   secure  connection  it
+establishes. This will be added to other platforms in the future.
 
 The Encrypted Mail services will run local SMTP and IMAP proxies that,
 once you configure the mail  client of your choice, will automatically
@@ -87,7 +100,7 @@ our intensive bug-reeducation program.
 
 HACKING
 
-You can find us in the #leap-dev channel on the freenode network.
+You can find us in the #leap channel on the freenode network.
 
 If you are lucky enough, you can also spot us drinking mate, sleepless
 in night  trains, rooftops,  rainforests, lonely islands  and, always,
@@ -95,6 +108,6 @@ beyond any border.
 
 The LEAP team,
 
-Apr 4, 2014
+May 16, 2014
 Somewhere in the middle of the intertubes.
 EOF

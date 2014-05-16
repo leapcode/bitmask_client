@@ -25,7 +25,6 @@ from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask.services.eip.connection import EIPConnection
-from leap.bitmask.services.eip.vpnprocess import VPNManager
 from leap.bitmask.services import get_service_display_name, EIP_SERVICE
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.util.averages import RateMovingAverage
@@ -89,17 +88,18 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.btnUpload.clicked.connect(onclicked)
         self.ui.btnDownload.clicked.connect(onclicked)
 
+    @QtCore.Slot()
     def _on_VPN_status_clicked(self):
         """
-        SLOT
-        TRIGGER: self.ui.btnUpload.clicked
-                 self.ui.btnDownload.clicked
+        TRIGGERS:
+            self.ui.btnUpload.clicked
+            self.ui.btnDownload.clicked
 
         Toggles between rate and total throughput display for vpn
         status figures.
         """
         self.DISPLAY_TRAFFIC_RATES = not self.DISPLAY_TRAFFIC_RATES
-        self.update_vpn_status(None)  # refresh
+        self.update_vpn_status()  # refresh
 
     def _set_traffic_rates(self):
         """
@@ -117,7 +117,7 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         self._up_rate.reset()
         self._down_rate.reset()
-        self.update_vpn_status(None)
+        self.update_vpn_status()
 
     def _update_traffic_rates(self, up, down):
         """
@@ -260,11 +260,12 @@ class EIPStatusWidget(QtGui.QWidget):
             self._service_name, self.tr("disabled")))
 
         # Replace EIP tray menu with an action that displays a "disabled" text
-        menu = self._systray.contextMenu()
-        menu.insertAction(
-            self._eip_status_menu.menuAction(),
-            self._eip_disabled_action)
-        self._eip_status_menu.menuAction().setVisible(False)
+        if self.isVisible():
+            menu = self._systray.contextMenu()
+            menu.insertAction(
+                self._eip_status_menu.menuAction(),
+                self._eip_disabled_action)
+            self._eip_status_menu.menuAction().setVisible(False)
 
     @QtCore.Slot()
     def enable_eip_start(self):
@@ -278,7 +279,8 @@ class EIPStatusWidget(QtGui.QWidget):
         # Restore the eip action menu
         menu = self._systray.contextMenu()
         menu.removeAction(self._eip_disabled_action)
-        self._eip_status_menu.menuAction().setVisible(True)
+        if self.isVisible():
+            self._eip_status_menu.menuAction().setVisible(True)
 
     # XXX disable (later) --------------------------
     def set_eip_status(self, status, error=False):
@@ -348,23 +350,27 @@ class EIPStatusWidget(QtGui.QWidget):
             self.tr("Traffic is being routed in the clear"))
         self.ui.lblEIPStatus.show()
 
-    def update_vpn_status(self, data):
+    @QtCore.Slot(dict)
+    def update_vpn_status(self, data=None):
         """
-        SLOT
-        TRIGGER: VPN.status_changed
+        TRIGGERS:
+            Signaler.eip_status_changed
 
-        Updates the download/upload labels based on the data provided
-        by the VPN thread.
+        Updates the download/upload labels based on the data provided by the
+        VPN thread.
+        If data is None, we just will refresh the display based on the previous
+        data.
 
-        :param data: a dictionary with the tcp/udp write and read totals.
-                     If data is None, we just will refresh the display based
-                     on the previous data.
-        :type data: dict
+        :param data: a tuple with download/upload totals (download, upload).
+        :type data: tuple
         """
-        if data:
-            upload = float(data[VPNManager.TCPUDP_WRITE_KEY] or "0")
-            download = float(data[VPNManager.TCPUDP_READ_KEY] or "0")
-            self._update_traffic_rates(upload, download)
+        if data is not None:
+            try:
+                upload, download = map(float, data)
+                self._update_traffic_rates(upload, download)
+            except Exception:
+                # discard invalid data
+                return
 
         if self.DISPLAY_TRAFFIC_RATES:
             uprate, downrate = self._get_traffic_rates()
@@ -379,39 +385,42 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.btnUpload.setText(upload_str)
         self.ui.btnDownload.setText(download_str)
 
-    def update_vpn_state(self, data):
+    @QtCore.Slot(dict)
+    def update_vpn_state(self, vpn_state):
         """
-        SLOT
-        TRIGGER: VPN.state_changed
+        TRIGGERS:
+            Signaler.eip_state_changed
 
         Updates the displayed VPN state based on the data provided by
         the VPN thread.
 
+        :param vpn_state: the state of the VPN
+        :type vpn_state: dict
+
         Emits:
-            If the status is connected, we emit EIPConnection.qtsigs.
+            If the vpn_state is connected, we emit EIPConnection.qtsigs.
             connected_signal
         """
-        status = data[VPNManager.STATUS_STEP_KEY]
-        self.set_eip_status_icon(status)
-        if status == "CONNECTED":
+        self.set_eip_status_icon(vpn_state)
+        if vpn_state == "CONNECTED":
             self.ui.eip_bandwidth.show()
             self.ui.lblEIPStatus.hide()
 
             # XXX should be handled by the state machine too.
             self.eip_connection_connected.emit()
 
-        # XXX should lookup status map in EIPConnection
-        elif status == "AUTH":
+        # XXX should lookup vpn_state map in EIPConnection
+        elif vpn_state == "AUTH":
             self.set_eip_status(self.tr("Authenticating..."))
-        elif status == "GET_CONFIG":
+        elif vpn_state == "GET_CONFIG":
             self.set_eip_status(self.tr("Retrieving configuration..."))
-        elif status == "WAIT":
+        elif vpn_state == "WAIT":
             self.set_eip_status(self.tr("Waiting to start..."))
-        elif status == "ASSIGN_IP":
+        elif vpn_state == "ASSIGN_IP":
             self.set_eip_status(self.tr("Assigning IP"))
-        elif status == "RECONNECTING":
+        elif vpn_state == "RECONNECTING":
             self.set_eip_status(self.tr("Reconnecting..."))
-        elif status == "ALREADYRUNNING":
+        elif vpn_state == "ALREADYRUNNING":
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
             QtCore.QTimer.singleShot(
@@ -419,7 +428,7 @@ class EIPStatusWidget(QtGui.QWidget):
             msg = self.tr("Unable to start VPN, it's already running.")
             QtCore.QTimer.singleShot(0, partial(self.set_eip_status, msg))
         else:
-            self.set_eip_status(status)
+            self.set_eip_status(vpn_state)
 
     def set_eip_icon(self, icon):
         """

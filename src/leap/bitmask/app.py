@@ -76,6 +76,16 @@ def sigint_handler(*args, **kwargs):
     mainwindow = args[0]
     mainwindow.quit()
 
+def sigterm_handler(*args, **kwargs):
+    """
+    Signal handler for SIGTERM.
+    This handler is actually passed to twisted reactor
+    """
+    logger = kwargs.get('logger', None)
+    if logger:
+        logger.debug("SIGTERM catched. shutting down...")
+    mainwindow = args[0]
+    mainwindow.quit()
 
 def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
     """
@@ -200,7 +210,7 @@ def main():
     debug = opts.debug
     logfile = opts.log_file
     mail_logfile = opts.mail_log_file
-    openvpn_verb = opts.openvpn_verb
+    start_hidden = opts.start_hidden
 
     #############################################################
     # Given how paths and bundling works, we need to delay the imports
@@ -213,6 +223,8 @@ def main():
     flags.MAIL_LOGFILE = mail_logfile
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
+    flags.OPENVPN_VERBOSITY = opts.openvpn_verb
+    flags.SKIP_WIZARD_CHECKS = opts.skip_wizard_checks
 
     flags.CA_CERT_FILE = opts.ca_cert_file
 
@@ -306,11 +318,14 @@ def main():
 
     window = MainWindow(
         lambda: twisted_main.quit(app),
-        openvpn_verb=openvpn_verb,
-        bypass_checks=bypass_checks)
+        bypass_checks=bypass_checks,
+        start_hidden=start_hidden)
 
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
+
+    # callable used in addSystemEventTrigger to handle SIGTERM
+    sigterm_window = partial(sigterm_handler, window, logger=logger)
 
     if IS_MAC:
         window.raise_()
@@ -322,6 +337,12 @@ def main():
 
     l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
     l.start(0.01)
+
+    # SIGTERM can't be handled the same way SIGINT is, since it's
+    # caught by twisted. See _handleSignals method in
+    # twisted/internet/base.py#L1150. So, addSystemEventTrigger
+    # reactor's method is used.
+    reactor.addSystemEventTrigger('before', 'shutdown', sigterm_window)
     reactor.run()
 
 if __name__ == "__main__":

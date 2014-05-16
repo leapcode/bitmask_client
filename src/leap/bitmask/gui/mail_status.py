@@ -184,10 +184,10 @@ class MailStatusWidget(QtGui.QWidget):
         leap_assert_type(action_mail_status, QtGui.QAction)
         self._action_mail_status = action_mail_status
 
+    @QtCore.Slot()
     def set_soledad_failed(self):
         """
-        SLOT
-        TRIGGER:
+        TRIGGERS:
             SoledadBootstrapper.soledad_failed
 
         This method is called whenever soledad has a failure.
@@ -195,10 +195,10 @@ class MailStatusWidget(QtGui.QWidget):
         msg = self.tr("There was an unexpected problem with Soledad.")
         self._set_mail_status(msg, ready=-1)
 
+    @QtCore.Slot()
     def set_soledad_invalid_auth_token(self):
         """
-        SLOT
-        TRIGGER:
+        TRIGGERS:
             SoledadBootstrapper.soledad_invalid_token
 
         This method is called when the auth token is invalid
@@ -250,10 +250,11 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._soledad_event.emit(req)
 
+    @QtCore.Slot(object)
     def _mail_handle_soledad_events_slot(self, req):
         """
-        SLOT
-        TRIGGER: _mail_handle_soledad_events
+        TRIGGERS:
+            _mail_handle_soledad_events
 
         Reacts to an Soledad event
 
@@ -284,10 +285,11 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._keymanager_event.emit(req)
 
+    @QtCore.Slot(object)
     def _mail_handle_keymanager_events_slot(self, req):
         """
-        SLOT
-        TRIGGER: _mail_handle_keymanager_events
+        TRIGGERS:
+            _mail_handle_keymanager_events
 
         Reacts to an KeyManager event
 
@@ -330,10 +332,11 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._smtp_event.emit(req)
 
+    @QtCore.Slot(object)
     def _mail_handle_smtp_events_slot(self, req):
         """
-        SLOT
-        TRIGGER: _mail_handle_smtp_events
+        TRIGGERS:
+            _mail_handle_smtp_events
 
         Reacts to an SMTP event
 
@@ -364,10 +367,11 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._imap_event.emit(req)
 
+    @QtCore.Slot(object)
     def _mail_handle_imap_events_slot(self, req):
         """
-        SLOT
-        TRIGGER: _mail_handle_imap_events
+        TRIGGERS:
+            _mail_handle_imap_events
 
         Reacts to an IMAP event
 

@@ -78,6 +78,7 @@ class AbstractBootstrapper(QtCore.QObject):
         self._signal_to_emit = None
         self._err_msg = None
         self._signaler = signaler
+        self._cancel_signal = None
 
     def _gui_errback(self, failure):
         """
@@ -95,7 +96,8 @@ class AbstractBootstrapper(QtCore.QObject):
         if failure.check(CancelledError):
             logger.debug("Defer cancelled.")
             failure.trap(Exception)
-            self._signaler.signal(self._signaler.PROV_CANCELLED_SETUP)
+            if self._signaler is not None and self._cancel_signal is not None:
+                self._signaler.signal(self._cancel_signal)
             return
 
         if self._signal_to_emit:

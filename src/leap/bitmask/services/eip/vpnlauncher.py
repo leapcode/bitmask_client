@@ -25,14 +25,12 @@ import stat
 from abc import ABCMeta, abstractmethod
 from functools import partial
 
-from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
-from leap.bitmask.util import first
-from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
-from leap.common.files import which
+
 
 logger = logging.getLogger(__name__)
 
@@ -107,10 +105,43 @@ class VPNLauncher(object):
 
     @classmethod
     @abstractmethod
+    def get_gateways(kls, eipconfig, providerconfig):
+        """
+        Return the selected gateways for a given provider, looking at the EIP
+        config file.
+
+        :param eipconfig: eip configuration object
+        :type eipconfig: EIPConfig
+
+        :param providerconfig: provider specific configuration
+        :type providerconfig: ProviderConfig
+
+        :rtype: list
+        """
+        gateways = []
+        leap_settings = LeapSettings()
+        domain = providerconfig.get_domain()
+        gateway_conf = leap_settings.get_selected_gateway(domain)
+
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateway_selector = VPNGatewaySelector(eipconfig)
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
+
+        if not gateways:
+            logger.error('No gateway was found!')
+            raise VPNLauncherException('No gateway was found!')
+
+        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
+        return gateways
+
+    @classmethod
+    @abstractmethod
     def get_vpn_command(kls, eipconfig, providerconfig,
                         socket_host, socket_port, openvpn_verb=1):
         """
-        Returns the platform dependant vpn launching command
+        Return the platform-dependant vpn command for launching openvpn.
 
         Might raise:
             OpenVPNNotFoundException,
@@ -134,16 +165,19 @@ class VPNLauncher(object):
         leap_assert_type(eipconfig, EIPConfig)
         leap_assert_type(providerconfig, ProviderConfig)
 
-        kwargs = {}
-        if flags.STANDALONE:
-            kwargs['path_extension'] = os.path.join(
-                get_path_prefix(), "..", "apps", "eip")
-
-        openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
-        if len(openvpn_possibilities) == 0:
+        # XXX this still has to be changed on osx and windows accordingly
+        #kwargs = {}
+        #openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
+        #if not openvpn_possibilities:
+            #raise OpenVPNNotFoundException()
+        #openvpn = first(openvpn_possibilities)
+        # -----------------------------------------
+        if not os.path.isfile(kls.OPENVPN_BIN_PATH):
+            logger.warning("Could not find openvpn bin in path %s" % (
+                kls.OPENVPN_BIN_PATH))
             raise OpenVPNNotFoundException()
 
-        openvpn = first(openvpn_possibilities)
+        openvpn = kls.OPENVPN_BIN_PATH
         args = []
 
         args += [
@@ -154,22 +188,7 @@ class VPNLauncher(object):
         if openvpn_verb is not None:
             args += ['--verb', '%d' % (openvpn_verb,)]
 
-        gateways = []
-        leap_settings = LeapSettings()
-        domain = providerconfig.get_domain()
-        gateway_conf = leap_settings.get_selected_gateway(domain)
-
-        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
-            gateway_selector = VPNGatewaySelector(eipconfig)
-            gateways = gateway_selector.get_gateways()
-        else:
-            gateways = [gateway_conf]
-
-        if not gateways:
-            logger.error('No gateway was found!')
-            raise VPNLauncherException('No gateway was found!')
-
-        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
+        gateways = kls.get_gateways(eipconfig, providerconfig)
 
         for gw in gateways:
             args += ['--remote', gw, '1194', 'udp']
@@ -177,11 +196,6 @@ class VPNLauncher(object):
         args += [
             '--client',
             '--dev', 'tun',
-            ##############################################################
-            # persist-tun makes ping-restart fail because it leaves a
-            # broken routing table
-            ##############################################################
-            # '--persist-tun',
             '--persist-key',
             '--tls-client',
             '--remote-cert-tls',
@@ -193,15 +207,6 @@ class VPNLauncher(object):
             args += ['--%s' % (key,), value]
 
         user = getpass.getuser()
-
-        ##############################################################
-        # The down-root plugin fails in some situations, so we don't
-        # drop privs for the time being
-        ##############################################################
-        # args += [
-        #     '--user', user,
-        #     '--group', grp.getgrgid(os.getgroups()[-1]).gr_name
-        # ]
 
         if socket_port == "unix":  # that's always the case for linux
             args += [
@@ -225,20 +230,6 @@ class VPNLauncher(object):
                 args += [
                     '--down', '\"%s\"' % (kls.DOWN_SCRIPT,)
                 ]
-
-        ###########################################################
-        # For the time being we are disabling the usage of the
-        # down-root plugin, because it doesn't quite work as
-        # expected (i.e. it doesn't run route -del as root
-        # when finishing, so it fails to properly
-        # restart/quit)
-        ###########################################################
-        # if _has_updown_scripts(kls.OPENVPN_DOWN_PLUGIN):
-        #     args += [
-        #         '--plugin', kls.OPENVPN_DOWN_ROOT,
-        #         '\'%s\'' % kls.DOWN_SCRIPT  # for OSX
-        #         '\'script_type=down %s\'' % kls.DOWN_SCRIPT  # for Linux
-        #     ]
 
         args += [
             '--cert', eipconfig.get_client_cert_path(providerconfig),
@@ -271,13 +262,18 @@ class VPNLauncher(object):
 
         :rtype: list
         """
-        leap_assert(kls.UPDOWN_FILES is not None,
-                    "Need to define UPDOWN_FILES for this particular "
-                    "launcher before calling this method")
-        file_exist = partial(_has_updown_scripts, warn=False)
-        zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
-        missing = filter(lambda (path, exists): exists is False, zipped)
-        return [path for path, exists in missing]
+        # FIXME
+        # XXX remove method when we ditch UPDOWN in osx and win too
+        if IS_LINUX:
+            return []
+        else:
+            leap_assert(kls.UPDOWN_FILES is not None,
+                        "Need to define UPDOWN_FILES for this particular "
+                        "launcher before calling this method")
+            file_exist = partial(_has_updown_scripts, warn=False)
+            zipped = zip(kls.UPDOWN_FILES, map(file_exist, kls.UPDOWN_FILES))
+            missing = filter(lambda (path, exists): exists is False, zipped)
+            return [path for path, exists in missing]
 
     @classmethod
     def missing_other_files(kls):
