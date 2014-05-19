@@ -76,6 +76,7 @@ def sigint_handler(*args, **kwargs):
     mainwindow = args[0]
     mainwindow.quit()
 
+
 def sigterm_handler(*args, **kwargs):
     """
     Signal handler for SIGTERM.
@@ -86,6 +87,7 @@ def sigterm_handler(*args, **kwargs):
         logger.debug("SIGTERM catched. shutting down...")
     mainwindow = args[0]
     mainwindow.quit()
+
 
 def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
     """

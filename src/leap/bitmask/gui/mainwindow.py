@@ -19,7 +19,6 @@ Main window for Bitmask.
 """
 import logging
 import socket
-import time
 
 from datetime import datetime
 
@@ -87,6 +86,7 @@ class MainWindow(QtGui.QMainWindow):
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
     logout = QtCore.Signal([])
+    all_services_stopped = QtCore.Signal()
 
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
@@ -194,6 +194,12 @@ class MainWindow(QtGui.QMainWindow):
         self._srp_auth = None
         self._logged_user = None
         self._logged_in_offline = False
+
+        # Set used to track the services being stopped and need wait.
+        self._services_being_stopped = {}
+
+        # timeout object used to trigger quit
+        self._quit_timeout_callater = None
 
         self._backend_connected_signals = {}
         self._backend_connect()
@@ -1996,6 +2002,14 @@ class MainWindow(QtGui.QMainWindow):
 
         self._cancel_ongoing_defers()
 
+        self._services_being_stopped = {'imap', 'eip'}
+
+        imap_stopped = lambda: self._remove_service('imap')
+        self._backend.signaler.imap_stopped.connect(imap_stopped)
+
+        eip_stopped = lambda: self._remove_service('eip')
+        self._backend.signaler.eip_stopped.connect(eip_stopped)
+
         logger.debug('Stopping mail services')
         self._backend.stop_imap_service()
         self._backend.stop_smtp_service()
@@ -2006,27 +2020,6 @@ class MainWindow(QtGui.QMainWindow):
 
         logger.debug('Terminating vpn')
         self._backend.stop_eip(shutdown=True)
-
-        # We need to give some time to the ongoing signals for shutdown
-        # to come into action. This needs to be solved using
-        # back-communication from backend.
-        # TODO: handle this, I commented this fix to merge 'cleanly'
-        # QtCore.QTimer.singleShot(3000, self._shutdown)
-
-    def _shutdown(self):
-        """
-        Actually shutdown.
-        """
-        self._cancel_ongoing_defers()
-
-        # TODO missing any more cancels?
-
-        logger.debug('Cleaning pidfiles')
-        self._cleanup_pidfiles()
-        if self._quit_callback:
-            self._quit_callback()
-
-        logger.debug('Bye.')
 
     def quit(self):
         """
@@ -2060,10 +2053,27 @@ class MainWindow(QtGui.QMainWindow):
 
         self._really_quit = True
 
-        # call final_quit when imap is stopped
-        self._backend.signaler.imap_stopped.connect(self.final_quit)
+        # call final quit when all the services are stopped
+        self.all_services_stopped.connect(self.final_quit)
         # or if we reach the timeout
-        reactor.callLater(self.SERVICES_STOP_TIMEOUT, self._backend.stop)
+        self._quit_timeout_callater = reactor.callLater(
+            self.SERVICES_STOP_TIMEOUT, self.final_quit)
+
+    @QtCore.Slot()
+    def _remove_service(self, service):
+        """
+        Remove the given service from the waiting list and check if we have
+        running services that we need to wait until we quit.
+        Emit self.all_services_stopped signal if we don't need to keep waiting.
+
+        :param service: the service that we want to remove
+        :type service: str
+        """
+        self._services_being_stopped.discard(service)
+
+        if not self._services_being_stopped:
+            logger.debug("All services stopped.")
+            self.all_services_stopped.emit()
 
     @QtCore.Slot()
     def final_quit(self):
@@ -2075,9 +2085,14 @@ class MainWindow(QtGui.QMainWindow):
 
         try:
             # disconnect signal if we get here due a timeout.
-            self._backend.signaler.imap_stopped.disconnect(self.final_quit)
+            self.all_services_stopped.disconnect(self.final_quit)
         except RuntimeError:
             pass  # Signal was not connected
+
+        # Cancel timeout to avoid being called if we reached here through the
+        # signal
+        if self._quit_timeout_callater.active():
+            self._quit_timeout_callater.cancel()
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
@@ -2086,3 +2101,5 @@ class MainWindow(QtGui.QMainWindow):
 
         self._backend.stop()
         self.close()
+
+        reactor.callLater(1, self._quit_callback)

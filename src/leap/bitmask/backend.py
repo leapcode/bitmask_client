@@ -17,7 +17,6 @@
 """
 Backend for everything
 """
-import commands
 import logging
 import os
 import time
@@ -391,13 +390,19 @@ class EIP(object):
             # TODO: are we connected here?
             signaler.signal(signaler.EIP_CONNECTED)
 
-    def stop(self, shutdown=False):
+    def _do_stop(self, shutdown=False):
         """
-        Stop the service.
+        Stop the service. This is run in a thread to avoid blocking.
         """
         self._vpn.terminate(shutdown)
         if IS_LINUX:
             self._wait_for_firewall_down()
+
+    def stop(self, shutdown=False):
+        """
+        Stop the service.
+        """
+        return threads.deferToThread(self._do_stop, shutdown)
 
     def _wait_for_firewall_down(self):
         """
@@ -411,15 +416,16 @@ class EIP(object):
         MAX_FW_WAIT_RETRIES = 25
         FW_WAIT_STEP = 0.5
 
-        retry = 0
+        retry = 1
 
-        fw_up_cmd = "pkexec /usr/sbin/bitmask-root firewall isup"
-        fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
-
-        while retry < MAX_FW_WAIT_RETRIES:
-            if fw_is_down():
+        while retry <= MAX_FW_WAIT_RETRIES:
+            if self._vpn.is_fw_down():
+                self._signaler.signal(self._signaler.EIP_STOPPED)
                 return
             else:
+                msg = "Firewall is not down yet, waiting... {0} of {1}"
+                msg = msg.format(retry, MAX_FW_WAIT_RETRIES)
+                logger.debug(msg)
                 time.sleep(FW_WAIT_STEP)
                 retry += 1
         logger.warning("After waiting, firewall is not down... "
@@ -953,6 +959,7 @@ class Signaler(QtCore.QObject):
     eip_disconnected = QtCore.Signal(object)
     eip_connection_died = QtCore.Signal(object)
     eip_connection_aborted = QtCore.Signal(object)
+    eip_stopped = QtCore.Signal(object)
 
     # EIP problems
     eip_no_polkit_agent_error = QtCore.Signal(object)
@@ -1040,6 +1047,8 @@ class Signaler(QtCore.QObject):
     EIP_DISCONNECTED = "eip_disconnected"
     EIP_CONNECTION_DIED = "eip_connection_died"
     EIP_CONNECTION_ABORTED = "eip_connection_aborted"
+    EIP_STOPPED = "eip_stopped"
+
     EIP_NO_POLKIT_AGENT_ERROR = "eip_no_polkit_agent_error"
     EIP_NO_TUN_KEXT_ERROR = "eip_no_tun_kext_error"
     EIP_NO_PKEXEC_ERROR = "eip_no_pkexec_error"
@@ -1110,6 +1119,8 @@ class Signaler(QtCore.QObject):
             self.EIP_DISCONNECTED,
             self.EIP_CONNECTION_DIED,
             self.EIP_CONNECTION_ABORTED,
+            self.EIP_STOPPED,
+
             self.EIP_NO_POLKIT_AGENT_ERROR,
             self.EIP_NO_TUN_KEXT_ERROR,
             self.EIP_NO_PKEXEC_ERROR,
