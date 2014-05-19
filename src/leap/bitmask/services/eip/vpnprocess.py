@@ -300,19 +300,24 @@ class VPN(object):
             self._vpnproc.aborted = True
             self._vpnproc.killProcess()
 
-    def terminate(self, shutdown=False):
+    def terminate(self, shutdown=False, restart=False):
         """
         Stops the openvpn subprocess.
 
         Attempts to send a SIGTERM first, and after a timeout
         it sends a SIGKILL.
+
+        :param shutdown: whether this is the final shutdown
+        :type shutdown: bool
+        :param restart: whether this stop is part of a hard restart.
+        :type restart: bool
         """
         from twisted.internet import reactor
         self._stop_pollers()
 
-        # We assume that the only valid shutodowns are initiated
-        # by an user action.
-        self._user_stopped = shutdown
+        # We assume that the only valid stops are initiated
+        # by an user action, not hard restarts
+        self._user_stopped = not restart
 
         # First we try to be polite and send a SIGTERM...
         if self._vpnproc:
@@ -324,13 +329,12 @@ class VPN(object):
             reactor.callLater(
                 self.TERMINATE_WAIT, self._kill_if_left_alive)
 
-            if shutdown:
-                if IS_LINUX and self._user_stopped:
-                    firewall_down = self._tear_down_firewall()
-                    if firewall_down:
-                        logger.debug("Firewall down")
-                    else:
-                        logger.warning("Could not tear firewall down")
+            if IS_LINUX and self._user_stopped:
+                firewall_down = self._tear_down_firewall()
+                if firewall_down:
+                    logger.debug("Firewall down")
+                else:
+                    logger.warning("Could not tear firewall down")
 
     def _start_pollers(self):
         """
