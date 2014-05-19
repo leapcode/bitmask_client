@@ -19,6 +19,8 @@ PYTHON2=$(shell pyversions -vr)
 
 override_dh_prep:
 	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
+	rst2man docs/man/bitmask-root.1.rst docs/man/bitmask-root.1
+
 	dh_prep
 	# this will re-generate the resource files and locales.
 	make -f ./Makefile
@@ -70,4 +72,5 @@ override_dh_auto_clean:
 	rm -rf docs/_build 
 	rm -rf *.egg-info
 	rm -f docs/man/bitmask.1
+	rm -f docs/man/bitmask-root.1
 	rm -rf docs/covhtml
