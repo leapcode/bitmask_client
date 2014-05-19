@@ -85,21 +85,16 @@ At the current time, Bitmask is not compatible with ``openresolv``, but it works
 FILES
 =====
 
-/etc/leap/resolv-update
------------------------
-Post up/down script passed to openvpn. It writes /etc/resolv.conf to avoid dns leaks, and restores the original resolv.conf on exit.
 
-/etc/leap/resolv-head
----------------------
-/etc/leap/resolv-tail
----------------------
-
-Custom entries that will appear in the written resolv.conf
-
-/usr/share/polkit-1/actions/net.openvpn.gui.leap.policy
+/usr/share/polkit-1/actions/se.leap.bitmask.policy
 -------------------------------------------------------
 
-PolicyKit policy file, used for granting access to openvpn without the need of entering a password each time.
+PolicyKit policy file, used for granting access to bitmask-root without the need of entering a password each time.
+
+/usr/sbin/bitmask-root
+------------------------
+
+Helper to launch and stop openvpn and the bitmask firewall.
 
 ~/.config/leap/
 ---------------
