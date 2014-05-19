@@ -7,9 +7,9 @@ graphical client to control LEAP, the encrypted internet access toolkit.
 ------------------------------------------------------------------------
 
 :Author: LEAP Encryption Access Project https://leap.se
-:Date:   2013-08-23
+:Date:   2014-05-19
 :Copyright: GPLv3+
-:Version: 0.3.1
+:Version: 0.5.1
 :Manual section: 1
 :Manual group: General Commands Manual
 
