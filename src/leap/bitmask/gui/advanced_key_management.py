@@ -30,12 +30,17 @@ from ui_advanced_key_management import Ui_AdvancedKeyManagement
 logger = logging.getLogger(__name__)
 
 
-class AdvancedKeyManagement(QtGui.QWidget):
+class AdvancedKeyManagement(QtGui.QDialog):
     """
     Advanced Key Management
     """
-    def __init__(self, user, keymanager, soledad):
+    def __init__(self, parent, has_mx, user, keymanager, soledad):
         """
+        :param parent: parent object of AdvancedKeyManagement.
+        :parent type: QWidget
+        :param has_mx: defines whether the current provider provides email or
+                       not.
+        :type has_mx: bool
         :param user: the current logged in user.
         :type user: unicode
         :param keymanager: the existing keymanager instance
@@ -43,7 +48,7 @@ class AdvancedKeyManagement(QtGui.QWidget):
         :param soledad: a loaded instance of Soledad
         :type soledad: Soledad
         """
-        QtGui.QWidget.__init__(self)
+        QtGui.QDialog.__init__(self, parent)
 
         self.ui = Ui_AdvancedKeyManagement()
         self.ui.setupUi(self)
@@ -52,13 +57,18 @@ class AdvancedKeyManagement(QtGui.QWidget):
         self.ui.pbImportKeys.setVisible(False)
 
         # if Soledad is not started yet
-        if sameProxiedObjects(soledad, None):
-            self.ui.gbMyKeyPair.setEnabled(False)
-            self.ui.gbStoredPublicKeys.setEnabled(False)
-            msg = self.tr("<span style='color:#0000FF;'>NOTE</span>: "
-                          "To use this, you need to enable/start {0}.")
+        if not has_mx:
+            msg = self.tr("The provider that you are using "
+                          "does not support {0}.")
             msg = msg.format(get_service_display_name(MX_SERVICE))
-            self.ui.lblStatus.setText(msg)
+            self._disable_ui(msg)
+            return
+
+        # if Soledad is not started yet
+        if sameProxiedObjects(soledad, None):
+            msg = self.tr("To use this, you need to enable/start {0}.")
+            msg = msg.format(get_service_display_name(MX_SERVICE))
+            self._disable_ui(msg)
             return
         # XXX: since import is disabled this is no longer a dangerous feature.
         # else:
@@ -89,6 +99,18 @@ class AdvancedKeyManagement(QtGui.QWidget):
             0, QtGui.QHeaderView.Stretch)
 
         self._list_keys()
+
+    def _disable_ui(self, msg):
+        """
+        Disable the UI and set a note in the status bar.
+
+        :param msg: note to display in the status bar.
+        :type msg: unicode
+        """
+        self.ui.gbMyKeyPair.setEnabled(False)
+        self.ui.gbStoredPublicKeys.setEnabled(False)
+        msg = self.tr("<span style='color:#0000FF;'>NOTE</span>: ") + msg
+        self.ui.lblStatus.setText(msg)
 
     def _import_keys(self):
         """

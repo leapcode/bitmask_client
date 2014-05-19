@@ -20,12 +20,13 @@ SMTP bootstrapping
 import logging
 import os
 
-from PySide import QtCore
-
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.certs import download_client_cert
 from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
+from leap.bitmask.services.mail.smtpconfig import SMTPConfig
+from leap.bitmask.util import is_file
+
 from leap.common import certs as leap_certs
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.files import check_and_fix_urw_only
@@ -33,27 +34,33 @@ from leap.common.files import check_and_fix_urw_only
 logger = logging.getLogger(__name__)
 
 
+class NoSMTPHosts(Exception):
+    """This is raised when there is no SMTP host to use."""
+
+
 class SMTPBootstrapper(AbstractBootstrapper):
     """
     SMTP init procedure
     """
 
-    # All dicts returned are of the form
-    # {"passed": bool, "error": str}
-    download_config = QtCore.Signal(dict)
+    PORT_KEY = "port"
+    IP_KEY = "ip_address"
 
     def __init__(self):
         AbstractBootstrapper.__init__(self)
 
         self._provider_config = None
         self._smtp_config = None
+        self._userid = None
         self._download_if_needed = False
 
-    def _download_config(self, *args):
-        """
-        Downloads the SMTP config for the given provider
-        """
+        self._smtp_service = None
+        self._smtp_port = None
 
+    def _download_config_and_cert(self):
+        """
+        Downloads the SMTP config and cert for the given provider.
+        """
         leap_assert(self._provider_config,
                     "We need a provider configuration!")
 
@@ -66,63 +73,101 @@ class SMTPBootstrapper(AbstractBootstrapper):
             self._session,
             self._download_if_needed)
 
-    def _download_client_certificates(self, *args):
+        hosts = self._smtp_config.get_hosts()
+
+        if len(hosts) == 0:
+            raise NoSMTPHosts()
+
+        # TODO handle more than one host and define how to choose
+        hostname = hosts.keys()[0]
+        logger.debug("Using hostname %s for SMTP" % (hostname,))
+
+        client_cert_path = self._smtp_config.get_client_cert_path(
+            self._provider_config, about_to_download=True)
+
+        if not is_file(client_cert_path):
+            # For re-download if something is wrong with the cert
+            self._download_if_needed = (
+                self._download_if_needed and
+                not leap_certs.should_redownload(client_cert_path))
+
+            if self._download_if_needed and os.path.isfile(client_cert_path):
+                check_and_fix_urw_only(client_cert_path)
+                return
+
+            download_client_cert(self._provider_config,
+                                 client_cert_path,
+                                 self._session)
+
+    def _start_smtp_service(self):
         """
-        Downloads the SMTP client certificate for the given provider
-
-        We actually are downloading the certificate for the same uri as
-        for the EIP config, but we duplicate these bits to allow mail
-        service to be working in a provider that does not offer EIP.
+        Start the smtp service using the downloaded configurations.
         """
-        # TODO factor out with eipboostrapper.download_client_certificates
-        # TODO this shouldn't be a private method, it's called from
-        # mainwindow.
-        leap_assert(self._provider_config, "We need a provider configuration!")
-        leap_assert(self._smtp_config, "We need an smtp configuration!")
+        # TODO Make the encrypted_only configurable
+        # TODO pick local smtp port in a better way
+        # TODO remove hard-coded port and let leap.mail set
+        # the specific default.
+        # TODO handle more than one host and define how to choose
+        hosts = self._smtp_config.get_hosts()
+        hostname = hosts.keys()[0]
+        host = hosts[hostname][self.IP_KEY].encode("utf-8")
+        port = hosts[hostname][self.PORT_KEY]
+        client_cert_path = self._smtp_config.get_client_cert_path(
+            self._provider_config, about_to_download=True)
 
-        logger.debug("Downloading SMTP client certificate for %s" %
-                     (self._provider_config.get_domain(),))
+        from leap.mail.smtp import setup_smtp_gateway
+        self._smtp_service, self._smtp_port = setup_smtp_gateway(
+            port=2013,
+            userid=self._userid,
+            keymanager=self._keymanager,
+            smtp_host=host,
+            smtp_port=port,
+            smtp_cert=client_cert_path,
+            smtp_key=client_cert_path,
+            encrypted_only=False)
 
-        client_cert_path = self._smtp_config.\
-            get_client_cert_path(self._provider_config,
-                                 about_to_download=True)
-
-        # For re-download if something is wrong with the cert
-        self._download_if_needed = self._download_if_needed and \
-            not leap_certs.should_redownload(client_cert_path)
-
-        if self._download_if_needed and \
-                os.path.isfile(client_cert_path):
-            check_and_fix_urw_only(client_cert_path)
-            return
-
-        download_client_cert(self._provider_config,
-                             client_cert_path,
-                             self._session)
-
-    def run_smtp_setup_checks(self,
-                              provider_config,
-                              smtp_config,
-                              download_if_needed=False):
+    def start_smtp_service(self, provider_config, smtp_config, keymanager,
+                           userid, download_if_needed=False):
         """
-        Starts the checks needed for a new smtp setup
+        Starts the SMTP service.
 
         :param provider_config: Provider configuration
         :type provider_config: ProviderConfig
         :param smtp_config: SMTP configuration to populate
         :type smtp_config: SMTPConfig
+        :param keymanager: a transparent proxy that eventually will point to a
+                           Keymanager Instance.
+        :type keymanager: zope.proxy.ProxyBase
+        :param userid: the user id, in the form "user@provider"
+        :type userid: str
         :param download_if_needed: True if it should check for mtime
                                    for the file
         :type download_if_needed: bool
         """
         leap_assert_type(provider_config, ProviderConfig)
+        leap_assert_type(smtp_config, SMTPConfig)
 
         self._provider_config = provider_config
+        self._keymanager = keymanager
         self._smtp_config = smtp_config
+        self._useid = userid
         self._download_if_needed = download_if_needed
 
-        cb_chain = [
-            (self._download_config, self.download_config),
-        ]
+        try:
+            self._download_config_and_cert()
+            logger.debug("Starting SMTP service.")
+            self._start_smtp_service()
+        except NoSMTPHosts:
+            logger.warning("There is no SMTP host to use.")
+        except Exception as e:
+            # TODO: we should handle more specific exceptions in here
+            logger.exception("Error while bootstrapping SMTP: %r" % (e, ))
 
-        self.addCallbackChain(cb_chain)
+    def stop_smtp_service(self):
+        """
+        Stops the smtp service (port and factory).
+        """
+        if self._smtp_service is not None:
+            logger.debug('Stopping SMTP service.')
+            self._smtp_port.stopListening()
+            self._smtp_service.doStop()

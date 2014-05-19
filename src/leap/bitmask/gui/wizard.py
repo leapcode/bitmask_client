@@ -24,6 +24,7 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.provider import get_provider_path
@@ -145,8 +146,7 @@ class Wizard(QtGui.QWizard):
     @QtCore.Slot()
     def _wizard_finished(self):
         """
-        SLOT
-        TRIGGER:
+        TRIGGERS:
             self.finished
 
         This method is called when the wizard is accepted or rejected.
@@ -210,15 +210,19 @@ class Wizard(QtGui.QWizard):
     def get_services(self):
         return self._selected_services
 
-    @QtCore.Slot()
+    @QtCore.Slot(unicode)
     def _enable_check(self, reset=True):
         """
-        SLOT
-        TRIGGER:
+        TRIGGERS:
             self.ui.lnProvider.textChanged
 
         Enables/disables the 'check' button in the SELECT_PROVIDER_PAGE
         depending on the lnProvider content.
+
+        :param reset: this contains the text of the line edit, and when is
+                      called directly defines whether we want to reset the
+                      checks.
+        :type reset: unicode or bool
         """
         enabled = len(self.ui.lnProvider.text()) != 0
         enabled = enabled or self.ui.rbExistingProvider.isChecked()
@@ -282,11 +286,11 @@ class Wizard(QtGui.QWizard):
         # register button
         self.ui.btnRegister.setVisible(visible)
 
+    @QtCore.Slot()
     def _registration_finished(self):
         """
-        SLOT
         TRIGGERS:
-          self._backend.signaler.srp_registration_finished
+            self._backend.signaler.srp_registration_finished
 
         The registration has finished successfully, so we do some final steps.
         """
@@ -308,11 +312,11 @@ class Wizard(QtGui.QWizard):
         self.page(self.REGISTER_USER_PAGE).set_completed()
         self.button(QtGui.QWizard.BackButton).setEnabled(False)
 
+    @QtCore.Slot()
     def _registration_failed(self):
         """
-        SLOT
         TRIGGERS:
-          self._backend.signaler.srp_registration_failed
+            self._backend.signaler.srp_registration_failed
 
         The registration has failed, so we report the problem.
         """
@@ -322,11 +326,11 @@ class Wizard(QtGui.QWizard):
         self._set_register_status(error_msg, error=True)
         self.ui.btnRegister.setEnabled(True)
 
+    @QtCore.Slot()
     def _registration_taken(self):
         """
-        SLOT
         TRIGGERS:
-          self._backend.signaler.srp_registration_taken
+            self._backend.signaler.srp_registration_taken
 
         The requested username is taken, warn the user about that.
         """
@@ -358,7 +362,8 @@ class Wizard(QtGui.QWizard):
         self.ui.lblProviderSelectStatus.setText("")
         self._domain = None
         self.button(QtGui.QWizard.NextButton).setEnabled(False)
-        self.page(self.SELECT_PROVIDER_PAGE).set_completed(False)
+        self.page(self.SELECT_PROVIDER_PAGE).set_completed(
+            flags.SKIP_WIZARD_CHECKS)
 
     def _reset_provider_setup(self):
         """
@@ -368,12 +373,12 @@ class Wizard(QtGui.QWizard):
         self.ui.lblCheckCaFpr.setPixmap(None)
         self.ui.lblCheckApiCert.setPixmap(None)
 
+    @QtCore.Slot()
     def _check_provider(self):
         """
-        SLOT
         TRIGGERS:
-          self.ui.btnCheck.clicked
-          self.ui.lnProvider.returnPressed
+            self.ui.btnCheck.clicked
+            self.ui.lnProvider.returnPressed
 
         Starts the checks for a given provider
         """
@@ -390,17 +395,23 @@ class Wizard(QtGui.QWizard):
 
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
-        self.ui.lnProvider.setEnabled(False)
+
+        # Disable provider widget
+        if self.ui.rbNewProvider.isChecked():
+            self.ui.lnProvider.setEnabled(False)
+        else:
+            self.ui.cbProviders.setEnabled(False)
+
         self.button(QtGui.QWizard.BackButton).clearFocus()
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_select_defer = self._backend.\
             setup_provider(self._domain)
 
+    @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
         """
-        SLOT
-        Triggered:
+        TRIGGERS:
             self.ui.rbExistingProvider.toggled
 
         Allows the user to move to the next page without make any checks,
@@ -441,10 +452,11 @@ class Wizard(QtGui.QWizard):
             label.setPixmap(self.ERROR_ICON)
             logger.error(error)
 
+    @QtCore.Slot(dict)
     def _name_resolution(self, data):
         """
-        SLOT
-        TRIGGER: self._backend.signaler.prov_name_resolution
+        TRIGGERS:
+            self._backend.signaler.prov_name_resolution
 
         Sets the status for the name resolution check
         """
@@ -460,10 +472,11 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
 
+    @QtCore.Slot(dict)
     def _https_connection(self, data):
         """
-        SLOT
-        TRIGGER: self._backend.signaler.prov_https_connection
+        TRIGGERS:
+            self._backend.signaler.prov_https_connection
 
         Sets the status for the https connection check
         """
@@ -479,10 +492,11 @@ class Wizard(QtGui.QWizard):
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
 
+    @QtCore.Slot(dict)
     def _download_provider_info(self, data):
         """
-        SLOT
-        TRIGGER: self._backend.signaler.prov_download_provider_info
+        TRIGGERS:
+            self._backend.signaler.prov_download_provider_info
 
         Sets the status for the provider information download
         check. Since this check is the last of this set, it also
@@ -506,12 +520,18 @@ class Wizard(QtGui.QWizard):
                              "</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(True)
-        self.ui.lnProvider.setEnabled(True)
 
+        # Enable provider widget
+        if self.ui.rbNewProvider.isChecked():
+            self.ui.lnProvider.setEnabled(True)
+        else:
+            self.ui.cbProviders.setEnabled(True)
+
+    @QtCore.Slot(dict)
     def _download_ca_cert(self, data):
         """
-        SLOT
-        TRIGGER: self._backend.signaler.prov_download_ca_cert
+        TRIGGERS:
+            self._backend.signaler.prov_download_ca_cert
 
         Sets the status for the download of the CA certificate check
         """
@@ -520,10 +540,11 @@ class Wizard(QtGui.QWizard):
         if passed:
             self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
 
+    @QtCore.Slot(dict)
     def _check_ca_fingerprint(self, data):
         """
-        SLOT
-        TRIGGER: self._backend.signaler.prov_check_ca_fingerprint
+        TRIGGERS:
+            self._backend.signaler.prov_check_ca_fingerprint
 
         Sets the status for the CA fingerprint check
         """
@@ -532,10 +553,11 @@ class Wizard(QtGui.QWizard):
         if passed:
             self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 
+    @QtCore.Slot(dict)
     def _check_api_certificate(self, data):
         """
-        SLOT
-        TRIGGER: self._backend.signaler.prov_check_api_certificate
+        TRIGGERS:
+            self._backend.signaler.prov_check_api_certificate
 
         Sets the status for the API certificate check. Also finishes
         the provider bootstrapper thread since it's not needed anymore
@@ -545,10 +567,12 @@ class Wizard(QtGui.QWizard):
                             True, self.SETUP_PROVIDER_PAGE)
         self._provider_setup_ok = True
 
+    @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
         """
-        SLOT
-        TRIGGER: service_checkbox.stateChanged
+        TRIGGERS:
+            service_checkbox.stateChanged
+
         Adds the service to the state if the state is checked, removes
         it otherwise
 
@@ -593,12 +617,16 @@ class Wizard(QtGui.QWizard):
                     self.tr("Something went wrong while trying to "
                             "load service %s" % (service,)))
 
+    @QtCore.Slot(int)
     def _current_id_changed(self, pageId):
         """
-        SLOT
-        TRIGGER: self.currentIdChanged
+        TRIGGERS:
+            self.currentIdChanged
 
         Prepares the pages when they appear
+
+        :param pageId: the new current page id.
+        :type pageId: int
         """
         if pageId == self.SELECT_PROVIDER_PAGE:
             self._clear_register_widgets()

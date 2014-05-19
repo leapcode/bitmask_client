@@ -88,6 +88,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         self._domain = None
         self._provider_config = None
         self._download_if_needed = False
+        if signaler is not None:
+            self._cancel_signal = signaler.PROV_CANCELLED_SETUP
 
     @property
     def verify(self):

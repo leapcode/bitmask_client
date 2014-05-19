@@ -6,6 +6,58 @@ History
 2014
 ====
 
+0.5.1 May 16 -- the "lil less leaky" release:
++++++++++++++++++++++++++++++++++++++++++++++
+
+- Use non blocking dialog so the Pastebin result does not block the
+  app. Closes #5404.
+- Handle provider setup problems and show an error to the user. Closes
+  #5424.
+- Disable providers combo box during check and enable combo or line
+  edit depending on radio button. Closes #5495.
+- Hide the bandwidth widget and update status icon if the openvpn
+  process is killed. Closes #5497.
+- Change password doesn't work. Closes #5540.
+- Hide services that the current logged in provider does not
+  have. Closes #5550.
+- If we don't have a provider supporting that service we hide the
+  actions along with the widgets. Related to #5550.
+- Client mistakenly says that traffic is routed in the clear. Closes
+  #5551.
+- Avoid user getting errors if he does a 'ctrl-c' on the wizard during
+  the first run. Closes #5559.
+- Download/upload rates were displayed backwards in the widget
+  rate. Closes #5563.
+- Fix unable to login issue. Closes #5581.
+- Hardcode paths for openvpn if STANDALONE=True. Related: #5592
+- Increase waiting time to wait for polkit agent to be up. Closes:
+  #5595
+- Use openvpn hard restart. Closes: #5669
+- Enable Turn ON button for EIP whenever possible (json and cert are
+  in place). Fixes #5665, #5666.
+- Fix Logout button bottom margin. Fixes #4987.
+- Properly finish the Qt app before stopping the reactor.
+- Let OpenVPN run its course when a ping-restart happens. Fixes #5564.
+- Refactor smtp logic into its bootstrapper.
+- Add flag to allow the user to start the app hidden in the
+  tray. Closes #4990.
+- Refactor: move SRPAuth to the backend. Closes #5347.
+- Refactor: move EIP to backend. Closes #5349.
+- Use PySide @Slot decorator instead of 'SLOT' docstring. Closes
+  #5506.
+- Advanced key management: show a note to the user if the provider
+  does not support Encrypted Email. Closes #5513.
+- Gracefully handle SIGTERM, with addSystemEventTrigger twisted
+  reactor's method. Closes #5672.
+- Hide the main window on quit as first thing and show a tooltip to
+  inform that we are closing.
+- Increase expiration life of a pastebin log from 1 week to 1 month.
+- Use iptables firewall. Closes: #5588
+- Refactor Soledad initialization retries to SoledadBootstrapper.
+- Refactor EIPBootstrapper to the backend. Closes #5348.
+- Add flag to skip provider checks in wizard (only for testing).
+- Add support for Mate's polkit agent.
+
 0.5.0 Apr 4 -- the "Long time no see" release:
 ++++++++++++++++++++++++++++++++++++++++++++++
 - Fix logging out typo, closes #4815.
