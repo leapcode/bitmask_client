@@ -203,9 +203,9 @@ if IS_LINUX:
     # globally. Or make specific install command. See #3805
     data_files = [
         ("share/polkit-1/actions",
-         ["pkg/linux/polkit/net.openvpn.gui.leap.policy"]),
-        ("etc/leap/",
-         ["pkg/linux/resolv-update"]),
+         ["pkg/linux/polkit/se.leap.bitmask.policy"]),
+        ("/usr/sbin",
+         ["pkg/linux/bitmask-root"]),
     ]
 
 
