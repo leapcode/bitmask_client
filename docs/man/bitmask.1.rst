@@ -80,7 +80,6 @@ WARNING
 
 This software is still in its early phases of testing. So don't trust your life to it! 
 
-At the current time, Bitmask is not compatible with ``openresolv``, but it works with ``resolvconf``.
 
 FILES
 =====
