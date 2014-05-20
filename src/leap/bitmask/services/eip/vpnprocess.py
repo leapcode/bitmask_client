@@ -30,9 +30,11 @@ import psutil
 try:
     # psutil < 2.0.0
     from psutil.error import AccessDenied as psutil_AccessDenied
+    PSUTIL_2 = False
 except ImportError:
     # psutil >= 2.0.0
     from psutil import AccessDenied as psutil_AccessDenied
+    PSUTIL_2 = True
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -676,7 +678,13 @@ class VPNManager(object):
                 # we need to be able to filter out arguments in the form
                 # --openvpn-foo, since otherwise we are shooting ourselves
                 # in the feet.
-                if any(map(lambda s: s.find("LEAPOPENVPN") != -1, p.cmdline)):
+
+                if PSUTIL_2:
+                    cmdline = p.cmdline()
+                else:
+                    cmdline = p.cmdline
+                if any(map(lambda s: s.find(
+                        "LEAPOPENVPN") != -1, cmdline)):
                     openvpn_process = p
                     break
             except psutil_AccessDenied:
