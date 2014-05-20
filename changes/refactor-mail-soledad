@@ -1,0 +1,5 @@
+- Improve wait and quit process.
+- Move soledad password change to backend.
+- Move Mail logic to backend.
+- Separate imap/smtp logic from conductor.
+- Refactor SoledadBootstrapper to backend. Closes #5481.
