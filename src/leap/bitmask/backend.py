@@ -1262,7 +1262,7 @@ class Backend(object):
         """
         Starts the looping call
         """
-        log.msg("Starting worker...")
+        logger.debug("Starting worker...")
         self._lc.start(0.01)
 
     def stop(self):
@@ -1275,14 +1275,17 @@ class Backend(object):
         """
         Delayed stopping of worker. Called from `stop`.
         """
-        log.msg("Stopping worker...")
+        logger.debug("Stopping worker...")
         if self._lc.running:
             self._lc.stop()
         else:
             logger.warning("Looping call is not running, cannot stop")
+
+        logger.debug("Cancelling ongoing defers...")
         while len(self._ongoing_defers) > 0:
             d = self._ongoing_defers.pop()
             d.cancel()
+        logger.debug("Defers cancelled.")
 
     def _register(self, component):
         """
@@ -1296,8 +1299,7 @@ class Backend(object):
         try:
             self._components[component.key] = component
         except Exception:
-            log.msg("There was a problem registering %s" % (component,))
-            log.err()
+            logger.error("There was a problem registering %s" % (component,))
 
     def _signal_back(self, _, signal):
         """
@@ -1325,19 +1327,19 @@ class Backend(object):
                 # A call might not have a callback signal, but if it does,
                 # we add it to the chain
                 if cmd[2] is not None:
-                    d.addCallbacks(self._signal_back, log.err, cmd[2])
-                d.addCallbacks(self._done_action, log.err,
+                    d.addCallbacks(self._signal_back, logger.error, cmd[2])
+                d.addCallbacks(self._done_action, logger.error,
                                callbackKeywords={"d": d})
-                d.addErrback(log.err)
+                d.addErrback(logger.error)
                 self._ongoing_defers.append(d)
         except Empty:
             # If it's just empty we don't have anything to do.
             pass
         except defer.CancelledError:
             logger.debug("defer cancelled somewhere (CancelledError).")
-        except Exception:
+        except Exception as e:
             # But we log the rest
-            log.err()
+            logger.exception("Unexpected exception: {0!r}".format(e))
 
     def _done_action(self, _, d):
         """
