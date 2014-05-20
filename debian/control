@@ -34,8 +34,6 @@ Depends:
   python-setuptools,
   pep8,
   openvpn,
-#polkit-gnome should not be a hard dep, but a recommends
-  policykit-1-gnome,
   python-pyside, 
   python-pyside.qtcore, 
   python-pyside.qtgui,
@@ -43,7 +41,7 @@ Depends:
   leap-mail,
   soledad-client
 Recommends: xul-ext-bitmask
-Suggests: resolvconf
+Suggests: resolvconf, policykit-1-gnome
 Enhances: openvpn
 Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
  LEAP (LEAP Encryption Access Project) develops a plan to secure everyday
