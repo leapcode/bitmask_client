@@ -566,7 +566,7 @@ class NameserverRestorer(Daemon):
     A daemon that will restore the previous nameservers.
     """
 
-    def run(self):
+    def run(self, *args):
         """
         Run when daemonized.
         """
