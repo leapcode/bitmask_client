@@ -44,7 +44,6 @@ Depends:
   soledad-client
 Recommends: xul-ext-bitmask
 Suggests: resolvconf
-Conflicts: openresolv
 Enhances: openvpn
 Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
  LEAP (LEAP Encryption Access Project) develops a plan to secure everyday
