@@ -765,6 +765,17 @@ def firewall_start(args):
                   "--dport", "53", "--destination", allowed_dns,
                   "--jump", "ACCEPT")
 
+    # workaround for ipv6 servers being blocked and not falling back to ipv4.
+    # See #5693
+    ip6tables("--append", "OUTPUT", "--jump", "REJECT",
+              "-s", "::/0",  "-d", "::/0",
+              "-p", "tcp",
+              "--reject-with", "icmp6-port-unreachable")
+    ip6tables("--append", "OUTPUT", "--jump", "REJECT",
+              "-s", "::/0",  "-d", "::/0",
+              "-p", "udp",
+              "--reject-with", "icmp6-port-unreachable")
+
 
 def firewall_stop():
     """
