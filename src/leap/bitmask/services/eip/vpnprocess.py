@@ -17,6 +17,7 @@
 """
 VPN Manager, spawned in a custom processProtocol.
 """
+import commands
 import logging
 import os
 import shutil
@@ -231,6 +232,17 @@ class VPN(object):
         exitCode = subprocess.call(["pkexec",
                                     BM_ROOT, "firewall", "start"] + gateways)
         return True if exitCode is 0 else False
+
+    def is_fw_down(self):
+        """
+        Return whether the firewall is down or not.
+
+        :rtype: bool
+        """
+        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        fw_up_cmd = "pkexec {0} firewall isup".format(BM_ROOT)
+        fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
+        return fw_is_down()
 
     def _tear_down_firewall(self):
         """

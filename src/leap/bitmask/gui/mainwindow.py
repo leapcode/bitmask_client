@@ -19,9 +19,7 @@ Main window for Bitmask.
 """
 import logging
 import socket
-import time
 
-from threading import Condition
 from datetime import datetime
 
 from PySide import QtCore, QtGui
@@ -57,8 +55,6 @@ from leap.bitmask.services.mail import conductor as mail_conductor
 
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 from leap.bitmask.services.eip.connection import EIPConnection
-from leap.bitmask.services.soledad.soledadbootstrapper import \
-    SoledadBootstrapper
 
 from leap.bitmask.util import make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
@@ -89,17 +85,17 @@ class MainWindow(QtGui.QMainWindow):
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
-    mail_client_logged_in = QtCore.Signal([])
     logout = QtCore.Signal([])
+    all_services_stopped = QtCore.Signal()
 
     # We use this flag to detect abnormal terminations
     user_stopped_eip = False
 
     # We give EIP some time to come up before starting soledad anyway
-    EIP_TIMEOUT = 60000  # in milliseconds
+    EIP_START_TIMEOUT = 60000  # in milliseconds
 
-    # We give each service some time to come to a halt before forcing quit
-    SERVICE_STOP_TIMEOUT = 20
+    # We give the services some time to a halt before forcing quit.
+    SERVICES_STOP_TIMEOUT = 20
 
     def __init__(self, quit_callback, bypass_checks=False, start_hidden=False):
         """
@@ -124,9 +120,6 @@ class MainWindow(QtGui.QMainWindow):
                  reqcbk=lambda req, resp: None)  # make rpc call async
         register(signal=proto.RAISE_WINDOW,
                  callback=self._on_raise_window_event,
-                 reqcbk=lambda req, resp: None)  # make rpc call async
-        register(signal=proto.IMAP_CLIENT_LOGIN,
-                 callback=self._on_mail_client_logged_in,
                  reqcbk=lambda req, resp: None)  # make rpc call async
         # end register leap events ####################################
 
@@ -195,27 +188,21 @@ class MainWindow(QtGui.QMainWindow):
         self._provisional_provider_config = ProviderConfig()
 
         self._already_started_eip = False
-        self._already_started_soledad = False
+        self._soledad_started = False
 
         # This is created once we have a valid provider config
         self._srp_auth = None
         self._logged_user = None
         self._logged_in_offline = False
 
+        # Set used to track the services being stopped and need wait.
+        self._services_being_stopped = {}
+
+        # timeout object used to trigger quit
+        self._quit_timeout_callater = None
+
         self._backend_connected_signals = {}
         self._backend_connect()
-
-        self._soledad_bootstrapper = SoledadBootstrapper()
-        self._soledad_bootstrapper.download_config.connect(
-            self._soledad_intermediate_stage)
-        self._soledad_bootstrapper.gen_key.connect(
-            self._soledad_bootstrapped_stage)
-        self._soledad_bootstrapper.local_only_ready.connect(
-            self._soledad_bootstrapped_stage)
-        self._soledad_bootstrapper.soledad_invalid_auth_token.connect(
-            self._mail_status.set_soledad_invalid_auth_token)
-        self._soledad_bootstrapper.soledad_failed.connect(
-            self._mail_status.set_soledad_failed)
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
         self.ui.action_eip_preferences.triggered.connect(
@@ -280,10 +267,6 @@ class MainWindow(QtGui.QMainWindow):
         # XXX should connect to mail_conductor.start_mail_service instead
         self.soledad_ready.connect(self._start_smtp_bootstrapping)
         self.soledad_ready.connect(self._start_imap_service)
-        self.mail_client_logged_in.connect(self._fetch_incoming_mail)
-        self.logout.connect(self._stop_imap_service)
-        self.logout.connect(self._stop_smtp_service)
-
         ################################# end Qt Signals connection ########
 
         init_platform()
@@ -296,17 +279,12 @@ class MainWindow(QtGui.QMainWindow):
         self._bypass_checks = bypass_checks
         self._start_hidden = start_hidden
 
-        # We initialize Soledad and Keymanager instances as
-        # transparent proxies, so we can pass the reference freely
-        # around.
-        self._soledad = ProxyBase(None)
         self._keymanager = ProxyBase(None)
 
-        self._soledad_defer = None
-
-        self._mail_conductor = mail_conductor.MailConductor(
-            self._soledad, self._keymanager)
+        self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
+
+        self.logout.connect(self._mail_conductor.stop_mail_services)
 
         # Eip machine is a public attribute where the state machine for
         # the eip connection will be available to the different components.
@@ -370,13 +348,22 @@ class MainWindow(QtGui.QMainWindow):
         logger.error("Bad call to the backend:")
         logger.error(data)
 
-    def _backend_connect(self):
+    def _backend_connect(self, only_tracked=False):
         """
-        Helper to connect to backend signals
+        Connect to backend signals.
+
+        We track some signals in order to disconnect them on demand.
+        For instance, in the wizard we need to connect to some signals that are
+        already connected in the mainwindow, so to avoid conflicts we do:
+            - disconnect signals needed in wizard (`_disconnect_and_untrack`)
+            - use wizard
+            - reconnect disconnected signals (we use the `only_tracked` param)
+
+        :param only_tracked: whether or not we should connect only the signals
+                             that we are tracking to disconnect later.
+        :type only_tracked: bool
         """
         sig = self._backend.signaler
-
-        sig.backend_bad_call.connect(self._backend_bad_call)
 
         self._connect_and_track(sig.prov_name_resolution,
                                 self._intermediate_stage)
@@ -433,7 +420,16 @@ class MainWindow(QtGui.QMainWindow):
         self._connect_and_track(sig.eip_client_certificate_ready,
                                 self._finish_eip_bootstrap)
 
+        ###################################################
+        # Add tracked signals above this, untracked bellow!
+        ###################################################
+        if only_tracked:
+            return
+
         # We don't want to disconnect some signals so don't track them:
+
+        sig.backend_bad_call.connect(self._backend_bad_call)
+
         sig.prov_unsupported_client.connect(self._needs_update)
         sig.prov_unsupported_api.connect(self._incompatible_api)
 
@@ -460,6 +456,21 @@ class MainWindow(QtGui.QMainWindow):
 
         sig.eip_can_start.connect(self._backend_can_start_eip)
         sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
+
+        # Soledad signals
+        sig.soledad_bootstrap_failed.connect(
+            self._mail_status.set_soledad_failed)
+        sig.soledad_bootstrap_finished.connect(self._on_soledad_ready)
+
+        sig.soledad_offline_failed.connect(
+            self._mail_status.set_soledad_failed)
+        sig.soledad_offline_finished.connect(self._on_soledad_ready)
+
+        sig.soledad_invalid_auth_token.connect(
+            self._mail_status.set_soledad_invalid_auth_token)
+
+        # TODO: connect this with something
+        # sig.soledad_cancelled_bootstrap.connect()
 
     def _disconnect_and_untrack(self):
         """
@@ -497,7 +508,7 @@ class MainWindow(QtGui.QMainWindow):
             # This happens if the user finishes the provider
             # setup but does not register
             self._wizard = None
-            self._backend_connect()
+            self._backend_connect(only_tracked=True)
             if self._wizard_firstrun:
                 self._finish_init()
 
@@ -591,8 +602,8 @@ class MainWindow(QtGui.QMainWindow):
             provider_config = self._get_best_provider_config()
             has_mx = provider_config.provides_mx()
 
-        akm = AdvancedKeyManagement(
-            self, has_mx, logged_user, self._keymanager, self._soledad)
+        akm = AdvancedKeyManagement(self, has_mx, logged_user,
+                                    self._keymanager, self._soledad_started)
         akm.show()
 
     @QtCore.Slot()
@@ -607,8 +618,8 @@ class MainWindow(QtGui.QMainWindow):
         user = self._login_widget.get_user()
         prov = self._login_widget.get_selected_provider()
         preferences = PreferencesWindow(
-            self, self._backend, self._provider_config, self._soledad,
-            user, prov)
+            self, self._backend, self._provider_config,
+            self._soledad_started, user, prov)
 
         self.soledad_ready.connect(preferences.set_soledad_ready)
         preferences.show()
@@ -642,7 +653,7 @@ class MainWindow(QtGui.QMainWindow):
         # If we don't want to start eip, we leave everything
         # initialized to quickly start it
         if not self._trying_to_start_eip:
-            self._backend.setup_eip(default_provider, skip_network=True)
+            self._backend.eip_setup(default_provider, skip_network=True)
 
     def _backend_can_start_eip(self):
         """
@@ -817,7 +828,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.eip_needs_login.emit()
 
             self._wizard = None
-            self._backend_connect()
+            self._backend_connect(only_tracked=True)
         else:
             self._update_eip_enabled_status()
 
@@ -1156,7 +1167,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         # XXX should rename this provider, name clash.
         provider = self._login_widget.get_selected_provider()
-        self._backend.setup_provider(provider)
+        self._backend.provider_setup(provider)
 
     @QtCore.Slot(dict)
     def _load_provider_config(self, data):
@@ -1250,20 +1261,19 @@ class MainWindow(QtGui.QMainWindow):
         Cancel the running defers to avoid app blocking.
         """
         # XXX: Should we stop all the backend defers?
-        self._backend.cancel_setup_provider()
-        self._backend.cancel_login()
+        self._backend.provider_cancel_setup()
+        self._backend.user_cancel_login()
+        self._backend.soledad_cancel_bootstrap()
+        self._backend.soledad_close()
 
-        if self._soledad_defer is not None:
-            logger.debug("Cancelling soledad defer.")
-            self._soledad_defer.cancel()
-            self._soledad_defer = None
+        self._soledad_started = False
 
     @QtCore.Slot()
     def _set_login_cancelled(self):
         """
         TRIGGERS:
             Signaler.prov_cancelled_setup fired by
-            self._backend.cancel_setup_provider()
+            self._backend.provider_cancel_setup()
 
         This method re-enables the login widget and display a message for
         the cancelled operation.
@@ -1289,7 +1299,7 @@ class MainWindow(QtGui.QMainWindow):
             self._show_hide_unsupported_services()
 
             domain = self._provider_config.get_domain()
-            self._backend.login(domain, username, password)
+            self._backend.user_login(domain, username, password)
         else:
             logger.error(data[self._backend.ERROR_KEY])
             self._login_problem_provider()
@@ -1317,9 +1327,9 @@ class MainWindow(QtGui.QMainWindow):
         if MX_SERVICE in self._enabled_services:
             btn_enabled = self._login_widget.set_logout_btn_enabled
             btn_enabled(False)
-            self.soledad_ready.connect(lambda: btn_enabled(True))
-            self._soledad_bootstrapper.soledad_failed.connect(
-                lambda: btn_enabled(True))
+            sig = self._backend.signaler
+            sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
+            sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
         if not self._get_best_provider_config().provides_mx():
             self._set_mx_visible(False)
@@ -1372,9 +1382,6 @@ class MainWindow(QtGui.QMainWindow):
         Conditionally start Soledad.
         """
         # TODO split.
-        if self._already_started_soledad is True:
-            return
-
         if not self._provides_mx_and_enabled():
             return
 
@@ -1382,11 +1389,7 @@ class MainWindow(QtGui.QMainWindow):
         password = unicode(self._login_widget.get_password())
         provider_domain = self._login_widget.get_selected_provider()
 
-        sb = self._soledad_bootstrapper
-        if flags.OFFLINE is True:
-            provider_domain = self._login_widget.get_selected_provider()
-            sb._password = password
-
+        if flags.OFFLINE:
             self._provisional_provider_config.load(
                 provider.get_provider_path(provider_domain))
 
@@ -1399,74 +1402,31 @@ class MainWindow(QtGui.QMainWindow):
                 # this is mostly for internal use/debug for now.
                 logger.warning("Sorry! Log-in at least one time.")
                 return
-            fun = sb.load_offline_soledad
-            fun(full_user_id, password, uuid)
+            self._backend.soledad_load_offline(full_user_id, password, uuid)
         else:
-            provider_config = self._provider_config
-
             if self._logged_user is not None:
-                self._soledad_defer = sb.run_soledad_setup_checks(
-                    provider_config, username, password,
-                    download_if_needed=True)
+                domain = self._provider_config.get_domain()
+                self._backend.soledad_bootstrap(username, domain, password)
 
     ###################################################################
     # Service control methods: soledad
 
-    @QtCore.Slot(dict)
-    def _soledad_intermediate_stage(self, data):
-        # TODO missing param docstring
+    @QtCore.Slot()
+    def _on_soledad_ready(self):
         """
         TRIGGERS:
-            self._soledad_bootstrapper.download_config
+            Signaler.soledad_bootstrap_finished
 
-        If there was a problem, displays it, otherwise it does nothing.
-        This is used for intermediate bootstrapping stages, in case
-        they fail.
+        Actions to take when Soledad is ready.
         """
-        passed = data[self._soledad_bootstrapper.PASSED_KEY]
-        if not passed:
-            # TODO display in the GUI:
-            # should pass signal to a slot in status_panel
-            # that sets the global status
-            logger.error("Soledad failed to start: %s" %
-                         (data[self._soledad_bootstrapper.ERROR_KEY],))
-
-    @QtCore.Slot(dict)
-    def _soledad_bootstrapped_stage(self, data):
-        """
-        TRIGGERS:
-            self._soledad_bootstrapper.gen_key
-            self._soledad_bootstrapper.local_only_ready
-
-        If there was a problem, displays it, otherwise it does nothing.
-        This is used for intermediate bootstrapping stages, in case
-        they fail.
-
-        :param data: result from the bootstrapping stage for Soledad
-        :type data: dict
-        """
-        passed = data[self._soledad_bootstrapper.PASSED_KEY]
-        if not passed:
-            # TODO should actually *display* on the panel.
-            logger.debug("ERROR on soledad bootstrapping:")
-            logger.error("%r" % data[self._soledad_bootstrapper.ERROR_KEY])
-            return
-
         logger.debug("Done bootstrapping Soledad")
 
-        # Update the proxy objects to point to
-        # the initialized instances.
-        setProxiedObject(self._soledad,
-                         self._soledad_bootstrapper.soledad)
-        setProxiedObject(self._keymanager,
-                         self._soledad_bootstrapper.keymanager)
+        # Update the proxy objects to point to the initialized instances.
+        # setProxiedObject(self._soledad, self._backend.get_soledad())
+        setProxiedObject(self._keymanager, self._backend.get_keymanager())
 
-        # Ok, now soledad is ready, so we can allow other things that
-        # depend on soledad to start.
-        self._soledad_defer = None
+        self._soledad_started = True
 
-        # this will trigger start_imap_service
-        # and start_smtp_boostrapping
         self.soledad_ready.emit()
 
     ###################################################################
@@ -1483,19 +1443,7 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         if self._provides_mx_and_enabled():
-            self._mail_conductor.start_smtp_service(self._provider_config,
-                                                    download_if_needed=True)
-
-    # XXX --- should remove from here, and connecte directly to the state
-    # machine.
-    @QtCore.Slot()
-    def _stop_smtp_service(self):
-        """
-        TRIGGERS:
-            self.logout
-        """
-        # TODO call stop_mail_service
-        self._mail_conductor.stop_smtp_service()
+            self._mail_conductor.start_smtp_service(download_if_needed=True)
 
     ###################################################################
     # Service control methods: imap
@@ -1510,47 +1458,18 @@ class MainWindow(QtGui.QMainWindow):
         # in the mail state machine so it shows that imap is active
         # (but not smtp since it's not yet ready for offline use)
         start_fun = self._mail_conductor.start_imap_service
-        if flags.OFFLINE is True:
+        if flags.OFFLINE:
             provider_domain = self._login_widget.get_selected_provider()
             self._provider_config.load(
                 provider.get_provider_path(provider_domain))
         provides_mx = self._provider_config.provides_mx()
 
-        if flags.OFFLINE is True and provides_mx:
+        if flags.OFFLINE and provides_mx:
             start_fun()
             return
 
         if self._provides_mx_and_enabled():
             start_fun()
-
-    def _on_mail_client_logged_in(self, req):
-        """
-        Triggers qt signal when client login event is received.
-        """
-        self.mail_client_logged_in.emit()
-
-    @QtCore.Slot()
-    def _fetch_incoming_mail(self):
-        """
-        TRIGGERS:
-            self.mail_client_logged_in
-        """
-        # TODO connect signal directly!!!
-        self._mail_conductor.fetch_incoming_mail()
-
-    @QtCore.Slot()
-    def _stop_imap_service(self):
-        """
-        TRIGGERS:
-            self.logout
-        """
-        cv = Condition()
-        cv.acquire()
-        # TODO call stop_mail_service
-        threads.deferToThread(self._mail_conductor.stop_imap_service, cv)
-        # and wait for it to be stopped
-        logger.debug('Waiting for imap service to stop.')
-        cv.wait(self.SERVICE_STOP_TIMEOUT)
 
     # end service control methods (imap)
 
@@ -1690,7 +1609,7 @@ class MainWindow(QtGui.QMainWindow):
         # won't try the next time.
         self._settings.set_autostart_eip(True)
 
-        self._backend.start_eip()
+        self._backend.eip_start()
 
     @QtCore.Slot()
     def _on_eip_connection_aborted(self):
@@ -1773,7 +1692,7 @@ class MainWindow(QtGui.QMainWindow):
         :type abnormal: bool
         """
         self.user_stopped_eip = True
-        self._backend.stop_eip()
+        self._backend.eip_stop()
 
         self._set_eipstatus_off(False)
         self._already_started_eip = False
@@ -1864,7 +1783,7 @@ class MainWindow(QtGui.QMainWindow):
             eip_status_label = eip_status_label.format(self._eip_name)
             self._eip_status.set_eip_status(eip_status_label, error=True)
             signal = qtsigs.connection_aborted_signal
-            self._backend.terminate_eip()
+            self._backend.eip_terminate()
 
         elif exitCode != 0 or not self.user_stopped_eip:
             eip_status_label = self.tr("{0} finished in an unexpected manner!")
@@ -1894,13 +1813,13 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr("Starting..."))
 
             domain = self._login_widget.get_selected_provider()
-            self._backend.setup_eip(domain)
+            self._backend.eip_setup(domain)
 
             self._already_started_eip = True
             # we want to start soledad anyway after a certain timeout if eip
             # fails to come up
             QtCore.QTimer.singleShot(
-                self.EIP_TIMEOUT,
+                self.EIP_START_TIMEOUT,
                 self._maybe_run_soledad_setup_checks)
         else:
             if not self._already_started_eip:
@@ -1987,16 +1906,11 @@ class MainWindow(QtGui.QMainWindow):
 
         Starts the logout sequence
         """
-        setProxiedObject(self._soledad, None)
-
         self._cancel_ongoing_defers()
-
-        # reset soledad status flag
-        self._already_started_soledad = False
 
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
-        self._backend.logout()
+        self._backend.user_logout()
         self.logout.emit()
 
     @QtCore.Slot()
@@ -2080,59 +1994,37 @@ class MainWindow(QtGui.QMainWindow):
     # cleanup and quit methods
     #
 
-    def _cleanup_pidfiles(self):
+    def _stop_services(self):
         """
-        Removes lockfiles on a clean shutdown.
-
-        Triggered after aboutToQuit signal.
+        Stop services and cancel ongoing actions (if any).
         """
-        if IS_WIN:
-            WindowsLock.release_all_locks()
+        logger.debug('About to quit, doing cleanup.')
 
-    def _cleanup_and_quit(self):
-        """
-        Call all the cleanup actions in a serialized way.
-        Should be called from the quit function.
-        """
-        logger.debug('About to quit, doing cleanup...')
-
-        self._stop_imap_service()
-
-        if self._logged_user is not None:
-            self._backend.logout()
-
-        if self._soledad_bootstrapper.soledad is not None:
-            logger.debug("Closing soledad...")
-            self._soledad_bootstrapper.soledad.close()
-        else:
-            logger.error("No instance of soledad was found.")
-
-        logger.debug('Terminating vpn')
-        self._backend.stop_eip(shutdown=True)
-
-        # We need to give some time to the ongoing signals for shutdown
-        # to come into action. This needs to be solved using
-        # back-communication from backend.
-        QtCore.QTimer.singleShot(3000, self._shutdown)
-
-    def _shutdown(self):
-        """
-        Actually shutdown.
-        """
         self._cancel_ongoing_defers()
 
-        # TODO missing any more cancels?
+        self._services_being_stopped = {'imap', 'eip'}
 
-        logger.debug('Cleaning pidfiles')
-        self._cleanup_pidfiles()
-        if self._quit_callback:
-            self._quit_callback()
+        imap_stopped = lambda: self._remove_service('imap')
+        self._backend.signaler.imap_stopped.connect(imap_stopped)
 
-        logger.debug('Bye.')
+        eip_stopped = lambda: self._remove_service('eip')
+        self._backend.signaler.eip_stopped.connect(eip_stopped)
+
+        logger.debug('Stopping mail services')
+        self._backend.imap_stop_service()
+        self._backend.smtp_stop_service()
+
+        if self._logged_user is not None:
+            logger.debug("Doing logout")
+            self._backend.user_logout()
+
+        logger.debug('Terminating vpn')
+        self._backend.eip_stop(shutdown=True)
 
     def quit(self):
         """
-        Cleanup and tidely close the main window before quitting.
+        Start the quit sequence and wait for services to finish.
+        Cleanup and close the main window before quitting.
         """
         # TODO separate the shutting down of services from the
         # UI stuff.
@@ -2145,22 +2037,69 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr('The app is quitting, please wait.'))
 
         # explicitly process events to display tooltip immediately
-        QtCore.QCoreApplication.processEvents()
+        QtCore.QCoreApplication.processEvents(0, 10)
 
-        # Set this in case that the app is hidden
-        QtGui.QApplication.setQuitOnLastWindowClosed(True)
-
-        self._cleanup_and_quit()
-
-        # We queue the call to stop since we need to wait until EIP is stopped.
-        # Otherwise we may exit leaving an unmanaged openvpn process.
-        reactor.callLater(0, self._backend.stop)
-        self._really_quit = True
-
+        # Close other windows if any.
         if self._wizard:
             self._wizard.close()
 
         if self._logger_window:
             self._logger_window.close()
 
+        # Set this in case that the app is hidden
+        QtGui.QApplication.setQuitOnLastWindowClosed(True)
+
+        self._stop_services()
+
+        self._really_quit = True
+
+        # call final quit when all the services are stopped
+        self.all_services_stopped.connect(self.final_quit)
+        # or if we reach the timeout
+        self._quit_timeout_callater = reactor.callLater(
+            self.SERVICES_STOP_TIMEOUT, self.final_quit)
+
+    @QtCore.Slot()
+    def _remove_service(self, service):
+        """
+        Remove the given service from the waiting list and check if we have
+        running services that we need to wait until we quit.
+        Emit self.all_services_stopped signal if we don't need to keep waiting.
+
+        :param service: the service that we want to remove
+        :type service: str
+        """
+        self._services_being_stopped.discard(service)
+
+        if not self._services_being_stopped:
+            logger.debug("All services stopped.")
+            self.all_services_stopped.emit()
+
+    @QtCore.Slot()
+    def final_quit(self):
+        """
+        Final steps to quit the app, starting from here we don't care about
+        running services or user interaction, just quitting.
+        """
+        logger.debug('Final quit...')
+
+        try:
+            # disconnect signal if we get here due a timeout.
+            self.all_services_stopped.disconnect(self.final_quit)
+        except RuntimeError:
+            pass  # Signal was not connected
+
+        # Cancel timeout to avoid being called if we reached here through the
+        # signal
+        if self._quit_timeout_callater.active():
+            self._quit_timeout_callater.cancel()
+
+        # Remove lockfiles on a clean shutdown.
+        logger.debug('Cleaning pidfiles')
+        if IS_WIN:
+            WindowsLock.release_all_locks()
+
+        self._backend.stop()
         self.close()
+
+        reactor.callLater(1, self._quit_callback)

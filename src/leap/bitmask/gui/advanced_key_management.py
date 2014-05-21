@@ -20,7 +20,6 @@ Advanced Key Management
 import logging
 
 from PySide import QtGui
-from zope.proxy import sameProxiedObjects
 
 from leap.keymanager import openpgp
 from leap.keymanager.errors import KeyAddressMismatch, KeyFingerprintMismatch
@@ -34,7 +33,7 @@ class AdvancedKeyManagement(QtGui.QDialog):
     """
     Advanced Key Management
     """
-    def __init__(self, parent, has_mx, user, keymanager, soledad):
+    def __init__(self, parent, has_mx, user, keymanager, soledad_started):
         """
         :param parent: parent object of AdvancedKeyManagement.
         :parent type: QWidget
@@ -45,8 +44,8 @@ class AdvancedKeyManagement(QtGui.QDialog):
         :type user: unicode
         :param keymanager: the existing keymanager instance
         :type keymanager: KeyManager
-        :param soledad: a loaded instance of Soledad
-        :type soledad: Soledad
+        :param soledad_started: whether soledad has started or not
+        :type soledad_started: bool
         """
         QtGui.QDialog.__init__(self, parent)
 
@@ -56,7 +55,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
         # XXX: Temporarily disable the key import.
         self.ui.pbImportKeys.setVisible(False)
 
-        # if Soledad is not started yet
         if not has_mx:
             msg = self.tr("The provider that you are using "
                           "does not support {0}.")
@@ -64,8 +62,7 @@ class AdvancedKeyManagement(QtGui.QDialog):
             self._disable_ui(msg)
             return
 
-        # if Soledad is not started yet
-        if sameProxiedObjects(soledad, None):
+        if not soledad_started:
             msg = self.tr("To use this, you need to enable/start {0}.")
             msg = msg.format(get_service_display_name(MX_SERVICE))
             self._disable_ui(msg)
@@ -79,7 +76,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
         #     self.ui.lblStatus.setText(msg)
 
         self._keymanager = keymanager
-        self._soledad = soledad
 
         self._key = keymanager.get_key(user, openpgp.OpenPGPKey)
         self._key_priv = keymanager.get_key(
