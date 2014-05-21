@@ -24,6 +24,7 @@ from ui_login import Ui_LoginWidget
 
 from leap.bitmask.config import flags
 from leap.bitmask.util import make_address
+from leap.bitmask.util.credentials import USERNAME_REGEX
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.keyring_helpers import get_keyring
 from leap.common.check import leap_assert_type
@@ -47,8 +48,6 @@ class LoginWidget(QtGui.QWidget):
     show_wizard = QtCore.Signal()
 
     MAX_STATUS_WIDTH = 40
-
-    BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
     # Keyring
     KEYRING_KEY = "bitmask"
@@ -87,7 +86,7 @@ class LoginWidget(QtGui.QWidget):
         self.ui.btnLogout.clicked.connect(
             self.logout)
 
-        username_re = QtCore.QRegExp(self.BARE_USERNAME_REGEX)
+        username_re = QtCore.QRegExp(USERNAME_REGEX)
         self.ui.lnUser.setValidator(
             QtGui.QRegExpValidator(username_re, self))
 

@@ -27,7 +27,7 @@ from PySide import QtCore, QtGui
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
-from leap.bitmask.util.password import basic_password_checks
+from leap.bitmask.util.credentials import password_checks
 from leap.bitmask.services import get_supported
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services import get_service_display_name, MX_SERVICE
@@ -198,7 +198,7 @@ class PreferencesWindow(QtGui.QDialog):
         new_password = self.ui.leNewPassword.text()
         new_password2 = self.ui.leNewPassword2.text()
 
-        ok, msg = basic_password_checks(username, new_password, new_password2)
+        ok, msg = password_checks(username, new_password, new_password2)
 
         if not ok:
             self._set_changing_password(False)
