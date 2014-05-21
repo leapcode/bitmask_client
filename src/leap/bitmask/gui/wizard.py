@@ -29,8 +29,9 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services import get_service_display_name, get_supported
+from leap.bitmask.util.credentials import password_checks, username_checks
+from leap.bitmask.util.credentials import USERNAME_REGEX
 from leap.bitmask.util.keyring_helpers import has_keyring
-from leap.bitmask.util.password import basic_password_checks
 
 from ui_wizard import Ui_Wizard
 
@@ -48,8 +49,6 @@ class Wizard(QtGui.QWizard):
     SETUP_PROVIDER_PAGE = 3
     REGISTER_USER_PAGE = 4
     SERVICES_PAGE = 5
-
-    BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
     def __init__(self, backend, bypass_checks=False):
         """
@@ -118,7 +117,7 @@ class Wizard(QtGui.QWizard):
 
         self.ui.rbExistingProvider.toggled.connect(self._skip_provider_checks)
 
-        usernameRe = QtCore.QRegExp(self.BARE_USERNAME_REGEX)
+        usernameRe = QtCore.QRegExp(USERNAME_REGEX)
         self.ui.lblUser.setValidator(
             QtGui.QRegExpValidator(usernameRe, self))
 
@@ -231,6 +230,12 @@ class Wizard(QtGui.QWizard):
         if reset:
             self._reset_provider_check()
 
+    def _focus_username(self):
+        """
+        Focus at the username lineedit for the registration page
+        """
+        self.ui.lblUser.setFocus()
+
     def _focus_password(self):
         """
         Focuses at the password lineedit for the registration page
@@ -253,16 +258,22 @@ class Wizard(QtGui.QWizard):
         password = self.ui.lblPassword.text()
         password2 = self.ui.lblPassword2.text()
 
-        ok, msg = basic_password_checks(username, password, password2)
-        if ok:
+        user_ok, msg = username_checks(username)
+        if user_ok:
+            pass_ok, msg = password_checks(username, password, password2)
+
+        if user_ok and pass_ok:
             self._set_register_status(self.tr("Starting registration..."))
 
             self._backend.user_register(self._domain, username, password)
             self._username = username
             self._password = password
         else:
+            if user_ok:
+                self._focus_password()
+            else:
+                self._focus_username()
             self._set_register_status(msg, error=True)
-            self._focus_password()
             self.ui.btnRegister.setEnabled(True)
 
     def _set_registration_fields_visibility(self, visible):
