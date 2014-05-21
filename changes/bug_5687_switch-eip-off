@@ -1,0 +1,1 @@
+- Bring firewall down when switching EIP off. Closes: #5687
