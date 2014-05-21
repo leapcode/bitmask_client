@@ -504,6 +504,11 @@ class ConnectionMachineBuilder(object):
             conn.qtsigs.connection_died_signal,
             states[_OFF])
 
+        # XXX adding this---------------------
+        states[_ON].addTransition(
+            conn.qtsigs.do_disconnect_signal,
+            states[_DIS])
+
         # * If we receive the connection_aborted, we transition
         #   from connecting to the off state
         states[_CON].addTransition(
@@ -551,7 +556,8 @@ class ConnectionMachineBuilder(object):
         # TODO add tooltip
 
         # OFF State ----------------------
-        off = QState()
+        off = SignallingState(
+            None, name=conn.name)
         off_label = _tr("Turn {0}").format(
             conn.Connected.short_label)
         if button:
@@ -587,7 +593,10 @@ class ConnectionMachineBuilder(object):
         states[_CON] = connecting
 
         # ON State ------------------------
-        on = QState()
+        on = SignallingState(
+            None, name=conn.name)
+        on_label = _tr("Turn {0}").format(
+            conn.Disconnected.short_label)
         if button:
             on.assignProperty(
                 button, 'text', on_label)

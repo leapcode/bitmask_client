@@ -24,7 +24,6 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
-from leap.bitmask.services.eip.connection import EIPConnection
 from leap.bitmask.services import get_service_display_name, EIP_SERVICE
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.util.averages import RateMovingAverage
@@ -43,9 +42,14 @@ class EIPStatusWidget(QtGui.QWidget):
     RATE_STR = "%1.2f KB/s"
     TOTAL_STR = "%1.2f Kb"
 
-    eip_connection_connected = QtCore.Signal()
+    def __init__(self, parent=None, eip_conductor=None):
+        """
+        :param parent: the parent of the widget.
+        :type parent: QObject
 
-    def __init__(self, parent=None):
+        :param eip_conductor: an EIPConductor object.
+        :type eip_conductor: EIPConductor
+        """
         QtGui.QWidget.__init__(self, parent)
 
         self._systray = None
@@ -54,7 +58,8 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui = Ui_EIPStatus()
         self.ui.setupUi(self)
 
-        self.eipconnection = EIPConnection()
+        self.eip_conductor = eip_conductor
+        self.eipconnection = eip_conductor.eip_connection
 
         # set systray tooltip status
         self._eip_status = ""
@@ -75,10 +80,35 @@ class EIPStatusWidget(QtGui.QWidget):
         self._make_status_clickable()
 
         self._provider = ""
+        self.is_restart = False
 
         # Action for the systray
         self._eip_disabled_action = QtGui.QAction(
             "{0} is {1}".format(self._service_name, self.tr("disabled")), self)
+
+    def connect_backend_signals(self):
+        """
+        Connect backend signals.
+        """
+        signaler = self.eip_conductor._backend.signaler
+
+        signaler.eip_openvpn_already_running.connect(
+            self._on_eip_openvpn_already_running)
+        signaler.eip_alien_openvpn_already_running.connect(
+            self._on_eip_alien_openvpn_already_running)
+        signaler.eip_openvpn_not_found_error.connect(
+            self._on_eip_openvpn_not_found_error)
+        signaler.eip_vpn_launcher_exception.connect(
+            self._on_eip_vpn_launcher_exception)
+        signaler.eip_no_polkit_agent_error.connect(
+            self._on_eip_no_polkit_agent_error)
+        signaler.eip_no_pkexec_error.connect(self._on_eip_no_pkexec_error)
+        signaler.eip_no_tun_kext_error.connect(self._on_eip_no_tun_kext_error)
+
+        signaler.eip_state_changed.connect(self.update_vpn_state)
+        signaler.eip_status_changed.connect(self.update_vpn_status)
+        signaler.eip_network_unreachable.connect(
+            self._on_eip_network_unreachable)
 
     def _make_status_clickable(self):
         """
@@ -238,7 +268,7 @@ class EIPStatusWidget(QtGui.QWidget):
     def eip_pre_up(self):
         """
         Triggered when the app activates eip.
-        Hides the status box and disables the start/stop button.
+        Disables the start/stop button.
         """
         self.set_startstop_enabled(False)
 
@@ -248,7 +278,7 @@ class EIPStatusWidget(QtGui.QWidget):
         Triggered when a default provider_config has not been found.
         Disables the start button and adds instructions to the user.
         """
-        #logger.debug('Hiding EIP start button')
+        logger.debug('Hiding EIP start button')
         # you might be tempted to change this for a .setEnabled(False).
         # it won't work. it's under the claws of the state machine.
         # probably the best thing would be to make a conditional
@@ -326,26 +356,26 @@ class EIPStatusWidget(QtGui.QWidget):
         Sets the state of the widget to how it should look after EIP
         has started
         """
-        self.ui.btnEipStartStop.setText(self.tr("Turn OFF"))
         self.ui.btnEipStartStop.disconnect(self)
         self.ui.btnEipStartStop.clicked.connect(
             self.eipconnection.qtsigs.do_connect_signal)
 
-    # XXX disable -----------------------------
-    def eip_stopped(self):
+    @QtCore.Slot(dict)
+    def eip_stopped(self, restart=False):
         """
+        TRIGGERS:
+            EIPConductor.qtsigs.disconnected_signal
+
         Sets the state of the widget to how it should look after EIP
         has stopped
         """
-        # XXX should connect this to EIPConnection.disconnected_signal
         self._reset_traffic_rates()
-        # XXX disable -----------------------------
-        self.ui.btnEipStartStop.setText(self.tr("Turn ON"))
-        self.ui.btnEipStartStop.disconnect(self)
-        self.ui.btnEipStartStop.clicked.connect(
-            self.eipconnection.qtsigs.do_disconnect_signal)
-
         self.ui.eip_bandwidth.hide()
+
+        # XXX FIXME ! ----------------------- this needs to
+        # accomodate the messages about firewall up or not.
+        # Or better call it from the conductor...
+
         self.ui.lblEIPMessage.setText(
             self.tr("Traffic is being routed in the clear"))
         self.ui.lblEIPStatus.show()
@@ -407,7 +437,8 @@ class EIPStatusWidget(QtGui.QWidget):
             self.ui.lblEIPStatus.hide()
 
             # XXX should be handled by the state machine too.
-            self.eip_connection_connected.emit()
+            # --- is this currently being sent?
+            self.eipconnection.qtsigs.connected_signal.emit()
 
         # XXX should lookup vpn_state map in EIPConnection
         elif vpn_state == "AUTH":
@@ -423,8 +454,9 @@ class EIPStatusWidget(QtGui.QWidget):
         elif vpn_state == "ALREADYRUNNING":
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
+            #self.send_disconnect_signal()
             QtCore.QTimer.singleShot(
-                0, self.eipconnection.qtsigs.do_disconnect_signal)
+                0, self.eipconnection.qtsigns.do_disconnect_signal.emit)
             msg = self.tr("Unable to start VPN, it's already running.")
             QtCore.QTimer.singleShot(0, partial(self.set_eip_status, msg))
         else:
@@ -470,3 +502,96 @@ class EIPStatusWidget(QtGui.QWidget):
         self._provider = provider
         self.ui.lblEIPMessage.setText(
             self.tr("Route traffic through: {0}").format(self._provider))
+
+    #
+    # Slots for signals
+    #
+
+    @QtCore.Slot()
+    def _on_eip_connection_aborted(self):
+        """
+        TRIGGERS:
+            Signaler.eip_connection_aborted
+        """
+        logger.error("Tried to start EIP but cannot find any "
+                     "available provider!")
+
+        eip_status_label = self.tr("Could not load {0} configuration.")
+        eip_status_label = eip_status_label.format(
+            self._eip_conductor.eip_name)
+        self.set_eip_status(eip_status_label, error=True)
+
+        # signal connection_aborted to state machine:
+        qtsigs = self._eip_connection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
+
+    def _on_eip_openvpn_already_running(self):
+        self.set_eip_status(
+            self.tr("Another openvpn instance is already running, and "
+                    "could not be stopped."),
+            error=True)
+        self.set_eipstatus_off()
+
+    def _on_eip_alien_openvpn_already_running(self):
+        self.set_eip_status(
+            self.tr("Another openvpn instance is already running, and "
+                    "could not be stopped because it was not launched by "
+                    "Bitmask. Please stop it and try again."),
+            error=True)
+        self.set_eipstatus_off()
+
+    def _on_eip_openvpn_not_found_error(self):
+        self.set_eip_status(
+            self.tr("We could not find openvpn binary."),
+            error=True)
+        self.set_eipstatus_off()
+
+    def _on_eip_vpn_launcher_exception(self):
+        # XXX We should implement again translatable exceptions so
+        # we can pass a translatable string to the panel (usermessage attr)
+        self.set_eip_status("VPN Launcher error.", error=True)
+        self.set_eipstatus_off()
+
+    def _on_eip_no_polkit_agent_error(self):
+        self.set_eip_status(
+            # XXX this should change to polkit-kde where
+            # applicable.
+            self.tr("We could not find any authentication agent in your "
+                    "system.<br/>Make sure you have"
+                    "<b>polkit-gnome-authentication-agent-1</b> running and"
+                    "try again."),
+            error=True)
+        self.set_eipstatus_off()
+
+    def _on_eip_no_pkexec_error(self):
+        self.set_eip_status(
+            self.tr("We could not find <b>pkexec</b> in your system."),
+            error=True)
+        self.set_eipstatus_off()
+
+    def _on_eip_no_tun_kext_error(self):
+        self.set_eip_status(
+            self.tr("{0} cannot be started because the tuntap extension is "
+                    "not installed properly in your "
+                    "system.").format(self._eip_conductor.eip_name))
+        self.set_eipstatus_off()
+
+    @QtCore.Slot()
+    def _on_eip_network_unreachable(self):
+        """
+        TRIGGERS:
+            self._eip_connection.qtsigs.network_unreachable
+
+        Displays a "network unreachable" error in the EIP status panel.
+        """
+        self.set_eip_status(self.tr("Network is unreachable"),
+                            error=True)
+        self.set_eip_status_icon("error")
+
+    def set_eipstatus_off(self, error=True):
+    # XXX this should be handled by the state machine.
+        """
+        Sets eip status to off
+        """
+        self.set_eip_status("", error=error)
+        self.set_eip_status_icon("error")

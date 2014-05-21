@@ -434,8 +434,12 @@ class EIP(object):
         except Exception as e:
             logger.error("Unexpected problem: {0!r}".format(e))
         else:
+            logger.debug('EIP: no errors')
             # TODO: are we connected here?
-            signaler.signal(signaler.EIP_CONNECTED)
+            # kali -- no, we are not! CONNECTED should be passed only
+            # by the vpn observer. Currently handled by the state updater
+            # in eip_status
+            #signaler.signal(signaler.EIP_CONNECTED)
 
     def _do_stop(self, shutdown=False, restart=False):
         """
@@ -470,9 +474,9 @@ class EIP(object):
                 self._signaler.signal(self._signaler.EIP_STOPPED)
                 return
             else:
-                msg = "Firewall is not down yet, waiting... {0} of {1}"
-                msg = msg.format(retry, MAX_FW_WAIT_RETRIES)
-                logger.debug(msg)
+                #msg = "Firewall is not down yet, waiting... {0} of {1}"
+                #msg = msg.format(retry, MAX_FW_WAIT_RETRIES)
+                #logger.debug(msg)
                 time.sleep(FW_WAIT_STEP)
                 retry += 1
         logger.warning("After waiting, firewall is not down... "
