@@ -653,7 +653,7 @@ class MainWindow(QtGui.QMainWindow):
         # If we don't want to start eip, we leave everything
         # initialized to quickly start it
         if not self._trying_to_start_eip:
-            self._backend.setup_eip(default_provider, skip_network=True)
+            self._backend.eip_setup(default_provider, skip_network=True)
 
     def _backend_can_start_eip(self):
         """
@@ -1167,7 +1167,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         # XXX should rename this provider, name clash.
         provider = self._login_widget.get_selected_provider()
-        self._backend.setup_provider(provider)
+        self._backend.provider_setup(provider)
 
     @QtCore.Slot(dict)
     def _load_provider_config(self, data):
@@ -1261,10 +1261,10 @@ class MainWindow(QtGui.QMainWindow):
         Cancel the running defers to avoid app blocking.
         """
         # XXX: Should we stop all the backend defers?
-        self._backend.cancel_setup_provider()
-        self._backend.cancel_login()
-        self._backend.cancel_soledad_bootstrap()
-        self._backend.close_soledad()
+        self._backend.provider_cancel_setup()
+        self._backend.user_cancel_login()
+        self._backend.soledad_cancel_bootstrap()
+        self._backend.soledad_close()
 
         self._soledad_started = False
 
@@ -1273,7 +1273,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         TRIGGERS:
             Signaler.prov_cancelled_setup fired by
-            self._backend.cancel_setup_provider()
+            self._backend.provider_cancel_setup()
 
         This method re-enables the login widget and display a message for
         the cancelled operation.
@@ -1299,7 +1299,7 @@ class MainWindow(QtGui.QMainWindow):
             self._show_hide_unsupported_services()
 
             domain = self._provider_config.get_domain()
-            self._backend.login(domain, username, password)
+            self._backend.user_login(domain, username, password)
         else:
             logger.error(data[self._backend.ERROR_KEY])
             self._login_problem_provider()
@@ -1402,7 +1402,7 @@ class MainWindow(QtGui.QMainWindow):
                 # this is mostly for internal use/debug for now.
                 logger.warning("Sorry! Log-in at least one time.")
                 return
-            self._backend.load_offline_soledad(full_user_id, password, uuid)
+            self._backend.soledad_load_offline(full_user_id, password, uuid)
         else:
             if self._logged_user is not None:
                 domain = self._provider_config.get_domain()
@@ -1609,7 +1609,7 @@ class MainWindow(QtGui.QMainWindow):
         # won't try the next time.
         self._settings.set_autostart_eip(True)
 
-        self._backend.start_eip()
+        self._backend.eip_start()
 
     @QtCore.Slot()
     def _on_eip_connection_aborted(self):
@@ -1692,7 +1692,7 @@ class MainWindow(QtGui.QMainWindow):
         :type abnormal: bool
         """
         self.user_stopped_eip = True
-        self._backend.stop_eip()
+        self._backend.eip_stop()
 
         self._set_eipstatus_off(False)
         self._already_started_eip = False
@@ -1783,7 +1783,7 @@ class MainWindow(QtGui.QMainWindow):
             eip_status_label = eip_status_label.format(self._eip_name)
             self._eip_status.set_eip_status(eip_status_label, error=True)
             signal = qtsigs.connection_aborted_signal
-            self._backend.terminate_eip()
+            self._backend.eip_terminate()
 
         elif exitCode != 0 or not self.user_stopped_eip:
             eip_status_label = self.tr("{0} finished in an unexpected manner!")
@@ -1813,7 +1813,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr("Starting..."))
 
             domain = self._login_widget.get_selected_provider()
-            self._backend.setup_eip(domain)
+            self._backend.eip_setup(domain)
 
             self._already_started_eip = True
             # we want to start soledad anyway after a certain timeout if eip
@@ -1910,7 +1910,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # XXX: If other defers are doing authenticated stuff, this
         # might conflict with those. CHECK!
-        self._backend.logout()
+        self._backend.user_logout()
         self.logout.emit()
 
     @QtCore.Slot()
@@ -2011,15 +2011,15 @@ class MainWindow(QtGui.QMainWindow):
         self._backend.signaler.eip_stopped.connect(eip_stopped)
 
         logger.debug('Stopping mail services')
-        self._backend.stop_imap_service()
-        self._backend.stop_smtp_service()
+        self._backend.imap_stop_service()
+        self._backend.smtp_stop_service()
 
         if self._logged_user is not None:
             logger.debug("Doing logout")
-            self._backend.logout()
+            self._backend.user_logout()
 
         logger.debug('Terminating vpn')
-        self._backend.stop_eip(shutdown=True)
+        self._backend.eip_stop(shutdown=True)
 
     def quit(self):
         """

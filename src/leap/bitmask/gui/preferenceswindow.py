@@ -87,7 +87,7 @@ class PreferencesWindow(QtGui.QDialog):
         else:
             self._add_configured_providers()
 
-        self._backend.get_logged_in_status()
+        self._backend.user_get_logged_in_status()
 
         self._select_provider_by_name(domain)
 
@@ -207,7 +207,7 @@ class PreferencesWindow(QtGui.QDialog):
             return
 
         self._set_changing_password(True)
-        self._backend.auth_change_password(current_password, new_password)
+        self._backend.user_change_password(current_password, new_password)
 
     @QtCore.Slot()
     def _srp_change_password_ok(self):

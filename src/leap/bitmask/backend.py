@@ -1356,7 +1356,7 @@ class Backend(object):
     # this in two processes, the methods bellow can be changed to
     # send_multipart and this backend class will be really simple.
 
-    def setup_provider(self, provider):
+    def provider_setup(self, provider):
         """
         Initiate the setup for a provider.
 
@@ -1372,7 +1372,7 @@ class Backend(object):
         """
         self._call_queue.put(("provider", "setup_provider", None, provider))
 
-    def cancel_setup_provider(self):
+    def provider_cancel_setup(self):
         """
         Cancel the ongoing setup provider (if any).
         """
@@ -1393,7 +1393,7 @@ class Backend(object):
         """
         self._call_queue.put(("provider", "bootstrap", None, provider))
 
-    def register_user(self, provider, username, password):
+    def user_register(self, provider, username, password):
         """
         Register a user using the domain and password given as parameters.
 
@@ -1412,7 +1412,7 @@ class Backend(object):
         self._call_queue.put(("register", "register_user", None, provider,
                               username, password))
 
-    def setup_eip(self, provider, skip_network=False):
+    def eip_setup(self, provider, skip_network=False):
         """
         Initiate the setup for a provider
 
@@ -1430,13 +1430,13 @@ class Backend(object):
         self._call_queue.put(("eip", "setup_eip", None, provider,
                               skip_network))
 
-    def cancel_setup_eip(self):
+    def eip_cancel_setup(self):
         """
         Cancel the ongoing setup EIP (if any).
         """
         self._call_queue.put(("eip", "cancel_setup_eip", None))
 
-    def start_eip(self):
+    def eip_start(self):
         """
         Start the EIP service.
 
@@ -1460,7 +1460,7 @@ class Backend(object):
         """
         self._call_queue.put(("eip", "start", None))
 
-    def stop_eip(self, shutdown=False):
+    def eip_stop(self, shutdown=False):
         """
         Stop the EIP service.
 
@@ -1469,7 +1469,7 @@ class Backend(object):
         """
         self._call_queue.put(("eip", "stop", None, shutdown))
 
-    def terminate_eip(self):
+    def eip_terminate(self):
         """
         Terminate the EIP service, not necessarily in a nice way.
         """
@@ -1521,7 +1521,7 @@ class Backend(object):
         self._call_queue.put(("eip", "can_start",
                               None, domain))
 
-    def login(self, provider, username, password):
+    def user_login(self, provider, username, password):
         """
         Execute the whole authentication process for a user
 
@@ -1543,7 +1543,7 @@ class Backend(object):
         self._call_queue.put(("authenticate", "login", None, provider,
                               username, password))
 
-    def logout(self):
+    def user_logout(self):
         """
         Log out the current session.
 
@@ -1554,13 +1554,13 @@ class Backend(object):
         """
         self._call_queue.put(("authenticate", "logout", None))
 
-    def cancel_login(self):
+    def user_cancel_login(self):
         """
         Cancel the ongoing login (if any).
         """
         self._call_queue.put(("authenticate", "cancel_login", None))
 
-    def auth_change_password(self, current_password, new_password):
+    def user_change_password(self, current_password, new_password):
         """
         Change the user's password.
 
@@ -1594,7 +1594,7 @@ class Backend(object):
         self._call_queue.put(("soledad", "change_password", None,
                               new_password))
 
-    def get_logged_in_status(self):
+    def user_get_logged_in_status(self):
         """
         Signal if the user is currently logged in or not.
 
@@ -1623,7 +1623,7 @@ class Backend(object):
         self._call_queue.put(("soledad", "bootstrap", None,
                               username, domain, password))
 
-    def load_offline_soledad(self, username, password, uuid):
+    def soledad_load_offline(self, username, password, uuid):
         """
         Load the soledad database in offline mode.
 
@@ -1639,19 +1639,19 @@ class Backend(object):
         self._call_queue.put(("soledad", "load_offline", None,
                               username, password, uuid))
 
-    def cancel_soledad_bootstrap(self):
+    def soledad_cancel_bootstrap(self):
         """
         Cancel the ongoing soledad bootstrapping process (if any).
         """
         self._call_queue.put(("soledad", "cancel_bootstrap", None))
 
-    def close_soledad(self):
+    def soledad_close(self):
         """
         Close soledad database.
         """
         self._call_queue.put(("soledad", "close", None))
 
-    def start_smtp_service(self, full_user_id, download_if_needed=False):
+    def smtp_start_service(self, full_user_id, download_if_needed=False):
         """
         Start the SMTP service.
 
@@ -1664,7 +1664,7 @@ class Backend(object):
         self._call_queue.put(("mail", "start_smtp_service", None,
                               full_user_id, download_if_needed))
 
-    def start_imap_service(self, full_user_id, offline=False):
+    def imap_start_service(self, full_user_id, offline=False):
         """
         Start the IMAP service.
 
@@ -1676,13 +1676,13 @@ class Backend(object):
         self._call_queue.put(("mail", "start_imap_service", None,
                               full_user_id, offline))
 
-    def stop_smtp_service(self):
+    def smtp_stop_service(self):
         """
         Stop the SMTP service.
         """
         self._call_queue.put(("mail", "stop_smtp_service", None))
 
-    def stop_imap_service(self):
+    def imap_stop_service(self):
         """
         Stop imap service.
 

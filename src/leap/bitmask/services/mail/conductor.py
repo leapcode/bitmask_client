@@ -64,7 +64,7 @@ class IMAPControl(object):
         """
         Start imap service.
         """
-        self._backend.start_imap_service(self.userid, flags.OFFLINE)
+        self._backend.imap_start_service(self.userid, flags.OFFLINE)
 
     def stop_imap_service(self):
         """
@@ -73,7 +73,7 @@ class IMAPControl(object):
         self.imap_connection.qtsigs.disconnecting_signal.emit()
         logger.debug('Stopping imap service.')
 
-        self._backend.stop_imap_service()
+        self._backend.imap_stop_service()
 
     def _handle_imap_events(self, req):
         """
@@ -146,14 +146,14 @@ class SMTPControl(object):
         :type download_if_needed: bool
         """
         self.smtp_connection.qtsigs.connecting_signal.emit()
-        self._backend.start_smtp_service(self.userid, download_if_needed)
+        self._backend.smtp_start_service(self.userid, download_if_needed)
 
     def stop_smtp_service(self):
         """
         Stops the SMTP service.
         """
         self.smtp_connection.qtsigs.disconnecting_signal.emit()
-        self._backend.stop_smtp_service()
+        self._backend.smtp_stop_service()
 
     def _handle_smtp_events(self, req):
         """
@@ -249,8 +249,8 @@ class MailConductor(IMAPControl, SMTPControl):
         """
         Stop the IMAP and SMTP services.
         """
-        self.stop_imap_service()
-        self.stop_smtp_service()
+        self.imap_stop_service()
+        self.smtp_stop_service()
 
     def connect_mail_signals(self, widget):
         """

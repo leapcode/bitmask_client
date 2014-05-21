@@ -257,7 +257,7 @@ class Wizard(QtGui.QWizard):
         if ok:
             self._set_register_status(self.tr("Starting registration..."))
 
-            self._backend.register_user(self._domain, username, password)
+            self._backend.user_register(self._domain, username, password)
             self._username = username
             self._password = password
         else:
@@ -406,7 +406,7 @@ class Wizard(QtGui.QWizard):
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_select_defer = self._backend.\
-            setup_provider(self._domain)
+            provider_setup(self._domain)
 
     @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
