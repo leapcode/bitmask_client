@@ -1680,7 +1680,7 @@ class MainWindow(QtGui.QMainWindow):
         self._set_eipstatus_off()
 
     @QtCore.Slot()
-    def _stop_eip(self):
+    def _stop_eip(self, restart=False):
         """
         TRIGGERS:
           self._eip_connection.qtsigs.do_disconnect_signal (via state machine)
@@ -1691,8 +1691,8 @@ class MainWindow(QtGui.QMainWindow):
         :param abnormal: whether this was an abnormal termination.
         :type abnormal: bool
         """
-        self.user_stopped_eip = True
-        self._backend.eip_stop()
+        self.user_stopped_eip = not restart
+        self._backend.eip_stop(restart=restart)
 
         self._set_eipstatus_off(False)
         self._already_started_eip = False
@@ -1731,7 +1731,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         # for some reason, emitting the do_disconnect/do_connect
         # signals hangs the UI.
-        self._stop_eip()
+        self._stop_eip(restart=True)
         QtCore.QTimer.singleShot(2000, self._start_EIP)
 
     def _set_eipstatus_off(self, error=True):
