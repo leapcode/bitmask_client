@@ -37,8 +37,8 @@ from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.platform_init import IS_LINUX
-from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services import get_supported
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
@@ -62,26 +62,6 @@ from leap.soledad.client import NoStorageSecret, PassphraseTooShort
 from PySide import QtCore
 
 logger = logging.getLogger(__name__)
-
-
-def get_provider_config(config, domain):
-    """
-    Return the ProviderConfig object for the given domain.
-    If it is already loaded in `config`, then don't reload.
-
-    :param config: a ProviderConfig object
-    :type conig: ProviderConfig
-    :param domain: the domain which config is required.
-    :type domain: unicode
-
-    :returns: True if the config was loaded successfully, False otherwise.
-    :rtype: bool
-    """
-    # TODO: see ProviderConfig.get_provider_config
-    if (not config.loaded() or config.get_domain() != domain):
-        config.load(get_provider_path(domain))
-
-    return config.loaded()
 
 
 class ILEAPComponent(zope.interface.Interface):
@@ -167,6 +147,7 @@ class Provider(object):
         :type bypass_checks: bool
         """
         self.key = "provider"
+        self._signaler = signaler
         self._provider_bootstrapper = ProviderBootstrapper(signaler,
                                                            bypass_checks)
         self._download_provider_defer = None
@@ -208,13 +189,9 @@ class Provider(object):
         """
         d = None
 
-        # TODO: use this commented code when we don't need the provider config
-        # in the maiwindow.
-        # config = ProviderConfig.get_provider_config(provider)
-        # self._provider_config = config
-        # if config is not None:
-        config = self._provider_config
-        if get_provider_config(config, provider):
+        config = ProviderConfig.get_provider_config(provider)
+        self._provider_config = config
+        if config is not None:
             d = self._provider_bootstrapper.run_provider_setup_checks(
                 config, download_if_needed=True)
         else:
@@ -227,6 +204,73 @@ class Provider(object):
         if d is None:
             d = defer.Deferred()
         return d
+
+    def _get_services(self, domain):
+        """
+        Returns a list of services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        :rtype: list of str
+        """
+        services = []
+        provider_config = ProviderConfig.get_provider_config(domain)
+        if provider_config is not None:
+            services = provider_config.get_services()
+
+        return services
+
+    def get_supported_services(self, domain):
+        """
+        Signal a list of supported services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        Signals:
+            prov_get_supported_services -> list of unicode
+        """
+        services = get_supported(self._get_services(domain))
+
+        self._signaler.signal(
+            self._signaler.PROV_GET_SUPPORTED_SERVICES, services)
+
+    def get_all_services(self, providers):
+        """
+        Signal a list of services provided by all the configured providers.
+
+        :param providers: the list of providers to get the services.
+        :type providers: list
+
+        Signals:
+            prov_get_all_services -> list of unicode
+        """
+        services_all = set()
+
+        for domain in providers:
+            services = self._get_services(domain)
+            services_all = services_all.union(set(services))
+
+        self._signaler.signal(
+            self._signaler.PROV_GET_ALL_SERVICES, services_all)
+
+    def get_details(self, domain, lang=None):
+        """
+        Signal a ProviderConfigLight object with the current ProviderConfig
+        settings.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+        :param lang: the language to use for localized strings.
+        :type lang: str
+
+        Signals:
+            prov_get_details -> ProviderConfigLight
+        """
+        self._signaler.signal(
+            self._signaler.PROV_GET_DETAILS,
+            self._provider_config.get_light_config(domain, lang))
 
 
 class Register(object):
@@ -926,6 +970,10 @@ class Signaler(QtCore.QObject):
     prov_unsupported_client = QtCore.Signal(object)
     prov_unsupported_api = QtCore.Signal(object)
 
+    prov_get_all_services = QtCore.Signal(object)
+    prov_get_supported_services = QtCore.Signal(object)
+    prov_get_details = QtCore.Signal(object)
+
     prov_cancelled_setup = QtCore.Signal(object)
 
     # Signals for SRPRegister
@@ -1021,6 +1069,9 @@ class Signaler(QtCore.QObject):
     PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
     PROV_UNSUPPORTED_API = "prov_unsupported_api"
     PROV_CANCELLED_SETUP = "prov_cancelled_setup"
+    PROV_GET_ALL_SERVICES = "prov_get_all_services"
+    PROV_GET_SUPPORTED_SERVICES = "prov_get_supported_services"
+    PROV_GET_DETAILS = "prov_get_details"
 
     SRP_REGISTRATION_FINISHED = "srp_registration_finished"
     SRP_REGISTRATION_FAILED = "srp_registration_failed"
@@ -1106,6 +1157,9 @@ class Signaler(QtCore.QObject):
             self.PROV_UNSUPPORTED_CLIENT,
             self.PROV_UNSUPPORTED_API,
             self.PROV_CANCELLED_SETUP,
+            self.PROV_GET_ALL_SERVICES,
+            self.PROV_GET_SUPPORTED_SERVICES,
+            self.PROV_GET_DETAILS,
 
             self.SRP_REGISTRATION_FINISHED,
             self.SRP_REGISTRATION_FAILED,
@@ -1392,6 +1446,47 @@ class Backend(object):
             prov_check_api_certificate -> {PASSED_KEY: bool, ERROR_KEY: str}
         """
         self._call_queue.put(("provider", "bootstrap", None, provider))
+
+    def provider_get_supported_services(self, domain):
+        """
+        Signal a list of supported services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        Signals:
+            prov_get_supported_services -> list of unicode
+        """
+        self._call_queue.put(("provider", "get_supported_services", None,
+                              domain))
+
+    def provider_get_all_services(self, providers):
+        """
+        Signal a list of services provided by all the configured providers.
+
+        :param providers: the list of providers to get the services.
+        :type providers: list
+
+        Signals:
+            prov_get_all_services -> list of unicode
+        """
+        self._call_queue.put(("provider", "get_all_services", None,
+                              providers))
+
+    def provider_get_details(self, domain, lang):
+        """
+        Signal a ProviderConfigLight object with the current ProviderConfig
+        settings.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+        :param lang: the language to use for localized strings.
+        :type lang: str
+
+        Signals:
+            prov_get_details -> ProviderConfigLight
+        """
+        self._call_queue.put(("provider", "get_details", None, domain, lang))
 
     def user_register(self, provider, username, password):
         """
@@ -1697,16 +1792,6 @@ class Backend(object):
     ###########################################################################
     # XXX HACK: this section is meant to be a place to hold methods and
     # variables needed in the meantime while we migrate all to the backend.
-
-    def get_provider_config(self):
-        # TODO: refactor the provider config into a singleton/global loading it
-        # every time from the file.
-        provider_config = self._components["provider"]._provider_config
-        return provider_config
-
-    def get_soledad(self):
-        soledad = self._components["soledad"]._soledad_bootstrapper._soledad
-        return soledad
 
     def get_keymanager(self):
         km = self._components["soledad"]._soledad_bootstrapper._keymanager
