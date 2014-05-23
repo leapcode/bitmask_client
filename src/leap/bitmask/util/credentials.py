@@ -21,7 +21,7 @@ Credentials utilities
 from PySide import QtCore, QtGui
 
 WEAK_PASSWORDS = ("123456", "qweasd", "qwerty", "password")
-USERNAME_REGEX = r"^[A-Za-z][A-Za-z\d_\-\.]+[A-Za-z]$"
+USERNAME_REGEX = r"^[A-Za-z][A-Za-z\d_\-\.]+[A-Za-z\d]$"
 
 USERNAME_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp(USERNAME_REGEX))
 
