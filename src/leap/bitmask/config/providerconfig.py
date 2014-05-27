@@ -199,39 +199,3 @@ class ProviderConfig(BaseConfig):
         :rtype: bool
         """
         return "mx" in self.get_services()
-
-
-if __name__ == "__main__":
-    logger = logging.getLogger(name='leap')
-    logger.setLevel(logging.DEBUG)
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        '%(asctime)s '
-        '- %(name)s - %(levelname)s - %(message)s')
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    provider = ProviderConfig()
-
-    try:
-        provider.get_api_version()
-    except Exception as e:
-        assert isinstance(e, AssertionError), "Expected an assert"
-        print "Safe value getting is working"
-
-    # standalone minitest
-    #if provider.load("provider_bad.json"):
-    if provider.load("leap/providers/bitmask.net/provider.json"):
-        print provider.get_api_version()
-        print provider.get_ca_cert_fingerprint()
-        print provider.get_ca_cert_uri()
-        print provider.get_default_language()
-        print provider.get_description()
-        print provider.get_description(lang="asd")
-        print provider.get_domain()
-        print provider.get_enrollment_policy()
-        print provider.get_languages()
-        print provider.get_name()
-        print provider.get_services()
-        print provider.get_services_string()
