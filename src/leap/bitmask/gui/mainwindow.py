@@ -23,7 +23,6 @@ import socket
 from datetime import datetime
 
 from PySide import QtCore, QtGui
-from zope.proxy import ProxyBase, setProxiedObject
 from twisted.internet import reactor, threads
 
 from leap.bitmask import __version__ as VERSION
@@ -268,8 +267,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._bypass_checks = bypass_checks
         self._start_hidden = start_hidden
-
-        self._keymanager = ProxyBase(None)
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
@@ -598,11 +595,11 @@ class MainWindow(QtGui.QMainWindow):
         details = self._provider_details
         mx_provided = False
         if details is not None:
-            mx_provided = MX_SERVICE in details
+            mx_provided = MX_SERVICE in details.services
 
         # XXX: handle differently not logged in user?
         akm = AdvancedKeyManagement(self, mx_provided, logged_user,
-                                    self._keymanager, self._soledad_started)
+                                    self._backend, self._soledad_started)
         akm.show()
 
     @QtCore.Slot()
@@ -1437,12 +1434,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug("Done bootstrapping Soledad")
 
-        # Update the proxy objects to point to the initialized instances.
-        # setProxiedObject(self._soledad, self._backend.get_soledad())
-        setProxiedObject(self._keymanager, self._backend.get_keymanager())
-
         self._soledad_started = True
-
         self.soledad_ready.emit()
 
     ###################################################################

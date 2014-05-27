@@ -56,6 +56,9 @@ from leap.bitmask.services.soledad.soledadbootstrapper import \
 
 from leap.common import certs as leap_certs
 
+from leap.keymanager import openpgp
+from leap.keymanager.errors import KeyAddressMismatch, KeyFingerprintMismatch
+
 from leap.soledad.client import NoStorageSecret, PassphraseTooShort
 
 # Frontend side
@@ -745,6 +748,125 @@ class Soledad(object):
         d.addErrback(self._change_password_error)
 
 
+class Keymanager(object):
+    """
+    Interfaces with KeyManager.
+    """
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, keymanager_proxy, signaler=None):
+        """
+        Constructor for the Keymanager component.
+
+        :param keymanager_proxy: proxy to pass around a Keymanager object.
+        :type keymanager_proxy: zope.ProxyBase
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        self.key = "keymanager"
+        self._keymanager_proxy = keymanager_proxy
+        self._signaler = signaler
+
+    def import_keys(self, username, filename):
+        """
+        Imports the username's key pair.
+        Those keys need to be ascii armored.
+
+        :param username: the user that will have the imported pair of keys.
+        :type username: str
+        :param filename: the name of the file where the key pair is stored.
+        :type filename: str
+        """
+        # NOTE: This feature is disabled right now since is dangerous
+        return
+
+        new_key = ''
+        signal = None
+        try:
+            with open(filename, 'r') as keys_file:
+                new_key = keys_file.read()
+        except IOError as e:
+            logger.error("IOError importing key. {0!r}".format(e))
+            signal = self._signaler.KEYMANAGER_IMPORT_IOERROR
+            self._signaler.signal(signal)
+            return
+
+        keymanager = self._keymanager_proxy
+        try:
+            public_key, private_key = keymanager.parse_openpgp_ascii_key(
+                new_key)
+        except (KeyAddressMismatch, KeyFingerprintMismatch) as e:
+            logger.error(repr(e))
+            signal = self._signaler.KEYMANAGER_IMPORT_DATAMISMATCH
+            self._signaler.signal(signal)
+            return
+
+        if public_key is None or private_key is None:
+            signal = self._signaler.KEYMANAGER_IMPORT_MISSINGKEY
+            self._signaler.signal(signal)
+            return
+
+        current_public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
+        if public_key.address != current_public_key.address:
+            logger.error("The key does not match the ID")
+            signal = self._signaler.KEYMANAGER_IMPORT_ADDRESSMISMATCH
+            self._signaler.signal(signal)
+            return
+
+        keymanager.delete_key(self._key)
+        keymanager.delete_key(self._key_priv)
+        keymanager.put_key(public_key)
+        keymanager.put_key(private_key)
+        keymanager.send_key(openpgp.OpenPGPKey)
+
+        logger.debug('Import ok')
+        signal = self._signaler.KEYMANAGER_IMPORT_OK
+
+        self._signaler.signal(signal)
+
+    def export_keys(self, username, filename):
+        """
+        Export the given username's keys to a file.
+
+        :param username: the username whos keys we need to export.
+        :type username: str
+        :param filename: the name of the file where we want to save the keys.
+        :type filename: str
+        """
+        keymanager = self._keymanager_proxy
+
+        public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
+        private_key = keymanager.get_key(username, openpgp.OpenPGPKey,
+                                         private=True)
+        try:
+            with open(filename, 'w') as keys_file:
+                keys_file.write(public_key.key_data)
+                keys_file.write(private_key.key_data)
+
+            logger.debug('Export ok')
+            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_OK)
+        except IOError as e:
+            logger.error("IOError exporting key. {0!r}".format(e))
+            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_ERROR)
+
+    def list_keys(self):
+        """
+        List all the keys stored in the local DB.
+        """
+        keys = self._keymanager_proxy.get_all_keys_in_local_db()
+        self._signaler.signal(self._signaler.KEYMANAGER_KEYS_LIST, keys)
+
+    def get_key_details(self, username):
+        """
+        List all the keys stored in the local DB.
+        """
+        public_key = self._keymanager_proxy.get_key(username,
+                                                    openpgp.OpenPGPKey)
+        details = (public_key.key_id, public_key.fingerprint)
+        self._signaler.signal(self._signaler.KEYMANAGER_KEY_DETAILS, details)
+
+
 class Mail(object):
     """
     Interfaces with setup and launch of Mail.
@@ -1047,6 +1169,19 @@ class Signaler(QtCore.QObject):
     soledad_password_change_ok = QtCore.Signal(object)
     soledad_password_change_error = QtCore.Signal(object)
 
+    # Keymanager signals
+    keymanager_export_ok = QtCore.Signal(object)
+    keymanager_export_error = QtCore.Signal(object)
+    keymanager_keys_list = QtCore.Signal(object)
+
+    keymanager_import_ioerror = QtCore.Signal(object)
+    keymanager_import_datamismatch = QtCore.Signal(object)
+    keymanager_import_missingkey = QtCore.Signal(object)
+    keymanager_import_addressmismatch = QtCore.Signal(object)
+    keymanager_import_ok = QtCore.Signal(object)
+
+    keymanager_key_details = QtCore.Signal(object)
+
     # mail related signals
     imap_stopped = QtCore.Signal(object)
 
@@ -1134,6 +1269,17 @@ class Signaler(QtCore.QObject):
     SOLEDAD_PASSWORD_CHANGE_ERROR = "soledad_password_change_error"
 
     SOLEDAD_CANCELLED_BOOTSTRAP = "soledad_cancelled_bootstrap"
+
+    KEYMANAGER_EXPORT_OK = "keymanager_export_ok"
+    KEYMANAGER_EXPORT_ERROR = "keymanager_export_error"
+    KEYMANAGER_KEYS_LIST = "keymanager_keys_list"
+
+    KEYMANAGER_IMPORT_IOERROR = "keymanager_import_ioerror"
+    KEYMANAGER_IMPORT_DATAMISMATCH = "keymanager_import_datamismatch"
+    KEYMANAGER_IMPORT_MISSINGKEY = "keymanager_import_missingkey"
+    KEYMANAGER_IMPORT_ADDRESSMISMATCH = "keymanager_import_addressmismatch"
+    KEYMANAGER_IMPORT_OK = "keymanager_import_ok"
+    KEYMANAGER_KEY_DETAILS = "keymanager_key_details"
 
     IMAP_STOPPED = "imap_stopped"
 
@@ -1223,6 +1369,17 @@ class Signaler(QtCore.QObject):
             self.SOLEDAD_PASSWORD_CHANGE_OK,
             self.SOLEDAD_PASSWORD_CHANGE_ERROR,
 
+            self.KEYMANAGER_EXPORT_OK,
+            self.KEYMANAGER_EXPORT_ERROR,
+            self.KEYMANAGER_KEYS_LIST,
+
+            self.KEYMANAGER_IMPORT_IOERROR,
+            self.KEYMANAGER_IMPORT_DATAMISMATCH,
+            self.KEYMANAGER_IMPORT_MISSINGKEY,
+            self.KEYMANAGER_IMPORT_ADDRESSMISMATCH,
+            self.KEYMANAGER_IMPORT_OK,
+            self.KEYMANAGER_KEY_DETAILS,
+
             self.IMAP_STOPPED,
 
             self.BACKEND_BAD_CALL,
@@ -1292,6 +1449,8 @@ class Backend(object):
         self._register(Soledad(self._soledad_proxy,
                                self._keymanager_proxy,
                                self._signaler))
+        self._register(Keymanager(self._keymanager_proxy,
+                                  self._signaler))
         self._register(Mail(self._soledad_proxy,
                             self._keymanager_proxy,
                             self._signaler))
@@ -1749,6 +1908,43 @@ class Backend(object):
         """
         self._call_queue.put(("soledad", "close", None))
 
+    def keymanager_list_keys(self):
+        """
+        Signal a list of public keys locally stored.
+
+        Signals:
+            keymanager_keys_list -> list
+        """
+        self._call_queue.put(("keymanager", "list_keys", None))
+
+    def keymanager_export_keys(self, username, filename):
+        """
+        Export the given username's keys to a file.
+
+        :param username: the username whos keys we need to export.
+        :type username: str
+        :param filename: the name of the file where we want to save the keys.
+        :type filename: str
+
+        Signals:
+            keymanager_export_ok
+            keymanager_export_error
+        """
+        self._call_queue.put(("keymanager", "export_keys", None,
+                              username, filename))
+
+    def keymanager_get_key_details(self, username):
+        """
+        Signal the given username's key details.
+
+        :param username: the username whos keys we need to get details.
+        :type username: str
+
+        Signals:
+            keymanager_key_details
+        """
+        self._call_queue.put(("keymanager", "get_key_details", None, username))
+
     def smtp_start_service(self, full_user_id, download_if_needed=False):
         """
         Start the SMTP service.
@@ -1788,11 +1984,3 @@ class Backend(object):
             imap_stopped
         """
         self._call_queue.put(("mail", "stop_imap_service", None))
-
-    ###########################################################################
-    # XXX HACK: this section is meant to be a place to hold methods and
-    # variables needed in the meantime while we migrate all to the backend.
-
-    def get_keymanager(self):
-        km = self._components["soledad"]._soledad_bootstrapper._keymanager
-        return km
