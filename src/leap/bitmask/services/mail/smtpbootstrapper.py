@@ -152,7 +152,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
         self._provider_config = ProviderConfig.get_provider_config(domain)
         self._keymanager = keymanager
         self._smtp_config = SMTPConfig()
-        self._useid = userid
+        self._userid = userid
         self._download_if_needed = download_if_needed
 
         try:
