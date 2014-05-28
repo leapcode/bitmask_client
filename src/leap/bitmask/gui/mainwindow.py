@@ -23,14 +23,12 @@ import socket
 from datetime import datetime
 
 from PySide import QtCore, QtGui
-from zope.proxy import ProxyBase, setProxiedObject
 from twisted.internet import reactor, threads
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
-from leap.bitmask.config.providerconfig import ProviderConfig
 
 from leap.bitmask.gui import statemachines
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
@@ -43,7 +41,6 @@ from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
 
-from leap.bitmask import provider
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
 
@@ -64,7 +61,6 @@ if IS_WIN:
     from leap.bitmask.platform_init.locks import WindowsLock
     from leap.bitmask.platform_init.locks import raise_window_ack
 
-from leap.common.check import leap_assert
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
 
@@ -178,15 +174,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._trying_to_start_eip = False
 
-        # This is loaded only once, there's a bug when doing that more
-        # than once
-        # XXX HACK!! But we need it as long as we are using
-        # provider_config in here
-        self._provider_config = self._backend.get_provider_config()
-
-        # Used for automatic start of EIP
-        self._provisional_provider_config = ProviderConfig()
-
         self._already_started_eip = False
         self._soledad_started = False
 
@@ -247,6 +234,8 @@ class MainWindow(QtGui.QMainWindow):
         self._ui_mx_visible = True
         self._ui_eip_visible = True
 
+        self._provider_details = None
+
         # last minute UI manipulations
 
         self._center_window()
@@ -278,8 +267,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._bypass_checks = bypass_checks
         self._start_hidden = start_hidden
-
-        self._keymanager = ProxyBase(None)
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
@@ -383,6 +370,9 @@ class MainWindow(QtGui.QMainWindow):
         self._connect_and_track(sig.prov_cancelled_setup,
                                 self._set_login_cancelled)
 
+        self._connect_and_track(sig.prov_get_details,
+                                self._provider_get_details)
+
         # Login signals
         self._connect_and_track(sig.srp_auth_ok, self._authentication_finished)
 
@@ -430,8 +420,13 @@ class MainWindow(QtGui.QMainWindow):
 
         sig.backend_bad_call.connect(self._backend_bad_call)
 
+        sig.prov_check_api_certificate.connect(self._get_provider_details)
+
         sig.prov_unsupported_client.connect(self._needs_update)
         sig.prov_unsupported_api.connect(self._incompatible_api)
+
+        sig.prov_get_all_services.connect(
+            self._provider_get_all_services)
 
         # EIP start signals
         sig.eip_openvpn_already_running.connect(
@@ -597,13 +592,14 @@ class MainWindow(QtGui.QMainWindow):
         domain = self._login_widget.get_selected_provider()
         logged_user = "{0}@{1}".format(self._logged_user, domain)
 
-        has_mx = True
-        if self._logged_user is not None:
-            provider_config = self._get_best_provider_config()
-            has_mx = provider_config.provides_mx()
+        details = self._provider_details
+        mx_provided = False
+        if details is not None:
+            mx_provided = MX_SERVICE in details.services
 
-        akm = AdvancedKeyManagement(self, has_mx, logged_user,
-                                    self._keymanager, self._soledad_started)
+        # XXX: handle differently not logged in user?
+        akm = AdvancedKeyManagement(self, mx_provided, logged_user,
+                                    self._backend, self._soledad_started)
         akm.show()
 
     @QtCore.Slot()
@@ -618,8 +614,7 @@ class MainWindow(QtGui.QMainWindow):
         user = self._login_widget.get_user()
         prov = self._login_widget.get_selected_provider()
         preferences = PreferencesWindow(
-            self, self._backend, self._provider_config,
-            self._soledad_started, user, prov)
+            self, self._backend, self._soledad_started, user, prov)
 
         self.soledad_ready.connect(preferences.set_soledad_ready)
         preferences.show()
@@ -857,16 +852,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         providers = self._settings.get_configured_providers()
 
-        services = set()
+        self._backend.provider_get_all_services(providers)
 
-        for prov in providers:
-            provider_config = ProviderConfig()
-            loaded = provider_config.load(
-                provider.get_provider_path(prov))
-            if loaded:
-                for service in provider_config.get_services():
-                    services.add(service)
-
+    def _provider_get_all_services(self, services):
         self._set_eip_visible(EIP_SERVICE in services)
         self._set_mx_visible(MX_SERVICE in services)
 
@@ -904,14 +892,11 @@ class MainWindow(QtGui.QMainWindow):
         """
         Set the login label to reflect offline status.
         """
-        if self._logged_in_offline:
-            provider = ""
-        else:
+        provider = ""
+        if not self._logged_in_offline:
             provider = self.ui.lblLoginProvider.text()
 
-        self.ui.lblLoginProvider.setText(
-            provider +
-            self.tr(" (offline mode)"))
+        self.ui.lblLoginProvider.setText(provider + self.tr(" (offline mode)"))
 
     #
     # systray
@@ -1165,9 +1150,8 @@ class MainWindow(QtGui.QMainWindow):
         provider configuration if it's not present, otherwise will
         emit the corresponding signals inmediately
         """
-        # XXX should rename this provider, name clash.
-        provider = self._login_widget.get_selected_provider()
-        self._backend.provider_setup(provider)
+        domain = self._login_widget.get_selected_provider()
+        self._backend.provider_setup(domain)
 
     @QtCore.Slot(dict)
     def _load_provider_config(self, data):
@@ -1175,12 +1159,11 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self._backend.signaler.prov_download_provider_info
 
-        Once the provider config has been downloaded, this loads the
-        self._provider_config instance with it and starts the second
-        part of the bootstrapping sequence
+        Once the provider config has been downloaded, start the second
+        part of the bootstrapping sequence.
 
         :param data: result from the last stage of the
-                     run_provider_select_checks
+                     backend.provider_setup()
         :type data: dict
         """
         if data[self._backend.PASSED_KEY]:
@@ -1222,7 +1205,6 @@ class MainWindow(QtGui.QMainWindow):
             self._set_label_offline()
             self.offline_mode_bypass_login.emit()
         else:
-            leap_assert(self._provider_config, "We need a provider config")
             self.ui.action_create_new_account.setEnabled(False)
             if self._login_widget.start_login():
                 self._download_provider_config()
@@ -1290,15 +1272,13 @@ class MainWindow(QtGui.QMainWindow):
         Once the provider configuration is loaded, this starts the SRP
         authentication
         """
-        leap_assert(self._provider_config, "We need a provider config!")
-
         if data[self._backend.PASSED_KEY]:
             username = self._login_widget.get_user()
             password = self._login_widget.get_password()
 
             self._show_hide_unsupported_services()
 
-            domain = self._provider_config.get_domain()
+            domain = self._login_widget.get_selected_provider()
             self._backend.user_login(domain, username, password)
         else:
             logger.error(data[self._backend.ERROR_KEY])
@@ -1317,7 +1297,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self._logged_user = self._login_widget.get_user()
         user = self._logged_user
-        domain = self._provider_config.get_domain()
+        domain = self._login_widget.get_selected_provider()
         full_user_id = make_address(user, domain)
         self._mail_conductor.userid = full_user_id
         self._start_eip_bootstrap()
@@ -1331,7 +1311,7 @@ class MainWindow(QtGui.QMainWindow):
             sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
             sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
-        if not self._get_best_provider_config().provides_mx():
+        if not MX_SERVICE in self._provider_details.services:
             self._set_mx_visible(False)
 
     def _start_eip_bootstrap(self):
@@ -1341,11 +1321,10 @@ class MainWindow(QtGui.QMainWindow):
         """
 
         self._login_widget.logged_in()
-        provider = self._provider_config.get_domain()
-        self.ui.lblLoginProvider.setText(provider)
+        domain = self._login_widget.get_selected_provider()
+        self.ui.lblLoginProvider.setText(domain)
 
-        self._enabled_services = self._settings.get_enabled_services(
-            self._provider_config.get_domain())
+        self._enabled_services = self._settings.get_enabled_services(domain)
 
         # TODO separate UI from logic.
         if self._provides_mx_and_enabled():
@@ -1355,6 +1334,30 @@ class MainWindow(QtGui.QMainWindow):
 
         self._maybe_start_eip()
 
+    @QtCore.Slot()
+    def _get_provider_details(self):
+        """
+        TRIGGERS:
+            prov_check_api_certificate
+
+        Set the attributes to know if the EIP and MX services are supported
+        and enabled.
+        This is triggered right after the provider has been set up.
+        """
+        domain = self._login_widget.get_selected_provider()
+        lang = QtCore.QLocale.system().name()
+        self._backend.provider_get_details(domain, lang)
+
+    @QtCore.Slot()
+    def _provider_get_details(self, details):
+        """
+        Set the details for the just downloaded provider.
+
+        :param details: the details of the provider.
+        :type details: ProviderConfigLight
+        """
+        self._provider_details = details
+
     def _provides_mx_and_enabled(self):
         """
         Defines if the current provider provides mx and if we have it enabled.
@@ -1362,9 +1365,15 @@ class MainWindow(QtGui.QMainWindow):
         :returns: True if provides and is enabled, False otherwise
         :rtype: bool
         """
-        provider_config = self._get_best_provider_config()
-        return (provider_config.provides_mx() and
-                MX_SERVICE in self._enabled_services)
+        domain = self._login_widget.get_selected_provider()
+        enabled_services = self._settings.get_enabled_services(domain)
+
+        mx_enabled = MX_SERVICE in enabled_services
+        mx_provided = False
+        if self._provider_details is not None:
+            mx_provided = MX_SERVICE in self._provider_details.services
+
+        return mx_enabled and mx_provided
 
     def _provides_eip_and_enabled(self):
         """
@@ -1373,16 +1382,23 @@ class MainWindow(QtGui.QMainWindow):
         :returns: True if provides and is enabled, False otherwise
         :rtype: bool
         """
-        provider_config = self._get_best_provider_config()
-        return (provider_config.provides_eip() and
-                EIP_SERVICE in self._enabled_services)
+        domain = self._login_widget.get_selected_provider()
+        enabled_services = self._settings.get_enabled_services(domain)
+
+        eip_enabled = EIP_SERVICE in enabled_services
+        eip_provided = False
+        if self._provider_details is not None:
+            eip_provided = EIP_SERVICE in self._provider_details.services
+
+        return eip_enabled and eip_provided
 
     def _maybe_run_soledad_setup_checks(self):
         """
         Conditionally start Soledad.
         """
         # TODO split.
-        if not self._provides_mx_and_enabled():
+        if not self._provides_mx_and_enabled() and not flags.OFFLINE:
+            logger.debug("Does not provides and enabled MX")
             return
 
         username = self._login_widget.get_user()
@@ -1390,9 +1406,6 @@ class MainWindow(QtGui.QMainWindow):
         provider_domain = self._login_widget.get_selected_provider()
 
         if flags.OFFLINE:
-            self._provisional_provider_config.load(
-                provider.get_provider_path(provider_domain))
-
             full_user_id = make_address(username, provider_domain)
             uuid = self._settings.get_uuid(full_user_id)
             self._mail_conductor.userid = full_user_id
@@ -1405,7 +1418,7 @@ class MainWindow(QtGui.QMainWindow):
             self._backend.soledad_load_offline(full_user_id, password, uuid)
         else:
             if self._logged_user is not None:
-                domain = self._provider_config.get_domain()
+                domain = self._login_widget.get_selected_provider()
                 self._backend.soledad_bootstrap(username, domain, password)
 
     ###################################################################
@@ -1421,12 +1434,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug("Done bootstrapping Soledad")
 
-        # Update the proxy objects to point to the initialized instances.
-        # setProxiedObject(self._soledad, self._backend.get_soledad())
-        setProxiedObject(self._keymanager, self._backend.get_keymanager())
-
         self._soledad_started = True
-
         self.soledad_ready.emit()
 
     ###################################################################
@@ -1457,19 +1465,8 @@ class MainWindow(QtGui.QMainWindow):
         # TODO in the OFFLINE mode we should also modify the  rules
         # in the mail state machine so it shows that imap is active
         # (but not smtp since it's not yet ready for offline use)
-        start_fun = self._mail_conductor.start_imap_service
-        if flags.OFFLINE:
-            provider_domain = self._login_widget.get_selected_provider()
-            self._provider_config.load(
-                provider.get_provider_path(provider_domain))
-        provides_mx = self._provider_config.provides_mx()
-
-        if flags.OFFLINE and provides_mx:
-            start_fun()
-            return
-
-        if self._provides_mx_and_enabled():
-            start_fun()
+        if self._provides_mx_and_enabled() or flags.OFFLINE:
+            self._mail_conductor.start_imap_service()
 
     # end service control methods (imap)
 
@@ -1519,9 +1516,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._eip_connection.qtsigs.connected_signal.emit()
 
-        provider_config = self._get_best_provider_config()
-        domain = provider_config.get_domain()
-
+        domain = self._login_widget.get_selected_provider()
         self._eip_status.set_provider(domain)
         self._settings.set_defaultprovider(domain)
         self._already_started_eip = True
@@ -1582,19 +1577,8 @@ class MainWindow(QtGui.QMainWindow):
         self._enabled_services = settings.get_enabled_services(
             default_provider)
 
-        loaded = self._provisional_provider_config.load(
-            provider.get_provider_path(default_provider))
-        if loaded and settings.get_autostart_eip():
-            # XXX I think we should not try to re-download config every time,
-            # it adds some delay.
-            # Maybe if it's the first run in a session,
-            # or we can try only if it fails.
+        if settings.get_autostart_eip():
             self._maybe_start_eip()
-        elif settings.get_autostart_eip():
-            # XXX: Display a proper message to the user
-            self.eip_needs_login.emit()
-            logger.error("Unable to load %s config, cannot autostart." %
-                         (default_provider,))
 
     @QtCore.Slot()
     def _start_EIP(self):
@@ -1700,11 +1684,12 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Setting autostart to: False')
         self._settings.set_autostart_eip(False)
 
-        if self._logged_user:
-            self._eip_status.set_provider(
-                make_address(
-                    self._logged_user,
-                    self._get_best_provider_config().get_domain()))
+        user = self._logged_user
+        if user:
+            domain = self._login_widget.get_selected_provider()
+            full_user_id = make_address(user, domain)
+            self._eip_status.set_provider(full_user_id)
+
         self._eip_status.eip_stopped()
 
     @QtCore.Slot()
@@ -1873,30 +1858,6 @@ class MainWindow(QtGui.QMainWindow):
             self._already_started_eip = False
 
     # end of EIP methods ---------------------------------------------
-
-    def _get_best_provider_config(self):
-        """
-        Returns the best ProviderConfig to use at a moment. We may
-        have to use self._provider_config or
-        self._provisional_provider_config depending on the start
-        status.
-
-        :rtype: ProviderConfig
-        """
-        # TODO move this out of gui.
-        leap_assert(self._provider_config is not None or
-                    self._provisional_provider_config is not None,
-                    "We need a provider config")
-
-        provider_config = None
-        if self._provider_config.loaded():
-            provider_config = self._provider_config
-        elif self._provisional_provider_config.loaded():
-            provider_config = self._provisional_provider_config
-        else:
-            leap_assert(False, "We could not find any usable ProviderConfig.")
-
-        return provider_config
 
     @QtCore.Slot()
     def _logout(self):

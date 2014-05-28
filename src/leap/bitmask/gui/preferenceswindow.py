@@ -24,12 +24,9 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
-from leap.bitmask.provider import get_provider_path
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.bitmask.util.credentials import password_checks
-from leap.bitmask.services import get_supported
-from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services import get_service_display_name, MX_SERVICE
 
 logger = logging.getLogger(__name__)
@@ -41,15 +38,12 @@ class PreferencesWindow(QtGui.QDialog):
     """
     preferences_saved = QtCore.Signal()
 
-    def __init__(self, parent, backend, provider_config, soledad_started,
-                 username, domain):
+    def __init__(self, parent, backend, soledad_started, username, domain):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
         :param backend: Backend being used
         :type backend: Backend
-        :param provider_config: ProviderConfig object.
-        :type provider_config: ProviderConfig
         :param soledad_started: whether soledad has started or not
         :type soledad_started: bool
         :param username: the user set in the login widget
@@ -62,7 +56,6 @@ class PreferencesWindow(QtGui.QDialog):
 
         self._backend = backend
         self._settings = LeapSettings()
-        self._provider_config = provider_config
         self._soledad_started = soledad_started
         self._username = username
         self._domain = domain
@@ -99,31 +92,7 @@ class PreferencesWindow(QtGui.QDialog):
 
         Actions to perform is the user is logged in.
         """
-        settings = self._settings
-        pw_enabled = True
-
-        # check if provider has 'mx' ...
-        # TODO: we should move this to the backend.
-        if self._provider_config.provides_mx():
-            enabled_services = settings.get_enabled_services(self._domain)
-            mx_name = get_service_display_name(MX_SERVICE)
-
-            # ... and if the user have it enabled
-            if MX_SERVICE not in enabled_services:
-                msg = self.tr("You need to enable {0} in order to change "
-                              "the password.".format(mx_name))
-                self._set_password_change_status(msg, error=True)
-                pw_enabled = False
-            else:
-                # check if Soledad is bootstrapped
-                if not self._soledad_started:
-                    msg = self.tr(
-                        "You need to wait until {0} is ready in "
-                        "order to change the password.".format(mx_name))
-                    self._set_password_change_status(msg)
-                    pw_enabled = False
-
-        self.ui.gbPasswordChange.setEnabled(pw_enabled)
+        self._backend.provider_provides_mx()
 
     @QtCore.Slot()
     def _not_logged_in(self):
@@ -136,6 +105,44 @@ class PreferencesWindow(QtGui.QDialog):
         msg = self.tr(
             "In order to change your password you need to be logged in.")
         self._set_password_change_status(msg)
+        self.ui.gbPasswordChange.setEnabled(False)
+
+    @QtCore.Slot()
+    def _provides_mx(self):
+        """
+        TRIGGERS:
+            Signaler.prov_provides_mx
+
+        Actions to perform if the provider provides MX.
+        """
+        pw_enabled = True
+        enabled_services = self._settings.get_enabled_services(self._domain)
+        mx_name = get_service_display_name(MX_SERVICE)
+
+        if MX_SERVICE not in enabled_services:
+            msg = self.tr("You need to enable {0} in order to change "
+                          "the password.".format(mx_name))
+            self._set_password_change_status(msg, error=True)
+            pw_enabled = False
+        else:
+            # check if Soledad is bootstrapped
+            if not self._soledad_started:
+                msg = self.tr(
+                    "You need to wait until {0} is ready in "
+                    "order to change the password.".format(mx_name))
+                self._set_password_change_status(msg)
+                pw_enabled = False
+
+        self.ui.gbPasswordChange.setEnabled(pw_enabled)
+
+    @QtCore.Slot()
+    def _not_provides_mx(self):
+        """
+        TRIGGERS:
+            Signaler.prov_not_provides_mx
+
+        Actions to perform if the provider does not provides MX.
+        """
         self.ui.gbPasswordChange.setEnabled(False)
 
     @QtCore.Slot()
@@ -339,8 +346,7 @@ class PreferencesWindow(QtGui.QDialog):
         TRIGGERS:
             self.ui.cbProvidersServices.currentIndexChanged[unicode]
 
-        Loads the services that the provider provides into the UI for
-        the user to enable or disable.
+        Fill the services list with the selected provider's services.
 
         :param domain: the domain of the provider to load services from.
         :type domain: str
@@ -349,10 +355,6 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui.lblProvidersServicesStatus.setVisible(False)
 
         if not domain:
-            return
-
-        provider_config = self._get_provider_config(domain)
-        if provider_config is None:
             return
 
         # set the proper connection for the 'save' button
@@ -364,7 +366,21 @@ class PreferencesWindow(QtGui.QDialog):
         save_services = partial(self._save_enabled_services, domain)
         self.ui.pbSaveServices.clicked.connect(save_services)
 
-        services = get_supported(provider_config.get_services())
+        self._backend.provider_get_supported_services(domain)
+
+    @QtCore.Slot(str)
+    def _load_services(self, services):
+        """
+        TRIGGERS:
+            self.ui.cbProvidersServices.currentIndexChanged[unicode]
+
+        Loads the services that the provider provides into the UI for
+        the user to enable or disable.
+
+        :param domain: the domain of the provider to load services from.
+        :type domain: str
+        """
+        domain = self.ui.cbProvidersServices.currentText()
         services_conf = self._settings.get_enabled_services(domain)
 
         # discard changes if other provider is selected
@@ -412,26 +428,14 @@ class PreferencesWindow(QtGui.QDialog):
         self._set_providers_services_status(msg, success=True)
         self.preferences_saved.emit()
 
-    def _get_provider_config(self, domain):
-        """
-        Helper to return a valid Provider Config from the domain name.
-
-        :param domain: the domain name of the provider.
-        :type domain: str
-
-        :rtype: ProviderConfig or None if there is a problem loading the config
-        """
-        provider_config = ProviderConfig()
-        if not provider_config.load(get_provider_path(domain)):
-            provider_config = None
-
-        return provider_config
-
     def _backend_connect(self):
         """
         Helper to connect to backend signals
         """
         sig = self._backend.signaler
+
+        sig.prov_provides_mx.connect(self._provides_mx)
+        sig.prov_get_supported_services.connect(self._load_services)
 
         sig.srp_status_logged_in.connect(self._is_logged_in)
         sig.srp_status_not_logged_in.connect(self._not_logged_in)

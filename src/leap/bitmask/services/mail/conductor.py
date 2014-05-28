@@ -249,8 +249,8 @@ class MailConductor(IMAPControl, SMTPControl):
         """
         Stop the IMAP and SMTP services.
         """
-        self.imap_stop_service()
-        self.smtp_stop_service()
+        self.stop_imap_service()
+        self.stop_smtp_service()
 
     def connect_mail_signals(self, widget):
         """

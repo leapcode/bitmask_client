@@ -37,8 +37,8 @@ from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.platform_init import IS_LINUX
-from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services import get_supported
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
@@ -56,32 +56,15 @@ from leap.bitmask.services.soledad.soledadbootstrapper import \
 
 from leap.common import certs as leap_certs
 
+from leap.keymanager import openpgp
+from leap.keymanager.errors import KeyAddressMismatch, KeyFingerprintMismatch
+
 from leap.soledad.client import NoStorageSecret, PassphraseTooShort
 
 # Frontend side
 from PySide import QtCore
 
 logger = logging.getLogger(__name__)
-
-
-def get_provider_config(config, domain):
-    """
-    Return the ProviderConfig object for the given domain.
-    If it is already loaded in `config`, then don't reload.
-
-    :param config: a ProviderConfig object
-    :type conig: ProviderConfig
-    :param domain: the domain which config is required.
-    :type domain: unicode
-
-    :returns: True if the config was loaded successfully, False otherwise.
-    :rtype: bool
-    """
-    # TODO: see ProviderConfig.get_provider_config
-    if (not config.loaded() or config.get_domain() != domain):
-        config.load(get_provider_path(domain))
-
-    return config.loaded()
 
 
 class ILEAPComponent(zope.interface.Interface):
@@ -167,6 +150,7 @@ class Provider(object):
         :type bypass_checks: bool
         """
         self.key = "provider"
+        self._signaler = signaler
         self._provider_bootstrapper = ProviderBootstrapper(signaler,
                                                            bypass_checks)
         self._download_provider_defer = None
@@ -208,13 +192,9 @@ class Provider(object):
         """
         d = None
 
-        # TODO: use this commented code when we don't need the provider config
-        # in the maiwindow.
-        # config = ProviderConfig.get_provider_config(provider)
-        # self._provider_config = config
-        # if config is not None:
-        config = self._provider_config
-        if get_provider_config(config, provider):
+        config = ProviderConfig.get_provider_config(provider)
+        self._provider_config = config
+        if config is not None:
             d = self._provider_bootstrapper.run_provider_setup_checks(
                 config, download_if_needed=True)
         else:
@@ -227,6 +207,73 @@ class Provider(object):
         if d is None:
             d = defer.Deferred()
         return d
+
+    def _get_services(self, domain):
+        """
+        Returns a list of services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        :rtype: list of str
+        """
+        services = []
+        provider_config = ProviderConfig.get_provider_config(domain)
+        if provider_config is not None:
+            services = provider_config.get_services()
+
+        return services
+
+    def get_supported_services(self, domain):
+        """
+        Signal a list of supported services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        Signals:
+            prov_get_supported_services -> list of unicode
+        """
+        services = get_supported(self._get_services(domain))
+
+        self._signaler.signal(
+            self._signaler.PROV_GET_SUPPORTED_SERVICES, services)
+
+    def get_all_services(self, providers):
+        """
+        Signal a list of services provided by all the configured providers.
+
+        :param providers: the list of providers to get the services.
+        :type providers: list
+
+        Signals:
+            prov_get_all_services -> list of unicode
+        """
+        services_all = set()
+
+        for domain in providers:
+            services = self._get_services(domain)
+            services_all = services_all.union(set(services))
+
+        self._signaler.signal(
+            self._signaler.PROV_GET_ALL_SERVICES, services_all)
+
+    def get_details(self, domain, lang=None):
+        """
+        Signal a ProviderConfigLight object with the current ProviderConfig
+        settings.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+        :param lang: the language to use for localized strings.
+        :type lang: str
+
+        Signals:
+            prov_get_details -> ProviderConfigLight
+        """
+        self._signaler.signal(
+            self._signaler.PROV_GET_DETAILS,
+            self._provider_config.get_light_config(domain, lang))
 
 
 class Register(object):
@@ -701,6 +748,125 @@ class Soledad(object):
         d.addErrback(self._change_password_error)
 
 
+class Keymanager(object):
+    """
+    Interfaces with KeyManager.
+    """
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, keymanager_proxy, signaler=None):
+        """
+        Constructor for the Keymanager component.
+
+        :param keymanager_proxy: proxy to pass around a Keymanager object.
+        :type keymanager_proxy: zope.ProxyBase
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        self.key = "keymanager"
+        self._keymanager_proxy = keymanager_proxy
+        self._signaler = signaler
+
+    def import_keys(self, username, filename):
+        """
+        Imports the username's key pair.
+        Those keys need to be ascii armored.
+
+        :param username: the user that will have the imported pair of keys.
+        :type username: str
+        :param filename: the name of the file where the key pair is stored.
+        :type filename: str
+        """
+        # NOTE: This feature is disabled right now since is dangerous
+        return
+
+        new_key = ''
+        signal = None
+        try:
+            with open(filename, 'r') as keys_file:
+                new_key = keys_file.read()
+        except IOError as e:
+            logger.error("IOError importing key. {0!r}".format(e))
+            signal = self._signaler.KEYMANAGER_IMPORT_IOERROR
+            self._signaler.signal(signal)
+            return
+
+        keymanager = self._keymanager_proxy
+        try:
+            public_key, private_key = keymanager.parse_openpgp_ascii_key(
+                new_key)
+        except (KeyAddressMismatch, KeyFingerprintMismatch) as e:
+            logger.error(repr(e))
+            signal = self._signaler.KEYMANAGER_IMPORT_DATAMISMATCH
+            self._signaler.signal(signal)
+            return
+
+        if public_key is None or private_key is None:
+            signal = self._signaler.KEYMANAGER_IMPORT_MISSINGKEY
+            self._signaler.signal(signal)
+            return
+
+        current_public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
+        if public_key.address != current_public_key.address:
+            logger.error("The key does not match the ID")
+            signal = self._signaler.KEYMANAGER_IMPORT_ADDRESSMISMATCH
+            self._signaler.signal(signal)
+            return
+
+        keymanager.delete_key(self._key)
+        keymanager.delete_key(self._key_priv)
+        keymanager.put_key(public_key)
+        keymanager.put_key(private_key)
+        keymanager.send_key(openpgp.OpenPGPKey)
+
+        logger.debug('Import ok')
+        signal = self._signaler.KEYMANAGER_IMPORT_OK
+
+        self._signaler.signal(signal)
+
+    def export_keys(self, username, filename):
+        """
+        Export the given username's keys to a file.
+
+        :param username: the username whos keys we need to export.
+        :type username: str
+        :param filename: the name of the file where we want to save the keys.
+        :type filename: str
+        """
+        keymanager = self._keymanager_proxy
+
+        public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
+        private_key = keymanager.get_key(username, openpgp.OpenPGPKey,
+                                         private=True)
+        try:
+            with open(filename, 'w') as keys_file:
+                keys_file.write(public_key.key_data)
+                keys_file.write(private_key.key_data)
+
+            logger.debug('Export ok')
+            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_OK)
+        except IOError as e:
+            logger.error("IOError exporting key. {0!r}".format(e))
+            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_ERROR)
+
+    def list_keys(self):
+        """
+        List all the keys stored in the local DB.
+        """
+        keys = self._keymanager_proxy.get_all_keys_in_local_db()
+        self._signaler.signal(self._signaler.KEYMANAGER_KEYS_LIST, keys)
+
+    def get_key_details(self, username):
+        """
+        List all the keys stored in the local DB.
+        """
+        public_key = self._keymanager_proxy.get_key(username,
+                                                    openpgp.OpenPGPKey)
+        details = (public_key.key_id, public_key.fingerprint)
+        self._signaler.signal(self._signaler.KEYMANAGER_KEY_DETAILS, details)
+
+
 class Mail(object):
     """
     Interfaces with setup and launch of Mail.
@@ -926,6 +1092,10 @@ class Signaler(QtCore.QObject):
     prov_unsupported_client = QtCore.Signal(object)
     prov_unsupported_api = QtCore.Signal(object)
 
+    prov_get_all_services = QtCore.Signal(object)
+    prov_get_supported_services = QtCore.Signal(object)
+    prov_get_details = QtCore.Signal(object)
+
     prov_cancelled_setup = QtCore.Signal(object)
 
     # Signals for SRPRegister
@@ -999,6 +1169,19 @@ class Signaler(QtCore.QObject):
     soledad_password_change_ok = QtCore.Signal(object)
     soledad_password_change_error = QtCore.Signal(object)
 
+    # Keymanager signals
+    keymanager_export_ok = QtCore.Signal(object)
+    keymanager_export_error = QtCore.Signal(object)
+    keymanager_keys_list = QtCore.Signal(object)
+
+    keymanager_import_ioerror = QtCore.Signal(object)
+    keymanager_import_datamismatch = QtCore.Signal(object)
+    keymanager_import_missingkey = QtCore.Signal(object)
+    keymanager_import_addressmismatch = QtCore.Signal(object)
+    keymanager_import_ok = QtCore.Signal(object)
+
+    keymanager_key_details = QtCore.Signal(object)
+
     # mail related signals
     imap_stopped = QtCore.Signal(object)
 
@@ -1021,6 +1204,9 @@ class Signaler(QtCore.QObject):
     PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
     PROV_UNSUPPORTED_API = "prov_unsupported_api"
     PROV_CANCELLED_SETUP = "prov_cancelled_setup"
+    PROV_GET_ALL_SERVICES = "prov_get_all_services"
+    PROV_GET_SUPPORTED_SERVICES = "prov_get_supported_services"
+    PROV_GET_DETAILS = "prov_get_details"
 
     SRP_REGISTRATION_FINISHED = "srp_registration_finished"
     SRP_REGISTRATION_FAILED = "srp_registration_failed"
@@ -1084,6 +1270,17 @@ class Signaler(QtCore.QObject):
 
     SOLEDAD_CANCELLED_BOOTSTRAP = "soledad_cancelled_bootstrap"
 
+    KEYMANAGER_EXPORT_OK = "keymanager_export_ok"
+    KEYMANAGER_EXPORT_ERROR = "keymanager_export_error"
+    KEYMANAGER_KEYS_LIST = "keymanager_keys_list"
+
+    KEYMANAGER_IMPORT_IOERROR = "keymanager_import_ioerror"
+    KEYMANAGER_IMPORT_DATAMISMATCH = "keymanager_import_datamismatch"
+    KEYMANAGER_IMPORT_MISSINGKEY = "keymanager_import_missingkey"
+    KEYMANAGER_IMPORT_ADDRESSMISMATCH = "keymanager_import_addressmismatch"
+    KEYMANAGER_IMPORT_OK = "keymanager_import_ok"
+    KEYMANAGER_KEY_DETAILS = "keymanager_key_details"
+
     IMAP_STOPPED = "imap_stopped"
 
     BACKEND_BAD_CALL = "backend_bad_call"
@@ -1106,6 +1303,9 @@ class Signaler(QtCore.QObject):
             self.PROV_UNSUPPORTED_CLIENT,
             self.PROV_UNSUPPORTED_API,
             self.PROV_CANCELLED_SETUP,
+            self.PROV_GET_ALL_SERVICES,
+            self.PROV_GET_SUPPORTED_SERVICES,
+            self.PROV_GET_DETAILS,
 
             self.SRP_REGISTRATION_FINISHED,
             self.SRP_REGISTRATION_FAILED,
@@ -1168,6 +1368,17 @@ class Signaler(QtCore.QObject):
 
             self.SOLEDAD_PASSWORD_CHANGE_OK,
             self.SOLEDAD_PASSWORD_CHANGE_ERROR,
+
+            self.KEYMANAGER_EXPORT_OK,
+            self.KEYMANAGER_EXPORT_ERROR,
+            self.KEYMANAGER_KEYS_LIST,
+
+            self.KEYMANAGER_IMPORT_IOERROR,
+            self.KEYMANAGER_IMPORT_DATAMISMATCH,
+            self.KEYMANAGER_IMPORT_MISSINGKEY,
+            self.KEYMANAGER_IMPORT_ADDRESSMISMATCH,
+            self.KEYMANAGER_IMPORT_OK,
+            self.KEYMANAGER_KEY_DETAILS,
 
             self.IMAP_STOPPED,
 
@@ -1238,6 +1449,8 @@ class Backend(object):
         self._register(Soledad(self._soledad_proxy,
                                self._keymanager_proxy,
                                self._signaler))
+        self._register(Keymanager(self._keymanager_proxy,
+                                  self._signaler))
         self._register(Mail(self._soledad_proxy,
                             self._keymanager_proxy,
                             self._signaler))
@@ -1392,6 +1605,47 @@ class Backend(object):
             prov_check_api_certificate -> {PASSED_KEY: bool, ERROR_KEY: str}
         """
         self._call_queue.put(("provider", "bootstrap", None, provider))
+
+    def provider_get_supported_services(self, domain):
+        """
+        Signal a list of supported services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        Signals:
+            prov_get_supported_services -> list of unicode
+        """
+        self._call_queue.put(("provider", "get_supported_services", None,
+                              domain))
+
+    def provider_get_all_services(self, providers):
+        """
+        Signal a list of services provided by all the configured providers.
+
+        :param providers: the list of providers to get the services.
+        :type providers: list
+
+        Signals:
+            prov_get_all_services -> list of unicode
+        """
+        self._call_queue.put(("provider", "get_all_services", None,
+                              providers))
+
+    def provider_get_details(self, domain, lang):
+        """
+        Signal a ProviderConfigLight object with the current ProviderConfig
+        settings.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+        :param lang: the language to use for localized strings.
+        :type lang: str
+
+        Signals:
+            prov_get_details -> ProviderConfigLight
+        """
+        self._call_queue.put(("provider", "get_details", None, domain, lang))
 
     def user_register(self, provider, username, password):
         """
@@ -1654,6 +1908,43 @@ class Backend(object):
         """
         self._call_queue.put(("soledad", "close", None))
 
+    def keymanager_list_keys(self):
+        """
+        Signal a list of public keys locally stored.
+
+        Signals:
+            keymanager_keys_list -> list
+        """
+        self._call_queue.put(("keymanager", "list_keys", None))
+
+    def keymanager_export_keys(self, username, filename):
+        """
+        Export the given username's keys to a file.
+
+        :param username: the username whos keys we need to export.
+        :type username: str
+        :param filename: the name of the file where we want to save the keys.
+        :type filename: str
+
+        Signals:
+            keymanager_export_ok
+            keymanager_export_error
+        """
+        self._call_queue.put(("keymanager", "export_keys", None,
+                              username, filename))
+
+    def keymanager_get_key_details(self, username):
+        """
+        Signal the given username's key details.
+
+        :param username: the username whos keys we need to get details.
+        :type username: str
+
+        Signals:
+            keymanager_key_details
+        """
+        self._call_queue.put(("keymanager", "get_key_details", None, username))
+
     def smtp_start_service(self, full_user_id, download_if_needed=False):
         """
         Start the SMTP service.
@@ -1693,21 +1984,3 @@ class Backend(object):
             imap_stopped
         """
         self._call_queue.put(("mail", "stop_imap_service", None))
-
-    ###########################################################################
-    # XXX HACK: this section is meant to be a place to hold methods and
-    # variables needed in the meantime while we migrate all to the backend.
-
-    def get_provider_config(self):
-        # TODO: refactor the provider config into a singleton/global loading it
-        # every time from the file.
-        provider_config = self._components["provider"]._provider_config
-        return provider_config
-
-    def get_soledad(self):
-        soledad = self._components["soledad"]._soledad_bootstrapper._soledad
-        return soledad
-
-    def get_keymanager(self):
-        km = self._components["soledad"]._soledad_bootstrapper._keymanager
-        return km

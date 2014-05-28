@@ -188,8 +188,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         try:
             self.load_and_sync_soledad(uuid, offline=True)
             self._signaler.signal(self._signaler.SOLEDAD_OFFLINE_FINISHED)
-        except Exception:
+        except Exception as e:
             # TODO: we should handle more specific exceptions in here
+            logger.exception(e)
             self._signaler.signal(self._signaler.SOLEDAD_OFFLINE_FAILED)
 
     def _get_soledad_local_params(self, uuid, offline=False):
