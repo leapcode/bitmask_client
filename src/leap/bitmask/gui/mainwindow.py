@@ -158,6 +158,8 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_conductor.connect_signals()
         self._eip_conductor.qtsigs.connected_signal.connect(
             self._on_eip_connection_connected)
+        self._eip_conductor.qtsigs.disconnected_signal.connect(
+            self._on_eip_connection_disconnected)
         self._eip_conductor.qtsigs.connected_signal.connect(
             self._maybe_run_soledad_setup_checks)
 
@@ -1465,6 +1467,25 @@ class MainWindow(QtGui.QMainWindow):
 
         # check for connectivity
         self._check_name_resolution(domain)
+
+    @QtCore.Slot()
+    def _on_eip_connection_disconnected(self):
+        """
+        TRIGGERS:
+            self._eip_conductor.qtsigs.disconnected_signal
+
+        Workaround for updating the eip_status widget with
+        the provider when the eip connection disconnects.
+        """
+        # TODO
+        # We should move this to the conductor<->widget interface.
+        # To do that, we need to subscribe to logged_user,
+        # for example by using the observer pattern or a proxy object.
+        user = self._logged_user
+        if user:
+            domain = self._login_widget.get_selected_provider()
+            full_user_id = make_address(user, domain)
+            self._eip_status.set_provider(full_user_id)
 
     def _check_name_resolution(self, domain):
         # FIXME this has to be moved to backend !!!
