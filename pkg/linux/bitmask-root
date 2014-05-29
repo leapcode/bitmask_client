@@ -758,11 +758,11 @@ def firewall_start(args):
         # allow multicast Simple Service Discovery Protocol
         ip4tables("--insert", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "239.255.255.250", "--dport", "1900",
-                  "-o", default_device, "--jump", "ACCEPT")
+                  "-o", default_device, "--jump", "RETURN")
         # allow multicast Bonjour/mDNS
         ip4tables("--insert", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "224.0.0.251", "--dport", "5353",
-                  "-o", default_device, "--jump", "ACCEPT")
+                  "-o", default_device, "--jump", "RETURN")
     if local_network_ipv6:
         ip6tables("--insert", BITMASK_CHAIN,
                   "--destination", local_network_ipv6, "-o", default_device,
@@ -770,11 +770,11 @@ def firewall_start(args):
         # allow multicast Simple Service Discovery Protocol
         ip6tables("--insert", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "FF05::C", "--dport", "1900",
-                  "-o", default_device, "--jump", "ACCEPT")
+                  "-o", default_device, "--jump", "RETURN")
         # allow multicast Bonjour/mDNS
         ip6tables("--insert", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "FF02::FB", "--dport", "5353",
-                  "-o", default_device, "--jump", "ACCEPT")
+                  "-o", default_device, "--jump", "RETURN")
 
 
     # block DNS requests to anyone but the service provider or localhost
