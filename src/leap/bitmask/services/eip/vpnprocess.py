@@ -70,7 +70,7 @@ class VPNObserver(object):
         'NETWORK_UNREACHABLE': (
             'Network is unreachable (code=101)',),
         'PROCESS_RESTART_TLS': (
-            "SIGUSR1[soft,tls-error]",),
+            "SIGTERM[soft,tls-error]",),
         'PROCESS_RESTART_PING': (
             "SIGTERM[soft,ping-restart]",),
         'INITIALIZATION_COMPLETED': (
@@ -116,10 +116,12 @@ class VPNObserver(object):
         :returns: a Signaler signal or None
         :rtype: str or None
         """
+        sig = self._signaler
         signals = {
-            "network_unreachable": self._signaler.EIP_NETWORK_UNREACHABLE,
-            "process_restart_tls": self._signaler.EIP_PROCESS_RESTART_TLS,
-            "process_restart_ping": self._signaler.EIP_PROCESS_RESTART_PING,
+            "network_unreachable": sig.EIP_NETWORK_UNREACHABLE,
+            "process_restart_tls": sig.EIP_PROCESS_RESTART_TLS,
+            "process_restart_ping": sig.EIP_PROCESS_RESTART_PING,
+            "initialization_completed": sig.EIP_CONNECTED
         }
         return signals.get(event.lower())
 
@@ -318,6 +320,7 @@ class VPN(object):
         # We assume that the only valid stops are initiated
         # by an user action, not hard restarts
         self._user_stopped = not restart
+        self._vpnproc.is_restart = restart
 
         # First we try to be polite and send a SIGTERM...
         if self._vpnproc:
@@ -755,7 +758,7 @@ class VPNManager(object):
                 # However, that should be a rare case right now.
                 self._send_command("signal SIGTERM")
                 self._close_management_socket(announce=True)
-            except Exception as e:
+            except (Exception, AssertionError) as e:
                 logger.warning("Problem trying to terminate OpenVPN: %r"
                                % (e,))
         else:
@@ -824,6 +827,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         self._openvpn_verb = openvpn_verb
 
         self._vpn_observer = VPNObserver(signaler)
+        self.is_restart = False
 
     # processProtocol methods
 
@@ -859,7 +863,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         exit_code = reason.value.exitCode
         if isinstance(exit_code, int):
             logger.debug("processExited, status %d" % (exit_code,))
-        self._signaler.signal(self._signaler.EIP_PROCESS_FINISHED, exit_code)
+        self._signaler.signal(
+            self._signaler.EIP_PROCESS_FINISHED, exit_code)
         self._alive = False
 
     def processEnded(self, reason):

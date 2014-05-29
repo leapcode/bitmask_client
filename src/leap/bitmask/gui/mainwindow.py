@@ -30,7 +30,6 @@ from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 
-from leap.bitmask.gui import statemachines
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.eip_preferenceswindow import EIPPreferencesWindow
 from leap.bitmask.gui.eip_status import EIPStatusWidget
@@ -46,12 +45,10 @@ from leap.bitmask.platform_init.initializers import init_platform
 
 from leap.bitmask import backend
 
-from leap.bitmask.services import get_service_display_name
-
+from leap.bitmask.services.eip import conductor as eip_conductor
 from leap.bitmask.services.mail import conductor as mail_conductor
 
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
-from leap.bitmask.services.eip.connection import EIPConnection
 
 from leap.bitmask.util import make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
@@ -68,6 +65,7 @@ from leap.mail.imap.service.imap import IMAP_PORT
 
 from ui_mainwindow import Ui_MainWindow
 
+QtDelayedCall = QtCore.QTimer.singleShot
 logger = logging.getLogger(__name__)
 
 
@@ -131,10 +129,15 @@ class MainWindow(QtGui.QMainWindow):
 
         self._settings = LeapSettings()
 
+        # Login Widget
         self._login_widget = LoginWidget(
             self._settings,
             self)
         self.ui.loginLayout.addWidget(self._login_widget)
+
+        # Mail Widget
+        self._mail_status = MailStatusWidget(self)
+        self.ui.mailLayout.addWidget(self._mail_status)
 
         # Qt Signal Connections #####################################
         # TODO separate logic from ui signals.
@@ -144,34 +147,29 @@ class MainWindow(QtGui.QMainWindow):
         self._login_widget.show_wizard.connect(self._launch_wizard)
         self._login_widget.logout.connect(self._logout)
 
-        self._eip_status = EIPStatusWidget(self)
+        # EIP Control redux #########################################
+        self._eip_conductor = eip_conductor.EIPConductor(
+            self._settings, self._backend)
+        self._eip_status = EIPStatusWidget(self, self._eip_conductor)
+
         self.ui.eipLayout.addWidget(self._eip_status)
-        self._login_widget.logged_in_signal.connect(
-            self._eip_status.enable_eip_start)
-        self._login_widget.logged_in_signal.connect(
-            self._enable_eip_start_action)
+        self._eip_conductor.add_eip_widget(self._eip_status)
 
-        self._mail_status = MailStatusWidget(self)
-        self.ui.mailLayout.addWidget(self._mail_status)
-
-        self._eip_connection = EIPConnection()
-
-        # XXX this should be handled by EIP Conductor
-        self._eip_connection.qtsigs.connecting_signal.connect(
-            self._start_EIP)
-        self._eip_connection.qtsigs.disconnecting_signal.connect(
-            self._stop_eip)
-
-        self._eip_status.eip_connection_connected.connect(
+        self._eip_conductor.connect_signals()
+        self._eip_conductor.qtsigs.connected_signal.connect(
             self._on_eip_connection_connected)
-        self._eip_status.eip_connection_connected.connect(
+        self._eip_conductor.qtsigs.disconnected_signal.connect(
+            self._on_eip_connection_disconnected)
+        self._eip_conductor.qtsigs.connected_signal.connect(
             self._maybe_run_soledad_setup_checks)
+
         self.offline_mode_bypass_login.connect(
             self._maybe_run_soledad_setup_checks)
 
         self.eip_needs_login.connect(self._eip_status.disable_eip_start)
         self.eip_needs_login.connect(self._disable_eip_start_action)
 
+        self._already_started_eip = False
         self._trying_to_start_eip = False
 
         self._already_started_eip = False
@@ -215,8 +213,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self._systray = None
 
-        # XXX separate actions into a different
-        # module.
+        # XXX separate actions into a different module.
         self._action_mail_status = QtGui.QAction(self.tr("Mail is OFF"), self)
         self._mail_status.set_action_mail_status(self._action_mail_status)
 
@@ -280,12 +277,11 @@ class MainWindow(QtGui.QMainWindow):
         # the EIPConductor or some other clever component that we will
         # instantiate from here.
 
-        self.eip_machine = None
         # start event machines
-        self.start_eip_machine()
+        # TODO should encapsulate all actions into one object
+        self._eip_conductor.start_eip_machine(
+            action=self._action_eip_startstop)
         self._mail_conductor.start_mail_machine()
-
-        self._eip_name = get_service_display_name(EIP_SERVICE)
 
         if self._first_run():
             self._wizard_firstrun = True
@@ -293,7 +289,7 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = Wizard(backend=self._backend,
                                   bypass_checks=bypass_checks)
             # Give this window time to finish init and then show the wizard
-            QtCore.QTimer.singleShot(1, self._launch_wizard)
+            QtDelayedCall(1, self._launch_wizard)
             self._wizard.accepted.connect(self._finish_init)
             self._wizard.rejected.connect(self._rejected_wizard)
         else:
@@ -351,67 +347,50 @@ class MainWindow(QtGui.QMainWindow):
         :type only_tracked: bool
         """
         sig = self._backend.signaler
+        conntrack = self._connect_and_track
+        auth_err = self._authentication_error
 
-        self._connect_and_track(sig.prov_name_resolution,
-                                self._intermediate_stage)
-        self._connect_and_track(sig.prov_https_connection,
-                                self._intermediate_stage)
-        self._connect_and_track(sig.prov_download_ca_cert,
-                                self._intermediate_stage)
+        conntrack(sig.prov_name_resolution, self._intermediate_stage)
+        conntrack(sig.prov_https_connection, self._intermediate_stage)
+        conntrack(sig.prov_download_ca_cert, self._intermediate_stage)
+        conntrack(sig.prov_download_provider_info, self._load_provider_config)
+        conntrack(sig.prov_check_api_certificate, self._provider_config_loaded)
 
-        self._connect_and_track(sig.prov_download_provider_info,
-                                self._load_provider_config)
-        self._connect_and_track(sig.prov_check_api_certificate,
-                                self._provider_config_loaded)
-
-        self._connect_and_track(sig.prov_problem_with_provider,
-                                self._login_problem_provider)
-
-        self._connect_and_track(sig.prov_cancelled_setup,
-                                self._set_login_cancelled)
+        conntrack(sig.prov_problem_with_provider, self._login_problem_provider)
+        conntrack(sig.prov_cancelled_setup, self._set_login_cancelled)
 
         self._connect_and_track(sig.prov_get_details,
                                 self._provider_get_details)
 
         # Login signals
-        self._connect_and_track(sig.srp_auth_ok, self._authentication_finished)
+        conntrack(sig.srp_auth_ok, self._authentication_finished)
 
-        auth_error = (
-            lambda: self._authentication_error(self.tr("Unknown error.")))
-        self._connect_and_track(sig.srp_auth_error, auth_error)
+        auth_error = lambda: auth_err(self.tr("Unknown error."))
+        conntrack(sig.srp_auth_error, auth_error)
 
-        auth_server_error = (
-            lambda: self._authentication_error(
-                self.tr("There was a server problem with authentication.")))
-        self._connect_and_track(sig.srp_auth_server_error, auth_server_error)
+        auth_server_error = lambda: auth_err(self.tr(
+            "There was a server problem with authentication."))
+        conntrack(sig.srp_auth_server_error, auth_server_error)
 
-        auth_connection_error = (
-            lambda: self._authentication_error(
-                self.tr("Could not establish a connection.")))
-        self._connect_and_track(sig.srp_auth_connection_error,
-                                auth_connection_error)
+        auth_connection_error = lambda: auth_err(self.tr(
+            "Could not establish a connection."))
+        conntrack(sig.srp_auth_connection_error, auth_connection_error)
 
-        auth_bad_user_or_password = (
-            lambda: self._authentication_error(
-                self.tr("Invalid username or password.")))
-        self._connect_and_track(sig.srp_auth_bad_user_or_password,
-                                auth_bad_user_or_password)
+        auth_bad_user_or_password = lambda: auth_err(self.tr(
+            "Invalid username or password."))
+        conntrack(sig.srp_auth_bad_user_or_password, auth_bad_user_or_password)
 
         # Logout signals
-        self._connect_and_track(sig.srp_logout_ok, self._logout_ok)
-        self._connect_and_track(sig.srp_logout_error, self._logout_error)
-
-        self._connect_and_track(sig.srp_not_logged_in_error,
-                                self._not_logged_in_error)
+        conntrack(sig.srp_logout_ok, self._logout_ok)
+        conntrack(sig.srp_logout_error, self._logout_error)
+        conntrack(sig.srp_not_logged_in_error, self._not_logged_in_error)
 
         # EIP bootstrap signals
-        self._connect_and_track(sig.eip_config_ready,
-                                self._eip_intermediate_stage)
-        self._connect_and_track(sig.eip_client_certificate_ready,
-                                self._finish_eip_bootstrap)
+        conntrack(sig.eip_config_ready, self._eip_intermediate_stage)
+        conntrack(sig.eip_client_certificate_ready, self._finish_eip_bootstrap)
 
         ###################################################
-        # Add tracked signals above this, untracked bellow!
+        # Add tracked signals above this, untracked below!
         ###################################################
         if only_tracked:
             return
@@ -421,38 +400,20 @@ class MainWindow(QtGui.QMainWindow):
         sig.backend_bad_call.connect(self._backend_bad_call)
 
         sig.prov_check_api_certificate.connect(self._get_provider_details)
-
         sig.prov_unsupported_client.connect(self._needs_update)
         sig.prov_unsupported_api.connect(self._incompatible_api)
+        sig.prov_get_all_services.connect(self._provider_get_all_services)
 
-        sig.prov_get_all_services.connect(
-            self._provider_get_all_services)
+        # EIP start signals ==============================================
 
-        # EIP start signals
-        sig.eip_openvpn_already_running.connect(
-            self._on_eip_openvpn_already_running)
-        sig.eip_alien_openvpn_already_running.connect(
-            self._on_eip_alien_openvpn_already_running)
-        sig.eip_openvpn_not_found_error.connect(
-            self._on_eip_openvpn_not_found_error)
-        sig.eip_vpn_launcher_exception.connect(
-            self._on_eip_vpn_launcher_exception)
-        sig.eip_no_polkit_agent_error.connect(
-            self._on_eip_no_polkit_agent_error)
-        sig.eip_no_pkexec_error.connect(self._on_eip_no_pkexec_error)
-        sig.eip_no_tun_kext_error.connect(self._on_eip_no_tun_kext_error)
-
-        sig.eip_state_changed.connect(self._eip_status.update_vpn_state)
-        sig.eip_status_changed.connect(self._eip_status.update_vpn_status)
-        sig.eip_process_finished.connect(self._eip_finished)
-        sig.eip_network_unreachable.connect(self._on_eip_network_unreachable)
-        sig.eip_process_restart_tls.connect(self._do_eip_restart)
-        sig.eip_process_restart_ping.connect(self._do_eip_restart)
-
+        self._eip_conductor.connect_backend_signals()
         sig.eip_can_start.connect(self._backend_can_start_eip)
         sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
 
+        # ==================================================================
+
         # Soledad signals
+        # TODO delegate connection to soledad bootstrapper
         sig.soledad_bootstrap_failed.connect(
             self._mail_status.set_soledad_failed)
         sig.soledad_bootstrap_finished.connect(self._on_soledad_ready)
@@ -919,7 +880,8 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
 
-        eip_status_label = "{0}: {1}".format(self._eip_name, self.tr("OFF"))
+        eip_status_label = "{0}: {1}".format(
+            self._eip_conductor.eip_name, self.tr("OFF"))
         self._eip_menu = eip_menu = systrayMenu.addMenu(eip_status_label)
         eip_menu.addAction(self._action_eip_startstop)
         self._eip_status.set_eip_status_menu(eip_menu)
@@ -1001,7 +963,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # Wait a bit until the window visibility has changed so
         # the menu is set with the correct value.
-        QtCore.QTimer.singleShot(500, self._update_hideshow_menu)
+        QtDelayedCall(500, self._update_hideshow_menu)
 
     def _center_window(self):
         """
@@ -1398,7 +1360,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         # TODO split.
         if not self._provides_mx_and_enabled() and not flags.OFFLINE:
-            logger.debug("Does not provides and enabled MX")
+            logger.debug("Provider does not offer MX, but it is enabled.")
             return
 
         username = self._login_widget.get_user()
@@ -1473,21 +1435,6 @@ class MainWindow(QtGui.QMainWindow):
     ###################################################################
     # Service control methods: eip
 
-    def start_eip_machine(self):
-        """
-        Initializes and starts the EIP state machine
-        """
-        button = self._eip_status.eip_button
-        action = self._action_eip_startstop
-        label = self._eip_status.eip_label
-        builder = statemachines.ConnectionMachineBuilder(self._eip_connection)
-        eip_machine = builder.make_machine(button=button,
-                                           action=action,
-                                           label=label)
-        self.eip_machine = eip_machine
-        self.eip_machine.start()
-        logger.debug('eip machine started')
-
     @QtCore.Slot()
     def _disable_eip_start_action(self):
         """
@@ -1506,17 +1453,14 @@ class MainWindow(QtGui.QMainWindow):
     def _on_eip_connection_connected(self):
         """
         TRIGGERS:
-            self._eip_status.eip_connection_connected
-
-        Emits the EIPConnection.qtsigs.connected_signal
+            self._eip_conductor.qtsigs.connected_signal
 
         This is a little workaround for connecting the vpn-connected
         signal that currently is beeing processed under status_panel.
         After the refactor to EIPConductor this should not be necessary.
         """
-        self._eip_connection.qtsigs.connected_signal.emit()
-
         domain = self._login_widget.get_selected_provider()
+
         self._eip_status.set_provider(domain)
         self._settings.set_defaultprovider(domain)
         self._already_started_eip = True
@@ -1524,7 +1468,29 @@ class MainWindow(QtGui.QMainWindow):
         # check for connectivity
         self._check_name_resolution(domain)
 
+    @QtCore.Slot()
+    def _on_eip_connection_disconnected(self):
+        """
+        TRIGGERS:
+            self._eip_conductor.qtsigs.disconnected_signal
+
+        Workaround for updating the eip_status widget with
+        the provider when the eip connection disconnects.
+        """
+        # TODO
+        # We should move this to the conductor<->widget interface.
+        # To do that, we need to subscribe to logged_user,
+        # for example by using the observer pattern or a proxy object.
+        user = self._logged_user
+        if user:
+            domain = self._login_widget.get_selected_provider()
+            full_user_id = make_address(user, domain)
+            self._eip_status.set_provider(full_user_id)
+
     def _check_name_resolution(self, domain):
+        # FIXME this has to be moved to backend !!!
+        # Should move to netchecks module.
+        # and separate qt from reactor...
         """
         Check if we can resolve the given domain name.
 
@@ -1555,7 +1521,7 @@ class MainWindow(QtGui.QMainWindow):
                 "missing some helper files that are needed to securely use "
                 "DNS while {1} is active. To install these helper files, quit "
                 "this application and start it again."
-            ).format(domain, self._eip_name)
+            ).format(domain, self._eip_conductor.eip_name)
 
             show_err = lambda: QtGui.QMessageBox.critical(
                 self, self.tr("Connection Error"), msg)
@@ -1579,211 +1545,6 @@ class MainWindow(QtGui.QMainWindow):
 
         if settings.get_autostart_eip():
             self._maybe_start_eip(autostart=True)
-
-    @QtCore.Slot()
-    def _start_EIP(self):
-        """
-        Starts EIP
-        """
-        self._eip_status.eip_pre_up()
-        self.user_stopped_eip = False
-
-        # Until we set an option in the preferences window, we'll assume that
-        # by default we try to autostart. If we switch it off manually, it
-        # won't try the next time.
-        self._settings.set_autostart_eip(True)
-
-        self._backend.eip_start()
-
-    @QtCore.Slot()
-    def _on_eip_connection_aborted(self):
-        """
-        TRIGGERS:
-            Signaler.eip_connection_aborted
-        """
-        logger.error("Tried to start EIP but cannot find any "
-                     "available provider!")
-
-        eip_status_label = self.tr("Could not load {0} configuration.")
-        eip_status_label = eip_status_label.format(self._eip_name)
-        self._eip_status.set_eip_status(eip_status_label, error=True)
-
-        # signal connection_aborted to state machine:
-        qtsigs = self._eip_connection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
-
-    def _on_eip_openvpn_already_running(self):
-        self._eip_status.set_eip_status(
-            self.tr("Another openvpn instance is already running, and "
-                    "could not be stopped."),
-            error=True)
-        self._set_eipstatus_off()
-
-    def _on_eip_alien_openvpn_already_running(self):
-        self._eip_status.set_eip_status(
-            self.tr("Another openvpn instance is already running, and "
-                    "could not be stopped because it was not launched by "
-                    "Bitmask. Please stop it and try again."),
-            error=True)
-        self._set_eipstatus_off()
-
-    def _on_eip_openvpn_not_found_error(self):
-        self._eip_status.set_eip_status(
-            self.tr("We could not find openvpn binary."),
-            error=True)
-        self._set_eipstatus_off()
-
-    def _on_eip_vpn_launcher_exception(self):
-        # XXX We should implement again translatable exceptions so
-        # we can pass a translatable string to the panel (usermessage attr)
-        self._eip_status.set_eip_status("VPN Launcher error.", error=True)
-        self._set_eipstatus_off()
-
-    def _on_eip_no_polkit_agent_error(self):
-        self._eip_status.set_eip_status(
-            # XXX this should change to polkit-kde where
-            # applicable.
-            self.tr("We could not find any authentication agent in your "
-                    "system.<br/>Make sure you have"
-                    "<b>polkit-gnome-authentication-agent-1</b> running and"
-                    "try again."),
-            error=True)
-        self._set_eipstatus_off()
-
-    def _on_eip_no_pkexec_error(self):
-        self._eip_status.set_eip_status(
-            self.tr("We could not find <b>pkexec</b> in your system."),
-            error=True)
-        self._set_eipstatus_off()
-
-    def _on_eip_no_tun_kext_error(self):
-        self._eip_status.set_eip_status(
-            self.tr("{0} cannot be started because the tuntap extension is "
-                    "not installed properly in your "
-                    "system.").format(self._eip_name))
-        self._set_eipstatus_off()
-
-    @QtCore.Slot()
-    def _stop_eip(self, restart=False):
-        """
-        TRIGGERS:
-          self._eip_connection.qtsigs.do_disconnect_signal (via state machine)
-
-        Stops vpn process and makes gui adjustments to reflect
-        the change of state.
-
-        :param abnormal: whether this was an abnormal termination.
-        :type abnormal: bool
-        """
-        self.user_stopped_eip = not restart
-        self._backend.eip_stop(restart=restart)
-
-        self._set_eipstatus_off(False)
-        self._already_started_eip = False
-
-        logger.debug('Setting autostart to: False')
-        self._settings.set_autostart_eip(False)
-
-        user = self._logged_user
-        if user:
-            domain = self._login_widget.get_selected_provider()
-            full_user_id = make_address(user, domain)
-            self._eip_status.set_provider(full_user_id)
-
-        self._eip_status.eip_stopped()
-
-    @QtCore.Slot()
-    def _on_eip_network_unreachable(self):
-        # XXX Should move to EIP Conductor
-        """
-        TRIGGERS:
-            self._eip_connection.qtsigs.network_unreachable
-
-        Displays a "network unreachable" error in the EIP status panel.
-        """
-        self._eip_status.set_eip_status(self.tr("Network is unreachable"),
-                                        error=True)
-        self._eip_status.set_eip_status_icon("error")
-
-    @QtCore.Slot()
-    def _do_eip_restart(self):
-        # XXX Should move to EIP Conductor
-        """
-        TRIGGERS:
-            self._eip_connection.qtsigs.process_restart
-
-        Restart the connection.
-        """
-        # for some reason, emitting the do_disconnect/do_connect
-        # signals hangs the UI.
-        self._stop_eip(restart=True)
-        QtCore.QTimer.singleShot(2000, self._start_EIP)
-
-    def _set_eipstatus_off(self, error=True):
-        """
-        Sets eip status to off
-        """
-        # XXX this should be handled by the state machine.
-        self._eip_status.set_eip_status("", error=error)
-        self._eip_status.set_eip_status_icon("error")
-
-    @QtCore.Slot(int)
-    def _eip_finished(self, exitCode):
-        """
-        TRIGGERS:
-            Signaler.eip_process_finished
-
-        Triggered when the EIP/VPN process finishes to set the UI
-        accordingly.
-
-        Ideally we would have the right exit code here,
-        but the use of different wrappers (pkexec, cocoasudo) swallows
-        the openvpn exit code so we get zero exit in some cases  where we
-        shouldn't. As a workaround we just use a flag to indicate
-        a purposeful switch off, and mark everything else as unexpected.
-
-        In the near future we should trigger a native notification from here,
-        since the user really really wants to know she is unprotected asap.
-        And the right thing to do will be to fail-close.
-
-        :param exitCode: the exit code of the eip process.
-        :type exitCode: int
-        """
-        # TODO move to EIPConductor.
-        # TODO Add error catching to the openvpn log observer
-        # so we can have a more precise idea of which type
-        # of error did we have (server side, local problem, etc)
-
-        logger.info("VPN process finished with exitCode %s..."
-                    % (exitCode,))
-
-        qtsigs = self._eip_connection.qtsigs
-        signal = qtsigs.disconnected_signal
-
-        # XXX check if these exitCodes are pkexec/cocoasudo specific
-        if exitCode in (126, 127):
-            eip_status_label = self.tr(
-                "{0} could not be launched "
-                "because you did not authenticate properly.")
-            eip_status_label = eip_status_label.format(self._eip_name)
-            self._eip_status.set_eip_status(eip_status_label, error=True)
-            signal = qtsigs.connection_aborted_signal
-            self._backend.eip_terminate()
-
-        elif exitCode != 0 or not self.user_stopped_eip:
-            eip_status_label = self.tr("{0} finished in an unexpected manner!")
-            eip_status_label = eip_status_label.format(self._eip_name)
-            self._eip_status.eip_stopped()
-            self._eip_status.set_eip_status_icon("error")
-            self._eip_status.set_eip_status(eip_status_label, error=True)
-            signal = qtsigs.connection_died_signal
-
-        if exitCode == 0 and IS_MAC:
-            # XXX remove this warning after I fix cocoasudo.
-            logger.warning("The above exit code MIGHT BE WRONG.")
-
-        # We emit signals to trigger transitions in the state machine:
-        signal.emit()
 
     # eip boostrapping, config etc...
 
@@ -1812,9 +1573,8 @@ class MainWindow(QtGui.QMainWindow):
             self._already_started_eip = True
             # we want to start soledad anyway after a certain timeout if eip
             # fails to come up
-            QtCore.QTimer.singleShot(
-                self.EIP_START_TIMEOUT,
-                self._maybe_run_soledad_setup_checks)
+            QtDelayedCall(self.EIP_START_TIMEOUT,
+                          self._maybe_run_soledad_setup_checks)
         else:
             if not self._already_started_eip:
                 if EIP_SERVICE in self._enabled_services:
@@ -1833,8 +1593,8 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self._backend.signaler.eip_client_certificate_ready
 
-        Starts the VPN thread if the eip configuration is properly
-        loaded
+        Start the VPN thread if the eip configuration is properly
+        loaded.
         """
         passed = data[self._backend.PASSED_KEY]
 
@@ -1846,11 +1606,11 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         # DO START EIP Connection!
-        self._eip_connection.qtsigs.do_connect_signal.emit()
+        self._eip_conductor.do_connect()
 
     @QtCore.Slot(dict)
     def _eip_intermediate_stage(self, data):
-        # TODO missing param
+        # TODO missing param documentation
         """
         TRIGGERS:
             self._backend.signaler.eip_config_ready
@@ -2004,7 +1764,7 @@ class MainWindow(QtGui.QMainWindow):
         if self._systray is not None:
             self._systray.showMessage(
                 self.tr('Quitting...'),
-                self.tr('The app is quitting, please wait.'))
+                self.tr('Bitmask is quitting, please wait.'))
 
         # explicitly process events to display tooltip immediately
         QtCore.QCoreApplication.processEvents(0, 10)
