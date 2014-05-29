@@ -1578,7 +1578,7 @@ class MainWindow(QtGui.QMainWindow):
             default_provider)
 
         if settings.get_autostart_eip():
-            self._maybe_start_eip()
+            self._maybe_start_eip(autostart=True)
 
     @QtCore.Slot()
     def _start_EIP(self):
@@ -1787,12 +1787,21 @@ class MainWindow(QtGui.QMainWindow):
 
     # eip boostrapping, config etc...
 
-    def _maybe_start_eip(self):
+    def _maybe_start_eip(self, autostart=False):
         """
         Start the EIP bootstrapping sequence if the client is configured to
         do so.
+
+        :param autostart: we are autostarting EIP when this is True
+        :type autostart: bool
         """
-        if self._provides_eip_and_enabled() and not self._already_started_eip:
+        # during autostart we assume that the provider provides EIP
+        if autostart:
+            should_start = EIP_SERVICE in self._enabled_services
+        else:
+            should_start = self._provides_eip_and_enabled()
+
+        if should_start and not self._already_started_eip:
             # XXX this should be handled by the state machine.
             self._eip_status.set_eip_status(
                 self.tr("Starting..."))
