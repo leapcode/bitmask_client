@@ -729,63 +729,63 @@ def firewall_start(args):
     local_network_ipv6 = get_local_network_ipv6(default_device)
     gateways = get_gateways(args)
 
-    # add custom chain "bitmask"
+    # add custom chain "bitmask" to front of OUTPUT chain
     if not ipv4_chain_exists(BITMASK_CHAIN):
         ip4tables("--new-chain", BITMASK_CHAIN)
     if not ipv6_chain_exists(BITMASK_CHAIN):
         ip6tables("--new-chain", BITMASK_CHAIN)
     iptables("--insert", "OUTPUT", "--jump", BITMASK_CHAIN)
 
-    # reject everything
-    iptables("--insert", BITMASK_CHAIN, "-o", default_device,
-             "--jump", "REJECT")
+    # allow DNS over VPN
+    for allowed_dns in [NAMESERVER, "127.0.0.1", "127.0.1.1"]:
+        ip4tables("--append", BITMASK_CHAIN, "--protocol", "udp",
+                  "--dport", "53", "--destination", allowed_dns,
+                  "--jump", "ACCEPT")
 
-    # log rejected packets to syslog
-    if DEBUG:
-        iptables("--insert", BITMASK_CHAIN, "-o", default_device,
-                 "--jump", "LOG", "--log-prefix", "iptables denied: ", "--log-level", "7")
-
-    # allow traffic to gateways
-    for gateway in gateways:
-        ip4tables("--insert", BITMASK_CHAIN, "--destination", gateway,
-                  "-o", default_device, "--jump", "ACCEPT")
+    # block DNS requests to anyone but the service provider or localhost
+    # (when we actually route ipv6, we will need DNS rules for it too)
+    ip4tables("--append", BITMASK_CHAIN, "--protocol", "udp", "--dport", "53",
+              "--jump", "REJECT")
 
     # allow traffic to IPs on local network
     if local_network_ipv4:
-        ip4tables("--insert", BITMASK_CHAIN,
+        ip4tables("--append", BITMASK_CHAIN,
                   "--destination", local_network_ipv4, "-o", default_device,
                   "--jump", "ACCEPT")
         # allow multicast Simple Service Discovery Protocol
-        ip4tables("--insert", BITMASK_CHAIN,
+        ip4tables("--append", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "239.255.255.250", "--dport", "1900",
                   "-o", default_device, "--jump", "RETURN")
         # allow multicast Bonjour/mDNS
-        ip4tables("--insert", BITMASK_CHAIN,
+        ip4tables("--append", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "224.0.0.251", "--dport", "5353",
                   "-o", default_device, "--jump", "RETURN")
     if local_network_ipv6:
-        ip6tables("--insert", BITMASK_CHAIN,
+        ip6tables("--append", BITMASK_CHAIN,
                   "--destination", local_network_ipv6, "-o", default_device,
                   "--jump", "ACCEPT")
         # allow multicast Simple Service Discovery Protocol
-        ip6tables("--insert", BITMASK_CHAIN,
+        ip6tables("--append", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "FF05::C", "--dport", "1900",
                   "-o", default_device, "--jump", "RETURN")
         # allow multicast Bonjour/mDNS
-        ip6tables("--insert", BITMASK_CHAIN,
+        ip6tables("--append", BITMASK_CHAIN,
                   "--protocol", "udp", "--destination", "FF02::FB", "--dport", "5353",
                   "-o", default_device, "--jump", "RETURN")
 
+    # allow traffic to gateways
+    for gateway in gateways:
+        ip4tables("--append", BITMASK_CHAIN, "--destination", gateway,
+                  "-o", default_device, "--jump", "ACCEPT")
 
-    # block DNS requests to anyone but the service provider or localhost
-    # when we actually route ipv6, we will need dns rules for it too
-    ip4tables("--insert", BITMASK_CHAIN, "--protocol", "udp", "--dport", "53",
-              "--jump", "REJECT")
+    # log rejected packets to syslog
+    if DEBUG:
+        iptables("--append", BITMASK_CHAIN, "-o", default_device,
+                 "--jump", "LOG", "--log-prefix", "iptables denied: ", "--log-level", "7")
 
-    for allowed_dns in [NAMESERVER, "127.0.0.1", "127.0.1.1"]:
-        ip4tables("--insert", BITMASK_CHAIN, "--protocol", "udp",
-                  "--dport", "53", "--destination", allowed_dns,
-                  "--jump", "ACCEPT")
+    # reject everything else
+    iptables("--append", BITMASK_CHAIN, "-o", default_device,
+             "--jump", "REJECT")
 
     # workaround for ipv6 servers being blocked and not falling back to ipv4.
     # See #5693
