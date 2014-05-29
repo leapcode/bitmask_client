@@ -361,7 +361,7 @@ class EIPStatusWidget(QtGui.QWidget):
             self.eipconnection.qtsigs.do_connect_signal)
 
     @QtCore.Slot(dict)
-    def eip_stopped(self, restart=False):
+    def eip_stopped(self, restart=False, failed=False):
         """
         TRIGGERS:
             EIPConductor.qtsigs.disconnected_signal
@@ -378,15 +378,28 @@ class EIPStatusWidget(QtGui.QWidget):
         # status positively.
         # Or better call it from the conductor...
 
-        clear_traffic = self.tr("Traffic is being routed in the clear")
-        unreachable_net = self.tr("Network is unreachable")
+        clear_traffic = self.tr("Traffic is being routed in the clear.")
+        unreachable_net = self.tr("Network is unreachable.")
+        failed_msg = self.tr("Cannot start Encrypted Proxy.")
 
         if restart:
             msg = unreachable_net
+        elif failed:
+            msg = failed_msg
         else:
             msg = clear_traffic
         self.ui.lblEIPMessage.setText(msg)
         self.ui.lblEIPStatus.show()
+
+    def eip_failed_to_restart(self):
+        """
+        Update EIP messages.
+        """
+        msg = self.tr("Could not restart Encrypted Proxy")
+        self.ui.lblEIPMessage.setText(msg)
+        self.ui.lblEIPStatus.show()
+
+        self.set_eip_status(self.tr("You can start the service manually."))
 
     @QtCore.Slot(dict)
     def update_vpn_status(self, data=None):
@@ -530,7 +543,7 @@ class EIPStatusWidget(QtGui.QWidget):
         self.set_eip_status(eip_status_label, error=True)
 
         # signal connection_aborted to state machine:
-        qtsigs = self._eip_connection.qtsigs
+        qtsigs = self._eipconnection.qtsigs
         qtsigs.connection_aborted_signal.emit()
 
     def _on_eip_openvpn_already_running(self):

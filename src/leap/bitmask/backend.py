@@ -1718,7 +1718,7 @@ class Backend(object):
         """
         self._call_queue.put(("eip", "start", None))
 
-    def eip_stop(self, shutdown=False, restart=False):
+    def eip_stop(self, shutdown=False, restart=False, failed=False):
         """
         Stop the EIP service.
 

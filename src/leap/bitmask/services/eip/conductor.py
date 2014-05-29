@@ -81,6 +81,7 @@ class EIPConductor(object):
 
         # for conductor
         signaler.eip_process_restart_tls.connect(self._do_eip_restart)
+        signaler.eip_process_restart_tls.connect(self._do_eip_failed)
         signaler.eip_process_restart_ping.connect(self._do_eip_restart)
         signaler.eip_process_finished.connect(self._eip_finished)
 
@@ -141,7 +142,7 @@ class EIPConductor(object):
         self._backend.eip_start()
 
     @QtCore.Slot()
-    def _stop_eip(self, restart=False):
+    def _stop_eip(self, restart=False, failed=False):
         """
         TRIGGERS:
           self.qsigs.do_disconnect_signal (via state machine)
@@ -151,9 +152,12 @@ class EIPConductor(object):
 
         :param restart: whether this is part of a eip restart.
         :type restart: bool
+
+        :param failed: whether this is the final step of a retry sequence
+        :type failed: bool
         """
         self._eip_status.is_restart = restart
-        self.user_stopped_eip = not restart
+        self.user_stopped_eip = not restart and not failed
 
         def on_disconnected_do_restart():
             # hard restarts
@@ -166,11 +170,9 @@ class EIPConductor(object):
             QtDelayedCall(2000, self.do_connect)
 
         def plug_restart_on_disconnected():
-            #print "PLUGGING RESTART ON DISCONNECTED"
             self.qtsigs.disconnected_signal.connect(on_disconnected_do_restart)
 
         def reconnect_disconnected_signal():
-            #print "RECONNECTING DISCONNECTED SIGNAL"
             self.qtsigs.disconnected_signal.disconnect(
                 on_disconnected_do_restart)
 
@@ -178,7 +180,6 @@ class EIPConductor(object):
             self._stop_eip(restart=False)
 
         def reconnect_stop_signal():
-            #print "RECONNECTING StOP SIGNAL"
             self.qtsigs.disconnecting_signal.disconnect()
             self.qtsigs.disconnecting_signal.connect(do_stop)
 
@@ -190,6 +191,10 @@ class EIPConductor(object):
             # ...and reconnect the original signal again, after having used the
             # diversion
             QtDelayedCall(500, reconnect_disconnected_signal)
+
+        elif failed:
+            self.qtsigs.disconnected_signal.emit()
+
         else:
             logger.debug('Setting autostart to: False')
             self._settings.set_autostart_eip(False)
@@ -197,9 +202,11 @@ class EIPConductor(object):
         # Call to the backend.
         self._backend.eip_stop(restart=restart)
 
-        self._already_started_eip = False
+        # ... and inform the status widget
         self._eip_status.set_eipstatus_off(False)
-        self._eip_status.eip_stopped(restart=restart)
+        self._eip_status.eip_stopped(restart=restart, failed=failed)
+
+        self._already_started_eip = False
 
         # XXX needed?
         if restart:
@@ -226,6 +233,18 @@ class EIPConductor(object):
 
         self.qtsigs.disconnecting_signal.connect(do_stop)
         self.qtsigs.do_disconnect_signal.emit()
+
+    @QtCore.Slot()
+    def _do_eip_failed(self):
+        """
+        Stop EIP after a failure to start.
+
+        TRIGGERS
+            signaler.eip_process_restart_tls
+        """
+        logger.debug("TLS Error: eip_stop (failed)")
+        self.qtsigs.connection_died_signal.emit()
+        QtDelayedCall(1000, self._eip_status.eip_failed_to_restart)
 
     @QtCore.Slot(int)
     def _eip_finished(self, exitCode):

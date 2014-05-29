@@ -55,10 +55,6 @@ class SignallingState(QState):
         """
         Emits the signal on entry.
         """
-        print "IIIIIIIIIIIIIIIIIII"
-        print "TO STATE", self._name, self.objectName()
-        print "IIIIIIIIIIIIIIIIIII"
-
         logger.debug('State %s::%s entered. Emitting signal ...'
                      % (self._name, self.objectName()))
         if self._signal is not None:

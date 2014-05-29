@@ -70,7 +70,7 @@ class VPNObserver(object):
         'NETWORK_UNREACHABLE': (
             'Network is unreachable (code=101)',),
         'PROCESS_RESTART_TLS': (
-            "SIGUSR1[soft,tls-error]",),
+            "SIGTERM[soft,tls-error]",),
         'PROCESS_RESTART_PING': (
             "SIGTERM[soft,ping-restart]",),
         'INITIALIZATION_COMPLETED': (
