@@ -565,11 +565,15 @@ class ConnectionMachineBuilder(object):
                 button, 'text', off_label)
             off.assignProperty(
                 button, 'enabled', True)
+            off.assignProperty(
+                button, 'visible', True)
         if action:
             off.assignProperty(
                 action, 'text', off_label)
             off.assignProperty(
                 action, 'enabled', True)
+            off.assignProperty(
+                action, 'visible', True)
         off.setObjectName(_OFF)
         states[_OFF] = off
 

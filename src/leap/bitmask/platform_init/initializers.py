@@ -33,7 +33,6 @@ from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip.linuxvpnlauncher import LinuxVPNLauncher
 from leap.bitmask.services.eip.darwinvpnlauncher import DarwinVPNLauncher
 from leap.bitmask.util import first
-from leap.bitmask.util import privilege_policies
 
 
 logger = logging.getLogger(__name__)
