@@ -373,11 +373,19 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.eip_bandwidth.hide()
 
         # XXX FIXME ! ----------------------- this needs to
-        # accomodate the messages about firewall up or not.
+        # accomodate the messages about firewall status. Right now
+        # we're assuming it works correctly, but we should test fw
+        # status positively.
         # Or better call it from the conductor...
 
-        self.ui.lblEIPMessage.setText(
-            self.tr("Traffic is being routed in the clear"))
+        clear_traffic = self.tr("Traffic is being routed in the clear")
+        unreachable_net = self.tr("Network is unreachable")
+
+        if restart:
+            msg = unreachable_net
+        else:
+            msg = clear_traffic
+        self.ui.lblEIPMessage.setText(msg)
         self.ui.lblEIPStatus.show()
 
     @QtCore.Slot(dict)
