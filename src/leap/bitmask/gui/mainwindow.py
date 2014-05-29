@@ -1360,7 +1360,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         # TODO split.
         if not self._provides_mx_and_enabled() and not flags.OFFLINE:
-            logger.debug("Does not provides and enabled MX")
+            logger.debug("Provider does not offer MX, but it is enabled.")
             return
 
         username = self._login_widget.get_user()
