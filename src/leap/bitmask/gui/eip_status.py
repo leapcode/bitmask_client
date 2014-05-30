@@ -526,6 +526,14 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.lblEIPMessage.setText(
             self.tr("Route traffic through: {0}").format(self._provider))
 
+    def aborted(self):
+        """
+        Notify the state machine that EIP was aborted for some reason.
+        """
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
+
     #
     # Slots for signals
     #
@@ -544,9 +552,7 @@ class EIPStatusWidget(QtGui.QWidget):
             self.eip_conductor.eip_name)
         self.set_eip_status(eip_status_label, error=True)
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     def _on_eip_openvpn_already_running(self):
         self.set_eip_status(
@@ -555,9 +561,7 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     def _on_eip_alien_openvpn_already_running(self):
         self.set_eip_status(
@@ -567,9 +571,7 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     def _on_eip_openvpn_not_found_error(self):
         self.set_eip_status(
@@ -577,9 +579,7 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     def _on_eip_vpn_launcher_exception(self):
         # XXX We should implement again translatable exceptions so
@@ -587,9 +587,7 @@ class EIPStatusWidget(QtGui.QWidget):
         self.set_eip_status("VPN Launcher error.", error=True)
         self.set_eipstatus_off()
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     def _on_eip_no_polkit_agent_error(self):
         self.set_eip_status(
@@ -602,9 +600,7 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     def _on_eip_no_pkexec_error(self):
         self.set_eip_status(
@@ -612,9 +608,7 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     def _on_eip_no_tun_kext_error(self):
         self.set_eip_status(
@@ -623,9 +617,7 @@ class EIPStatusWidget(QtGui.QWidget):
                     "system.").format(self.eip_conductor.eip_name))
         self.set_eipstatus_off()
 
-        # signal connection_aborted to state machine:
-        qtsigs = self.eipconnection.qtsigs
-        qtsigs.connection_aborted_signal.emit()
+        self.aborted()
 
     @QtCore.Slot()
     def _on_eip_network_unreachable(self):
