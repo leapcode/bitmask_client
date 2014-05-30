@@ -317,13 +317,13 @@ class VPN(object):
         from twisted.internet import reactor
         self._stop_pollers()
 
-        # We assume that the only valid stops are initiated
-        # by an user action, not hard restarts
-        self._user_stopped = not restart
-        self._vpnproc.is_restart = restart
-
         # First we try to be polite and send a SIGTERM...
-        if self._vpnproc:
+        if self._vpnproc is not None:
+            # We assume that the only valid stops are initiated
+            # by an user action, not hard restarts
+            self._user_stopped = not restart
+            self._vpnproc.is_restart = restart
+
             self._sentterm = True
             self._vpnproc.terminate_openvpn(shutdown=shutdown)
 
