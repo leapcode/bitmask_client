@@ -653,12 +653,18 @@ def get_local_network_ipv6(device):
 def run_iptable_with_check(cmd, *args, **options):
     """
     Run an iptables command checking to see if it should:
+      for --append: run only if rule does not already exist.
       for --insert: run only if rule does not already exist.
       for --delete: run only if rule does exist.
     other commands are run normally.
     """
     if "--insert" in args:
         check_args = [arg.replace("--insert", "--check") for arg in args]
+        check_code = run(cmd, *check_args, exitcode=True)
+        if check_code != 0:
+            run(cmd, *args, **options)
+    elif "--append" in args:
+        check_args = [arg.replace("--append", "--check") for arg in args]
         check_code = run(cmd, *check_args, exitcode=True)
         if check_code != 0:
             run(cmd, *args, **options)
@@ -773,7 +779,7 @@ def firewall_start(args):
                   "--protocol", "udp", "--destination", "FF02::FB", "--dport", "5353",
                   "-o", default_device, "--jump", "RETURN")
 
-    # allow traffic to gateways
+    # allow ipv4 traffic to gateways
     for gateway in gateways:
         ip4tables("--append", BITMASK_CHAIN, "--destination", gateway,
                   "-o", default_device, "--jump", "ACCEPT")
@@ -783,21 +789,13 @@ def firewall_start(args):
         iptables("--append", BITMASK_CHAIN, "-o", default_device,
                  "--jump", "LOG", "--log-prefix", "iptables denied: ", "--log-level", "7")
 
-    # reject everything else
-    iptables("--append", BITMASK_CHAIN, "-o", default_device,
-             "--jump", "REJECT")
+    # for now, ensure all other ipv6 packets get rejected (regardless of device)
+    # (not sure why, but "-p any" doesn't work)
+    ip6tables("--append", BITMASK_CHAIN, "-p", "tcp", "--jump", "REJECT")
+    ip6tables("--append", BITMASK_CHAIN, "-p", "udp", "--jump", "REJECT")
 
-    # workaround for ipv6 servers being blocked and not falling back to ipv4.
-    # See #5693
-    ip6tables("--append", "OUTPUT", "--jump", "REJECT",
-              "-s", "::/0",  "-d", "::/0",
-              "-p", "tcp",
-              "--reject-with", "icmp6-port-unreachable")
-    ip6tables("--append", "OUTPUT", "--jump", "REJECT",
-              "-s", "::/0",  "-d", "::/0",
-              "-p", "udp",
-              "--reject-with", "icmp6-port-unreachable")
-
+    # reject all other ipv4 sent over the default device
+    ip4tables("--append", BITMASK_CHAIN, "-o", default_device, "--jump", "REJECT")
 
 def firewall_stop():
     """

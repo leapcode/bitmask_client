@@ -1,1 +1,2 @@
 - unblock local multicast IPs from linux firewall, to allow SSDP and Bonjour/mDNS to work.
+- fix bug with ipv6 blocking that caused block to not get removed from firewall when Bitmask quit.
