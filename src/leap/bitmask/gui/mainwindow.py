@@ -572,10 +572,13 @@ class MainWindow(QtGui.QMainWindow):
 
         Displays the preferences window.
         """
-        user = self._login_widget.get_user()
-        prov = self._login_widget.get_selected_provider()
-        preferences = PreferencesWindow(
-            self, self._backend, self._soledad_started, user, prov)
+        user = self._logged_user
+        domain = self._login_widget.get_selected_provider()
+        mx_provided = False
+        if self._provider_details is not None:
+            mx_provided = MX_SERVICE in self._provider_details.services
+        preferences = PreferencesWindow(self, user, domain, self._backend,
+                                        self._soledad_started, mx_provided)
 
         self.soledad_ready.connect(preferences.set_soledad_ready)
         preferences.show()
