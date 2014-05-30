@@ -186,7 +186,7 @@ class MainWindow(QtGui.QMainWindow):
         # timeout object used to trigger quit
         self._quit_timeout_callater = None
 
-        self._backend_connected_signals = {}
+        self._backend_connected_signals = []
         self._backend_connect()
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
@@ -318,7 +318,7 @@ class MainWindow(QtGui.QMainWindow):
         :param method: the method to call when the signal is triggered.
         :type method: callable, Slot or Signal
         """
-        self._backend_connected_signals[signal] = method
+        self._backend_connected_signals.append((signal, method))
         signal.connect(method)
 
     def _backend_bad_call(self, data):
@@ -355,12 +355,12 @@ class MainWindow(QtGui.QMainWindow):
         conntrack(sig.prov_download_ca_cert, self._intermediate_stage)
         conntrack(sig.prov_download_provider_info, self._load_provider_config)
         conntrack(sig.prov_check_api_certificate, self._provider_config_loaded)
+        conntrack(sig.prov_check_api_certificate, self._get_provider_details)
 
         conntrack(sig.prov_problem_with_provider, self._login_problem_provider)
         conntrack(sig.prov_cancelled_setup, self._set_login_cancelled)
 
-        self._connect_and_track(sig.prov_get_details,
-                                self._provider_get_details)
+        conntrack(sig.prov_get_details, self._provider_get_details)
 
         # Login signals
         conntrack(sig.srp_auth_ok, self._authentication_finished)
@@ -399,7 +399,6 @@ class MainWindow(QtGui.QMainWindow):
 
         sig.backend_bad_call.connect(self._backend_bad_call)
 
-        sig.prov_check_api_certificate.connect(self._get_provider_details)
         sig.prov_unsupported_client.connect(self._needs_update)
         sig.prov_unsupported_api.connect(self._incompatible_api)
         sig.prov_get_all_services.connect(self._provider_get_all_services)
@@ -435,13 +434,13 @@ class MainWindow(QtGui.QMainWindow):
         Some signals are emitted from the wizard, and we want to
         ignore those.
         """
-        for signal, method in self._backend_connected_signals.items():
+        for signal, method in self._backend_connected_signals:
             try:
                 signal.disconnect(method)
             except RuntimeError:
                 pass  # Signal was not connected
 
-        self._backend_connected_signals = {}
+        self._backend_connected_signals = []
 
     @QtCore.Slot()
     def _rejected_wizard(self):
