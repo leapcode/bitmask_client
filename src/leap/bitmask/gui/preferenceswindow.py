@@ -38,28 +38,31 @@ class PreferencesWindow(QtGui.QDialog):
     """
     preferences_saved = QtCore.Signal()
 
-    def __init__(self, parent, backend, soledad_started, username, domain):
+    def __init__(self, parent, username, domain, backend, soledad_started, mx):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
-        :param backend: Backend being used
-        :type backend: Backend
-        :param soledad_started: whether soledad has started or not
-        :type soledad_started: bool
         :param username: the user set in the login widget
         :type username: unicode
         :param domain: the selected domain in the login widget
         :type domain: unicode
+        :param backend: Backend being used
+        :type backend: Backend
+        :param soledad_started: whether soledad has started or not
+        :type soledad_started: bool
+        :param mx: whether the current provider provides mx or not.
+        :type mx: bool
         """
         QtGui.QDialog.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
-        self._backend = backend
-        self._settings = LeapSettings()
-        self._soledad_started = soledad_started
         self._username = username
         self._domain = domain
+        self._backend = backend
+        self._soledad_started = soledad_started
+        self._mx_provided = mx
 
+        self._settings = LeapSettings()
         self._backend_connect()
 
         # Load UI
@@ -80,26 +83,17 @@ class PreferencesWindow(QtGui.QDialog):
         else:
             self._add_configured_providers()
 
-        self._backend.user_get_logged_in_status()
+        if self._username is None:
+            self._not_logged_in()
+        else:
+            self.ui.gbPasswordChange.setEnabled(True)
+            if self._mx_provided:
+                self._provides_mx()
 
         self._select_provider_by_name(domain)
 
-    @QtCore.Slot()
-    def _is_logged_in(self):
-        """
-        TRIGGERS:
-            Signaler.srp_status_logged_in
-
-        Actions to perform is the user is logged in.
-        """
-        self._backend.provider_provides_mx()
-
-    @QtCore.Slot()
     def _not_logged_in(self):
         """
-        TRIGGERS:
-            Signaler.srp_status_not_logged_in
-
         Actions to perform if the user is not logged in.
         """
         msg = self.tr(
@@ -107,12 +101,8 @@ class PreferencesWindow(QtGui.QDialog):
         self._set_password_change_status(msg)
         self.ui.gbPasswordChange.setEnabled(False)
 
-    @QtCore.Slot()
     def _provides_mx(self):
         """
-        TRIGGERS:
-            Signaler.prov_provides_mx
-
         Actions to perform if the provider provides MX.
         """
         pw_enabled = True
@@ -134,16 +124,6 @@ class PreferencesWindow(QtGui.QDialog):
                 pw_enabled = False
 
         self.ui.gbPasswordChange.setEnabled(pw_enabled)
-
-    @QtCore.Slot()
-    def _not_provides_mx(self):
-        """
-        TRIGGERS:
-            Signaler.prov_not_provides_mx
-
-        Actions to perform if the provider does not provides MX.
-        """
-        self.ui.gbPasswordChange.setEnabled(False)
 
     @QtCore.Slot()
     def set_soledad_ready(self):
@@ -226,7 +206,11 @@ class PreferencesWindow(QtGui.QDialog):
         """
         new_password = self.ui.leNewPassword.text()
         logger.debug("SRP password changed successfully.")
-        self._backend.soledad_change_password(new_password)
+
+        if self._mx_provided:
+            self._backend.soledad_change_password(new_password)
+        else:
+            self._change_password_success()
 
     @QtCore.Slot(unicode)
     def _srp_change_password_problem(self, msg):
@@ -250,6 +234,13 @@ class PreferencesWindow(QtGui.QDialog):
         TRIGGERS:
             Signaler.soledad_password_change_ok
 
+        Soledad password change went OK.
+        """
+        logger.debug("Soledad password changed successfully.")
+        self._change_password_success()
+
+    def _change_password_success(self):
+        """
         Callback used to display a successfully changed password.
         """
         logger.debug("Soledad password changed successfully.")
@@ -434,11 +425,7 @@ class PreferencesWindow(QtGui.QDialog):
         """
         sig = self._backend.signaler
 
-        sig.prov_provides_mx.connect(self._provides_mx)
         sig.prov_get_supported_services.connect(self._load_services)
-
-        sig.srp_status_logged_in.connect(self._is_logged_in)
-        sig.srp_status_not_logged_in.connect(self._not_logged_in)
 
         sig.srp_password_change_ok.connect(self._srp_change_password_ok)
 
