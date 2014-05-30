@@ -1624,6 +1624,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr("Unable to connect: Problem with provider"))
             logger.error(data[self._backend.ERROR_KEY])
             self._already_started_eip = False
+            self._eip_status.aborted()
 
     # end of EIP methods ---------------------------------------------
 
