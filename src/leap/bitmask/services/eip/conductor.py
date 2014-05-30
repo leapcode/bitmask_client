@@ -26,7 +26,6 @@ from leap.bitmask.services import EIP_SERVICE
 from leap.bitmask.services import get_service_display_name
 from leap.bitmask.services.eip.connection import EIPConnection
 from leap.bitmask.platform_init import IS_MAC
-from leap.bitmask.util import make_address
 
 QtDelayedCall = QtCore.QTimer.singleShot
 logger = logging.getLogger(__name__)

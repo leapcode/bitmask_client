@@ -102,6 +102,8 @@ class EIPStatusWidget(QtGui.QWidget):
             self._on_eip_vpn_launcher_exception)
         signaler.eip_no_polkit_agent_error.connect(
             self._on_eip_no_polkit_agent_error)
+        signaler.eip_connection_aborted.connect(
+            self._on_eip_connection_aborted)
         signaler.eip_no_pkexec_error.connect(self._on_eip_no_pkexec_error)
         signaler.eip_no_tun_kext_error.connect(self._on_eip_no_tun_kext_error)
 
@@ -539,11 +541,11 @@ class EIPStatusWidget(QtGui.QWidget):
 
         eip_status_label = self.tr("Could not load {0} configuration.")
         eip_status_label = eip_status_label.format(
-            self._eip_conductor.eip_name)
+            self.eip_conductor.eip_name)
         self.set_eip_status(eip_status_label, error=True)
 
         # signal connection_aborted to state machine:
-        qtsigs = self._eipconnection.qtsigs
+        qtsigs = self.eipconnection.qtsigs
         qtsigs.connection_aborted_signal.emit()
 
     def _on_eip_openvpn_already_running(self):
@@ -553,6 +555,10 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
+
     def _on_eip_alien_openvpn_already_running(self):
         self.set_eip_status(
             self.tr("Another openvpn instance is already running, and "
@@ -561,17 +567,29 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
+
     def _on_eip_openvpn_not_found_error(self):
         self.set_eip_status(
             self.tr("We could not find openvpn binary."),
             error=True)
         self.set_eipstatus_off()
 
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
+
     def _on_eip_vpn_launcher_exception(self):
         # XXX We should implement again translatable exceptions so
         # we can pass a translatable string to the panel (usermessage attr)
         self.set_eip_status("VPN Launcher error.", error=True)
         self.set_eipstatus_off()
+
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
 
     def _on_eip_no_polkit_agent_error(self):
         self.set_eip_status(
@@ -584,18 +602,30 @@ class EIPStatusWidget(QtGui.QWidget):
             error=True)
         self.set_eipstatus_off()
 
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
+
     def _on_eip_no_pkexec_error(self):
         self.set_eip_status(
             self.tr("We could not find <b>pkexec</b> in your system."),
             error=True)
         self.set_eipstatus_off()
 
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
+
     def _on_eip_no_tun_kext_error(self):
         self.set_eip_status(
             self.tr("{0} cannot be started because the tuntap extension is "
                     "not installed properly in your "
-                    "system.").format(self._eip_conductor.eip_name))
+                    "system.").format(self.eip_conductor.eip_name))
         self.set_eipstatus_off()
+
+        # signal connection_aborted to state machine:
+        qtsigs = self.eipconnection.qtsigs
+        qtsigs.connection_aborted_signal.emit()
 
     @QtCore.Slot()
     def _on_eip_network_unreachable(self):

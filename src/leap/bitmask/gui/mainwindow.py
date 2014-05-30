@@ -597,7 +597,7 @@ class MainWindow(QtGui.QMainWindow):
         default_provider = settings.get_defaultprovider()
 
         if default_provider is None:
-            logger.warning("Trying toupdate eip enabled status but there's no"
+            logger.warning("Trying to update eip enabled status but there's no"
                            " default provider. Disabling EIP for the time"
                            " being...")
             self._backend_cannot_start_eip()
@@ -637,7 +637,6 @@ class MainWindow(QtGui.QMainWindow):
                 # so the user needs to log in first
                 self._eip_status.disable_eip_start()
         else:
-            self._stop_eip()
             self._eip_status.disable_eip_start()
             self._eip_status.set_eip_status(self.tr("Disabled"))
 
@@ -664,7 +663,6 @@ class MainWindow(QtGui.QMainWindow):
             # so the user needs to log in first
             self._eip_status.disable_eip_start()
         else:
-            self._stop_eip()
             self._eip_status.disable_eip_start()
             self._eip_status.set_eip_status(self.tr("Disabled"))
 
@@ -1566,6 +1564,7 @@ class MainWindow(QtGui.QMainWindow):
             # XXX this should be handled by the state machine.
             self._eip_status.set_eip_status(
                 self.tr("Starting..."))
+            self._eip_status.eip_button.setEnabled(False)
 
             domain = self._login_widget.get_selected_provider()
             self._backend.eip_setup(domain)

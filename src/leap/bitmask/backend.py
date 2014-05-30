@@ -45,7 +45,7 @@ from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 
 from leap.bitmask.services.eip import vpnlauncher, vpnprocess
 from leap.bitmask.services.eip import linuxvpnlauncher, darwinvpnlauncher
-
+from leap.bitmask.services.eip import get_vpn_launcher
 
 from leap.bitmask.services.mail.imapcontroller import IMAPController
 from leap.bitmask.services.mail.smtpbootstrapper import SMTPBootstrapper
@@ -389,6 +389,11 @@ class EIP(object):
         loaded = eipconfig.load_eipconfig_if_needed(
             provider_config, eip_config, domain)
 
+        if not self._can_start(domain):
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.EIP_CONNECTION_ABORTED)
+            return
+
         if not loaded:
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.EIP_CONNECTION_ABORTED)
@@ -572,6 +577,46 @@ class EIP(object):
             self._signaler.signal(
                 self._signaler.EIP_GET_GATEWAYS_LIST, gateways)
 
+    def _can_start(self, domain):
+        """
+        Returns True if it has everything that is needed to run EIP,
+        False otherwise
+
+        :param domain: the domain for the provider to check
+        :type domain: str
+        """
+        eip_config = eipconfig.EIPConfig()
+        provider_config = ProviderConfig.get_provider_config(domain)
+
+        api_version = provider_config.get_api_version()
+        eip_config.set_api_version(api_version)
+        eip_loaded = eip_config.load(eipconfig.get_eipconfig_path(domain))
+
+        launcher = get_vpn_launcher()
+        if not os.path.isfile(launcher.OPENVPN_BIN_PATH):
+            logger.error("Cannot start OpenVPN, binary not found")
+            return False
+
+        # check for other problems
+        if not eip_loaded or provider_config is None:
+            logger.error("Cannot load provider and eip config, cannot "
+                         "autostart")
+            return False
+
+        client_cert_path = eip_config.\
+            get_client_cert_path(provider_config, about_to_download=False)
+
+        if leap_certs.should_redownload(client_cert_path):
+            logger.error("The client should redownload the certificate,"
+                         " cannot autostart")
+            return False
+
+        if not os.path.isfile(client_cert_path):
+            logger.error("Can't find the certificate, cannot autostart")
+            return False
+
+        return True
+
     def can_start(self, domain):
         """
         Signal whether it has everything that is needed to run EIP or not
@@ -583,33 +628,10 @@ class EIP(object):
             eip_can_start
             eip_cannot_start
         """
-        try:
-            eip_config = eipconfig.EIPConfig()
-            provider_config = ProviderConfig.get_provider_config(domain)
-
-            api_version = provider_config.get_api_version()
-            eip_config.set_api_version(api_version)
-            eip_loaded = eip_config.load(eipconfig.get_eipconfig_path(domain))
-
-            # check for other problems
-            if not eip_loaded or provider_config is None:
-                raise Exception("Cannot load provider and eip config, cannot "
-                                "autostart")
-
-            client_cert_path = eip_config.\
-                get_client_cert_path(provider_config, about_to_download=False)
-
-            if leap_certs.should_redownload(client_cert_path):
-                raise Exception("The client should redownload the certificate,"
-                                " cannot autostart")
-
-            if not os.path.isfile(client_cert_path):
-                raise Exception("Can't find the certificate, cannot autostart")
-
+        if self._can_start(domain):
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.EIP_CAN_START)
-        except Exception as e:
-            logger.exception(e)
+        else:
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.EIP_CANNOT_START)
 
