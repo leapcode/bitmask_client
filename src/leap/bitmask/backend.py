@@ -974,6 +974,7 @@ class Mail(object):
         threads.deferToThread(self._imap_controller.stop_imap_service, cv)
         logger.debug('Waiting for imap service to stop.')
         cv.wait(self.SERVICE_STOP_TIMEOUT)
+        logger.debug('IMAP stopped')
         self._signaler.signal(self._signaler.IMAP_STOPPED)
 
     def stop_imap_service(self):
