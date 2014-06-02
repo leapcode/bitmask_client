@@ -31,6 +31,7 @@ from leap.common.check import leap_assert_type
 
 from ui_eip_status import Ui_EIPStatus
 
+QtDelayedCall = QtCore.QTimer.singleShot
 logger = logging.getLogger(__name__)
 
 
@@ -66,6 +67,9 @@ class EIPStatusWidget(QtGui.QWidget):
         self._service_name = get_service_display_name(EIP_SERVICE)
 
         self.ui.eip_bandwidth.hide()
+        self.hide_fw_down_button()
+        self.ui.btnFwDown.clicked.connect(
+            self._on_fw_down_button_clicked)
 
         # Set the EIP status icons
         self.CONNECTING_ICON = None
@@ -109,8 +113,12 @@ class EIPStatusWidget(QtGui.QWidget):
 
         signaler.eip_state_changed.connect(self.update_vpn_state)
         signaler.eip_status_changed.connect(self.update_vpn_status)
-        signaler.eip_network_unreachable.connect(
-            self._on_eip_network_unreachable)
+
+        # XXX we cannot connect this signal now because
+        # it interferes with the proper notifications during restarts
+        # without available network.
+        #signaler.eip_network_unreachable.connect(
+            #self._on_eip_network_unreachable)
 
     def _make_status_clickable(self):
         """
@@ -273,6 +281,8 @@ class EIPStatusWidget(QtGui.QWidget):
         Disables the start/stop button.
         """
         self.set_startstop_enabled(False)
+        msg = self.tr("Encrypted Internet is starting")
+        self.set_eip_message(msg)
 
     @QtCore.Slot()
     def disable_eip_start(self):
@@ -314,10 +324,18 @@ class EIPStatusWidget(QtGui.QWidget):
         if self.isVisible():
             self._eip_status_menu.menuAction().setVisible(True)
 
-    # XXX disable (later) --------------------------
+    def set_eip_message(self, message):
+        """
+        Set the EIP Widget main message.
+
+        :param message: the message to set in the widget
+        :type message: str or unicode
+        """
+        self.ui.lblEIPMessage.setText(message)
+
     def set_eip_status(self, status, error=False):
         """
-        Sets the status label at the VPN stage to status
+        Set the status label at the VPN stage to status.
 
         :param status: status message
         :type status: str or unicode
@@ -362,6 +380,26 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.btnEipStartStop.clicked.connect(
             self.eipconnection.qtsigs.do_connect_signal)
 
+    def hide_fw_down_button(self):
+        """
+        Hide firewall-down button.
+        """
+        self.ui.btnFwDown.hide()
+
+    def show_fw_down_button(self):
+        """
+        Enable firewall-down button.
+        """
+        self.ui.btnFwDown.show()
+
+    def _on_fw_down_button_clicked(self):
+        """
+        Raise a signal for tearing down the firewall, and hide the button
+        afterwards.
+        """
+        self.eip_conductor._backend.tear_fw_down()
+        QtDelayedCall(50, self.hide_fw_down_button)
+
     @QtCore.Slot(dict)
     def eip_stopped(self, restart=False, failed=False):
         """
@@ -382,7 +420,7 @@ class EIPStatusWidget(QtGui.QWidget):
 
         clear_traffic = self.tr("Traffic is being routed in the clear.")
         unreachable_net = self.tr("Network is unreachable.")
-        failed_msg = self.tr("Cannot start Encrypted Proxy.")
+        failed_msg = self.tr("Cannot start Encrypted Internet")
 
         if restart:
             msg = unreachable_net
@@ -390,18 +428,19 @@ class EIPStatusWidget(QtGui.QWidget):
             msg = failed_msg
         else:
             msg = clear_traffic
-        self.ui.lblEIPMessage.setText(msg)
+        self.set_eip_message(msg)
         self.ui.lblEIPStatus.show()
+        self.show()
 
     def eip_failed_to_restart(self):
         """
         Update EIP messages.
         """
-        msg = self.tr("Could not restart Encrypted Proxy")
+        msg = self.tr("Could not restart Encrypted Internet")
         self.ui.lblEIPMessage.setText(msg)
         self.ui.lblEIPStatus.show()
-
-        self.set_eip_status(self.tr("You can start the service manually."))
+        self.set_eip_status(self.tr("You can launch the service manually."))
+        self.show_fw_down_button()
 
     @QtCore.Slot(dict)
     def update_vpn_status(self, data=None):
@@ -462,10 +501,15 @@ class EIPStatusWidget(QtGui.QWidget):
             # XXX should be handled by the state machine too.
             # --- is this currently being sent?
             self.eipconnection.qtsigs.connected_signal.emit()
+            self._on_eip_connected()
 
         # XXX should lookup vpn_state map in EIPConnection
         elif vpn_state == "AUTH":
             self.set_eip_status(self.tr("Authenticating..."))
+            # we wipe up any previous error info in the EIP message
+            # when we detect vpn authentication is happening
+            msg = self.tr("Encrypted Internet is starting")
+            self.set_eip_message(msg)
         elif vpn_state == "GET_CONFIG":
             self.set_eip_status(self.tr("Retrieving configuration..."))
         elif vpn_state == "WAIT":
@@ -478,10 +522,10 @@ class EIPStatusWidget(QtGui.QWidget):
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
             #self.send_disconnect_signal()
-            QtCore.QTimer.singleShot(
+            QtDelayedCall(
                 0, self.eipconnection.qtsigns.do_disconnect_signal.emit)
             msg = self.tr("Unable to start VPN, it's already running.")
-            QtCore.QTimer.singleShot(0, partial(self.set_eip_status, msg))
+            QtDelayedCall(0, partial(self.set_eip_status, msg))
         else:
             self.set_eip_status(vpn_state)
 
@@ -524,7 +568,8 @@ class EIPStatusWidget(QtGui.QWidget):
     def set_provider(self, provider):
         self._provider = provider
         self.ui.lblEIPMessage.setText(
-            self.tr("Route traffic through: {0}").format(self._provider))
+            self.tr("Routing traffic through: <b>{0}</b>").format(
+                self._provider))
 
     def aborted(self):
         """
@@ -618,6 +663,13 @@ class EIPStatusWidget(QtGui.QWidget):
         self.set_eipstatus_off()
 
         self.aborted()
+
+    def _on_eip_connected(self):
+        """
+        Reconnect the disconnecting signal when we are just connected,
+        so that we restore the disconnecting -> stop behaviour.
+        """
+        self.eip_conductor.reconnect_stop_signal()
 
     @QtCore.Slot()
     def _on_eip_network_unreachable(self):
