@@ -297,8 +297,11 @@ class EIPConductor(object):
             signal = self.qtsigs.connection_aborted_signal
             self._backend.eip_terminate()
 
-        # XXX FIXME --- check exitcode is != 0 really
-        if exitCode != 0 and not self.user_stopped_eip:
+        # XXX FIXME --- check exitcode is != 0 really.
+        # bitmask-root is masking the exitcode, so we might need
+        # to fix it on that side.
+        #if exitCode != 0 and not self.user_stopped_eip:
+        if not self.user_stopped_eip:
             eip_status_label = self._eip_status.tr(
                 "{0} finished in an unexpected manner!")
             eip_status_label = eip_status_label.format(self.eip_name)
@@ -307,6 +310,9 @@ class EIPConductor(object):
             self._eip_status.set_eip_status(eip_status_label,
                                             error=True)
             signal = self.qtsigs.connection_died_signal
+            self._eip_status.show_fw_down_button()
+            msg = self._eip_status.tr("Outgoing traffic is blocked")
+            self._eip_status.set_eip_message(msg)
 
         if exitCode == 0 and IS_MAC:
             # XXX remove this warning after I fix cocoasudo.

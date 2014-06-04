@@ -400,6 +400,11 @@ class EIPStatusWidget(QtGui.QWidget):
         self.eip_conductor._backend.tear_fw_down()
         QtDelayedCall(50, self.hide_fw_down_button)
 
+        # XXX do actual check
+        msg = "Traffic is being routed in the clear."
+        self.set_eip_message(msg)
+        self.set_eip_status("")
+
     @QtCore.Slot(dict)
     def eip_stopped(self, restart=False, failed=False):
         """

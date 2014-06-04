@@ -1564,6 +1564,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if should_start and not self._already_started_eip:
             # XXX this should be handled by the state machine.
+            self._enable_eip_start_action()
             self._eip_status.set_eip_status(
                 self.tr("Starting..."))
             self._eip_status.eip_button.setEnabled(False)
