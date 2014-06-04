@@ -332,6 +332,7 @@ class EIPStatusWidget(QtGui.QWidget):
         :type message: str or unicode
         """
         self.ui.lblEIPMessage.setText(message)
+        self.ui.lblEIPMessage.show()
 
     def set_eip_status(self, status, error=False):
         """
@@ -515,6 +516,8 @@ class EIPStatusWidget(QtGui.QWidget):
             # when we detect vpn authentication is happening
             msg = self.tr("Encrypted Internet is starting")
             self.set_eip_message(msg)
+            # on the first-run path, we hadn't showed the button yet.
+            self.eip_button.show()
         elif vpn_state == "GET_CONFIG":
             self.set_eip_status(self.tr("Retrieving configuration..."))
         elif vpn_state == "WAIT":
@@ -572,9 +575,10 @@ class EIPStatusWidget(QtGui.QWidget):
 
     def set_provider(self, provider):
         self._provider = provider
+
         self.ui.lblEIPMessage.setText(
             self.tr("Routing traffic through: <b>{0}</b>").format(
-                self._provider))
+                provider))
 
     def aborted(self):
         """
@@ -594,6 +598,9 @@ class EIPStatusWidget(QtGui.QWidget):
         TRIGGERS:
             Signaler.eip_connection_aborted
         """
+        # TODO this name is very misleading, since there's a generic signal
+        # that's called connection_aborted / connection_died...
+        # should rename to something more specific about missing config.
         logger.error("Tried to start EIP but cannot find any "
                      "available provider!")
 
