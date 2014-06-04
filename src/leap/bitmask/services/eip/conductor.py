@@ -114,13 +114,19 @@ class EIPConductor(object):
         """
         self.qtsigs.do_connect_signal.emit()
 
+    def tear_fw_down(self):
+        """
+        Tear the firewall down.
+        """
+        self._backend.tear_fw_down()
+
     @QtCore.Slot()
     def _start_eip(self):
         """
         Starts EIP.
         """
-        # FIXME --- pass is_restart parameter to here ???
-        is_restart = self._eip_status and self._eip_status.is_restart
+        st = self._eip_status
+        is_restart = st and st.is_restart
 
         def reconnect():
             self.qtsigs.disconnecting_signal.connect(self._stop_eip)
@@ -130,6 +136,7 @@ class EIPConductor(object):
         else:
             self._eip_status.eip_pre_up()
         self.user_stopped_eip = False
+        self._eip_status.hide_fw_down_button()
 
         # Until we set an option in the preferences window, we'll assume that
         # by default we try to autostart. If we switch it off manually, it
@@ -138,7 +145,19 @@ class EIPConductor(object):
         self._eip_status.is_restart = False
 
         # DO the backend call!
-        self._backend.eip_start()
+        self._backend.eip_start(restart=is_restart)
+
+    def reconnect_stop_signal(self):
+        """
+        Restore the original behaviour associated with the disconnecting
+        signal, this is, trigger a normal stop, and not a restart one.
+        """
+
+        def do_stop(*args):
+            self._stop_eip(restart=False)
+
+        self.qtsigs.disconnecting_signal.disconnect()
+        self.qtsigs.disconnecting_signal.connect(do_stop)
 
     @QtCore.Slot()
     def _stop_eip(self, restart=False, failed=False):
@@ -178,10 +197,6 @@ class EIPConductor(object):
         def do_stop(*args):
             self._stop_eip(restart=False)
 
-        def reconnect_stop_signal():
-            self.qtsigs.disconnecting_signal.disconnect()
-            self.qtsigs.disconnecting_signal.connect(do_stop)
-
         if restart:
             # we bypass the on_eip_disconnected here
             plug_restart_on_disconnected()
@@ -209,7 +224,7 @@ class EIPConductor(object):
 
         # XXX needed?
         if restart:
-            QtDelayedCall(3000, reconnect_stop_signal)
+            QtDelayedCall(2000, self.reconnect_stop_signal)
 
     @QtCore.Slot()
     def _do_eip_restart(self):
@@ -282,8 +297,11 @@ class EIPConductor(object):
             signal = self.qtsigs.connection_aborted_signal
             self._backend.eip_terminate()
 
-        # XXX FIXME --- check exitcode is != 0 really
-        if exitCode != 0 and not self.user_stopped_eip:
+        # XXX FIXME --- check exitcode is != 0 really.
+        # bitmask-root is masking the exitcode, so we might need
+        # to fix it on that side.
+        #if exitCode != 0 and not self.user_stopped_eip:
+        if not self.user_stopped_eip:
             eip_status_label = self._eip_status.tr(
                 "{0} finished in an unexpected manner!")
             eip_status_label = eip_status_label.format(self.eip_name)
@@ -292,6 +310,9 @@ class EIPConductor(object):
             self._eip_status.set_eip_status(eip_status_label,
                                             error=True)
             signal = self.qtsigs.connection_died_signal
+            self._eip_status.show_fw_down_button()
+            msg = self._eip_status.tr("Outgoing traffic is blocked")
+            self._eip_status.set_eip_message(msg)
 
         if exitCode == 0 and IS_MAC:
             # XXX remove this warning after I fix cocoasudo.

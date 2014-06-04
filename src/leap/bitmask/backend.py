@@ -80,13 +80,13 @@ class ILEAPService(ILEAPComponent):
     Interface that every Service needs to implement
     """
 
-    def start(self):
+    def start(self, *args, **kwargs):
         """
         Start the service.
         """
         pass
 
-    def stop(self):
+    def stop(self, *args, **kwargs):
         """
         Stops the service.
         """
@@ -378,9 +378,12 @@ class EIP(object):
         if d is not None:
             d.cancel()
 
-    def _start_eip(self):
+    def _start_eip(self, restart=False):
         """
         Start EIP
+
+        :param restart: whether is is a restart.
+        :type restart: bool
         """
         provider_config = self._provider_config
         eip_config = eipconfig.EIPConfig()
@@ -404,9 +407,10 @@ class EIP(object):
         host, port = get_openvpn_management()
         self._vpn.start(eipconfig=eip_config,
                         providerconfig=provider_config,
-                        socket_host=host, socket_port=port)
+                        socket_host=host, socket_port=port,
+                        restart=restart)
 
-    def start(self):
+    def start(self, *args, **kwargs):
         """
         Start the service.
         """
@@ -419,7 +423,7 @@ class EIP(object):
             return
 
         try:
-            self._start_eip()
+            self._start_eip(*args, **kwargs)
         except vpnprocess.OpenVPNAlreadyRunning:
             signaler.signal(signaler.EIP_OPENVPN_ALREADY_RUNNING)
         except vpnprocess.AlienOpenVPNAlreadyRunning:
@@ -440,11 +444,6 @@ class EIP(object):
             logger.error("Unexpected problem: {0!r}".format(e))
         else:
             logger.debug('EIP: no errors')
-            # TODO: are we connected here?
-            # kali -- no, we are not! CONNECTED should be passed only
-            # by the vpn observer. Currently handled by the state updater
-            # in eip_status
-            #signaler.signal(signaler.EIP_CONNECTED)
 
     def _do_stop(self, shutdown=False, restart=False):
         """
@@ -538,6 +537,12 @@ class EIP(object):
         if self._signaler is not None:
             self._signaler.signal(self._signaler.EIP_GET_INITIALIZED_PROVIDERS,
                                   filtered_domains)
+
+    def tear_fw_down(self):
+        """
+        Tear the firewall down.
+        """
+        self._vpn.tear_down_firewall()
 
     def get_gateways_list(self, domain):
         """
@@ -1181,6 +1186,7 @@ class Signaler(QtCore.QObject):
     eip_state_changed = QtCore.Signal(dict)
     eip_status_changed = QtCore.Signal(dict)
     eip_process_finished = QtCore.Signal(int)
+    eip_tear_fw_down = QtCore.Signal(object)
 
     # signals whether the needed files to start EIP exist or not
     eip_can_start = QtCore.Signal(object)
@@ -1282,6 +1288,7 @@ class Signaler(QtCore.QObject):
     EIP_STATE_CHANGED = "eip_state_changed"
     EIP_STATUS_CHANGED = "eip_status_changed"
     EIP_PROCESS_FINISHED = "eip_process_finished"
+    EIP_TEAR_FW_DOWN = "eip_tear_fw_down"
 
     EIP_CAN_START = "eip_can_start"
     EIP_CANNOT_START = "eip_cannot_start"
@@ -1717,7 +1724,7 @@ class Backend(object):
         """
         self._call_queue.put(("eip", "cancel_setup_eip", None))
 
-    def eip_start(self):
+    def eip_start(self, restart=False):
         """
         Start the EIP service.
 
@@ -1738,8 +1745,11 @@ class Backend(object):
             eip_state_changed -> str
             eip_status_changed -> tuple of str (download, upload)
             eip_vpn_launcher_exception
+
+        :param restart: whether is is a restart.
+        :type restart: bool
         """
-        self._call_queue.put(("eip", "start", None))
+        self._call_queue.put(("eip", "start", None, restart))
 
     def eip_stop(self, shutdown=False, restart=False, failed=False):
         """
@@ -1804,6 +1814,12 @@ class Backend(object):
         """
         self._call_queue.put(("eip", "can_start",
                               None, domain))
+
+    def tear_fw_down(self):
+        """
+        Signal the need to tear the fw down.
+        """
+        self._call_queue.put(("eip", "tear_fw_down", None))
 
     def user_login(self, provider, username, password):
         """

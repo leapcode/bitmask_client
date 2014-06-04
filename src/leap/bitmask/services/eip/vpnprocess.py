@@ -183,6 +183,8 @@ class VPN(object):
         kwargs['openvpn_verb'] = self._openvpn_verb
         kwargs['signaler'] = self._signaler
 
+        restart = kwargs.pop('restart', False)
+
         # start the main vpn subprocess
         vpnproc = VPNProcess(*args, **kwargs)
 
@@ -193,8 +195,9 @@ class VPN(object):
         # we try to bring the firewall up
         if IS_LINUX:
             gateways = vpnproc.getGateways()
-            firewall_up = self._launch_firewall(gateways)
-            if not firewall_up:
+            firewall_up = self._launch_firewall(gateways,
+                                                restart=restart)
+            if not restart and not firewall_up:
                 logger.error("Could not bring firewall up, "
                              "aborting openvpn launch.")
                 return
@@ -216,7 +219,7 @@ class VPN(object):
         self._pollers.extend(poll_list)
         self._start_pollers()
 
-    def _launch_firewall(self, gateways):
+    def _launch_firewall(self, gateways, restart=False):
         """
         Launch the firewall using the privileged wrapper.
 
@@ -231,8 +234,10 @@ class VPN(object):
         # XXX could check that the iptables rules are in place.
 
         BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
-        exitCode = subprocess.call(["pkexec",
-                                    BM_ROOT, "firewall", "start"] + gateways)
+        cmd = ["pkexec", BM_ROOT, "firewall", "start"]
+        if restart:
+            cmd.append("restart")
+        exitCode = subprocess.call(cmd + gateways)
         return True if exitCode is 0 else False
 
     def is_fw_down(self):
@@ -246,7 +251,7 @@ class VPN(object):
         fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
         return fw_is_down()
 
-    def _tear_down_firewall(self):
+    def tear_down_firewall(self):
         """
         Tear the firewall down using the privileged wrapper.
         """
@@ -270,7 +275,7 @@ class VPN(object):
 
                 # we try to tear the firewall down
                 if IS_LINUX and self._user_stopped:
-                    firewall_down = self._tear_down_firewall()
+                    firewall_down = self.tear_down_firewall()
                     if firewall_down:
                         logger.debug("Firewall down")
                     else:
@@ -333,7 +338,7 @@ class VPN(object):
                 self.TERMINATE_WAIT, self._kill_if_left_alive)
 
             if IS_LINUX and self._user_stopped:
-                firewall_down = self._tear_down_firewall()
+                firewall_down = self.tear_down_firewall()
                 if firewall_down:
                     logger.debug("Firewall down")
                 else:
