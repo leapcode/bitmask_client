@@ -1543,6 +1543,8 @@ class MainWindow(QtGui.QMainWindow):
             should_start = self._provides_eip_and_enabled()
 
         if should_start and not self._already_started_eip:
+            if self._eip_status.is_cold_start:
+                self._backend.tear_fw_down()
             # XXX this should be handled by the state machine.
             self._enable_eip_start_action()
             self._eip_status.set_eip_status(

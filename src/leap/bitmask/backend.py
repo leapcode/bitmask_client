@@ -381,6 +381,9 @@ class EIP(object):
     def _start_eip(self, restart=False):
         """
         Start EIP
+
+        :param restart: whether is is a restart.
+        :type restart: bool
         """
         provider_config = self._provider_config
         eip_config = eipconfig.EIPConfig()
@@ -1742,6 +1745,9 @@ class Backend(object):
             eip_state_changed -> str
             eip_status_changed -> tuple of str (download, upload)
             eip_vpn_launcher_exception
+
+        :param restart: whether is is a restart.
+        :type restart: bool
         """
         self._call_queue.put(("eip", "start", None, restart))
 

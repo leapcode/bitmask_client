@@ -125,8 +125,8 @@ class EIPConductor(object):
         """
         Starts EIP.
         """
-        # FIXME --- pass is_restart parameter to here ???
-        is_restart = self._eip_status and self._eip_status.is_restart
+        st = self._eip_status
+        is_restart = st and st.is_restart
 
         def reconnect():
             self.qtsigs.disconnecting_signal.connect(self._stop_eip)

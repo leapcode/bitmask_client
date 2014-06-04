@@ -85,6 +85,7 @@ class EIPStatusWidget(QtGui.QWidget):
 
         self._provider = ""
         self.is_restart = False
+        self.is_cold_start = True
 
         # Action for the systray
         self._eip_disabled_action = QtGui.QAction(
@@ -508,6 +509,7 @@ class EIPStatusWidget(QtGui.QWidget):
             # --- is this currently being sent?
             self.eipconnection.qtsigs.connected_signal.emit()
             self._on_eip_connected()
+            self.is_cold_start = False
 
         # XXX should lookup vpn_state map in EIPConnection
         elif vpn_state == "AUTH":
