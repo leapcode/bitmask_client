@@ -21,6 +21,7 @@ import logging
 import os
 import platform
 import stat
+import sys
 import subprocess
 import tempfile
 
@@ -342,6 +343,46 @@ def DarwinInitializer():
 #
 # Linux initializers
 #
+
+def _get_missing_resolvconf_dialog():
+    """
+    Create a dialog for notifying about missing openresolv.
+
+    :rtype: QtGui.QMessageBox instance
+    """
+    NO_RESOLVCONF = (
+        "Could not find <b>resolvconf</b> installed in your system.\n"
+        "Do you want to quit Bitmask now?")
+
+    EXPLAIN = (
+        "Encrypted Internet needs resolvconf installed to work properly.\n"
+        "Please use your package manager to install it.\n")
+
+    msg = QtGui.QMessageBox()
+    msg.setWindowTitle(msg.tr("Missing resolvconf framework"))
+    msg.setText(msg.tr(NO_RESOLVCONF))
+    # but maybe the user really deserve to know more
+    msg.setInformativeText(msg.tr(EXPLAIN))
+    msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+    msg.setDefaultButton(QtGui.QMessageBox.Yes)
+    return msg
+
+
+def _linux_check_resolvconf():
+    """
+    Raise a dialog warning about the lack of the resolvconf framework.
+    """
+    RESOLVCONF_PATH = "/sbin/resolvconf"
+    missing = not os.path.isfile(RESOLVCONF_PATH)
+
+    if missing:
+        msg = _get_missing_resolvconf_dialog()
+        ret = msg.exec_()
+
+        if ret == QtGui.QMessageBox.Yes:
+            sys.exit()
+
+
 def _linux_install_missing_scripts(badexec, notfound):
     """
     Try to install the missing up/down scripts.
@@ -395,7 +436,11 @@ def _linux_install_missing_scripts(badexec, notfound):
 
 def LinuxInitializer():
     """
-    Raise a dialog in case that either updown scripts or policykit file
-    are missing or they have incorrect permissions.
+    Raise a dialog if needed files are missing.
+
+    Missing files can be either system-wide resolvconf, bitmask-root, or
+    policykit file. The dialog will also be raised if some of those files are
+    found to have incorrect permissions.
     """
+    _linux_check_resolvconf()
     check_missing()
