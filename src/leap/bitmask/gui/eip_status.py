@@ -249,7 +249,7 @@ class EIPStatusWidget(QtGui.QWidget):
 
     def set_action_eip_startstop(self, action_eip_startstop):
         """
-        Sets the action_eip_startstop to use.
+        Set the action_eip_startstop to use.
 
         :param action_eip_startstop: action_eip_status to be used
         :type action_eip_startstop: QtGui.QAction
@@ -392,6 +392,9 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         Enable firewall-down button.
         """
+        retry_msg = self.tr("Retry")
+        self.ui.btnEipStartStop.setText(retry_msg)
+        self._action_eip_startstop.setText(retry_msg)
         self.ui.btnFwDown.show()
 
     def _on_fw_down_button_clicked(self):
@@ -404,6 +407,7 @@ class EIPStatusWidget(QtGui.QWidget):
 
         # XXX do actual check
         msg = "Traffic is being routed in the clear."
+        self.ui.btnEipStartStop.setText(self.tr("Turn ON"))
         self.set_eip_message(msg)
         self.set_eip_status("")
 
@@ -419,15 +423,13 @@ class EIPStatusWidget(QtGui.QWidget):
         self._reset_traffic_rates()
         self.ui.eip_bandwidth.hide()
 
-        # XXX FIXME ! ----------------------- this needs to
-        # accomodate the messages about firewall status. Right now
-        # we're assuming it works correctly, but we should test fw
+        # This is assuming the firewall works correctly, but we should test fw
         # status positively.
         # Or better call it from the conductor...
 
         clear_traffic = self.tr("Traffic is being routed in the clear.")
         unreachable_net = self.tr("Network is unreachable.")
-        failed_msg = self.tr("Cannot start Encrypted Internet")
+        failed_msg = self.tr("Error connecting")
 
         if restart:
             msg = unreachable_net
@@ -439,14 +441,15 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.lblEIPStatus.show()
         self.show()
 
-    def eip_failed_to_restart(self):
+    def eip_failed_to_connect(self):
         """
-        Update EIP messages.
+        Update EIP messages with error during (re)connection.
         """
-        msg = self.tr("Could not restart Encrypted Internet")
+        msg = self.tr("Error connecting.")
         self.ui.lblEIPMessage.setText(msg)
         self.ui.lblEIPStatus.show()
-        self.set_eip_status(self.tr("You can launch the service manually."))
+        self.set_eip_status(self.tr("Bitmask is blocking "
+                                    "unencrypted traffic."))
         self.show_fw_down_button()
 
     @QtCore.Slot(dict)
