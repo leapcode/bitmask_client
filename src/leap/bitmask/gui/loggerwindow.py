@@ -27,7 +27,7 @@ from twisted.internet import threads
 from ui_loggerwindow import Ui_LoggerWindow
 
 from leap.bitmask.util.constants import PASTEBIN_API_DEV_KEY
-from leap.bitmask.util.leap_log_handler import LeapLogHandler
+from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 from leap.bitmask.util import pastebin
 from leap.common.check import leap_assert, leap_assert_type
 
