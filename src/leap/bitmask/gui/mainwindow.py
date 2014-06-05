@@ -52,7 +52,7 @@ from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
 from leap.bitmask.util import make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
-from leap.bitmask.util.leap_log_handler import LeapLogHandler
+from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 
 if IS_WIN:
     from leap.bitmask.platform_init.locks import WindowsLock
