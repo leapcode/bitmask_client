@@ -71,7 +71,20 @@ def _is_auth_agent_running():
         'ps aux | grep "[l]xpolkit"'
     ]
     is_running = [commands.getoutput(cmd) for cmd in polkit_options]
-    return any(is_running)
+
+    # gnome-shell does not uses a separate process for the polkit-agent, it
+    # uses a polkit-agent within its own process so we can't ps-grep it.
+    is_running = any(is_running)
+    if not is_running:
+        is_gnome_shell = commands.getoutput('ps aux | grep [g]nome-shell')
+
+        # $DESKTOP_SESSION == 'gnome' -> gnome-shell
+        # $DESKTOP_SESSION == 'gnome-fallback' -> gnome-shell fallback mode,
+        # uses polkit-gnome...
+        if is_gnome_shell and os.getenv("DESKTOP_SESSION") == 'gnome':
+            is_running = True
+
+    return is_running
 
 
 def _try_to_launch_agent():
