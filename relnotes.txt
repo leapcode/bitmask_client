@@ -1,4 +1,4 @@
-﻿ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.5.1
+ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.5.1
 
 The LEAP  team is  pleased to announce  the immediate  availability of
 version 0.5.1  of Bitmask,  the Internet Encryption  Toolkit, codename
