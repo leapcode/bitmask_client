@@ -1,5 +1,6 @@
 ﻿= Bitmask Release Checklist (*) =
   * [ ] Check that all tests are passing!
+  * [ ] Check that the version in bitmask_client/pkg/linux/bitmask-root is bumped if needed.
   * [ ] Tag everything
     * Should be done for the following packages, in order:
       * [ ] 1. leap.common
