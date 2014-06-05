@@ -24,6 +24,7 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+from leap.bitmask.config import flags
 from leap.bitmask.services import get_service_display_name, EIP_SERVICE
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.util.averages import RateMovingAverage
@@ -416,6 +417,7 @@ class EIPStatusWidget(QtGui.QWidget):
         Sets the state of the widget to how it should look after EIP
         has stopped
         """
+        self.set_country_code("")
         self._reset_traffic_rates()
         self.ui.eip_bandwidth.hide()
 
@@ -582,6 +584,25 @@ class EIPStatusWidget(QtGui.QWidget):
             self.tr("Routing traffic through: <b>{0}</b>").format(
                 provider))
 
+        ccode = flags.CURRENT_VPN_COUNTRY
+        if ccode is not None:
+            self.set_country_code(ccode)
+
+    def set_country_code(self, code):
+        """
+        Set the pixmap of the given country code
+
+        :param code: the country code
+        :type code: str
+        """
+        if code is not None and len(code) == 2:
+            img = ":/images/countries/%s.png" % (code.lower(),)
+        else:
+            img = None
+        cc = self.ui.lblGatewayCountryCode
+        cc.setPixmap(QtGui.QPixmap(img))
+        cc.setToolTip(code)
+
     def aborted(self):
         """
         Notify the state machine that EIP was aborted for some reason.
@@ -704,3 +725,6 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         self.set_eip_status("", error=error)
         self.set_eip_status_icon("error")
+
+import eipstatus_rc
+assert(eipstatus_rc)

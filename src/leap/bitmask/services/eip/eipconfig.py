@@ -110,7 +110,7 @@ class VPNGatewaySelector(object):
 
     def get_gateways_list(self):
         """
-        Returns the existing gateways, sorted by timezone proximity.
+        Return the existing gateways, sorted by timezone proximity.
 
         :rtype: list of tuples (location, ip)
                 (str, IPv4Address or IPv6Address object)
@@ -148,16 +148,36 @@ class VPNGatewaySelector(object):
 
     def get_gateways(self):
         """
-        Returns the 4 best gateways, sorted by timezone proximity.
+        Return the 4 best gateways, sorted by timezone proximity.
 
         :rtype: list of IPv4Address or IPv6Address object.
         """
         gateways = [ip for location, ip in self.get_gateways_list()][:4]
         return gateways
 
+    def get_gateways_country_code(self):
+        """
+        Return a dict with ipaddress -> country code mapping.
+
+        :rtype: dict
+        """
+        country_codes = {}
+
+        locations = self._eipconfig.get_locations()
+        gateways = self._eipconfig.get_gateways()
+
+        for idx, gateway in enumerate(gateways):
+            gateway_location = gateway.get('location')
+
+            ip = self._eipconfig.get_gateway_ip(idx)
+            if gateway_location is not None:
+                ccode = locations[gateway['location']]['country_code']
+                country_codes[ip] = ccode
+        return country_codes
+
     def _get_timezone_distance(self, offset):
         '''
-        Returns the distance between the local timezone and
+        Return the distance between the local timezone and
         the one with offset 'offset'.
 
         :param offset: the distance of a timezone to GMT.
@@ -179,7 +199,7 @@ class VPNGatewaySelector(object):
 
     def _get_local_offset(self):
         '''
-        Returns the distance between GMT and the local timezone.
+        Return the distance between GMT and the local timezone.
 
         :rtype: int
         '''

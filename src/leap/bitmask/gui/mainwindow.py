@@ -1465,6 +1465,7 @@ class MainWindow(QtGui.QMainWindow):
         self._already_started_eip = True
 
         # check for connectivity
+        # we might want to leave a little time here...
         self._check_name_resolution(domain)
 
     def _check_name_resolution(self, domain):
