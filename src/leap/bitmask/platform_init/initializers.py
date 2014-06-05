@@ -14,15 +14,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 """
-Platform dependant initializing code
+Platform-dependant initialization code.
 """
-
 import logging
 import os
 import platform
 import stat
+import sys
 import subprocess
 import tempfile
 
@@ -47,7 +46,7 @@ _system = platform.system()
 
 def init_platform():
     """
-    Returns the right initializer for the platform we are running in, or
+    Return the right initializer for the platform we are running in, or
     None if no proper initializer is found
     """
     initializer = None
@@ -79,7 +78,7 @@ UPDOWN_BADEXEC_MSG = BADEXEC_MSG % (
 
 def get_missing_updown_dialog():
     """
-    Creates a dialog for notifying of missing updown scripts.
+    Create a dialog for notifying of missing updown scripts.
     Returns that dialog.
 
     :rtype: QtGui.QMessageBox instance
@@ -101,7 +100,7 @@ def get_missing_updown_dialog():
 
 def check_missing():
     """
-    Checks for the need of installing missing scripts, and
+    Check for the need of installing missing scripts, and
     raises a dialog to ask user for permission to do it.
     """
     config = LeapSettings()
@@ -149,7 +148,7 @@ def check_missing():
 
 def _windows_has_tap_device():
     """
-    Loops over the windows registry trying to find if the tap0901 tap driver
+    Loop over the windows registry trying to find if the tap0901 tap driver
     has been installed on this machine.
     """
     import _winreg as reg
@@ -175,7 +174,7 @@ def _windows_has_tap_device():
 
 def WindowsInitializer():
     """
-    Raises a dialog in case that the windows tap driver has not been found
+    Raise a dialog in case that the windows tap driver has not been found
     in the registry, asking the user for permission to install the driver
     """
     if not _windows_has_tap_device():
@@ -219,7 +218,7 @@ def WindowsInitializer():
 
 def _darwin_has_tun_kext():
     """
-    Returns True only if we found a directory under the system kext folder
+    Return True only if we found a directory under the system kext folder
     containing a kext named tun.kext, AND we found a startup item named 'tun'
     """
     # XXX we should be smarter here and use kextstats output.
@@ -235,7 +234,7 @@ def _darwin_has_tun_kext():
 
 def _darwin_install_missing_scripts(badexec, notfound):
     """
-    Tries to install the missing up/down scripts.
+    Try to install the missing up/down scripts.
 
     :param badexec: error for notifying execution error during command.
     :type badexec: str
@@ -290,7 +289,7 @@ def _darwin_install_missing_scripts(badexec, notfound):
 
 def DarwinInitializer():
     """
-    Raises a dialog in case that the osx tuntap driver has not been found
+    Raise a dialog in case that the osx tuntap driver has not been found
     in the registry, asking the user for permission to install the driver
     """
     # XXX split this function into several
@@ -344,9 +343,49 @@ def DarwinInitializer():
 #
 # Linux initializers
 #
+
+def _get_missing_resolvconf_dialog():
+    """
+    Create a dialog for notifying about missing openresolv.
+
+    :rtype: QtGui.QMessageBox instance
+    """
+    NO_RESOLVCONF = (
+        "Could not find <b>resolvconf</b> installed in your system.\n"
+        "Do you want to quit Bitmask now?")
+
+    EXPLAIN = (
+        "Encrypted Internet needs resolvconf installed to work properly.\n"
+        "Please use your package manager to install it.\n")
+
+    msg = QtGui.QMessageBox()
+    msg.setWindowTitle(msg.tr("Missing resolvconf framework"))
+    msg.setText(msg.tr(NO_RESOLVCONF))
+    # but maybe the user really deserve to know more
+    msg.setInformativeText(msg.tr(EXPLAIN))
+    msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+    msg.setDefaultButton(QtGui.QMessageBox.Yes)
+    return msg
+
+
+def _linux_check_resolvconf():
+    """
+    Raise a dialog warning about the lack of the resolvconf framework.
+    """
+    RESOLVCONF_PATH = "/sbin/resolvconf"
+    missing = not os.path.isfile(RESOLVCONF_PATH)
+
+    if missing:
+        msg = _get_missing_resolvconf_dialog()
+        ret = msg.exec_()
+
+        if ret == QtGui.QMessageBox.Yes:
+            sys.exit()
+
+
 def _linux_install_missing_scripts(badexec, notfound):
     """
-    Tries to install the missing up/down scripts.
+    Try to install the missing up/down scripts.
 
     :param badexec: error for notifying execution error during command.
     :type badexec: str
@@ -397,7 +436,11 @@ def _linux_install_missing_scripts(badexec, notfound):
 
 def LinuxInitializer():
     """
-    Raises a dialog in case that either updown scripts or policykit file
-    are missing or they have incorrect permissions.
+    Raise a dialog if needed files are missing.
+
+    Missing files can be either system-wide resolvconf, bitmask-root, or
+    policykit file. The dialog will also be raised if some of those files are
+    found to have incorrect permissions.
     """
+    _linux_check_resolvconf()
     check_missing()
