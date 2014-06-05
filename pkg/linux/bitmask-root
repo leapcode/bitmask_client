@@ -838,6 +838,9 @@ def main():
             print(VERSION)
             exit(0)
 
+        if os.getuid() != 0:
+            bail("ERROR: must be run as root")
+
         if command == "openvpn_start":
             openvpn_start(args)
 
