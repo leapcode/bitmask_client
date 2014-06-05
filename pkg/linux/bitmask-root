@@ -765,11 +765,13 @@ def firewall_start(args):
                   "--jump", "ACCEPT")
         # allow multicast Simple Service Discovery Protocol
         ip4tables("--append", BITMASK_CHAIN,
-                  "--protocol", "udp", "--destination", "239.255.255.250", "--dport", "1900",
+                  "--protocol", "udp",
+                  "--destination", "239.255.255.250", "--dport", "1900",
                   "-o", default_device, "--jump", "RETURN")
         # allow multicast Bonjour/mDNS
         ip4tables("--append", BITMASK_CHAIN,
-                  "--protocol", "udp", "--destination", "224.0.0.251", "--dport", "5353",
+                  "--protocol", "udp",
+                  "--destination", "224.0.0.251", "--dport", "5353",
                   "-o", default_device, "--jump", "RETURN")
     if local_network_ipv6:
         ip6tables("--append", BITMASK_CHAIN,
@@ -777,11 +779,13 @@ def firewall_start(args):
                   "--jump", "ACCEPT")
         # allow multicast Simple Service Discovery Protocol
         ip6tables("--append", BITMASK_CHAIN,
-                  "--protocol", "udp", "--destination", "FF05::C", "--dport", "1900",
+                  "--protocol", "udp",
+                  "--destination", "FF05::C", "--dport", "1900",
                   "-o", default_device, "--jump", "RETURN")
         # allow multicast Bonjour/mDNS
         ip6tables("--append", BITMASK_CHAIN,
-                  "--protocol", "udp", "--destination", "FF02::FB", "--dport", "5353",
+                  "--protocol", "udp",
+                  "--destination", "FF02::FB", "--dport", "5353",
                   "-o", default_device, "--jump", "RETURN")
 
     # allow ipv4 traffic to gateways
@@ -792,15 +796,19 @@ def firewall_start(args):
     # log rejected packets to syslog
     if DEBUG:
         iptables("--append", BITMASK_CHAIN, "-o", default_device,
-                 "--jump", "LOG", "--log-prefix", "iptables denied: ", "--log-level", "7")
+                 "--jump", "LOG", "--log-prefix", "iptables denied: ",
+                 "--log-level", "7")
 
-    # for now, ensure all other ipv6 packets get rejected (regardless of device)
+    # for now, ensure all other ipv6 packets get rejected (regardless of
+    # device)
     # (not sure why, but "-p any" doesn't work)
     ip6tables("--append", BITMASK_CHAIN, "-p", "tcp", "--jump", "REJECT")
     ip6tables("--append", BITMASK_CHAIN, "-p", "udp", "--jump", "REJECT")
 
     # reject all other ipv4 sent over the default device
-    ip4tables("--append", BITMASK_CHAIN, "-o", default_device, "--jump", "REJECT")
+    ip4tables("--append", BITMASK_CHAIN, "-o",
+              default_device, "--jump", "REJECT")
+
 
 def firewall_stop():
     """
@@ -853,8 +861,8 @@ def main():
                 nameserver_setter.start(NAMESERVER)
             except Exception as ex:
                 if not is_restart:
-		    nameserver_restorer.start()
-		    firewall_stop()
+                    nameserver_restorer.start()
+                    firewall_stop()
                 bail("ERROR: could not start firewall", ex)
 
         elif command == "firewall_stop":
