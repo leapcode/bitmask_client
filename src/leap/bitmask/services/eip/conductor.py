@@ -258,7 +258,7 @@ class EIPConductor(object):
         """
         logger.debug("TLS Error: eip_stop (failed)")
         self.qtsigs.connection_died_signal.emit()
-        QtDelayedCall(1000, self._eip_status.eip_failed_to_restart)
+        QtDelayedCall(1000, self._eip_status.eip_failed_to_connect)
 
     @QtCore.Slot(int)
     def _eip_finished(self, exitCode):
@@ -311,8 +311,7 @@ class EIPConductor(object):
                                             error=True)
             signal = self.qtsigs.connection_died_signal
             self._eip_status.show_fw_down_button()
-            msg = self._eip_status.tr("Outgoing traffic is blocked")
-            self._eip_status.set_eip_message(msg)
+            self._eip_status.eip_failed_to_connect()
 
         if exitCode == 0 and IS_MAC:
             # XXX remove this warning after I fix cocoasudo.

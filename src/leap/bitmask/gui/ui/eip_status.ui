@@ -242,7 +242,7 @@
      <item row="0" column="2">
       <widget class="QPushButton" name="btnFwDown">
        <property name="text">
-        <string>Allow unencrypted traffic</string>
+        <string>Turn Off</string>
        </property>
       </widget>
      </item>
