@@ -29,6 +29,7 @@ from leap.bitmask import util
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
 from leap.bitmask.provider import get_provider_path
+from leap.bitmask.provider.pinned import PinnedProviders
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.util.request_helpers import get_content
@@ -175,6 +176,14 @@ class ProviderBootstrapper(AbstractBootstrapper):
         domain = self._domain.encode(sys.getfilesystemencoding())
         provider_json = os.path.join(util.get_path_prefix(),
                                      get_provider_path(domain))
+
+        if domain in PinnedProviders.domains() and \
+           not os.path.exists(provider_json):
+            mkdir_p(os.path.join(os.path.dirname(provider_json),
+                                 "keys", "ca"))
+            cacert = os.path.join(os.path.dirname(provider_json),
+                                  "keys", "ca", "cacert.pem")
+            PinnedProviders.save_hardcoded(domain, provider_json, cacert)
 
         mtime = get_mtime(provider_json)
 
