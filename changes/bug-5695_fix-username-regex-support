@@ -1,3 +1,0 @@
-- Update username regex to support the same as webapp. Closes #5965.
-- Wrong error message for username too short. (Bug #5697)
-- Cleanup and refactor username/password validators.

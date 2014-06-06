@@ -1,1 +1,0 @@
-- Enable UI when OpenVPN bin is not found, plus check before starting EIP. Fixes #5619.

@@ -1,8 +1,8 @@
-ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.5.1
+ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.5.2
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.5.1  of Bitmask,  the Internet Encryption  Toolkit, codename
-"lil less leaky".
+version 0.5.2  of Bitmask,  the Internet Encryption  Toolkit, codename
+"are we there yet".
 
 https://downloads.leap.se/client/
 
@@ -43,13 +43,9 @@ NOT trust your life to it.
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask  0.5.1 improves  greatly  its mail  support  and stability  in
-general, among other various bug fixes. You can refer to the CHANGELOG
-for the meat.
-
-As always,  you can  connect to the  Encrypted Internet  Proxy service
-offered by a  provider of your choice, and enjoy  a encrypted internet
-connection that the spying eyes can only track back to your provider.
+Bitmask  0.5.2 improves  greatly  its Encrypted  internet support  and
+stability in general, among other various  bug fixes. You can refer to
+the CHANGELOG for the meat.
 
 Encrypted Internet on Linux now  helps you don't shoot yourself in the
 foot  by   leaking  traffic  outside  of  the   secure  connection  it
@@ -108,6 +104,6 @@ beyond any border.
 
 The LEAP team,
 
-May 16, 2014
+June 6, 2014
 Somewhere in the middle of the intertubes.
 EOF
