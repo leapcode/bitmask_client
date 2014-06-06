@@ -120,17 +120,22 @@ def main():
     """
     Starts the main event loop and launches the main window.
     """
-    # TODO move boilerplate outa here!
+    # Parse arguments and store them
     _, opts = leap_argparse.init_leapc_args()
     do_display_version(opts)
 
-    standalone = opts.standalone
-    offline = opts.offline
-    bypass_checks = getattr(opts, 'danger', False)
-    debug = opts.debug
-    logfile = opts.log_file
-    mail_logfile = opts.mail_log_file
+    bypass_checks = opts.danger
     start_hidden = opts.start_hidden
+
+    flags.STANDALONE = opts.standalone
+    flags.OFFLINE = opts.offline
+    flags.MAIL_LOGFILE = opts.mail_log_file
+    flags.APP_VERSION_CHECK = opts.app_version_check
+    flags.API_VERSION_CHECK = opts.api_version_check
+    flags.OPENVPN_VERBOSITY = opts.openvpn_verb
+    flags.SKIP_WIZARD_CHECKS = opts.skip_wizard_checks
+
+    flags.CA_CERT_FILE = opts.ca_cert_file
 
     replace_stdout = True
     if opts.repair or opts.import_maildir:
@@ -138,17 +143,7 @@ def main():
         # this could be more generic with a Command class.
         replace_stdout = False
 
-    logger = get_logger(debug, logfile, replace_stdout)
-
-    flags.STANDALONE = standalone
-    flags.OFFLINE = offline
-    flags.MAIL_LOGFILE = mail_logfile
-    flags.APP_VERSION_CHECK = opts.app_version_check
-    flags.API_VERSION_CHECK = opts.api_version_check
-    flags.OPENVPN_VERBOSITY = opts.openvpn_verb
-    flags.SKIP_WIZARD_CHECKS = opts.skip_wizard_checks
-
-    flags.CA_CERT_FILE = opts.ca_cert_file
+    logger = get_logger(opts.debug, opts.log_file, replace_stdout)
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.
