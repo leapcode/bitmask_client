@@ -48,6 +48,7 @@ from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
+from leap.bitmask.config import flags
 from leap.bitmask.gui import locale_rc  # noqa - silence pylint
 from leap.bitmask.gui.mainwindow import MainWindow
 from leap.bitmask.logs.utils import get_logger
@@ -139,12 +140,6 @@ def main():
 
     logger = get_logger(debug, logfile, replace_stdout)
 
-    #############################################################
-    # Given how paths and bundling works, we need to delay the imports
-    # of certain parts that depend on this path settings.
-    # So first we set all the places where standalone might be queried.
-    from leap.bitmask.config import flags
-    from leap.common.config.baseconfig import BaseConfig
     flags.STANDALONE = standalone
     flags.OFFLINE = offline
     flags.MAIL_LOGFILE = mail_logfile
@@ -154,8 +149,6 @@ def main():
     flags.SKIP_WIZARD_CHECKS = opts.skip_wizard_checks
 
     flags.CA_CERT_FILE = opts.ca_cert_file
-
-    BaseConfig.standalone = standalone
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.
