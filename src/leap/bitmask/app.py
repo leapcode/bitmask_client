@@ -51,7 +51,7 @@ from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config import flags
 from leap.bitmask.gui import locale_rc  # noqa - silence pylint
 from leap.bitmask.gui.mainwindow import MainWindow
-from leap.bitmask.logs.utils import get_logger
+from leap.bitmask.logs.utils import create_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
 from leap.bitmask.util import leap_argparse
@@ -143,7 +143,7 @@ def main():
         # this could be more generic with a Command class.
         replace_stdout = False
 
-    logger = get_logger(opts.debug, opts.log_file, replace_stdout)
+    logger = create_logger(opts.debug, opts.log_file, replace_stdout)
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.

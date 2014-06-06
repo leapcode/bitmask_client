@@ -8,7 +8,7 @@ from leap.bitmask.logs.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
 
 
-def get_logger(debug=False, logfile=None, replace_stdout=True):
+def create_logger(debug=False, logfile=None, replace_stdout=True):
     """
     Create the logger and attach the handlers.
 
