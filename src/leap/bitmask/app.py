@@ -170,7 +170,6 @@ def main():
     # And then we import all the other stuff
     # I think it's safe to import at the top by now -- kali
     from leap.bitmask.gui import locale_rc
-    from leap.bitmask.gui import twisted_main
     from leap.bitmask.gui.mainwindow import MainWindow
     from leap.bitmask.platform_init import IS_MAC
     from leap.bitmask.platform_init.locks import we_are_the_one_and_only
@@ -231,10 +230,8 @@ def main():
     #timer.timeout.connect(lambda: None)
     # XXX ---------------------------------------------------------
 
-    window = MainWindow(
-        lambda: twisted_main.quit(app),
-        bypass_checks=bypass_checks,
-        start_hidden=start_hidden)
+    window = MainWindow(bypass_checks=bypass_checks,
+                        start_hidden=start_hidden)
 
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
