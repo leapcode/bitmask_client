@@ -238,11 +238,6 @@ def main():
     # callable used in addSystemEventTrigger to handle SIGTERM
     sigterm_window = partial(sigterm_handler, window, logger=logger)
 
-    # This was a good idea, but for this to work as intended we
-    # should centralize the start of all services in there.
-    #tx_app = leap_services()
-    #assert(tx_app)
-
     l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
     l.start(0.01)
 
