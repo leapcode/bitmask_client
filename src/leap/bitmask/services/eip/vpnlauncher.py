@@ -25,6 +25,7 @@ import stat
 from abc import ABCMeta, abstractmethod
 from functools import partial
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.platform_init import IS_LINUX
@@ -122,9 +123,9 @@ class VPNLauncher(object):
         leap_settings = LeapSettings()
         domain = providerconfig.get_domain()
         gateway_conf = leap_settings.get_selected_gateway(domain)
+        gateway_selector = VPNGatewaySelector(eipconfig)
 
         if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
-            gateway_selector = VPNGatewaySelector(eipconfig)
             gateways = gateway_selector.get_gateways()
         else:
             gateways = [gateway_conf]
@@ -132,6 +133,12 @@ class VPNLauncher(object):
         if not gateways:
             logger.error('No gateway was found!')
             raise VPNLauncherException('No gateway was found!')
+
+        # this only works for selecting the first gateway, as we're
+        # currently doing.
+        ccodes = gateway_selector.get_gateways_country_code()
+        gateway_ccode = ccodes[gateways[0]]
+        flags.CURRENT_VPN_COUNTRY = gateway_ccode
 
         logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
         return gateways
