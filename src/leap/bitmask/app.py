@@ -48,9 +48,14 @@ from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
-from leap.bitmask.util import leap_argparse
+from leap.bitmask.gui import locale_rc  # noqa - silence pylint
+from leap.bitmask.gui.mainwindow import MainWindow
 from leap.bitmask.logs.utils import get_logger
+from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
+from leap.bitmask.util import leap_argparse
+from leap.bitmask.util.requirement_checker import check_requirements
+
 from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
 
@@ -166,16 +171,6 @@ def main():
     if PLAY_NICE and PLAY_NICE.isdigit():
         nice = os.nice(int(PLAY_NICE))
         logger.info("Setting NICE: %s" % nice)
-
-    # And then we import all the other stuff
-    # I think it's safe to import at the top by now -- kali
-    from leap.bitmask.gui import locale_rc
-    from leap.bitmask.gui.mainwindow import MainWindow
-    from leap.bitmask.platform_init.locks import we_are_the_one_and_only
-    from leap.bitmask.util.requirement_checker import check_requirements
-
-    # pylint: avoid unused import
-    assert(locale_rc)
 
     # TODO move to a different module: commands?
     if not we_are_the_one_and_only():
