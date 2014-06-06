@@ -17,6 +17,7 @@
 """
 VPN Manager, spawned in a custom processProtocol.
 """
+import commands
 import logging
 import os
 import shutil
@@ -30,9 +31,11 @@ import psutil
 try:
     # psutil < 2.0.0
     from psutil.error import AccessDenied as psutil_AccessDenied
+    PSUTIL_2 = False
 except ImportError:
     # psutil >= 2.0.0
     from psutil import AccessDenied as psutil_AccessDenied
+    PSUTIL_2 = True
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
@@ -67,7 +70,7 @@ class VPNObserver(object):
         'NETWORK_UNREACHABLE': (
             'Network is unreachable (code=101)',),
         'PROCESS_RESTART_TLS': (
-            "SIGUSR1[soft,tls-error]",),
+            "SIGTERM[soft,tls-error]",),
         'PROCESS_RESTART_PING': (
             "SIGTERM[soft,ping-restart]",),
         'INITIALIZATION_COMPLETED': (
@@ -113,10 +116,12 @@ class VPNObserver(object):
         :returns: a Signaler signal or None
         :rtype: str or None
         """
+        sig = self._signaler
         signals = {
-            "network_unreachable": self._signaler.EIP_NETWORK_UNREACHABLE,
-            "process_restart_tls": self._signaler.EIP_PROCESS_RESTART_TLS,
-            "process_restart_ping": self._signaler.EIP_PROCESS_RESTART_PING,
+            "network_unreachable": sig.EIP_NETWORK_UNREACHABLE,
+            "process_restart_tls": sig.EIP_PROCESS_RESTART_TLS,
+            "process_restart_ping": sig.EIP_PROCESS_RESTART_PING,
+            "initialization_completed": sig.EIP_CONNECTED
         }
         return signals.get(event.lower())
 
@@ -178,6 +183,8 @@ class VPN(object):
         kwargs['openvpn_verb'] = self._openvpn_verb
         kwargs['signaler'] = self._signaler
 
+        restart = kwargs.pop('restart', False)
+
         # start the main vpn subprocess
         vpnproc = VPNProcess(*args, **kwargs)
 
@@ -188,8 +195,9 @@ class VPN(object):
         # we try to bring the firewall up
         if IS_LINUX:
             gateways = vpnproc.getGateways()
-            firewall_up = self._launch_firewall(gateways)
-            if not firewall_up:
+            firewall_up = self._launch_firewall(gateways,
+                                                restart=restart)
+            if not restart and not firewall_up:
                 logger.error("Could not bring firewall up, "
                              "aborting openvpn launch.")
                 return
@@ -211,7 +219,7 @@ class VPN(object):
         self._pollers.extend(poll_list)
         self._start_pollers()
 
-    def _launch_firewall(self, gateways):
+    def _launch_firewall(self, gateways, restart=False):
         """
         Launch the firewall using the privileged wrapper.
 
@@ -226,11 +234,24 @@ class VPN(object):
         # XXX could check that the iptables rules are in place.
 
         BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
-        exitCode = subprocess.call(["pkexec",
-                                    BM_ROOT, "firewall", "start"] + gateways)
+        cmd = ["pkexec", BM_ROOT, "firewall", "start"]
+        if restart:
+            cmd.append("restart")
+        exitCode = subprocess.call(cmd + gateways)
         return True if exitCode is 0 else False
 
-    def _tear_down_firewall(self):
+    def is_fw_down(self):
+        """
+        Return whether the firewall is down or not.
+
+        :rtype: bool
+        """
+        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        fw_up_cmd = "pkexec {0} firewall isup".format(BM_ROOT)
+        fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
+        return fw_is_down()
+
+    def tear_down_firewall(self):
         """
         Tear the firewall down using the privileged wrapper.
         """
@@ -254,7 +275,7 @@ class VPN(object):
 
                 # we try to tear the firewall down
                 if IS_LINUX and self._user_stopped:
-                    firewall_down = self._tear_down_firewall()
+                    firewall_down = self.tear_down_firewall()
                     if firewall_down:
                         logger.debug("Firewall down")
                     else:
@@ -286,22 +307,28 @@ class VPN(object):
             self._vpnproc.aborted = True
             self._vpnproc.killProcess()
 
-    def terminate(self, shutdown=False):
+    def terminate(self, shutdown=False, restart=False):
         """
         Stops the openvpn subprocess.
 
         Attempts to send a SIGTERM first, and after a timeout
         it sends a SIGKILL.
+
+        :param shutdown: whether this is the final shutdown
+        :type shutdown: bool
+        :param restart: whether this stop is part of a hard restart.
+        :type restart: bool
         """
         from twisted.internet import reactor
         self._stop_pollers()
 
-        # We assume that the only valid shutodowns are initiated
-        # by an user action.
-        self._user_stopped = shutdown
-
         # First we try to be polite and send a SIGTERM...
-        if self._vpnproc:
+        if self._vpnproc is not None:
+            # We assume that the only valid stops are initiated
+            # by an user action, not hard restarts
+            self._user_stopped = not restart
+            self._vpnproc.is_restart = restart
+
             self._sentterm = True
             self._vpnproc.terminate_openvpn(shutdown=shutdown)
 
@@ -310,13 +337,12 @@ class VPN(object):
             reactor.callLater(
                 self.TERMINATE_WAIT, self._kill_if_left_alive)
 
-            if shutdown:
-                if IS_LINUX and self._user_stopped:
-                    firewall_down = self._tear_down_firewall()
-                    if firewall_down:
-                        logger.debug("Firewall down")
-                    else:
-                        logger.warning("Could not tear firewall down")
+            if IS_LINUX and self._user_stopped:
+                firewall_down = self.tear_down_firewall()
+                if firewall_down:
+                    logger.debug("Firewall down")
+                else:
+                    logger.warning("Could not tear firewall down")
 
     def _start_pollers(self):
         """
@@ -676,7 +702,13 @@ class VPNManager(object):
                 # we need to be able to filter out arguments in the form
                 # --openvpn-foo, since otherwise we are shooting ourselves
                 # in the feet.
-                if any(map(lambda s: s.find("LEAPOPENVPN") != -1, p.cmdline)):
+
+                if PSUTIL_2:
+                    cmdline = p.cmdline()
+                else:
+                    cmdline = p.cmdline
+                if any(map(lambda s: s.find(
+                        "LEAPOPENVPN") != -1, cmdline)):
                     openvpn_process = p
                     break
             except psutil_AccessDenied:
@@ -731,7 +763,7 @@ class VPNManager(object):
                 # However, that should be a rare case right now.
                 self._send_command("signal SIGTERM")
                 self._close_management_socket(announce=True)
-            except Exception as e:
+            except (Exception, AssertionError) as e:
                 logger.warning("Problem trying to terminate OpenVPN: %r"
                                % (e,))
         else:
@@ -800,6 +832,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         self._openvpn_verb = openvpn_verb
 
         self._vpn_observer = VPNObserver(signaler)
+        self.is_restart = False
 
     # processProtocol methods
 
@@ -835,7 +868,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         exit_code = reason.value.exitCode
         if isinstance(exit_code, int):
             logger.debug("processExited, status %d" % (exit_code,))
-        self._signaler.signal(self._signaler.EIP_PROCESS_FINISHED, exit_code)
+        self._signaler.signal(
+            self._signaler.EIP_PROCESS_FINISHED, exit_code)
         self._alive = False
 
     def processEnded(self, reason):

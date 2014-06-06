@@ -22,14 +22,15 @@ It should only be called by the Bitmask application.
 
 USAGE:
   bitmask-root firewall stop
-  bitmask-root firewall start GATEWAY1 GATEWAY2 ...
+  bitmask-root firewall start [restart] GATEWAY1 GATEWAY2 ...
   bitmask-root openvpn stop
   bitmask-root openvpn start CONFIG1 CONFIG1 ...
 
 All actions return exit code 0 for success, non-zero otherwise.
 
 The `openvpn start` action is special: it calls exec on openvpn and replaces
-the current process.
+the current process. If the `restart` parameter is passed, the firewall will
+not be teared down in the case of an error during launch.
 """
 # TODO should be tested with python3, which can be the default on some distro.
 from __future__ import print_function
@@ -38,11 +39,11 @@ import os
 import re
 import signal
 import socket
+import syslog
 import subprocess
 import sys
 import time
 import traceback
-
 
 cmdcheck = subprocess.check_output
 
@@ -50,6 +51,7 @@ cmdcheck = subprocess.check_output
 ## CONSTANTS
 ##
 
+VERSION = "1"
 SCRIPT = "bitmask-root"
 NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
@@ -128,6 +130,8 @@ if DEBUG:
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     logger.addHandler(ch)
+
+syslog.openlog(SCRIPT)
 
 ##
 ## UTILITY
@@ -413,6 +417,7 @@ def bail(msg=None, exception=None):
     """
     if msg is not None:
         print("%s: %s" % (SCRIPT, msg))
+        syslog.syslog(syslog.LOG_ERR, msg)
     if exception is not None:
         traceback.print_exc()
     exit(1)
@@ -566,7 +571,7 @@ class NameserverRestorer(Daemon):
     A daemon that will restore the previous nameservers.
     """
 
-    def run(self):
+    def run(self, *args):
         """
         Run when daemonized.
         """
@@ -614,7 +619,7 @@ def get_default_device():
     """
     routes = subprocess.check_output([IP, "route", "show"])
     match = re.search("^default .*dev ([^\s]*) .*$", routes, flags=re.M)
-    if match.groups():
+    if match and match.groups():
         return match.group(1)
     else:
         bail("Could not find default device")
@@ -629,7 +634,7 @@ def get_local_network_ipv4(device):
     """
     addresses = cmdcheck([IP, "-o", "address", "show", "dev", device])
     match = re.search("^.*inet ([^ ]*) .*$", addresses, flags=re.M)
-    if match.groups():
+    if match and match.groups():
         return match.group(1)
     else:
         return None
@@ -644,7 +649,7 @@ def get_local_network_ipv6(device):
     """
     addresses = cmdcheck([IP, "-o", "address", "show", "dev", device])
     match = re.search("^.*inet6 ([^ ]*) .*$", addresses, flags=re.M)
-    if match.groups():
+    if match and match.groups():
         return match.group(1)
     else:
         return None
@@ -653,12 +658,18 @@ def get_local_network_ipv6(device):
 def run_iptable_with_check(cmd, *args, **options):
     """
     Run an iptables command checking to see if it should:
+      for --append: run only if rule does not already exist.
       for --insert: run only if rule does not already exist.
       for --delete: run only if rule does exist.
     other commands are run normally.
     """
     if "--insert" in args:
         check_args = [arg.replace("--insert", "--check") for arg in args]
+        check_code = run(cmd, *check_args, exitcode=True)
+        if check_code != 0:
+            run(cmd, *args, **options)
+    elif "--append" in args:
+        check_args = [arg.replace("--append", "--check") for arg in args]
         check_code = run(cmd, *check_args, exitcode=True)
         if check_code != 0:
             run(cmd, *args, **options)
@@ -729,41 +740,74 @@ def firewall_start(args):
     local_network_ipv6 = get_local_network_ipv6(default_device)
     gateways = get_gateways(args)
 
-    # add custom chain "bitmask"
+    # add custom chain "bitmask" to front of OUTPUT chain
     if not ipv4_chain_exists(BITMASK_CHAIN):
         ip4tables("--new-chain", BITMASK_CHAIN)
     if not ipv6_chain_exists(BITMASK_CHAIN):
         ip6tables("--new-chain", BITMASK_CHAIN)
     iptables("--insert", "OUTPUT", "--jump", BITMASK_CHAIN)
 
-    # reject everything
-    iptables("--insert", BITMASK_CHAIN, "-o", default_device,
-             "--jump", "REJECT")
-
-    # allow traffic to gateways
-    for gateway in gateways:
-        ip4tables("--insert", BITMASK_CHAIN, "--destination", gateway,
-                  "-o", default_device, "--jump", "ACCEPT")
-
-    # allow traffic to IPs on local network
-    if local_network_ipv4:
-        ip4tables("--insert", BITMASK_CHAIN,
-                  "--destination", local_network_ipv4, "-o", default_device,
-                  "--jump", "ACCEPT")
-    if local_network_ipv6:
-        ip6tables("--insert", BITMASK_CHAIN,
-                  "--destination", local_network_ipv6, "-o", default_device,
+    # allow DNS over VPN
+    for allowed_dns in [NAMESERVER, "127.0.0.1", "127.0.1.1"]:
+        ip4tables("--append", BITMASK_CHAIN, "--protocol", "udp",
+                  "--dport", "53", "--destination", allowed_dns,
                   "--jump", "ACCEPT")
 
     # block DNS requests to anyone but the service provider or localhost
-    # when we actually route ipv6, we will need dns rules for it too
-    ip4tables("--insert", BITMASK_CHAIN, "--protocol", "udp", "--dport", "53",
+    # (when we actually route ipv6, we will need DNS rules for it too)
+    ip4tables("--append", BITMASK_CHAIN, "--protocol", "udp", "--dport", "53",
               "--jump", "REJECT")
 
-    for allowed_dns in [NAMESERVER, "127.0.0.1", "127.0.1.1"]:
-        ip4tables("--insert", BITMASK_CHAIN, "--protocol", "udp",
-                  "--dport", "53", "--destination", allowed_dns,
+    # allow traffic to IPs on local network
+    if local_network_ipv4:
+        ip4tables("--append", BITMASK_CHAIN,
+                  "--destination", local_network_ipv4, "-o", default_device,
                   "--jump", "ACCEPT")
+        # allow multicast Simple Service Discovery Protocol
+        ip4tables("--append", BITMASK_CHAIN,
+                  "--protocol", "udp",
+                  "--destination", "239.255.255.250", "--dport", "1900",
+                  "-o", default_device, "--jump", "RETURN")
+        # allow multicast Bonjour/mDNS
+        ip4tables("--append", BITMASK_CHAIN,
+                  "--protocol", "udp",
+                  "--destination", "224.0.0.251", "--dport", "5353",
+                  "-o", default_device, "--jump", "RETURN")
+    if local_network_ipv6:
+        ip6tables("--append", BITMASK_CHAIN,
+                  "--destination", local_network_ipv6, "-o", default_device,
+                  "--jump", "ACCEPT")
+        # allow multicast Simple Service Discovery Protocol
+        ip6tables("--append", BITMASK_CHAIN,
+                  "--protocol", "udp",
+                  "--destination", "FF05::C", "--dport", "1900",
+                  "-o", default_device, "--jump", "RETURN")
+        # allow multicast Bonjour/mDNS
+        ip6tables("--append", BITMASK_CHAIN,
+                  "--protocol", "udp",
+                  "--destination", "FF02::FB", "--dport", "5353",
+                  "-o", default_device, "--jump", "RETURN")
+
+    # allow ipv4 traffic to gateways
+    for gateway in gateways:
+        ip4tables("--append", BITMASK_CHAIN, "--destination", gateway,
+                  "-o", default_device, "--jump", "ACCEPT")
+
+    # log rejected packets to syslog
+    if DEBUG:
+        iptables("--append", BITMASK_CHAIN, "-o", default_device,
+                 "--jump", "LOG", "--log-prefix", "iptables denied: ",
+                 "--log-level", "7")
+
+    # for now, ensure all other ipv6 packets get rejected (regardless of
+    # device)
+    # (not sure why, but "-p any" doesn't work)
+    ip6tables("--append", BITMASK_CHAIN, "-p", "tcp", "--jump", "REJECT")
+    ip6tables("--append", BITMASK_CHAIN, "-p", "udp", "--jump", "REJECT")
+
+    # reject all other ipv4 sent over the default device
+    ip4tables("--append", BITMASK_CHAIN, "-o",
+              default_device, "--jump", "REJECT")
 
 
 def firewall_stop():
@@ -784,9 +828,26 @@ def firewall_stop():
 
 
 def main():
-    if len(sys.argv) >= 3:
+    """
+    Entry point for cmdline execution.
+    """
+    # TODO use argparse instead.
+
+    if len(sys.argv) >= 2:
         command = "_".join(sys.argv[1:3])
         args = sys.argv[3:]
+
+        is_restart = False
+        if args and args[0] == "restart":
+            is_restart = True
+            args.remove('restart')
+
+        if command == "version":
+            print(VERSION)
+            exit(0)
+
+        if os.getuid() != 0:
+            bail("ERROR: must be run as root")
 
         if command == "openvpn_start":
             openvpn_start(args)
@@ -799,8 +860,9 @@ def main():
                 firewall_start(args)
                 nameserver_setter.start(NAMESERVER)
             except Exception as ex:
-                nameserver_restorer.start()
-                firewall_stop()
+                if not is_restart:
+                    nameserver_restorer.start()
+                    firewall_stop()
                 bail("ERROR: could not start firewall", ex)
 
         elif command == "firewall_stop":

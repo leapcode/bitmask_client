@@ -188,7 +188,7 @@ class MailStatusWidget(QtGui.QWidget):
     def set_soledad_failed(self):
         """
         TRIGGERS:
-            SoledadBootstrapper.soledad_failed
+            Signaler.soledad_bootstrap_failed
 
         This method is called whenever soledad has a failure.
         """

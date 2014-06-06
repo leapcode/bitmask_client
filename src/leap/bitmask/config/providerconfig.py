@@ -38,12 +38,64 @@ class MissingCACert(Exception):
     pass
 
 
+class ProviderConfigLight(object):
+    """
+    A light config object to hold some provider settings needed by the GUI.
+    """
+    def __init__(self):
+        """
+        Define the public attributes.
+        """
+        self.domain = ""
+        self.name = ""
+        self.description = ""
+        self.enrollment_policy = ""
+        self.services = []
+
+    @property
+    def services_string(self):
+        """
+        Return a comma separated list of serices provided by this provider.
+
+        :rtype: str
+        """
+        services = []
+        for service in self.services:
+            services.append(get_service_display_name(service))
+
+        services_str = ", ".join(services)
+        return services_str
+
+
 class ProviderConfig(BaseConfig):
     """
     Provider configuration abstraction class
     """
     def __init__(self):
         BaseConfig.__init__(self)
+
+    def get_light_config(self, domain, lang=None):
+        """
+        Return a ProviderConfigLight object with the data for the loaded
+        object.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+        :param lang: the language to use for localized strings.
+        :type lang: str
+
+        :rtype: ProviderConfigLight or None if the ProviderConfig isn't loaded.
+        """
+        config = self.get_provider_config(domain)
+        details = ProviderConfigLight()
+
+        details.domain = config.get_domain()
+        details.name = config.get_name(lang=lang)
+        details.description = config.get_description(lang=lang)
+        details.enrollment_policy = config.get_enrollment_policy()
+        details.services = config.get_services()
+
+        return details
 
     @classmethod
     def get_provider_config(self, domain):
@@ -144,18 +196,6 @@ class ProviderConfig(BaseConfig):
         services = self._safe_get_value("services")
         return services
 
-    def get_services_string(self):
-        """
-        Returns a string with the available services in the current
-        provider, ready to be shown to the user.
-        """
-        services = []
-        for service in self.get_services():
-            services.append(get_service_display_name(service))
-
-        services_str = ", ".join(services)
-        return services_str
-
     def get_ca_cert_path(self, about_to_download=False):
         """
         Returns the path to the certificate for the current provider.
@@ -199,39 +239,3 @@ class ProviderConfig(BaseConfig):
         :rtype: bool
         """
         return "mx" in self.get_services()
-
-
-if __name__ == "__main__":
-    logger = logging.getLogger(name='leap')
-    logger.setLevel(logging.DEBUG)
-    console = logging.StreamHandler()
-    console.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        '%(asctime)s '
-        '- %(name)s - %(levelname)s - %(message)s')
-    console.setFormatter(formatter)
-    logger.addHandler(console)
-
-    provider = ProviderConfig()
-
-    try:
-        provider.get_api_version()
-    except Exception as e:
-        assert isinstance(e, AssertionError), "Expected an assert"
-        print "Safe value getting is working"
-
-    # standalone minitest
-    #if provider.load("provider_bad.json"):
-    if provider.load("leap/providers/bitmask.net/provider.json"):
-        print provider.get_api_version()
-        print provider.get_ca_cert_fingerprint()
-        print provider.get_ca_cert_uri()
-        print provider.get_default_language()
-        print provider.get_description()
-        print provider.get_description(lang="asd")
-        print provider.get_domain()
-        print provider.get_enrollment_policy()
-        print provider.get_languages()
-        print provider.get_name()
-        print provider.get_services()
-        print provider.get_services_string()

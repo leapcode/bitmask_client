@@ -24,7 +24,7 @@ except ImportError:
 
 import logging
 
-from leap.bitmask.util.leap_log_handler import LeapLogHandler
+from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 from leap.bitmask.util.pyside_tests_helper import BasicPySlotCase
 from leap.common.testing.basetest import BaseLeapTest
 

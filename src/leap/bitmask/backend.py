@@ -17,13 +17,13 @@
 """
 Backend for everything
 """
-import commands
 import logging
 import os
 import time
 
 from functools import partial
 from Queue import Queue, Empty
+from threading import Condition
 
 from twisted.internet import reactor
 from twisted.internet import threads, defer
@@ -31,46 +31,40 @@ from twisted.internet.task import LoopingCall
 from twisted.python import log
 
 import zope.interface
+import zope.proxy
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.platform_init import IS_LINUX
-from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.services import get_supported
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
 
 from leap.bitmask.services.eip import vpnlauncher, vpnprocess
 from leap.bitmask.services.eip import linuxvpnlauncher, darwinvpnlauncher
+from leap.bitmask.services.eip import get_vpn_launcher
+
+from leap.bitmask.services.mail.imapcontroller import IMAPController
+from leap.bitmask.services.mail.smtpbootstrapper import SMTPBootstrapper
+from leap.bitmask.services.mail.smtpconfig import SMTPConfig
+
+from leap.bitmask.services.soledad.soledadbootstrapper import \
+    SoledadBootstrapper
 
 from leap.common import certs as leap_certs
+
+from leap.keymanager import openpgp
+from leap.keymanager.errors import KeyAddressMismatch, KeyFingerprintMismatch
+
+from leap.soledad.client import NoStorageSecret, PassphraseTooShort
 
 # Frontend side
 from PySide import QtCore
 
 logger = logging.getLogger(__name__)
-
-
-def get_provider_config(config, domain):
-    """
-    Return the ProviderConfig object for the given domain.
-    If it is already loaded in `config`, then don't reload.
-
-    :param config: a ProviderConfig object
-    :type conig: ProviderConfig
-    :param domain: the domain which config is required.
-    :type domain: unicode
-
-    :returns: True if the config was loaded successfully, False otherwise.
-    :rtype: bool
-    """
-    # TODO: see ProviderConfig.get_provider_config
-    if (not config.loaded() or config.get_domain() != domain):
-        config.load(get_provider_path(domain))
-
-    return config.loaded()
 
 
 class ILEAPComponent(zope.interface.Interface):
@@ -86,13 +80,13 @@ class ILEAPService(ILEAPComponent):
     Interface that every Service needs to implement
     """
 
-    def start(self):
+    def start(self, *args, **kwargs):
         """
         Start the service.
         """
         pass
 
-    def stop(self):
+    def stop(self, *args, **kwargs):
         """
         Stops the service.
         """
@@ -156,6 +150,7 @@ class Provider(object):
         :type bypass_checks: bool
         """
         self.key = "provider"
+        self._signaler = signaler
         self._provider_bootstrapper = ProviderBootstrapper(signaler,
                                                            bypass_checks)
         self._download_provider_defer = None
@@ -197,11 +192,11 @@ class Provider(object):
         """
         d = None
 
-        config = self._provider_config
-        if get_provider_config(config, provider):
+        config = ProviderConfig.get_provider_config(provider)
+        self._provider_config = config
+        if config is not None:
             d = self._provider_bootstrapper.run_provider_setup_checks(
-                self._provider_config,
-                download_if_needed=True)
+                config, download_if_needed=True)
         else:
             if self._signaler is not None:
                 self._signaler.signal(
@@ -212,6 +207,73 @@ class Provider(object):
         if d is None:
             d = defer.Deferred()
         return d
+
+    def _get_services(self, domain):
+        """
+        Returns a list of services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        :rtype: list of str
+        """
+        services = []
+        provider_config = ProviderConfig.get_provider_config(domain)
+        if provider_config is not None:
+            services = provider_config.get_services()
+
+        return services
+
+    def get_supported_services(self, domain):
+        """
+        Signal a list of supported services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        Signals:
+            prov_get_supported_services -> list of unicode
+        """
+        services = get_supported(self._get_services(domain))
+
+        self._signaler.signal(
+            self._signaler.PROV_GET_SUPPORTED_SERVICES, services)
+
+    def get_all_services(self, providers):
+        """
+        Signal a list of services provided by all the configured providers.
+
+        :param providers: the list of providers to get the services.
+        :type providers: list
+
+        Signals:
+            prov_get_all_services -> list of unicode
+        """
+        services_all = set()
+
+        for domain in providers:
+            services = self._get_services(domain)
+            services_all = services_all.union(set(services))
+
+        self._signaler.signal(
+            self._signaler.PROV_GET_ALL_SERVICES, services_all)
+
+    def get_details(self, domain, lang=None):
+        """
+        Signal a ProviderConfigLight object with the current ProviderConfig
+        settings.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+        :param lang: the language to use for localized strings.
+        :type lang: str
+
+        Signals:
+            prov_get_details -> ProviderConfigLight
+        """
+        self._signaler.signal(
+            self._signaler.PROV_GET_DETAILS,
+            self._provider_config.get_light_config(domain, lang))
 
 
 class Register(object):
@@ -246,8 +308,9 @@ class Register(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        config = ProviderConfig()
-        if get_provider_config(config, domain):
+        config = ProviderConfig.get_provider_config(domain)
+        self._provider_config = config
+        if config is not None:
             srpregister = SRPRegister(signaler=self._signaler,
                                       provider_config=config)
             return threads.deferToThread(
@@ -294,8 +357,9 @@ class EIP(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        config = self._provider_config
-        if get_provider_config(config, domain):
+        config = ProviderConfig.get_provider_config(domain)
+        self._provider_config = config
+        if config is not None:
             if skip_network:
                 return defer.Deferred()
             eb = self._eip_bootstrapper
@@ -314,9 +378,12 @@ class EIP(object):
         if d is not None:
             d.cancel()
 
-    def _start_eip(self):
+    def _start_eip(self, restart=False):
         """
         Start EIP
+
+        :param restart: whether is is a restart.
+        :type restart: bool
         """
         provider_config = self._provider_config
         eip_config = eipconfig.EIPConfig()
@@ -324,6 +391,11 @@ class EIP(object):
 
         loaded = eipconfig.load_eipconfig_if_needed(
             provider_config, eip_config, domain)
+
+        if not self._can_start(domain):
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.EIP_CONNECTION_ABORTED)
+            return
 
         if not loaded:
             if self._signaler is not None:
@@ -335,9 +407,10 @@ class EIP(object):
         host, port = get_openvpn_management()
         self._vpn.start(eipconfig=eip_config,
                         providerconfig=provider_config,
-                        socket_host=host, socket_port=port)
+                        socket_host=host, socket_port=port,
+                        restart=restart)
 
-    def start(self):
+    def start(self, *args, **kwargs):
         """
         Start the service.
         """
@@ -350,7 +423,7 @@ class EIP(object):
             return
 
         try:
-            self._start_eip()
+            self._start_eip(*args, **kwargs)
         except vpnprocess.OpenVPNAlreadyRunning:
             signaler.signal(signaler.EIP_OPENVPN_ALREADY_RUNNING)
         except vpnprocess.AlienOpenVPNAlreadyRunning:
@@ -370,16 +443,21 @@ class EIP(object):
         except Exception as e:
             logger.error("Unexpected problem: {0!r}".format(e))
         else:
-            # TODO: are we connected here?
-            signaler.signal(signaler.EIP_CONNECTED)
+            logger.debug('EIP: no errors')
 
-    def stop(self, shutdown=False):
+    def _do_stop(self, shutdown=False, restart=False):
+        """
+        Stop the service. This is run in a thread to avoid blocking.
+        """
+        self._vpn.terminate(shutdown, restart)
+        if IS_LINUX:
+            self._wait_for_firewall_down()
+
+    def stop(self, shutdown=False, restart=False):
         """
         Stop the service.
         """
-        self._vpn.terminate(shutdown)
-        if IS_LINUX:
-            self._wait_for_firewall_down()
+        return threads.deferToThread(self._do_stop, shutdown, restart)
 
     def _wait_for_firewall_down(self):
         """
@@ -393,15 +471,16 @@ class EIP(object):
         MAX_FW_WAIT_RETRIES = 25
         FW_WAIT_STEP = 0.5
 
-        retry = 0
+        retry = 1
 
-        fw_up_cmd = "pkexec /usr/sbin/bitmask-root firewall isup"
-        fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
-
-        while retry < MAX_FW_WAIT_RETRIES:
-            if fw_is_down():
+        while retry <= MAX_FW_WAIT_RETRIES:
+            if self._vpn.is_fw_down():
+                self._signaler.signal(self._signaler.EIP_STOPPED)
                 return
             else:
+                #msg = "Firewall is not down yet, waiting... {0} of {1}"
+                #msg = msg.format(retry, MAX_FW_WAIT_RETRIES)
+                #logger.debug(msg)
                 time.sleep(FW_WAIT_STEP)
                 retry += 1
         logger.warning("After waiting, firewall is not down... "
@@ -459,6 +538,12 @@ class EIP(object):
             self._signaler.signal(self._signaler.EIP_GET_INITIALIZED_PROVIDERS,
                                   filtered_domains)
 
+    def tear_fw_down(self):
+        """
+        Tear the firewall down.
+        """
+        self._vpn.tear_down_firewall()
+
     def get_gateways_list(self, domain):
         """
         Signal a list of gateways for the given provider.
@@ -497,6 +582,46 @@ class EIP(object):
             self._signaler.signal(
                 self._signaler.EIP_GET_GATEWAYS_LIST, gateways)
 
+    def _can_start(self, domain):
+        """
+        Returns True if it has everything that is needed to run EIP,
+        False otherwise
+
+        :param domain: the domain for the provider to check
+        :type domain: str
+        """
+        eip_config = eipconfig.EIPConfig()
+        provider_config = ProviderConfig.get_provider_config(domain)
+
+        api_version = provider_config.get_api_version()
+        eip_config.set_api_version(api_version)
+        eip_loaded = eip_config.load(eipconfig.get_eipconfig_path(domain))
+
+        launcher = get_vpn_launcher()
+        if not os.path.isfile(launcher.OPENVPN_BIN_PATH):
+            logger.error("Cannot start OpenVPN, binary not found")
+            return False
+
+        # check for other problems
+        if not eip_loaded or provider_config is None:
+            logger.error("Cannot load provider and eip config, cannot "
+                         "autostart")
+            return False
+
+        client_cert_path = eip_config.\
+            get_client_cert_path(provider_config, about_to_download=False)
+
+        if leap_certs.should_redownload(client_cert_path):
+            logger.error("The client should redownload the certificate,"
+                         " cannot autostart")
+            return False
+
+        if not os.path.isfile(client_cert_path):
+            logger.error("Can't find the certificate, cannot autostart")
+            return False
+
+        return True
+
     def can_start(self, domain):
         """
         Signal whether it has everything that is needed to run EIP or not
@@ -508,35 +633,363 @@ class EIP(object):
             eip_can_start
             eip_cannot_start
         """
-        try:
-            eip_config = eipconfig.EIPConfig()
-            provider_config = ProviderConfig.get_provider_config(domain)
-
-            api_version = provider_config.get_api_version()
-            eip_config.set_api_version(api_version)
-            eip_loaded = eip_config.load(eipconfig.get_eipconfig_path(domain))
-
-            # check for other problems
-            if not eip_loaded or provider_config is None:
-                raise Exception("Cannot load provider and eip config, cannot "
-                                "autostart")
-
-            client_cert_path = eip_config.\
-                get_client_cert_path(provider_config, about_to_download=False)
-
-            if leap_certs.should_redownload(client_cert_path):
-                raise Exception("The client should redownload the certificate,"
-                                " cannot autostart")
-
-            if not os.path.isfile(client_cert_path):
-                raise Exception("Can't find the certificate, cannot autostart")
-
+        if self._can_start(domain):
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.EIP_CAN_START)
-        except Exception as e:
-            logger.exception(e)
+        else:
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.EIP_CANNOT_START)
+
+
+class Soledad(object):
+    """
+    Interfaces with setup of Soledad.
+    """
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, soledad_proxy, keymanager_proxy, signaler=None):
+        """
+        Constructor for the Soledad component.
+
+        :param soledad_proxy: proxy to pass around a Soledad object.
+        :type soledad_proxy: zope.ProxyBase
+        :param keymanager_proxy: proxy to pass around a Keymanager object.
+        :type keymanager_proxy: zope.ProxyBase
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        self.key = "soledad"
+        self._soledad_proxy = soledad_proxy
+        self._keymanager_proxy = keymanager_proxy
+        self._signaler = signaler
+        self._soledad_bootstrapper = SoledadBootstrapper(signaler)
+        self._soledad_defer = None
+
+    def bootstrap(self, username, domain, password):
+        """
+        Bootstrap Soledad with the user credentials.
+
+        Signals:
+            soledad_download_config
+            soledad_gen_key
+
+        :param user: user's login
+        :type user: unicode
+        :param domain: the domain that we are using.
+        :type domain: unicode
+        :param password: user's password
+        :type password: unicode
+        """
+        provider_config = ProviderConfig.get_provider_config(domain)
+        if provider_config is not None:
+            self._soledad_defer = threads.deferToThread(
+                self._soledad_bootstrapper.run_soledad_setup_checks,
+                provider_config, username, password,
+                download_if_needed=True)
+            self._soledad_defer.addCallback(self._set_proxies_cb)
+        else:
+            if self._signaler is not None:
+                self._signaler.signal(self._signaler.SOLEDAD_BOOTSTRAP_FAILED)
+            logger.error("Could not load provider configuration.")
+
+        return self._soledad_defer
+
+    def _set_proxies_cb(self, _):
+        """
+        Update the soledad and keymanager proxies to reference the ones created
+        in the bootstrapper.
+        """
+        zope.proxy.setProxiedObject(self._soledad_proxy,
+                                    self._soledad_bootstrapper.soledad)
+        zope.proxy.setProxiedObject(self._keymanager_proxy,
+                                    self._soledad_bootstrapper.keymanager)
+
+    def load_offline(self, username, password, uuid):
+        """
+        Load the soledad database in offline mode.
+
+        :param username: full user id (user@provider)
+        :type username: str or unicode
+        :param password: the soledad passphrase
+        :type password: unicode
+        :param uuid: the user uuid
+        :type uuid: str or unicode
+
+        Signals:
+            Signaler.soledad_offline_finished
+            Signaler.soledad_offline_failed
+        """
+        self._soledad_bootstrapper.load_offline_soledad(
+            username, password, uuid)
+
+    def cancel_bootstrap(self):
+        """
+        Cancel the ongoing soledad bootstrap (if any).
+        """
+        if self._soledad_defer is not None:
+            logger.debug("Cancelling soledad defer.")
+            self._soledad_defer.cancel()
+            self._soledad_defer = None
+            zope.proxy.setProxiedObject(self._soledad_proxy, None)
+
+    def close(self):
+        """
+        Close soledad database.
+        """
+        if not zope.proxy.sameProxiedObjects(self._soledad_proxy, None):
+            self._soledad_proxy.close()
+            zope.proxy.setProxiedObject(self._soledad_proxy, None)
+
+    def _change_password_ok(self, _):
+        """
+        Password change callback.
+        """
+        if self._signaler is not None:
+            self._signaler.signal(self._signaler.SOLEDAD_PASSWORD_CHANGE_OK)
+
+    def _change_password_error(self, failure):
+        """
+        Password change errback.
+
+        :param failure: failure object containing problem.
+        :type failure: twisted.python.failure.Failure
+        """
+        if failure.check(NoStorageSecret):
+            logger.error("No storage secret for password change in Soledad.")
+        if failure.check(PassphraseTooShort):
+            logger.error("Passphrase too short.")
+
+        if self._signaler is not None:
+            self._signaler.signal(self._signaler.SOLEDAD_PASSWORD_CHANGE_ERROR)
+
+    def change_password(self, new_password):
+        """
+        Change the database's password.
+
+        :param new_password: the new password.
+        :type new_password: unicode
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        d = threads.deferToThread(self._soledad_proxy.change_passphrase,
+                                  new_password)
+        d.addCallback(self._change_password_ok)
+        d.addErrback(self._change_password_error)
+
+
+class Keymanager(object):
+    """
+    Interfaces with KeyManager.
+    """
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, keymanager_proxy, signaler=None):
+        """
+        Constructor for the Keymanager component.
+
+        :param keymanager_proxy: proxy to pass around a Keymanager object.
+        :type keymanager_proxy: zope.ProxyBase
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        self.key = "keymanager"
+        self._keymanager_proxy = keymanager_proxy
+        self._signaler = signaler
+
+    def import_keys(self, username, filename):
+        """
+        Imports the username's key pair.
+        Those keys need to be ascii armored.
+
+        :param username: the user that will have the imported pair of keys.
+        :type username: str
+        :param filename: the name of the file where the key pair is stored.
+        :type filename: str
+        """
+        # NOTE: This feature is disabled right now since is dangerous
+        return
+
+        new_key = ''
+        signal = None
+        try:
+            with open(filename, 'r') as keys_file:
+                new_key = keys_file.read()
+        except IOError as e:
+            logger.error("IOError importing key. {0!r}".format(e))
+            signal = self._signaler.KEYMANAGER_IMPORT_IOERROR
+            self._signaler.signal(signal)
+            return
+
+        keymanager = self._keymanager_proxy
+        try:
+            public_key, private_key = keymanager.parse_openpgp_ascii_key(
+                new_key)
+        except (KeyAddressMismatch, KeyFingerprintMismatch) as e:
+            logger.error(repr(e))
+            signal = self._signaler.KEYMANAGER_IMPORT_DATAMISMATCH
+            self._signaler.signal(signal)
+            return
+
+        if public_key is None or private_key is None:
+            signal = self._signaler.KEYMANAGER_IMPORT_MISSINGKEY
+            self._signaler.signal(signal)
+            return
+
+        current_public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
+        if public_key.address != current_public_key.address:
+            logger.error("The key does not match the ID")
+            signal = self._signaler.KEYMANAGER_IMPORT_ADDRESSMISMATCH
+            self._signaler.signal(signal)
+            return
+
+        keymanager.delete_key(self._key)
+        keymanager.delete_key(self._key_priv)
+        keymanager.put_key(public_key)
+        keymanager.put_key(private_key)
+        keymanager.send_key(openpgp.OpenPGPKey)
+
+        logger.debug('Import ok')
+        signal = self._signaler.KEYMANAGER_IMPORT_OK
+
+        self._signaler.signal(signal)
+
+    def export_keys(self, username, filename):
+        """
+        Export the given username's keys to a file.
+
+        :param username: the username whos keys we need to export.
+        :type username: str
+        :param filename: the name of the file where we want to save the keys.
+        :type filename: str
+        """
+        keymanager = self._keymanager_proxy
+
+        public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
+        private_key = keymanager.get_key(username, openpgp.OpenPGPKey,
+                                         private=True)
+        try:
+            with open(filename, 'w') as keys_file:
+                keys_file.write(public_key.key_data)
+                keys_file.write(private_key.key_data)
+
+            logger.debug('Export ok')
+            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_OK)
+        except IOError as e:
+            logger.error("IOError exporting key. {0!r}".format(e))
+            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_ERROR)
+
+    def list_keys(self):
+        """
+        List all the keys stored in the local DB.
+        """
+        keys = self._keymanager_proxy.get_all_keys_in_local_db()
+        self._signaler.signal(self._signaler.KEYMANAGER_KEYS_LIST, keys)
+
+    def get_key_details(self, username):
+        """
+        List all the keys stored in the local DB.
+        """
+        public_key = self._keymanager_proxy.get_key(username,
+                                                    openpgp.OpenPGPKey)
+        details = (public_key.key_id, public_key.fingerprint)
+        self._signaler.signal(self._signaler.KEYMANAGER_KEY_DETAILS, details)
+
+
+class Mail(object):
+    """
+    Interfaces with setup and launch of Mail.
+    """
+    # We give each service some time to come to a halt before forcing quit
+    SERVICE_STOP_TIMEOUT = 20
+
+    zope.interface.implements(ILEAPComponent)
+
+    def __init__(self, soledad_proxy, keymanager_proxy, signaler=None):
+        """
+        Constructor for the Mail component.
+
+        :param soledad_proxy: proxy to pass around a Soledad object.
+        :type soledad_proxy: zope.ProxyBase
+        :param keymanager_proxy: proxy to pass around a Keymanager object.
+        :type keymanager_proxy: zope.ProxyBase
+        :param signaler: Object in charge of handling communication
+                         back to the frontend
+        :type signaler: Signaler
+        """
+        self.key = "mail"
+        self._signaler = signaler
+        self._soledad_proxy = soledad_proxy
+        self._keymanager_proxy = keymanager_proxy
+        self._imap_controller = IMAPController(self._soledad_proxy,
+                                               self._keymanager_proxy)
+        self._smtp_bootstrapper = SMTPBootstrapper()
+        self._smtp_config = SMTPConfig()
+
+    def start_smtp_service(self, full_user_id, download_if_needed=False):
+        """
+        Start the SMTP service.
+
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param download_if_needed: True if it should check for mtime
+                                   for the file
+        :type download_if_needed: bool
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        return threads.deferToThread(
+            self._smtp_bootstrapper.start_smtp_service,
+            self._keymanager_proxy, full_user_id, download_if_needed)
+
+    def start_imap_service(self, full_user_id, offline=False):
+        """
+        Start the IMAP service.
+
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param offline: whether imap should start in offline mode or not.
+        :type offline: bool
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        return threads.deferToThread(
+            self._imap_controller.start_imap_service,
+            full_user_id, offline)
+
+    def stop_smtp_service(self):
+        """
+        Stop the SMTP service.
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        return threads.deferToThread(self._smtp_bootstrapper.stop_smtp_service)
+
+    def _stop_imap_service(self):
+        """
+        Stop imap and wait until the service is stopped to signal that is done.
+        """
+        cv = Condition()
+        cv.acquire()
+        threads.deferToThread(self._imap_controller.stop_imap_service, cv)
+        logger.debug('Waiting for imap service to stop.')
+        cv.wait(self.SERVICE_STOP_TIMEOUT)
+        logger.debug('IMAP stopped')
+        self._signaler.signal(self._signaler.IMAP_STOPPED)
+
+    def stop_imap_service(self):
+        """
+        Stop imap service (fetcher, factory and port).
+
+        :returns: a defer to interact with.
+        :rtype: twisted.internet.defer.Deferred
+        """
+        return threads.deferToThread(self._stop_imap_service)
 
 
 class Authenticate(object):
@@ -556,6 +1009,7 @@ class Authenticate(object):
         """
         self.key = "authenticate"
         self._signaler = signaler
+        self._login_defer = None
         self._srp_auth = SRPAuth(ProviderConfig(), self._signaler)
 
     def login(self, domain, username, password):
@@ -572,8 +1026,8 @@ class Authenticate(object):
         :returns: the defer for the operation running in a thread.
         :rtype: twisted.internet.defer.Deferred
         """
-        config = ProviderConfig()
-        if get_provider_config(config, domain):
+        config = ProviderConfig.get_provider_config(domain)
+        if config is not None:
             self._srp_auth = SRPAuth(config, self._signaler)
             self._login_defer = self._srp_auth.authenticate(username, password)
             return self._login_defer
@@ -670,6 +1124,10 @@ class Signaler(QtCore.QObject):
     prov_unsupported_client = QtCore.Signal(object)
     prov_unsupported_api = QtCore.Signal(object)
 
+    prov_get_all_services = QtCore.Signal(object)
+    prov_get_supported_services = QtCore.Signal(object)
+    prov_get_details = QtCore.Signal(object)
+
     prov_cancelled_setup = QtCore.Signal(object)
 
     # Signals for SRPRegister
@@ -703,6 +1161,7 @@ class Signaler(QtCore.QObject):
     eip_disconnected = QtCore.Signal(object)
     eip_connection_died = QtCore.Signal(object)
     eip_connection_aborted = QtCore.Signal(object)
+    eip_stopped = QtCore.Signal(object)
 
     # EIP problems
     eip_no_polkit_agent_error = QtCore.Signal(object)
@@ -727,10 +1186,37 @@ class Signaler(QtCore.QObject):
     eip_state_changed = QtCore.Signal(dict)
     eip_status_changed = QtCore.Signal(dict)
     eip_process_finished = QtCore.Signal(int)
+    eip_tear_fw_down = QtCore.Signal(object)
 
     # signals whether the needed files to start EIP exist or not
     eip_can_start = QtCore.Signal(object)
     eip_cannot_start = QtCore.Signal(object)
+
+    # Signals for Soledad
+    soledad_bootstrap_failed = QtCore.Signal(object)
+    soledad_bootstrap_finished = QtCore.Signal(object)
+    soledad_offline_failed = QtCore.Signal(object)
+    soledad_offline_finished = QtCore.Signal(object)
+    soledad_invalid_auth_token = QtCore.Signal(object)
+    soledad_cancelled_bootstrap = QtCore.Signal(object)
+    soledad_password_change_ok = QtCore.Signal(object)
+    soledad_password_change_error = QtCore.Signal(object)
+
+    # Keymanager signals
+    keymanager_export_ok = QtCore.Signal(object)
+    keymanager_export_error = QtCore.Signal(object)
+    keymanager_keys_list = QtCore.Signal(object)
+
+    keymanager_import_ioerror = QtCore.Signal(object)
+    keymanager_import_datamismatch = QtCore.Signal(object)
+    keymanager_import_missingkey = QtCore.Signal(object)
+    keymanager_import_addressmismatch = QtCore.Signal(object)
+    keymanager_import_ok = QtCore.Signal(object)
+
+    keymanager_key_details = QtCore.Signal(object)
+
+    # mail related signals
+    imap_stopped = QtCore.Signal(object)
 
     # This signal is used to warn the backend user that is doing something
     # wrong
@@ -751,6 +1237,9 @@ class Signaler(QtCore.QObject):
     PROV_UNSUPPORTED_CLIENT = "prov_unsupported_client"
     PROV_UNSUPPORTED_API = "prov_unsupported_api"
     PROV_CANCELLED_SETUP = "prov_cancelled_setup"
+    PROV_GET_ALL_SERVICES = "prov_get_all_services"
+    PROV_GET_SUPPORTED_SERVICES = "prov_get_supported_services"
+    PROV_GET_DETAILS = "prov_get_details"
 
     SRP_REGISTRATION_FINISHED = "srp_registration_finished"
     SRP_REGISTRATION_FAILED = "srp_registration_failed"
@@ -777,6 +1266,8 @@ class Signaler(QtCore.QObject):
     EIP_DISCONNECTED = "eip_disconnected"
     EIP_CONNECTION_DIED = "eip_connection_died"
     EIP_CONNECTION_ABORTED = "eip_connection_aborted"
+    EIP_STOPPED = "eip_stopped"
+
     EIP_NO_POLKIT_AGENT_ERROR = "eip_no_polkit_agent_error"
     EIP_NO_TUN_KEXT_ERROR = "eip_no_tun_kext_error"
     EIP_NO_PKEXEC_ERROR = "eip_no_pkexec_error"
@@ -797,9 +1288,34 @@ class Signaler(QtCore.QObject):
     EIP_STATE_CHANGED = "eip_state_changed"
     EIP_STATUS_CHANGED = "eip_status_changed"
     EIP_PROCESS_FINISHED = "eip_process_finished"
+    EIP_TEAR_FW_DOWN = "eip_tear_fw_down"
 
     EIP_CAN_START = "eip_can_start"
     EIP_CANNOT_START = "eip_cannot_start"
+
+    SOLEDAD_BOOTSTRAP_FAILED = "soledad_bootstrap_failed"
+    SOLEDAD_BOOTSTRAP_FINISHED = "soledad_bootstrap_finished"
+    SOLEDAD_OFFLINE_FAILED = "soledad_offline_failed"
+    SOLEDAD_OFFLINE_FINISHED = "soledad_offline_finished"
+    SOLEDAD_INVALID_AUTH_TOKEN = "soledad_invalid_auth_token"
+
+    SOLEDAD_PASSWORD_CHANGE_OK = "soledad_password_change_ok"
+    SOLEDAD_PASSWORD_CHANGE_ERROR = "soledad_password_change_error"
+
+    SOLEDAD_CANCELLED_BOOTSTRAP = "soledad_cancelled_bootstrap"
+
+    KEYMANAGER_EXPORT_OK = "keymanager_export_ok"
+    KEYMANAGER_EXPORT_ERROR = "keymanager_export_error"
+    KEYMANAGER_KEYS_LIST = "keymanager_keys_list"
+
+    KEYMANAGER_IMPORT_IOERROR = "keymanager_import_ioerror"
+    KEYMANAGER_IMPORT_DATAMISMATCH = "keymanager_import_datamismatch"
+    KEYMANAGER_IMPORT_MISSINGKEY = "keymanager_import_missingkey"
+    KEYMANAGER_IMPORT_ADDRESSMISMATCH = "keymanager_import_addressmismatch"
+    KEYMANAGER_IMPORT_OK = "keymanager_import_ok"
+    KEYMANAGER_KEY_DETAILS = "keymanager_key_details"
+
+    IMAP_STOPPED = "imap_stopped"
 
     BACKEND_BAD_CALL = "backend_bad_call"
 
@@ -821,6 +1337,9 @@ class Signaler(QtCore.QObject):
             self.PROV_UNSUPPORTED_CLIENT,
             self.PROV_UNSUPPORTED_API,
             self.PROV_CANCELLED_SETUP,
+            self.PROV_GET_ALL_SERVICES,
+            self.PROV_GET_SUPPORTED_SERVICES,
+            self.PROV_GET_DETAILS,
 
             self.SRP_REGISTRATION_FINISHED,
             self.SRP_REGISTRATION_FAILED,
@@ -834,6 +1353,8 @@ class Signaler(QtCore.QObject):
             self.EIP_DISCONNECTED,
             self.EIP_CONNECTION_DIED,
             self.EIP_CONNECTION_ABORTED,
+            self.EIP_STOPPED,
+
             self.EIP_NO_POLKIT_AGENT_ERROR,
             self.EIP_NO_TUN_KEXT_ERROR,
             self.EIP_NO_PKEXEC_ERROR,
@@ -871,6 +1392,29 @@ class Signaler(QtCore.QObject):
             self.SRP_NOT_LOGGED_IN_ERROR,
             self.SRP_STATUS_LOGGED_IN,
             self.SRP_STATUS_NOT_LOGGED_IN,
+
+            self.SOLEDAD_BOOTSTRAP_FAILED,
+            self.SOLEDAD_BOOTSTRAP_FINISHED,
+            self.SOLEDAD_OFFLINE_FAILED,
+            self.SOLEDAD_OFFLINE_FINISHED,
+            self.SOLEDAD_INVALID_AUTH_TOKEN,
+            self.SOLEDAD_CANCELLED_BOOTSTRAP,
+
+            self.SOLEDAD_PASSWORD_CHANGE_OK,
+            self.SOLEDAD_PASSWORD_CHANGE_ERROR,
+
+            self.KEYMANAGER_EXPORT_OK,
+            self.KEYMANAGER_EXPORT_ERROR,
+            self.KEYMANAGER_KEYS_LIST,
+
+            self.KEYMANAGER_IMPORT_IOERROR,
+            self.KEYMANAGER_IMPORT_DATAMISMATCH,
+            self.KEYMANAGER_IMPORT_MISSINGKEY,
+            self.KEYMANAGER_IMPORT_ADDRESSMISMATCH,
+            self.KEYMANAGER_IMPORT_OK,
+            self.KEYMANAGER_KEY_DETAILS,
+
+            self.IMAP_STOPPED,
 
             self.BACKEND_BAD_CALL,
         ]
@@ -926,11 +1470,24 @@ class Backend(object):
         # Signaler object to translate commands into Qt signals
         self._signaler = Signaler()
 
+        # Objects needed by several components, so we make a proxy and pass
+        # them around
+        self._soledad_proxy = zope.proxy.ProxyBase(None)
+        self._keymanager_proxy = zope.proxy.ProxyBase(None)
+
         # Component registration
         self._register(Provider(self._signaler, bypass_checks))
         self._register(Register(self._signaler))
         self._register(Authenticate(self._signaler))
         self._register(EIP(self._signaler))
+        self._register(Soledad(self._soledad_proxy,
+                               self._keymanager_proxy,
+                               self._signaler))
+        self._register(Keymanager(self._keymanager_proxy,
+                                  self._signaler))
+        self._register(Mail(self._soledad_proxy,
+                            self._keymanager_proxy,
+                            self._signaler))
 
         # We have a looping call on a thread executing all the
         # commands in queue. Right now this queue is an actual Queue
@@ -952,7 +1509,7 @@ class Backend(object):
         """
         Starts the looping call
         """
-        log.msg("Starting worker...")
+        logger.debug("Starting worker...")
         self._lc.start(0.01)
 
     def stop(self):
@@ -965,14 +1522,17 @@ class Backend(object):
         """
         Delayed stopping of worker. Called from `stop`.
         """
-        log.msg("Stopping worker...")
+        logger.debug("Stopping worker...")
         if self._lc.running:
             self._lc.stop()
         else:
             logger.warning("Looping call is not running, cannot stop")
+
+        logger.debug("Cancelling ongoing defers...")
         while len(self._ongoing_defers) > 0:
             d = self._ongoing_defers.pop()
             d.cancel()
+        logger.debug("Defers cancelled.")
 
     def _register(self, component):
         """
@@ -986,8 +1546,7 @@ class Backend(object):
         try:
             self._components[component.key] = component
         except Exception:
-            log.msg("There was a problem registering %s" % (component,))
-            log.err()
+            logger.error("There was a problem registering %s" % (component,))
 
     def _signal_back(self, _, signal):
         """
@@ -1015,19 +1574,19 @@ class Backend(object):
                 # A call might not have a callback signal, but if it does,
                 # we add it to the chain
                 if cmd[2] is not None:
-                    d.addCallbacks(self._signal_back, log.err, cmd[2])
-                d.addCallbacks(self._done_action, log.err,
+                    d.addCallbacks(self._signal_back, logger.error, cmd[2])
+                d.addCallbacks(self._done_action, logger.error,
                                callbackKeywords={"d": d})
-                d.addErrback(log.err)
+                d.addErrback(logger.error)
                 self._ongoing_defers.append(d)
         except Empty:
             # If it's just empty we don't have anything to do.
             pass
         except defer.CancelledError:
             logger.debug("defer cancelled somewhere (CancelledError).")
-        except Exception:
+        except Exception as e:
             # But we log the rest
-            log.err()
+            logger.exception("Unexpected exception: {0!r}".format(e))
 
     def _done_action(self, _, d):
         """
@@ -1044,7 +1603,7 @@ class Backend(object):
     # this in two processes, the methods bellow can be changed to
     # send_multipart and this backend class will be really simple.
 
-    def setup_provider(self, provider):
+    def provider_setup(self, provider):
         """
         Initiate the setup for a provider.
 
@@ -1060,7 +1619,7 @@ class Backend(object):
         """
         self._call_queue.put(("provider", "setup_provider", None, provider))
 
-    def cancel_setup_provider(self):
+    def provider_cancel_setup(self):
         """
         Cancel the ongoing setup provider (if any).
         """
@@ -1081,7 +1640,48 @@ class Backend(object):
         """
         self._call_queue.put(("provider", "bootstrap", None, provider))
 
-    def register_user(self, provider, username, password):
+    def provider_get_supported_services(self, domain):
+        """
+        Signal a list of supported services provided by the given provider.
+
+        :param domain: the provider to get the services from.
+        :type domain: str
+
+        Signals:
+            prov_get_supported_services -> list of unicode
+        """
+        self._call_queue.put(("provider", "get_supported_services", None,
+                              domain))
+
+    def provider_get_all_services(self, providers):
+        """
+        Signal a list of services provided by all the configured providers.
+
+        :param providers: the list of providers to get the services.
+        :type providers: list
+
+        Signals:
+            prov_get_all_services -> list of unicode
+        """
+        self._call_queue.put(("provider", "get_all_services", None,
+                              providers))
+
+    def provider_get_details(self, domain, lang):
+        """
+        Signal a ProviderConfigLight object with the current ProviderConfig
+        settings.
+
+        :param domain: the domain name of the provider.
+        :type domain: str
+        :param lang: the language to use for localized strings.
+        :type lang: str
+
+        Signals:
+            prov_get_details -> ProviderConfigLight
+        """
+        self._call_queue.put(("provider", "get_details", None, domain, lang))
+
+    def user_register(self, provider, username, password):
         """
         Register a user using the domain and password given as parameters.
 
@@ -1100,7 +1700,7 @@ class Backend(object):
         self._call_queue.put(("register", "register_user", None, provider,
                               username, password))
 
-    def setup_eip(self, provider, skip_network=False):
+    def eip_setup(self, provider, skip_network=False):
         """
         Initiate the setup for a provider
 
@@ -1118,13 +1718,13 @@ class Backend(object):
         self._call_queue.put(("eip", "setup_eip", None, provider,
                               skip_network))
 
-    def cancel_setup_eip(self):
+    def eip_cancel_setup(self):
         """
         Cancel the ongoing setup EIP (if any).
         """
         self._call_queue.put(("eip", "cancel_setup_eip", None))
 
-    def start_eip(self):
+    def eip_start(self, restart=False):
         """
         Start the EIP service.
 
@@ -1145,19 +1745,25 @@ class Backend(object):
             eip_state_changed -> str
             eip_status_changed -> tuple of str (download, upload)
             eip_vpn_launcher_exception
-        """
-        self._call_queue.put(("eip", "start", None))
 
-    def stop_eip(self, shutdown=False):
+        :param restart: whether is is a restart.
+        :type restart: bool
+        """
+        self._call_queue.put(("eip", "start", None, restart))
+
+    def eip_stop(self, shutdown=False, restart=False, failed=False):
         """
         Stop the EIP service.
 
-        :param shutdown:
+        :param shutdown: whether this is the final shutdown.
         :type shutdown: bool
-        """
-        self._call_queue.put(("eip", "stop", None, shutdown))
 
-    def terminate_eip(self):
+        :param restart: whether this is part of a restart.
+        :type restart: bool
+        """
+        self._call_queue.put(("eip", "stop", None, shutdown, restart))
+
+    def eip_terminate(self):
         """
         Terminate the EIP service, not necessarily in a nice way.
         """
@@ -1209,7 +1815,13 @@ class Backend(object):
         self._call_queue.put(("eip", "can_start",
                               None, domain))
 
-    def login(self, provider, username, password):
+    def tear_fw_down(self):
+        """
+        Signal the need to tear the fw down.
+        """
+        self._call_queue.put(("eip", "tear_fw_down", None))
+
+    def user_login(self, provider, username, password):
         """
         Execute the whole authentication process for a user
 
@@ -1231,7 +1843,7 @@ class Backend(object):
         self._call_queue.put(("authenticate", "login", None, provider,
                               username, password))
 
-    def logout(self):
+    def user_logout(self):
         """
         Log out the current session.
 
@@ -1242,13 +1854,13 @@ class Backend(object):
         """
         self._call_queue.put(("authenticate", "logout", None))
 
-    def cancel_login(self):
+    def user_cancel_login(self):
         """
         Cancel the ongoing login (if any).
         """
         self._call_queue.put(("authenticate", "cancel_login", None))
 
-    def change_password(self, current_password, new_password):
+    def user_change_password(self, current_password, new_password):
         """
         Change the user's password.
 
@@ -1266,7 +1878,23 @@ class Backend(object):
         self._call_queue.put(("authenticate", "change_password", None,
                               current_password, new_password))
 
-    def get_logged_in_status(self):
+    def soledad_change_password(self, new_password):
+        """
+        Change the database's password.
+
+        :param new_password: the new password for the user.
+        :type new_password: unicode
+
+        Signals:
+            srp_not_logged_in_error
+            srp_password_change_ok
+            srp_password_change_badpw
+            srp_password_change_error
+        """
+        self._call_queue.put(("soledad", "change_password", None,
+                              new_password))
+
+    def user_get_logged_in_status(self):
         """
         Signal if the user is currently logged in or not.
 
@@ -1276,10 +1904,126 @@ class Backend(object):
         """
         self._call_queue.put(("authenticate", "get_logged_in_status", None))
 
-    ###########################################################################
-    # XXX HACK: this section is meant to be a place to hold methods and
-    # variables needed in the meantime while we migrate all to the backend.
+    def soledad_bootstrap(self, username, domain, password):
+        """
+        Bootstrap the soledad database.
 
-    def get_provider_config(self):
-        provider_config = self._components["provider"]._provider_config
-        return provider_config
+        :param username: the user name
+        :type username: unicode
+        :param domain: the domain that we are using.
+        :type domain: unicode
+        :param password: the password for the username
+        :type password: unicode
+
+        Signals:
+            soledad_bootstrap_finished
+            soledad_bootstrap_failed
+            soledad_invalid_auth_token
+        """
+        self._call_queue.put(("soledad", "bootstrap", None,
+                              username, domain, password))
+
+    def soledad_load_offline(self, username, password, uuid):
+        """
+        Load the soledad database in offline mode.
+
+        :param username: full user id (user@provider)
+        :type username: str or unicode
+        :param password: the soledad passphrase
+        :type password: unicode
+        :param uuid: the user uuid
+        :type uuid: str or unicode
+
+        Signals:
+        """
+        self._call_queue.put(("soledad", "load_offline", None,
+                              username, password, uuid))
+
+    def soledad_cancel_bootstrap(self):
+        """
+        Cancel the ongoing soledad bootstrapping process (if any).
+        """
+        self._call_queue.put(("soledad", "cancel_bootstrap", None))
+
+    def soledad_close(self):
+        """
+        Close soledad database.
+        """
+        self._call_queue.put(("soledad", "close", None))
+
+    def keymanager_list_keys(self):
+        """
+        Signal a list of public keys locally stored.
+
+        Signals:
+            keymanager_keys_list -> list
+        """
+        self._call_queue.put(("keymanager", "list_keys", None))
+
+    def keymanager_export_keys(self, username, filename):
+        """
+        Export the given username's keys to a file.
+
+        :param username: the username whos keys we need to export.
+        :type username: str
+        :param filename: the name of the file where we want to save the keys.
+        :type filename: str
+
+        Signals:
+            keymanager_export_ok
+            keymanager_export_error
+        """
+        self._call_queue.put(("keymanager", "export_keys", None,
+                              username, filename))
+
+    def keymanager_get_key_details(self, username):
+        """
+        Signal the given username's key details.
+
+        :param username: the username whos keys we need to get details.
+        :type username: str
+
+        Signals:
+            keymanager_key_details
+        """
+        self._call_queue.put(("keymanager", "get_key_details", None, username))
+
+    def smtp_start_service(self, full_user_id, download_if_needed=False):
+        """
+        Start the SMTP service.
+
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param download_if_needed: True if it should check for mtime
+                                   for the file
+        :type download_if_needed: bool
+        """
+        self._call_queue.put(("mail", "start_smtp_service", None,
+                              full_user_id, download_if_needed))
+
+    def imap_start_service(self, full_user_id, offline=False):
+        """
+        Start the IMAP service.
+
+        :param full_user_id: user id, in the form "user@provider"
+        :type full_user_id: str
+        :param offline: whether imap should start in offline mode or not.
+        :type offline: bool
+        """
+        self._call_queue.put(("mail", "start_imap_service", None,
+                              full_user_id, offline))
+
+    def smtp_stop_service(self):
+        """
+        Stop the SMTP service.
+        """
+        self._call_queue.put(("mail", "stop_smtp_service", None))
+
+    def imap_stop_service(self):
+        """
+        Stop imap service.
+
+        Signals:
+            imap_stopped
+        """
+        self._call_queue.put(("mail", "stop_imap_service", None))

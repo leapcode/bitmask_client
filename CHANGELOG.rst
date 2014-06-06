@@ -6,6 +6,40 @@ History
 2014
 ====
 
+0.5.2 June 6 -- the "are we there yet" release:
++++++++++++++++++++++++++++++++++++++++++++++++
+
+- Unblock local multicast IPs from linux firewall, to allow SSDP and
+  Bonjour/mDNS to work.
+- Add support for gnome-shell polkit agent. Closes #4144, #4218.
+- Update username regex to support the same as webapp. Closes #5965.
+- Wrong error message for username too short. Fixes #5697.
+- Cleanup and refactor username/password validators.
+- Fix EIP autostart failing. Closes #5721.
+- Block ipv6 traffic for the moment. Closes #5693
+- Fix bug with ipv6 blocking that caused block to not get removed from
+  firewall when Bitmask quit.
+- Bring firewall down when switching EIP off. Closes #5687
+- Add OPENVPN_BIN_PATH for OSX so that EIP starts properly.
+- Allow usernames to end in a digit.
+- Improve signal handling in the mainwindow and wizard.
+- Enable UI when OpenVPN bin is not found, plus check before starting
+  EIP. Fixes #5619.
+- Properly set the userid for SMTP.
+- Update EIP UI if it fails to download the config.
+- Make use of cmdline in psutil backwards-compatible. Closes #5689
+- Add versioning support to bitmask-root.
+- Show flag of country for eip exit node, if available. Related #1232
+- Fix nameserver restoring. Closes #5692
+- Warn user if resolvconf cannot be found.
+- Refactor Keymanager to backend. Closes #5711.
+- Cleanup backend from hacks. Closes #5698.
+- Improve wait and quit process.
+- Move soledad password change to backend.
+- Move Mail logic to backend.
+- Separate imap/smtp logic from conductor.
+- Refactor SoledadBootstrapper to backend. Closes #5481.
+
 0.5.1 May 16 -- the "lil less leaky" release:
 +++++++++++++++++++++++++++++++++++++++++++++
 

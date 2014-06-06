@@ -52,6 +52,8 @@ class DarwinVPNLauncher(VPNLauncher):
     OPENVPN_PATH = "%s/Contents/Resources/openvpn" % (INSTALL_PATH,)
     OPENVPN_PATH_ESCAPED = "%s/Contents/Resources/openvpn" % (
         INSTALL_PATH_ESCAPED,)
+    OPENVPN_BIN_PATH = "%s/Contents/Resources/%s" % (INSTALL_PATH,
+                                                     OPENVPN_BIN)
 
     UP_SCRIPT = "%s/client.up.sh" % (OPENVPN_PATH,)
     DOWN_SCRIPT = "%s/client.down.sh" % (OPENVPN_PATH,)

@@ -7,9 +7,9 @@ graphical client to control LEAP, the encrypted internet access toolkit.
 ------------------------------------------------------------------------
 
 :Author: LEAP Encryption Access Project https://leap.se
-:Date:   2013-08-23
+:Date:   2014-06-05
 :Copyright: GPLv3+
-:Version: 0.3.1
+:Version: 0.5.2
 :Manual section: 1
 :Manual group: General Commands Manual
 
@@ -80,26 +80,20 @@ WARNING
 
 This software is still in its early phases of testing. So don't trust your life to it! 
 
-At the current time, Bitmask is not compatible with ``openresolv``, but it works with ``resolvconf``.
 
 FILES
 =====
 
-/etc/leap/resolv-update
------------------------
-Post up/down script passed to openvpn. It writes /etc/resolv.conf to avoid dns leaks, and restores the original resolv.conf on exit.
 
-/etc/leap/resolv-head
----------------------
-/etc/leap/resolv-tail
----------------------
-
-Custom entries that will appear in the written resolv.conf
-
-/usr/share/polkit-1/actions/net.openvpn.gui.leap.policy
+/usr/share/polkit-1/actions/se.leap.bitmask.policy
 -------------------------------------------------------
 
-PolicyKit policy file, used for granting access to openvpn without the need of entering a password each time.
+PolicyKit policy file, used for granting access to bitmask-root without the need of entering a password each time.
+
+/usr/sbin/bitmask-root
+------------------------
+
+Helper to launch and stop openvpn and the bitmask firewall.
 
 ~/.config/leap/
 ---------------

@@ -63,14 +63,20 @@ def _is_auth_agent_running():
     :return: True if it's running, False if it's not.
     :rtype: boolean
     """
+    # Note that gnome-shell does not uses a separate process for the
+    # polkit-agent, it uses a polkit-agent within its own process so we can't
+    # ps-grep a polkit process, we can ps-grep gnome-shell itself.
+
     # the [x] thing is to avoid grep match itself
     polkit_options = [
         'ps aux | grep "polkit-[g]nome-authentication-agent-1"',
         'ps aux | grep "polkit-[k]de-authentication-agent-1"',
         'ps aux | grep "polkit-[m]ate-authentication-agent-1"',
-        'ps aux | grep "[l]xpolkit"'
+        'ps aux | grep "[l]xpolkit"',
+        'ps aux | grep "[g]nome-shell"',
     ]
     is_running = [commands.getoutput(cmd) for cmd in polkit_options]
+
     return any(is_running)
 
 

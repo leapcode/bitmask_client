@@ -11,10 +11,7 @@ srp>=1.0.2
 pyopenssl
 python-dateutil
 
-# since gnupg requires exactly 1.2.1, this chokes if we
-# don't specify a version. Selecting something lesser than
-# 2.0 is equivalent to pick 1.2.1. See #5489
-psutil<2.0
+psutil
 
 ipaddr
 twisted
