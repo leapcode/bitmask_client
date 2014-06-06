@@ -171,7 +171,6 @@ def main():
     # I think it's safe to import at the top by now -- kali
     from leap.bitmask.gui import locale_rc
     from leap.bitmask.gui.mainwindow import MainWindow
-    from leap.bitmask.platform_init import IS_MAC
     from leap.bitmask.platform_init.locks import we_are_the_one_and_only
     from leap.bitmask.util.requirement_checker import check_requirements
 
@@ -238,9 +237,6 @@ def main():
 
     # callable used in addSystemEventTrigger to handle SIGTERM
     sigterm_window = partial(sigterm_handler, window, logger=logger)
-
-    if IS_MAC:
-        window.raise_()
 
     # This was a good idea, but for this to work as intended we
     # should centralize the start of all services in there.
