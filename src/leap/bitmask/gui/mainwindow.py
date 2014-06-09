@@ -22,7 +22,6 @@ import logging
 from datetime import datetime
 
 from PySide import QtCore, QtGui
-from twisted.internet import reactor
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
@@ -176,8 +175,8 @@ class MainWindow(QtGui.QMainWindow):
         # Set used to track the services being stopped and need wait.
         self._services_being_stopped = {}
 
-        # timeout object used to trigger quit
-        self._quit_timeout_callater = None
+        # used to know if we are in the final steps of quitting
+        self._finally_quitting = False
 
         self._backend_connected_signals = []
         self._backend_connect()
@@ -898,7 +897,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr('Hello!'),
                 self.tr('Bitmask has started in the tray.'))
             # we wait for the systray to be ready
-            reactor.callLater(1, hello)
+            QtDelayedCall(1, hello)
 
     @QtCore.Slot(int)
     def _tray_activated(self, reason=None):
@@ -1739,8 +1738,7 @@ class MainWindow(QtGui.QMainWindow):
         # call final quit when all the services are stopped
         self.all_services_stopped.connect(self.final_quit)
         # or if we reach the timeout
-        self._quit_timeout_callater = reactor.callLater(
-            self.SERVICES_STOP_TIMEOUT, self.final_quit)
+        QtDelayedCall(self.SERVICES_STOP_TIMEOUT, self.final_quit)
 
     @QtCore.Slot()
     def _remove_service(self, service):
@@ -1766,16 +1764,13 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('Final quit...')
 
-        try:
-            # disconnect signal if we get here due a timeout.
-            self.all_services_stopped.disconnect(self.final_quit)
-        except RuntimeError:
-            pass  # Signal was not connected
+        # We can reach here because all the services are stopped or because a
+        # timeout was triggered. Since we want to run this only once, we exit
+        # if this is called twice.
+        if self._finally_quitting:
+            return
 
-        # Cancel timeout to avoid being called if we reached here through the
-        # signal
-        if self._quit_timeout_callater.active():
-            self._quit_timeout_callater.cancel()
+        self._finally_quitting = True
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
@@ -1785,4 +1780,4 @@ class MainWindow(QtGui.QMainWindow):
         self._backend.stop()
         self.close()
 
-        reactor.callLater(1, twisted_main.quit)
+        QtDelayedCall(1, twisted_main.quit)
