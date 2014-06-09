@@ -39,6 +39,7 @@ from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
+from leap.bitmask.gui import twisted_main
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
@@ -91,13 +92,9 @@ class MainWindow(QtGui.QMainWindow):
     # We give the services some time to a halt before forcing quit.
     SERVICES_STOP_TIMEOUT = 20
 
-    def __init__(self, quit_callback, bypass_checks=False, start_hidden=False):
+    def __init__(self, bypass_checks=False, start_hidden=False):
         """
         Constructor for the client main window
-
-        :param quit_callback: Function to be called when closing
-                              the application.
-        :type quit_callback: callable
 
         :param bypass_checks: Set to true if the app should bypass first round
                               of checks for CA certificates at bootstrap
@@ -117,7 +114,6 @@ class MainWindow(QtGui.QMainWindow):
                  reqcbk=lambda req, resp: None)  # make rpc call async
         # end register leap events ####################################
 
-        self._quit_callback = quit_callback
         self._updates_content = ""
 
         # setup UI
@@ -1818,4 +1814,4 @@ class MainWindow(QtGui.QMainWindow):
         self._backend.stop()
         self.close()
 
-        reactor.callLater(1, self._quit_callback)
+        reactor.callLater(1, twisted_main.quit)
