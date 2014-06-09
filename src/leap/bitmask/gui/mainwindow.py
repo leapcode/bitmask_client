@@ -18,12 +18,11 @@
 Main window for Bitmask.
 """
 import logging
-import socket
 
 from datetime import datetime
 
 from PySide import QtCore, QtGui
-from twisted.internet import reactor, threads
+from twisted.internet import reactor
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
@@ -402,6 +401,8 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_conductor.connect_backend_signals()
         sig.eip_can_start.connect(self._backend_can_start_eip)
         sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
+
+        sig.eip_dns_error.connect(self._eip_dns_error)
 
         # ==================================================================
 
@@ -1461,55 +1462,25 @@ class MainWindow(QtGui.QMainWindow):
         self._already_started_eip = True
 
         # check for connectivity
-        # we might want to leave a little time here...
-        self._check_name_resolution(domain)
+        self._backend.eip_check_dns(domain)
 
-    def _check_name_resolution(self, domain):
-        # FIXME this has to be moved to backend !!!
-        # Should move to netchecks module.
-        # and separate qt from reactor...
+    @QtCore.Slot()
+    def _eip_dns_error(self):
         """
-        Check if we can resolve the given domain name.
-
-        :param domain: the domain to check.
-        :type domain: str
+        Trigger this if we don't have a working DNS resolver.
         """
-        def do_check():
-            """
-            Try to resolve the domain name.
-            """
-            socket.gethostbyname(domain.encode('idna'))
+        domain = self._login_widget.get_selected_provider()
+        msg = self.tr(
+            "The server at {0} can't be found, because the DNS lookup "
+            "failed. DNS is the network service that translates a "
+            "website's name to its Internet address. Either your computer "
+            "is having trouble connecting to the network, or you are "
+            "missing some helper files that are needed to securely use "
+            "DNS while {1} is active. To install these helper files, quit "
+            "this application and start it again."
+        ).format(domain, self._eip_conductor.eip_name)
 
-        def check_err(failure):
-            """
-            Errback handler for `do_check`.
-
-            :param failure: the failure that triggered the errback.
-            :type failure: twisted.python.failure.Failure
-            """
-            logger.error(repr(failure))
-            logger.error("Can't resolve hostname.")
-
-            msg = self.tr(
-                "The server at {0} can't be found, because the DNS lookup "
-                "failed. DNS is the network service that translates a "
-                "website's name to its Internet address. Either your computer "
-                "is having trouble connecting to the network, or you are "
-                "missing some helper files that are needed to securely use "
-                "DNS while {1} is active. To install these helper files, quit "
-                "this application and start it again."
-            ).format(domain, self._eip_conductor.eip_name)
-
-            show_err = lambda: QtGui.QMessageBox.critical(
-                self, self.tr("Connection Error"), msg)
-            reactor.callLater(0, show_err)
-
-            # python 2.7.4 raises socket.error
-            # python 2.7.5 raises socket.gaierror
-            failure.trap(socket.gaierror, socket.error)
-
-        d = threads.deferToThread(do_check)
-        d.addErrback(check_err)
+        QtGui.QMessageBox.critical(self, self.tr("Connection Error"), msg)
 
     def _try_autostart_eip(self):
         """
