@@ -121,7 +121,7 @@ def main():
     Starts the main event loop and launches the main window.
     """
     # Parse arguments and store them
-    _, opts = leap_argparse.init_leapc_args()
+    opts = leap_argparse.get_options()
     do_display_version(opts)
 
     bypass_checks = opts.danger
