@@ -39,17 +39,13 @@
 # M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
 # M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
 #                (thanks to: http://www.glassgiant.com/ascii/)
-import signal
-import sys
+import multiprocessing
 import os
-
-from functools import partial
-
-from PySide import QtCore, QtGui
+import sys
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config import flags
-from leap.bitmask.gui.mainwindow import MainWindow
+from leap.bitmask.frontend_app import run_frontend
 from leap.bitmask.logs.utils import create_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
@@ -58,9 +54,6 @@ from leap.bitmask.util.requirement_checker import check_requirements
 
 from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
-
-from twisted.internet import reactor
-from twisted.internet.task import LoopingCall
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
@@ -84,36 +77,7 @@ def kill_the_children():
 
 # XXX This is currently broken, but we need to fix it to avoid
 # orphaned processes in case of a crash.
-#atexit.register(kill_the_children)
-
-
-def sigint_handler(*args, **kwargs):
-    """
-    Signal handler for SIGINT
-    """
-    logger = kwargs.get('logger', None)
-    parentpid = kwargs.get('parentpid', None)
-    pid = os.getpid()
-    if parentpid == pid:
-        if logger:
-            logger.debug("SIGINT catched. shutting down...")
-        mainwindow = args[0]
-        mainwindow.quit()
-
-
-def sigterm_handler(*args, **kwargs):
-    """
-    Signal handler for SIGTERM.
-    This handler is actually passed to twisted reactor
-    """
-    logger = kwargs.get('logger', None)
-    parentpid = kwargs.get('parentpid', None)
-    pid = os.getpid()
-    if parentpid == pid:
-        if logger:
-            logger.debug("SIGTERM catched. shutting down...")
-        mainwindow = args[0]
-        mainwindow.quit()
+# atexit.register(kill_the_children)
 
 
 def do_display_version(opts):
@@ -141,7 +105,7 @@ def do_mail_plumbing(opts):
     # XXX catch when import is used w/o acct
 
 
-def main():
+def start_app():
     """
     Starts the main event loop and launches the main window.
     """
@@ -149,8 +113,12 @@ def main():
     opts = leap_argparse.get_options()
     do_display_version(opts)
 
-    bypass_checks = opts.danger
-    start_hidden = opts.start_hidden
+    options = {
+        'bypass_checks': opts.danger,
+        'start_hidden': opts.start_hidden,
+        'debug': opts.debug,
+        'log_file': opts.log_file,
+    }
 
     flags.STANDALONE = opts.standalone
     flags.OFFLINE = opts.offline
@@ -202,53 +170,9 @@ def main():
 
     logger.info('Starting app')
 
-    # We force the style if on KDE so that it doesn't load all the kde
-    # libs, which causes a compatibility issue in some systems.
-    # For more info, see issue #3194
-    if flags.STANDALONE and os.environ.get("KDE_SESSION_UID") is not None:
-        sys.argv.append("-style")
-        sys.argv.append("Cleanlooks")
+    frontend = multiprocessing.Process(target=run_frontend, args=(options, ))
+    frontend.start()
 
-    app = QtGui.QApplication(sys.argv)
-
-    # To test:
-    # $ LANG=es ./app.py
-    locale = QtCore.QLocale.system().name()
-    qtTranslator = QtCore.QTranslator()
-    if qtTranslator.load("qt_%s" % locale, ":/translations"):
-        app.installTranslator(qtTranslator)
-    appTranslator = QtCore.QTranslator()
-    if appTranslator.load("%s.qm" % locale[:2], ":/translations"):
-        app.installTranslator(appTranslator)
-
-    # Needed for initializing qsettings it will write
-    # .config/leap/leap.conf top level app settings in a platform
-    # independent way
-    app.setOrganizationName("leap")
-    app.setApplicationName("leap")
-    app.setOrganizationDomain("leap.se")
-
-    window = MainWindow(bypass_checks=bypass_checks,
-                        start_hidden=start_hidden)
-
-    mainpid = os.getpid()
-    sigint_window = partial(sigint_handler, window,
-                            logger=logger, parentpid=mainpid)
-    signal.signal(signal.SIGINT, sigint_window)
-
-    # callable used in addSystemEventTrigger to handle SIGTERM
-    sigterm_window = partial(sigterm_handler, window,
-                             logger=logger, parentpid=mainpid)
-    # SIGTERM can't be handled the same way SIGINT is, since it's
-    # caught by twisted. See _handleSignals method in
-    # twisted/internet/base.py#L1150. So, addSystemEventTrigger
-    # reactor's method is used.
-    reactor.addSystemEventTrigger('before', 'shutdown', sigterm_window)
-
-    l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
-    l.start(0.01)
-
-    reactor.run()
 
 if __name__ == "__main__":
-    main()
+    start_app()
