@@ -54,6 +54,7 @@ from leap.bitmask.services.mail.smtpconfig import SMTPConfig
 
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
+from leap.bitmask.util import force_eval
 
 from leap.common import certs as leap_certs
 
@@ -609,7 +610,8 @@ class EIP(object):
         eip_loaded = eip_config.load(eipconfig.get_eipconfig_path(domain))
 
         launcher = get_vpn_launcher()
-        if not os.path.isfile(launcher.OPENVPN_BIN_PATH):
+        ovpn_path = force_eval(launcher.OPENVPN_BIN_PATH)
+        if not os.path.isfile(ovpn_path):
             logger.error("Cannot start OpenVPN, binary not found")
             return False
 

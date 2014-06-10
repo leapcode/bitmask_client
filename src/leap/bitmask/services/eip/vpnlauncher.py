@@ -30,6 +30,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
+from leap.bitmask.util import force_eval
 from leap.common.check import leap_assert, leap_assert_type
 
 
@@ -179,12 +180,13 @@ class VPNLauncher(object):
             #raise OpenVPNNotFoundException()
         #openvpn = first(openvpn_possibilities)
         # -----------------------------------------
-        if not os.path.isfile(kls.OPENVPN_BIN_PATH):
+        openvpn_path = force_eval(kls.OPENVPN_BIN_PATH)
+
+        if not os.path.isfile(openvpn_path):
             logger.warning("Could not find openvpn bin in path %s" % (
-                kls.OPENVPN_BIN_PATH))
+                openvpn_path))
             raise OpenVPNNotFoundException()
 
-        openvpn = kls.OPENVPN_BIN_PATH
         args = []
 
         args += [
@@ -248,7 +250,7 @@ class VPNLauncher(object):
             '--ping', '10',
             '--ping-restart', '30']
 
-        command_and_args = [openvpn] + args
+        command_and_args = [openvpn_path] + args
         return command_and_args
 
     @classmethod
@@ -293,7 +295,8 @@ class VPNLauncher(object):
         leap_assert(kls.OTHER_FILES is not None,
                     "Need to define OTHER_FILES for this particular "
                     "auncher before calling this method")
+        other = force_eval(kls.OTHER_FILES)
         file_exist = partial(_has_other_files, warn=False)
-        zipped = zip(kls.OTHER_FILES, map(file_exist, kls.OTHER_FILES))
+        zipped = zip(other, map(file_exist, other))
         missing = filter(lambda (path, exists): exists is False, zipped)
         return [path for path, exists in missing]

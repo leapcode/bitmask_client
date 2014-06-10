@@ -70,10 +70,10 @@ NOTFOUND_MSG = ("Tried to install %s, but %s "
 BADEXEC_MSG = ("Tried to install %s, but %s "
                "failed to %s.")
 
-UPDOWN_NOTFOUND_MSG = NOTFOUND_MSG % (
-    "updown scripts", "those were")
-UPDOWN_BADEXEC_MSG = BADEXEC_MSG % (
-    "updown scripts", "they", "be copied")
+HELPERS_NOTFOUND_MSG = NOTFOUND_MSG % (
+    "helper files", "those were")
+HELPERS_BADEXEC_MSG = BADEXEC_MSG % (
+    "helper files", "they", "be copied")
 
 
 def get_missing_updown_dialog():
@@ -88,7 +88,7 @@ def get_missing_updown_dialog():
                       "to install helper files. "
                       "Do you want to proceed?")
     msg = QtGui.QMessageBox()
-    msg.setWindowTitle(msg.tr("Missing up/down scripts"))
+    msg.setWindowTitle(msg.tr("Missing helper files"))
     msg.setText(msg.tr(WE_NEED_POWERS))
     # but maybe the user really deserve to know more
     #msg.setInformativeText(msg.tr(BECAUSE))
@@ -123,8 +123,10 @@ def check_missing():
                     "Installer not found for platform %s." % (_system,))
                 return
 
+            print "INSTALL FUN", install_missing_fun
+
             # XXX maybe move constants to fun
-            ok = install_missing_fun(UPDOWN_BADEXEC_MSG, UPDOWN_NOTFOUND_MSG)
+            ok = install_missing_fun(HELPERS_BADEXEC_MSG, HELPERS_NOTFOUND_MSG)
             if not ok:
                 msg = QtGui.QMessageBox()
                 msg.setWindowTitle(msg.tr("Problem installing files"))
@@ -385,7 +387,7 @@ def _linux_check_resolvconf():
 
 def _linux_install_missing_scripts(badexec, notfound):
     """
-    Try to install the missing up/down scripts.
+    Try to install the missing helper files.
 
     :param badexec: error for notifying execution error during command.
     :type badexec: str
@@ -405,6 +407,7 @@ def _linux_install_missing_scripts(badexec, notfound):
         polfd, pol_tempfile = tempfile.mkstemp(prefix="leap_installer-")
         try:
             pkexec = first(launcher.maybe_pkexec())
+
             scriptlines = launcher.cmd_for_missing_scripts(installer_path)
             with os.fdopen(fd, 'w') as f:
                 f.write(scriptlines)
@@ -413,6 +416,7 @@ def _linux_install_missing_scripts(badexec, notfound):
             os.chmod(tempscript, st.st_mode | stat.S_IEXEC | stat.S_IXUSR |
                      stat.S_IXGRP | stat.S_IXOTH)
             cmdline = ["%s %s" % (pkexec, tempscript)]
+
             ret = subprocess.call(
                 cmdline, stdout=subprocess.PIPE,
                 shell=True)

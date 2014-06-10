@@ -43,7 +43,7 @@ from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip import linuxvpnlauncher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.bitmask.services.eip.udstelnet import UDSTelnet
-from leap.bitmask.util import first
+from leap.bitmask.util import first, force_eval
 from leap.bitmask.platform_init import IS_MAC, IS_LINUX
 from leap.common.check import leap_assert, leap_assert_type
 
@@ -233,7 +233,7 @@ class VPN(object):
         # XXX could check for wrapper existence, check it's root owned etc.
         # XXX could check that the iptables rules are in place.
 
-        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
         cmd = ["pkexec", BM_ROOT, "firewall", "start"]
         if restart:
             cmd.append("restart")
@@ -246,7 +246,7 @@ class VPN(object):
 
         :rtype: bool
         """
-        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
         fw_up_cmd = "pkexec {0} firewall isup".format(BM_ROOT)
         fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
         return fw_is_down()
@@ -255,7 +255,7 @@ class VPN(object):
         """
         Tear the firewall down using the privileged wrapper.
         """
-        BM_ROOT = linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT
+        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
         exitCode = subprocess.call(["pkexec",
                                     BM_ROOT, "firewall", "stop"])
         return True if exitCode is 0 else False
