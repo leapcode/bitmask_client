@@ -28,7 +28,7 @@ from leap.bitmask.services.mail.smtpconfig import SMTPConfig
 from leap.bitmask.util import is_file
 
 from leap.common import certs as leap_certs
-from leap.common.check import leap_assert, leap_assert_type
+from leap.common.check import leap_assert
 from leap.common.files import check_and_fix_urw_only
 
 logger = logging.getLogger(__name__)
@@ -36,6 +36,10 @@ logger = logging.getLogger(__name__)
 
 class NoSMTPHosts(Exception):
     """This is raised when there is no SMTP host to use."""
+
+
+class MalformedUserId(Exception):
+    """This is raised when an userid does not have the form user@provider."""
 
 
 class SMTPBootstrapper(AbstractBootstrapper):
@@ -126,15 +130,10 @@ class SMTPBootstrapper(AbstractBootstrapper):
             smtp_key=client_cert_path,
             encrypted_only=False)
 
-    def start_smtp_service(self, provider_config, smtp_config, keymanager,
-                           userid, download_if_needed=False):
+    def start_smtp_service(self, keymanager, userid, download_if_needed=False):
         """
         Starts the SMTP service.
 
-        :param provider_config: Provider configuration
-        :type provider_config: ProviderConfig
-        :param smtp_config: SMTP configuration to populate
-        :type smtp_config: SMTPConfig
         :param keymanager: a transparent proxy that eventually will point to a
                            Keymanager Instance.
         :type keymanager: zope.proxy.ProxyBase
@@ -144,13 +143,16 @@ class SMTPBootstrapper(AbstractBootstrapper):
                                    for the file
         :type download_if_needed: bool
         """
-        leap_assert_type(provider_config, ProviderConfig)
-        leap_assert_type(smtp_config, SMTPConfig)
+        try:
+            username, domain = userid.split('@')
+        except ValueError:
+            logger.critical("Malformed userid parameter!")
+            raise MalformedUserId()
 
-        self._provider_config = provider_config
+        self._provider_config = ProviderConfig.get_provider_config(domain)
         self._keymanager = keymanager
-        self._smtp_config = smtp_config
-        self._useid = userid
+        self._smtp_config = SMTPConfig()
+        self._userid = userid
         self._download_if_needed = download_if_needed
 
         try:

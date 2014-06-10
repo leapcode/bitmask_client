@@ -26,11 +26,10 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
-from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services import get_service_display_name, get_supported
+from leap.bitmask.util.credentials import password_checks, username_checks
+from leap.bitmask.util.credentials import USERNAME_REGEX
 from leap.bitmask.util.keyring_helpers import has_keyring
-from leap.bitmask.util.password import basic_password_checks
 
 from ui_wizard import Ui_Wizard
 
@@ -48,8 +47,6 @@ class Wizard(QtGui.QWizard):
     SETUP_PROVIDER_PAGE = 3
     REGISTER_USER_PAGE = 4
     SERVICES_PAGE = 5
-
-    BARE_USERNAME_REGEX = r"^[A-Za-z\d_]+$"
 
     def __init__(self, backend, bypass_checks=False):
         """
@@ -89,10 +86,9 @@ class Wizard(QtGui.QWizard):
         self._backend_connect()
 
         self._domain = None
-        # HACK!! We need provider_config for the time being, it'll be
-        # removed
-        self._provider_config = (
-            self._backend._components["provider"]._provider_config)
+
+        # this details are set when the provider download is complete.
+        self._provider_details = None
 
         # We will store a reference to the defers for eventual use
         # (eg, to cancel them) but not doing anything with them right now.
@@ -118,7 +114,7 @@ class Wizard(QtGui.QWizard):
 
         self.ui.rbExistingProvider.toggled.connect(self._skip_provider_checks)
 
-        usernameRe = QtCore.QRegExp(self.BARE_USERNAME_REGEX)
+        usernameRe = QtCore.QRegExp(USERNAME_REGEX)
         self.ui.lblUser.setValidator(
             QtGui.QRegExpValidator(usernameRe, self))
 
@@ -231,6 +227,12 @@ class Wizard(QtGui.QWizard):
         if reset:
             self._reset_provider_check()
 
+    def _focus_username(self):
+        """
+        Focus at the username lineedit for the registration page
+        """
+        self.ui.lblUser.setFocus()
+
     def _focus_password(self):
         """
         Focuses at the password lineedit for the registration page
@@ -253,16 +255,22 @@ class Wizard(QtGui.QWizard):
         password = self.ui.lblPassword.text()
         password2 = self.ui.lblPassword2.text()
 
-        ok, msg = basic_password_checks(username, password, password2)
-        if ok:
+        user_ok, msg = username_checks(username)
+        if user_ok:
+            pass_ok, msg = password_checks(username, password, password2)
+
+        if user_ok and pass_ok:
             self._set_register_status(self.tr("Starting registration..."))
 
-            self._backend.register_user(self._domain, username, password)
+            self._backend.user_register(self._domain, username, password)
             self._username = username
             self._password = password
         else:
+            if user_ok:
+                self._focus_password()
+            else:
+                self._focus_username()
             self._set_register_status(msg, error=True)
-            self._focus_password()
             self.ui.btnRegister.setEnabled(True)
 
     def _set_registration_fields_visibility(self, visible):
@@ -406,7 +414,7 @@ class Wizard(QtGui.QWizard):
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_select_defer = self._backend.\
-            setup_provider(self._domain)
+            provider_setup(self._domain)
 
     @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
@@ -502,10 +510,12 @@ class Wizard(QtGui.QWizard):
         check. Since this check is the last of this set, it also
         completes the page if passed
         """
-        if self._provider_config.load(get_provider_path(self._domain)):
+        if data[self._backend.PASSED_KEY]:
             self._complete_task(data, self.ui.lblProviderInfo,
                                 True, self.SELECT_PROVIDER_PAGE)
             self._provider_checks_ok = True
+            lang = QtCore.QLocale.system().name()
+            self._backend.provider_get_details(self._domain, lang)
         else:
             new_data = {
                 self._backend.PASSED_KEY: False,
@@ -526,6 +536,16 @@ class Wizard(QtGui.QWizard):
             self.ui.lnProvider.setEnabled(True)
         else:
             self.ui.cbProviders.setEnabled(True)
+
+    @QtCore.Slot()
+    def _provider_get_details(self, details):
+        """
+        Set the details for the just downloaded provider.
+
+        :param details: the details of the provider.
+        :type details: ProviderConfigLight
+        """
+        self._provider_details = details
 
     @QtCore.Slot(dict)
     def _download_ca_cert(self, data):
@@ -594,11 +614,9 @@ class Wizard(QtGui.QWizard):
         the user to enable or disable.
         """
         self.ui.grpServices.setTitle(
-            self.tr("Services by %s") %
-            (self._provider_config.get_name(),))
+            self.tr("Services by {0}").format(self._provider_details.name))
 
-        services = get_supported(
-            self._provider_config.get_services())
+        services = get_supported(self._provider_details.services)
 
         for service in services:
             try:
@@ -641,38 +659,31 @@ class Wizard(QtGui.QWizard):
             if not self._provider_setup_ok:
                 self._reset_provider_setup()
                 sub_title = self.tr("Gathering configuration options for {0}")
-                sub_title = sub_title.format(self._provider_config.get_name())
+                sub_title = sub_title.format(self._provider_details.name)
                 self.page(pageId).setSubTitle(sub_title)
                 self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
                 self._provider_setup_defer = self._backend.\
                     provider_bootstrap(self._domain)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
-            self.page(pageId).setSubTitle(self.tr("Description of services "
-                                                  "offered by %s") %
-                                          (self._provider_config
-                                           .get_name(),))
+            sub_title = self.tr("Description of services offered by {0}")
+            sub_title = sub_title.format(self._provider_details.name)
+            self.page(pageId).setSubTitle(sub_title)
 
-            lang = QtCore.QLocale.system().name()
-            self.ui.lblProviderName.setText(
-                "<b>%s</b>" %
-                (self._provider_config.get_name(lang=lang),))
-            self.ui.lblProviderURL.setText(
-                "https://%s" % (self._provider_config.get_domain(),))
-            self.ui.lblProviderDesc.setText(
-                "<i>%s</i>" %
-                (self._provider_config.get_description(lang=lang),))
-
-            self.ui.lblServicesOffered.setText(self._provider_config
-                                               .get_services_string())
-            self.ui.lblProviderPolicy.setText(self._provider_config
-                                              .get_enrollment_policy())
+            details = self._provider_details
+            name = "<b>{0}</b>".format(details.name)
+            domain = "https://{0}".format(details.domain)
+            description = "<i>{0}</i>".format(details.description)
+            self.ui.lblProviderName.setText(name)
+            self.ui.lblProviderURL.setText(domain)
+            self.ui.lblProviderDesc.setText(description)
+            self.ui.lblServicesOffered.setText(details.services_string)
+            self.ui.lblProviderPolicy.setText(details.enrollment_policy)
 
         if pageId == self.REGISTER_USER_PAGE:
-            self.page(pageId).setSubTitle(self.tr("Register a new user with "
-                                                  "%s") %
-                                          (self._provider_config
-                                           .get_name(),))
+            sub_title = self.tr("Register a new user with {0}")
+            sub_title = sub_title.format(self._provider_details.name)
+            self.page(pageId).setSubTitle(sub_title)
             self.ui.chkRemember.setVisible(False)
 
         if pageId == self.SERVICES_PAGE:
@@ -695,8 +706,6 @@ class Wizard(QtGui.QWizard):
         if self.currentPage() == self.page(self.SELECT_PROVIDER_PAGE):
             if self._use_existing_provider:
                 self._domain = self.ui.cbProviders.currentText()
-                self._provider_config = ProviderConfig.get_provider_config(
-                    self._domain)
                 if self._show_register:
                     return self.REGISTER_USER_PAGE
                 else:
@@ -721,6 +730,7 @@ class Wizard(QtGui.QWizard):
         sig.prov_name_resolution.connect(self._name_resolution)
         sig.prov_https_connection.connect(self._https_connection)
         sig.prov_download_provider_info.connect(self._download_provider_info)
+        sig.prov_get_details.connect(self._provider_get_details)
 
         sig.prov_download_ca_cert.connect(self._download_ca_cert)
         sig.prov_check_ca_fingerprint.connect(self._check_ca_fingerprint)

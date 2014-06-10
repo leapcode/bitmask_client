@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# password.py
+# credentials.py
 # Copyright (C) 2013 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,14 +16,34 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Password utilities
+Credentials utilities
 """
-from PySide import QtCore
+from PySide import QtCore, QtGui
 
 WEAK_PASSWORDS = ("123456", "qweasd", "qwerty", "password")
+USERNAME_REGEX = r"^[A-Za-z][A-Za-z\d_\-\.]+[A-Za-z\d]$"
+
+USERNAME_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp(USERNAME_REGEX))
 
 
-def basic_password_checks(username, password, password2):
+def username_checks(username):
+    # translation helper
+    _tr = QtCore.QObject().tr
+
+    message = None
+
+    if message is None and len(username) < 2:
+        message = _tr("Username must have at least 2 characters")
+
+    valid = USERNAME_VALIDATOR.validate(username, 0)
+    valid_username = valid[0] == QtGui.QValidator.State.Acceptable
+    if message is None and not valid_username:
+        message = _tr("Invalid username")
+
+    return message is None, message
+
+
+def password_checks(username, password, password2):
     """
     Performs basic password checks to avoid really easy passwords.
 
@@ -45,6 +65,9 @@ def basic_password_checks(username, password, password2):
 
     if message is None and password != password2:
         message = _tr("Passwords don't match")
+
+    if message is None and not password:
+        message = _tr("You can't use an empty password")
 
     if message is None and len(password) < 6:
         message = _tr("Password too short")

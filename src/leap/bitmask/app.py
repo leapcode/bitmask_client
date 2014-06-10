@@ -39,7 +39,6 @@
 # M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
 # M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
 #                (thanks to: http://www.glassgiant.com/ascii/)
-import logging
 import signal
 import sys
 import os
@@ -50,10 +49,7 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.util import leap_argparse
-from leap.bitmask.util import log_silencer, LOG_FORMAT
-from leap.bitmask.util.leap_log_handler import LeapLogHandler
-from leap.bitmask.util.streamtologger import StreamToLogger
-from leap.bitmask.platform_init import IS_WIN
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services.mail import plumber
 from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
@@ -76,6 +72,7 @@ def sigint_handler(*args, **kwargs):
     mainwindow = args[0]
     mainwindow.quit()
 
+
 def sigterm_handler(*args, **kwargs):
     """
     Signal handler for SIGTERM.
@@ -86,89 +83,6 @@ def sigterm_handler(*args, **kwargs):
         logger.debug("SIGTERM catched. shutting down...")
     mainwindow = args[0]
     mainwindow.quit()
-
-def add_logger_handlers(debug=False, logfile=None, replace_stdout=True):
-    """
-    Create the logger and attach the handlers.
-
-    :param debug: the level of the messages that we should log
-    :type debug: bool
-    :param logfile: the file name of where we should to save the logs
-    :type logfile: str
-    :return: the new logger with the attached handlers.
-    :rtype: logging.Logger
-    """
-    # TODO: get severity from command line args
-    if debug:
-        level = logging.DEBUG
-    else:
-        level = logging.WARNING
-
-    # Create logger and formatter
-    logger = logging.getLogger(name='leap')
-    logger.setLevel(level)
-    formatter = logging.Formatter(LOG_FORMAT)
-
-    # Console handler
-    try:
-        import coloredlogs
-        console = coloredlogs.ColoredStreamHandler(level=level)
-    except ImportError:
-        console = logging.StreamHandler()
-        console.setLevel(level)
-        console.setFormatter(formatter)
-        using_coloredlog = False
-    else:
-        using_coloredlog = True
-
-    if using_coloredlog:
-        replace_stdout = False
-
-    silencer = log_silencer.SelectiveSilencerFilter()
-    console.addFilter(silencer)
-    logger.addHandler(console)
-    logger.debug('Console handler plugged!')
-
-    # LEAP custom handler
-    leap_handler = LeapLogHandler()
-    leap_handler.setLevel(level)
-    leap_handler.addFilter(silencer)
-    logger.addHandler(leap_handler)
-    logger.debug('Leap handler plugged!')
-
-    # File handler
-    if logfile is not None:
-        logger.debug('Setting logfile to %s ', logfile)
-        fileh = logging.FileHandler(logfile)
-        fileh.setLevel(logging.DEBUG)
-        fileh.setFormatter(formatter)
-        fileh.addFilter(silencer)
-        logger.addHandler(fileh)
-        logger.debug('File handler plugged!')
-
-    if replace_stdout:
-        replace_stdout_stderr_with_logging(logger)
-
-    return logger
-
-
-def replace_stdout_stderr_with_logging(logger):
-    """
-    Replace:
-        - the standard output
-        - the standard error
-        - the twisted log output
-    with a custom one that writes to the logger.
-    """
-    # Disabling this on windows since it breaks ALL THE THINGS
-    # The issue for this is #4149
-    if not IS_WIN:
-        sys.stdout = StreamToLogger(logger, logging.DEBUG)
-        sys.stderr = StreamToLogger(logger, logging.ERROR)
-
-        # Replace twisted's logger to use our custom output.
-        from twisted.python import log
-        log.startLogging(sys.stdout)
 
 
 def do_display_version(opts):
@@ -212,6 +126,14 @@ def main():
     mail_logfile = opts.mail_log_file
     start_hidden = opts.start_hidden
 
+    replace_stdout = True
+    if opts.repair or opts.import_maildir:
+        # We don't want too much clutter on the comand mode
+        # this could be more generic with a Command class.
+        replace_stdout = False
+
+    logger = get_logger(debug, logfile, replace_stdout)
+
     #############################################################
     # Given how paths and bundling works, we need to delay the imports
     # of certain parts that depend on this path settings.
@@ -229,13 +151,6 @@ def main():
     flags.CA_CERT_FILE = opts.ca_cert_file
 
     BaseConfig.standalone = standalone
-
-    replace_stdout = True
-    if opts.repair or opts.import_maildir:
-        # We don't want too much clutter on the comand mode
-        # this could be more generic with a Command class.
-        replace_stdout = False
-    logger = add_logger_handlers(debug, logfile, replace_stdout)
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.
