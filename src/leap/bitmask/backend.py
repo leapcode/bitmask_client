@@ -38,6 +38,7 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
+from leap.bitmask.provider.pinned import PinnedProviders
 from leap.bitmask.services import get_supported
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
@@ -275,6 +276,16 @@ class Provider(object):
             self._signaler.PROV_GET_DETAILS,
             self._provider_config.get_light_config(domain, lang))
 
+    def get_pinned_providers(self):
+        """
+        Signal the list of pinned provider domains.
+
+        Signals:
+            prov_get_pinned_providers -> list of provider domains
+        """
+        self._signaler.signal(
+            self._signaler.PROV_GET_PINNED_PROVIDERS,
+            PinnedProviders.domains())
 
 class Register(object):
     """
@@ -1127,6 +1138,7 @@ class Signaler(QtCore.QObject):
     prov_get_all_services = QtCore.Signal(object)
     prov_get_supported_services = QtCore.Signal(object)
     prov_get_details = QtCore.Signal(object)
+    prov_get_pinned_providers = QtCore.Signal(object)
 
     prov_cancelled_setup = QtCore.Signal(object)
 
@@ -1240,6 +1252,7 @@ class Signaler(QtCore.QObject):
     PROV_GET_ALL_SERVICES = "prov_get_all_services"
     PROV_GET_SUPPORTED_SERVICES = "prov_get_supported_services"
     PROV_GET_DETAILS = "prov_get_details"
+    PROV_GET_PINNED_PROVIDERS = "prov_get_pinned_providers"
 
     SRP_REGISTRATION_FINISHED = "srp_registration_finished"
     SRP_REGISTRATION_FAILED = "srp_registration_failed"
@@ -1340,6 +1353,7 @@ class Signaler(QtCore.QObject):
             self.PROV_GET_ALL_SERVICES,
             self.PROV_GET_SUPPORTED_SERVICES,
             self.PROV_GET_DETAILS,
+            self.PROV_GET_PINNED_PROVIDERS,
 
             self.SRP_REGISTRATION_FINISHED,
             self.SRP_REGISTRATION_FAILED,
@@ -1680,6 +1694,15 @@ class Backend(object):
             prov_get_details -> ProviderConfigLight
         """
         self._call_queue.put(("provider", "get_details", None, domain, lang))
+
+    def provider_get_pinned_providers(self):
+        """
+        Signal the pinned providers.
+
+        Signals:
+            prov_get_pinned_providers -> list of provider domains
+        """
+        self._call_queue.put(("provider", "get_pinned_providers", None))
 
     def user_register(self, provider, username, password):
         """

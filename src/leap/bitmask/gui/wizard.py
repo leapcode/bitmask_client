@@ -33,6 +33,7 @@ from leap.bitmask.util.keyring_helpers import has_keyring
 
 from ui_wizard import Ui_Wizard
 
+QtDelayedCall = QtCore.QTimer.singleShot
 logger = logging.getLogger(__name__)
 
 
@@ -64,6 +65,8 @@ class Wizard(QtGui.QWizard):
         self.ui = Ui_Wizard()
         self.ui.setupUi(self)
 
+        self._connected_signals = []
+
         self.setPixmap(QtGui.QWizard.LogoPixmap,
                        QtGui.QPixmap(":/images/mask-icon.png"))
 
@@ -79,8 +82,8 @@ class Wizard(QtGui.QWizard):
         self._use_existing_provider = False
 
         self.ui.grpCheckProvider.setVisible(False)
-        self.ui.btnCheck.clicked.connect(self._check_provider)
-        self.ui.lnProvider.returnPressed.connect(self._check_provider)
+        self._connect_and_track(self.ui.btnCheck.clicked, self._check_provider)
+        self._connect_and_track(self.ui.lnProvider.returnPressed, self._check_provider)
 
         self._backend = backend
         self._backend_connect()
@@ -95,24 +98,25 @@ class Wizard(QtGui.QWizard):
         self._provider_select_defer = None
         self._provider_setup_defer = None
 
-        self.currentIdChanged.connect(self._current_id_changed)
+        self._connect_and_track(self.currentIdChanged, self._current_id_changed)
 
-        self.ui.lnProvider.textChanged.connect(self._enable_check)
-        self.ui.rbNewProvider.toggled.connect(
+        self._connect_and_track(self.ui.lnProvider.textChanged, self._enable_check)
+        self._connect_and_track(self.ui.rbNewProvider.toggled,
             lambda x: self._enable_check())
-        self.ui.cbProviders.currentIndexChanged[int].connect(
+        self._connect_and_track(self.ui.cbProviders.currentIndexChanged[int],
             self._reset_provider_check)
 
-        self.ui.lblUser.returnPressed.connect(
+        self._connect_and_track(self.ui.lblUser.returnPressed,
             self._focus_password)
-        self.ui.lblPassword.returnPressed.connect(
+        self._connect_and_track(self.ui.lblPassword.returnPressed,
             self._focus_second_password)
-        self.ui.lblPassword2.returnPressed.connect(
+        self._connect_and_track(self.ui.lblPassword2.returnPressed,
             self._register)
-        self.ui.btnRegister.clicked.connect(
+        self._connect_and_track(self.ui.btnRegister.clicked,
             self._register)
 
-        self.ui.rbExistingProvider.toggled.connect(self._skip_provider_checks)
+        self._connect_and_track(self.ui.rbExistingProvider.toggled,
+                                self._skip_provider_checks)
 
         usernameRe = QtCore.QRegExp(USERNAME_REGEX)
         self.ui.lblUser.setValidator(
@@ -137,7 +141,19 @@ class Wizard(QtGui.QWizard):
 
         self._provider_checks_ok = False
         self._provider_setup_ok = False
-        self.finished.connect(self._wizard_finished)
+        self._connect_and_track(self.finished, self._wizard_finished)
+
+    def _connect_and_track(self, signal, method):
+        """
+        Helper to connect signals and keep track of them.
+
+        :param signal: the signal to connect to.
+        :type signal: QtCore.Signal
+        :param method: the method to call when the signal is triggered.
+        :type method: callable, Slot or Signal
+        """
+        self._connected_signals.append((signal, method))
+        signal.connect(method)
 
     @QtCore.Slot()
     def _wizard_finished(self):
@@ -153,28 +169,35 @@ class Wizard(QtGui.QWizard):
         self._provider_setup_ok = False
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
-        self._backend_disconnect()
+        self._disconnect_tracked()
 
     def _load_configured_providers(self):
         """
         Loads the configured providers into the wizard providers combo box.
         """
+        self._backend.provider_get_pinned_providers()
+
+    def _load_configured_providers_with_pinned(self, pinned):
+        """
+        Once we have the pinned providers from the backend, we
+        continue setting everything up
+
+        :param pinned: list of pinned providers
+        :type pinned: list of str
+        """
         ls = LeapSettings()
         providers = ls.get_configured_providers()
-        if not providers:
+        if not providers and not pinned:
             self.ui.rbExistingProvider.setEnabled(False)
             self.ui.label_8.setEnabled(False)  # 'https://' label
             self.ui.cbProviders.setEnabled(False)
             return
 
-        pinned = []
         user_added = []
 
         # separate pinned providers from user added ones
         for p in providers:
-            if ls.is_pinned_provider(p):
-                pinned.append(p)
-            else:
+            if p not in pinned:
                 user_added.append(p)
 
         if user_added:
@@ -190,6 +213,9 @@ class Wizard(QtGui.QWizard):
         # We have configured providers, so by default we select the
         # 'Use existing provider' option.
         self.ui.rbExistingProvider.setChecked(True)
+
+        # We need to set it as complete explicitly
+        self.page(self.INTRO_PAGE).set_completed()
 
     def get_domain(self):
         return self._domain
@@ -727,36 +753,30 @@ class Wizard(QtGui.QWizard):
         Connects all the backend signals with the wizard.
         """
         sig = self._backend.signaler
-        sig.prov_name_resolution.connect(self._name_resolution)
-        sig.prov_https_connection.connect(self._https_connection)
-        sig.prov_download_provider_info.connect(self._download_provider_info)
-        sig.prov_get_details.connect(self._provider_get_details)
+        conntrack = self._connect_and_track
+        conntrack(sig.prov_name_resolution, self._name_resolution)
+        conntrack(sig.prov_https_connection, self._https_connection)
+        conntrack(sig.prov_download_provider_info,
+                  self._download_provider_info)
+        conntrack(sig.prov_get_details, self._provider_get_details)
+        conntrack(sig.prov_get_pinned_providers,
+                  self._load_configured_providers_with_pinned)
 
-        sig.prov_download_ca_cert.connect(self._download_ca_cert)
-        sig.prov_check_ca_fingerprint.connect(self._check_ca_fingerprint)
-        sig.prov_check_api_certificate.connect(self._check_api_certificate)
+        conntrack(sig.prov_download_ca_cert, self._download_ca_cert)
+        conntrack(sig.prov_check_ca_fingerprint, self._check_ca_fingerprint)
+        conntrack(sig.prov_check_api_certificate, self._check_api_certificate)
 
-        sig.srp_registration_finished.connect(self._registration_finished)
-        sig.srp_registration_failed.connect(self._registration_failed)
-        sig.srp_registration_taken.connect(self._registration_taken)
+        conntrack(sig.srp_registration_finished, self._registration_finished)
+        conntrack(sig.srp_registration_failed, self._registration_failed)
+        conntrack(sig.srp_registration_taken, self._registration_taken)
 
-    def _backend_disconnect(self):
+    def _disconnect_tracked(self):
         """
         This method is called when the wizard dialog is closed.
-        We disconnect all the backend signals in here.
+        We disconnect all the signals in here.
         """
-        sig = self._backend.signaler
-        try:
-            # disconnect backend signals
-            sig.prov_name_resolution.disconnect(self._name_resolution)
-            sig.prov_https_connection.disconnect(self._https_connection)
-            sig.prov_download_provider_info.disconnect(
-                self._download_provider_info)
-
-            sig.prov_download_ca_cert.disconnect(self._download_ca_cert)
-            sig.prov_check_ca_fingerprint.disconnect(
-                self._check_ca_fingerprint)
-            sig.prov_check_api_certificate.disconnect(
-                self._check_api_certificate)
-        except RuntimeError:
-            pass  # Signal was not connected
+        for signal, method in self._connected_signals:
+            try:
+                signal.disconnect(method)
+            except RuntimeError:
+                pass  # Signal was not connected
