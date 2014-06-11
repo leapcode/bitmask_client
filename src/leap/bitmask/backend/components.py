@@ -197,7 +197,7 @@ class Provider(object):
         else:
             if self._signaler is not None:
                 self._signaler.signal(
-                    self._signaler.PROV_PROBLEM_WITH_PROVIDER_KEY)
+                    self._signaler.prov_problem_with_provider)
             logger.error("Could not load provider configuration.")
             self._login_widget.set_enabled(True)
 
@@ -234,7 +234,7 @@ class Provider(object):
         services = get_supported(self._get_services(domain))
 
         self._signaler.signal(
-            self._signaler.PROV_GET_SUPPORTED_SERVICES, services)
+            self._signaler.prov_get_supported_services, services)
 
     def get_all_services(self, providers):
         """
@@ -253,7 +253,7 @@ class Provider(object):
             services_all = services_all.union(set(services))
 
         self._signaler.signal(
-            self._signaler.PROV_GET_ALL_SERVICES, services_all)
+            self._signaler.prov_get_all_services, list(services_all))
 
     def get_details(self, domain, lang=None):
         """
@@ -268,7 +268,7 @@ class Provider(object):
             prov_get_details -> dict
         """
         self._signaler.signal(
-            self._signaler.PROV_GET_DETAILS,
+            self._signaler.prov_get_details,
             self._provider_config.get_light_config(domain, lang))
 
     def get_pinned_providers(self):
@@ -279,7 +279,7 @@ class Provider(object):
             prov_get_pinned_providers -> list of provider domains
         """
         self._signaler.signal(
-            self._signaler.PROV_GET_PINNED_PROVIDERS,
+            self._signaler.prov_get_pinned_providers,
             PinnedProviders.domains())
 
 
@@ -324,7 +324,7 @@ class Register(object):
                 partial(srpregister.register_user, username, password))
         else:
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.SRP_REGISTRATION_FAILED)
+                self._signaler.signal(self._signaler.srp_registration_failed)
             logger.error("Could not load provider configuration.")
 
 
@@ -401,12 +401,12 @@ class EIP(object):
 
         if not self._can_start(domain):
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.EIP_CONNECTION_ABORTED)
+                self._signaler.signal(self._signaler.eip_connection_aborted)
             return
 
         if not loaded:
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.EIP_CONNECTION_ABORTED)
+                self._signaler.signal(self._signaler.eip_connection_aborted)
             logger.error("Tried to start EIP but cannot find any "
                          "available provider!")
             return
@@ -425,28 +425,28 @@ class EIP(object):
 
         if not self._provider_config.loaded():
             # This means that the user didn't call setup_eip first.
-            self._signaler.signal(signaler.BACKEND_BAD_CALL, "EIP.start(), "
+            self._signaler.signal(signaler.backend_bad_call, "EIP.start(), "
                                   "no provider loaded")
             return
 
         try:
             self._start_eip(*args, **kwargs)
         except vpnprocess.OpenVPNAlreadyRunning:
-            signaler.signal(signaler.EIP_OPENVPN_ALREADY_RUNNING)
+            signaler.signal(signaler.eip_openvpn_already_running)
         except vpnprocess.AlienOpenVPNAlreadyRunning:
-            signaler.signal(signaler.EIP_ALIEN_OPENVPN_ALREADY_RUNNING)
+            signaler.signal(signaler.eip_alien_openvpn_already_running)
         except vpnlauncher.OpenVPNNotFoundException:
-            signaler.signal(signaler.EIP_OPENVPN_NOT_FOUND_ERROR)
+            signaler.signal(signaler.eip_openvpn_not_found_error)
         except vpnlauncher.VPNLauncherException:
             # TODO: this seems to be used for 'gateway not found' only.
             #       see vpnlauncher.py
-            signaler.signal(signaler.EIP_VPN_LAUNCHER_EXCEPTION)
+            signaler.signal(signaler.eip_vpn_launcher_exception)
         except linuxvpnlauncher.EIPNoPolkitAuthAgentAvailable:
-            signaler.signal(signaler.EIP_NO_POLKIT_AGENT_ERROR)
+            signaler.signal(signaler.eip_no_polkit_agent_error)
         except linuxvpnlauncher.EIPNoPkexecAvailable:
-            signaler.signal(signaler.EIP_NO_PKEXEC_ERROR)
+            signaler.signal(signaler.eip_no_pkexec_error)
         except darwinvpnlauncher.EIPNoTunKextLoaded:
-            signaler.signal(signaler.EIP_NO_TUN_KEXT_ERROR)
+            signaler.signal(signaler.eip_no_tun_kext_error)
         except Exception as e:
             logger.error("Unexpected problem: {0!r}".format(e))
         else:
@@ -482,7 +482,7 @@ class EIP(object):
 
         while retry <= MAX_FW_WAIT_RETRIES:
             if self._vpn.is_fw_down():
-                self._signaler.signal(self._signaler.EIP_STOPPED)
+                self._signaler.signal(self._signaler.eip_stopped)
                 return
             else:
                 #msg = "Firewall is not down yet, waiting... {0} of {1}"
@@ -542,7 +542,7 @@ class EIP(object):
             filtered_domains.append((domain, is_initialized))
 
         if self._signaler is not None:
-            self._signaler.signal(self._signaler.EIP_GET_INITIALIZED_PROVIDERS,
+            self._signaler.signal(self._signaler.eip_get_initialized_providers,
                                   filtered_domains)
 
     def tear_fw_down(self):
@@ -566,7 +566,7 @@ class EIP(object):
         if not self._provider_is_initialized(domain):
             if self._signaler is not None:
                 self._signaler.signal(
-                    self._signaler.EIP_UNINITIALIZED_PROVIDER)
+                    self._signaler.eip_uninitialized_provider)
             return
 
         eip_config = eipconfig.EIPConfig()
@@ -580,14 +580,14 @@ class EIP(object):
         if not eip_loaded or provider_config is None:
             if self._signaler is not None:
                 self._signaler.signal(
-                    self._signaler.EIP_GET_GATEWAYS_LIST_ERROR)
+                    self._signaler.eip_get_gateways_list_error)
             return
 
         gateways = eipconfig.VPNGatewaySelector(eip_config).get_gateways_list()
 
         if self._signaler is not None:
             self._signaler.signal(
-                self._signaler.EIP_GET_GATEWAYS_LIST, gateways)
+                self._signaler.eip_get_gateways_list, gateways)
 
     def _can_start(self, domain):
         """
@@ -643,10 +643,10 @@ class EIP(object):
         """
         if self._can_start(domain):
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.EIP_CAN_START)
+                self._signaler.signal(self._signaler.eip_can_start)
         else:
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.EIP_CANNOT_START)
+                self._signaler.signal(self._signaler.eip_cannot_start)
 
     def check_dns(self, domain):
         """
@@ -665,7 +665,7 @@ class EIP(object):
             """
             Callback handler for `do_check`.
             """
-            self._signaler.signal(self._signaler.EIP_DNS_OK)
+            self._signaler.signal(self._signaler.eip_dns_ok)
             logger.debug("DNS check OK")
 
         def check_err(failure):
@@ -677,7 +677,7 @@ class EIP(object):
             """
             logger.debug("Can't resolve hostname. {0!r}".format(failure))
 
-            self._signaler.signal(self._signaler.EIP_DNS_ERROR)
+            self._signaler.signal(self._signaler.eip_dns_error)
 
             # python 2.7.4 raises socket.error
             # python 2.7.5 raises socket.gaierror
@@ -737,7 +737,7 @@ class Soledad(object):
             self._soledad_defer.addCallback(self._set_proxies_cb)
         else:
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.SOLEDAD_BOOTSTRAP_FAILED)
+                self._signaler.signal(self._signaler.soledad_bootstrap_failed)
             logger.error("Could not load provider configuration.")
 
         return self._soledad_defer
@@ -793,7 +793,7 @@ class Soledad(object):
         Password change callback.
         """
         if self._signaler is not None:
-            self._signaler.signal(self._signaler.SOLEDAD_PASSWORD_CHANGE_OK)
+            self._signaler.signal(self._signaler.soledad_password_change_ok)
 
     def _change_password_error(self, failure):
         """
@@ -808,7 +808,7 @@ class Soledad(object):
             logger.error("Passphrase too short.")
 
         if self._signaler is not None:
-            self._signaler.signal(self._signaler.SOLEDAD_PASSWORD_CHANGE_ERROR)
+            self._signaler.signal(self._signaler.soledad_password_change_error)
 
     def change_password(self, new_password):
         """
@@ -866,7 +866,7 @@ class Keymanager(object):
                 new_key = keys_file.read()
         except IOError as e:
             logger.error("IOError importing key. {0!r}".format(e))
-            signal = self._signaler.KEYMANAGER_IMPORT_IOERROR
+            signal = self._signaler.keymanager_import_ioerror
             self._signaler.signal(signal)
             return
 
@@ -876,19 +876,19 @@ class Keymanager(object):
                 new_key)
         except (KeyAddressMismatch, KeyFingerprintMismatch) as e:
             logger.error(repr(e))
-            signal = self._signaler.KEYMANAGER_IMPORT_DATAMISMATCH
+            signal = self._signaler.keymanager_import_datamismatch
             self._signaler.signal(signal)
             return
 
         if public_key is None or private_key is None:
-            signal = self._signaler.KEYMANAGER_IMPORT_MISSINGKEY
+            signal = self._signaler.keymanager_import_missingkey
             self._signaler.signal(signal)
             return
 
         current_public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
         if public_key.address != current_public_key.address:
             logger.error("The key does not match the ID")
-            signal = self._signaler.KEYMANAGER_IMPORT_ADDRESSMISMATCH
+            signal = self._signaler.keymanager_import_addressmismatch
             self._signaler.signal(signal)
             return
 
@@ -899,7 +899,7 @@ class Keymanager(object):
         keymanager.send_key(openpgp.OpenPGPKey)
 
         logger.debug('Import ok')
-        signal = self._signaler.KEYMANAGER_IMPORT_OK
+        signal = self._signaler.keymanager_import_ok
 
         self._signaler.signal(signal)
 
@@ -923,17 +923,17 @@ class Keymanager(object):
                 keys_file.write(private_key.key_data)
 
             logger.debug('Export ok')
-            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_OK)
+            self._signaler.signal(self._signaler.keymanager_export_ok)
         except IOError as e:
             logger.error("IOError exporting key. {0!r}".format(e))
-            self._signaler.signal(self._signaler.KEYMANAGER_EXPORT_ERROR)
+            self._signaler.signal(self._signaler.keymanager_export_error)
 
     def list_keys(self):
         """
         List all the keys stored in the local DB.
         """
         keys = self._keymanager_proxy.get_all_keys_in_local_db()
-        self._signaler.signal(self._signaler.KEYMANAGER_KEYS_LIST, keys)
+        self._signaler.signal(self._signaler.keymanager_keys_list, keys)
 
     def get_key_details(self, username):
         """
@@ -942,7 +942,7 @@ class Keymanager(object):
         public_key = self._keymanager_proxy.get_key(username,
                                                     openpgp.OpenPGPKey)
         details = (public_key.key_id, public_key.fingerprint)
-        self._signaler.signal(self._signaler.KEYMANAGER_KEY_DETAILS, details)
+        self._signaler.signal(self._signaler.keymanager_key_details, details)
 
 
 class Mail(object):
@@ -1027,7 +1027,7 @@ class Mail(object):
         logger.debug('Waiting for imap service to stop.')
         cv.wait(self.SERVICE_STOP_TIMEOUT)
         logger.debug('IMAP stopped')
-        self._signaler.signal(self._signaler.IMAP_STOPPED)
+        self._signaler.signal(self._signaler.imap_stopped)
 
     def stop_imap_service(self):
         """
@@ -1080,7 +1080,7 @@ class Authenticate(object):
             return self._login_defer
         else:
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.SRP_AUTH_ERROR)
+                self._signaler.signal(self._signaler.srp_auth_error)
             logger.error("Could not load provider configuration.")
 
     def cancel_login(self):
@@ -1105,7 +1105,7 @@ class Authenticate(object):
         """
         if not self._is_logged_in():
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.SRP_NOT_LOGGED_IN_ERROR)
+                self._signaler.signal(self._signaler.srp_not_logged_in_error)
             return
 
         return self._srp_auth.change_password(current_password, new_password)
@@ -1117,7 +1117,7 @@ class Authenticate(object):
         """
         if not self._is_logged_in():
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.SRP_NOT_LOGGED_IN_ERROR)
+                self._signaler.signal(self._signaler.srp_not_logged_in_error)
             return
 
         self._srp_auth.logout()
@@ -1140,8 +1140,8 @@ class Authenticate(object):
 
         signal = None
         if self._is_logged_in():
-            signal = self._signaler.SRP_STATUS_LOGGED_IN
+            signal = self._signaler.srp_status_logged_in
         else:
-            signal = self._signaler.SRP_STATUS_NOT_LOGGED_IN
+            signal = self._signaler.srp_status_not_logged_in
 
         self._signaler.signal(signal)
