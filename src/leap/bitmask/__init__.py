@@ -66,7 +66,7 @@ except ImportError:
 
 __appname__ = "unknown"
 try:
-    from leap._appname import __appname__
+    from leap.bitmask._appname import __appname__
 except ImportError:
     #running on a tree that has not run
     #the setup.py setver
