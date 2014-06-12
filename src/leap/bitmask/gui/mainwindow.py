@@ -549,7 +549,7 @@ class MainWindow(QtGui.QMainWindow):
         details = self._provider_details
         mx_provided = False
         if details is not None:
-            mx_provided = MX_SERVICE in details.services
+            mx_provided = MX_SERVICE in details['services']
 
         # XXX: handle differently not logged in user?
         akm = AdvancedKeyManagement(self, mx_provided, logged_user,
@@ -569,7 +569,7 @@ class MainWindow(QtGui.QMainWindow):
         domain = self._login_widget.get_selected_provider()
         mx_provided = False
         if self._provider_details is not None:
-            mx_provided = MX_SERVICE in self._provider_details.services
+            mx_provided = MX_SERVICE in self._provider_details['services']
         preferences = PreferencesWindow(self, user, domain, self._backend,
                                         self._soledad_started, mx_provided)
 
@@ -1267,7 +1267,7 @@ class MainWindow(QtGui.QMainWindow):
             sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
             sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
-        if not MX_SERVICE in self._provider_details.services:
+        if not MX_SERVICE in self._provider_details['services']:
             self._set_mx_visible(False)
 
     def _start_eip_bootstrap(self):
@@ -1310,7 +1310,7 @@ class MainWindow(QtGui.QMainWindow):
         Set the details for the just downloaded provider.
 
         :param details: the details of the provider.
-        :type details: ProviderConfigLight
+        :type details: dict
         """
         self._provider_details = details
 
@@ -1327,7 +1327,7 @@ class MainWindow(QtGui.QMainWindow):
         mx_enabled = MX_SERVICE in enabled_services
         mx_provided = False
         if self._provider_details is not None:
-            mx_provided = MX_SERVICE in self._provider_details.services
+            mx_provided = MX_SERVICE in self._provider_details['services']
 
         return mx_enabled and mx_provided
 
@@ -1344,7 +1344,7 @@ class MainWindow(QtGui.QMainWindow):
         eip_enabled = EIP_SERVICE in enabled_services
         eip_provided = False
         if self._provider_details is not None:
-            eip_provided = EIP_SERVICE in self._provider_details.services
+            eip_provided = EIP_SERVICE in self._provider_details['services']
 
         return eip_enabled and eip_provided
 

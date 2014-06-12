@@ -569,7 +569,7 @@ class Wizard(QtGui.QWizard):
         Set the details for the just downloaded provider.
 
         :param details: the details of the provider.
-        :type details: ProviderConfigLight
+        :type details: dict
         """
         self._provider_details = details
 
@@ -640,9 +640,9 @@ class Wizard(QtGui.QWizard):
         the user to enable or disable.
         """
         self.ui.grpServices.setTitle(
-            self.tr("Services by {0}").format(self._provider_details.name))
+            self.tr("Services by {0}").format(self._provider_details['name']))
 
-        services = get_supported(self._provider_details.services)
+        services = get_supported(self._provider_details['services'])
 
         for service in services:
             try:
@@ -685,7 +685,7 @@ class Wizard(QtGui.QWizard):
             if not self._provider_setup_ok:
                 self._reset_provider_setup()
                 sub_title = self.tr("Gathering configuration options for {0}")
-                sub_title = sub_title.format(self._provider_details.name)
+                sub_title = sub_title.format(self._provider_details['name'])
                 self.page(pageId).setSubTitle(sub_title)
                 self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
                 self._provider_setup_defer = self._backend.\
@@ -693,22 +693,22 @@ class Wizard(QtGui.QWizard):
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             sub_title = self.tr("Description of services offered by {0}")
-            sub_title = sub_title.format(self._provider_details.name)
+            sub_title = sub_title.format(self._provider_details['name'])
             self.page(pageId).setSubTitle(sub_title)
 
             details = self._provider_details
-            name = "<b>{0}</b>".format(details.name)
-            domain = "https://{0}".format(details.domain)
-            description = "<i>{0}</i>".format(details.description)
+            name = "<b>{0}</b>".format(details['name'])
+            domain = "https://{0}".format(details['domain'])
+            description = "<i>{0}</i>".format(details['description'])
             self.ui.lblProviderName.setText(name)
             self.ui.lblProviderURL.setText(domain)
             self.ui.lblProviderDesc.setText(description)
-            self.ui.lblServicesOffered.setText(details.services_string)
-            self.ui.lblProviderPolicy.setText(details.enrollment_policy)
+            self.ui.lblServicesOffered.setText(details['services_string'])
+            self.ui.lblProviderPolicy.setText(details['enrollment_policy'])
 
         if pageId == self.REGISTER_USER_PAGE:
             sub_title = self.tr("Register a new user with {0}")
-            sub_title = sub_title.format(self._provider_details.name)
+            sub_title = sub_title.format(self._provider_details['name'])
             self.page(pageId).setSubTitle(sub_title)
             self.ui.chkRemember.setVisible(False)
 

@@ -1,0 +1,1 @@
+- Use a dict instead an object to ease later serialization.

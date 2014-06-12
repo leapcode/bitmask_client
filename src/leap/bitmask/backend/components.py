@@ -257,8 +257,7 @@ class Provider(object):
 
     def get_details(self, domain, lang=None):
         """
-        Signal a ProviderConfigLight object with the current ProviderConfig
-        settings.
+        Signal a dict with the current ProviderConfig settings.
 
         :param domain: the domain name of the provider.
         :type domain: str
@@ -266,7 +265,7 @@ class Provider(object):
         :type lang: str
 
         Signals:
-            prov_get_details -> ProviderConfigLight
+            prov_get_details -> dict
         """
         self._signaler.signal(
             self._signaler.PROV_GET_DETAILS,
