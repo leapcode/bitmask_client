@@ -1,0 +1,1 @@
+- Update the bundled binaries to their path if their sha256 is not correct. Closes:#5759
