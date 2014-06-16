@@ -248,13 +248,13 @@ def _darwin_install_missing_scripts(badexec, notfound):
     # We expect to execute this from some way of bundle, since
     # the up/down scripts should be put in place by the installer.
     success = False
-    installer_path = os.path.join(
-        os.getcwd(),
-        "..",
-        "Resources",
-        "openvpn")
+    installer_path = os.path.abspath(
+        os.path.join(
+            os.getcwd(), "..", "Resources", "openvpn"))
     launcher = DarwinVPNLauncher
 
+
+    # XXX FIXME !!! call the bash script!
     if os.path.isdir(installer_path):
         fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
         try:
@@ -397,12 +397,15 @@ def _linux_install_missing_scripts(badexec, notfound):
     :rtype: bool
     """
     success = False
-    installer_path = os.path.join(os.getcwd(), "apps", "eip", "files")
+    installer_path = os.path.abspath(
+        os.path.join(os.getcwd(), "apps", "eip", "files"))
     launcher = LinuxVPNLauncher
 
     # XXX refactor with darwin, same block.
 
     if os.path.isdir(installer_path):
+
+        # FIXME --------- call installer script ---
         fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
         polfd, pol_tempfile = tempfile.mkstemp(prefix="leap_installer-")
         try:
