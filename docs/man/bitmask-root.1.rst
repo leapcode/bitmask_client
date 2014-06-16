@@ -49,9 +49,9 @@ firewall
 
 **stop**               Stops the firewall.
 
-=======
+
 version
---------
+-------
 
 **version**             Prints the `bitmask-root` version string.
 
