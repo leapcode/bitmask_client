@@ -25,8 +25,9 @@ import sys
 import subprocess
 import tempfile
 
-from PySide import QtGui
+from PySide import QtGui, QtCore
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip.linuxvpnlauncher import LinuxVPNLauncher
@@ -76,9 +77,9 @@ HELPERS_BADEXEC_MSG = BADEXEC_MSG % (
     "helper files", "they", "be copied")
 
 
-def get_missing_updown_dialog():
+def get_missing_helpers_dialog():
     """
-    Create a dialog for notifying of missing updown scripts.
+    Create a dialog for notifying of missing helpers.
     Returns that dialog.
 
     :rtype: QtGui.QMessageBox instance
@@ -104,14 +105,25 @@ def check_missing():
     raises a dialog to ask user for permission to do it.
     """
     config = LeapSettings()
+    complain_missing = False
     alert_missing = config.get_alert_missing_scripts()
+
+    if alert_missing and not flags.STANDALONE:
+        # We refuse to install missing stuff if not running with standalone
+        # flag. Right now we rely on the flag alone, but we can disable this
+        # by overwriting some constant from within the debian package.
+        alert_missing = False
+        complain_missing = True
 
     launcher = get_vpn_launcher()
     missing_scripts = launcher.missing_updown_scripts
     missing_other = launcher.missing_other_files
 
-    if alert_missing and (missing_scripts() or missing_other()):
-        msg = get_missing_updown_dialog()
+    logger.debug("MISSING OTHER: %s" % (str(missing_other())))
+
+    missing_some = missing_scripts() or missing_other()
+    if alert_missing and missing_some:
+        msg = get_missing_helpers_dialog()
         ret = msg.exec_()
 
         if ret == QtGui.QMessageBox.Yes:
@@ -122,8 +134,6 @@ def check_missing():
                 logger.warning(
                     "Installer not found for platform %s." % (_system,))
                 return
-
-            print "INSTALL FUN", install_missing_fun
 
             # XXX maybe move constants to fun
             ok = install_missing_fun(HELPERS_BADEXEC_MSG, HELPERS_NOTFOUND_MSG)
@@ -143,6 +153,12 @@ def check_missing():
                 "Setting alert_missing_scripts to False, we will not "
                 "ask again")
             config.set_alert_missing_scripts(False)
+
+    if complain_missing and missing_some:
+        missing = missing_scripts() + missing_other()
+        msg = _get_missing_complain_dialog(missing)
+        ret = msg.exec_()
+
 #
 # windows initializers
 #
@@ -253,7 +269,6 @@ def _darwin_install_missing_scripts(badexec, notfound):
             os.getcwd(), "..", "Resources", "openvpn"))
     launcher = DarwinVPNLauncher
 
-
     # XXX FIXME !!! call the bash script!
     if os.path.isdir(installer_path):
         fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
@@ -352,21 +367,69 @@ def _get_missing_resolvconf_dialog():
 
     :rtype: QtGui.QMessageBox instance
     """
-    NO_RESOLVCONF = (
+    msgstr = QtCore.QObject()
+    msgstr.NO_RESOLVCONF = msgstr.tr(
         "Could not find <b>resolvconf</b> installed in your system.\n"
         "Do you want to quit Bitmask now?")
 
-    EXPLAIN = (
+    msgstr.EXPLAIN = msgstr.tr(
         "Encrypted Internet needs resolvconf installed to work properly.\n"
         "Please use your package manager to install it.\n")
 
     msg = QtGui.QMessageBox()
     msg.setWindowTitle(msg.tr("Missing resolvconf framework"))
-    msg.setText(msg.tr(NO_RESOLVCONF))
+    msg.setText(msgstr.NO_RESOLVCONF)
     # but maybe the user really deserve to know more
-    msg.setInformativeText(msg.tr(EXPLAIN))
+    msg.setInformativeText(msgstr.EXPLAIN)
     msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
     msg.setDefaultButton(QtGui.QMessageBox.Yes)
+    return msg
+
+
+def _get_missing_complain_dialog(stuff):
+    """
+    Create a dialog for notifying about missing helpers (but doing nothing).
+    Used from non-standalone runs.
+
+    :param stuff: list of missing items to display
+    :type stuff: list
+    :rtype: QtGui.QMessageBox instance
+    """
+    msgstr = QtCore.QObject()
+    msgstr.NO_HELPERS = msgstr.tr(
+        "Some essential helper files are missing in your system.")
+    msgstr.EXPLAIN = msgstr.tr(
+        "Reinstall your debian packages, or make sure you place them by hand.")
+
+    class ComplainDialog(QtGui.QDialog):
+
+        def __init__(self, parent=None):
+                super(ComplainDialog, self).__init__(parent)
+
+                label = QtGui.QLabel(msgstr.NO_HELPERS)
+                label.setAlignment(QtCore.Qt.AlignLeft)
+
+                label2 = QtGui.QLabel(msgstr.EXPLAIN)
+                label2.setAlignment(QtCore.Qt.AlignLeft)
+
+                textedit = QtGui.QTextEdit()
+                textedit.setText("\n".join(stuff))
+
+                ok = QtGui.QPushButton()
+                ok.setText(self.tr("Ok, thanks"))
+                self.ok = ok
+                self.ok.clicked.connect(self.close)
+
+                mainLayout = QtGui.QGridLayout()
+                mainLayout.addWidget(label, 0, 0)
+                mainLayout.addWidget(label2, 1, 0)
+                mainLayout.addWidget(textedit, 2, 0)
+                mainLayout.addWidget(ok, 3, 0)
+
+                self.setLayout(mainLayout)
+
+    msg = ComplainDialog()
+    msg.setWindowTitle(msg.tr("Missing Bitmask helpers"))
     return msg
 
 
@@ -401,17 +464,18 @@ def _linux_install_missing_scripts(badexec, notfound):
         os.path.join(os.getcwd(), "apps", "eip", "files"))
     launcher = LinuxVPNLauncher
 
-    install_helper = "linux-install-helper.sh"
+    install_helper = "leap-install-helper.sh"
     install_helper_path = os.path.join(installer_path, install_helper)
 
-    install_opts = ("--from-path %s --install-bitmask-root YES"
-                    "--install-polkit-file YES --install-openvpn YES" % (
-                        installer_path,))
+    install_opts = ("--from-path %s --install-bitmask-root YES "
+                    "--install-polkit-file YES --install-openvpn YES "
+                    "--remove-old-files YES" % (installer_path,))
 
     if os.path.isdir(installer_path):
         try:
             pkexec = first(launcher.maybe_pkexec())
-            cmdline = ["%s %s" % (pkexec, install_helper_path, install_opts)]
+            cmdline = ["%s %s %s" % (
+                pkexec, install_helper_path, install_opts)]
 
             ret = subprocess.call(
                 cmdline, stdout=subprocess.PIPE,
