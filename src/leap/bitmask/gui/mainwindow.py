@@ -605,12 +605,13 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         self._trying_to_start_eip = settings.get_autostart_eip()
-        self._backend.eip_can_start(default_provider)
+        self._backend.eip_can_start(domain=default_provider)
 
         # If we don't want to start eip, we leave everything
         # initialized to quickly start it
         if not self._trying_to_start_eip:
-            self._backend.eip_setup(default_provider, skip_network=True)
+            self._backend.eip_setup(provider=default_provider,
+                                    skip_network=True)
 
     def _backend_can_start_eip(self):
         """
@@ -824,7 +825,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         providers = self._settings.get_configured_providers()
 
-        self._backend.provider_get_all_services(providers)
+        self._backend.provider_get_all_services(providers=providers)
 
     def _provider_get_all_services(self, services):
         self._set_eip_visible(EIP_SERVICE in services)
@@ -1124,7 +1125,7 @@ class MainWindow(QtGui.QMainWindow):
         emit the corresponding signals inmediately
         """
         domain = self._login_widget.get_selected_provider()
-        self._backend.provider_setup(domain)
+        self._backend.provider_setup(provider=domain)
 
     @QtCore.Slot(dict)
     def _load_provider_config(self, data):
@@ -1141,7 +1142,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         if data[self._backend.PASSED_KEY]:
             selected_provider = self._login_widget.get_selected_provider()
-            self._backend.provider_bootstrap(selected_provider)
+            self._backend.provider_bootstrap(provider=selected_provider)
         else:
             logger.error(data[self._backend.ERROR_KEY])
             self._login_problem_provider()
@@ -1252,7 +1253,8 @@ class MainWindow(QtGui.QMainWindow):
             self._show_hide_unsupported_services()
 
             domain = self._login_widget.get_selected_provider()
-            self._backend.user_login(domain, username, password)
+            self._backend.user_login(provider=domain,
+                                     username=username, password=password)
         else:
             logger.error(data[self._backend.ERROR_KEY])
             self._login_problem_provider()
@@ -1319,7 +1321,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         domain = self._login_widget.get_selected_provider()
         lang = QtCore.QLocale.system().name()
-        self._backend.provider_get_details(domain, lang)
+        self._backend.provider_get_details(domain=domain, lang=lang)
 
     @QtCore.Slot()
     def _provider_get_details(self, details):
@@ -1388,11 +1390,14 @@ class MainWindow(QtGui.QMainWindow):
                 # this is mostly for internal use/debug for now.
                 logger.warning("Sorry! Log-in at least one time.")
                 return
-            self._backend.soledad_load_offline(full_user_id, password, uuid)
+            self._backend.soledad_load_offline(username=full_user_id,
+                                               password=password, uuid=uuid)
         else:
             if self._logged_user is not None:
                 domain = self._login_widget.get_selected_provider()
-                self._backend.soledad_bootstrap(username, domain, password)
+                self._backend.soledad_bootstrap(username=username,
+                                                domain=domain,
+                                                password=password)
 
     ###################################################################
     # Service control methods: soledad
@@ -1478,7 +1483,7 @@ class MainWindow(QtGui.QMainWindow):
         self._already_started_eip = True
 
         # check for connectivity
-        self._backend.eip_check_dns(domain)
+        self._backend.eip_check_dns(domain=domain)
 
     @QtCore.Slot()
     def _eip_dns_error(self):
@@ -1542,7 +1547,7 @@ class MainWindow(QtGui.QMainWindow):
             self._eip_status.eip_button.setEnabled(False)
 
             domain = self._login_widget.get_selected_provider()
-            self._backend.eip_setup(domain)
+            self._backend.eip_setup(provider=domain)
 
             self._already_started_eip = True
             # we want to start soledad anyway after a certain timeout if eip

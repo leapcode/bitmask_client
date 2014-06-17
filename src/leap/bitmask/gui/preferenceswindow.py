@@ -196,7 +196,8 @@ class PreferencesWindow(QtGui.QDialog):
             return
 
         self._set_changing_password(True)
-        self._backend.user_change_password(current_password, new_password)
+        self._backend.user_change_password(current_password=current_password,
+                                           new_password=new_password)
 
     @QtCore.Slot()
     def _srp_change_password_ok(self):
@@ -210,7 +211,7 @@ class PreferencesWindow(QtGui.QDialog):
         logger.debug("SRP password changed successfully.")
 
         if self._mx_provided:
-            self._backend.soledad_change_password(new_password)
+            self._backend.soledad_change_password(new_password=new_password)
         else:
             self._change_password_success()
 
@@ -359,7 +360,7 @@ class PreferencesWindow(QtGui.QDialog):
         save_services = partial(self._save_enabled_services, domain)
         self.ui.pbSaveServices.clicked.connect(save_services)
 
-        self._backend.provider_get_supported_services(domain)
+        self._backend.provider_get_supported_services(domain=domain)
 
     @QtCore.Slot(str)
     def _load_services(self, services):

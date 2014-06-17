@@ -323,7 +323,8 @@ class Wizard(QtGui.QWizard):
         if user_ok and pass_ok:
             self._set_register_status(self.tr("Starting registration..."))
 
-            self._backend.user_register(self._domain, username, password)
+            self._backend.user_register(provider=self._domain,
+                                        username=username, password=password)
             self._username = username
             self._password = password
         else:
@@ -475,7 +476,7 @@ class Wizard(QtGui.QWizard):
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._provider_select_defer = self._backend.\
-            provider_setup(self._domain)
+            provider_setup(provider=self._domain)
 
     @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
@@ -576,7 +577,7 @@ class Wizard(QtGui.QWizard):
                                 True, self.SELECT_PROVIDER_PAGE)
             self._provider_checks_ok = True
             lang = QtCore.QLocale.system().name()
-            self._backend.provider_get_details(self._domain, lang)
+            self._backend.provider_get_details(domain=self._domain, lang=lang)
         else:
             new_data = {
                 self._backend.PASSED_KEY: False,
@@ -724,7 +725,7 @@ class Wizard(QtGui.QWizard):
                 self.page(pageId).setSubTitle(sub_title)
                 self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
                 self._provider_setup_defer = self._backend.\
-                    provider_bootstrap(self._domain)
+                    provider_bootstrap(provider=self._domain)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             sub_title = self.tr("Description of services offered by {0}")

@@ -97,7 +97,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         if not providers:
             return
 
-        self._backend.eip_get_initialized_providers(providers)
+        self._backend.eip_get_initialized_providers(domains=providers)
 
     @QtCore.Slot(list)
     def _load_providers_in_combo(self, providers):
@@ -175,7 +175,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         domain = self.ui.cbProvidersGateway.itemData(domain_idx)
         self._selected_domain = domain
 
-        self._backend.eip_get_gateways_list(domain)
+        self._backend.eip_get_gateways_list(domain=domain)
 
     @QtCore.Slot(list)
     def _update_gateways_list(self, gateways):
