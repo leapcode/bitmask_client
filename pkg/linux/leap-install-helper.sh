@@ -19,8 +19,9 @@
 
 LOCAL_SBIN_FOLDER=/usr/local/sbin
 
+POLKIT_FOLDER="/usr/share/polkit-1/actions"
 POLKIT_FILE="se.leap.bitmask.bundle.policy"
-POLKIT_PATH="/usr/share/polkit-1/actions"
+POLKIT_PATH="${POLKIT_FOLDER}/${POLKIT_FILE}"
 
 BITMASK_ROOT_FILE="bitmask-root"
 BITMASK_ROOT_PATH="${LOCAL_SBIN_FOLDER}/${BITMASK_ROOT_FILE}"

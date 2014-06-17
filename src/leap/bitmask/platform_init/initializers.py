@@ -401,39 +401,27 @@ def _linux_install_missing_scripts(badexec, notfound):
         os.path.join(os.getcwd(), "apps", "eip", "files"))
     launcher = LinuxVPNLauncher
 
-    # XXX refactor with darwin, same block.
+    install_helper = "linux-install-helper.sh"
+    install_helper_path = os.path.join(installer_path, install_helper)
+
+    install_opts = ("--from-path %s --install-bitmask-root YES"
+                    "--install-polkit-file YES --install-openvpn YES" % (
+                        installer_path,))
 
     if os.path.isdir(installer_path):
-
-        # FIXME --------- call installer script ---
-        fd, tempscript = tempfile.mkstemp(prefix="leap_installer-")
-        polfd, pol_tempfile = tempfile.mkstemp(prefix="leap_installer-")
         try:
             pkexec = first(launcher.maybe_pkexec())
-
-            scriptlines = launcher.cmd_for_missing_scripts(installer_path)
-            with os.fdopen(fd, 'w') as f:
-                f.write(scriptlines)
-
-            st = os.stat(tempscript)
-            os.chmod(tempscript, st.st_mode | stat.S_IEXEC | stat.S_IXUSR |
-                     stat.S_IXGRP | stat.S_IXOTH)
-            cmdline = ["%s %s" % (pkexec, tempscript)]
+            cmdline = ["%s %s" % (pkexec, install_helper_path, install_opts)]
 
             ret = subprocess.call(
                 cmdline, stdout=subprocess.PIPE,
                 shell=True)
             success = ret == 0
             if not success:
-                logger.error("Install missing scripts failed.")
+                logger.error("Install of helpers failed.")
         except Exception as exc:
             logger.error(badexec)
             logger.error("Error was: %r" % (exc,))
-        finally:
-            try:
-                os.remove(tempscript)
-            except OSError as exc:
-                logger.error("%r" % (exc,))
     else:
         logger.error(notfound)
         logger.debug('path searched: %s' % (installer_path,))
