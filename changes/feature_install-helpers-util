@@ -1,0 +1,3 @@
+- Remove deprecated policy files. Closes: #5651
+- Install helper files only if standalone=True. Related: #5625
+- Use installer helper from within bundle path. Related: #5634
