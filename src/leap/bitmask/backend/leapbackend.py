@@ -289,6 +289,7 @@ class Provider(object):
             self._signaler.PROV_GET_PINNED_PROVIDERS,
             PinnedProviders.domains())
 
+
 class Register(object):
     """
     Interfaces with setup and bootstrapping operations for a provider

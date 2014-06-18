@@ -42,7 +42,7 @@ from leap.bitmask.gui import twisted_main
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
 
-from leap.bitmask import backend
+from leap.bitmask.backend import leapbackend
 
 from leap.bitmask.services.eip import conductor as eip_conductor
 from leap.bitmask.services.mail import conductor as mail_conductor
@@ -118,7 +118,7 @@ class MainWindow(QtGui.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.menuBar().setNativeMenuBar(not IS_LINUX)
-        self._backend = backend.Backend(bypass_checks)
+        self._backend = leapbackend.Backend(bypass_checks)
         self._backend.start()
 
         self._settings = LeapSettings()
