@@ -25,7 +25,6 @@ from PySide import QtCore, QtGui
 from leap.bitmask.config import flags
 from leap.bitmask.gui import locale_rc  # noqa - silence pylint
 from leap.bitmask.gui.mainwindow import MainWindow
-# from leap.bitmask.logs.utils import create_logger
 
 import logging
 logger = logging.getLogger(__name__)
@@ -61,7 +60,6 @@ def run_frontend(options):
     :param options: a dict of options parsed from the command line.
     :type options: dict
     """
-    bypass_checks = options["bypass_checks"]
     start_hidden = options["start_hidden"]
 
     # We force the style if on KDE so that it doesn't load all the kde
@@ -90,8 +88,7 @@ def run_frontend(options):
     qApp.setApplicationName("leap")
     qApp.setOrganizationDomain("leap.se")
 
-    window = MainWindow(bypass_checks=bypass_checks,
-                        start_hidden=start_hidden)
+    window = MainWindow(start_hidden=start_hidden)
 
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)

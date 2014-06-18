@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class EIPConductor(object):
 
-    def __init__(self, settings, backend, **kwargs):
+    def __init__(self, settings, backend, leap_signaler, **kwargs):
         """
         Initializes EIP Conductor.
 
@@ -46,6 +46,7 @@ class EIPConductor(object):
         self.eip_connection = EIPConnection()
         self.eip_name = get_service_display_name(EIP_SERVICE)
         self._settings = settings
+        self._leap_signaler = leap_signaler
         self._backend = backend
 
         self._eip_status = None
@@ -76,7 +77,7 @@ class EIPConductor(object):
         """
         Connect to backend signals.
         """
-        signaler = self._backend.signaler
+        signaler = self._leap_signaler
 
         # for conductor
         signaler.eip_process_restart_tls.connect(self._do_eip_restart)

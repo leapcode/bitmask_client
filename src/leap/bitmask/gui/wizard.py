@@ -49,16 +49,12 @@ class Wizard(QtGui.QWizard):
     REGISTER_USER_PAGE = 4
     SERVICES_PAGE = 5
 
-    def __init__(self, backend, bypass_checks=False):
+    def __init__(self, backend, leap_signaler):
         """
         Constructor for the main Wizard.
 
         :param backend: Backend being used
         :type backend: Backend
-        :param bypass_checks: Set to true if the app should bypass
-                              first round of checks for CA
-                              certificates at bootstrap
-        :type bypass_checks: bool
         """
         QtGui.QWizard.__init__(self)
 
@@ -85,6 +81,8 @@ class Wizard(QtGui.QWizard):
         self._connect_and_track(self.ui.btnCheck.clicked, self._check_provider)
         self._connect_and_track(self.ui.lnProvider.returnPressed,
                                 self._check_provider)
+
+        self._leap_signaler = leap_signaler
 
         self._backend = backend
         self._backend_connect()
@@ -789,7 +787,7 @@ class Wizard(QtGui.QWizard):
         """
         Connects all the backend signals with the wizard.
         """
-        sig = self._backend.signaler
+        sig = self._leap_signaler
         conntrack = self._connect_and_track
         conntrack(sig.prov_name_resolution, self._name_resolution)
         conntrack(sig.prov_https_connection, self._https_connection)

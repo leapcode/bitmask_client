@@ -43,9 +43,12 @@ import multiprocessing
 import os
 import sys
 
+from leap.bitmask.backend.utils import generate_certificates
+
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config import flags
 from leap.bitmask.frontend_app import run_frontend
+from leap.bitmask.backend.leapbackend import run_backend
 from leap.bitmask.logs.utils import create_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
@@ -114,7 +117,6 @@ def start_app():
     do_display_version(opts)
 
     options = {
-        'bypass_checks': opts.danger,
         'start_hidden': opts.start_hidden,
         'debug': opts.debug,
         'log_file': opts.log_file,
@@ -170,8 +172,15 @@ def start_app():
 
     logger.info('Starting app')
 
-    frontend = multiprocessing.Process(target=run_frontend, args=(options, ))
-    frontend.start()
+    generate_certificates()
+
+    app = lambda: run_frontend(options=options)
+    gui_process = multiprocessing.Process(target=app)
+    gui_process.start()
+
+    backend = lambda: run_backend(bypass_checks=opts.danger)
+    backend_process = multiprocessing.Process(target=backend)
+    backend_process.start()
 
 
 if __name__ == "__main__":

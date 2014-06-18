@@ -38,7 +38,8 @@ class PreferencesWindow(QtGui.QDialog):
     """
     preferences_saved = QtCore.Signal()
 
-    def __init__(self, parent, username, domain, backend, soledad_started, mx):
+    def __init__(self, parent, username, domain, backend, soledad_started, mx,
+                 leap_signaler):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
@@ -58,6 +59,7 @@ class PreferencesWindow(QtGui.QDialog):
 
         self._username = username
         self._domain = domain
+        self._leap_signaler = leap_signaler
         self._backend = backend
         self._soledad_started = soledad_started
         self._mx_provided = mx
@@ -423,7 +425,7 @@ class PreferencesWindow(QtGui.QDialog):
         """
         Helper to connect to backend signals
         """
-        sig = self._backend.signaler
+        sig = self._leap_signaler
 
         sig.prov_get_supported_services.connect(self._load_services)
 

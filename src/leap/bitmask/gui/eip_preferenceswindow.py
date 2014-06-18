@@ -33,7 +33,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
     """
     Window that displays the EIP preferences.
     """
-    def __init__(self, parent, domain, backend):
+    def __init__(self, parent, domain, backend, leap_signaler):
         """
         :param parent: parent object of the EIPPreferencesWindow.
         :type parent: QWidget
@@ -46,6 +46,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
         self._settings = LeapSettings()
+        self._leap_signaler = leap_signaler
         self._backend = backend
 
         # Load UI
@@ -248,7 +249,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.cbGateways.setEnabled(False)
 
     def _backend_connect(self):
-        sig = self._backend.signaler
+        sig = self._leap_signaler
         sig.eip_get_gateways_list.connect(self._update_gateways_list)
         sig.eip_get_gateways_list_error.connect(self._gateways_list_error)
         sig.eip_uninitialized_provider.connect(

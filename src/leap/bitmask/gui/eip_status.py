@@ -44,7 +44,7 @@ class EIPStatusWidget(QtGui.QWidget):
     RATE_STR = "%1.2f KB/s"
     TOTAL_STR = "%1.2f Kb"
 
-    def __init__(self, parent=None, eip_conductor=None):
+    def __init__(self, parent, eip_conductor, leap_signaler):
         """
         :param parent: the parent of the widget.
         :type parent: QObject
@@ -59,6 +59,8 @@ class EIPStatusWidget(QtGui.QWidget):
 
         self.ui = Ui_EIPStatus()
         self.ui.setupUi(self)
+
+        self._leap_signaler = leap_signaler
 
         self.eip_conductor = eip_conductor
         self.eipconnection = eip_conductor.eip_connection
@@ -98,7 +100,7 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         Connect backend signals.
         """
-        signaler = self.eip_conductor._backend.signaler
+        signaler = self._leap_signaler
 
         signaler.eip_openvpn_already_running.connect(
             self._on_eip_openvpn_already_running)

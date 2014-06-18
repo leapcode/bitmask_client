@@ -43,7 +43,8 @@ from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
 from leap.bitmask.platform_init.initializers import init_signals
 
-from leap.bitmask.backend import leapbackend
+from leap.bitmask.backend.backend_proxy import BackendProxy
+from leap.bitmask.backend.leapsignaler import LeapSignaler
 
 from leap.bitmask.services.eip import conductor as eip_conductor
 from leap.bitmask.services.mail import conductor as mail_conductor
@@ -91,13 +92,10 @@ class MainWindow(QtGui.QMainWindow):
     # We give the services some time to a halt before forcing quit.
     SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
 
-    def __init__(self, bypass_checks=False, start_hidden=False):
+    def __init__(self, start_hidden=False):
         """
         Constructor for the client main window
 
-        :param bypass_checks: Set to true if the app should bypass first round
-                              of checks for CA certificates at bootstrap
-        :type bypass_checks: bool
         :param start_hidden: Set to true if the app should not show the window
                              but just the tray.
         :type start_hidden: bool
@@ -119,15 +117,16 @@ class MainWindow(QtGui.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.menuBar().setNativeMenuBar(not IS_LINUX)
-        self._backend = leapbackend.Backend(bypass_checks)
-        self._backend.start()
+
+        self._backend = BackendProxy()
+
+        self._leap_signaler = LeapSignaler()
+        self._leap_signaler.start()
 
         self._settings = LeapSettings()
 
         # Login Widget
-        self._login_widget = LoginWidget(
-            self._settings,
-            self)
+        self._login_widget = LoginWidget(self._settings, self)
         self.ui.loginLayout.addWidget(self._login_widget)
 
         # Mail Widget
@@ -144,8 +143,9 @@ class MainWindow(QtGui.QMainWindow):
 
         # EIP Control redux #########################################
         self._eip_conductor = eip_conductor.EIPConductor(
-            self._settings, self._backend)
-        self._eip_status = EIPStatusWidget(self, self._eip_conductor)
+            self._settings, self._backend, self._leap_signaler)
+        self._eip_status = EIPStatusWidget(self, self._eip_conductor,
+                                           self._leap_signaler)
 
         init_signals.eip_missing_helpers.connect(
             self._disable_eip_missing_helpers)
@@ -258,7 +258,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._logger_window = None
 
-        self._bypass_checks = bypass_checks
         self._start_hidden = start_hidden
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
@@ -283,7 +282,7 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard_firstrun = True
             self._disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
-                                  bypass_checks=bypass_checks)
+                                  leap_signaler=self._leap_signaler)
             # Give this window time to finish init and then show the wizard
             QtDelayedCall(1, self._launch_wizard)
             self._wizard.accepted.connect(self._finish_init)
@@ -342,7 +341,7 @@ class MainWindow(QtGui.QMainWindow):
                              that we are tracking to disconnect later.
         :type only_tracked: bool
         """
-        sig = self._backend.signaler
+        sig = self._leap_signaler
         conntrack = self._connect_and_track
         auth_err = self._authentication_error
 
@@ -480,7 +479,7 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard is None:
             self._disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
-                                  bypass_checks=self._bypass_checks)
+                                  leap_signaler=self._leap_signaler)
             self._wizard.accepted.connect(self._finish_init)
             self._wizard.rejected.connect(self._rejected_wizard)
 
@@ -575,7 +574,8 @@ class MainWindow(QtGui.QMainWindow):
         if self._provider_details is not None:
             mx_provided = MX_SERVICE in self._provider_details['services']
         preferences = PreferencesWindow(self, user, domain, self._backend,
-                                        self._soledad_started, mx_provided)
+                                        self._soledad_started, mx_provided,
+                                        self._leap_signaler)
 
         self.soledad_ready.connect(preferences.set_soledad_ready)
         preferences.show()
@@ -686,7 +686,9 @@ class MainWindow(QtGui.QMainWindow):
         Displays the EIP preferences window.
         """
         domain = self._login_widget.get_selected_provider()
-        EIPPreferencesWindow(self, domain, self._backend).show()
+        pref = EIPPreferencesWindow(self, domain,
+                                    self._backend, self._leap_signaler)
+        pref.show()
 
     #
     # updates
@@ -1277,7 +1279,7 @@ class MainWindow(QtGui.QMainWindow):
         if MX_SERVICE in self._enabled_services:
             btn_enabled = self._login_widget.set_logout_btn_enabled
             btn_enabled(False)
-            sig = self._backend.signaler
+            sig = self._leap_signaler
             sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
             sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
@@ -1711,10 +1713,10 @@ class MainWindow(QtGui.QMainWindow):
         self._services_being_stopped = set(('imap', 'eip'))
 
         imap_stopped = lambda: self._remove_service('imap')
-        self._backend.signaler.imap_stopped.connect(imap_stopped)
+        self._leap_signaler.imap_stopped.connect(imap_stopped)
 
         eip_stopped = lambda: self._remove_service('eip')
-        self._backend.signaler.eip_stopped.connect(eip_stopped)
+        self._leap_signaler.eip_stopped.connect(eip_stopped)
 
         logger.debug('Stopping mail services')
         self._backend.imap_stop_service()
@@ -1804,7 +1806,6 @@ class MainWindow(QtGui.QMainWindow):
         if IS_WIN:
             WindowsLock.release_all_locks()
 
-        self._backend.stop()
         self.close()
 
         QtDelayedCall(100, twisted_main.quit)
