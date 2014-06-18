@@ -123,7 +123,13 @@ def build_parser():
     return parser
 
 
-def init_leapc_args():
+def get_options():
+    """
+    Get the command line options used when the app was started.
+
+    :return: the command options
+    :rtype: argparse.Namespace
+    """
     parser = build_parser()
     opts, unknown = parser.parse_known_args()
-    return parser, opts
+    return opts

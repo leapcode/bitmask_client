@@ -19,6 +19,7 @@ Backend for everything
 """
 import logging
 import os
+import socket
 import time
 
 from functools import partial
@@ -653,6 +654,45 @@ class EIP(object):
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.EIP_CANNOT_START)
 
+    def check_dns(self, domain):
+        """
+        Check if we can resolve the given domain name.
+
+        :param domain: the domain to check.
+        :type domain: str
+        """
+        def do_check():
+            """
+            Try to resolve the domain name.
+            """
+            socket.gethostbyname(domain.encode('idna'))
+
+        def check_ok(_):
+            """
+            Callback handler for `do_check`.
+            """
+            self._signaler.signal(self._signaler.EIP_DNS_OK)
+            logger.debug("DNS check OK")
+
+        def check_err(failure):
+            """
+            Errback handler for `do_check`.
+
+            :param failure: the failure that triggered the errback.
+            :type failure: twisted.python.failure.Failure
+            """
+            logger.debug("Can't resolve hostname. {0!r}".format(failure))
+
+            self._signaler.signal(self._signaler.EIP_DNS_ERROR)
+
+            # python 2.7.4 raises socket.error
+            # python 2.7.5 raises socket.gaierror
+            failure.trap(socket.gaierror, socket.error)
+
+        d = threads.deferToThread(do_check)
+        d.addCallback(check_ok)
+        d.addErrback(check_err)
+
 
 class Soledad(object):
     """
@@ -1177,6 +1217,9 @@ class Signaler(QtCore.QObject):
     eip_connection_aborted = QtCore.Signal(object)
     eip_stopped = QtCore.Signal(object)
 
+    eip_dns_ok = QtCore.Signal(object)
+    eip_dns_error = QtCore.Signal(object)
+
     # EIP problems
     eip_no_polkit_agent_error = QtCore.Signal(object)
     eip_no_tun_kext_error = QtCore.Signal(object)
@@ -1308,6 +1351,9 @@ class Signaler(QtCore.QObject):
     EIP_CAN_START = "eip_can_start"
     EIP_CANNOT_START = "eip_cannot_start"
 
+    EIP_DNS_OK = "eip_dns_ok"
+    EIP_DNS_ERROR = "eip_dns_error"
+
     SOLEDAD_BOOTSTRAP_FAILED = "soledad_bootstrap_failed"
     SOLEDAD_BOOTSTRAP_FINISHED = "soledad_bootstrap_finished"
     SOLEDAD_OFFLINE_FAILED = "soledad_offline_failed"
@@ -1394,6 +1440,9 @@ class Signaler(QtCore.QObject):
 
             self.EIP_CAN_START,
             self.EIP_CANNOT_START,
+
+            self.EIP_DNS_OK,
+            self.EIP_DNS_ERROR,
 
             self.SRP_AUTH_OK,
             self.SRP_AUTH_ERROR,
@@ -1839,6 +1888,19 @@ class Backend(object):
         """
         self._call_queue.put(("eip", "can_start",
                               None, domain))
+
+    def eip_check_dns(self, domain):
+        """
+        Check if we can resolve the given domain name.
+
+        :param domain: the domain for the provider to check
+        :type domain: str
+
+        Signals:
+            eip_dns_ok
+            eip_dns_error
+        """
+        self._call_queue.put(("eip", "check_dns", None, domain))
 
     def tear_fw_down(self):
         """
