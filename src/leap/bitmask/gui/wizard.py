@@ -24,6 +24,10 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+# TODO: we should use a more granular signaling instead of passing error/ok as
+# a result.
+from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
+
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.services import get_service_display_name, get_supported
@@ -511,8 +515,8 @@ class Wizard(QtGui.QWizard):
         :param complete_page: page id to complete
         :type complete_page: int
         """
-        passed = data[self._backend.PASSED_KEY]
-        error = data[self._backend.ERROR_KEY]
+        passed = data[PASSED_KEY]
+        error = data[ERROR_KEY]
         if passed:
             label.setPixmap(self.OK_ICON)
             if complete:
@@ -532,7 +536,7 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblNameResolution)
         status = ""
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if not passed:
             status = self.tr("<font color='red'><b>Non-existent "
                              "provider</b></font>")
@@ -552,10 +556,10 @@ class Wizard(QtGui.QWizard):
         """
         self._complete_task(data, self.ui.lblHTTPS)
         status = ""
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if not passed:
             status = self.tr("<font color='red'><b>%s</b></font>") \
-                % (data[self._backend.ERROR_KEY])
+                % (data[ERROR_KEY])
             self.ui.lblProviderSelectStatus.setText(status)
         else:
             self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
@@ -572,7 +576,7 @@ class Wizard(QtGui.QWizard):
         check. Since this check is the last of this set, it also
         completes the page if passed
         """
-        if data[self._backend.PASSED_KEY]:
+        if data[PASSED_KEY]:
             self._complete_task(data, self.ui.lblProviderInfo,
                                 True, self.SELECT_PROVIDER_PAGE)
             self._provider_checks_ok = True
@@ -580,14 +584,13 @@ class Wizard(QtGui.QWizard):
             self._backend.provider_get_details(domain=self._domain, lang=lang)
         else:
             new_data = {
-                self._backend.PASSED_KEY: False,
-                self._backend.ERROR_KEY:
-                self.tr("Unable to load provider configuration")
+                PASSED_KEY: False,
+                ERROR_KEY: self.tr("Unable to load provider configuration")
             }
             self._complete_task(new_data, self.ui.lblProviderInfo)
 
         status = ""
-        if not data[self._backend.PASSED_KEY]:
+        if not data[PASSED_KEY]:
             status = self.tr("<font color='red'><b>Not a valid provider"
                              "</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
@@ -618,7 +621,7 @@ class Wizard(QtGui.QWizard):
         Sets the status for the download of the CA certificate check
         """
         self._complete_task(data, self.ui.lblDownloadCaCert)
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if passed:
             self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
 
@@ -631,7 +634,7 @@ class Wizard(QtGui.QWizard):
         Sets the status for the CA fingerprint check
         """
         self._complete_task(data, self.ui.lblCheckCaFpr)
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if passed:
             self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 

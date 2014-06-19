@@ -26,6 +26,11 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
+
+# TODO: we should use a more granular signaling instead of passing error/ok as
+# a result.
+from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
+
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 
@@ -1140,11 +1145,11 @@ class MainWindow(QtGui.QMainWindow):
                      backend.provider_setup()
         :type data: dict
         """
-        if data[self._backend.PASSED_KEY]:
+        if data[PASSED_KEY]:
             selected_provider = self._login_widget.get_selected_provider()
             self._backend.provider_bootstrap(provider=selected_provider)
         else:
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._login_problem_provider()
 
     @QtCore.Slot()
@@ -1246,7 +1251,7 @@ class MainWindow(QtGui.QMainWindow):
         Once the provider configuration is loaded, this starts the SRP
         authentication
         """
-        if data[self._backend.PASSED_KEY]:
+        if data[PASSED_KEY]:
             username = self._login_widget.get_user()
             password = self._login_widget.get_password()
 
@@ -1256,7 +1261,7 @@ class MainWindow(QtGui.QMainWindow):
             self._backend.user_login(provider=domain,
                                      username=username, password=password)
         else:
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._login_problem_provider()
 
     @QtCore.Slot()
@@ -1579,12 +1584,12 @@ class MainWindow(QtGui.QMainWindow):
         Start the VPN thread if the eip configuration is properly
         loaded.
         """
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
 
         if not passed:
             error_msg = self.tr("There was a problem with the provider")
             self._eip_status.set_eip_status(error_msg, error=True)
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._already_started_eip = False
             return
 
@@ -1602,11 +1607,11 @@ class MainWindow(QtGui.QMainWindow):
         This is used for intermediate bootstrapping stages, in case
         they fail.
         """
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if not passed:
             self._login_widget.set_status(
                 self.tr("Unable to connect: Problem with provider"))
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._already_started_eip = False
             self._eip_status.aborted()
 
@@ -1671,9 +1676,9 @@ class MainWindow(QtGui.QMainWindow):
         This is used for intermediate bootstrapping stages, in case
         they fail.
         """
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if not passed:
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._login_problem_provider()
 
     #

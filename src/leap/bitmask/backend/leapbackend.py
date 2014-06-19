@@ -28,6 +28,9 @@ from leap.bitmask.backend.backend import Backend
 
 logger = logging.getLogger(__name__)
 
+ERROR_KEY = "error"
+PASSED_KEY = "passed"
+
 
 class LeapBackend(Backend):
     """
