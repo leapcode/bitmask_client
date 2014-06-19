@@ -20,6 +20,7 @@ Pinned Providers
 import logging
 
 from leap.bitmask.provider import pinned_demobitmask
+from leap.bitmask.provider import pinned_riseup
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,10 @@ class PinnedProviders(object):
         pinned_demobitmask.DOMAIN: {
             CONFIG_KEY: pinned_demobitmask.PROVIDER_JSON,
             CACERT_KEY: pinned_demobitmask.CACERT_PEM,
+        },
+        pinned_riseup.DOMAIN: {
+            CONFIG_KEY: pinned_riseup.PROVIDER_JSON,
+            CACERT_KEY: pinned_riseup.CACERT_PEM,
         }
     }
 
