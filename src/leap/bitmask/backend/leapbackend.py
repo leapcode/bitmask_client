@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # leapbackend.py
-# Copyright (C) 2013 LEAP
+# Copyright (C) 2013, 2014 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,178 +15,60 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Backend for GUI/Logic communication.
+Backend for everything
 """
 import logging
-
-from Queue import Queue, Empty
-
-from twisted.internet import reactor
-from twisted.internet import threads, defer
-from twisted.internet.task import LoopingCall
+import signal
 
 import zope.interface
 import zope.proxy
 
-from leap.bitmask.backend.leapsignaler import Signaler
 from leap.bitmask.backend import components
+from leap.bitmask.backend.backend import Backend
 
 logger = logging.getLogger(__name__)
 
 
-class Backend(object):
+class LeapBackend(Backend):
     """
-    Backend for everything, the UI should only use this class.
+    Backend server subclass, used to implement the API methods.
     """
-
-    PASSED_KEY = "passed"
-    ERROR_KEY = "error"
-
     def __init__(self, bypass_checks=False):
         """
         Constructor for the backend.
         """
-        # Components map for the commands received
-        self._components = {}
-
-        # Ongoing defers that will be cancelled at stop time
-        self._ongoing_defers = []
-
-        # Signaler object to translate commands into Qt signals
-        self._signaler = Signaler()
+        Backend.__init__(self)
 
         # Objects needed by several components, so we make a proxy and pass
         # them around
         self._soledad_proxy = zope.proxy.ProxyBase(None)
         self._keymanager_proxy = zope.proxy.ProxyBase(None)
 
-        # Component registration
-        self._register(components.Provider(self._signaler, bypass_checks))
-        self._register(components.Register(self._signaler))
-        self._register(components.Authenticate(self._signaler))
-        self._register(components.EIP(self._signaler))
-        self._register(components.Soledad(self._soledad_proxy,
-                                          self._keymanager_proxy,
-                                          self._signaler))
-        self._register(components.Keymanager(self._keymanager_proxy,
-                                             self._signaler))
-        self._register(components.Mail(self._soledad_proxy,
-                                       self._keymanager_proxy,
-                                       self._signaler))
+        # Component instances creation
+        self._provider = components.Provider(self._signaler, bypass_checks)
+        self._register = components.Register(self._signaler)
+        self._authenticate = components.Authenticate(self._signaler)
+        self._eip = components.EIP(self._signaler)
+        self._soledad = components.Soledad(self._soledad_proxy,
+                                           self._keymanager_proxy,
+                                           self._signaler)
+        self._keymanager = components.Keymanager(self._keymanager_proxy,
+                                                 self._signaler)
+        self._mail = components.Mail(self._soledad_proxy,
+                                     self._keymanager_proxy,
+                                     self._signaler)
 
-        # We have a looping call on a thread executing all the
-        # commands in queue. Right now this queue is an actual Queue
-        # object, but it'll become the zmq recv_multipart queue
-        self._lc = LoopingCall(threads.deferToThread, self._worker)
+    def _check_type(self, obj, expected_type):
+        """
+        Check the type of a parameter.
 
-        # Temporal call_queue for worker, will be replaced with
-        # recv_multipart os something equivalent in the loopingcall
-        self._call_queue = Queue()
-
-    @property
-    def signaler(self):
+        :param obj: object to check its type.
+        :type obj: any type
+        :param expected_type: the expected type of the object.
+        :type expected_type: type
         """
-        Public signaler access to let the UI connect to its signals.
-        """
-        return self._signaler
-
-    def start(self):
-        """
-        Starts the looping call
-        """
-        logger.debug("Starting worker...")
-        self._lc.start(0.01)
-
-    def stop(self):
-        """
-        Stops the looping call and tries to cancel all the defers.
-        """
-        reactor.callLater(2, self._stop)
-
-    def _stop(self):
-        """
-        Delayed stopping of worker. Called from `stop`.
-        """
-        logger.debug("Stopping worker...")
-        if self._lc.running:
-            self._lc.stop()
-        else:
-            logger.warning("Looping call is not running, cannot stop")
-
-        logger.debug("Cancelling ongoing defers...")
-        while len(self._ongoing_defers) > 0:
-            d = self._ongoing_defers.pop()
-            d.cancel()
-        logger.debug("Defers cancelled.")
-
-    def _register(self, component):
-        """
-        Registers a component in this backend
-
-        :param component: Component to register
-        :type component: any object that implements ILEAPComponent
-        """
-        # TODO: assert that the component implements the interfaces
-        # expected
-        try:
-            self._components[component.key] = component
-        except Exception:
-            logger.error("There was a problem registering %s" % (component,))
-
-    def _signal_back(self, _, signal):
-        """
-        Helper method to signal back (callback like behavior) to the
-        UI that an operation finished.
-
-        :param signal: signal name
-        :type signal: str
-        """
-        self._signaler.signal(signal)
-
-    def _worker(self):
-        """
-        Worker method, called from a different thread and as a part of
-        a looping call
-        """
-        try:
-            # this'll become recv_multipart
-            cmd = self._call_queue.get(block=False)
-
-            # cmd is: component, method, signalback, *args
-            func = getattr(self._components[cmd[0]], cmd[1])
-            d = func(*cmd[3:])
-            if d is not None:  # d may be None if a defer chain is cancelled.
-                # A call might not have a callback signal, but if it does,
-                # we add it to the chain
-                if cmd[2] is not None:
-                    d.addCallbacks(self._signal_back, logger.error, cmd[2])
-                d.addCallbacks(self._done_action, logger.error,
-                               callbackKeywords={"d": d})
-                d.addErrback(logger.error)
-                self._ongoing_defers.append(d)
-        except Empty:
-            # If it's just empty we don't have anything to do.
-            pass
-        except defer.CancelledError:
-            logger.debug("defer cancelled somewhere (CancelledError).")
-        except Exception as e:
-            # But we log the rest
-            logger.exception("Unexpected exception: {0!r}".format(e))
-
-    def _done_action(self, _, d):
-        """
-        Remover of the defer once it's done
-
-        :param d: defer to remove
-        :type d: twisted.internet.defer.Deferred
-        """
-        if d in self._ongoing_defers:
-            self._ongoing_defers.remove(d)
-
-    # XXX: Temporal interface until we migrate to zmq
-    # We simulate the calls to zmq.send_multipart. Once we separate
-    # this in two processes, the methods bellow can be changed to
-    # send_multipart and this backend class will be really simple.
+        if not isinstance(obj, expected_type):
+            raise TypeError("The parameter type is incorrect.")
 
     def provider_setup(self, provider):
         """
@@ -202,13 +84,13 @@ class Backend(object):
             prov_https_connection       -> { PASSED_KEY: bool, ERROR_KEY: str }
             prov_download_provider_info -> { PASSED_KEY: bool, ERROR_KEY: str }
         """
-        self._call_queue.put(("provider", "setup_provider", None, provider))
+        self._provider.setup_provider(provider)
 
     def provider_cancel_setup(self):
         """
         Cancel the ongoing setup provider (if any).
         """
-        self._call_queue.put(("provider", "cancel_setup_provider", None))
+        self._provider.cancel_setup_provider()
 
     def provider_bootstrap(self, provider):
         """
@@ -223,7 +105,7 @@ class Backend(object):
             prov_check_ca_fingerprint  -> {PASSED_KEY: bool, ERROR_KEY: str}
             prov_check_api_certificate -> {PASSED_KEY: bool, ERROR_KEY: str}
         """
-        self._call_queue.put(("provider", "bootstrap", None, provider))
+        self._provider.bootstrap(provider)
 
     def provider_get_supported_services(self, domain):
         """
@@ -235,8 +117,7 @@ class Backend(object):
         Signals:
             prov_get_supported_services -> list of unicode
         """
-        self._call_queue.put(("provider", "get_supported_services", None,
-                              domain))
+        self._provider.get_supported_services(domain)
 
     def provider_get_all_services(self, providers):
         """
@@ -248,13 +129,11 @@ class Backend(object):
         Signals:
             prov_get_all_services -> list of unicode
         """
-        self._call_queue.put(("provider", "get_all_services", None,
-                              providers))
+        self._provider.get_all_services(providers)
 
     def provider_get_details(self, domain, lang):
         """
-        Signal a ProviderConfigLight object with the current ProviderConfig
-        settings.
+        Signal a dict with the current ProviderConfig settings.
 
         :param domain: the domain name of the provider.
         :type domain: str
@@ -262,9 +141,9 @@ class Backend(object):
         :type lang: str
 
         Signals:
-            prov_get_details -> ProviderConfigLight
+            prov_get_details -> dict
         """
-        self._call_queue.put(("provider", "get_details", None, domain, lang))
+        self._provider.get_details(domain, lang)
 
     def provider_get_pinned_providers(self):
         """
@@ -273,7 +152,7 @@ class Backend(object):
         Signals:
             prov_get_pinned_providers -> list of provider domains
         """
-        self._call_queue.put(("provider", "get_pinned_providers", None))
+        self._provider.get_pinned_providers()
 
     def user_register(self, provider, username, password):
         """
@@ -291,8 +170,7 @@ class Backend(object):
             srp_registration_taken
             srp_registration_failed
         """
-        self._call_queue.put(("register", "register_user", None, provider,
-                              username, password))
+        self._register.register_user(provider, username, password)
 
     def eip_setup(self, provider, skip_network=False):
         """
@@ -309,14 +187,13 @@ class Backend(object):
             eip_client_certificate_ready -> {PASSED_KEY: bool, ERROR_KEY: str}
             eip_cancelled_setup
         """
-        self._call_queue.put(("eip", "setup_eip", None, provider,
-                              skip_network))
+        self._eip.setup_eip(provider, skip_network)
 
     def eip_cancel_setup(self):
         """
         Cancel the ongoing setup EIP (if any).
         """
-        self._call_queue.put(("eip", "cancel_setup_eip", None))
+        self._eip.cancel_setup_eip()
 
     def eip_start(self, restart=False):
         """
@@ -343,7 +220,7 @@ class Backend(object):
         :param restart: whether is is a restart.
         :type restart: bool
         """
-        self._call_queue.put(("eip", "start", None, restart))
+        self._eip.start(restart)
 
     def eip_stop(self, shutdown=False, restart=False, failed=False):
         """
@@ -355,13 +232,13 @@ class Backend(object):
         :param restart: whether this is part of a restart.
         :type restart: bool
         """
-        self._call_queue.put(("eip", "stop", None, shutdown, restart))
+        self._eip.stop(shutdown, restart)
 
     def eip_terminate(self):
         """
         Terminate the EIP service, not necessarily in a nice way.
         """
-        self._call_queue.put(("eip", "terminate", None))
+        self._eip.terminate()
 
     def eip_get_gateways_list(self, domain):
         """
@@ -370,16 +247,12 @@ class Backend(object):
         :param domain: the domain to get the gateways.
         :type domain: str
 
-        # TODO discuss how to document the expected result object received of
-        # the signal
-        :signal type: list of str
-
         Signals:
             eip_get_gateways_list -> list of unicode
             eip_get_gateways_list_error
             eip_uninitialized_provider
         """
-        self._call_queue.put(("eip", "get_gateways_list", None, domain))
+        self._eip.get_gateways_list(domain)
 
     def eip_get_initialized_providers(self, domains):
         """
@@ -392,8 +265,7 @@ class Backend(object):
             eip_get_initialized_providers -> list of tuple(unicode, bool)
 
         """
-        self._call_queue.put(("eip", "get_initialized_providers",
-                              None, domains))
+        self._eip.get_initialized_providers(domains)
 
     def eip_can_start(self, domain):
         """
@@ -406,8 +278,7 @@ class Backend(object):
             eip_can_start
             eip_cannot_start
         """
-        self._call_queue.put(("eip", "can_start",
-                              None, domain))
+        self._eip.can_start(domain)
 
     def eip_check_dns(self, domain):
         """
@@ -420,13 +291,13 @@ class Backend(object):
             eip_dns_ok
             eip_dns_error
         """
-        self._call_queue.put(("eip", "check_dns", None, domain))
+        self._eip.check_dns(domain)
 
     def tear_fw_down(self):
         """
         Signal the need to tear the fw down.
         """
-        self._call_queue.put(("eip", "tear_fw_down", None))
+        self._eip.tear_fw_down()
 
     def user_login(self, provider, username, password):
         """
@@ -447,8 +318,7 @@ class Backend(object):
             srp_auth_connection_error
             srp_auth_error
         """
-        self._call_queue.put(("authenticate", "login", None, provider,
-                              username, password))
+        self._authenticate.login(provider, username, password)
 
     def user_logout(self):
         """
@@ -459,13 +329,13 @@ class Backend(object):
             srp_logout_error
             srp_not_logged_in_error
         """
-        self._call_queue.put(("authenticate", "logout", None))
+        self._authenticate.logout()
 
     def user_cancel_login(self):
         """
         Cancel the ongoing login (if any).
         """
-        self._call_queue.put(("authenticate", "cancel_login", None))
+        self._authenticate.cancel_login()
 
     def user_change_password(self, current_password, new_password):
         """
@@ -482,8 +352,7 @@ class Backend(object):
             srp_password_change_badpw
             srp_password_change_error
         """
-        self._call_queue.put(("authenticate", "change_password", None,
-                              current_password, new_password))
+        self._authenticate.change_password(current_password, new_password)
 
     def soledad_change_password(self, new_password):
         """
@@ -498,8 +367,7 @@ class Backend(object):
             srp_password_change_badpw
             srp_password_change_error
         """
-        self._call_queue.put(("soledad", "change_password", None,
-                              new_password))
+        self._soledad.change_password(new_password)
 
     def user_get_logged_in_status(self):
         """
@@ -509,7 +377,7 @@ class Backend(object):
             srp_status_logged_in
             srp_status_not_logged_in
         """
-        self._call_queue.put(("authenticate", "get_logged_in_status", None))
+        self._authenticate.get_logged_in_status()
 
     def soledad_bootstrap(self, username, domain, password):
         """
@@ -527,8 +395,10 @@ class Backend(object):
             soledad_bootstrap_failed
             soledad_invalid_auth_token
         """
-        self._call_queue.put(("soledad", "bootstrap", None,
-                              username, domain, password))
+        self._check_type(username, unicode)
+        self._check_type(domain, unicode)
+        self._check_type(password, unicode)
+        self._soledad.bootstrap(username, domain, password)
 
     def soledad_load_offline(self, username, password, uuid):
         """
@@ -543,20 +413,19 @@ class Backend(object):
 
         Signals:
         """
-        self._call_queue.put(("soledad", "load_offline", None,
-                              username, password, uuid))
+        self._soledad.load_offline(username, password, uuid)
 
     def soledad_cancel_bootstrap(self):
         """
         Cancel the ongoing soledad bootstrapping process (if any).
         """
-        self._call_queue.put(("soledad", "cancel_bootstrap", None))
+        self._soledad.cancel_bootstrap()
 
     def soledad_close(self):
         """
         Close soledad database.
         """
-        self._call_queue.put(("soledad", "close", None))
+        self._soledad.close()
 
     def keymanager_list_keys(self):
         """
@@ -565,7 +434,7 @@ class Backend(object):
         Signals:
             keymanager_keys_list -> list
         """
-        self._call_queue.put(("keymanager", "list_keys", None))
+        self._keymanager.list_keys()
 
     def keymanager_export_keys(self, username, filename):
         """
@@ -580,8 +449,7 @@ class Backend(object):
             keymanager_export_ok
             keymanager_export_error
         """
-        self._call_queue.put(("keymanager", "export_keys", None,
-                              username, filename))
+        self._keymanager.export_keys(username, filename)
 
     def keymanager_get_key_details(self, username):
         """
@@ -593,7 +461,7 @@ class Backend(object):
         Signals:
             keymanager_key_details
         """
-        self._call_queue.put(("keymanager", "get_key_details", None, username))
+        self._keymanager.get_key_details(username)
 
     def smtp_start_service(self, full_user_id, download_if_needed=False):
         """
@@ -605,8 +473,7 @@ class Backend(object):
                                    for the file
         :type download_if_needed: bool
         """
-        self._call_queue.put(("mail", "start_smtp_service", None,
-                              full_user_id, download_if_needed))
+        self._mail.start_smtp_service(full_user_id, download_if_needed)
 
     def imap_start_service(self, full_user_id, offline=False):
         """
@@ -617,14 +484,13 @@ class Backend(object):
         :param offline: whether imap should start in offline mode or not.
         :type offline: bool
         """
-        self._call_queue.put(("mail", "start_imap_service", None,
-                              full_user_id, offline))
+        self._mail.start_imap_service(full_user_id, offline)
 
     def smtp_stop_service(self):
         """
         Stop the SMTP service.
         """
-        self._call_queue.put(("mail", "stop_smtp_service", None))
+        self._mail.stop_smtp_service()
 
     def imap_stop_service(self):
         """
@@ -633,4 +499,12 @@ class Backend(object):
         Signals:
             imap_stopped
         """
-        self._call_queue.put(("mail", "stop_imap_service", None))
+        self._mail.stop_imap_service()
+
+
+def run_backend(bypass_checks=False):
+    # Ensure that the application quits using CTRL-C
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    backend = LeapBackend(bypass_checks=bypass_checks)
+    backend.run()
