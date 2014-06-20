@@ -15,9 +15,14 @@ path will be used if the flag ``--standalone`` is set::
  bitmask-root -> /usr/local/sbin/bitmask-root
  polkit/se.leap.bitmask.bundle.policy -> /usr/share/polkit-1/actions/se.leap.bitmask.bundle.policy
 
-You will also have to place an openvpn binary in the following path::
+When running with ``--standalone`` flag, the openvpn binary is  expected in the following path::
 
  leap-openvpn -> /usr/local/sbin/leap-openvpn
+
+The bundle will use the script ``leap-install-helper.sh`` to copy the needed
+files. If you ever want to use it manually to update the helpers or bins, it
+needs a ``--from-path`` parameter to be passed to it. This points to a folder
+from where all the needed binaries and scripts can be found.
 
 
 Binary hashing
