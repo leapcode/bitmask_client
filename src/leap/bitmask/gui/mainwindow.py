@@ -88,7 +88,7 @@ class MainWindow(QtGui.QMainWindow):
     EIP_START_TIMEOUT = 60000  # in milliseconds
 
     # We give the services some time to a halt before forcing quit.
-    SERVICES_STOP_TIMEOUT = 20
+    SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
 
     def __init__(self, bypass_checks=False, start_hidden=False):
         """
@@ -897,7 +897,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr('Hello!'),
                 self.tr('Bitmask has started in the tray.'))
             # we wait for the systray to be ready
-            QtDelayedCall(1, hello)
+            QtDelayedCall(1000, hello)
 
     @QtCore.Slot(int)
     def _tray_activated(self, reason=None):
@@ -1780,4 +1780,4 @@ class MainWindow(QtGui.QMainWindow):
         self._backend.stop()
         self.close()
 
-        QtDelayedCall(1, twisted_main.quit)
+        QtDelayedCall(100, twisted_main.quit)
