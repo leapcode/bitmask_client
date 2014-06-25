@@ -41,6 +41,7 @@
 #                (thanks to: http://www.glassgiant.com/ascii/)
 import multiprocessing
 import os
+import signal
 import sys
 
 from leap.bitmask.backend.utils import generate_certificates
@@ -112,6 +113,9 @@ def start_app():
     """
     Starts the main event loop and launches the main window.
     """
+    # Ensure that the application quits using CTRL-C
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+
     # Parse arguments and store them
     opts = leap_argparse.get_options()
     do_display_version(opts)

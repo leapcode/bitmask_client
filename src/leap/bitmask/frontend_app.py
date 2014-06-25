@@ -18,8 +18,6 @@ import signal
 import sys
 import os
 
-from functools import partial
-
 from PySide import QtCore, QtGui
 
 from leap.bitmask.config import flags
@@ -37,18 +35,6 @@ def sigint_handler(*args, **kwargs):
     logger = kwargs.get('logger', None)
     if logger:
         logger.debug("SIGINT catched. shutting down...")
-    mainwindow = args[0]
-    mainwindow.quit()
-
-
-def sigterm_handler(*args, **kwargs):
-    """
-    Signal handler for SIGTERM.
-    This handler is actually passed to twisted reactor
-    """
-    logger = kwargs.get('logger', None)
-    if logger:
-        logger.debug("SIGTERM catched. shutting down...")
     mainwindow = args[0]
     mainwindow.quit()
 
@@ -88,10 +74,12 @@ def run_frontend(options):
     qApp.setApplicationName("leap")
     qApp.setOrganizationDomain("leap.se")
 
-    window = MainWindow(start_hidden=start_hidden)
+    MainWindow(start_hidden=start_hidden)
 
-    sigint_window = partial(sigint_handler, window, logger=logger)
-    signal.signal(signal.SIGINT, sigint_window)
+    # sigint_window = partial(sigint_handler, window, logger=logger)
+    # signal.signal(signal.SIGINT, sigint_window)
+    # Ensure that the application quits using CTRL-C
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     sys.exit(qApp.exec_())
 
