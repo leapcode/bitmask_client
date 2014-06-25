@@ -18,6 +18,7 @@
 Main window for Bitmask.
 """
 import logging
+import time
 
 from datetime import datetime
 
@@ -1788,7 +1789,6 @@ class MainWindow(QtGui.QMainWindow):
         Final steps to quit the app, starting from here we don't care about
         running services or user interaction, just quitting.
         """
-
         # We can reach here because all the services are stopped or because a
         # timeout was triggered. Since we want to run this only once, we exit
         # if this is called twice.
@@ -1800,6 +1800,10 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Closing soledad...')
         self._backend.soledad_close()
         logger.debug('Final quit...')
+
+        self._leap_signaler.stop()
+        self._backend.stop()
+        time.sleep(0.05)  # give the thread a little time to finish.
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
