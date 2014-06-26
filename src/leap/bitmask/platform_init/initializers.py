@@ -45,6 +45,16 @@ __all__ = ["init_platform"]
 _system = platform.system()
 
 
+class InitSignals(QtCore.QObject):
+    """
+    Signal container to communicate initialization events to differnt widgets.
+    """
+    eip_missing_helpers = QtCore.Signal()
+
+
+init_signals = InitSignals()
+
+
 def init_platform():
     """
     Return the right initializer for the platform we are running in, or
@@ -86,8 +96,9 @@ def get_missing_helpers_dialog():
     """
     WE_NEED_POWERS = ("To better protect your privacy, "
                       "Bitmask needs administrative privileges "
-                      "to install helper files. "
-                      "Do you want to proceed?")
+                      "to install helper files. Encrypted "
+                      "Internet cannot work without those files. "
+                      "Do you want to install them now?")
     msg = QtGui.QMessageBox()
     msg.setWindowTitle(msg.tr("Missing helper files"))
     msg.setText(msg.tr(WE_NEED_POWERS))
@@ -147,6 +158,7 @@ def check_missing():
         elif ret == QtGui.QMessageBox.No:
             logger.debug("Not installing missing scripts, "
                          "user decided to ignore our warning.")
+            init_signals.eip_missing_helpers.emit()
 
         elif ret == QtGui.QMessageBox.Rejected:
             logger.debug(
