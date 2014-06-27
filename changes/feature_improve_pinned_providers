@@ -1,1 +1,0 @@
-- Improve how pinned providers are handled by hardcoding it instead of expecting them to be in the config. Closes #4733.
