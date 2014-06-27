@@ -1,0 +1,1 @@
+- Disable EIP if the helper files were not installed. Closes: #5818

@@ -41,6 +41,7 @@ from leap.bitmask.gui import twisted_main
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
+from leap.bitmask.platform_init.initializers import init_signals
 
 from leap.bitmask.backend import leapbackend
 
@@ -145,6 +146,9 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_conductor = eip_conductor.EIPConductor(
             self._settings, self._backend)
         self._eip_status = EIPStatusWidget(self, self._eip_conductor)
+
+        init_signals.eip_missing_helpers.connect(
+            self._disable_eip_missing_helpers)
 
         self.ui.eipLayout.addWidget(self._eip_status)
         self._eip_conductor.add_eip_widget(self._eip_status)
@@ -661,6 +665,16 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._eip_status.disable_eip_start()
             self._eip_status.set_eip_status(self.tr("Disabled"))
+
+    @QtCore.Slot()
+    def _disable_eip_missing_helpers(self):
+        """
+        TRIGGERS:
+            init_signals.missing_helpers
+
+        Set the missing_helpers flag, so we can disable EIP.
+        """
+        self._eip_status.missing_helpers = True
 
     @QtCore.Slot()
     def _show_eip_preferences(self):
@@ -1509,7 +1523,13 @@ class MainWindow(QtGui.QMainWindow):
         else:
             should_start = self._provides_eip_and_enabled()
 
-        if should_start and not self._already_started_eip:
+        missing_helpers = self._eip_status.missing_helpers
+        already_started = self._already_started_eip
+        can_start = (should_start
+                     and not already_started
+                     and not missing_helpers)
+
+        if can_start:
             if self._eip_status.is_cold_start:
                 self._backend.tear_fw_down()
             # XXX this should be handled by the state machine.
@@ -1529,12 +1549,16 @@ class MainWindow(QtGui.QMainWindow):
         else:
             if not self._already_started_eip:
                 if EIP_SERVICE in self._enabled_services:
-                    self._eip_status.set_eip_status(
-                        self.tr("Not supported"),
-                        error=True)
+                    if missing_helpers:
+                        msg = self.tr(
+                            "Disabled: missing helper files")
+                    else:
+                        msg = self.tr("Not supported"),
+                    self._eip_status.set_eip_status(msg, error=True)
                 else:
+                    msg = self.tr("Disabled")
                     self._eip_status.disable_eip_start()
-                    self._eip_status.set_eip_status(self.tr("Disabled"))
+                    self._eip_status.set_eip_status(msg)
             # eip will not start, so we start soledad anyway
             self._maybe_run_soledad_setup_checks()
 
