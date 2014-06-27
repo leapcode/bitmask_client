@@ -18,6 +18,7 @@
 Platform independant VPN launcher interface.
 """
 import getpass
+import hashlib
 import logging
 import os
 import stat
@@ -30,6 +31,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
+from leap.bitmask.util import force_eval
 from leap.common.check import leap_assert, leap_assert_type
 
 
@@ -76,7 +78,7 @@ def _has_updown_scripts(path, warn=True):
 
 def _has_other_files(path, warn=True):
     """
-    Checks the existence of other important files.
+    Check the existence of other important files.
 
     :param path: the path to be checked
     :type path: str
@@ -179,12 +181,13 @@ class VPNLauncher(object):
             #raise OpenVPNNotFoundException()
         #openvpn = first(openvpn_possibilities)
         # -----------------------------------------
-        if not os.path.isfile(kls.OPENVPN_BIN_PATH):
+        openvpn_path = force_eval(kls.OPENVPN_BIN_PATH)
+
+        if not os.path.isfile(openvpn_path):
             logger.warning("Could not find openvpn bin in path %s" % (
-                kls.OPENVPN_BIN_PATH))
+                openvpn_path))
             raise OpenVPNNotFoundException()
 
-        openvpn = kls.OPENVPN_BIN_PATH
         args = []
 
         args += [
@@ -248,13 +251,13 @@ class VPNLauncher(object):
             '--ping', '10',
             '--ping-restart', '30']
 
-        command_and_args = [openvpn] + args
+        command_and_args = [openvpn_path] + args
         return command_and_args
 
     @classmethod
     def get_vpn_env(kls):
         """
-        Returns a dictionary with the custom env for the platform.
+        Return a dictionary with the custom env for the platform.
         This is mainly used for setting LD_LIBRARY_PATH to the correct
         path when distributing a standalone client
 
@@ -265,7 +268,7 @@ class VPNLauncher(object):
     @classmethod
     def missing_updown_scripts(kls):
         """
-        Returns what updown scripts are missing.
+        Return what updown scripts are missing.
 
         :rtype: list
         """
@@ -285,7 +288,7 @@ class VPNLauncher(object):
     @classmethod
     def missing_other_files(kls):
         """
-        Returns what other important files are missing during startup.
+        Return what other important files are missing during startup.
         Same as missing_updown_scripts but does not check for exec bit.
 
         :rtype: list
@@ -293,7 +296,57 @@ class VPNLauncher(object):
         leap_assert(kls.OTHER_FILES is not None,
                     "Need to define OTHER_FILES for this particular "
                     "auncher before calling this method")
+        other = force_eval(kls.OTHER_FILES)
         file_exist = partial(_has_other_files, warn=False)
-        zipped = zip(kls.OTHER_FILES, map(file_exist, kls.OTHER_FILES))
-        missing = filter(lambda (path, exists): exists is False, zipped)
-        return [path for path, exists in missing]
+
+        if flags.STANDALONE:
+            try:
+                from leap.bitmask import _binaries
+            except ImportError:
+                raise RuntimeError(
+                    "Could not find binary hash info in this bundle!")
+
+            _, bitmask_root_path, openvpn_bin_path = other
+
+            check_hash = _has_expected_binary_hash
+            openvpn_hash = _binaries.OPENVPN_BIN
+            bitmask_root_hash = _binaries.BITMASK_ROOT
+
+            correct_hash = (
+                True,  # we do not check the polkit file
+                check_hash(bitmask_root_path, bitmask_root_hash),
+                check_hash(openvpn_bin_path, openvpn_hash))
+
+            zipped = zip(other, map(file_exist, other), correct_hash)
+            missing = filter(
+                lambda (path, exists, hash_ok): (
+                    exists is False or hash_ok is False),
+                zipped)
+            return [path for path, exists, hash_ok in missing]
+        else:
+            zipped = zip(other, map(file_exist, other))
+            missing = filter(lambda (path, exists): exists is False, zipped)
+            return [path for path, exists in missing]
+
+
+def _has_expected_binary_hash(path, expected_hash):
+    """
+    Check if the passed path matches the expected hash.
+
+    Used from within the bundle, to know if we have to reinstall the shipped
+    binaries into the system path.
+
+    This path will be /usr/local/sbin for linux.
+
+    :param path: the path to check.
+    :type path: str
+    :param expected_hash: the sha256 hash that we expect
+    :type expected_hash: str
+    :rtype: bool
+    """
+    try:
+        with open(path) as f:
+            file_hash = hashlib.sha256(f.read()).hexdigest()
+        return expected_hash == file_hash
+    except IOError:
+        return False

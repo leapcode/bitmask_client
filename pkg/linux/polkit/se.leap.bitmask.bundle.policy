@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+
+  <vendor>LEAP Project</vendor>
+  <vendor_url>http://leap.se/</vendor_url>
+
+  <action id="se.leap.bitmask.bundle.policy">
+    <description>Runs bitmask helper to launch firewall and openvpn (bundle version)</description>
+    <description xml:lang="es">Ejecuta el asistente de bitmask para lanzar el firewall y openvpn (version bundle)</description>
+    <message>Bitmask needs that you authenticate to start</message>
+    <message xml:lang="es">Bitmask necesita autorizacion para comenzar</message>
+    <icon_name>package-x-generic</icon_name> 
+    <defaults>
+      <allow_any>yes</allow_any>
+      <allow_inactive>yes</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/sbin/bitmask-root</annotate>
+  </action>
+</policyconfig>

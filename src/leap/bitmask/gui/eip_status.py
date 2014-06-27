@@ -88,6 +88,8 @@ class EIPStatusWidget(QtGui.QWidget):
         self.is_restart = False
         self.is_cold_start = True
 
+        self.missing_helpers = False
+
         # Action for the systray
         self._eip_disabled_action = QtGui.QAction(
             "{0} is {1}".format(self._service_name, self.tr("disabled")), self)
@@ -298,7 +300,12 @@ class EIPStatusWidget(QtGui.QWidget):
         # probably the best thing would be to make a conditional
         # transition there, but that's more involved.
         self.eip_button.hide()
-        msg = self.tr("You must login to use {0}".format(self._service_name))
+        if self.missing_helpers:
+            msg = self.tr(
+                "<font color=red>Disabled: missing helper files</font>")
+        else:
+            msg = self.tr(
+                "You must login to use {0}".format(self._service_name))
         self.eip_label.setText(msg)
         self._eip_status_menu.setTitle("{0} is {1}".format(
             self._service_name, self.tr("disabled")))

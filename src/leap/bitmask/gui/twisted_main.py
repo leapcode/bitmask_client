@@ -36,11 +36,8 @@ def stop():
     logger.debug("Done stopping all the things.")
 
 
-def quit(app):
+def quit():
     """
     Stop the mainloop.
-
-    :param app: the main qt QApplication instance.
-    :type app: QtCore.QApplication
     """
     reactor.callLater(0, stop)

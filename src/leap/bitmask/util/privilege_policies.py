@@ -24,6 +24,8 @@ import platform
 
 from abc import ABCMeta, abstractmethod
 
+from leap.bitmask.config import flags
+
 logger = logging.getLogger(__name__)
 
 
@@ -71,6 +73,8 @@ class LinuxPolicyChecker(PolicyChecker):
     """
     LINUX_POLKIT_FILE = ("/usr/share/polkit-1/actions/"
                          "se.leap.bitmask.policy")
+    LINUX_POLKIT_FILE_BUNDLE = ("/usr/share/polkit-1/actions/"
+                                "se.leap.bitmask.bundle.policy")
 
     @classmethod
     def get_polkit_path(self):
@@ -79,7 +83,8 @@ class LinuxPolicyChecker(PolicyChecker):
 
         :rtype: str
         """
-        return self.LINUX_POLKIT_FILE
+        return (self.LINUX_POLKIT_FILE_BUNDLE if flags.STANDALONE
+                else self.LINUX_POLKIT_FILE)
 
     def is_missing_policy_permissions(self):
     # FIXME this name is quite confusing, it does not have anything to do with
@@ -90,4 +95,5 @@ class LinuxPolicyChecker(PolicyChecker):
 
         :rtype: bool
         """
-        return not os.path.isfile(self.LINUX_POLKIT_FILE)
+        path = self.get_polkit_path()
+        return not os.path.isfile(path)
