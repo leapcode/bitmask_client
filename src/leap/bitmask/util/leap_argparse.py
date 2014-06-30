@@ -132,4 +132,9 @@ def get_options():
     """
     parser = build_parser()
     opts, unknown = parser.parse_known_args()
+
+    # we add this option manually since it's not defined for 'release version'
+    if not IS_RELEASE_VERSION:
+        opts.danger = False
+
     return opts
