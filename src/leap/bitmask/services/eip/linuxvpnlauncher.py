@@ -29,7 +29,7 @@ from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
 from leap.common.files import which
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncher
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncherException
-from leap.bitmask.util import get_path_prefix
+from leap.bitmask.util import get_path_prefix, force_eval
 from leap.common.check import leap_assert
 from leap.bitmask.util import first
 
@@ -105,26 +105,34 @@ leapfile = lambda f: "%s/%s" % (SYSTEM_CONFIG, f)
 
 class LinuxVPNLauncher(VPNLauncher):
     PKEXEC_BIN = 'pkexec'
-    BITMASK_ROOT = "/usr/sbin/bitmask-root"
 
-    # We assume this is there by our openvpn dependency, and
-    # we will put it there on the bundle too.
-    if flags.STANDALONE:
-        OPENVPN_BIN_PATH = "/usr/sbin/leap-openvpn"
-    else:
-        OPENVPN_BIN_PATH = "/usr/sbin/openvpn"
+    # The following classes depend on force_eval to be called against
+    # the classes, to get the evaluation of the standalone flag on runtine.
+    # If we keep extending this kind of classes, we should abstract the
+    # handling of the STANDALONE flag in a base class
 
-    POLKIT_PATH = LinuxPolicyChecker.get_polkit_path()
+    class BITMASK_ROOT(object):
+        def __call__(self):
+            return ("/usr/local/sbin/bitmask-root" if flags.STANDALONE else
+                    "/usr/sbin/bitmask-root")
 
-    if flags.STANDALONE:
-        RESOLVCONF_BIN_PATH = "/usr/local/sbin/leap-resolvconf"
-    else:
+    class OPENVPN_BIN_PATH(object):
+        def __call__(self):
+            return ("/usr/local/sbin/leap-openvpn" if flags.STANDALONE else
+                    "/usr/sbin/openvpn")
+
+    class POLKIT_PATH(object):
+        def __call__(self):
+            # LinuxPolicyChecker will give us the right path if standalone.
+            return LinuxPolicyChecker.get_polkit_path()
+
+    class RESOLVCONF_BIN_PATH(object):
+        def __call__(self):
+            return ("/usr/local/sbin/leap-resolvconf" if flags.STANDALONE else
+                    "/sbin/resolvconf")
         # this only will work with debian/ubuntu distros.
-        RESOLVCONF_BIN_PATH = "/sbin/resolvconf"
 
-    # XXX openvpn binary TOO
-    OTHER_FILES = (POLKIT_PATH, BITMASK_ROOT, OPENVPN_BIN_PATH,
-                   RESOLVCONF_BIN_PATH)
+    OTHER_FILES = (POLKIT_PATH, BITMASK_ROOT, OPENVPN_BIN_PATH)
 
     @classmethod
     def maybe_pkexec(kls):
@@ -187,7 +195,7 @@ class LinuxVPNLauncher(VPNLauncher):
         command = super(LinuxVPNLauncher, kls).get_vpn_command(
             eipconfig, providerconfig, socket_host, socket_port, openvpn_verb)
 
-        command.insert(0, kls.BITMASK_ROOT)
+        command.insert(0, force_eval(kls.BITMASK_ROOT))
         command.insert(1, "openvpn")
         command.insert(2, "start")
 
@@ -207,35 +215,37 @@ class LinuxVPNLauncher(VPNLauncher):
 
         :rtype: str
         """
+        bin_paths = force_eval(
+            (LinuxVPNLauncher.POLKIT_PATH,
+             LinuxVPNLauncher.OPENVPN_BIN_PATH,
+             LinuxVPNLauncher.BITMASK_ROOT))
+
+        polkit_path, openvpn_bin_path, bitmask_root = bin_paths
+
         # no system config for now
         # sys_config = kls.SYSTEM_CONFIG
         (polkit_file, openvpn_bin_file,
-         bitmask_root_file, resolvconf_bin_file) = map(
+         bitmask_root_file) = map(
             lambda p: os.path.split(p)[-1],
-            (kls.POLKIT_PATH, kls.OPENVPN_BIN_PATH,
-             kls.BITMASK_ROOT, kls.RESOLVCONF_BIN_PATH))
+            bin_paths)
 
         cmd = '#!/bin/sh\n'
         cmd += 'mkdir -p /usr/local/sbin\n'
 
         cmd += 'cp "%s" "%s"\n' % (os.path.join(frompath, polkit_file),
-                                   kls.POLKIT_PATH)
-        cmd += 'chmod 644 "%s"\n' % (kls.POLKIT_PATH, )
+                                   polkit_path)
+        cmd += 'chmod 644 "%s"\n' % (polkit_path, )
 
         cmd += 'cp "%s" "%s"\n' % (os.path.join(frompath, bitmask_root_file),
-                                   kls.BITMASK_ROOT)
-        cmd += 'chmod 744 "%s"\n' % (kls.BITMASK_ROOT, )
+                                   bitmask_root)
+        cmd += 'chmod 744 "%s"\n' % (bitmask_root, )
 
         if flags.STANDALONE:
             cmd += 'cp "%s" "%s"\n' % (
                 os.path.join(frompath, openvpn_bin_file),
-                kls.OPENVPN_BIN_PATH)
-            cmd += 'chmod 744 "%s"\n' % (kls.POLKIT_PATH, )
+                openvpn_bin_path)
+            cmd += 'chmod 744 "%s"\n' % (openvpn_bin_path, )
 
-            cmd += 'cp "%s" "%s"\n' % (
-                os.path.join(frompath, resolvconf_bin_file),
-                kls.RESOLVCONF_BIN_PATH)
-            cmd += 'chmod 744 "%s"\n' % (kls.POLKIT_PATH, )
         return cmd
 
     @classmethod

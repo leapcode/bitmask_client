@@ -110,3 +110,22 @@ def make_address(user, provider):
     :type provider: basestring
     """
     return "%s@%s" % (user, provider)
+
+
+def force_eval(items):
+    """
+    Return a sequence that evaluates any callable in the sequence,
+    instantiating it beforehand if the item is a class, and
+    leaves the non-callable items without change.
+    """
+    def do_eval(thing):
+        if isinstance(thing, type):
+            return thing()()
+        if callable(thing):
+            return thing()
+        return thing
+
+    if isinstance(items, (list, tuple)):
+        return map(do_eval, items)
+    else:
+        return do_eval(items)

@@ -38,7 +38,7 @@
   <property name="options">
    <set>QWizard::IndependentPages</set>
   </property>
-  <widget class="QWizardPage" name="introduction_page">
+  <widget class="WizardPage" name="introduction_page">
    <property name="title">
     <string>Welcome</string>
    </property>

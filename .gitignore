@@ -28,6 +28,7 @@ pkg/osx/build
 
 src/*.egg-info
 src/pysqlcipher
+src/leap/bitmask/_binaries.py
 src/leap/bitmask/util/reqs.txt
 MANIFEST
 _trial_temp*

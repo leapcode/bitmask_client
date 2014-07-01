@@ -6,6 +6,22 @@ History
 2014
 ====
 
+0.5.3 June 27 -- the "encrypt ALL THE THINGS" release:
+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+- Disable EIP if the helper files were not installed. Closes #5818.
+- Install helpers to /usr/local for bundle. Closes #5741.
+- Improve how pinned providers are handled by hardcoding it instead of
+  expecting them to be in the config. Closes #4733.
+- Remove deprecated policy files. Closes #5651.
+- Install helper files only if standalone=True. Related to #5625
+- Use installer helper from within bundle path. Related to #5634
+- Pin Riseup as a provider. Closes #5783.
+- Update the bundled binaries to their path if their sha256 is not
+  correct. Closes #5759.
+- Use a dict instead an object to ease later serialization of
+  ProviderConfig.
+
 0.5.2 June 6 -- the "are we there yet" release:
 +++++++++++++++++++++++++++++++++++++++++++++++
 

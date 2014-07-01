@@ -18,12 +18,10 @@
 Main window for Bitmask.
 """
 import logging
-import socket
 
 from datetime import datetime
 
 from PySide import QtCore, QtGui
-from twisted.internet import reactor, threads
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
@@ -39,11 +37,13 @@ from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
+from leap.bitmask.gui import twisted_main
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
+from leap.bitmask.platform_init.initializers import init_signals
 
-from leap.bitmask import backend
+from leap.bitmask.backend import leapbackend
 
 from leap.bitmask.services.eip import conductor as eip_conductor
 from leap.bitmask.services.mail import conductor as mail_conductor
@@ -89,15 +89,11 @@ class MainWindow(QtGui.QMainWindow):
     EIP_START_TIMEOUT = 60000  # in milliseconds
 
     # We give the services some time to a halt before forcing quit.
-    SERVICES_STOP_TIMEOUT = 20
+    SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
 
-    def __init__(self, quit_callback, bypass_checks=False, start_hidden=False):
+    def __init__(self, bypass_checks=False, start_hidden=False):
         """
         Constructor for the client main window
-
-        :param quit_callback: Function to be called when closing
-                              the application.
-        :type quit_callback: callable
 
         :param bypass_checks: Set to true if the app should bypass first round
                               of checks for CA certificates at bootstrap
@@ -117,14 +113,13 @@ class MainWindow(QtGui.QMainWindow):
                  reqcbk=lambda req, resp: None)  # make rpc call async
         # end register leap events ####################################
 
-        self._quit_callback = quit_callback
         self._updates_content = ""
 
         # setup UI
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.menuBar().setNativeMenuBar(not IS_LINUX)
-        self._backend = backend.Backend(bypass_checks)
+        self._backend = leapbackend.Backend(bypass_checks)
         self._backend.start()
 
         self._settings = LeapSettings()
@@ -151,6 +146,9 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_conductor = eip_conductor.EIPConductor(
             self._settings, self._backend)
         self._eip_status = EIPStatusWidget(self, self._eip_conductor)
+
+        init_signals.eip_missing_helpers.connect(
+            self._disable_eip_missing_helpers)
 
         self.ui.eipLayout.addWidget(self._eip_status)
         self._eip_conductor.add_eip_widget(self._eip_status)
@@ -181,8 +179,8 @@ class MainWindow(QtGui.QMainWindow):
         # Set used to track the services being stopped and need wait.
         self._services_being_stopped = {}
 
-        # timeout object used to trigger quit
-        self._quit_timeout_callater = None
+        # used to know if we are in the final steps of quitting
+        self._finally_quitting = False
 
         self._backend_connected_signals = []
         self._backend_connect()
@@ -407,6 +405,8 @@ class MainWindow(QtGui.QMainWindow):
         sig.eip_can_start.connect(self._backend_can_start_eip)
         sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
 
+        sig.eip_dns_error.connect(self._eip_dns_error)
+
         # ==================================================================
 
         # Soledad signals
@@ -553,7 +553,7 @@ class MainWindow(QtGui.QMainWindow):
         details = self._provider_details
         mx_provided = False
         if details is not None:
-            mx_provided = MX_SERVICE in details.services
+            mx_provided = MX_SERVICE in details['services']
 
         # XXX: handle differently not logged in user?
         akm = AdvancedKeyManagement(self, mx_provided, logged_user,
@@ -573,7 +573,7 @@ class MainWindow(QtGui.QMainWindow):
         domain = self._login_widget.get_selected_provider()
         mx_provided = False
         if self._provider_details is not None:
-            mx_provided = MX_SERVICE in self._provider_details.services
+            mx_provided = MX_SERVICE in self._provider_details['services']
         preferences = PreferencesWindow(self, user, domain, self._backend,
                                         self._soledad_started, mx_provided)
 
@@ -665,6 +665,16 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self._eip_status.disable_eip_start()
             self._eip_status.set_eip_status(self.tr("Disabled"))
+
+    @QtCore.Slot()
+    def _disable_eip_missing_helpers(self):
+        """
+        TRIGGERS:
+            init_signals.missing_helpers
+
+        Set the missing_helpers flag, so we can disable EIP.
+        """
+        self._eip_status.missing_helpers = True
 
     @QtCore.Slot()
     def _show_eip_preferences(self):
@@ -901,7 +911,7 @@ class MainWindow(QtGui.QMainWindow):
                 self.tr('Hello!'),
                 self.tr('Bitmask has started in the tray.'))
             # we wait for the systray to be ready
-            reactor.callLater(1, hello)
+            QtDelayedCall(1000, hello)
 
     @QtCore.Slot(int)
     def _tray_activated(self, reason=None):
@@ -1271,7 +1281,7 @@ class MainWindow(QtGui.QMainWindow):
             sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
             sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
-        if not MX_SERVICE in self._provider_details.services:
+        if not MX_SERVICE in self._provider_details['services']:
             self._set_mx_visible(False)
 
     def _start_eip_bootstrap(self):
@@ -1314,7 +1324,7 @@ class MainWindow(QtGui.QMainWindow):
         Set the details for the just downloaded provider.
 
         :param details: the details of the provider.
-        :type details: ProviderConfigLight
+        :type details: dict
         """
         self._provider_details = details
 
@@ -1331,7 +1341,7 @@ class MainWindow(QtGui.QMainWindow):
         mx_enabled = MX_SERVICE in enabled_services
         mx_provided = False
         if self._provider_details is not None:
-            mx_provided = MX_SERVICE in self._provider_details.services
+            mx_provided = MX_SERVICE in self._provider_details['services']
 
         return mx_enabled and mx_provided
 
@@ -1348,7 +1358,7 @@ class MainWindow(QtGui.QMainWindow):
         eip_enabled = EIP_SERVICE in enabled_services
         eip_provided = False
         if self._provider_details is not None:
-            eip_provided = EIP_SERVICE in self._provider_details.services
+            eip_provided = EIP_SERVICE in self._provider_details['services']
 
         return eip_enabled and eip_provided
 
@@ -1465,55 +1475,25 @@ class MainWindow(QtGui.QMainWindow):
         self._already_started_eip = True
 
         # check for connectivity
-        # we might want to leave a little time here...
-        self._check_name_resolution(domain)
+        self._backend.eip_check_dns(domain)
 
-    def _check_name_resolution(self, domain):
-        # FIXME this has to be moved to backend !!!
-        # Should move to netchecks module.
-        # and separate qt from reactor...
+    @QtCore.Slot()
+    def _eip_dns_error(self):
         """
-        Check if we can resolve the given domain name.
-
-        :param domain: the domain to check.
-        :type domain: str
+        Trigger this if we don't have a working DNS resolver.
         """
-        def do_check():
-            """
-            Try to resolve the domain name.
-            """
-            socket.gethostbyname(domain.encode('idna'))
+        domain = self._login_widget.get_selected_provider()
+        msg = self.tr(
+            "The server at {0} can't be found, because the DNS lookup "
+            "failed. DNS is the network service that translates a "
+            "website's name to its Internet address. Either your computer "
+            "is having trouble connecting to the network, or you are "
+            "missing some helper files that are needed to securely use "
+            "DNS while {1} is active. To install these helper files, quit "
+            "this application and start it again."
+        ).format(domain, self._eip_conductor.eip_name)
 
-        def check_err(failure):
-            """
-            Errback handler for `do_check`.
-
-            :param failure: the failure that triggered the errback.
-            :type failure: twisted.python.failure.Failure
-            """
-            logger.error(repr(failure))
-            logger.error("Can't resolve hostname.")
-
-            msg = self.tr(
-                "The server at {0} can't be found, because the DNS lookup "
-                "failed. DNS is the network service that translates a "
-                "website's name to its Internet address. Either your computer "
-                "is having trouble connecting to the network, or you are "
-                "missing some helper files that are needed to securely use "
-                "DNS while {1} is active. To install these helper files, quit "
-                "this application and start it again."
-            ).format(domain, self._eip_conductor.eip_name)
-
-            show_err = lambda: QtGui.QMessageBox.critical(
-                self, self.tr("Connection Error"), msg)
-            reactor.callLater(0, show_err)
-
-            # python 2.7.4 raises socket.error
-            # python 2.7.5 raises socket.gaierror
-            failure.trap(socket.gaierror, socket.error)
-
-        d = threads.deferToThread(do_check)
-        d.addErrback(check_err)
+        QtGui.QMessageBox.critical(self, self.tr("Connection Error"), msg)
 
     def _try_autostart_eip(self):
         """
@@ -1543,7 +1523,13 @@ class MainWindow(QtGui.QMainWindow):
         else:
             should_start = self._provides_eip_and_enabled()
 
-        if should_start and not self._already_started_eip:
+        missing_helpers = self._eip_status.missing_helpers
+        already_started = self._already_started_eip
+        can_start = (should_start
+                     and not already_started
+                     and not missing_helpers)
+
+        if can_start:
             if self._eip_status.is_cold_start:
                 self._backend.tear_fw_down()
             # XXX this should be handled by the state machine.
@@ -1563,12 +1549,16 @@ class MainWindow(QtGui.QMainWindow):
         else:
             if not self._already_started_eip:
                 if EIP_SERVICE in self._enabled_services:
-                    self._eip_status.set_eip_status(
-                        self.tr("Not supported"),
-                        error=True)
+                    if missing_helpers:
+                        msg = self.tr(
+                            "Disabled: missing helper files")
+                    else:
+                        msg = self.tr("Not supported"),
+                    self._eip_status.set_eip_status(msg, error=True)
                 else:
+                    msg = self.tr("Disabled")
                     self._eip_status.disable_eip_start()
-                    self._eip_status.set_eip_status(self.tr("Disabled"))
+                    self._eip_status.set_eip_status(msg)
             # eip will not start, so we start soledad anyway
             self._maybe_run_soledad_setup_checks()
 
@@ -1772,8 +1762,7 @@ class MainWindow(QtGui.QMainWindow):
         # call final quit when all the services are stopped
         self.all_services_stopped.connect(self.final_quit)
         # or if we reach the timeout
-        self._quit_timeout_callater = reactor.callLater(
-            self.SERVICES_STOP_TIMEOUT, self.final_quit)
+        QtDelayedCall(self.SERVICES_STOP_TIMEOUT, self.final_quit)
 
     @QtCore.Slot()
     def _remove_service(self, service):
@@ -1799,16 +1788,13 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.debug('Final quit...')
 
-        try:
-            # disconnect signal if we get here due a timeout.
-            self.all_services_stopped.disconnect(self.final_quit)
-        except RuntimeError:
-            pass  # Signal was not connected
+        # We can reach here because all the services are stopped or because a
+        # timeout was triggered. Since we want to run this only once, we exit
+        # if this is called twice.
+        if self._finally_quitting:
+            return
 
-        # Cancel timeout to avoid being called if we reached here through the
-        # signal
-        if self._quit_timeout_callater.active():
-            self._quit_timeout_callater.cancel()
+        self._finally_quitting = True
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
@@ -1818,4 +1804,4 @@ class MainWindow(QtGui.QMainWindow):
         self._backend.stop()
         self.close()
 
-        reactor.callLater(1, self._quit_callback)
+        QtDelayedCall(100, twisted_main.quit)

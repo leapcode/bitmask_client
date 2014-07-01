@@ -48,9 +48,15 @@ from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
-from leap.bitmask.util import leap_argparse
-from leap.bitmask.logs.utils import get_logger
+from leap.bitmask.config import flags
+from leap.bitmask.gui import locale_rc  # noqa - silence pylint
+from leap.bitmask.gui.mainwindow import MainWindow
+from leap.bitmask.logs.utils import create_logger
+from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
+from leap.bitmask.util import leap_argparse
+from leap.bitmask.util.requirement_checker import check_requirements
+
 from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
 
@@ -114,35 +120,16 @@ def main():
     """
     Starts the main event loop and launches the main window.
     """
-    # TODO move boilerplate outa here!
-    _, opts = leap_argparse.init_leapc_args()
+    # Parse arguments and store them
+    opts = leap_argparse.get_options()
     do_display_version(opts)
 
-    standalone = opts.standalone
-    offline = opts.offline
-    bypass_checks = getattr(opts, 'danger', False)
-    debug = opts.debug
-    logfile = opts.log_file
-    mail_logfile = opts.mail_log_file
+    bypass_checks = opts.danger
     start_hidden = opts.start_hidden
 
-    replace_stdout = True
-    if opts.repair or opts.import_maildir:
-        # We don't want too much clutter on the comand mode
-        # this could be more generic with a Command class.
-        replace_stdout = False
-
-    logger = get_logger(debug, logfile, replace_stdout)
-
-    #############################################################
-    # Given how paths and bundling works, we need to delay the imports
-    # of certain parts that depend on this path settings.
-    # So first we set all the places where standalone might be queried.
-    from leap.bitmask.config import flags
-    from leap.common.config.baseconfig import BaseConfig
-    flags.STANDALONE = standalone
-    flags.OFFLINE = offline
-    flags.MAIL_LOGFILE = mail_logfile
+    flags.STANDALONE = opts.standalone
+    flags.OFFLINE = opts.offline
+    flags.MAIL_LOGFILE = opts.mail_log_file
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
     flags.OPENVPN_VERBOSITY = opts.openvpn_verb
@@ -150,7 +137,13 @@ def main():
 
     flags.CA_CERT_FILE = opts.ca_cert_file
 
-    BaseConfig.standalone = standalone
+    replace_stdout = True
+    if opts.repair or opts.import_maildir:
+        # We don't want too much clutter on the comand mode
+        # this could be more generic with a Command class.
+        replace_stdout = False
+
+    logger = create_logger(opts.debug, opts.log_file, replace_stdout)
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.
@@ -166,18 +159,6 @@ def main():
     if PLAY_NICE and PLAY_NICE.isdigit():
         nice = os.nice(int(PLAY_NICE))
         logger.info("Setting NICE: %s" % nice)
-
-    # And then we import all the other stuff
-    # I think it's safe to import at the top by now -- kali
-    from leap.bitmask.gui import locale_rc
-    from leap.bitmask.gui import twisted_main
-    from leap.bitmask.gui.mainwindow import MainWindow
-    from leap.bitmask.platform_init import IS_MAC
-    from leap.bitmask.platform_init.locks import we_are_the_one_and_only
-    from leap.bitmask.util.requirement_checker import check_requirements
-
-    # pylint: avoid unused import
-    assert(locale_rc)
 
     # TODO move to a different module: commands?
     if not we_are_the_one_and_only():
@@ -231,24 +212,14 @@ def main():
     #timer.timeout.connect(lambda: None)
     # XXX ---------------------------------------------------------
 
-    window = MainWindow(
-        lambda: twisted_main.quit(app),
-        bypass_checks=bypass_checks,
-        start_hidden=start_hidden)
+    window = MainWindow(bypass_checks=bypass_checks,
+                        start_hidden=start_hidden)
 
     sigint_window = partial(sigint_handler, window, logger=logger)
     signal.signal(signal.SIGINT, sigint_window)
 
     # callable used in addSystemEventTrigger to handle SIGTERM
     sigterm_window = partial(sigterm_handler, window, logger=logger)
-
-    if IS_MAC:
-        window.raise_()
-
-    # This was a good idea, but for this to work as intended we
-    # should centralize the start of all services in there.
-    #tx_app = leap_services()
-    #assert(tx_app)
 
     l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
     l.start(0.01)

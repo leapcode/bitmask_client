@@ -67,7 +67,7 @@ OPENVPN_USER = "nobody"
 OPENVPN_GROUP = "nogroup"
 LEAPOPENVPN = "LEAPOPENVPN"
 OPENVPN_SYSTEM_BIN = "/usr/sbin/openvpn"  # Debian location
-OPENVPN_LEAP_BIN = "/usr/sbin/leap-openvpn"  # installed by bundle
+OPENVPN_LEAP_BIN = "/usr/local/sbin/leap-openvpn"  # installed by bundle
 
 
 """
