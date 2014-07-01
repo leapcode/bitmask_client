@@ -1,3 +1,9 @@
+bitmask (0.5.3) unstable; urgency=medium
+
+  * Update to 0.5.3 release 
+
+ -- Ben Carrillo <ben@futeisha.org>  Tue, 01 Jul 2014 01:49:02 -0500
+
 bitmask (0.5.2) unstable; urgency=medium
 
   * Update to 0.5.2 release 
