@@ -7,7 +7,7 @@ Uploaders: Micah Anderson <micah@debian.org>
 Homepage: https://leap.se
 #Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
 #Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
-Build-Depends: debhelper (>= 8.0.0), python-support, python (>=2.6), python-setuptools,
+Build-Depends: debhelper (>= 8.0.0), dh-python, python (>=2.6), python-setuptools,
                pep8,
                python-sphinx (>= 1.0.7+dfsg), docutils-common, python-nose, python-mock,
                python-requests, python-srp, python-crypto, python-keyring, python-xdg,
