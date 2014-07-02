@@ -412,6 +412,9 @@ class MainWindow(QtGui.QMainWindow):
 
         sig.eip_dns_error.connect(self._eip_dns_error)
 
+        sig.eip_get_gateway_country_code.connect(self._set_eip_provider)
+        sig.eip_no_gateway.connect(self._set_eip_provider)
+
         # ==================================================================
 
         # Soledad signals
@@ -1481,14 +1484,27 @@ class MainWindow(QtGui.QMainWindow):
         signal that currently is beeing processed under status_panel.
         After the refactor to EIPConductor this should not be necessary.
         """
-        domain = self._login_widget.get_selected_provider()
-
-        self._eip_status.set_provider(domain)
-        self._settings.set_defaultprovider(domain)
         self._already_started_eip = True
+
+        domain = self._login_widget.get_selected_provider()
+        self._settings.set_defaultprovider(domain)
+
+        self._backend.eip_get_gateway_country_code(domain=domain)
 
         # check for connectivity
         self._backend.eip_check_dns(domain=domain)
+
+    @QtCore.Slot()
+    def _set_eip_provider(self, country_code=None):
+        """
+        TRIGGERS:
+            Signaler.eip_get_gateway_country_code
+            Signaler.eip_no_gateway
+
+        Set the current provider and country code in the eip status widget.
+        """
+        domain = self._login_widget.get_selected_provider()
+        self._eip_status.set_provider(domain, country_code)
 
     @QtCore.Slot()
     def _eip_dns_error(self):

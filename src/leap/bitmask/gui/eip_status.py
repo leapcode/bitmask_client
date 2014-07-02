@@ -589,16 +589,23 @@ class EIPStatusWidget(QtGui.QWidget):
         self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
         self._eip_status_menu.setTitle(tray_message)
 
-    def set_provider(self, provider):
+    def set_provider(self, provider, country_code):
+        """
+        Set the provider used right now, name and flag (if available).
+
+        :param provider: the provider in use.
+        :type provider: str
+        :param country_code: the country code of the gateway in use.
+        :type country_code: str
+        """
         self._provider = provider
 
         self.ui.lblEIPMessage.setText(
             self.tr("Routing traffic through: <b>{0}</b>").format(
                 provider))
 
-        ccode = flags.CURRENT_VPN_COUNTRY
-        if ccode is not None:
-            self.set_country_code(ccode)
+        if country_code is not None:
+            self.set_country_code(country_code)
 
     def set_country_code(self, code):
         """

@@ -256,6 +256,19 @@ class LeapBackend(Backend):
         """
         self._eip.get_gateways_list(domain)
 
+    def eip_get_gateway_country_code(self, domain):
+        """
+        Signal a list of gateways for the given provider.
+
+        :param domain: the domain to get the gateways.
+        :type domain: str
+
+        Signals:
+            eip_get_gateways_list -> str
+            eip_no_gateway
+        """
+        self._eip.get_gateway_country_code(domain)
+
     def eip_get_initialized_providers(self, domains):
         """
         Signal a list of the given domains and if they are initialized or not.

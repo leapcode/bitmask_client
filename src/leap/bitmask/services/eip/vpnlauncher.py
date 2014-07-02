@@ -136,12 +136,6 @@ class VPNLauncher(object):
             logger.error('No gateway was found!')
             raise VPNLauncherException('No gateway was found!')
 
-        # this only works for selecting the first gateway, as we're
-        # currently doing.
-        ccodes = gateway_selector.get_gateways_country_code()
-        gateway_ccode = ccodes[gateways[0]]
-        flags.CURRENT_VPN_COUNTRY = gateway_ccode
-
         logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
         return gateways
 

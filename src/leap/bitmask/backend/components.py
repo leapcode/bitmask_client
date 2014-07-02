@@ -31,6 +31,7 @@ from twisted.python import log
 import zope.interface
 import zope.proxy
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
@@ -588,6 +589,47 @@ class EIP(object):
         if self._signaler is not None:
             self._signaler.signal(
                 self._signaler.eip_get_gateways_list, gateways)
+
+    def get_gateway_country_code(self, domain):
+        """
+        Signal the country code for the currently used gateway for the given
+        provider.
+
+        :param domain: the domain to get country code.
+        :type domain: str
+
+        Signals:
+            eip_get_gateway_country_code -> str
+            eip_no_gateway
+        """
+        leap_settings = LeapSettings()
+
+        eip_config = eipconfig.EIPConfig()
+        provider_config = ProviderConfig.get_provider_config(domain)
+
+        api_version = provider_config.get_api_version()
+        eip_config.set_api_version(api_version)
+        eip_config.load(eipconfig.get_eipconfig_path(domain))
+
+        gateway_selector = eipconfig.VPNGatewaySelector(eip_config)
+        gateway_conf = leap_settings.get_selected_gateway(domain)
+
+        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+            gateways = gateway_selector.get_gateways()
+        else:
+            gateways = [gateway_conf]
+
+        if not gateways:
+            self._signaler.signal(self._signaler.eip_no_gateway)
+            return
+
+        # this only works for selecting the first gateway, as we're
+        # currently doing.
+        ccodes = gateway_selector.get_gateways_country_code()
+        gateway_ccode = ccodes[gateways[0]]
+
+        self._signaler.signal(self._signaler.eip_get_gateway_country_code,
+                              gateway_ccode)
 
     def _can_start(self, domain):
         """
