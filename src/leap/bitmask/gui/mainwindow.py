@@ -43,7 +43,6 @@ from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
-from leap.bitmask.gui import twisted_main
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
@@ -1837,5 +1836,3 @@ class MainWindow(QtGui.QMainWindow):
             WindowsLock.release_all_locks()
 
         self.close()
-
-        QtDelayedCall(100, twisted_main.quit)
