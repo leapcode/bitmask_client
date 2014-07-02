@@ -1708,7 +1708,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self._cancel_ongoing_defers()
 
-        self._services_being_stopped = {'imap', 'eip'}
+        self._services_being_stopped = set(('imap', 'eip'))
 
         imap_stopped = lambda: self._remove_service('imap')
         self._backend.signaler.imap_stopped.connect(imap_stopped)
