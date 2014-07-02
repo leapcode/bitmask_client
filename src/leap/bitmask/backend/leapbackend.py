@@ -18,7 +18,6 @@
 Backend for everything
 """
 import logging
-import signal
 
 import zope.interface
 import zope.proxy
@@ -503,11 +502,3 @@ class LeapBackend(Backend):
             imap_stopped
         """
         self._mail.stop_imap_service()
-
-
-def run_backend(bypass_checks=False):
-    # Ensure that the application quits using CTRL-C
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    backend = LeapBackend(bypass_checks=bypass_checks)
-    backend.run()
