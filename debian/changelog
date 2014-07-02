@@ -1,3 +1,10 @@
+bitmask (0.5.3.2) unstable; urgency=medium
+
+  * Lower version dependency on python requests so
+    that other suites can still install 
+
+ -- Micah Anderson <micah@debian.org>  Tue, 01 Jul 2014 21:19:27 -0400
+
 bitmask (0.5.3.1) unstable; urgency=medium
 
   * Add version dependency for python-requests
