@@ -14,10 +14,31 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import logging
+import multiprocessing
 import signal
 
 from leap.bitmask.backend.leapbackend import LeapBackend
 from leap.bitmask.util import dict_to_flags
+
+logger = logging.getLogger(__name__)
+
+
+def signal_handler(signum, frame):
+    """
+    Signal handler that quits the running app cleanly.
+
+    :param signum: number of the signal received (e.g. SIGINT -> 2)
+    :type signum: int
+    :param frame: current stack frame
+    :type frame: frame or None
+    """
+    # Note: we don't stop the backend in here since the frontend signal handler
+    # will take care of that.
+    # In the future we may need to do the stop in here when the frontend and
+    # the backend are run separately (without multiprocessing)
+    pname = multiprocessing.current_process().name
+    logger.debug("{0}: SIGNAL #{1} catched.".format(pname, signum))
 
 
 def run_backend(bypass_checks, flags_dict):
@@ -29,8 +50,9 @@ def run_backend(bypass_checks, flags_dict):
     :param flags_dict: a dict containing the flag values set on app start.
     :type flags_dict: dict
     """
-    # Ensure that the application quits using CTRL-C
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    # ignore SIGINT since app.py takes care of signaling SIGTERM to us.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     dict_to_flags(flags_dict)
 
