@@ -23,6 +23,7 @@ from PySide import QtCore, QtGui
 from leap.bitmask.config import flags
 from leap.bitmask.gui import locale_rc  # noqa - silence pylint
 from leap.bitmask.gui.mainwindow import MainWindow
+from leap.bitmask.util import dict_to_flags
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,13 +40,17 @@ def sigint_handler(*args, **kwargs):
     mainwindow.quit()
 
 
-def run_frontend(options):
+def run_frontend(options, flags_dict):
     """
     Run the GUI for the application.
 
     :param options: a dict of options parsed from the command line.
     :type options: dict
+    :param flags_dict: a dict containing the flag values set on app start.
+    :type flags_dict: dict
     """
+    dict_to_flags(flags_dict)
+
     start_hidden = options["start_hidden"]
 
     # We force the style if on KDE so that it doesn't load all the kde

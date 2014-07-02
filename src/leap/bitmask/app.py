@@ -53,7 +53,7 @@ from leap.bitmask.backend_app import run_backend
 from leap.bitmask.logs.utils import create_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
-from leap.bitmask.util import leap_argparse
+from leap.bitmask.util import leap_argparse, flags_to_dict
 from leap.bitmask.util.requirement_checker import check_requirements
 
 from leap.common.events import server as event_server
@@ -178,11 +178,13 @@ def start_app():
 
     generate_certificates()
 
-    app = lambda: run_frontend(options=options)
+    flags_dict = flags_to_dict()
+
+    app = lambda: run_frontend(options, flags_dict)
     gui_process = multiprocessing.Process(target=app)
     gui_process.start()
 
-    backend = lambda: run_backend(bypass_checks=opts.danger)
+    backend = lambda: run_backend(opts.danger, flags_dict)
     backend_process = multiprocessing.Process(target=backend)
     backend_process.start()
 

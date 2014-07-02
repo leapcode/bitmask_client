@@ -17,11 +17,22 @@
 import signal
 
 from leap.bitmask.backend.leapbackend import LeapBackend
+from leap.bitmask.util import dict_to_flags
 
 
-def run_backend(bypass_checks=False):
+def run_backend(bypass_checks, flags_dict):
+    """
+    Run the backend for the application.
+
+    :param bypass_checks: whether we should bypass the checks or not
+    :type bypass_checks: bool
+    :param flags_dict: a dict containing the flag values set on app start.
+    :type flags_dict: dict
+    """
     # Ensure that the application quits using CTRL-C
     signal.signal(signal.SIGINT, signal.SIG_DFL)
+
+    dict_to_flags(flags_dict)
 
     backend = LeapBackend(bypass_checks=bypass_checks)
     backend.run()
