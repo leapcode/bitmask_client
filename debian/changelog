@@ -1,3 +1,10 @@
+bitmask (0.5.3.4) unstable; urgency=medium
+
+  * Add hint to pydist-overrides for python-openssl, seems this might be
+    needed for saucy (#676)
+
+ -- Micah Anderson <micah@debian.org>  Thu, 03 Jul 2014 21:45:37 -0400
+
 bitmask (0.5.3.3) unstable; urgency=medium
 
   * Cherry-pick fix for syntax error on install for some suites 
