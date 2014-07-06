@@ -1,3 +1,9 @@
+bitmask (0.5.3.5) unstable; urgency=medium
+
+  * Neglected to set python-requests dependency for Depends 
+
+ -- Micah Anderson <micah@debian.org>  Sun, 06 Jul 2014 19:07:56 -0400
+
 bitmask (0.5.3.4) unstable; urgency=medium
 
   * Add hint to pydist-overrides for python-openssl, seems this might be

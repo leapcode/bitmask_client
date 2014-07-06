@@ -28,7 +28,7 @@ Depends:
   python-argparse,
   python-psutil,
   python-netifaces,
-  python-requests,
+  python-requests (>= 1.2.3-1),
   python-xdg,
   python-jsonschema (>= 0.7.0),
   python-setuptools,
