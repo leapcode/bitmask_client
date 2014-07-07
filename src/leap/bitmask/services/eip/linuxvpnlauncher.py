@@ -74,6 +74,7 @@ def _is_auth_agent_running():
         'ps aux | grep "polkit-[m]ate-authentication-agent-1"',
         'ps aux | grep "[l]xpolkit"',
         'ps aux | grep "[g]nome-shell"',
+        'ps aux | grep "[f]ingerprint-polkit-agent"',
     ]
     is_running = [commands.getoutput(cmd) for cmd in polkit_options]
 
