@@ -253,7 +253,8 @@ cmdclass["sdist"] = cmd_sdist
 
 import platform
 _system = platform.system()
-IS_LINUX = True if _system == "Linux" else False
+IS_LINUX = _system == "Linux"
+IS_MAC = _system == "Darwin"
 
 data_files = []
 
@@ -267,6 +268,31 @@ if IS_LINUX:
          ["pkg/linux/bitmask-root"]),
     ]
 
+extra_options = {}
+
+if IS_MAC:
+    extra_options["app"] = ['src/leap/bitmask/app.py']
+    OPTIONS = {
+        'argv_emulation': True,
+        'plist': 'pkg/osx/Info.plist',
+        'iconfile': 'pkg/osx/bitmask.icns',
+    }
+    extra_options["options"] = {'py2app': OPTIONS}
+    extra_options["setup_requires"] = ['py2app']
+
+    class jsonschema_recipe(object):
+        def check(self, dist, mf):
+            m = mf.findNode('jsonschema')
+            if m is None:
+                return None
+
+            # Don't put jsonschema in the site-packages.zip file
+            return dict(
+                packages=['jsonschema']
+            )
+
+    import py2app.recipes
+    py2app.recipes.jsonschema = jsonschema_recipe()
 
 setup(
     name="leap.bitmask",
@@ -305,4 +331,5 @@ setup(
     entry_points={
         'console_scripts': [leap_launcher]
     },
+    **extra_options
 )

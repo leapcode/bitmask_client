@@ -2,21 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleDisplayName</key>
-	<string>leap-client</string>
-	<key>CFBundleExecutable</key>
-	<string>MacOS/app</string>
-	<key>CFBundleIconFile</key>
-	<string>icon-windowed.icns</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>leap-client</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1</string>
-	<key>LSBackgroundOnly</key>
-	<false/>
+        <key>CFBundleDisplayName</key>
+        <string>Bitmask</string>
+        <key>CFBundleExecutable</key>
+        <string>app</string>
+        <key>CFBundleIconFile</key>
+        <string>bitmask.icns</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>6.0</string>
+        <key>CFBundleName</key>
+        <string>Bitmask</string>
+        <key>CFBundlePackageType</key>
+        <string>APPL</string>
+        <key>CFBundleShortVersionString</key>
+        <string>1</string>
+        <key>LSBackgroundOnly</key>
+        <false/>
+        <key>CFBundleIdentifier</key>
+        <string>se.leap.bitmask</string>
 </dict>
 </plist>

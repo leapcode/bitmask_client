@@ -17,5 +17,7 @@
 """
 init file for leap.gui
 """
-app = __import__("app", globals(), locals(), [], 2)
-__all__ = [app]
+# This was added for coverage and testing, but when doing the osx
+# bundle with py2app it fails because of this, so commenting for now
+# app = __import__("app", globals(), locals(), [], 2)
+# __all__ = [app]
