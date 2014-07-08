@@ -14,6 +14,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+The BackendProxy handles calls from the GUI and forwards (through ZMQ)
+to the backend.
+"""
 import functools
 import Queue
 import threading

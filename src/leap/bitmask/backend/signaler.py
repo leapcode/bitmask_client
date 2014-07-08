@@ -14,6 +14,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Signaler client.
+Receives signals from the backend and sends to the signaling server.
+"""
 import Queue
 import threading
 import time

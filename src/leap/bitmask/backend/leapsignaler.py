@@ -14,6 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Signaling server, used to define the API signals.
+"""
 from PySide import QtCore
 
 from leap.bitmask.backend.signaler_qt import SignalerQt
@@ -21,7 +24,7 @@ from leap.bitmask.backend.signaler_qt import SignalerQt
 
 class LeapSignaler(SignalerQt):
     """
-    Signaling server subclass, used to defines the API signals.
+    Signaling server subclass, used to define the API signals.
     """
     backend_bad_call = QtCore.Signal(object)
 

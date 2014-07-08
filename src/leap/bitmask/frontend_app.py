@@ -14,6 +14,9 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Start point for the Frontend.
+"""
 import multiprocessing
 import signal
 import sys

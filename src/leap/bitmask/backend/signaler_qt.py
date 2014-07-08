@@ -14,6 +14,10 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+Signaling server.
+Receives signals from the signaling client and emit Qt signals for the GUI.
+"""
 import threading
 import time
 
