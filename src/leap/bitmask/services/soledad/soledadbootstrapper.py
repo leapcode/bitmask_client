@@ -423,7 +423,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 local_db_path=local_db_path.encode(encoding),
                 server_url=server_url,
                 cert_file=cert_file.encode(encoding),
-                auth_token=auth_token)
+                auth_token=auth_token,
+                defer_encryption=True)
 
         # XXX All these errors should be handled by soledad itself,
         # and return a subclass of SoledadInitializationFailed
@@ -448,7 +449,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Raises SoledadSyncError if not successful.
         """
         try:
-            self._soledad.sync()
+            self._soledad.sync(defer_decryption=True)
         except SSLError as exc:
             logger.error("%r" % (exc,))
             raise SoledadSyncError("Failed to sync soledad")
