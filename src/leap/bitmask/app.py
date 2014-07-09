@@ -49,7 +49,6 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config import flags
-from leap.bitmask.gui import locale_rc  # noqa - silence pylint
 from leap.bitmask.gui.mainwindow import MainWindow
 from leap.bitmask.logs.utils import create_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
@@ -67,16 +66,39 @@ import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
 
+import psutil
+
+
+def kill_the_children():
+    """
+    Make sure no lingering subprocesses are left in case of a bad termination.
+    """
+    me = os.getpid()
+    parent = psutil.Process(me)
+    print "Killing all the children processes..."
+    for child in parent.get_children(recursive=True):
+        try:
+            child.terminate()
+        except Exception as exc:
+            print exc
+
+# XXX This is currently broken, but we need to fix it to avoid
+# orphaned processes in case of a crash.
+#atexit.register(kill_the_children)
+
 
 def sigint_handler(*args, **kwargs):
     """
     Signal handler for SIGINT
     """
     logger = kwargs.get('logger', None)
-    if logger:
-        logger.debug("SIGINT catched. shutting down...")
-    mainwindow = args[0]
-    mainwindow.quit()
+    parentpid = kwargs.get('parentpid', None)
+    pid = os.getpid()
+    if parentpid == pid:
+        if logger:
+            logger.debug("SIGINT catched. shutting down...")
+        mainwindow = args[0]
+        mainwindow.quit()
 
 
 def sigterm_handler(*args, **kwargs):
@@ -85,10 +107,13 @@ def sigterm_handler(*args, **kwargs):
     This handler is actually passed to twisted reactor
     """
     logger = kwargs.get('logger', None)
-    if logger:
-        logger.debug("SIGTERM catched. shutting down...")
-    mainwindow = args[0]
-    mainwindow.quit()
+    parentpid = kwargs.get('parentpid', None)
+    pid = os.getpid()
+    if parentpid == pid:
+        if logger:
+            logger.debug("SIGTERM catched. shutting down...")
+        mainwindow = args[0]
+        mainwindow.quit()
 
 
 def do_display_version(opts):
@@ -203,32 +228,26 @@ def main():
     app.setApplicationName("leap")
     app.setOrganizationDomain("leap.se")
 
-    # XXX ---------------------------------------------------------
-    # In quarantine, looks like we don't need it anymore.
-    # This dummy timer ensures that control is given to the outside
-    # loop, so we can hook our sigint handler.
-    #timer = QtCore.QTimer()
-    #timer.start(500)
-    #timer.timeout.connect(lambda: None)
-    # XXX ---------------------------------------------------------
-
     window = MainWindow(bypass_checks=bypass_checks,
                         start_hidden=start_hidden)
 
-    sigint_window = partial(sigint_handler, window, logger=logger)
+    mainpid = os.getpid()
+    sigint_window = partial(sigint_handler, window,
+                            logger=logger, parentpid=mainpid)
     signal.signal(signal.SIGINT, sigint_window)
 
     # callable used in addSystemEventTrigger to handle SIGTERM
-    sigterm_window = partial(sigterm_handler, window, logger=logger)
-
-    l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
-    l.start(0.01)
-
+    sigterm_window = partial(sigterm_handler, window,
+                             logger=logger, parentpid=mainpid)
     # SIGTERM can't be handled the same way SIGINT is, since it's
     # caught by twisted. See _handleSignals method in
     # twisted/internet/base.py#L1150. So, addSystemEventTrigger
     # reactor's method is used.
     reactor.addSystemEventTrigger('before', 'shutdown', sigterm_window)
+
+    l = LoopingCall(QtCore.QCoreApplication.processEvents, 0, 10)
+    l.start(0.01)
+
     reactor.run()
 
 if __name__ == "__main__":
