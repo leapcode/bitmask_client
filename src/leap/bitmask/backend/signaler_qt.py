@@ -72,7 +72,7 @@ class SignalerQt(QtCore.QThread):
             # Wait for next request from client
             try:
                 request = socket.recv(zmq.NOBLOCK)
-                logger.debug("Received request: '{0}'".format(request))
+                # logger.debug("Received request: '{0}'".format(request))
                 socket.send("OK")
                 self._process_request(request)
             except zmq.ZMQError as e:
@@ -116,7 +116,7 @@ class SignalerQt(QtCore.QThread):
             logger.warning("Signal not implemented, '{0}'".format(signal))
             return
 
-        logger.debug("Emitting '{0}'".format(signal))
+        # logger.debug("Emitting '{0}'".format(signal))
         if data is None:
             qt_signal.emit()
         else:

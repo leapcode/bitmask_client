@@ -131,14 +131,16 @@ class BackendProxy(object):
         :param request: the request to send.
         :type request: str
         """
-        logger.debug("Sending request to backend: {0}".format(request))
+        # logger.debug("Sending request to backend: {0}".format(request))
         self._socket.send(request)
 
         try:
             # Get the reply.
-            response = self._socket.recv()
-            msg = "Received reply for '{0}' -> '{1}'".format(request, response)
-            logger.debug(msg)
+            self._socket.recv()
+            # response = self._socket.recv()
+            # msg = "Received reply for '{0}' -> '{1}'"
+            # msg = msg.format(request, response)
+            # logger.debug(msg)
         except zmq.error.Again as e:
             msg = "Timeout error contacting backend. {0!r}".format(e)
             logger.critical(msg)

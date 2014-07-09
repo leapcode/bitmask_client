@@ -86,7 +86,7 @@ class Backend(object):
             try:
                 request = self._zmq_socket.recv(zmq.NOBLOCK)
                 self._zmq_socket.send("OK")
-                logger.debug("Received request: '{0}'".format(request))
+                # logger.debug("Received request: '{0}'".format(request))
                 self._process_request(request)
             except zmq.ZMQError as e:
                 if e.errno != zmq.EAGAIN:
@@ -180,8 +180,8 @@ class Backend(object):
         if kwargs is not None:
             method = lambda: func(**kwargs)
 
-        logger.debug("Running method: '{0}' "
-                     "with args: '{1}' in a thread".format(api_method, kwargs))
+        # logger.debug("Running method: '{0}' "
+        #            "with args: '{1}' in a thread".format(api_method, kwargs))
 
         # run the action in a thread and keep track of it
         d = threads.deferToThread(method)

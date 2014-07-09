@@ -145,14 +145,16 @@ class Signaler(object):
         :param request: the request to send.
         :type request: str
         """
-        logger.debug("Signaling '{0}'".format(request))
+        # logger.debug("Signaling '{0}'".format(request))
         self._socket.send(request)
 
         # Get the reply.
         try:
-            response = self._socket.recv()
-            msg = "Received reply for '{0}' -> '{1}'".format(request, response)
-            logger.debug(msg)
+            self._socket.recv()
+            # response = self._socket.recv()
+            # msg = "Received reply for '{0}' -> '{1}'"
+            # msg = msg.format(request, response)
+            # logger.debug(msg)
         except zmq.error.Again as e:
             msg = "Timeout error contacting signaler. {0!r}".format(e)
             logger.critical(msg)
