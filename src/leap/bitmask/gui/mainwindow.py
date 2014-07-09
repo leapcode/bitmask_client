@@ -1786,7 +1786,6 @@ class MainWindow(QtGui.QMainWindow):
         Final steps to quit the app, starting from here we don't care about
         running services or user interaction, just quitting.
         """
-        logger.debug('Final quit...')
 
         # We can reach here because all the services are stopped or because a
         # timeout was triggered. Since we want to run this only once, we exit
@@ -1795,6 +1794,10 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         self._finally_quitting = True
+
+        logger.debug('Closing soledad...')
+        self._backend.soledad_close()
+        logger.debug('Final quit...')
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
