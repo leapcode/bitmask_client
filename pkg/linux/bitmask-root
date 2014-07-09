@@ -150,7 +150,7 @@ def is_valid_address(value):
         socket.inet_aton(value)
         return True
     except Exception:
-        print("%s: ERROR: MALFORMED IP: %s!" % (SCRIPT, value))
+        log("%s: ERROR: MALFORMED IP: %s!" % (SCRIPT, value))
         return False
 
 
@@ -348,7 +348,7 @@ class Daemon(object):
                 if os.path.exists(self.pidfile):
                     os.remove(self.pidfile)
             else:
-                print(str(err))
+                log(str(err))
                 sys.exit(1)
 
     def restart(self):
@@ -376,23 +376,24 @@ def run(command, *args, **options):
       `detach`: If True, run in detached process.
       `input`: If True, open command for writing stream to, returning the Popen
                object.
+      `throw`: If True, raise an exception if there is an error instead of bailing.
     """
     parts = [command]
     parts.extend(args)
-    if TEST or DEBUG:
-        print("%s run: %s " (SCRIPT, " ".join(parts)))
+    debug("%s run: %s " % (SCRIPT, " ".join(parts)))
 
     _check = options.get("check", True)
     _detach = options.get("detach", False)
     _input = options.get("input", False)
     _exitcode = options.get("exitcode", False)
+    _throw = options.get("throw", False)
 
-    if not _check or _detach or _input:
+    if not (_check or _throw) or _detach or _input:
         if _input:
             return subprocess.Popen(parts, stdin=subprocess.PIPE)
         else:
-            # XXX ok with return None ??
             subprocess.Popen(parts)
+            return None
     else:
         try:
             devnull = open('/dev/null', 'w')
@@ -402,24 +403,49 @@ def run(command, *args, **options):
             if DEBUG:
                 logger.exception(exc)
             if _exitcode:
+                debug("ERROR: Could not run %s: %s" % (exc.cmd, exc.output),
+                     exception=exc)
                 return exc.returncode
+            elif _throw:
+                raise exc
             else:
                 bail("ERROR: Could not run %s: %s" % (exc.cmd, exc.output),
                      exception=exc)
 
 
-def bail(msg=None, exception=None):
+def log(msg=None, exception=None, priority=syslog.LOG_INFO):
     """
-    Abnormal exit.
+    print and log warning message or exception.
 
     :param msg: optional error message.
     :type msg: str
+    :param msg: optional exception.
+    :type msg: Exception
+    :param msg: syslog level
+    :type msg: one of LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR,
+               LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG
     """
     if msg is not None:
         print("%s: %s" % (SCRIPT, msg))
-        syslog.syslog(syslog.LOG_ERR, msg)
+        syslog.syslog(priority, msg)
     if exception is not None:
-        traceback.print_exc()
+        if TEST or DEBUG:
+            traceback.print_exc()
+        syslog.syslog(priority, traceback.format_exc())
+
+def debug(msg=None, exception=None):
+    """
+    Just like log, but is skipped unless DEBUG. Use syslog.LOG_INFO
+    even for debug messages (we don't want to miss them).
+    """
+    if TEST or DEBUG:
+        log(msg, exception)
+
+def bail(msg=None, exception=None):
+    """
+    abnormal exit. like log(), but exits with error status code.
+    """
+    log(msg, exception)
     exit(1)
 
 ##
@@ -457,21 +483,21 @@ def parse_openvpn_flags(args):
                 if required_params:
                     flag_params = flag[1:]
                     if len(flag_params) != len(required_params):
-                        print("%s: ERROR: not enough params for %s" %
+                        log("%s: ERROR: not enough params for %s" %
                               (SCRIPT, flag_name))
                         return None
                     for param, param_type in zip(flag_params, required_params):
                         if PARAM_FORMATS[param_type](param):
                             result.append(param)
                         else:
-                            print("%s: ERROR: Bad argument %s" %
+                            log("%s: ERROR: Bad argument %s" %
                                   (SCRIPT, param))
                             return None
             else:
-                print("WARNING: unrecognized openvpn flag %s" % flag_name)
+                log("WARNING: unrecognized openvpn flag %s" % flag_name)
         return result
     except Exception as exc:
-        print("%s: ERROR PARSING FLAGS: %s" % (SCRIPT, exc))
+        log("%s: ERROR PARSING FLAGS: %s" % (SCRIPT, exc))
         if DEBUG:
             logger.exception(exc)
         return None
@@ -490,8 +516,8 @@ def openvpn_start(args):
         OPENVPN = get_openvpn_bin()
         flags = [OPENVPN] + FIXED_FLAGS + openvpn_flags
         if DEBUG:
-            print("%s: running openvpn with flags:" % (SCRIPT,))
-            print(flags)
+            log("%s: running openvpn with flags:" % (SCRIPT,))
+            log(flags)
         # note: first argument to command is ignored, but customarily set to
         # the command.
         os.execv(OPENVPN, flags)
@@ -584,7 +610,7 @@ class NameserverRestorer(Daemon):
         if os.path.isfile(RESOLVCONF):
             run(RESOLVCONF, "-d", "bitmask")
         else:
-            print("%s: ERROR: package openresolv "
+            log("%s: ERROR: package openresolv "
                   "or resolvconf not installed." %
                   (SCRIPT,))
 
@@ -703,29 +729,49 @@ def ip6tables(*args, **options):
     """
     run_iptable_with_check(IP6TABLES, *args, **options)
 
+#
+# NOTE: these tests to see if a chain exists might incorrectly return false.
+# This happens when there is an error in calling `iptables --list bitmask`.
+#
+# For this reason, when stopping the firewall, we do not trust the
+# output of ipvx_chain_exists() but instead always attempt to delete
+# the chain.
+#
 
-def ipv4_chain_exists(table):
+def ipv4_chain_exists(chain):
     """
     Check if a given chain exists.
 
-    :param table: the table to check against
-    :type table: str
+    :param chain: the chain to check against
+    :type chain: str
     :rtype: bool
     """
-    code = run(IPTABLES, "--list", table, "--numeric", exitcode=True)
-    return code == 0
+    code = run(IPTABLES, "--list", chain, "--numeric", exitcode=True)
+    if code == 0:
+        return True
+    elif code == 1:
+        return False
+    else:
+        log("ERROR: Could not determine state of iptable chain")
+        return False
 
 
-def ipv6_chain_exists(table):
+def ipv6_chain_exists(chain):
     """
     Check if a given chain exists.
 
-    :param table: the table to check against
-    :type table: str
+    :param chain: the chain to check against
+    :type chain: str
     :rtype: bool
     """
-    code = run(IP6TABLES, "--list", table, "--numeric", exitcode=True)
-    return code == 0
+    code = run(IP6TABLES, "--list", chain, "--numeric", exitcode=True)
+    if code == 0:
+        return True
+    elif code == 1:
+        return False
+    else:
+        log("ERROR: Could not determine state of iptable chain")
+        return False
 
 
 def firewall_start(args):
@@ -812,15 +858,34 @@ def firewall_start(args):
 
 def firewall_stop():
     """
-    Stop the firewall.
+    Stop the firewall. Because we really really always want the firewall to be
+    stopped if at all possible, this function is cautious and contains a lot of
+    trys and excepts.
+
+    If there were any problems, we raise an exception at the end. This allows the calling code
+    to retry stopping the firewall. Stopping the firewall can fail if iptables is being run by
+    another process (only one iptables command can be run at a time).
     """
-    iptables("--delete", "OUTPUT", "--jump", BITMASK_CHAIN)
-    if ipv4_chain_exists(BITMASK_CHAIN):
-        ip4tables("--flush", BITMASK_CHAIN)
-        ip4tables("--delete-chain", BITMASK_CHAIN)
-    if ipv6_chain_exists(BITMASK_CHAIN):
-        ip6tables("--flush", BITMASK_CHAIN)
-        ip6tables("--delete-chain", BITMASK_CHAIN)
+    ok = True
+    try:
+        iptables("--wait", "--delete", "OUTPUT", "--jump", BITMASK_CHAIN, throw=True)
+    except subprocess.CalledProcessError as exc:
+        log("INFO: not able to remove bitmask firewall from OUTPUT chain (maybe it is already removed?)", exc)
+        ok = False
+    try:
+        ip4tables("--flush", BITMASK_CHAIN, throw=True)
+        ip4tables("--delete-chain", BITMASK_CHAIN, throw=True)
+    except subprocess.CalledProcessError as exc:
+        log("INFO: not able to flush and delete bitmask ipv4 firewall chain (maybe it is already destroyed?)", exc)
+        ok = False
+    try:
+        ip6tables("--flush", BITMASK_CHAIN, throw=True)
+        ip6tables("--delete-chain", BITMASK_CHAIN, throw=True)
+    except subprocess.CalledProcessError as exc:
+        log("INFO: not able to flush and delete bitmask ipv6 firewall chain (maybe it is already destroyed?)", exc)
+        ok = False
+    if not ok:
+        raise Exception("firewall might still be left up. Please try `firewall stop` again.")
 
 ##
 ## MAIN
@@ -874,7 +939,7 @@ def main():
 
         elif command == "firewall_isup":
             if ipv4_chain_exists(BITMASK_CHAIN):
-                print("%s: INFO: bitmask firewall is up" % (SCRIPT,))
+                log("%s: INFO: bitmask firewall is up" % (SCRIPT,))
             else:
                 bail("INFO: bitmask firewall is down")
 
@@ -884,8 +949,7 @@ def main():
         bail("ERROR: No such command")
 
 if __name__ == "__main__":
-    if DEBUG:
-        logger.debug(" ".join(sys.argv))
+    debug(" ".join(sys.argv))
     main()
-    print("%s: done" % (SCRIPT,))
+    log("%s: done" % (SCRIPT,))
     exit(0)
