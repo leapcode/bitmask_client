@@ -83,7 +83,8 @@ class Wizard(QtGui.QWizard):
 
         self.ui.grpCheckProvider.setVisible(False)
         self._connect_and_track(self.ui.btnCheck.clicked, self._check_provider)
-        self._connect_and_track(self.ui.lnProvider.returnPressed, self._check_provider)
+        self._connect_and_track(self.ui.lnProvider.returnPressed,
+                                self._check_provider)
 
         self._backend = backend
         self._backend_connect()
@@ -98,22 +99,24 @@ class Wizard(QtGui.QWizard):
         self._provider_select_defer = None
         self._provider_setup_defer = None
 
-        self._connect_and_track(self.currentIdChanged, self._current_id_changed)
+        self._connect_and_track(self.currentIdChanged,
+                                self._current_id_changed)
 
-        self._connect_and_track(self.ui.lnProvider.textChanged, self._enable_check)
+        self._connect_and_track(self.ui.lnProvider.textChanged,
+                                self._enable_check)
         self._connect_and_track(self.ui.rbNewProvider.toggled,
-            lambda x: self._enable_check())
+                                lambda x: self._enable_check())
         self._connect_and_track(self.ui.cbProviders.currentIndexChanged[int],
-            self._reset_provider_check)
+                                self._reset_provider_check)
 
         self._connect_and_track(self.ui.lblUser.returnPressed,
-            self._focus_password)
+                                self._focus_password)
         self._connect_and_track(self.ui.lblPassword.returnPressed,
-            self._focus_second_password)
+                                self._focus_second_password)
         self._connect_and_track(self.ui.lblPassword2.returnPressed,
-            self._register)
+                                self._register)
         self._connect_and_track(self.ui.btnRegister.clicked,
-            self._register)
+                                self._register)
 
         self._connect_and_track(self.ui.rbExistingProvider.toggled,
                                 self._skip_provider_checks)
@@ -184,21 +187,55 @@ class Wizard(QtGui.QWizard):
 
         :param pinned: list of pinned providers
         :type pinned: list of str
+
+
+        How the combobox items are arranged:
+        -----------------------------------
+
+        First run:
+
+            demo.bitmask.net
+            --
+            pinned2.org
+            pinned1.org
+            pinned3.org
+
+        After some usage:
+
+            added-by-user.org
+            pinned-but-then-used.org
+            ---
+            demo.bitmask.net
+            pinned1.org
+            pinned3.org
+            pinned2.org
+
+        In other words:
+            * There are two sections.
+            * Section one consists of all the providers that the user has used.
+              If this is empty, than use demo.bitmask.net for this section.
+              This list is sorted alphabetically.
+            * Section two consists of all the pinned or 'pre seeded' providers,
+              minus any providers that are now in section one. This last list
+              is in random order.
         """
         ls = LeapSettings()
-        providers = ls.get_configured_providers()
-        if not providers and not pinned:
+        user_added = ls.get_configured_providers()
+        if not user_added and not pinned:
             self.ui.rbExistingProvider.setEnabled(False)
             self.ui.label_8.setEnabled(False)  # 'https://' label
             self.ui.cbProviders.setEnabled(False)
             return
 
-        user_added = []
+        user_added.sort()
 
-        # separate pinned providers from user added ones
-        for p in providers:
-            if p not in pinned:
-                user_added.append(p)
+        if not user_added:
+            user_added = [pinned.pop(0)]
+
+        # separate unused pinned providers from user added ones
+        for p in user_added:
+            if p in pinned:
+                pinned.remove(p)
 
         if user_added:
             self.ui.cbProviders.addItems(user_added)
