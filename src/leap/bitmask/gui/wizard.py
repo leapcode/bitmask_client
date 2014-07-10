@@ -83,7 +83,8 @@ class Wizard(QtGui.QWizard):
 
         self.ui.grpCheckProvider.setVisible(False)
         self._connect_and_track(self.ui.btnCheck.clicked, self._check_provider)
-        self._connect_and_track(self.ui.lnProvider.returnPressed, self._check_provider)
+        self._connect_and_track(self.ui.lnProvider.returnPressed,
+                                self._check_provider)
 
         self._backend = backend
         self._backend_connect()
@@ -98,22 +99,24 @@ class Wizard(QtGui.QWizard):
         self._provider_select_defer = None
         self._provider_setup_defer = None
 
-        self._connect_and_track(self.currentIdChanged, self._current_id_changed)
+        self._connect_and_track(self.currentIdChanged,
+                                self._current_id_changed)
 
-        self._connect_and_track(self.ui.lnProvider.textChanged, self._enable_check)
+        self._connect_and_track(self.ui.lnProvider.textChanged,
+                                self._enable_check)
         self._connect_and_track(self.ui.rbNewProvider.toggled,
-            lambda x: self._enable_check())
+                                lambda x: self._enable_check())
         self._connect_and_track(self.ui.cbProviders.currentIndexChanged[int],
-            self._reset_provider_check)
+                                self._reset_provider_check)
 
         self._connect_and_track(self.ui.lblUser.returnPressed,
-            self._focus_password)
+                                self._focus_password)
         self._connect_and_track(self.ui.lblPassword.returnPressed,
-            self._focus_second_password)
+                                self._focus_second_password)
         self._connect_and_track(self.ui.lblPassword2.returnPressed,
-            self._register)
+                                self._register)
         self._connect_and_track(self.ui.btnRegister.clicked,
-            self._register)
+                                self._register)
 
         self._connect_and_track(self.ui.rbExistingProvider.toggled,
                                 self._skip_provider_checks)
