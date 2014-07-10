@@ -25,6 +25,12 @@ from pkg_resources import parse_version
 
 from leap.bitmask.util import first
 
+# HACK: This is a hack so that py2app copies _scrypt.so to the right
+# place, it can't be technically imported, but that doesn't matter
+# because the import is never executed
+if False:
+    import _scrypt
+
 
 def _is_release_version(version):
     """
