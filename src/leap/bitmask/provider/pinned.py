@@ -32,6 +32,7 @@ class PinnedProviders(object):
 
     CONFIG_KEY = "config"
     CACERT_KEY = "cacert"
+    PREFERRED_PROVIDER = pinned_demobitmask.DOMAIN
 
     PROVIDERS = {
         pinned_demobitmask.DOMAIN: {
@@ -50,11 +51,16 @@ class PinnedProviders(object):
     @classmethod
     def domains(self):
         """
-        Return the domains that are pinned in here
+        Return the domains that are pinned in here.
+        The first domain in the list is the preferred one.
 
         :rtype: list of str
         """
-        return self.PROVIDERS.keys()
+        domains = self.PROVIDERS.keys()
+        domains.remove(self.PREFERRED_PROVIDER)
+        domains.insert(0, self.PREFERRED_PROVIDER)
+
+        return domains
 
     @classmethod
     def save_hardcoded(self, domain, provider_path, cacert_path):

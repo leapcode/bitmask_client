@@ -184,21 +184,55 @@ class Wizard(QtGui.QWizard):
 
         :param pinned: list of pinned providers
         :type pinned: list of str
+
+
+        How the combobox items are arranged:
+        -----------------------------------
+
+        First run:
+
+            demo.bitmask.net
+            --
+            pinned2.org
+            pinned1.org
+            pinned3.org
+
+        After some usage:
+
+            added-by-user.org
+            pinned-but-then-used.org
+            ---
+            demo.bitmask.net
+            pinned1.org
+            pinned3.org
+            pinned2.org
+
+        In other words:
+            * There are two sections.
+            * Section one consists of all the providers that the user has used.
+              If this is empty, than use demo.bitmask.net for this section.
+              This list is sorted alphabetically.
+            * Section two consists of all the pinned or 'pre seeded' providers,
+              minus any providers that are now in section one. This last list
+              is in random order.
         """
         ls = LeapSettings()
-        providers = ls.get_configured_providers()
-        if not providers and not pinned:
+        user_added = ls.get_configured_providers()
+        if not user_added and not pinned:
             self.ui.rbExistingProvider.setEnabled(False)
             self.ui.label_8.setEnabled(False)  # 'https://' label
             self.ui.cbProviders.setEnabled(False)
             return
 
-        user_added = []
+        user_added.sort()
 
-        # separate pinned providers from user added ones
-        for p in providers:
-            if p not in pinned:
-                user_added.append(p)
+        if not user_added:
+            user_added = [pinned.pop(0)]
+
+        # separate unused pinned providers from user added ones
+        for p in user_added:
+            if p in pinned:
+                pinned.remove(p)
 
         if user_added:
             self.ui.cbProviders.addItems(user_added)
