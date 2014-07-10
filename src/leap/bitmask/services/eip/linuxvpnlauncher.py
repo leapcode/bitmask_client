@@ -127,12 +127,6 @@ class LinuxVPNLauncher(VPNLauncher):
             # LinuxPolicyChecker will give us the right path if standalone.
             return LinuxPolicyChecker.get_polkit_path()
 
-    class RESOLVCONF_BIN_PATH(object):
-        def __call__(self):
-            return ("/usr/local/sbin/leap-resolvconf" if flags.STANDALONE else
-                    "/sbin/resolvconf")
-        # this only will work with debian/ubuntu distros.
-
     OTHER_FILES = (POLKIT_PATH, BITMASK_ROOT, OPENVPN_BIN_PATH)
 
     @classmethod
