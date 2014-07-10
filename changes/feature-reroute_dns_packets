@@ -1,0 +1,1 @@
+- reroute DNS packets instead of blocking them, eliminating need to muck around with resolv.conf. Closes #4633, #5655, #5738, #4823
