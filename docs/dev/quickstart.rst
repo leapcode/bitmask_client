@@ -65,8 +65,6 @@ Compile the resource files::
 
 Copy necessary files into system folders, with root privileges::
 
-    (bitmask)$ sudo mkdir -p /etc/leap
-    (bitmask)$ sudo cp pkg/linux/resolv-update /etc/leap
     (bitmask)$ sudo cp pkg/linux/polkit/net.openvpn.gui.leap.policy /usr/share/polkit-1/actions/
 
 
