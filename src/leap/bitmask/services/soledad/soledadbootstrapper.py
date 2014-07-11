@@ -21,6 +21,7 @@ import logging
 import os
 import socket
 import sys
+import time
 
 from ssl import SSLError
 from sqlite3 import ProgrammingError as sqlite_ProgrammingError
@@ -132,6 +133,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
     MAX_INIT_RETRIES = 10
     MAX_SYNC_RETRIES = 10
+    WAIT_MAX_SECONDS = 600
+    #WAIT_STEP_SECONDS = 1
+    WAIT_STEP_SECONDS = 5
 
     def __init__(self, signaler=None):
         AbstractBootstrapper.__init__(self, signaler)
@@ -181,7 +185,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :param uuid: the user uuid
         :type uuid: str or unicode
         """
-        print "UUID ", uuid
         self._address = username
         self._password = password
         self._uuid = uuid
@@ -356,12 +359,20 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Do several retries to get an initial soledad sync.
         """
         # and now, let's sync
-        sync_tries = 1
-        while sync_tries <= self.MAX_SYNC_RETRIES:
+        sync_tries = self.MAX_SYNC_RETRIES
+        step = self.WAIT_STEP_SECONDS
+        max_wait = self.WAIT_MAX_SECONDS
+        while sync_tries > 0:
+            wait = 0
             try:
                 logger.debug("Trying to sync soledad....")
                 self._try_soledad_sync()
-                logger.debug("Soledad has been synced.")
+                while self.soledad.syncing:
+                    time.sleep(step)
+                    wait += step
+                    if wait >= max_wait:
+                        raise SoledadSyncError("timeout!")
+                logger.debug("Soledad has been synced!")
                 # so long, and thanks for all the fish
                 return
             except SoledadSyncError:
@@ -382,6 +393,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                     self._signaler.SOLEDAD_INVALID_AUTH_TOKEN)
                 raise
             except Exception as e:
+                # XXX release syncing lock
                 logger.exception("Unhandled error while syncing "
                                  "soledad: %r" % (e,))
                 break
@@ -423,7 +435,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 local_db_path=local_db_path.encode(encoding),
                 server_url=server_url,
                 cert_file=cert_file.encode(encoding),
-                auth_token=auth_token)
+                auth_token=auth_token,
+                defer_encryption=True)
 
         # XXX All these errors should be handled by soledad itself,
         # and return a subclass of SoledadInitializationFailed
@@ -448,7 +461,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
         Raises SoledadSyncError if not successful.
         """
         try:
-            self._soledad.sync()
+            logger.debug("BOOTSTRAPPER: trying to sync Soledad....")
+            # pass defer_decryption=False to get inline decryption
+            # for debugging.
+            self._soledad.sync(defer_decryption=True)
         except SSLError as exc:
             logger.error("%r" % (exc,))
             raise SoledadSyncError("Failed to sync soledad")

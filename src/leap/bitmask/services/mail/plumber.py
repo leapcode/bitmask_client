@@ -83,7 +83,8 @@ def initialize_soledad(uuid, email, passwd,
         secrets,
         localdb,
         server_url,
-        cert_file)
+        cert_file,
+        defer_encryption=True)
 
     return soledad
 
