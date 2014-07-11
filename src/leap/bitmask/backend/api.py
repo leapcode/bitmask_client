@@ -45,6 +45,7 @@ API = (
     "provider_get_pinned_providers",
     "provider_get_supported_services",
     "provider_setup",
+    "settings_set_selected_gateway",
     "smtp_start_service",
     "smtp_stop_service",
     "soledad_bootstrap",

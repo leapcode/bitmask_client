@@ -129,6 +129,8 @@ class MainWindow(QtGui.QMainWindow):
         self._leap_signaler.start()
 
         self._settings = LeapSettings()
+        # gateway = self._settings.get_selected_gateway(provider)
+        # self._backend.settings_set_selected_gateway(provider, gateway)
 
         # Login Widget
         self._login_widget = LoginWidget(self._settings, self)

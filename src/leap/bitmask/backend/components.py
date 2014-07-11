@@ -31,7 +31,7 @@ from twisted.python import log
 import zope.interface
 import zope.proxy
 
-from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.backend.settings import Settings, GATEWAY_AUTOMATIC
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
@@ -602,7 +602,7 @@ class EIP(object):
             eip_get_gateway_country_code -> str
             eip_no_gateway
         """
-        leap_settings = LeapSettings()
+        settings = Settings()
 
         eip_config = eipconfig.EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
@@ -612,9 +612,9 @@ class EIP(object):
         eip_config.load(eipconfig.get_eipconfig_path(domain))
 
         gateway_selector = eipconfig.VPNGatewaySelector(eip_config)
-        gateway_conf = leap_settings.get_selected_gateway(domain)
+        gateway_conf = settings.get_selected_gateway(domain)
 
-        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+        if gateway_conf == GATEWAY_AUTOMATIC:
             gateways = gateway_selector.get_gateways()
         else:
             gateways = [gateway_conf]

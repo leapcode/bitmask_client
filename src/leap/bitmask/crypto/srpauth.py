@@ -32,7 +32,7 @@ from requests.adapters import HTTPAdapter
 from twisted.internet import threads
 from twisted.internet.defer import CancelledError
 
-from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.backend.settings import Settings
 from leap.bitmask.util import request_helpers as reqhelper
 from leap.bitmask.util.compat import requests_has_max_retries
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
@@ -151,7 +151,7 @@ class SRPAuth(object):
 
             self._provider_config = provider_config
             self._signaler = signaler
-            self._settings = LeapSettings()
+            self._settings = Settings()
 
             # **************************************************** #
             # Dependency injection helpers, override this for more

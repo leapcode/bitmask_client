@@ -149,6 +149,8 @@ class EIPPreferencesWindow(QtGui.QDialog):
             gateway = self.ui.cbGateways.itemData(idx)
 
         self._settings.set_selected_gateway(provider, gateway)
+        self._backend.settings_set_selected_gateway(provider=provider,
+                                                    gateway=gateway)
 
         msg = self.tr(
             "Gateway settings for provider '{0}' saved.").format(provider)

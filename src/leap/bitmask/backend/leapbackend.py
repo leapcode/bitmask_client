@@ -24,6 +24,7 @@ import zope.proxy
 
 from leap.bitmask.backend import components
 from leap.bitmask.backend.backend import Backend
+from leap.bitmask.backend.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,8 @@ class LeapBackend(Backend):
         Constructor for the backend.
         """
         Backend.__init__(self)
+
+        self._settings = Settings()
 
         # Objects needed by several components, so we make a proxy and pass
         # them around
@@ -515,3 +518,14 @@ class LeapBackend(Backend):
             imap_stopped
         """
         self._mail.stop_imap_service()
+
+    def settings_set_selected_gateway(self, provider, gateway):
+        """
+        Set the selected gateway for a given provider.
+
+        :param provider: provider domain
+        :type provider: str
+        :param gateway: gateway to use as default
+        :type gateway: str
+        """
+        self._settings.set_selected_gateway(provider, gateway)

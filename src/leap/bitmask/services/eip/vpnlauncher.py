@@ -27,7 +27,7 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 
 from leap.bitmask.config import flags
-from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.backend.settings import Settings, GATEWAY_AUTOMATIC
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
@@ -122,12 +122,12 @@ class VPNLauncher(object):
         :rtype: list
         """
         gateways = []
-        leap_settings = LeapSettings()
+        settings = Settings()
         domain = providerconfig.get_domain()
-        gateway_conf = leap_settings.get_selected_gateway(domain)
+        gateway_conf = settings.get_selected_gateway(domain)
         gateway_selector = VPNGatewaySelector(eipconfig)
 
-        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+        if gateway_conf == GATEWAY_AUTOMATIC:
             gateways = gateway_selector.get_gateways()
         else:
             gateways = [gateway_conf]

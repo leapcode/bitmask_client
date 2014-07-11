@@ -26,7 +26,7 @@ from functools import partial
 
 from twisted.internet import defer
 
-from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.backend.settings import Settings
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
@@ -114,7 +114,7 @@ class MBOXPlumber(object):
         self.user = user
         self.mdir = mdir
         self.sol = None
-        self._settings = LeapSettings()
+        self._settings = Settings()
 
         provider_config_path = os.path.join(get_path_prefix(),
                                             get_provider_path(provider))
