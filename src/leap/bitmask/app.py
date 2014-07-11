@@ -41,10 +41,8 @@
 #                (thanks to: http://www.glassgiant.com/ascii/)
 import multiprocessing
 import os
-import signal
 import sys
 
-from functools import partial
 
 from leap.bitmask.backend.utils import generate_certificates
 
@@ -109,27 +107,6 @@ def do_mail_plumbing(opts):
         plumber.import_maildir(opts.acct, opts.import_maildir)
         sys.exit(0)
     # XXX catch when import is used w/o acct
-
-
-def sigterm_handler(logger, gui_process, backend_process, signum, frame):
-    """
-    Signal handler that quits the running app cleanly.
-
-    :param logger: the configured logger object.
-    :type logger: logging.Logger
-    :param gui_process: the GUI process
-    :type gui_process: multiprocessing.Process
-    :param backend_process: the backend process
-    :type backend_process: multiprocessing.Process
-    :param signum: number of the signal received (e.g. SIGINT -> 2)
-    :type signum: int
-    :param frame: current stack frame
-    :type frame: frame or None
-    """
-    logger.debug("SIGTERM catched, terminating processes.")
-    gui_process.terminate()
-    # Don't terminate the backend, the frontend takes care of that.
-    # backend_process.terminate()
 
 
 def start_app():
@@ -203,18 +180,13 @@ def start_app():
 
     flags_dict = flags_to_dict()
 
-    app = lambda: run_frontend(options, flags_dict)
-    gui_process = multiprocessing.Process(target=app, name='Frontend')
-    gui_process.start()
-
     backend = lambda: run_backend(opts.danger, flags_dict)
     backend_process = multiprocessing.Process(target=backend, name='Backend')
+    backend_process.daemon = True
     backend_process.start()
 
-    handle_sigterm = partial(sigterm_handler, logger,
-                             gui_process, backend_process)
-    signal.signal(signal.SIGTERM, handle_sigterm)
-    signal.signal(signal.SIGINT, handle_sigterm)
+    run_frontend(options, flags_dict)
+
 
 
 if __name__ == "__main__":

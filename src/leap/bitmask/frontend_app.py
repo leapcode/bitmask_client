@@ -101,10 +101,9 @@ def run_frontend(options, flags_dict):
 
     window = MainWindow(start_hidden=start_hidden)
 
-    sigterm_handler = partial(signal_handler, window)
-    # ignore SIGINT since app.py takes care of signaling SIGTERM to us.
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-    signal.signal(signal.SIGTERM, sigterm_handler)
+    sig_handler = partial(signal_handler, window)
+    signal.signal(signal.SIGINT, sig_handler)
+    signal.signal(signal.SIGTERM, sig_handler)
 
     sys.exit(qApp.exec_())
 
