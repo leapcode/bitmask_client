@@ -187,6 +187,7 @@ class MainWindow(QtGui.QMainWindow):
         self._services_being_stopped = {}
 
         # used to know if we are in the final steps of quitting
+        self._quitting = False
         self._finally_quitting = False
 
         self._backend_connected_signals = []
@@ -1762,8 +1763,10 @@ class MainWindow(QtGui.QMainWindow):
         Start the quit sequence and wait for services to finish.
         Cleanup and close the main window before quitting.
         """
-        # TODO separate the shutting down of services from the
-        # UI stuff.
+        if self._quitting:
+            return
+
+        self._quitting = True
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
