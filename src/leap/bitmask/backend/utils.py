@@ -23,6 +23,7 @@ import shutil
 import zmq.auth
 
 from leap.bitmask.util import get_path_prefix
+from leap.common.files import mkdir_p
 
 KEYS_DIR = os.path.join(get_path_prefix(), 'leap', 'zmq_certificates')
 
@@ -34,7 +35,7 @@ def generate_certificates():
     # Create directory for certificates, remove old content if necessary
     if os.path.exists(KEYS_DIR):
         shutil.rmtree(KEYS_DIR)
-    os.mkdir(KEYS_DIR)
+    mkdir_p(KEYS_DIR)
 
     # create new keys in certificates dir
     # public_file, secret_file = create_certificates(...)
