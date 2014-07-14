@@ -188,6 +188,5 @@ def start_app():
     run_frontend(options, flags_dict)
 
 
-
 if __name__ == "__main__":
     start_app()

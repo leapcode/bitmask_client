@@ -256,7 +256,7 @@ class MainWindow(QtGui.QMainWindow):
         # XXX should connect to mail_conductor.start_mail_service instead
         self.soledad_ready.connect(self._start_smtp_bootstrapping)
         self.soledad_ready.connect(self._start_imap_service)
-        ################################# end Qt Signals connection ########
+        # ################################ end Qt Signals connection ########
 
         init_platform()
 
@@ -1295,7 +1295,7 @@ class MainWindow(QtGui.QMainWindow):
             sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
             sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
-        if not MX_SERVICE in self._provider_details['services']:
+        if MX_SERVICE not in self._provider_details['services']:
             self._set_mx_visible(False)
 
     def _start_eip_bootstrap(self):
