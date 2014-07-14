@@ -181,6 +181,7 @@ class MainWindow(QtGui.QMainWindow):
         self._services_being_stopped = {}
 
         # used to know if we are in the final steps of quitting
+        self._quitting = False
         self._finally_quitting = False
 
         self._backend_connected_signals = []
