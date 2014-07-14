@@ -27,7 +27,6 @@ from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask.config import flags
-from leap.bitmask.gui import locale_rc  # noqa - silence pylint
 from leap.bitmask.gui.mainwindow import MainWindow
 from leap.bitmask.util import dict_to_flags
 
@@ -35,20 +34,24 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def signal_handler(window, signum, frame):
+def signal_handler(window, pid, signum, frame):
     """
     Signal handler that quits the running app cleanly.
 
     :param window: a window with a `quit` callable
     :type window: MainWindow
+    :param pid: process id of the main process.
+    :type pid: int
     :param signum: number of the signal received (e.g. SIGINT -> 2)
     :type signum: int
     :param frame: current stack frame
     :type frame: frame or None
     """
-    pname = multiprocessing.current_process().name
-    logger.debug("{0}: SIGNAL #{1} catched.".format(pname, signum))
-    window.quit()
+    my_pid = os.getpid()
+    if pid == my_pid:
+        pname = multiprocessing.current_process().name
+        logger.debug("{0}: SIGNAL #{1} catched.".format(pname, signum))
+        window.quit()
 
 
 def run_frontend(options, flags_dict):
@@ -101,7 +104,8 @@ def run_frontend(options, flags_dict):
 
     window = MainWindow(start_hidden=start_hidden)
 
-    sig_handler = partial(signal_handler, window)
+    my_pid = os.getpid()
+    sig_handler = partial(signal_handler, window, my_pid)
     signal.signal(signal.SIGINT, sig_handler)
     signal.signal(signal.SIGTERM, sig_handler)
 
