@@ -38,6 +38,8 @@ class Signaler(object):
     """
     PORT = "5667"
     SERVER = "tcp://localhost:%s" % PORT
+    POLL_TIMEOUT = 1000  # ms
+    POLL_TRIES = 3
 
     def __init__(self):
         """
@@ -148,13 +150,23 @@ class Signaler(object):
         # logger.debug("Signaling '{0}'".format(request))
         self._socket.send(request)
 
-        # Get the reply.
-        try:
-            self._socket.recv()
-            # response = self._socket.recv()
-            # msg = "Received reply for '{0}' -> '{1}'"
-            # msg = msg.format(request, response)
-            # logger.debug(msg)
-        except zmq.error.Again as e:
-            msg = "Timeout error contacting signaler. {0!r}".format(e)
+        poll = zmq.Poller()
+        poll.register(self._socket, zmq.POLLIN)
+
+        reply = None
+        tries = 0
+
+        while tries < self.POLL_TRIES:
+            socks = dict(poll.poll(self.POLL_TIMEOUT))
+            if socks.get(self._socket) == zmq.POLLIN:
+                reply = self._socket.recv()
+                break
+
+            tries += 1
+
+        if reply is None:
+            msg = "Timeout error contacting backend."
             logger.critical(msg)
+        # else:
+        #     msg = "Received reply for '{0}' -> '{1}'".format(request, reply)
+        #     logger.debug(msg)
