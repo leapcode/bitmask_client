@@ -649,7 +649,8 @@ class EIP(object):
         launcher = get_vpn_launcher()
         ovpn_path = force_eval(launcher.OPENVPN_BIN_PATH)
         if not os.path.isfile(ovpn_path):
-            logger.error("Cannot start OpenVPN, binary not found")
+            logger.error("Cannot start OpenVPN, binary not found: %s" %
+                         (ovpn_path,))
             return False
 
         # check for other problems

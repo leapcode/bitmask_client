@@ -255,6 +255,9 @@ class VPN(object):
         """
         Tear the firewall down using the privileged wrapper.
         """
+        if IS_MAC:
+            # We don't support Mac so far
+            return True
         BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
         exitCode = subprocess.call(["pkexec",
                                     BM_ROOT, "firewall", "stop"])
