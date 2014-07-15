@@ -33,7 +33,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class SignalerQt(QtCore.QThread):
+class SignalerQt(QtCore.QObject):
     """
     Signaling server.
     Receives signals from the signaling client and emit Qt signals for the GUI.
@@ -42,11 +42,24 @@ class SignalerQt(QtCore.QThread):
     BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
 
     def __init__(self):
-        QtCore.QThread.__init__(self)
-        self._do_work = threading.Event()
-        self._do_work.set()
+        QtCore.QObject.__init__(self)
 
-    def run(self):
+        # Note: we use a plain thread instead of a QThread since works better.
+        # The signaler was not responding on OSX if the worker loop was run in
+        # a QThread.
+        # Possibly, ZMQ was not getting cycles to do work because Qt not
+        # receiving focus or something.
+        self._worker_thread = threading.Thread(target=self._run)
+        self._do_work = threading.Event()
+
+    def start(self):
+        """
+        Start the worker thread for the signaler server.
+        """
+        self._do_work.set()
+        self._worker_thread.start()
+
+    def _run(self):
         """
         Start a loop to process the ZMQ requests from the signaler client.
         """
