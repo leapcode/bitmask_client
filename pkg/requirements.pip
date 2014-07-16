@@ -19,6 +19,8 @@ python-daemon # this should not be needed for Windows.
 keyring
 zope.proxy
 
+pyzmq
+
 leap.common>=0.3.7
 leap.soledad.client>=0.5.0
 leap.keymanager>=0.3.8

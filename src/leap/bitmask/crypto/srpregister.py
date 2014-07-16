@@ -179,11 +179,11 @@ class SRPRegister(QtCore.QObject):
             return
 
         if status_code in self.STATUS_OK:
-            self._signaler.signal(self._signaler.SRP_REGISTRATION_FINISHED)
+            self._signaler.signal(self._signaler.srp_registration_finished)
         elif status_code == self.STATUS_TAKEN:
-            self._signaler.signal(self._signaler.SRP_REGISTRATION_TAKEN)
+            self._signaler.signal(self._signaler.srp_registration_taken)
         else:
-            self._signaler.signal(self._signaler.SRP_REGISTRATION_FAILED)
+            self._signaler.signal(self._signaler.srp_registration_failed)
 
 
 if __name__ == "__main__":

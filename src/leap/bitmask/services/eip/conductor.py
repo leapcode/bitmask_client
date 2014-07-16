@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class EIPConductor(object):
 
-    def __init__(self, settings, backend, **kwargs):
+    def __init__(self, settings, backend, leap_signaler, **kwargs):
         """
         Initializes EIP Conductor.
 
@@ -46,6 +46,7 @@ class EIPConductor(object):
         self.eip_connection = EIPConnection()
         self.eip_name = get_service_display_name(EIP_SERVICE)
         self._settings = settings
+        self._leap_signaler = leap_signaler
         self._backend = backend
 
         self._eip_status = None
@@ -76,7 +77,7 @@ class EIPConductor(object):
         """
         Connect to backend signals.
         """
-        signaler = self._backend.signaler
+        signaler = self._leap_signaler
 
         # for conductor
         signaler.eip_process_restart_tls.connect(self._do_eip_restart)
@@ -201,7 +202,7 @@ class EIPConductor(object):
             # we bypass the on_eip_disconnected here
             plug_restart_on_disconnected()
             self.qtsigs.disconnected_signal.emit()
-            #QtDelayedCall(0, self.qtsigs.disconnected_signal.emit)
+            # QtDelayedCall(0, self.qtsigs.disconnected_signal.emit)
             # ...and reconnect the original signal again, after having used the
             # diversion
             QtDelayedCall(500, reconnect_disconnected_signal)
@@ -300,7 +301,7 @@ class EIPConductor(object):
         # XXX FIXME --- check exitcode is != 0 really.
         # bitmask-root is masking the exitcode, so we might need
         # to fix it on that side.
-        #if exitCode != 0 and not self.user_stopped_eip:
+        # if exitCode != 0 and not self.user_stopped_eip:
         if not self.user_stopped_eip:
             eip_status_label = self._eip_status.tr(
                 "{0} finished in an unexpected manner!")

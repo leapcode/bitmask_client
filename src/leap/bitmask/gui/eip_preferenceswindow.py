@@ -33,7 +33,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
     """
     Window that displays the EIP preferences.
     """
-    def __init__(self, parent, domain, backend):
+    def __init__(self, parent, domain, backend, leap_signaler):
         """
         :param parent: parent object of the EIPPreferencesWindow.
         :type parent: QWidget
@@ -46,6 +46,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
         self._settings = LeapSettings()
+        self._leap_signaler = leap_signaler
         self._backend = backend
 
         # Load UI
@@ -96,7 +97,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         if not providers:
             return
 
-        self._backend.eip_get_initialized_providers(providers)
+        self._backend.eip_get_initialized_providers(domains=providers)
 
     @QtCore.Slot(list)
     def _load_providers_in_combo(self, providers):
@@ -148,6 +149,8 @@ class EIPPreferencesWindow(QtGui.QDialog):
             gateway = self.ui.cbGateways.itemData(idx)
 
         self._settings.set_selected_gateway(provider, gateway)
+        self._backend.settings_set_selected_gateway(provider=provider,
+                                                    gateway=gateway)
 
         msg = self.tr(
             "Gateway settings for provider '{0}' saved.").format(provider)
@@ -174,7 +177,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         domain = self.ui.cbProvidersGateway.itemData(domain_idx)
         self._selected_domain = domain
 
-        self._backend.eip_get_gateways_list(domain)
+        self._backend.eip_get_gateways_list(domain=domain)
 
     @QtCore.Slot(list)
     def _update_gateways_list(self, gateways):
@@ -248,7 +251,7 @@ class EIPPreferencesWindow(QtGui.QDialog):
         self.ui.cbGateways.setEnabled(False)
 
     def _backend_connect(self):
-        sig = self._backend.signaler
+        sig = self._leap_signaler
         sig.eip_get_gateways_list.connect(self._update_gateways_list)
         sig.eip_get_gateways_list_error.connect(self._gateways_list_error)
         sig.eip_uninitialized_provider.connect(

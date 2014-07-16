@@ -24,7 +24,6 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
-from leap.bitmask.config import flags
 from leap.bitmask.services import get_service_display_name, EIP_SERVICE
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.util.averages import RateMovingAverage
@@ -44,7 +43,7 @@ class EIPStatusWidget(QtGui.QWidget):
     RATE_STR = "%1.2f KB/s"
     TOTAL_STR = "%1.2f Kb"
 
-    def __init__(self, parent=None, eip_conductor=None):
+    def __init__(self, parent, eip_conductor, leap_signaler):
         """
         :param parent: the parent of the widget.
         :type parent: QObject
@@ -59,6 +58,8 @@ class EIPStatusWidget(QtGui.QWidget):
 
         self.ui = Ui_EIPStatus()
         self.ui.setupUi(self)
+
+        self._leap_signaler = leap_signaler
 
         self.eip_conductor = eip_conductor
         self.eipconnection = eip_conductor.eip_connection
@@ -98,7 +99,7 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         Connect backend signals.
         """
-        signaler = self.eip_conductor._backend.signaler
+        signaler = self._leap_signaler
 
         signaler.eip_openvpn_already_running.connect(
             self._on_eip_openvpn_already_running)
@@ -121,8 +122,8 @@ class EIPStatusWidget(QtGui.QWidget):
         # XXX we cannot connect this signal now because
         # it interferes with the proper notifications during restarts
         # without available network.
-        #signaler.eip_network_unreachable.connect(
-            #self._on_eip_network_unreachable)
+        # signaler.eip_network_unreachable.connect(
+        #     self._on_eip_network_unreachable)
 
     def _make_status_clickable(self):
         """
@@ -324,7 +325,7 @@ class EIPStatusWidget(QtGui.QWidget):
         Triggered after a successful login.
         Enables the start button.
         """
-        #logger.debug('Showing EIP start button')
+        # logger.debug('Showing EIP start button')
         self.eip_button.show()
 
         # Restore the eip action menu
@@ -543,7 +544,7 @@ class EIPStatusWidget(QtGui.QWidget):
         elif vpn_state == "ALREADYRUNNING":
             # Put the following calls in Qt's event queue, otherwise
             # the UI won't update properly
-            #self.send_disconnect_signal()
+            # self.send_disconnect_signal()
             QtDelayedCall(
                 0, self.eipconnection.qtsigns.do_disconnect_signal.emit)
             msg = self.tr("Unable to start VPN, it's already running.")
@@ -587,16 +588,23 @@ class EIPStatusWidget(QtGui.QWidget):
         self._systray.setIcon(QtGui.QIcon(selected_pixmap_tray))
         self._eip_status_menu.setTitle(tray_message)
 
-    def set_provider(self, provider):
+    def set_provider(self, provider, country_code):
+        """
+        Set the provider used right now, name and flag (if available).
+
+        :param provider: the provider in use.
+        :type provider: str
+        :param country_code: the country code of the gateway in use.
+        :type country_code: str
+        """
         self._provider = provider
 
         self.ui.lblEIPMessage.setText(
             self.tr("Routing traffic through: <b>{0}</b>").format(
                 provider))
 
-        ccode = flags.CURRENT_VPN_COUNTRY
-        if ccode is not None:
-            self.set_country_code(ccode)
+        if country_code is not None:
+            self.set_country_code(country_code)
 
     def set_country_code(self, code):
         """
@@ -729,7 +737,7 @@ class EIPStatusWidget(QtGui.QWidget):
         self.set_eip_status_icon("error")
 
     def set_eipstatus_off(self, error=True):
-    # XXX this should be handled by the state machine.
+        # XXX this should be handled by the state machine.
         """
         Sets eip status to off
         """

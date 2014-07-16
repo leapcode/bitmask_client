@@ -1,0 +1,3 @@
+- Split frontend/backend in different files. Closes #5719.
+- Implement ZMQ based messaging system. Closes #5733.
+- Launch the backend in a different process than the app. Closes #5734.

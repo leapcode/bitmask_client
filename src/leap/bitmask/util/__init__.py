@@ -129,3 +129,28 @@ def force_eval(items):
         return map(do_eval, items)
     else:
         return do_eval(items)
+
+
+def dict_to_flags(values):
+    """
+    Set the flags values given in the values dict.
+    If a value isn't provided then use the already existing one.
+
+    :param values: the values to set.
+    :type values: dict.
+    """
+    for k, v in values.items():
+        setattr(flags, k, v)
+
+
+def flags_to_dict():
+    """
+    Get the flags values in a dict.
+
+    :return: the values of flags into a dict.
+    :rtype: dict.
+    """
+    items = [i for i in dir(flags) if i[0] != '_']
+    values = {i: getattr(flags, i) for i in items}
+
+    return values

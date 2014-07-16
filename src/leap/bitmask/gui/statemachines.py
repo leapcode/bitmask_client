@@ -240,9 +240,9 @@ class CompositeMachine(QStateMachine):
         c2.qtsigs.disconnected_signal.connect(self.off_ev2_slot)
 
     # XXX why is this getting deletec in c++?
-    #Traceback (most recent call last):
-    #self.postEvent(self.events.on_ev2)
-    #RuntimeError: Internal C++ object (ConnectedEvent2) already deleted.
+    # Traceback (most recent call last):
+    # self.postEvent(self.events.on_ev2)
+    # RuntimeError: Internal C++ object (ConnectedEvent2) already deleted.
     # XXX trying the following workaround, since
     # I cannot find why in the world this is getting deleted :(
     # XXX refactor!
@@ -318,9 +318,8 @@ class ConnectionMachineBuilder(object):
         components = self._conn.components
 
         if components is None:
-        # simple case: connection definition inherits directly from
-        # the abstract connection.
-
+            # simple case: connection definition inherits directly from
+            # the abstract connection.
             leap_assert_type(self._conn, connections.AbstractLEAPConnection)
             return self._make_simple_machine(self._conn, **kwargs)
 

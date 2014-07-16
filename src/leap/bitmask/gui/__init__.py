@@ -19,5 +19,6 @@ init file for leap.gui
 """
 # This was added for coverage and testing, but when doing the osx
 # bundle with py2app it fails because of this, so commenting for now
+# Also creates conflicts with the new frontend/backend separation.
 # app = __import__("app", globals(), locals(), [], 2)
 # __all__ = [app]

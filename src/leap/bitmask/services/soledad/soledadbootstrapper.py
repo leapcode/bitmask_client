@@ -134,14 +134,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
     MAX_INIT_RETRIES = 10
     MAX_SYNC_RETRIES = 10
     WAIT_MAX_SECONDS = 600
-    #WAIT_STEP_SECONDS = 1
+    # WAIT_STEP_SECONDS = 1
     WAIT_STEP_SECONDS = 5
 
     def __init__(self, signaler=None):
         AbstractBootstrapper.__init__(self, signaler)
 
         if signaler is not None:
-            self._cancel_signal = signaler.SOLEDAD_CANCELLED_BOOTSTRAP
+            self._cancel_signal = signaler.soledad_cancelled_bootstrap
 
         self._provider_config = None
         self._soledad_config = None
@@ -190,11 +190,11 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._uuid = uuid
         try:
             self.load_and_sync_soledad(uuid, offline=True)
-            self._signaler.signal(self._signaler.SOLEDAD_OFFLINE_FINISHED)
+            self._signaler.signal(self._signaler.soledad_offline_finished)
         except Exception as e:
             # TODO: we should handle more specific exceptions in here
             logger.exception(e)
-            self._signaler.signal(self._signaler.SOLEDAD_OFFLINE_FAILED)
+            self._signaler.signal(self._signaler.soledad_offline_failed)
 
     def _get_soledad_local_params(self, uuid, offline=False):
         """
@@ -390,7 +390,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 continue
             except InvalidAuthTokenError:
                 self._signaler.signal(
-                    self._signaler.SOLEDAD_INVALID_AUTH_TOKEN)
+                    self._signaler.soledad_invalid_auth_token)
                 raise
             except Exception as e:
                 # XXX release syncing lock
@@ -649,11 +649,11 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._password = password
 
         if flags.OFFLINE:
-            signal_finished = self._signaler.SOLEDAD_OFFLINE_FINISHED
-            signal_failed = self._signaler.SOLEDAD_OFFLINE_FAILED
+            signal_finished = self._signaler.soledad_offline_finished
+            signal_failed = self._signaler.soledad_offline_failed
         else:
-            signal_finished = self._signaler.SOLEDAD_BOOTSTRAP_FINISHED
-            signal_failed = self._signaler.SOLEDAD_BOOTSTRAP_FAILED
+            signal_finished = self._signaler.soledad_bootstrap_finished
+            signal_failed = self._signaler.soledad_bootstrap_failed
 
         try:
             self._download_config()

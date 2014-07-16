@@ -27,7 +27,7 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 
 from leap.bitmask.config import flags
-from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.backend.settings import Settings, GATEWAY_AUTOMATIC
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
@@ -122,12 +122,12 @@ class VPNLauncher(object):
         :rtype: list
         """
         gateways = []
-        leap_settings = LeapSettings()
+        settings = Settings()
         domain = providerconfig.get_domain()
-        gateway_conf = leap_settings.get_selected_gateway(domain)
+        gateway_conf = settings.get_selected_gateway(domain)
         gateway_selector = VPNGatewaySelector(eipconfig)
 
-        if gateway_conf == leap_settings.GATEWAY_AUTOMATIC:
+        if gateway_conf == GATEWAY_AUTOMATIC:
             gateways = gateway_selector.get_gateways()
         else:
             gateways = [gateway_conf]
@@ -135,12 +135,6 @@ class VPNLauncher(object):
         if not gateways:
             logger.error('No gateway was found!')
             raise VPNLauncherException('No gateway was found!')
-
-        # this only works for selecting the first gateway, as we're
-        # currently doing.
-        ccodes = gateway_selector.get_gateways_country_code()
-        gateway_ccode = ccodes[gateways[0]]
-        flags.CURRENT_VPN_COUNTRY = gateway_ccode
 
         logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
         return gateways
@@ -175,11 +169,11 @@ class VPNLauncher(object):
         leap_assert_type(providerconfig, ProviderConfig)
 
         # XXX this still has to be changed on osx and windows accordingly
-        #kwargs = {}
-        #openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
-        #if not openvpn_possibilities:
-            #raise OpenVPNNotFoundException()
-        #openvpn = first(openvpn_possibilities)
+        # kwargs = {}
+        # openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
+        # if not openvpn_possibilities:
+        #     raise OpenVPNNotFoundException()
+        # openvpn = first(openvpn_possibilities)
         # -----------------------------------------
         openvpn_path = force_eval(kls.OPENVPN_BIN_PATH)
 

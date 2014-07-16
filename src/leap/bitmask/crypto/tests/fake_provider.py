@@ -156,7 +156,7 @@ def getSession(self, sessionInterface=None):
     put the right cookie name in place
     """
     if not self.session:
-        #cookiename = b"_".join([b'TWISTED_SESSION'] + self.sitepath)
+        # cookiename = b"_".join([b'TWISTED_SESSION'] + self.sitepath)
         cookiename = b"_".join([b'_session_id'] + self.sitepath)
         sessionCookie = self.getCookie(cookiename)
         if sessionCookie:
@@ -321,7 +321,7 @@ class OpenSSLServerContextFactory(object):
         Create an SSL context.
         """
         ctx = SSL.Context(SSL.SSLv23_METHOD)
-        #ctx = SSL.Context(SSL.TLSv1_METHOD)
+        # ctx = SSL.Context(SSL.TLSv1_METHOD)
         ctx.use_certificate_file(where('leaptestscert.pem'))
         ctx.use_privatekey_file(where('leaptestskey.pem'))
 

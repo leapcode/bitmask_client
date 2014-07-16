@@ -87,8 +87,8 @@ class LinuxPolicyChecker(PolicyChecker):
                 else self.LINUX_POLKIT_FILE)
 
     def is_missing_policy_permissions(self):
-    # FIXME this name is quite confusing, it does not have anything to do with
-    # file permissions.
+        # FIXME this name is quite confusing, it does not have anything to do
+        # with file permissions.
         """
         Returns True if we could not find the appropriate policykit file
         in place
