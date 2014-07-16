@@ -194,8 +194,8 @@ class ProviderBootstrapper(AbstractBootstrapper):
         verify = self.verify
 
         if mtime:  # the provider.json exists
-        # So, we're getting it from the api.* and checking against
-        # the provider ca.
+            # So, we're getting it from the api.* and checking against
+            # the provider ca.
             try:
                 provider_config = ProviderConfig()
                 provider_config.load(provider_json)

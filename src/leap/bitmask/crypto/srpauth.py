@@ -24,7 +24,7 @@ import requests
 import srp
 import json
 
-#this error is raised from requests
+# this error is raised from requests
 from simplejson.decoder import JSONDecodeError
 from functools import partial
 from requests.adapters import HTTPAdapter

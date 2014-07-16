@@ -486,9 +486,9 @@ class EIP(object):
                 self._signaler.signal(self._signaler.eip_stopped)
                 return
             else:
-                #msg = "Firewall is not down yet, waiting... {0} of {1}"
-                #msg = msg.format(retry, MAX_FW_WAIT_RETRIES)
-                #logger.debug(msg)
+                # msg = "Firewall is not down yet, waiting... {0} of {1}"
+                # msg = msg.format(retry, MAX_FW_WAIT_RETRIES)
+                # logger.debug(msg)
                 time.sleep(FW_WAIT_STEP)
                 retry += 1
         logger.warning("After waiting, firewall is not down... "

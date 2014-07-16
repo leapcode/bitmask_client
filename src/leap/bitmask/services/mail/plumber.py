@@ -232,8 +232,8 @@ class MBOXPlumber(object):
 
         with open(mail_filename) as f:
             mail_string = f.read()
-            #uid = self._mbox.getUIDNext()
-            #print "saving with UID: %s" % uid
+            # uid = self._mbox.getUIDNext()
+            # print "saving with UID: %s" % uid
             d = self._mbox.messages.add_msg(
                 mail_string, notify_on_disk=True)
         return d

@@ -30,7 +30,7 @@ import time
 try:
     import unittest2 as unittest
 except ImportError:
-    import unittest
+    import unittest  # noqa - skip 'unused import' warning
 
 from nose.twistedtools import deferred, reactor
 from twisted.internet import threads

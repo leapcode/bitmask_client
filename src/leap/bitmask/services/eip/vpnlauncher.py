@@ -169,11 +169,11 @@ class VPNLauncher(object):
         leap_assert_type(providerconfig, ProviderConfig)
 
         # XXX this still has to be changed on osx and windows accordingly
-        #kwargs = {}
-        #openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
-        #if not openvpn_possibilities:
-            #raise OpenVPNNotFoundException()
-        #openvpn = first(openvpn_possibilities)
+        # kwargs = {}
+        # openvpn_possibilities = which(kls.OPENVPN_BIN, **kwargs)
+        # if not openvpn_possibilities:
+        #     raise OpenVPNNotFoundException()
+        # openvpn = first(openvpn_possibilities)
         # -----------------------------------------
         openvpn_path = force_eval(kls.OPENVPN_BIN_PATH)
 

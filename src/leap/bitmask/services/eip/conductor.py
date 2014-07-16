@@ -202,7 +202,7 @@ class EIPConductor(object):
             # we bypass the on_eip_disconnected here
             plug_restart_on_disconnected()
             self.qtsigs.disconnected_signal.emit()
-            #QtDelayedCall(0, self.qtsigs.disconnected_signal.emit)
+            # QtDelayedCall(0, self.qtsigs.disconnected_signal.emit)
             # ...and reconnect the original signal again, after having used the
             # diversion
             QtDelayedCall(500, reconnect_disconnected_signal)
@@ -301,7 +301,7 @@ class EIPConductor(object):
         # XXX FIXME --- check exitcode is != 0 really.
         # bitmask-root is masking the exitcode, so we might need
         # to fix it on that side.
-        #if exitCode != 0 and not self.user_stopped_eip:
+        # if exitCode != 0 and not self.user_stopped_eip:
         if not self.user_stopped_eip:
             eip_status_label = self._eip_status.tr(
                 "{0} finished in an unexpected manner!")

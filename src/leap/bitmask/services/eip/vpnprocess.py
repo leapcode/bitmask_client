@@ -817,7 +817,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         leap_assert_type(eipconfig, EIPConfig)
         leap_assert_type(providerconfig, ProviderConfig)
 
-        #leap_assert(not self.isRunning(), "Starting process more than once!")
+        # leap_assert(not self.isRunning(), "Starting process more than once!")
 
         self._eipconfig = eipconfig
         self._providerconfig = providerconfig

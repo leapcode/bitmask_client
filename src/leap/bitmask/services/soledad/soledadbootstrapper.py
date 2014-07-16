@@ -134,7 +134,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
     MAX_INIT_RETRIES = 10
     MAX_SYNC_RETRIES = 10
     WAIT_MAX_SECONDS = 600
-    #WAIT_STEP_SECONDS = 1
+    # WAIT_STEP_SECONDS = 1
     WAIT_STEP_SECONDS = 5
 
     def __init__(self, signaler=None):

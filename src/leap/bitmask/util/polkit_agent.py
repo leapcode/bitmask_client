@@ -39,9 +39,9 @@ def _launch_agent():
         logger.error('Exception while running polkit authentication agent '
                      '%s' % (exc,))
         # XXX fix KDE launch. See: #3755
-        #try:
-            #subprocess.call(KDE_PATH)
-        #except Exception as exc:
+        # try:
+        #     subprocess.call(KDE_PATH)
+        # except Exception as exc:
 
 
 def launch():

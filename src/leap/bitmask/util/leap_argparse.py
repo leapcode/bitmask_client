@@ -107,19 +107,19 @@ def build_parser():
                              'against domains.')
 
     # Not in use, we might want to reintroduce them.
-    #parser.add_argument('-i', '--no-provider-checks',
-                        #action="store_true", default=False,
-                        #help="skips download of provider config files. gets "
-                        #"config from local files only. Will fail if cannot "
-                        #"find any")
-    #parser.add_argument('-k', '--no-ca-verify',
-                        #action="store_true", default=False,
-                        #help="(insecure). Skips verification of the server "
-                        #"certificate used in TLS handshake.")
-    #parser.add_argument('-c', '--config', metavar="CONFIG FILE", nargs='?',
-                        #action="store", dest="config_file",
-                        #type=argparse.FileType('r'),
-                        #help='optional config file')
+    # parser.add_argument('-i', '--no-provider-checks',
+    #                     action="store_true", default=False,
+    #                     help="skips download of provider config files. gets "
+    #                     "config from local files only. Will fail if cannot "
+    #                     "find any")
+    # parser.add_argument('-k', '--no-ca-verify',
+    #                     action="store_true", default=False,
+    #                     help="(insecure). Skips verification of the server "
+    #                     "certificate used in TLS handshake.")
+    # parser.add_argument('-c', '--config', metavar="CONFIG FILE", nargs='?',
+    #                     action="store", dest="config_file",
+    #                     type=argparse.FileType('r'),
+    #                     help='optional config file')
     return parser
 
 

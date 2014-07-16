@@ -37,7 +37,7 @@ leap_provider_spec = {
             'default': {u'en': u'Test Provider'}
         },
         'description': {
-            #'type': LEAPTranslatable,
+            # 'type': LEAPTranslatable,
             'type': dict,
             'format': 'translatable',
             'default': {u'en': u'Test provider'}
