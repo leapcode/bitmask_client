@@ -55,6 +55,8 @@ VERSION = "1"
 SCRIPT = "bitmask-root"
 NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
+BITMASK_CHAIN_NAT_OUT = "bitmask"
+BITMASK_CHAIN_NAT_POST = "bitmask_postrouting"
 
 IP = "/bin/ip"
 IPTABLES = "/sbin/iptables"
@@ -565,11 +567,16 @@ def firewall_start(args):
     # the 'filter' and the 'nat' tables.
     if not ipv4_chain_exists(BITMASK_CHAIN):
         ip4tables("--new-chain", BITMASK_CHAIN)
-    if not ipv4_chain_exists(BITMASK_CHAIN, 'nat'):
-        ip4tables("--table", "nat", "--new-chain", BITMASK_CHAIN)
+    if not ipv4_chain_exists(BITMASK_CHAIN_NAT_OUT, 'nat'):
+        ip4tables("--table", "nat", "--new-chain", BITMASK_CHAIN_NAT_OUT)
+    if not ipv4_chain_exists(BITMASK_CHAIN_NAT_POST, 'nat'):
+        ip4tables("--table", "nat", "--new-chain", BITMASK_CHAIN_NAT_POST)
     if not ipv6_chain_exists(BITMASK_CHAIN):
         ip6tables("--new-chain", BITMASK_CHAIN)
-    ip4tables("--table", "nat", "--insert", "OUTPUT", "--jump", BITMASK_CHAIN)
+    ip4tables("--table", "nat", "--insert", "OUTPUT",
+              "--jump", BITMASK_CHAIN_NAT_OUT)
+    ip4tables("--table", "nat", "--insert", "POSTROUTING",
+              "--jump", BITMASK_CHAIN_NAT_POST)
     iptables("--insert", "OUTPUT", "--jump", BITMASK_CHAIN)
 
     # route all ipv4 DNS over VPN
@@ -581,16 +588,32 @@ def firewall_start(args):
               "--jump", "ACCEPT")
     # rewrite all outgoing packets to use VPN DNS server
     # (DNS does sometimes use TCP!)
-    ip4tables("-t", "nat", "--append", BITMASK_CHAIN, "--protocol", "udp",
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_OUT, "-p", "udp",
               "--dport", "53", "--jump", "DNAT", "--to", NAMESERVER+":53")
-    ip4tables("-t", "nat", "--append", BITMASK_CHAIN, "--protocol", "tcp",
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_OUT, "-p", "tcp",
               "--dport", "53", "--jump", "DNAT", "--to", NAMESERVER+":53")
+    # enable masquerading, so that DNS packets rewritten by DNAT will
+    # have the correct source IPs
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_POST,
+              "--protocol", "udp", "--dport", "53", "--jump", "MASQUERADE")
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_POST,
+              "--protocol", "tcp", "--dport", "53", "--jump", "MASQUERADE")
 
-    # allow traffic to IPs on local network
+    # allow local network traffic
     if local_network_ipv4:
+        # allow local network destinations
         ip4tables("--append", BITMASK_CHAIN,
                   "--destination", local_network_ipv4, "-o", default_device,
                   "--jump", "ACCEPT")
+        # allow local network sources for DNS
+        # (required to allow local network DNS that gets rewritten by NAT
+        #  to get passed through so that MASQUERADE can set correct source IP)
+        ip4tables("--append", BITMASK_CHAIN,
+                  "--source", local_network_ipv4, "-o", default_device,
+                  "-p", "udp", "--dport", "53", "--jump", "ACCEPT")
+        ip4tables("--append", BITMASK_CHAIN,
+                  "--source", local_network_ipv4, "-o", default_device,
+                  "-p", "tcp", "--dport", "53", "--jump", "ACCEPT")
         # allow multicast Simple Service Discovery Protocol
         ip4tables("--append", BITMASK_CHAIN,
                   "--protocol", "udp",
@@ -649,19 +672,34 @@ def firewall_stop():
     command can be run at a time).
     """
     ok = True
+
+    # -t filter -D OUTPUT -j bitmask
     try:
         iptables("--delete", "OUTPUT", "--jump", BITMASK_CHAIN, throw=True)
     except subprocess.CalledProcessError as exc:
         debug("INFO: not able to remove bitmask firewall from OUTPUT chain "
               "(maybe it is already removed?)", exc)
         ok = False
+
+    # -t nat -D OUTPUT -j bitmask
     try:
         ip4tables("-t", "nat", "--delete", "OUTPUT",
-                  "--jump", BITMASK_CHAIN, throw=True)
+                  "--jump", BITMASK_CHAIN_NAT_OUT, throw=True)
     except subprocess.CalledProcessError as exc:
         debug("INFO: not able to remove bitmask firewall from OUTPUT chain "
               "in 'nat' table (maybe it is already removed?)", exc)
         ok = False
+
+    # -t nat -D POSTROUTING -j bitmask_postrouting
+    try:
+        ip4tables("-t", "nat", "--delete", "POSTROUTING",
+                  "--jump", BITMASK_CHAIN_NAT_POST, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to remove bitmask firewall from POSTROUTING "
+              "chain in 'nat' table (maybe it is already removed?)", exc)
+        ok = False
+
+    # -t filter --delete-chain bitmask
     try:
         ip4tables("--flush", BITMASK_CHAIN, throw=True)
         ip4tables("--delete-chain", BITMASK_CHAIN, throw=True)
@@ -669,13 +707,28 @@ def firewall_stop():
         debug("INFO: not able to flush and delete bitmask ipv4 firewall "
               "chain (maybe it is already destroyed?)", exc)
         ok = False
+
+    # -t nat --delete-chain bitmask
     try:
-        ip4tables("-t", "nat", "--flush", BITMASK_CHAIN, throw=True)
-        ip4tables("-t", "nat", "--delete-chain", BITMASK_CHAIN, throw=True)
+        ip4tables("-t", "nat", "--flush", BITMASK_CHAIN_NAT_OUT, throw=True)
+        ip4tables("-t", "nat", "--delete-chain",
+                  BITMASK_CHAIN_NAT_OUT, throw=True)
     except subprocess.CalledProcessError as exc:
         debug("INFO: not able to flush and delete bitmask ipv4 firewall "
               "chain in 'nat' table (maybe it is already destroyed?)", exc)
         ok = False
+
+    # -t nat --delete-chain bitmask_postrouting
+    try:
+        ip4tables("-t", "nat", "--flush", BITMASK_CHAIN_NAT_POST, throw=True)
+        ip4tables("-t", "nat", "--delete-chain",
+                  BITMASK_CHAIN_NAT_POST, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv4 firewall "
+              "chain in 'nat' table (maybe it is already destroyed?)", exc)
+        ok = False
+
+    # -t filter --delete-chain bitmask (ipv6)
     try:
         ip6tables("--flush", BITMASK_CHAIN, throw=True)
         ip6tables("--delete-chain", BITMASK_CHAIN, throw=True)
@@ -683,6 +736,7 @@ def firewall_stop():
         debug("INFO: not able to flush and delete bitmask ipv6 firewall "
               "chain (maybe it is already destroyed?)", exc)
         ok = False
+
     if not (ok or ipv4_chain_exists or ipv6_chain_exists):
         raise Exception("firewall might still be left up. "
                         "Please try `firewall stop` again.")
