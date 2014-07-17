@@ -137,7 +137,7 @@ def get_versions(default={}, verbose=False):
 cmdclass["freeze_debianver"] = freeze_debianver
 parsed_reqs = utils.parse_requirements()
 
-leap_launcher = 'bitmask=leap.bitmask.app:main'
+leap_launcher = 'bitmask=leap.bitmask.app:start_app'
 
 from setuptools.command.develop import develop as _develop
 
