@@ -53,7 +53,7 @@ class EIPBootstrapper(AbstractBootstrapper):
         self._eip_config = None
         self._download_if_needed = False
         if signaler is not None:
-            self._cancel_signal = signaler.EIP_CANCELLED_SETUP
+            self._cancel_signal = signaler.eip_cancelled_setup
 
     def _download_config(self, *args):
         """
@@ -116,9 +116,9 @@ class EIPBootstrapper(AbstractBootstrapper):
         self._download_if_needed = download_if_needed
 
         cb_chain = [
-            (self._download_config, self._signaler.EIP_CONFIG_READY),
+            (self._download_config, self._signaler.eip_config_ready),
             (self._download_client_certificates,
-             self._signaler.EIP_CLIENT_CERTIFICATE_READY)
+             self._signaler.eip_client_certificate_ready)
         ]
 
         return self.addCallbackChain(cb_chain)

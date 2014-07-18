@@ -74,6 +74,7 @@ def _is_auth_agent_running():
         'ps aux | grep "polkit-[m]ate-authentication-agent-1"',
         'ps aux | grep "[l]xpolkit"',
         'ps aux | grep "[g]nome-shell"',
+        'ps aux | grep "[f]ingerprint-polkit-agent"',
     ]
     is_running = [commands.getoutput(cmd) for cmd in polkit_options]
 
@@ -125,12 +126,6 @@ class LinuxVPNLauncher(VPNLauncher):
         def __call__(self):
             # LinuxPolicyChecker will give us the right path if standalone.
             return LinuxPolicyChecker.get_polkit_path()
-
-    class RESOLVCONF_BIN_PATH(object):
-        def __call__(self):
-            return ("/usr/local/sbin/leap-resolvconf" if flags.STANDALONE else
-                    "/sbin/resolvconf")
-        # this only will work with debian/ubuntu distros.
 
     OTHER_FILES = (POLKIT_PATH, BITMASK_ROOT, OPENVPN_BIN_PATH)
 

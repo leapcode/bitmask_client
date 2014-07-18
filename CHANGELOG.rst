@@ -6,6 +6,23 @@ History
 2014
 ====
 
+0.6.0 July 18 -- the "nothing to see here" release:
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+- Initial sync message is confusing. Closes #5875.
+- Use preferred provider on first run. Closes #5813.
+- Add TUF init repository and release tools. Closes #5864.
+- Add support for fingerprint-gui's polkit agent. Closes #5880.
+- Reroute DNS packets instead of blocking them, eliminating need to
+  muck around with resolv.conf. Closes #4633, #5655, #5738, #4823
+- Use inline decrypting for initial soledad syncrhonization, to wait
+  for secrets.
+- Add the ability to create an osx bundle with py2app. Closes #5845.
+- Split frontend/backend in different files. Closes #5719.
+- Implement ZMQ based messaging system. Closes #5733.
+- Launch the backend in a different process than the app. Closes
+  #5734.
+
 0.5.3 June 27 -- the "encrypt ALL THE THINGS" release:
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

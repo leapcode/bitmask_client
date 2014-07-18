@@ -54,7 +54,7 @@ It is a tool to create isolated Python environments.
 
 The basic problem being addressed is one of dependencies and versions, and indirectly permissions. Imagine you have an application that needs version 1 of LibFoo, but another application requires version 2. How can you use both these applications? If you install everything into /usr/lib/python2.7/site-packages (or whatever your platform's standard location is), it's easy to end up in a situation where you unintentionally upgrade an application that shouldn't be upgraded.
 
-Read more about it in the `project documentation page <http://pypi.python.org/pypi/virtualenv/>`_. 
+Read more about it in the `project documentation page <http://pypi.python.org/pypi/virtualenv/>`_.
 
 .. note::
    this section could be completed with useful options that can be passed to the virtualenv command (e.g., to make portable paths, site-packages, ...). We also should document how to use virtualenvwrapper.
@@ -73,7 +73,7 @@ You first create a virtualenv in any directory that you like::
 
 Note the change in the prompt.
 
-.. TODO use virtualenvwrapper + isis non-sudo recipe here 
+.. TODO use virtualenvwrapper + isis non-sudo recipe here
 
 .. _pysidevirtualenv:
 
@@ -142,16 +142,6 @@ We also need to compile the resource files::
 You need to repeat this step each time you change a ``.ui`` file.
 
 .. TODO need to make translations too?
-
-.. _copyscriptfiles:
-
-Copy script files
------------------
-
-The openvpn invocation expects some files to be in place. If you have not installed `bitmask` from a debian package, you must copy these files manually by now::
-
-    $ sudo mkdir -p /etc/leap
-    $ sudo cp pkg/linux/resolv-update /etc/leap
 
 .. _policykit:
 

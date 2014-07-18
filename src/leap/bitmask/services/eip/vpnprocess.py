@@ -118,10 +118,10 @@ class VPNObserver(object):
         """
         sig = self._signaler
         signals = {
-            "network_unreachable": sig.EIP_NETWORK_UNREACHABLE,
-            "process_restart_tls": sig.EIP_PROCESS_RESTART_TLS,
-            "process_restart_ping": sig.EIP_PROCESS_RESTART_PING,
-            "initialization_completed": sig.EIP_CONNECTED
+            "network_unreachable": sig.eip_network_unreachable,
+            "process_restart_tls": sig.eip_process_restart_tls,
+            "process_restart_ping": sig.eip_process_restart_ping,
+            "initialization_completed": sig.eip_connected
         }
         return signals.get(event.lower())
 
@@ -255,6 +255,9 @@ class VPN(object):
         """
         Tear the firewall down using the privileged wrapper.
         """
+        if IS_MAC:
+            # We don't support Mac so far
+            return True
         BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
         exitCode = subprocess.call(["pkexec",
                                     BM_ROOT, "firewall", "stop"])
@@ -594,7 +597,7 @@ class VPNManager(object):
 
             state = status_step
             if state != self._last_state:
-                self._signaler.signal(self._signaler.EIP_STATE_CHANGED, state)
+                self._signaler.signal(self._signaler.eip_state_changed, state)
                 self._last_state = state
 
     def _parse_status_and_notify(self, output):
@@ -632,7 +635,7 @@ class VPNManager(object):
 
         status = (tun_tap_read, tun_tap_write)
         if status != self._last_status:
-            self._signaler.signal(self._signaler.EIP_STATUS_CHANGED, status)
+            self._signaler.signal(self._signaler.eip_status_changed, status)
             self._last_status = status
 
     def get_state(self):
@@ -814,7 +817,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         leap_assert_type(eipconfig, EIPConfig)
         leap_assert_type(providerconfig, ProviderConfig)
 
-        #leap_assert(not self.isRunning(), "Starting process more than once!")
+        # leap_assert(not self.isRunning(), "Starting process more than once!")
 
         self._eipconfig = eipconfig
         self._providerconfig = providerconfig
@@ -869,7 +872,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         if isinstance(exit_code, int):
             logger.debug("processExited, status %d" % (exit_code,))
         self._signaler.signal(
-            self._signaler.EIP_PROCESS_FINISHED, exit_code)
+            self._signaler.eip_process_finished, exit_code)
         self._alive = False
 
     def processEnded(self, reason):

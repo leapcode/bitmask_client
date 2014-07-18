@@ -21,7 +21,6 @@ import logging
 import os
 import platform
 import stat
-import sys
 import subprocess
 import tempfile
 
@@ -103,7 +102,7 @@ def get_missing_helpers_dialog():
     msg.setWindowTitle(msg.tr("Missing helper files"))
     msg.setText(msg.tr(WE_NEED_POWERS))
     # but maybe the user really deserve to know more
-    #msg.setInformativeText(msg.tr(BECAUSE))
+    # msg.setInformativeText(msg.tr(BECAUSE))
     msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
     msg.addButton("No, don't ask again", QtGui.QMessageBox.RejectRole)
     msg.setDefaultButton(QtGui.QMessageBox.Yes)
@@ -373,30 +372,6 @@ def DarwinInitializer():
 # Linux initializers
 #
 
-def _get_missing_resolvconf_dialog():
-    """
-    Create a dialog for notifying about missing openresolv.
-
-    :rtype: QtGui.QMessageBox instance
-    """
-    msgstr = QtCore.QObject()
-    msgstr.NO_RESOLVCONF = msgstr.tr(
-        "Could not find <b>resolvconf</b> installed in your system.\n"
-        "Do you want to quit Bitmask now?")
-
-    msgstr.EXPLAIN = msgstr.tr(
-        "Encrypted Internet needs resolvconf installed to work properly.\n"
-        "Please use your package manager to install it.\n")
-
-    msg = QtGui.QMessageBox()
-    msg.setWindowTitle(msg.tr("Missing resolvconf framework"))
-    msg.setText(msgstr.NO_RESOLVCONF)
-    # but maybe the user really deserve to know more
-    msg.setInformativeText(msgstr.EXPLAIN)
-    msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-    msg.setDefaultButton(QtGui.QMessageBox.Yes)
-    return msg
-
 
 def _get_missing_complain_dialog(stuff):
     """
@@ -443,21 +418,6 @@ def _get_missing_complain_dialog(stuff):
     msg = ComplainDialog()
     msg.setWindowTitle(msg.tr("Missing Bitmask helpers"))
     return msg
-
-
-def _linux_check_resolvconf():
-    """
-    Raise a dialog warning about the lack of the resolvconf framework.
-    """
-    RESOLVCONF_PATH = "/sbin/resolvconf"
-    missing = not os.path.isfile(RESOLVCONF_PATH)
-
-    if missing:
-        msg = _get_missing_resolvconf_dialog()
-        ret = msg.exec_()
-
-        if ret == QtGui.QMessageBox.Yes:
-            sys.exit()
 
 
 def _linux_install_missing_scripts(badexec, notfound):
@@ -509,9 +469,8 @@ def LinuxInitializer():
     """
     Raise a dialog if needed files are missing.
 
-    Missing files can be either system-wide resolvconf, bitmask-root, or
-    policykit file. The dialog will also be raised if some of those files are
+    Missing files can be either bitmask-root policykit file.
+    The dialog will also be raised if some of those files are
     found to have incorrect permissions.
     """
-    _linux_check_resolvconf()
     check_missing()

@@ -67,7 +67,7 @@ Launch Bitmask in debug mode. Logs are way more verbose that way::
 Get your hand on the logs. You can achieve that either by clicking on the "Show
 log" button, and saving to file, or directly by specifying the path to the
 logfile in the command line invocation::
-  
+
   bitmask --debug --logfile /tmp/bitmask.log
 
 Attach the logfile to your bug report.
@@ -99,7 +99,7 @@ painlessly fetch the latest development code.
 We have put together a script to allow rapid testing in different platforms for
 the brave souls like you. It more or less does all the steps covered in the
 :ref:`Setting up a Work Enviroment <environment>` section, only that in a more
-compact way suitable (ahem) also for non developers.  
+compact way suitable (ahem) also for non developers.
 
 .. note::
 
@@ -127,7 +127,7 @@ Download and source the following script in the parent folder where you want you
 
 .. code-block:: bash
 
-   cd /tmp  
+   cd /tmp
    wget https://raw.github.com/leapcode/bitmask_client/develop/pkg/scripts/bitmask_bootstrap.sh
    source bitmask_bootstrap.sh
 
@@ -142,7 +142,7 @@ Activating the virtualenv
 The above bootstrap script has fetched latest code inside a virtualenv, which is
 an isolated, *virtual* python local environment that avoids messing with your
 global paths. You will notice you are *inside* a virtualenv because you will see
-a modified prompt reminding it to you (*bitmask-testbuild* in this case).  
+a modified prompt reminding it to you (*bitmask-testbuild* in this case).
 
 Thus, if you forget to *activate your virtualenv*, bitmask will not run from the
 local path, and it will be looking for something else in your global path. So,
@@ -162,8 +162,6 @@ Copying config files
 If you have never installed ``bitmask`` globally, **you need to copy some files to its proper path before running it for the first time** (you only need to do this once). This, unless the virtualenv-based operations, will need root permissions. See :ref:`copy script files <copyscriptfiles>` and :ref:`running openvpn without root privileges <policykit>` sections for more info on this. In short::
 
     $ sudo cp pkg/linux/polkit/net.openvpn.gui.leap.policy /usr/share/polkit-1/actions/
-    $ sudo mkdir -p /etc/leap
-    $ sudo cp pkg/linux/resolv-update /etc/leap
 
 Local config files
 ^^^^^^^^^^^^^^^^^^^

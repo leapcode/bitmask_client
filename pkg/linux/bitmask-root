@@ -47,36 +47,26 @@ import traceback
 
 cmdcheck = subprocess.check_output
 
-##
-## CONSTANTS
-##
+#
+# CONSTANTS
+#
 
 VERSION = "1"
 SCRIPT = "bitmask-root"
 NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
+BITMASK_CHAIN_NAT_OUT = "bitmask"
+BITMASK_CHAIN_NAT_POST = "bitmask_postrouting"
 
 IP = "/bin/ip"
 IPTABLES = "/sbin/iptables"
 IP6TABLES = "/sbin/ip6tables"
-
-RESOLVCONF_SYSTEM_BIN = "/sbin/resolvconf"
-RESOLVCONF_LEAP_BIN = "/usr/local/sbin/leap-resolvconf"
 
 OPENVPN_USER = "nobody"
 OPENVPN_GROUP = "nogroup"
 LEAPOPENVPN = "LEAPOPENVPN"
 OPENVPN_SYSTEM_BIN = "/usr/sbin/openvpn"  # Debian location
 OPENVPN_LEAP_BIN = "/usr/local/sbin/leap-openvpn"  # installed by bundle
-
-
-"""
-The path to the script to update resolv.conf
-"""
-# XXX We have to check if we have a valid resolvconf, and use
-# the old resolv-update if not.
-LEAP_UPDATE_RESOLVCONF_FILE = "/etc/leap/update-resolv-conf"
-LEAP_RESOLV_UPDATE = "/etc/leap/resolv-update"
 
 FIXED_FLAGS = [
     "--setenv", "LEAPOPENVPN", "1",
@@ -133,9 +123,9 @@ if DEBUG:
 
 syslog.openlog(SCRIPT)
 
-##
-## UTILITY
-##
+#
+# UTILITY
+#
 
 
 def is_valid_address(value):
@@ -150,35 +140,8 @@ def is_valid_address(value):
         socket.inet_aton(value)
         return True
     except Exception:
-        print("%s: ERROR: MALFORMED IP: %s!" % (SCRIPT, value))
+        log("%s: ERROR: MALFORMED IP: %s!" % (SCRIPT, value))
         return False
-
-
-def has_system_resolvconf():
-    """
-    Return True if resolvconf is found in the system.
-
-    :rtype: bool
-    """
-    return os.path.isfile(RESOLVCONF)
-
-
-def has_valid_update_resolvconf():
-    """
-    Return True if a valid update-resolv-conf script is found in the system.
-
-    :rtype: bool
-    """
-    return os.path.isfile(LEAP_UPDATE_RESOLVCONF_FILE)
-
-
-def has_valid_leap_resolv_update():
-    """
-    Return True if a valid resolv-update script is found in the system.
-
-    :rtype: bool
-    """
-    return os.path.isfile(LEAP_RESOLV_UPDATE)
 
 
 def split_list(_list, regex):
@@ -235,135 +198,6 @@ def get_process_list():
     return filter(None, res)
 
 
-class Daemon(object):
-    """
-    A generic daemon class.
-    """
-    def __init__(self, pidfile, stdin='/dev/null',
-                 stdout='/dev/null', stderr='/dev/null'):
-        self.stdin = stdin
-        self.stdout = stdout
-        self.stderr = stderr
-        self.pidfile = pidfile
-
-    def daemonize(self):
-        """
-        Do the UNIX double-fork magic, see Stevens' "Advanced
-        Programming in the UNIX Environment" for details (ISBN 0201563177)
-        http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
-        """
-        try:
-            pid = os.fork()
-            if pid > 0:
-                # exit first parent
-                sys.exit(0)
-        except OSError, e:
-            sys.stderr.write(
-                "fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
-            sys.exit(1)
-
-        # decouple from parent environment
-        os.chdir("/")
-        os.setsid()
-        os.umask(0)
-
-        # do second fork
-        try:
-            pid = os.fork()
-            if pid > 0:
-                # exit from second parent
-                sys.exit(0)
-        except OSError, e:
-            sys.stderr.write(
-                "fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
-            sys.exit(1)
-
-        # redirect standard file descriptors
-        sys.stdout.flush()
-        sys.stderr.flush()
-        si = file(self.stdin, 'r')
-        so = file(self.stdout, 'a+')
-        se = file(self.stderr, 'a+', 0)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
-
-        # write pidfile
-        atexit.register(self.delpid)
-        pid = str(os.getpid())
-        file(self.pidfile, 'w+').write("%s\n" % pid)
-
-    def delpid(self):
-        """
-        Delete the pidfile.
-        """
-        os.remove(self.pidfile)
-
-    def start(self, *args):
-        """
-        Start the daemon.
-        """
-        # Check for a pidfile to see if the daemon already runs
-        try:
-            pf = file(self.pidfile, 'r')
-            pid = int(pf.read().strip())
-            pf.close()
-        except IOError:
-            pid = None
-
-        if pid:
-            message = "pidfile %s already exist. Daemon already running?\n"
-            sys.stderr.write(message % self.pidfile)
-            sys.exit(1)
-
-        # Start the daemon
-        self.daemonize()
-        self.run(args)
-
-    def stop(self):
-        """
-        Stop the daemon.
-        """
-        # Get the pid from the pidfile
-        try:
-            pf = file(self.pidfile, 'r')
-            pid = int(pf.read().strip())
-            pf.close()
-        except IOError:
-            pid = None
-
-        if not pid:
-            message = "pidfile %s does not exist. Daemon not running?\n"
-            sys.stderr.write(message % self.pidfile)
-            return  # not an error in a restart
-
-        # Try killing the daemon process
-        try:
-            while 1:
-                os.kill(pid, signal.SIGTERM)
-                time.sleep(0.1)
-        except OSError, err:
-            err = str(err)
-            if err.find("No such process") > 0:
-                if os.path.exists(self.pidfile):
-                    os.remove(self.pidfile)
-            else:
-                print(str(err))
-                sys.exit(1)
-
-    def restart(self):
-        """
-        Restart the daemon.
-        """
-        self.stop()
-        self.start()
-
-    def run(self):
-        """
-        This should  be overridden by derived classes.
-        """
-
-
 def run(command, *args, **options):
     """
     Run an external command.
@@ -376,55 +210,85 @@ def run(command, *args, **options):
       `detach`: If True, run in detached process.
       `input`: If True, open command for writing stream to, returning the Popen
                object.
+      `throw`: If True, raise an exception if there is an error instead
+               of bailing.
     """
     parts = [command]
     parts.extend(args)
-    if TEST or DEBUG:
-        print("%s run: %s " (SCRIPT, " ".join(parts)))
+    debug("%s run: %s " % (SCRIPT, " ".join(parts)))
 
     _check = options.get("check", True)
     _detach = options.get("detach", False)
     _input = options.get("input", False)
     _exitcode = options.get("exitcode", False)
+    _throw = options.get("throw", False)
 
-    if not _check or _detach or _input:
+    if not (_check or _throw) or _detach or _input:
         if _input:
             return subprocess.Popen(parts, stdin=subprocess.PIPE)
         else:
-            # XXX ok with return None ??
             subprocess.Popen(parts)
+            return None
     else:
         try:
             devnull = open('/dev/null', 'w')
             subprocess.check_call(parts, stdout=devnull, stderr=devnull)
             return 0
         except subprocess.CalledProcessError as exc:
-            if DEBUG:
-                logger.exception(exc)
             if _exitcode:
+                if exc.returncode != 1:
+                    # 0 or 1 is to be expected, but anything else
+                    # should be logged.
+                    debug("ERROR: Could not run %s: %s" %
+                          (exc.cmd, exc.output), exception=exc)
                 return exc.returncode
+            elif _throw:
+                raise exc
             else:
                 bail("ERROR: Could not run %s: %s" % (exc.cmd, exc.output),
                      exception=exc)
 
 
-def bail(msg=None, exception=None):
+def log(msg=None, exception=None, priority=syslog.LOG_INFO):
     """
-    Abnormal exit.
+    print and log warning message or exception.
 
     :param msg: optional error message.
     :type msg: str
+    :param msg: optional exception.
+    :type msg: Exception
+    :param msg: syslog level
+    :type msg: one of LOG_EMERG, LOG_ALERT, LOG_CRIT, LOG_ERR,
+               LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG
     """
     if msg is not None:
         print("%s: %s" % (SCRIPT, msg))
-        syslog.syslog(syslog.LOG_ERR, msg)
+        syslog.syslog(priority, msg)
     if exception is not None:
-        traceback.print_exc()
+        if TEST or DEBUG:
+            traceback.print_exc()
+        syslog.syslog(priority, traceback.format_exc())
+
+
+def debug(msg=None, exception=None):
+    """
+    Just like log, but is skipped unless DEBUG. Use syslog.LOG_INFO
+    even for debug messages (we don't want to miss them).
+    """
+    if TEST or DEBUG:
+        log(msg, exception)
+
+
+def bail(msg=None, exception=None):
+    """
+    abnormal exit. like log(), but exits with error status code.
+    """
+    log(msg, exception)
     exit(1)
 
-##
-## OPENVPN
-##
+#
+# OPENVPN
+#
 
 
 def get_openvpn_bin():
@@ -457,21 +321,21 @@ def parse_openvpn_flags(args):
                 if required_params:
                     flag_params = flag[1:]
                     if len(flag_params) != len(required_params):
-                        print("%s: ERROR: not enough params for %s" %
-                              (SCRIPT, flag_name))
+                        log("%s: ERROR: not enough params for %s" %
+                            (SCRIPT, flag_name))
                         return None
                     for param, param_type in zip(flag_params, required_params):
                         if PARAM_FORMATS[param_type](param):
                             result.append(param)
                         else:
-                            print("%s: ERROR: Bad argument %s" %
-                                  (SCRIPT, param))
+                            log("%s: ERROR: Bad argument %s" %
+                                (SCRIPT, param))
                             return None
             else:
-                print("WARNING: unrecognized openvpn flag %s" % flag_name)
+                log("WARNING: unrecognized openvpn flag %s" % flag_name)
         return result
     except Exception as exc:
-        print("%s: ERROR PARSING FLAGS: %s" % (SCRIPT, exc))
+        log("%s: ERROR PARSING FLAGS: %s" % (SCRIPT, exc))
         if DEBUG:
             logger.exception(exc)
         return None
@@ -490,8 +354,8 @@ def openvpn_start(args):
         OPENVPN = get_openvpn_bin()
         flags = [OPENVPN] + FIXED_FLAGS + openvpn_flags
         if DEBUG:
-            print("%s: running openvpn with flags:" % (SCRIPT,))
-            print(flags)
+            log("%s: running openvpn with flags:" % (SCRIPT,))
+            log(flags)
         # note: first argument to command is ignored, but customarily set to
         # the command.
         os.execv(OPENVPN, flags)
@@ -516,84 +380,9 @@ def openvpn_stop(args):
         pid = found_leap_openvpn[0][0]
         os.kill(int(pid), signal.SIGTERM)
 
-##
-## DNS
-##
-
-
-def get_resolvconf_bin():
-    """
-    Return the path for either the system resolvconf or the one the
-    bundle has put there.
-    """
-    if os.path.isfile(RESOLVCONF_SYSTEM_BIN):
-        return RESOLVCONF_SYSTEM_BIN
-
-    # the bundle option should be removed from the debian package.
-    if os.path.isfile(RESOLVCONF_LEAP_BIN):
-        return RESOLVCONF_LEAP_BIN
-
-RESOLVCONF = get_resolvconf_bin()
-
-
-class NameserverSetter(Daemon):
-    """
-    A daemon that will add leap nameserver inside the tunnel
-    to the system `resolv.conf`
-    """
-
-    def run(self, *args):
-        """
-        Run when daemonized.
-        """
-        if args:
-            ip_address = args[0]
-            self.set_dns_nameserver(ip_address)
-
-    def set_dns_nameserver(self, ip_address):
-        """
-        Add the tunnel DNS server to `resolv.conf`
-
-        :param ip_address: the ip to add to `resolv.conf`
-        :type ip_address: str
-        """
-        if os.path.isfile(RESOLVCONF):
-            process = run(RESOLVCONF, "-a", "bitmask", input=True)
-            process.communicate("nameserver %s\n" % ip_address)
-        else:
-            bail("ERROR: package openresolv or resolvconf not installed.")
-
-nameserver_setter = NameserverSetter('/tmp/leap-dns-up.pid')
-
-
-class NameserverRestorer(Daemon):
-    """
-    A daemon that will restore the previous nameservers.
-    """
-
-    def run(self, *args):
-        """
-        Run when daemonized.
-        """
-        self.restore_dns_nameserver()
-
-    def restore_dns_nameserver(self):
-        """
-        Remove tunnel DNS server from `resolv.conf`
-        """
-        if os.path.isfile(RESOLVCONF):
-            run(RESOLVCONF, "-d", "bitmask")
-        else:
-            print("%s: ERROR: package openresolv "
-                  "or resolvconf not installed." %
-                  (SCRIPT,))
-
-nameserver_restorer = NameserverRestorer('/tmp/leap-dns-down.pid')
-
-
-##
-## FIREWALL
-##
+#
+# FIREWALL
+#
 
 
 def get_gateways(gateways):
@@ -703,29 +492,63 @@ def ip6tables(*args, **options):
     """
     run_iptable_with_check(IP6TABLES, *args, **options)
 
+#
+# NOTE: these tests to see if a chain exists might incorrectly return false.
+# This happens when there is an error in calling `iptables --list bitmask`.
+#
+# For this reason, when stopping the firewall, we do not trust the
+# output of ipvx_chain_exists() but instead always attempt to delete
+# the chain.
+#
 
-def ipv4_chain_exists(table):
+
+def ipv4_chain_exists(chain, table=None):
     """
-    Check if a given chain exists.
+    Check if a given chain exists. Only returns true if it actually exists,
+    but might return false if it exists and iptables failed to run.
 
-    :param table: the table to check against
-    :type table: str
+    :param chain: the chain to check against
+    :type chain: str
     :rtype: bool
     """
-    code = run(IPTABLES, "--list", table, "--numeric", exitcode=True)
-    return code == 0
+    if table is not None:
+        code = run(IPTABLES, "-t", table,
+                   "--list", chain, "--numeric", exitcode=True)
+    else:
+        code = run(IPTABLES, "--list", chain, "--numeric", exitcode=True)
+    if code == 0:
+        return True
+    elif code == 1:
+        return False
+    else:
+        log("ERROR: Could not determine state of iptable chain")
+        return False
 
 
-def ipv6_chain_exists(table):
+def ipv6_chain_exists(chain):
     """
-    Check if a given chain exists.
+    see ipv4_chain_exists()
 
-    :param table: the table to check against
-    :type table: str
+    :param chain: the chain to check against
+    :type chain: str
     :rtype: bool
     """
-    code = run(IP6TABLES, "--list", table, "--numeric", exitcode=True)
-    return code == 0
+    code = run(IP6TABLES, "--list", chain, "--numeric", exitcode=True)
+    if code == 0:
+        return True
+    elif code == 1:
+        return False
+    else:
+        log("ERROR: Could not determine state of iptable chain")
+        return False
+
+
+def enable_ip_forwarding():
+    """
+    ip_fowarding must be enabled for the firewall to work.
+    """
+    with open('/proc/sys/net/ipv4/ip_forward', 'w') as f:
+        f.write('1\n')
 
 
 def firewall_start(args):
@@ -740,29 +563,57 @@ def firewall_start(args):
     local_network_ipv6 = get_local_network_ipv6(default_device)
     gateways = get_gateways(args)
 
-    # add custom chain "bitmask" to front of OUTPUT chain
+    # add custom chain "bitmask" to front of OUTPUT chain for both
+    # the 'filter' and the 'nat' tables.
     if not ipv4_chain_exists(BITMASK_CHAIN):
         ip4tables("--new-chain", BITMASK_CHAIN)
+    if not ipv4_chain_exists(BITMASK_CHAIN_NAT_OUT, 'nat'):
+        ip4tables("--table", "nat", "--new-chain", BITMASK_CHAIN_NAT_OUT)
+    if not ipv4_chain_exists(BITMASK_CHAIN_NAT_POST, 'nat'):
+        ip4tables("--table", "nat", "--new-chain", BITMASK_CHAIN_NAT_POST)
     if not ipv6_chain_exists(BITMASK_CHAIN):
         ip6tables("--new-chain", BITMASK_CHAIN)
+    ip4tables("--table", "nat", "--insert", "OUTPUT",
+              "--jump", BITMASK_CHAIN_NAT_OUT)
+    ip4tables("--table", "nat", "--insert", "POSTROUTING",
+              "--jump", BITMASK_CHAIN_NAT_POST)
     iptables("--insert", "OUTPUT", "--jump", BITMASK_CHAIN)
 
-    # allow DNS over VPN
-    for allowed_dns in [NAMESERVER, "127.0.0.1", "127.0.1.1"]:
-        ip4tables("--append", BITMASK_CHAIN, "--protocol", "udp",
-                  "--dport", "53", "--destination", allowed_dns,
-                  "--jump", "ACCEPT")
+    # route all ipv4 DNS over VPN
+    # (note: NAT does not work with ipv6 until kernel 3.7)
+    enable_ip_forwarding()
+    # allow dns to localhost
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN, "--protocol", "udp",
+              "--dest", "127.0.1.1,127.0.0.1", "--dport", "53",
+              "--jump", "ACCEPT")
+    # rewrite all outgoing packets to use VPN DNS server
+    # (DNS does sometimes use TCP!)
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_OUT, "-p", "udp",
+              "--dport", "53", "--jump", "DNAT", "--to", NAMESERVER+":53")
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_OUT, "-p", "tcp",
+              "--dport", "53", "--jump", "DNAT", "--to", NAMESERVER+":53")
+    # enable masquerading, so that DNS packets rewritten by DNAT will
+    # have the correct source IPs
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_POST,
+              "--protocol", "udp", "--dport", "53", "--jump", "MASQUERADE")
+    ip4tables("-t", "nat", "--append", BITMASK_CHAIN_NAT_POST,
+              "--protocol", "tcp", "--dport", "53", "--jump", "MASQUERADE")
 
-    # block DNS requests to anyone but the service provider or localhost
-    # (when we actually route ipv6, we will need DNS rules for it too)
-    ip4tables("--append", BITMASK_CHAIN, "--protocol", "udp", "--dport", "53",
-              "--jump", "REJECT")
-
-    # allow traffic to IPs on local network
+    # allow local network traffic
     if local_network_ipv4:
+        # allow local network destinations
         ip4tables("--append", BITMASK_CHAIN,
                   "--destination", local_network_ipv4, "-o", default_device,
                   "--jump", "ACCEPT")
+        # allow local network sources for DNS
+        # (required to allow local network DNS that gets rewritten by NAT
+        #  to get passed through so that MASQUERADE can set correct source IP)
+        ip4tables("--append", BITMASK_CHAIN,
+                  "--source", local_network_ipv4, "-o", default_device,
+                  "-p", "udp", "--dport", "53", "--jump", "ACCEPT")
+        ip4tables("--append", BITMASK_CHAIN,
+                  "--source", local_network_ipv4, "-o", default_device,
+                  "-p", "tcp", "--dport", "53", "--jump", "ACCEPT")
         # allow multicast Simple Service Discovery Protocol
         ip4tables("--append", BITMASK_CHAIN,
                   "--protocol", "udp",
@@ -800,8 +651,7 @@ def firewall_start(args):
                  "--log-level", "7")
 
     # for now, ensure all other ipv6 packets get rejected (regardless of
-    # device)
-    # (not sure why, but "-p any" doesn't work)
+    # device). not sure why, but "-p any" doesn't work.
     ip6tables("--append", BITMASK_CHAIN, "-p", "tcp", "--jump", "REJECT")
     ip6tables("--append", BITMASK_CHAIN, "-p", "udp", "--jump", "REJECT")
 
@@ -812,19 +662,89 @@ def firewall_start(args):
 
 def firewall_stop():
     """
-    Stop the firewall.
-    """
-    iptables("--delete", "OUTPUT", "--jump", BITMASK_CHAIN)
-    if ipv4_chain_exists(BITMASK_CHAIN):
-        ip4tables("--flush", BITMASK_CHAIN)
-        ip4tables("--delete-chain", BITMASK_CHAIN)
-    if ipv6_chain_exists(BITMASK_CHAIN):
-        ip6tables("--flush", BITMASK_CHAIN)
-        ip6tables("--delete-chain", BITMASK_CHAIN)
+    Stop the firewall. Because we really really always want the firewall to
+    be stopped if at all possible, this function is cautious and contains a
+    lot of trys and excepts.
 
-##
-## MAIN
-##
+    If there were any problems, we raise an exception at the end. This allows
+    the calling code to retry stopping the firewall. Stopping the firewall
+    can fail if iptables is being run by another process (only one iptables
+    command can be run at a time).
+    """
+    ok = True
+
+    # -t filter -D OUTPUT -j bitmask
+    try:
+        iptables("--delete", "OUTPUT", "--jump", BITMASK_CHAIN, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to remove bitmask firewall from OUTPUT chain "
+              "(maybe it is already removed?)", exc)
+        ok = False
+
+    # -t nat -D OUTPUT -j bitmask
+    try:
+        ip4tables("-t", "nat", "--delete", "OUTPUT",
+                  "--jump", BITMASK_CHAIN_NAT_OUT, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to remove bitmask firewall from OUTPUT chain "
+              "in 'nat' table (maybe it is already removed?)", exc)
+        ok = False
+
+    # -t nat -D POSTROUTING -j bitmask_postrouting
+    try:
+        ip4tables("-t", "nat", "--delete", "POSTROUTING",
+                  "--jump", BITMASK_CHAIN_NAT_POST, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to remove bitmask firewall from POSTROUTING "
+              "chain in 'nat' table (maybe it is already removed?)", exc)
+        ok = False
+
+    # -t filter --delete-chain bitmask
+    try:
+        ip4tables("--flush", BITMASK_CHAIN, throw=True)
+        ip4tables("--delete-chain", BITMASK_CHAIN, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv4 firewall "
+              "chain (maybe it is already destroyed?)", exc)
+        ok = False
+
+    # -t nat --delete-chain bitmask
+    try:
+        ip4tables("-t", "nat", "--flush", BITMASK_CHAIN_NAT_OUT, throw=True)
+        ip4tables("-t", "nat", "--delete-chain",
+                  BITMASK_CHAIN_NAT_OUT, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv4 firewall "
+              "chain in 'nat' table (maybe it is already destroyed?)", exc)
+        ok = False
+
+    # -t nat --delete-chain bitmask_postrouting
+    try:
+        ip4tables("-t", "nat", "--flush", BITMASK_CHAIN_NAT_POST, throw=True)
+        ip4tables("-t", "nat", "--delete-chain",
+                  BITMASK_CHAIN_NAT_POST, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv4 firewall "
+              "chain in 'nat' table (maybe it is already destroyed?)", exc)
+        ok = False
+
+    # -t filter --delete-chain bitmask (ipv6)
+    try:
+        ip6tables("--flush", BITMASK_CHAIN, throw=True)
+        ip6tables("--delete-chain", BITMASK_CHAIN, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv6 firewall "
+              "chain (maybe it is already destroyed?)", exc)
+        ok = False
+
+    if not (ok or ipv4_chain_exists or ipv6_chain_exists):
+        raise Exception("firewall might still be left up. "
+                        "Please try `firewall stop` again.")
+
+
+#
+# MAIN
+#
 
 
 def main():
@@ -858,23 +778,20 @@ def main():
         elif command == "firewall_start":
             try:
                 firewall_start(args)
-                nameserver_setter.start(NAMESERVER)
             except Exception as ex:
                 if not is_restart:
-                    nameserver_restorer.start()
                     firewall_stop()
                 bail("ERROR: could not start firewall", ex)
 
         elif command == "firewall_stop":
             try:
                 firewall_stop()
-                nameserver_restorer.start()
             except Exception as ex:
                 bail("ERROR: could not stop firewall", ex)
 
         elif command == "firewall_isup":
             if ipv4_chain_exists(BITMASK_CHAIN):
-                print("%s: INFO: bitmask firewall is up" % (SCRIPT,))
+                log("%s: INFO: bitmask firewall is up" % (SCRIPT,))
             else:
                 bail("INFO: bitmask firewall is down")
 
@@ -884,8 +801,7 @@ def main():
         bail("ERROR: No such command")
 
 if __name__ == "__main__":
-    if DEBUG:
-        logger.debug(" ".join(sys.argv))
+    debug(" ".join(sys.argv))
     main()
-    print("%s: done" % (SCRIPT,))
+    log("done")
     exit(0)

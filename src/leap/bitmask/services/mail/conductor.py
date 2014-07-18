@@ -64,7 +64,8 @@ class IMAPControl(object):
         """
         Start imap service.
         """
-        self._backend.imap_start_service(self.userid, flags.OFFLINE)
+        self._backend.imap_start_service(full_user_id=self.userid,
+                                         offline=flags.OFFLINE)
 
     def stop_imap_service(self):
         """
@@ -146,7 +147,8 @@ class SMTPControl(object):
         :type download_if_needed: bool
         """
         self.smtp_connection.qtsigs.connecting_signal.emit()
-        self._backend.smtp_start_service(self.userid, download_if_needed)
+        self._backend.smtp_start_service(full_user_id=self.userid,
+                                         download_if_needed=download_if_needed)
 
     def stop_smtp_service(self):
         """

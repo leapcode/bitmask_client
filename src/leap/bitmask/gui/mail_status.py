@@ -304,7 +304,7 @@ class MailStatusWidget(QtGui.QWidget):
         ext_status = ""
 
         if req.event == proto.KEYMANAGER_LOOKING_FOR_KEY:
-            ext_status = self.tr("Looking for key for this user")
+            ext_status = self.tr("Initial sync in progress, please wait...")
         elif req.event == proto.KEYMANAGER_KEY_FOUND:
             ext_status = self.tr("Found key! Starting mail...")
         # elif req.event == proto.KEYMANAGER_KEY_NOT_FOUND:
