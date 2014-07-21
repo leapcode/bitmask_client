@@ -125,6 +125,11 @@ class MainWindow(QtGui.QMainWindow):
 
         self._backend = BackendProxy()
 
+        # periodically check if the backend is alive
+        self._backend_checker = QtCore.QTimer(self)
+        self._backend_checker.timeout.connect(self._check_backend_status)
+        self._backend_checker.start(2000)
+
         self._leap_signaler = LeapSignaler()
         self._leap_signaler.start()
 
@@ -333,6 +338,23 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.error("Bad call to the backend:")
         logger.error(data)
+
+    @QtCore.Slot()
+    def _check_backend_status(self):
+        """
+        TRIGGERS:
+            self._backend_checker.timeout
+
+        Check that the backend is running. Otherwise show an error to the user.
+        """
+        online = self._backend.online
+        if not online:
+            logger.critical("Backend is not online.")
+            QtGui.QMessageBox.critical(
+                self, self.tr("Application error"),
+                self.tr("There is a problem contacting the backend, please "
+                        "restart Bitmask."))
+            self._backend_checker.stop()
 
     def _backend_connect(self, only_tracked=False):
         """
