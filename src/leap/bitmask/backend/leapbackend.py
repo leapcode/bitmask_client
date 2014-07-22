@@ -36,11 +36,11 @@ class LeapBackend(Backend):
     """
     Backend server subclass, used to implement the API methods.
     """
-    def __init__(self, bypass_checks=False):
+    def __init__(self, bypass_checks=False, frontend_pid=None):
         """
         Constructor for the backend.
         """
-        Backend.__init__(self)
+        Backend.__init__(self, frontend_pid)
 
         self._settings = Settings()
 

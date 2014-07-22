@@ -18,6 +18,8 @@ import json
 import threading
 import time
 
+import psutil
+
 from twisted.internet import defer, reactor, threads
 
 import zmq
@@ -39,11 +41,15 @@ class Backend(object):
     PORT = '5556'
     BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
 
-    def __init__(self):
+    PING_INTERVAL = 2  # secs
+
+    def __init__(self, frontend_pid=None):
         """
         Backend constructor, create needed instances.
         """
         self._signaler = Signaler()
+
+        self._frontend_pid = frontend_pid
 
         self._do_work = threading.Event()  # used to stop the worker thread.
         self._zmq_socket = None
@@ -81,6 +87,8 @@ class Backend(object):
         Note: we use a simple while since is less resource consuming than a
         Twisted's LoopingCall.
         """
+        pid = self._frontend_pid
+        check_wait = 0
         while self._do_work.is_set():
             # Wait for next request from client
             try:
@@ -92,6 +100,20 @@ class Backend(object):
                 if e.errno != zmq.EAGAIN:
                     raise
             time.sleep(0.01)
+
+            check_wait += 0.01
+            if pid is not None and check_wait > self.PING_INTERVAL:
+                check_wait = 0
+                self._check_frontend_alive()
+
+    def _check_frontend_alive(self):
+        """
+        Check if the frontend is alive and stop the backend if it is not.
+        """
+        pid = self._frontend_pid
+        if pid is not None and not psutil.pid_exists(pid):
+            logger.critical("The frontend is down!")
+            self.stop()
 
     def _stop_reactor(self):
         """
