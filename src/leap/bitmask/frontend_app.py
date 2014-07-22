@@ -54,7 +54,7 @@ def signal_handler(window, pid, signum, frame):
         window.quit()
 
 
-def run_frontend(options, flags_dict):
+def run_frontend(options, flags_dict, backend_pid):
     """
     Run the GUI for the application.
 
@@ -102,7 +102,7 @@ def run_frontend(options, flags_dict):
     timer.start(500)  # You may change this if you wish.
     timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
 
-    window = MainWindow(start_hidden=start_hidden)
+    window = MainWindow(start_hidden=start_hidden, backend_pid=backend_pid)
 
     my_pid = os.getpid()
     sig_handler = partial(signal_handler, window, my_pid)

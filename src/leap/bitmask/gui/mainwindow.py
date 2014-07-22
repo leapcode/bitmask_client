@@ -22,6 +22,8 @@ import time
 
 from datetime import datetime
 
+import psutil
+
 from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
@@ -97,7 +99,7 @@ class MainWindow(QtGui.QMainWindow):
     # We give the services some time to a halt before forcing quit.
     SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
 
-    def __init__(self, start_hidden=False):
+    def __init__(self, start_hidden=False, backend_pid=None):
         """
         Constructor for the client main window
 
@@ -272,6 +274,7 @@ class MainWindow(QtGui.QMainWindow):
         self._logger_window = None
 
         self._start_hidden = start_hidden
+        self._backend_pid = backend_pid
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
@@ -1819,6 +1822,15 @@ class MainWindow(QtGui.QMainWindow):
         # or if we reach the timeout
         QtDelayedCall(self.SERVICES_STOP_TIMEOUT, self.final_quit)
 
+    def _backend_kill(self):
+        """
+        Send a kill signal to the backend process.
+        This is called if the backend does not respond to requests.
+        """
+        if self._backend_pid is not None:
+            logger.debug("Killing backend")
+            psutil.Process(self._backend_pid).kill()
+
     @QtCore.Slot()
     def _remove_service(self, service):
         """
@@ -1854,7 +1866,12 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Final quit...')
 
         self._leap_signaler.stop()
-        self._backend.stop()
+
+        if self._backend.online:
+            self._backend.stop()
+        else:
+            self._backend_kill()
+
         time.sleep(0.05)  # give the thread a little time to finish.
 
         # Remove lockfiles on a clean shutdown.
