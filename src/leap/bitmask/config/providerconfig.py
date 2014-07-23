@@ -22,6 +22,7 @@ import logging
 import os
 
 from leap.bitmask import provider
+from leap.bitmask.config import flags
 from leap.bitmask.config.provider_spec import leap_provider_spec
 from leap.bitmask.services import get_service_display_name
 from leap.bitmask.util import get_path_prefix
@@ -43,6 +44,7 @@ class ProviderConfig(BaseConfig):
     Provider configuration abstraction class
     """
     def __init__(self):
+        self.standalone = flags.STANDALONE
         BaseConfig.__init__(self)
 
     def get_light_config(self, domain, lang=None):
