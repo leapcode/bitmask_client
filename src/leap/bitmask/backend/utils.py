@@ -19,6 +19,7 @@ Backend utilities to handle ZMQ certificates.
 """
 import os
 import shutil
+import stat
 
 import zmq.auth
 
@@ -36,6 +37,8 @@ def generate_certificates():
     if os.path.exists(KEYS_DIR):
         shutil.rmtree(KEYS_DIR)
     mkdir_p(KEYS_DIR)
+    # set permissions to: 0700 (U:rwx G:--- O:---)
+    os.chmod(KEYS_DIR, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     # create new keys in certificates dir
     # public_file, secret_file = create_certificates(...)
