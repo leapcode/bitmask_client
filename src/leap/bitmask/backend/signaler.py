@@ -60,6 +60,7 @@ class Signaler(object):
         socket.curve_serverkey = public
 
         socket.setsockopt(zmq.RCVTIMEO, 1000)
+        socket.setsockopt(zmq.LINGER, 0)  # Terminate early
         socket.connect(self.SERVER)
         self._socket = socket
 
