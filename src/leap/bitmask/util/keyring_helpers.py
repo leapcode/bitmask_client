@@ -34,6 +34,10 @@ except Exception:
     # dbus socket, or stuff like that.
     keyring = None
 
+# XXX remember password disabled right now!
+# see: https://leap.se/code/issues/4190
+keyring = None
+
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +50,7 @@ def _get_keyring_with_fallback():
     This is a workaround for the cases in which the keyring module chooses
     an insecure keyring by default (ie, inside a virtualenv).
     """
-    if not keyring:
+    if keyring is None:
         return None
     kr = keyring.get_keyring()
     if not canuse(kr):
@@ -67,7 +71,7 @@ def has_keyring():
 
     :rtype: bool
     """
-    if not keyring:
+    if keyring is None:
         return False
     kr = _get_keyring_with_fallback()
     return canuse(kr)
@@ -79,7 +83,7 @@ def get_keyring():
 
     :rtype: keyringBackend or None
     """
-    if not keyring:
+    if keyring is None:
         return False
     kr = _get_keyring_with_fallback()
     return kr if canuse(kr) else None
