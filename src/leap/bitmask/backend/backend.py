@@ -23,7 +23,7 @@ from twisted.internet import defer, reactor, threads
 import zmq
 from zmq.auth.thread import ThreadAuthenticator
 
-from leap.bitmask.backend.api import API
+from leap.bitmask.backend.api import API, PING_REQUEST
 from leap.bitmask.backend.utils import get_backend_certificates
 from leap.bitmask.backend.signaler import Signaler
 
@@ -146,6 +146,10 @@ class Backend(object):
         :param request_json: a json specification of a request.
         :type request_json: str
         """
+        if request_json == PING_REQUEST:
+            # do not process request if it's just a ping
+            return
+
         try:
             # request = zmq.utils.jsonapi.loads(request_json)
             # We use stdlib's json to ensure that we get unicode strings

@@ -25,7 +25,7 @@ import time
 
 import zmq
 
-from leap.bitmask.backend.api import API, STOP_REQUEST
+from leap.bitmask.backend.api import API, STOP_REQUEST, PING_REQUEST
 from leap.bitmask.backend.utils import get_backend_certificates
 
 import logging
@@ -39,6 +39,11 @@ class BackendProxy(object):
     """
     PORT = '5556'
     SERVER = "tcp://localhost:%s" % PORT
+
+    POLL_TIMEOUT = 4000  # ms
+    POLL_TRIES = 3
+
+    PING_INTERVAL = 2  # secs
 
     def __init__(self):
         self._socket = None
@@ -62,6 +67,9 @@ class BackendProxy(object):
         socket.connect(self.SERVER)
         self._socket = socket
 
+        self._ping_at = 0
+        self.online = False
+
         self._call_queue = Queue.Queue()
         self._worker_caller = threading.Thread(target=self._worker)
         self._worker_caller.start()
@@ -82,8 +90,25 @@ class BackendProxy(object):
             except Queue.Empty:
                 pass
             time.sleep(0.01)
+            self._ping()
 
         logger.debug("BackendProxy worker stopped.")
+
+    def _reset_ping(self):
+        """
+        Reset the ping timeout counter.
+        This is called for every ping and request.
+        """
+        self._ping_at = time.time() + self.PING_INTERVAL
+
+    def _ping(self):
+        """
+        Heartbeat helper.
+        Sends a PING request just to know that the server is alive.
+        """
+        if time.time() > self._ping_at:
+            self._send_request(PING_REQUEST)
+            self._reset_ping()
 
     def _api_call(self, *args, **kwargs):
         """
@@ -134,16 +159,35 @@ class BackendProxy(object):
         # logger.debug("Sending request to backend: {0}".format(request))
         self._socket.send(request)
 
-        try:
-            # Get the reply.
-            self._socket.recv()
-            # response = self._socket.recv()
-            # msg = "Received reply for '{0}' -> '{1}'"
-            # msg = msg.format(request, response)
-            # logger.debug(msg)
-        except zmq.error.Again as e:
-            msg = "Timeout error contacting backend. {0!r}".format(e)
+        poll = zmq.Poller()
+        poll.register(self._socket, zmq.POLLIN)
+
+        reply = None
+        tries = 0
+
+        while True:
+            socks = dict(poll.poll(self.POLL_TIMEOUT))
+            if socks.get(self._socket) == zmq.POLLIN:
+                reply = self._socket.recv()
+                break
+
+            tries += 1
+            if tries < self.POLL_TRIES:
+                logger.warning('Retrying receive... {0}/{1}'.format(
+                    tries, self.POLL_TRIES))
+            else:
+                break
+
+        if reply is None:
+            msg = "Timeout error contacting backend."
             logger.critical(msg)
+            self.online = False
+        else:
+            # msg = "Received reply for '{0}' -> '{1}'".format(request, reply)
+            # logger.debug(msg)
+            self.online = True
+            # request received, no ping needed for other interval.
+            self._reset_ping()
 
     def __getattribute__(self, name):
         """

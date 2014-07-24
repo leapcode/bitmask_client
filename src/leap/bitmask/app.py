@@ -185,7 +185,7 @@ def start_app():
     backend_process.daemon = True
     backend_process.start()
 
-    run_frontend(options, flags_dict)
+    run_frontend(options, flags_dict, backend_pid=backend_process.pid)
 
 
 if __name__ == "__main__":

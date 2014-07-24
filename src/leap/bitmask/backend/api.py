@@ -18,10 +18,12 @@
 Backend available API and SIGNALS definition.
 """
 STOP_REQUEST = "stop"
+PING_REQUEST = "PING"
 
 API = (
     STOP_REQUEST,  # this method needs to be defined in order to support the
                    # backend stop action
+    PING_REQUEST,
 
     "eip_can_start",
     "eip_cancel_setup",

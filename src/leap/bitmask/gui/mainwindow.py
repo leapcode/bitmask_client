@@ -22,6 +22,8 @@ import time
 
 from datetime import datetime
 
+import psutil
+
 from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
@@ -97,7 +99,7 @@ class MainWindow(QtGui.QMainWindow):
     # We give the services some time to a halt before forcing quit.
     SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
 
-    def __init__(self, start_hidden=False):
+    def __init__(self, start_hidden=False, backend_pid=None):
         """
         Constructor for the client main window
 
@@ -124,6 +126,11 @@ class MainWindow(QtGui.QMainWindow):
         self.menuBar().setNativeMenuBar(not IS_LINUX)
 
         self._backend = BackendProxy()
+
+        # periodically check if the backend is alive
+        self._backend_checker = QtCore.QTimer(self)
+        self._backend_checker.timeout.connect(self._check_backend_status)
+        self._backend_checker.start(2000)
 
         self._leap_signaler = LeapSignaler()
         self._leap_signaler.start()
@@ -267,6 +274,7 @@ class MainWindow(QtGui.QMainWindow):
         self._logger_window = None
 
         self._start_hidden = start_hidden
+        self._backend_pid = backend_pid
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
@@ -333,6 +341,23 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.error("Bad call to the backend:")
         logger.error(data)
+
+    @QtCore.Slot()
+    def _check_backend_status(self):
+        """
+        TRIGGERS:
+            self._backend_checker.timeout
+
+        Check that the backend is running. Otherwise show an error to the user.
+        """
+        online = self._backend.online
+        if not online:
+            logger.critical("Backend is not online.")
+            QtGui.QMessageBox.critical(
+                self, self.tr("Application error"),
+                self.tr("There is a problem contacting the backend, please "
+                        "restart Bitmask."))
+            self._backend_checker.stop()
 
     def _backend_connect(self, only_tracked=False):
         """
@@ -1788,14 +1813,27 @@ class MainWindow(QtGui.QMainWindow):
         # Set this in case that the app is hidden
         QtGui.QApplication.setQuitOnLastWindowClosed(True)
 
-        self._stop_services()
-
         self._really_quit = True
+
+        if not self._backend.online:
+            self.final_quit()
+            return
+
+        self._stop_services()
 
         # call final quit when all the services are stopped
         self.all_services_stopped.connect(self.final_quit)
         # or if we reach the timeout
         QtDelayedCall(self.SERVICES_STOP_TIMEOUT, self.final_quit)
+
+    def _backend_kill(self):
+        """
+        Send a kill signal to the backend process.
+        This is called if the backend does not respond to requests.
+        """
+        if self._backend_pid is not None:
+            logger.debug("Killing backend")
+            psutil.Process(self._backend_pid).kill()
 
     @QtCore.Slot()
     def _remove_service(self, service):
@@ -1825,14 +1863,20 @@ class MainWindow(QtGui.QMainWindow):
         if self._finally_quitting:
             return
 
+        logger.debug('Final quit...')
         self._finally_quitting = True
 
-        logger.debug('Closing soledad...')
-        self._backend.soledad_close()
-        logger.debug('Final quit...')
+        if self._backend.online:
+            logger.debug('Closing soledad...')
+            self._backend.soledad_close()
 
         self._leap_signaler.stop()
-        self._backend.stop()
+
+        if self._backend.online:
+            self._backend.stop()
+        else:
+            self._backend_kill()
+
         time.sleep(0.05)  # give the thread a little time to finish.
 
         # Remove lockfiles on a clean shutdown.
