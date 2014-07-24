@@ -1813,9 +1813,13 @@ class MainWindow(QtGui.QMainWindow):
         # Set this in case that the app is hidden
         QtGui.QApplication.setQuitOnLastWindowClosed(True)
 
-        self._stop_services()
-
         self._really_quit = True
+
+        if not self._backend.online:
+            self.final_quit()
+            return
+
+        self._stop_services()
 
         # call final quit when all the services are stopped
         self.all_services_stopped.connect(self.final_quit)
@@ -1859,11 +1863,12 @@ class MainWindow(QtGui.QMainWindow):
         if self._finally_quitting:
             return
 
+        logger.debug('Final quit...')
         self._finally_quitting = True
 
-        logger.debug('Closing soledad...')
-        self._backend.soledad_close()
-        logger.debug('Final quit...')
+        if self._backend.online:
+            logger.debug('Closing soledad...')
+            self._backend.soledad_close()
 
         self._leap_signaler.stop()
 
