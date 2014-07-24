@@ -960,6 +960,12 @@ class MainWindow(QtGui.QMainWindow):
         if not visible:
             QtGui.QApplication.setQuitOnLastWindowClosed(True)
             self.show()
+            if IS_LINUX:
+                # On ubuntu, activateWindow doesn't work reliably, so
+                # we do the following as a workaround. See
+                # https://bugreports.qt-project.org/browse/QTBUG-24932
+                # for more details
+                QtGui.QX11Info.setAppUserTime(0)
             self.activateWindow()
             self.raise_()
         else:
