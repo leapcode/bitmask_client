@@ -50,7 +50,7 @@ from leap.bitmask.services.mail import conductor as mail_conductor
 
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
-from leap.bitmask.util import make_address
+from leap.bitmask.util import autostart, make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 
@@ -103,6 +103,7 @@ class MainWindow(QtGui.QMainWindow):
         :type start_hidden: bool
         """
         QtGui.QMainWindow.__init__(self)
+        autostart.set_autostart(True)
 
         # register leap events ########################################
         register(signal=proto.UPDATER_NEW_UPDATES,
@@ -1740,6 +1741,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         # TODO separate the shutting down of services from the
         # UI stuff.
+        if self._quitting:
+            return
+
+        autostart.set_autostart(False)
+
+        self._quitting = True
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
