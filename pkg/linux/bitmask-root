@@ -34,7 +34,6 @@ not be teared down in the case of an error during launch.
 """
 # TODO should be tested with python3, which can be the default on some distro.
 from __future__ import print_function
-import atexit
 import os
 import re
 import signal
@@ -42,7 +41,6 @@ import socket
 import syslog
 import subprocess
 import sys
-import time
 import traceback
 
 cmdcheck = subprocess.check_output
