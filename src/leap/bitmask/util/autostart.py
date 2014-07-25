@@ -22,6 +22,7 @@ import os
 
 from leap.bitmask.config import flags
 from leap.bitmask.platform_init import IS_LINUX
+from leap.common.files import mkdir_p
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,8 @@ Terminal=false
 Icon=bitmask
 """
 
-DESKTOP_ENTRY_PATH = os.path.expanduser("~/.config/autostart/bitmask.desktop")
+DESKTOP_ENTRY_PATH = os.path.expanduser("~/.config/autostart/")
+DESKTOP_ENTRY_FILE = os.path.join(DESKTOP_ENTRY_PATH, 'bitmask.desktop')
 
 
 def set_autostart(enabled):
@@ -56,11 +58,12 @@ def set_autostart(enabled):
         return
 
     if enabled:
-        with open(DESKTOP_ENTRY_PATH, 'w') as f:
+        mkdir_p(DESKTOP_ENTRY_PATH)
+        with open(DESKTOP_ENTRY_FILE, 'w') as f:
             f.write(DESKTOP_ENTRY)
     else:
         try:
-            os.remove(DESKTOP_ENTRY_PATH)
+            os.remove(DESKTOP_ENTRY_FILE)
         except OSError:  # if the file does not exist
             pass
         except Exception as e:
