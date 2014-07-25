@@ -17,10 +17,10 @@
 """
 Helpers to enable/disable bitmask's autostart.
 """
-import flags
 import logging
 import os
 
+from leap.bitmask.config import flags
 from leap.bitmask.platform_init import IS_LINUX
 
 logger = logging.getLogger(__name__)
