@@ -24,6 +24,7 @@ import time
 
 import ipaddr
 
+from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.services import ServiceConfig
 from leap.bitmask.services.eip.eipspec import get_schema
@@ -220,6 +221,7 @@ class EIPConfig(ServiceConfig):
     OPENVPN_CIPHERS_REGEX = re.compile("[A-Z0-9\-]+")
 
     def __init__(self):
+        self.standalone = flags.STANDALONE
         ServiceConfig.__init__(self)
         self._api_version = None
 

@@ -216,7 +216,8 @@ class LoginWidget(QtGui.QWidget):
         """
         self.ui.lnUser.setEnabled(enabled)
         self.ui.lnPassword.setEnabled(enabled)
-        self.ui.chkRemember.setEnabled(enabled)
+        if has_keyring():
+            self.ui.chkRemember.setEnabled(enabled)
         self.ui.cmbProviders.setEnabled(enabled)
 
         self._set_cancel(not enabled)
