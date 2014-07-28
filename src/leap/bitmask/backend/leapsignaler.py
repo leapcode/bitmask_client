@@ -58,6 +58,7 @@ class LeapSignaler(SignalerQt):
     eip_status_changed = QtCore.Signal(dict)
     eip_stopped = QtCore.Signal()
     eip_tear_fw_down = QtCore.Signal(object)
+    eip_bitmask_root_vpn_down = QtCore.Signal(object)
     eip_uninitialized_provider = QtCore.Signal()
     eip_vpn_launcher_exception = QtCore.Signal()
 

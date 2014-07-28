@@ -317,6 +317,12 @@ class LeapBackend(Backend):
         """
         self._eip.tear_fw_down()
 
+    def bitmask_root_vpn_down(self):
+        """
+        Signal the need to bring vpn down.
+        """
+        self._eip.bitmask_root_vpn_down()
+
     def user_login(self, provider, username, password):
         """
         Execute the whole authentication process for a user

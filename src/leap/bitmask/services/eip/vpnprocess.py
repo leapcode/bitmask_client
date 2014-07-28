@@ -263,6 +263,18 @@ class VPN(object):
                                     BM_ROOT, "firewall", "stop"])
         return True if exitCode is 0 else False
 
+    def bitmask_root_vpn_down(self):
+        """
+        Bring openvpn down using the privileged wrapper.
+        """
+        if IS_MAC:
+            # We don't support Mac so far
+            return True
+        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+        exitCode = subprocess.call(["pkexec",
+                                    BM_ROOT, "openvpn", "stop"])
+        return True if exitCode is 0 else False
+
     def _kill_if_left_alive(self, tries=0):
         """
         Check if the process is still alive, and send a
