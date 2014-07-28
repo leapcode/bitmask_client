@@ -1138,6 +1138,11 @@ class MainWindow(QtGui.QMainWindow):
         """
         Reimplementation of closeEvent to close to tray
         """
+        if not e.spontaneous():
+            # if the system requested the `close` then we should quit.
+            self.quit()
+            return
+
         if QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
                 not self._really_quit:
             self._toggle_visible()
