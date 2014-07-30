@@ -97,7 +97,7 @@ class MainWindow(QtGui.QMainWindow):
     EIP_START_TIMEOUT = 60000  # in milliseconds
 
     # We give the services some time to a halt before forcing quit.
-    SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
+    SERVICES_STOP_TIMEOUT = 3000  # in milliseconds
 
     def __init__(self, start_hidden=False, backend_pid=None):
         """
