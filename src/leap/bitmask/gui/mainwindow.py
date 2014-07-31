@@ -97,7 +97,7 @@ class MainWindow(QtGui.QMainWindow):
     EIP_START_TIMEOUT = 60000  # in milliseconds
 
     # We give the services some time to a halt before forcing quit.
-    SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
+    SERVICES_STOP_TIMEOUT = 3000  # in milliseconds
 
     def __init__(self, start_hidden=False, backend_pid=None):
         """
@@ -197,6 +197,7 @@ class MainWindow(QtGui.QMainWindow):
         # used to know if we are in the final steps of quitting
         self._quitting = False
         self._finally_quitting = False
+        self._system_quit = False
 
         self._backend_connected_signals = []
         self._backend_connect()
@@ -1140,6 +1141,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         if not e.spontaneous():
             # if the system requested the `close` then we should quit.
+            self._system_quit = True
             self.quit()
             return
 
@@ -1809,7 +1811,7 @@ class MainWindow(QtGui.QMainWindow):
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
-        if self._systray is not None:
+        if not self._system_quit and self._systray is not None:
             self._systray.showMessage(
                 self.tr('Quitting...'),
                 self.tr('Bitmask is quitting, please wait.'))
@@ -1833,10 +1835,18 @@ class MainWindow(QtGui.QMainWindow):
             self.final_quit()
             return
 
-        self._stop_services()
-
         # call final quit when all the services are stopped
         self.all_services_stopped.connect(self.final_quit)
+
+        self._stop_services()
+
+        # we wait and call manually since during the system's logout the
+        # backend process can be killed and we won't get a response.
+        # XXX: also, for some reason the services stop timeout does not work.
+        if self._system_quit:
+            time.sleep(0.5)
+            self.final_quit()
+
         # or if we reach the timeout
         QtDelayedCall(self.SERVICES_STOP_TIMEOUT, self.final_quit)
 
@@ -1859,6 +1869,7 @@ class MainWindow(QtGui.QMainWindow):
         :param service: the service that we want to remove
         :type service: str
         """
+        logger.debug("Removing service: {0}".format(service))
         self._services_being_stopped.discard(service)
 
         if not self._services_being_stopped:
@@ -1886,12 +1897,12 @@ class MainWindow(QtGui.QMainWindow):
 
         self._leap_signaler.stop()
 
-        if self._backend.online:
-            self._backend.stop()
-        else:
-            self._backend_kill()
-
+        self._backend.stop()
         time.sleep(0.05)  # give the thread a little time to finish.
+
+        if self._system_quit or not self._backend.online:
+            logger.debug("Killing the backend")
+            self._backend_kill()
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
