@@ -50,11 +50,8 @@ def _get_keyring_with_fallback():
         return None
     kr = keyring.get_keyring()
     if not canuse(kr):
-        try:
-            kr_klass = keyring.backends.SecretService
-            kr = kr_klass.Keyring()
-        except AttributeError:
-            logger.warning("Keyring cannot find SecretService Backend")
+        logger.debug("No usable keyring found")
+        return None
     logger.debug("Selected keyring: %s" % (kr.__class__,))
     if not canuse(kr):
         logger.debug("Not using default keyring since it is obsolete")
