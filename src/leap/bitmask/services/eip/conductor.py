@@ -137,6 +137,7 @@ class EIPConductor(object):
         else:
             self._eip_status.eip_pre_up()
         self.user_stopped_eip = False
+        self.cancelled = False
         self._eip_status.hide_fw_down_button()
 
         # Until we set an option in the preferences window, we'll assume that
@@ -175,6 +176,9 @@ class EIPConductor(object):
         :param failed: whether this is the final step of a retry sequence
         :type failed: bool
         """
+        # XXX we should NOT keep status in the widget, but we do for a series
+        # of hacks related to restarts. All status should be kept in a backend
+        # object, widgets should be just widgets.
         self._eip_status.is_restart = restart
         self.user_stopped_eip = not restart and not failed
 
@@ -302,17 +306,25 @@ class EIPConductor(object):
         # bitmask-root is masking the exitcode, so we might need
         # to fix it on that side.
         # if exitCode != 0 and not self.user_stopped_eip:
-        if not self.user_stopped_eip:
+
+        if not self.user_stopped_eip and not self.cancelled:
+            error = True
             eip_status_label = self._eip_status.tr(
                 "{0} finished in an unexpected manner!")
             eip_status_label = eip_status_label.format(self.eip_name)
-            self._eip_status.eip_stopped()
             self._eip_status.set_eip_status_icon("error")
             self._eip_status.set_eip_status(eip_status_label,
-                                            error=True)
+                                            error=error)
+            self._eip_status.eip_stopped()
             signal = self.qtsigs.connection_died_signal
             self._eip_status.show_fw_down_button()
             self._eip_status.eip_failed_to_connect()
+
+        if self.cancelled:
+            signal = self.qtsigs.connection_aborted_signal
+            self._eip_status.set_eip_status_icon("error")
+            self._eip_status.eip_stopped()
+            self._eip_status.set_eip_status("", error=False)
 
         if exitCode == 0 and IS_MAC:
             # XXX remove this warning after I fix cocoasudo.

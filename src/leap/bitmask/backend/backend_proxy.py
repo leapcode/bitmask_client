@@ -18,6 +18,8 @@
 The BackendProxy handles calls from the GUI and forwards (through ZMQ)
 to the backend.
 """
+# XXX should document the relationship to the API here.
+
 import functools
 import Queue
 import threading
@@ -37,6 +39,7 @@ class BackendProxy(object):
     The BackendProxy handles calls from the GUI and forwards (through ZMQ)
     to the backend.
     """
+
     PORT = '5556'
     SERVER = "tcp://localhost:%s" % PORT
 

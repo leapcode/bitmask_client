@@ -69,7 +69,6 @@ class ILEAPComponent(zope.interface.Interface):
     """
     Interface that every component for the backend should comply to
     """
-
     key = zope.interface.Attribute("Key id for this component")
 
 
@@ -551,6 +550,12 @@ class EIP(object):
         Tear the firewall down.
         """
         self._vpn.tear_down_firewall()
+
+    def bitmask_root_vpn_down(self):
+        """
+        Bring openvpn down, using bitmask-root helper.
+        """
+        self._vpn.bitmask_root_vpn_down()
 
     def get_gateways_list(self, domain):
         """

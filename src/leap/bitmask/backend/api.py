@@ -20,6 +20,8 @@ Backend available API and SIGNALS definition.
 STOP_REQUEST = "stop"
 PING_REQUEST = "PING"
 
+# XXX this needs documentation. What is it used for?
+
 API = (
     STOP_REQUEST,  # this method needs to be defined in order to support the
                    # backend stop action
@@ -56,6 +58,7 @@ API = (
     "soledad_close",
     "soledad_load_offline",
     "tear_fw_down",
+    "bitmask_root_vpn_down",
     "user_cancel_login",
     "user_change_password",
     "user_get_logged_in_status",
@@ -97,6 +100,7 @@ SIGNALS = (
     "eip_status_changed",
     "eip_stopped",
     "eip_tear_fw_down",
+    "eip_bitmask_root_vpn_down",
     "eip_uninitialized_provider",
     "eip_vpn_launcher_exception",
     "imap_stopped",
