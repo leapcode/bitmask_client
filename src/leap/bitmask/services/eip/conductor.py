@@ -16,6 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 EIP Conductor module.
+
+This handles Qt Signals and triggers the calls to the backend,
+where the VPNProcess has been initialized.
 """
 import logging
 
@@ -90,7 +93,7 @@ class EIPConductor(object):
 
     def start_eip_machine(self, action):
         """
-        Initializes and starts the EIP state machine.
+        Initialize and start the EIP state machine.
         Needs the reference to the eip_status widget not to be empty.
 
         :action: QtAction
@@ -124,8 +127,12 @@ class EIPConductor(object):
     @QtCore.Slot()
     def _start_eip(self):
         """
-        Starts EIP.
+        Start EIP.
+
+        This set a couple of status flags and calls the start procedure in the
+        backend.
         """
+        # TODO status should be kept in a singleton in the backend.
         st = self._eip_status
         is_restart = st and st.is_restart
 
@@ -271,7 +278,7 @@ class EIPConductor(object):
         TRIGGERS:
             Signaler.eip_process_finished
 
-        Triggered when the EIP/VPN process finishes to set the UI
+        Triggered when the EIP/VPN process finishes, in order to set the UI
         accordingly.
 
         Ideally we would have the right exit code here,

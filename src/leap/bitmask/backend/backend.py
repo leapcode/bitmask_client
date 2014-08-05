@@ -14,6 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# FIXME this is missing module documentation. It would be fine to say a couple
+# of lines about the whole backend architecture.
+# TODO use txzmq bindings instead.
+
 import json
 import threading
 import time
@@ -38,7 +43,11 @@ class Backend(object):
     Backend server.
     Receives signals from backend_proxy and emit signals if needed.
     """
+    # XXX this should not be hardcoded. Make it configurable.
     PORT = '5556'
+
+    # XXX we might want to make this configurable per-platform,
+    # and use the most performant socket type on each one.
     BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
 
     PING_INTERVAL = 2  # secs
@@ -67,6 +76,7 @@ class Backend(object):
         # Start an authenticator for this context.
         auth = ThreadAuthenticator(context)
         auth.start()
+        # XXX do not hardcode this here.
         auth.allow('127.0.0.1')
 
         # Tell authenticator to use the certificate in a directory
