@@ -40,14 +40,14 @@ class LoggerWindow(QtGui.QDialog):
     _paste_ok = QtCore.Signal(object)
     _paste_error = QtCore.Signal(object)
 
-    def __init__(self, handler):
+    def __init__(self, parent, handler):
         """
         Initialize the widget with the custom handler.
 
         :param handler: Custom handler that supports history and signal.
         :type handler: LeapLogHandler.
         """
-        QtGui.QDialog.__init__(self)
+        QtGui.QDialog.__init__(self, parent)
         leap_assert(handler, "We need a handler for the logger window")
         leap_assert_type(handler, LeapLogHandler)
 
