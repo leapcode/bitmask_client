@@ -367,6 +367,7 @@ class EIPStatusWidget(QtGui.QWidget):
         leap_assert_type(error, bool)
         if error:
             logger.error(status)
+            self.hide_eip_cancel_button()
         else:
             logger.debug(status)
         self._eip_status = status
@@ -723,8 +724,16 @@ class EIPStatusWidget(QtGui.QWidget):
     def _on_eip_vpn_launcher_exception(self):
         # XXX We should implement again translatable exceptions so
         # we can pass a translatable string to the panel (usermessage attr)
-        self.set_eip_status("VPN Launcher error.", error=True)
+        # FIXME this logic should belong to the backend, not to this
+        # widget.
         self.set_eipstatus_off()
+
+        st = self.tr("VPN Launcher error. See the logs for more info.")
+        self.set_eip_status(st, error=True)
+
+        msg = self.tr("Encrypted Internet failed to start")
+        self.set_eip_message(msg)
+        self.show_fw_down_button()
 
         self.aborted()
 
