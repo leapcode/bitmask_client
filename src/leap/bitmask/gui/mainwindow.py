@@ -1837,7 +1837,7 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard:
             self._wizard.close()
 
-        if self._logger_window:
+        if self._logger_window is not None:
             self._logger_window.close()
 
         # Set this in case that the app is hidden
