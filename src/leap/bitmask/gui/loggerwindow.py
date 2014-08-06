@@ -18,11 +18,10 @@
 """
 History log window
 """
-import logging
 import cgi
+import logging
 
 from PySide import QtCore, QtGui
-from twisted.internet import threads
 
 from ui_loggerwindow import Ui_LoggerWindow
 
@@ -38,6 +37,9 @@ class LoggerWindow(QtGui.QDialog):
     """
     Window that displays a history of the logged messages in the app.
     """
+    _paste_ok = QtCore.Signal(object)
+    _paste_error = QtCore.Signal(object)
+
     def __init__(self, handler):
         """
         Initialize the widget with the custom handler.
@@ -45,9 +47,6 @@ class LoggerWindow(QtGui.QDialog):
         :param handler: Custom handler that supports history and signal.
         :type handler: LeapLogHandler.
         """
-        from twisted.internet import reactor
-        self.reactor = reactor
-
         QtGui.QDialog.__init__(self)
         leap_assert(handler, "We need a handler for the logger window")
         leap_assert_type(handler, LeapLogHandler)
@@ -66,6 +65,9 @@ class LoggerWindow(QtGui.QDialog):
         self.ui.leFilterBy.textEdited.connect(self._filter_by)
         self.ui.cbCaseInsensitive.stateChanged.connect(self._load_history)
         self.ui.btnPastebin.clicked.connect(self._pastebin_this)
+
+        self._paste_ok.connect(self._pastebin_ok)
+        self._paste_error.connect(self._pastebin_err)
 
         self._current_filter = ""
         self._current_history = ""
@@ -193,6 +195,45 @@ class LoggerWindow(QtGui.QDialog):
             self.ui.btnPastebin.setText(self.tr("Send to Pastebin.com"))
             self.ui.btnPastebin.setEnabled(True)
 
+    def _pastebin_ok(self, link):
+        """
+        Handle a successful paste.
+
+        :param link: the recently created pastebin link.
+        :type link: str
+        """
+        self._set_pastebin_sending(False)
+        msg = self.tr("Your pastebin link <a href='{0}'>{0}</a>")
+        msg = msg.format(link)
+
+        # We save the dialog in an instance member to avoid dialog being
+        # deleted right after we exit this method
+        self._msgBox = msgBox = QtGui.QMessageBox(
+            QtGui.QMessageBox.Information, self.tr("Pastebin OK"), msg)
+        msgBox.setWindowModality(QtCore.Qt.NonModal)
+        msgBox.show()
+
+    def _pastebin_err(self, failure):
+        """
+        Handle a failure in paste.
+
+        :param failure: the exception that made the paste fail.
+        :type failure: Exception
+        """
+        self._set_pastebin_sending(False)
+        logger.error(repr(failure))
+
+        msg = self.tr("Sending logs to Pastebin failed!")
+        if isinstance(failure, pastebin.PostLimitError):
+            msg = self.tr('Maximum posts per day reached')
+
+        # We save the dialog in an instance member to avoid dialog being
+        # deleted right after we exit this method
+        self._msgBox = msgBox = QtGui.QMessageBox(
+            QtGui.QMessageBox.Critical, self.tr("Pastebin Error"), msg)
+        msgBox.setWindowModality(QtCore.Qt.NonModal)
+        msgBox.show()
+
     def _pastebin_this(self):
         """
         Send the current log history to pastebin.com and gives the user a link
@@ -204,55 +245,19 @@ class LoggerWindow(QtGui.QDialog):
             """
             content = self._current_history
             pb = pastebin.PastebinAPI()
-            link = pb.paste(PASTEBIN_API_DEV_KEY, content,
-                            paste_name="Bitmask log",
-                            paste_expire_date='1M')
+            try:
+                link = pb.paste(PASTEBIN_API_DEV_KEY, content,
+                                paste_name="Bitmask log",
+                                paste_expire_date='1M')
+                # convert to 'raw' link
+                link = "http://pastebin.com/raw.php?i=" + link.split('/')[-1]
 
-            # convert to 'raw' link
-            link = "http://pastebin.com/raw.php?i=" + link.split('/')[-1]
-
-            return link
-
-        def pastebin_ok(link):
-            """
-            Callback handler for `do_pastebin`.
-
-            :param link: the recently created pastebin link.
-            :type link: str
-            """
-            self._set_pastebin_sending(False)
-            msg = self.tr("Your pastebin link <a href='{0}'>{0}</a>")
-            msg = msg.format(link)
-
-            # We save the dialog in an instance member to avoid dialog being
-            # deleted right after we exit this method
-            self._msgBox = msgBox = QtGui.QMessageBox(
-                QtGui.QMessageBox.Information, self.tr("Pastebin OK"), msg)
-            msgBox.setWindowModality(QtCore.Qt.NonModal)
-            msgBox.show()
-
-        def pastebin_err(failure):
-            """
-            Errback handler for `do_pastebin`.
-
-            :param failure: the failure that triggered the errback.
-            :type failure: twisted.python.failure.Failure
-            """
-            self._set_pastebin_sending(False)
-            logger.error(repr(failure))
-
-            msg = self.tr("Sending logs to Pastebin failed!")
-            if failure.check(pastebin.PostLimitError):
-                msg = self.tr('Maximum posts per day reached')
-
-            # We save the dialog in an instance member to avoid dialog being
-            # deleted right after we exit this method
-            self._msgBox = msgBox = QtGui.QMessageBox(
-                QtGui.QMessageBox.Critical, self.tr("Pastebin Error"), msg)
-            msgBox.setWindowModality(QtCore.Qt.NonModal)
-            msgBox.show()
+                self._paste_ok.emit(link)
+            except Exception as e:
+                self._paste_error.emit(e)
 
         self._set_pastebin_sending(True)
-        d = threads.deferToThread(do_pastebin)
-        d.addCallback(pastebin_ok)
-        d.addErrback(pastebin_err)
+
+        self._paste_thread = QtCore.QThread()
+        self._paste_thread.run = lambda: do_pastebin()
+        self._paste_thread.start()
