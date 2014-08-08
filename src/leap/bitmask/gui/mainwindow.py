@@ -285,14 +285,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self.logout.connect(self._mail_conductor.stop_mail_services)
 
-        # Eip machine is a public attribute where the state machine for
-        # the eip connection will be available to the different components.
-        # Remember that this will not live in the  +1600LOC mainwindow for
-        # all the eternity, so at some point we will be moving this to
-        # the EIPConductor or some other clever component that we will
-        # instantiate from here.
+        # start event machines from within the eip and mail conductors
 
-        # start event machines
         # TODO should encapsulate all actions into one object
         self._eip_conductor.start_eip_machine(
             action=self._action_eip_startstop)
