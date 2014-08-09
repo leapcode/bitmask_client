@@ -34,7 +34,6 @@ not be teared down in the case of an error during launch.
 """
 # TODO should be tested with python3, which can be the default on some distro.
 from __future__ import print_function
-import atexit
 import os
 import re
 import signal
@@ -42,7 +41,6 @@ import socket
 import syslog
 import subprocess
 import sys
-import time
 import traceback
 
 cmdcheck = subprocess.check_output
@@ -51,7 +49,7 @@ cmdcheck = subprocess.check_output
 # CONSTANTS
 #
 
-VERSION = "1"
+VERSION = "2"
 SCRIPT = "bitmask-root"
 NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
@@ -658,17 +656,6 @@ def firewall_start(args):
     # reject all other ipv4 sent over the default device
     ip4tables("--append", BITMASK_CHAIN, "-o",
               default_device, "--jump", "REJECT")
-
-    # workaround for ipv6 servers being blocked and not falling back to ipv4.
-    # See #5693
-    ip6tables("--append", "OUTPUT", "--jump", "REJECT",
-              "-s", "::/0",  "-d", "::/0",
-              "-p", "tcp",
-              "--reject-with", "icmp6-port-unreachable")
-    ip6tables("--append", "OUTPUT", "--jump", "REJECT",
-              "-s", "::/0",  "-d", "::/0",
-              "-p", "udp",
-              "--reject-with", "icmp6-port-unreachable")
 
 
 def firewall_stop():

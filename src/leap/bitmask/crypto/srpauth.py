@@ -24,7 +24,7 @@ import requests
 import srp
 import json
 
-#this error is raised from requests
+# this error is raised from requests
 from simplejson.decoder import JSONDecodeError
 from functools import partial
 from requests.adapters import HTTPAdapter
@@ -32,7 +32,7 @@ from requests.adapters import HTTPAdapter
 from twisted.internet import threads
 from twisted.internet.defer import CancelledError
 
-from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.backend.settings import Settings
 from leap.bitmask.util import request_helpers as reqhelper
 from leap.bitmask.util.compat import requests_has_max_retries
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
@@ -151,7 +151,7 @@ class SRPAuth(object):
 
             self._provider_config = provider_config
             self._signaler = signaler
-            self._settings = LeapSettings()
+            self._settings = Settings()
 
             # **************************************************** #
             # Dependency injection helpers, override this for more
@@ -523,7 +523,7 @@ class SRPAuth(object):
             Password change callback.
             """
             if self._signaler is not None:
-                self._signaler.signal(self._signaler.SRP_PASSWORD_CHANGE_OK)
+                self._signaler.signal(self._signaler.srp_password_change_ok)
 
         def _change_password_error(self, failure):
             """
@@ -535,9 +535,9 @@ class SRPAuth(object):
                 return
 
             if failure.check(SRPAuthBadUserOrPassword):
-                self._signaler.signal(self._signaler.SRP_PASSWORD_CHANGE_BADPW)
+                self._signaler.signal(self._signaler.srp_password_change_badpw)
             else:
-                self._signaler.signal(self._signaler.SRP_PASSWORD_CHANGE_ERROR)
+                self._signaler.signal(self._signaler.srp_password_change_error)
 
         def authenticate(self, username, password):
             """
@@ -591,7 +591,7 @@ class SRPAuth(object):
             :type _: IGNORED
             """
             logger.debug("Successful login!")
-            self._signaler.signal(self._signaler.SRP_AUTH_OK)
+            self._signaler.signal(self._signaler.srp_auth_ok)
 
         def _authenticate_error(self, failure):
             """
@@ -612,13 +612,13 @@ class SRPAuth(object):
                 return
 
             if failure.check(SRPAuthBadUserOrPassword):
-                signal = self._signaler.SRP_AUTH_BAD_USER_OR_PASSWORD
+                signal = self._signaler.srp_auth_bad_user_or_password
             elif failure.check(SRPAuthConnectionError):
-                signal = self._signaler.SRP_AUTH_CONNECTION_ERROR
+                signal = self._signaler.srp_auth_connection_error
             elif failure.check(SRPAuthenticationError):
-                signal = self._signaler.SRP_AUTH_SERVER_ERROR
+                signal = self._signaler.srp_auth_server_error
             else:
-                signal = self._signaler.SRP_AUTH_ERROR
+                signal = self._signaler.srp_auth_error
 
             self._signaler.signal(signal)
 
@@ -647,7 +647,7 @@ class SRPAuth(object):
                 logger.warning("Something went wrong with the logout: %r" %
                                (e,))
                 if self._signaler is not None:
-                    self._signaler.signal(self._signaler.SRP_LOGOUT_ERROR)
+                    self._signaler.signal(self._signaler.srp_logout_error)
                 raise
             else:
                 self.set_session_id(None)
@@ -657,7 +657,7 @@ class SRPAuth(object):
                 self._session = self._fetcher.session()
                 logger.debug("Successfully logged out.")
                 if self._signaler is not None:
-                    self._signaler.signal(self._signaler.SRP_LOGOUT_OK)
+                    self._signaler.signal(self._signaler.srp_logout_ok)
 
         def set_session_id(self, session_id):
             with self._session_id_lock:

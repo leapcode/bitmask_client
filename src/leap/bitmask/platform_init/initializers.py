@@ -21,7 +21,6 @@ import logging
 import os
 import platform
 import stat
-import sys
 import subprocess
 import tempfile
 
@@ -103,7 +102,7 @@ def get_missing_helpers_dialog():
     msg.setWindowTitle(msg.tr("Missing helper files"))
     msg.setText(msg.tr(WE_NEED_POWERS))
     # but maybe the user really deserve to know more
-    #msg.setInformativeText(msg.tr(BECAUSE))
+    # msg.setInformativeText(msg.tr(BECAUSE))
     msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
     msg.addButton("No, don't ask again", QtGui.QMessageBox.RejectRole)
     msg.setDefaultButton(QtGui.QMessageBox.Yes)

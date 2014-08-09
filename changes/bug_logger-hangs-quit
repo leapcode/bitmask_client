@@ -1,0 +1,1 @@
+- Fix logger window blocking the bitmask quit().

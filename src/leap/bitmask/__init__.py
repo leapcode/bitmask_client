@@ -25,6 +25,12 @@ from pkg_resources import parse_version
 
 from leap.bitmask.util import first
 
+# HACK: This is a hack so that py2app copies _scrypt.so to the right
+# place, it can't be technically imported, but that doesn't matter
+# because the import is never executed
+if False:
+    import _scrypt  # noqa - skip 'not used' warning
+
 
 def _is_release_version(version):
     """
@@ -60,16 +66,16 @@ try:
     IS_RELEASE_VERSION = _is_release_version(__version__)
     del get_versions
 except ImportError:
-    #running on a tree that has not run
-    #the setup.py setver
+    # running on a tree that has not run
+    # the setup.py setver
     pass
 
 __appname__ = "unknown"
 try:
     from leap.bitmask._appname import __appname__
 except ImportError:
-    #running on a tree that has not run
-    #the setup.py setver
+    # running on a tree that has not run
+    # the setup.py setver
     pass
 
 __short_version__ = first(re.findall('\d+\.\d+\.\d+', __version__))

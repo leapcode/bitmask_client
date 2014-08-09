@@ -1,4 +1,4 @@
-## -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 # test_abstrctbootstrapper.py
 # Copyright (C) 2013 LEAP
 #

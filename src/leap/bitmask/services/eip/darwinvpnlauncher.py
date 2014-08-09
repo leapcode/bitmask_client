@@ -46,7 +46,9 @@ class DarwinVPNLauncher(VPNLauncher):
     INSTALL_MSG = ("\"Bitmask needs administrative privileges to install "
                    "missing scripts and fix permissions.\"")
 
-    INSTALL_PATH = os.path.realpath(os.getcwd() + "/../../")
+    # Hardcode the installation path for OSX for security, openvpn is
+    # run as root
+    INSTALL_PATH = "/Applications/Bitmask.app/"
     INSTALL_PATH_ESCAPED = os.path.realpath(os.getcwd() + "/../../")
     OPENVPN_BIN = 'openvpn.leap'
     OPENVPN_PATH = "%s/Contents/Resources/openvpn" % (INSTALL_PATH,)

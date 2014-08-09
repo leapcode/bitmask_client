@@ -18,13 +18,21 @@
 Main window for Bitmask.
 """
 import logging
+import time
 
 from datetime import datetime
+
+import psutil
 
 from PySide import QtCore, QtGui
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask import __version_hash__ as VERSION_HASH
+
+# TODO: we should use a more granular signaling instead of passing error/ok as
+# a result.
+from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
+
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 
@@ -37,20 +45,20 @@ from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
-from leap.bitmask.gui import twisted_main
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init.initializers import init_platform
 from leap.bitmask.platform_init.initializers import init_signals
 
-from leap.bitmask.backend import leapbackend
+from leap.bitmask.backend.backend_proxy import BackendProxy
+from leap.bitmask.backend.leapsignaler import LeapSignaler
 
 from leap.bitmask.services.eip import conductor as eip_conductor
 from leap.bitmask.services.mail import conductor as mail_conductor
 
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
-from leap.bitmask.util import make_address
+from leap.bitmask.util import autostart, make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 
@@ -89,20 +97,18 @@ class MainWindow(QtGui.QMainWindow):
     EIP_START_TIMEOUT = 60000  # in milliseconds
 
     # We give the services some time to a halt before forcing quit.
-    SERVICES_STOP_TIMEOUT = 20000  # in milliseconds
+    SERVICES_STOP_TIMEOUT = 3000  # in milliseconds
 
-    def __init__(self, bypass_checks=False, start_hidden=False):
+    def __init__(self, start_hidden=False, backend_pid=None):
         """
         Constructor for the client main window
 
-        :param bypass_checks: Set to true if the app should bypass first round
-                              of checks for CA certificates at bootstrap
-        :type bypass_checks: bool
         :param start_hidden: Set to true if the app should not show the window
                              but just the tray.
         :type start_hidden: bool
         """
         QtGui.QMainWindow.__init__(self)
+        autostart.set_autostart(True)
 
         # register leap events ########################################
         register(signal=proto.UPDATER_NEW_UPDATES,
@@ -119,15 +125,23 @@ class MainWindow(QtGui.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.menuBar().setNativeMenuBar(not IS_LINUX)
-        self._backend = leapbackend.Backend(bypass_checks)
-        self._backend.start()
+
+        self._backend = BackendProxy()
+
+        # periodically check if the backend is alive
+        self._backend_checker = QtCore.QTimer(self)
+        self._backend_checker.timeout.connect(self._check_backend_status)
+        self._backend_checker.start(2000)
+
+        self._leap_signaler = LeapSignaler()
+        self._leap_signaler.start()
 
         self._settings = LeapSettings()
+        # gateway = self._settings.get_selected_gateway(provider)
+        # self._backend.settings_set_selected_gateway(provider, gateway)
 
         # Login Widget
-        self._login_widget = LoginWidget(
-            self._settings,
-            self)
+        self._login_widget = LoginWidget(self._settings, self)
         self.ui.loginLayout.addWidget(self._login_widget)
 
         # Mail Widget
@@ -144,13 +158,17 @@ class MainWindow(QtGui.QMainWindow):
 
         # EIP Control redux #########################################
         self._eip_conductor = eip_conductor.EIPConductor(
-            self._settings, self._backend)
-        self._eip_status = EIPStatusWidget(self, self._eip_conductor)
+            self._settings, self._backend, self._leap_signaler)
+        self._eip_status = EIPStatusWidget(self, self._eip_conductor,
+                                           self._leap_signaler)
 
         init_signals.eip_missing_helpers.connect(
             self._disable_eip_missing_helpers)
 
         self.ui.eipLayout.addWidget(self._eip_status)
+
+        # XXX we should get rid of the circular refs
+        # conductor <-> status, right now keeping state on the widget ifself.
         self._eip_conductor.add_eip_widget(self._eip_status)
 
         self._eip_conductor.connect_signals()
@@ -165,6 +183,7 @@ class MainWindow(QtGui.QMainWindow):
         self.eip_needs_login.connect(self._eip_status.disable_eip_start)
         self.eip_needs_login.connect(self._disable_eip_start_action)
 
+        # XXX all this info about state should move to eip conductor too
         self._already_started_eip = False
         self._trying_to_start_eip = False
 
@@ -180,7 +199,9 @@ class MainWindow(QtGui.QMainWindow):
         self._services_being_stopped = {}
 
         # used to know if we are in the final steps of quitting
+        self._quitting = False
         self._finally_quitting = False
+        self._system_quit = False
 
         self._backend_connected_signals = []
         self._backend_connect()
@@ -249,17 +270,15 @@ class MainWindow(QtGui.QMainWindow):
         # XXX should connect to mail_conductor.start_mail_service instead
         self.soledad_ready.connect(self._start_smtp_bootstrapping)
         self.soledad_ready.connect(self._start_imap_service)
-        ################################# end Qt Signals connection ########
+        # ################################ end Qt Signals connection ########
 
         init_platform()
 
         self._wizard = None
         self._wizard_firstrun = False
 
-        self._logger_window = None
-
-        self._bypass_checks = bypass_checks
         self._start_hidden = start_hidden
+        self._backend_pid = backend_pid
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
@@ -283,7 +302,7 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard_firstrun = True
             self._disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
-                                  bypass_checks=bypass_checks)
+                                  leap_signaler=self._leap_signaler)
             # Give this window time to finish init and then show the wizard
             QtDelayedCall(1, self._launch_wizard)
             self._wizard.accepted.connect(self._finish_init)
@@ -327,6 +346,23 @@ class MainWindow(QtGui.QMainWindow):
         logger.error("Bad call to the backend:")
         logger.error(data)
 
+    @QtCore.Slot()
+    def _check_backend_status(self):
+        """
+        TRIGGERS:
+            self._backend_checker.timeout
+
+        Check that the backend is running. Otherwise show an error to the user.
+        """
+        online = self._backend.online
+        if not online:
+            logger.critical("Backend is not online.")
+            QtGui.QMessageBox.critical(
+                self, self.tr("Application error"),
+                self.tr("There is a problem contacting the backend, please "
+                        "restart Bitmask."))
+            self._backend_checker.stop()
+
     def _backend_connect(self, only_tracked=False):
         """
         Connect to backend signals.
@@ -342,7 +378,7 @@ class MainWindow(QtGui.QMainWindow):
                              that we are tracking to disconnect later.
         :type only_tracked: bool
         """
-        sig = self._backend.signaler
+        sig = self._leap_signaler
         conntrack = self._connect_and_track
         auth_err = self._authentication_error
 
@@ -406,6 +442,9 @@ class MainWindow(QtGui.QMainWindow):
         sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
 
         sig.eip_dns_error.connect(self._eip_dns_error)
+
+        sig.eip_get_gateway_country_code.connect(self._set_eip_provider)
+        sig.eip_no_gateway.connect(self._set_eip_provider)
 
         # ==================================================================
 
@@ -480,7 +519,7 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard is None:
             self._disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
-                                  bypass_checks=self._bypass_checks)
+                                  leap_signaler=self._leap_signaler)
             self._wizard.accepted.connect(self._finish_init)
             self._wizard.rejected.connect(self._rejected_wizard)
 
@@ -524,20 +563,16 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.ui.action_show_logs.triggered
 
-        Displays the window with the history of messages logged until now
+        Display the window with the history of messages logged until now
         and displays the new ones on arrival.
         """
-        if self._logger_window is None:
-            leap_log_handler = self._get_leap_logging_handler()
-            if leap_log_handler is None:
-                logger.error('Leap logger handler not found')
-                return
-            else:
-                self._logger_window = LoggerWindow(handler=leap_log_handler)
-                self._logger_window.setVisible(
-                    not self._logger_window.isVisible())
+        leap_log_handler = self._get_leap_logging_handler()
+        if leap_log_handler is None:
+            logger.error('Leap logger handler not found')
+            return
         else:
-            self._logger_window.setVisible(not self._logger_window.isVisible())
+            lw = LoggerWindow(self, handler=leap_log_handler)
+            lw.show()
 
     @QtCore.Slot()
     def _show_AKM(self):
@@ -545,7 +580,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.ui.action_advanced_key_management.triggered
 
-        Displays the Advanced Key Management dialog.
+        Display the Advanced Key Management dialog.
         """
         domain = self._login_widget.get_selected_provider()
         logged_user = "{0}@{1}".format(self._logged_user, domain)
@@ -567,7 +602,7 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.btnPreferences.clicked (disabled for now)
             self.ui.action_preferences
 
-        Displays the preferences window.
+        Display the preferences window.
         """
         user = self._logged_user
         domain = self._login_widget.get_selected_provider()
@@ -575,7 +610,8 @@ class MainWindow(QtGui.QMainWindow):
         if self._provider_details is not None:
             mx_provided = MX_SERVICE in self._provider_details['services']
         preferences = PreferencesWindow(self, user, domain, self._backend,
-                                        self._soledad_started, mx_provided)
+                                        self._soledad_started, mx_provided,
+                                        self._leap_signaler)
 
         self.soledad_ready.connect(preferences.set_soledad_ready)
         preferences.show()
@@ -604,12 +640,13 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         self._trying_to_start_eip = settings.get_autostart_eip()
-        self._backend.eip_can_start(default_provider)
+        self._backend.eip_can_start(domain=default_provider)
 
         # If we don't want to start eip, we leave everything
         # initialized to quickly start it
         if not self._trying_to_start_eip:
-            self._backend.eip_setup(default_provider, skip_network=True)
+            self._backend.eip_setup(provider=default_provider,
+                                    skip_network=True)
 
     def _backend_can_start_eip(self):
         """
@@ -683,10 +720,12 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.btnEIPPreferences.clicked
             self.ui.action_eip_preferences (disabled for now)
 
-        Displays the EIP preferences window.
+        Display the EIP preferences window.
         """
         domain = self._login_widget.get_selected_provider()
-        EIPPreferencesWindow(self, domain, self._backend).show()
+        pref = EIPPreferencesWindow(self, domain,
+                                    self._backend, self._leap_signaler)
+        pref.show()
 
     #
     # updates
@@ -707,7 +746,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self.new_updates
 
-        Displays the new updates label and sets the updates_content
+        Display the new updates label and sets the updates_content
 
         :param req: Request type
         :type req: leap.common.events.events_pb2.SignalRequest
@@ -821,7 +860,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         providers = self._settings.get_configured_providers()
 
-        self._backend.provider_get_all_services(providers)
+        self._backend.provider_get_all_services(providers=providers)
 
     def _provider_get_all_services(self, services):
         self._set_eip_visible(EIP_SERVICE in services)
@@ -922,7 +961,7 @@ class MainWindow(QtGui.QMainWindow):
         :param reason: the reason why the tray got activated.
         :type reason: int
 
-        Displays the context menu from the tray icon
+        Display the context menu from the tray icon
         """
         self._update_hideshow_menu()
 
@@ -936,7 +975,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _update_hideshow_menu(self):
         """
-        Updates the Hide/Show main window menu text based on the
+        Update the Hide/Show main window menu text based on the
         visibility of the window.
         """
         get_action = lambda visible: (
@@ -953,7 +992,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self._action_visible.triggered
 
-        Toggles the window visibility
+        Toggle the window visibility
         """
         visible = self.isVisible() and self.isActiveWindow()
 
@@ -981,7 +1020,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _center_window(self):
         """
-        Centers the mainwindow based on the desktop geometry
+        Center the main window based on the desktop geometry
         """
         geometry = self._settings.get_geometry()
         state = self._settings.get_windowstate()
@@ -1083,7 +1122,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def changeEvent(self, e):
         """
-        Reimplements the changeEvent method to minimize to tray
+        Reimplementation of changeEvent method to minimize to tray
         """
         if not IS_MAC and \
            QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
@@ -1098,6 +1137,12 @@ class MainWindow(QtGui.QMainWindow):
         """
         Reimplementation of closeEvent to close to tray
         """
+        if not e.spontaneous():
+            # if the system requested the `close` then we should quit.
+            self._system_quit = True
+            self.quit()
+            return
+
         if QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
                 not self._really_quit:
             self._toggle_visible()
@@ -1111,7 +1156,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _first_run(self):
         """
-        Returns True if there are no configured providers. False otherwise
+        Return True if there are no configured providers. False otherwise
 
         :rtype: bool
         """
@@ -1122,12 +1167,12 @@ class MainWindow(QtGui.QMainWindow):
 
     def _download_provider_config(self):
         """
-        Starts the bootstrapping sequence. It will download the
+        Start the bootstrapping sequence. It will download the
         provider configuration if it's not present, otherwise will
         emit the corresponding signals inmediately
         """
         domain = self._login_widget.get_selected_provider()
-        self._backend.provider_setup(domain)
+        self._backend.provider_setup(provider=domain)
 
     @QtCore.Slot(dict)
     def _load_provider_config(self, data):
@@ -1142,18 +1187,19 @@ class MainWindow(QtGui.QMainWindow):
                      backend.provider_setup()
         :type data: dict
         """
-        if data[self._backend.PASSED_KEY]:
+        if data[PASSED_KEY]:
             selected_provider = self._login_widget.get_selected_provider()
-            self._backend.provider_bootstrap(selected_provider)
+            self._backend.provider_bootstrap(provider=selected_provider)
         else:
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._login_problem_provider()
 
     @QtCore.Slot()
     def _login_problem_provider(self):
         """
-        Warns the user about a problem with the provider during login.
+        Warn the user about a problem with the provider during login.
         """
+        # XXX triggers?
         self._login_widget.set_status(
             self.tr("Unable to login: Problem with provider"))
         self._login_widget.set_enabled(True)
@@ -1164,7 +1210,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self._login_widget.login
 
-        Starts the login sequence. Which involves bootstrapping the
+        Start the login sequence. Which involves bootstrapping the
         selected provider if the selection is valid (not empty), then
         start the SRP authentication, and as the last step
         bootstrapping the EIP service
@@ -1209,7 +1255,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self._login_widget.cancel_login
 
-        Stops the login sequence.
+        Stop the login sequence.
         """
         logger.debug("Cancelling log in.")
         self._cancel_ongoing_defers()
@@ -1233,7 +1279,7 @@ class MainWindow(QtGui.QMainWindow):
             Signaler.prov_cancelled_setup fired by
             self._backend.provider_cancel_setup()
 
-        This method re-enables the login widget and display a message for
+        Re-enable the login widget and display a message for
         the cancelled operation.
         """
         self._login_widget.set_status(self.tr("Log in cancelled by the user."))
@@ -1248,16 +1294,17 @@ class MainWindow(QtGui.QMainWindow):
         Once the provider configuration is loaded, this starts the SRP
         authentication
         """
-        if data[self._backend.PASSED_KEY]:
+        if data[PASSED_KEY]:
             username = self._login_widget.get_user()
             password = self._login_widget.get_password()
 
             self._show_hide_unsupported_services()
 
             domain = self._login_widget.get_selected_provider()
-            self._backend.user_login(domain, username, password)
+            self._backend.user_login(provider=domain,
+                                     username=username, password=password)
         else:
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._login_problem_provider()
 
     @QtCore.Slot()
@@ -1283,16 +1330,16 @@ class MainWindow(QtGui.QMainWindow):
         if MX_SERVICE in self._enabled_services:
             btn_enabled = self._login_widget.set_logout_btn_enabled
             btn_enabled(False)
-            sig = self._backend.signaler
+            sig = self._leap_signaler
             sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
             sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
 
-        if not MX_SERVICE in self._provider_details['services']:
+        if MX_SERVICE not in self._provider_details['services']:
             self._set_mx_visible(False)
 
     def _start_eip_bootstrap(self):
         """
-        Changes the stackedWidget index to the EIP status one and
+        Change the stackedWidget index to the EIP status one and
         triggers the eip bootstrapping.
         """
 
@@ -1322,7 +1369,7 @@ class MainWindow(QtGui.QMainWindow):
         """
         domain = self._login_widget.get_selected_provider()
         lang = QtCore.QLocale.system().name()
-        self._backend.provider_get_details(domain, lang)
+        self._backend.provider_get_details(domain=domain, lang=lang)
 
     @QtCore.Slot()
     def _provider_get_details(self, details):
@@ -1336,7 +1383,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _provides_mx_and_enabled(self):
         """
-        Defines if the current provider provides mx and if we have it enabled.
+        Define if the current provider provides mx and if we have it enabled.
 
         :returns: True if provides and is enabled, False otherwise
         :rtype: bool
@@ -1353,7 +1400,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _provides_eip_and_enabled(self):
         """
-        Defines if the current provider provides eip and if we have it enabled.
+        Define if the current provider provides eip and if we have it enabled.
 
         :returns: True if provides and is enabled, False otherwise
         :rtype: bool
@@ -1391,11 +1438,14 @@ class MainWindow(QtGui.QMainWindow):
                 # this is mostly for internal use/debug for now.
                 logger.warning("Sorry! Log-in at least one time.")
                 return
-            self._backend.soledad_load_offline(full_user_id, password, uuid)
+            self._backend.soledad_load_offline(username=full_user_id,
+                                               password=password, uuid=uuid)
         else:
             if self._logged_user is not None:
                 domain = self._login_widget.get_selected_provider()
-                self._backend.soledad_bootstrap(username, domain, password)
+                self._backend.soledad_bootstrap(username=username,
+                                                domain=domain,
+                                                password=password)
 
     ###################################################################
     # Service control methods: soledad
@@ -1452,14 +1502,14 @@ class MainWindow(QtGui.QMainWindow):
     @QtCore.Slot()
     def _disable_eip_start_action(self):
         """
-        Disables the EIP start action in the systray menu.
+        Disable the EIP start action in the systray menu.
         """
         self._action_eip_startstop.setEnabled(False)
 
     @QtCore.Slot()
     def _enable_eip_start_action(self):
         """
-        Enables the EIP start action in the systray menu.
+        Enable the EIP start action in the systray menu.
         """
         self._action_eip_startstop.setEnabled(True)
         self._eip_status.enable_eip_start()
@@ -1474,14 +1524,27 @@ class MainWindow(QtGui.QMainWindow):
         signal that currently is beeing processed under status_panel.
         After the refactor to EIPConductor this should not be necessary.
         """
-        domain = self._login_widget.get_selected_provider()
-
-        self._eip_status.set_provider(domain)
-        self._settings.set_defaultprovider(domain)
         self._already_started_eip = True
 
+        domain = self._login_widget.get_selected_provider()
+        self._settings.set_defaultprovider(domain)
+
+        self._backend.eip_get_gateway_country_code(domain=domain)
+
         # check for connectivity
-        self._backend.eip_check_dns(domain)
+        self._backend.eip_check_dns(domain=domain)
+
+    @QtCore.Slot()
+    def _set_eip_provider(self, country_code=None):
+        """
+        TRIGGERS:
+            Signaler.eip_get_gateway_country_code
+            Signaler.eip_no_gateway
+
+        Set the current provider and country code in the eip status widget.
+        """
+        domain = self._login_widget.get_selected_provider()
+        self._eip_status.set_provider(domain, country_code)
 
     @QtCore.Slot()
     def _eip_dns_error(self):
@@ -1503,7 +1566,7 @@ class MainWindow(QtGui.QMainWindow):
 
     def _try_autostart_eip(self):
         """
-        Tries to autostart EIP
+        Try to autostart EIP.
         """
         settings = self._settings
         default_provider = settings.get_defaultprovider()
@@ -1523,6 +1586,8 @@ class MainWindow(QtGui.QMainWindow):
         :param autostart: we are autostarting EIP when this is True
         :type autostart: bool
         """
+        # XXX should move to EIP conductor.
+
         # during autostart we assume that the provider provides EIP
         if autostart:
             should_start = EIP_SERVICE in self._enabled_services
@@ -1542,10 +1607,16 @@ class MainWindow(QtGui.QMainWindow):
             self._enable_eip_start_action()
             self._eip_status.set_eip_status(
                 self.tr("Starting..."))
+            self._eip_status.show_eip_cancel_button()
+
+            # We were disabling the button, but now that we have
+            # a cancel button we just hide it. It will be visible
+            # when the connection is completed successfully.
+            self._eip_status.eip_button.hide()
             self._eip_status.eip_button.setEnabled(False)
 
             domain = self._login_widget.get_selected_provider()
-            self._backend.eip_setup(domain)
+            self._backend.eip_setup(provider=domain)
 
             self._already_started_eip = True
             # we want to start soledad anyway after a certain timeout if eip
@@ -1577,12 +1648,12 @@ class MainWindow(QtGui.QMainWindow):
         Start the VPN thread if the eip configuration is properly
         loaded.
         """
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
 
         if not passed:
             error_msg = self.tr("There was a problem with the provider")
             self._eip_status.set_eip_status(error_msg, error=True)
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._already_started_eip = False
             return
 
@@ -1600,11 +1671,11 @@ class MainWindow(QtGui.QMainWindow):
         This is used for intermediate bootstrapping stages, in case
         they fail.
         """
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if not passed:
             self._login_widget.set_status(
                 self.tr("Unable to connect: Problem with provider"))
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._already_started_eip = False
             self._eip_status.aborted()
 
@@ -1616,7 +1687,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGERS:
             self._login_widget.logout
 
-        Starts the logout sequence
+        Start the logout sequence
         """
         self._cancel_ongoing_defers()
 
@@ -1644,7 +1715,7 @@ class MainWindow(QtGui.QMainWindow):
         TRIGGER:
             self._srp_auth.logout_ok
 
-        Switches the stackedWidget back to the login stage after
+        Switch the stackedWidget back to the login stage after
         logging out
         """
         self._login_widget.done_logout()
@@ -1665,13 +1736,13 @@ class MainWindow(QtGui.QMainWindow):
             self._backend.signaler.prov_https_connection
             self._backend.signaler.prov_download_ca_cert
 
-        If there was a problem, displays it, otherwise it does nothing.
+        If there was a problem, display it, otherwise it does nothing.
         This is used for intermediate bootstrapping stages, in case
         they fail.
         """
-        passed = data[self._backend.PASSED_KEY]
+        passed = data[PASSED_KEY]
         if not passed:
-            logger.error(data[self._backend.ERROR_KEY])
+            logger.error(data[ERROR_KEY])
             self._login_problem_provider()
 
     #
@@ -1717,10 +1788,11 @@ class MainWindow(QtGui.QMainWindow):
         self._services_being_stopped = set(('imap', 'eip'))
 
         imap_stopped = lambda: self._remove_service('imap')
-        self._backend.signaler.imap_stopped.connect(imap_stopped)
+        self._leap_signaler.imap_stopped.connect(imap_stopped)
 
+        # XXX change name, already used in conductor.
         eip_stopped = lambda: self._remove_service('eip')
-        self._backend.signaler.eip_stopped.connect(eip_stopped)
+        self._leap_signaler.eip_stopped.connect(eip_stopped)
 
         logger.debug('Stopping mail services')
         self._backend.imap_stop_service()
@@ -1738,12 +1810,16 @@ class MainWindow(QtGui.QMainWindow):
         Start the quit sequence and wait for services to finish.
         Cleanup and close the main window before quitting.
         """
-        # TODO separate the shutting down of services from the
-        # UI stuff.
+        if self._quitting:
+            return
+
+        autostart.set_autostart(False)
+
+        self._quitting = True
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
-        if self._systray is not None:
+        if not self._system_quit and self._systray is not None:
             self._systray.showMessage(
                 self.tr('Quitting...'),
                 self.tr('Bitmask is quitting, please wait.'))
@@ -1755,20 +1831,38 @@ class MainWindow(QtGui.QMainWindow):
         if self._wizard:
             self._wizard.close()
 
-        if self._logger_window:
-            self._logger_window.close()
-
         # Set this in case that the app is hidden
         QtGui.QApplication.setQuitOnLastWindowClosed(True)
 
-        self._stop_services()
-
         self._really_quit = True
+
+        if not self._backend.online:
+            self.final_quit()
+            return
 
         # call final quit when all the services are stopped
         self.all_services_stopped.connect(self.final_quit)
+
+        self._stop_services()
+
+        # we wait and call manually since during the system's logout the
+        # backend process can be killed and we won't get a response.
+        # XXX: also, for some reason the services stop timeout does not work.
+        if self._system_quit:
+            time.sleep(0.5)
+            self.final_quit()
+
         # or if we reach the timeout
         QtDelayedCall(self.SERVICES_STOP_TIMEOUT, self.final_quit)
+
+    def _backend_kill(self):
+        """
+        Send a kill signal to the backend process.
+        This is called if the backend does not respond to requests.
+        """
+        if self._backend_pid is not None:
+            logger.debug("Killing backend")
+            psutil.Process(self._backend_pid).kill()
 
     @QtCore.Slot()
     def _remove_service(self, service):
@@ -1780,6 +1874,7 @@ class MainWindow(QtGui.QMainWindow):
         :param service: the service that we want to remove
         :type service: str
         """
+        logger.debug("Removing service: {0}".format(service))
         self._services_being_stopped.discard(service)
 
         if not self._services_being_stopped:
@@ -1792,22 +1887,31 @@ class MainWindow(QtGui.QMainWindow):
         Final steps to quit the app, starting from here we don't care about
         running services or user interaction, just quitting.
         """
-        logger.debug('Final quit...')
-
         # We can reach here because all the services are stopped or because a
         # timeout was triggered. Since we want to run this only once, we exit
         # if this is called twice.
         if self._finally_quitting:
             return
 
+        logger.debug('Final quit...')
         self._finally_quitting = True
+
+        if self._backend.online:
+            logger.debug('Closing soledad...')
+            self._backend.soledad_close()
+
+        self._leap_signaler.stop()
+
+        self._backend.stop()
+        time.sleep(0.05)  # give the thread a little time to finish.
+
+        if self._system_quit or not self._backend.online:
+            logger.debug("Killing the backend")
+            self._backend_kill()
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
         if IS_WIN:
             WindowsLock.release_all_locks()
 
-        self._backend.stop()
         self.close()
-
-        QtDelayedCall(100, twisted_main.quit)

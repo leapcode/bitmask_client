@@ -38,7 +38,8 @@ class PreferencesWindow(QtGui.QDialog):
     """
     preferences_saved = QtCore.Signal()
 
-    def __init__(self, parent, username, domain, backend, soledad_started, mx):
+    def __init__(self, parent, username, domain, backend, soledad_started, mx,
+                 leap_signaler):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
@@ -58,6 +59,7 @@ class PreferencesWindow(QtGui.QDialog):
 
         self._username = username
         self._domain = domain
+        self._leap_signaler = leap_signaler
         self._backend = backend
         self._soledad_started = soledad_started
         self._mx_provided = mx
@@ -194,7 +196,8 @@ class PreferencesWindow(QtGui.QDialog):
             return
 
         self._set_changing_password(True)
-        self._backend.user_change_password(current_password, new_password)
+        self._backend.user_change_password(current_password=current_password,
+                                           new_password=new_password)
 
     @QtCore.Slot()
     def _srp_change_password_ok(self):
@@ -208,7 +211,7 @@ class PreferencesWindow(QtGui.QDialog):
         logger.debug("SRP password changed successfully.")
 
         if self._mx_provided:
-            self._backend.soledad_change_password(new_password)
+            self._backend.soledad_change_password(new_password=new_password)
         else:
             self._change_password_success()
 
@@ -357,7 +360,7 @@ class PreferencesWindow(QtGui.QDialog):
         save_services = partial(self._save_enabled_services, domain)
         self.ui.pbSaveServices.clicked.connect(save_services)
 
-        self._backend.provider_get_supported_services(domain)
+        self._backend.provider_get_supported_services(domain=domain)
 
     @QtCore.Slot(str)
     def _load_services(self, services):
@@ -423,7 +426,7 @@ class PreferencesWindow(QtGui.QDialog):
         """
         Helper to connect to backend signals
         """
-        sig = self._backend.signaler
+        sig = self._leap_signaler
 
         sig.prov_get_supported_services.connect(self._load_services)
 

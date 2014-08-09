@@ -55,5 +55,3 @@ OPENVPN_VERBOSITY = 1
 
 # Skip the checks in the wizard, use for testing purposes only!
 SKIP_WIZARD_CHECKS = False
-
-CURRENT_VPN_COUNTRY = None

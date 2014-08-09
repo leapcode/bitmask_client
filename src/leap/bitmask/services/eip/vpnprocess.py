@@ -118,10 +118,10 @@ class VPNObserver(object):
         """
         sig = self._signaler
         signals = {
-            "network_unreachable": sig.EIP_NETWORK_UNREACHABLE,
-            "process_restart_tls": sig.EIP_PROCESS_RESTART_TLS,
-            "process_restart_ping": sig.EIP_PROCESS_RESTART_PING,
-            "initialization_completed": sig.EIP_CONNECTED
+            "network_unreachable": sig.eip_network_unreachable,
+            "process_restart_tls": sig.eip_process_restart_tls,
+            "process_restart_ping": sig.eip_process_restart_ping,
+            "initialization_completed": sig.eip_connected
         }
         return signals.get(event.lower())
 
@@ -202,7 +202,24 @@ class VPN(object):
                              "aborting openvpn launch.")
                 return
 
-        cmd = vpnproc.getCommand()
+        # FIXME it would be good to document where the
+        # errors here are catched, since we currently handle them
+        # at the frontend layer. This *should* move to be handled entirely
+        # in the backend.
+        # exception is indeed technically catched in backend, then converted
+        # into a signal, that is catched in the eip_status widget in the
+        # frontend, and converted into a signal to abort the connection that is
+        # sent to the backend again.
+
+        # the whole exception catching should be done in the backend, without
+        # the ping-pong to the frontend, and without adding any logical checks
+        # in the frontend. We should just communicate UI changes to frontend,
+        # and abstract us away from anything else.
+        try:
+            cmd = vpnproc.getCommand()
+        except Exception:
+            logger.error("Error while getting vpn command...")
+            raise
         env = os.environ
         for key, val in vpnproc.vpn_env.items():
             env[key] = val
@@ -255,9 +272,24 @@ class VPN(object):
         """
         Tear the firewall down using the privileged wrapper.
         """
+        if IS_MAC:
+            # We don't support Mac so far
+            return True
         BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
         exitCode = subprocess.call(["pkexec",
                                     BM_ROOT, "firewall", "stop"])
+        return True if exitCode is 0 else False
+
+    def bitmask_root_vpn_down(self):
+        """
+        Bring openvpn down using the privileged wrapper.
+        """
+        if IS_MAC:
+            # We don't support Mac so far
+            return True
+        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+        exitCode = subprocess.call(["pkexec",
+                                    BM_ROOT, "openvpn", "stop"])
         return True if exitCode is 0 else False
 
     def _kill_if_left_alive(self, tries=0):
@@ -594,7 +626,7 @@ class VPNManager(object):
 
             state = status_step
             if state != self._last_state:
-                self._signaler.signal(self._signaler.EIP_STATE_CHANGED, state)
+                self._signaler.signal(self._signaler.eip_state_changed, state)
                 self._last_state = state
 
     def _parse_status_and_notify(self, output):
@@ -632,7 +664,7 @@ class VPNManager(object):
 
         status = (tun_tap_read, tun_tap_write)
         if status != self._last_status:
-            self._signaler.signal(self._signaler.EIP_STATUS_CHANGED, status)
+            self._signaler.signal(self._signaler.eip_status_changed, status)
             self._last_status = status
 
     def get_state(self):
@@ -814,7 +846,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         leap_assert_type(eipconfig, EIPConfig)
         leap_assert_type(providerconfig, ProviderConfig)
 
-        #leap_assert(not self.isRunning(), "Starting process more than once!")
+        # leap_assert(not self.isRunning(), "Starting process more than once!")
 
         self._eipconfig = eipconfig
         self._providerconfig = providerconfig
@@ -869,7 +901,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         if isinstance(exit_code, int):
             logger.debug("processExited, status %d" % (exit_code,))
         self._signaler.signal(
-            self._signaler.EIP_PROCESS_FINISHED, exit_code)
+            self._signaler.eip_process_finished, exit_code)
         self._alive = False
 
     def processEnded(self, reason):

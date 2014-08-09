@@ -22,7 +22,7 @@ import platform
 
 _system = platform.system()
 
-IS_WIN = True if _system == "Windows" else False
-IS_MAC = True if _system == "Darwin" else False
-IS_LINUX = True if _system == "Linux" else False
+IS_LINUX = _system == "Linux"
+IS_MAC = _system == "Darwin"
 IS_UNIX = IS_MAC or IS_LINUX
+IS_WIN = _system == "Windows"
