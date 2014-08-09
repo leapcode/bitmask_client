@@ -1165,12 +1165,14 @@ class MainWindow(QtGui.QMainWindow):
         skip_first_run = self._settings.get_skip_first_run()
         return not (has_provider_on_disk and skip_first_run)
 
+    @QtCore.Slot()
     def _download_provider_config(self):
         """
         Start the bootstrapping sequence. It will download the
         provider configuration if it's not present, otherwise will
         emit the corresponding signals inmediately
         """
+        self._disconnect_scheduled_login()
         domain = self._login_widget.get_selected_provider()
         self._backend.provider_setup(provider=domain)
 
@@ -1204,6 +1206,40 @@ class MainWindow(QtGui.QMainWindow):
             self.tr("Unable to login: Problem with provider"))
         self._login_widget.set_enabled(True)
 
+    def _schedule_login(self):
+        """
+        Schedule the login sequence to go after the EIP started.
+
+        The login sequence is connected to all finishing status of EIP
+        (connected, disconnected, aborted or died) to continue with the login
+        after EIP.
+        """
+        logger.debug('Login scheduled when eip_connected is triggered')
+        eip_sigs = self._eip_conductor.qtsigs
+        eip_sigs.connected_signal.connect(self._download_provider_config)
+        eip_sigs.disconnected_signal.connect(self._download_provider_config)
+        eip_sigs.connection_aborted_signal.connect(self._download_provider_config)
+        eip_sigs.connection_died_signal.connect(self._download_provider_config)
+
+    def _disconnect_scheduled_login(self):
+        """
+        Disconnect scheduled login signals if exists
+        """
+        try:
+            eip_sigs = self._eip_conductor.qtsigs
+            eip_sigs.connected_signal.disconnect(
+                    self._download_provider_config)
+            eip_sigs.disconnected_signal.disconnect(
+                    self._download_provider_config)
+            eip_sigs.connection_aborted_signal.disconnect(
+                    self._download_provider_config)
+            eip_sigs.connection_died_signal.disconnect(
+                    self._download_provider_config)
+        except Exception:
+            # signal not connected
+            pass
+
+
     @QtCore.Slot()
     def _login(self):
         """
@@ -1229,7 +1265,10 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.ui.action_create_new_account.setEnabled(False)
             if self._login_widget.start_login():
-                self._download_provider_config()
+                if self._trying_to_start_eip:
+                    self._schedule_login()
+                else:
+                    self._download_provider_config()
 
     @QtCore.Slot(unicode)
     def _authentication_error(self, msg):
@@ -1258,7 +1297,12 @@ class MainWindow(QtGui.QMainWindow):
         Stop the login sequence.
         """
         logger.debug("Cancelling log in.")
+        self._disconnect_scheduled_login()
+
         self._cancel_ongoing_defers()
+
+        # Needed in case of EIP starting and login deferer never set
+        self._set_login_cancelled()
 
     def _cancel_ongoing_defers(self):
         """
@@ -1673,8 +1717,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         passed = data[PASSED_KEY]
         if not passed:
-            self._login_widget.set_status(
-                self.tr("Unable to connect: Problem with provider"))
+            self._eip_status.set_eip_status(
+                self.tr("Unable to connect: Problem with provider"),
+                error=True)
             logger.error(data[ERROR_KEY])
             self._already_started_eip = False
             self._eip_status.aborted()
