@@ -134,15 +134,15 @@ class MailStatusWidget(QtGui.QWidget):
         WIN   : light icons
         """
         EIP_ICONS = EIP_ICONS_TRAY = (
-            ":/images/black/32/wait.png",
-            ":/images/black/32/on.png",
-            ":/images/black/32/off.png")
+            ":/images/black/wait.svg",
+            ":/images/black/on.svg",
+            ":/images/black/off.svg")
 
         if IS_LINUX:
             EIP_ICONS_TRAY = (
-                ":/images/white/32/wait.png",
-                ":/images/white/32/on.png",
-                ":/images/white/32/off.png")
+                ":/images/white/wait.svg",
+                ":/images/white/on.svg",
+                ":/images/white/off.svg")
 
         self.CONNECTING_ICON = QtGui.QPixmap(EIP_ICONS[0])
         self.CONNECTED_ICON = QtGui.QPixmap(EIP_ICONS[1])

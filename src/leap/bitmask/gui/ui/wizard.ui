@@ -181,11 +181,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -203,11 +212,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -225,11 +243,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -557,11 +584,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -579,11 +615,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -622,11 +667,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
