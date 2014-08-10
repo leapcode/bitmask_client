@@ -1073,22 +1073,38 @@ class MainWindow(QtGui.QMainWindow):
         # TODO: don't hardcode!
         smtp_port = 2013
 
-        url = ("<a href='https://addons.mozilla.org/es/thunderbird/"
-               "addon/bitmask/'>bitmask addon</a>")
+        help_url = "<p><a href='https://{0}'>{0}</a></p>".format(
+            self.tr("bitmask.net/help"))
 
-        msg = self.tr(
-            "<strong>Instructions to use mail:</strong><br>"
-            "If you use Thunderbird you can use the Bitmask extension helper. "
-            "Search for 'Bitmask' in the add-on manager or download it "
-            "from: {0}.<br><br>"
-            "You can configure Bitmask manually with these options:<br>"
-            "<em>"
-            "   Incoming -> IMAP, port: {1}<br>"
-            "   Outgoing -> SMTP, port: {2}<br>"
-            "   Username -> your bitmask username.<br>"
-            "   Password -> does not matter, use any text. "
-            " Just don't leave it empty and don't use your account's password."
-            "</em>").format(url, IMAP_PORT, smtp_port)
+        lang = QtCore.QLocale.system().name().replace('_','-')
+        thunderbird_extension_url = \
+            "https://addons.mozilla.org/{0}/" \
+            "thunderbird/addon/bitmask/".format(lang)
+
+        email_quick_reference = self.tr("Email quick reference")
+        thunderbird_text = self.tr("For Thunderbird, you can use the "
+            "Bitmask extension. Search for \"Bitmask\" in the add-on "
+            "manager or download it from <a href='{0}'>"
+            "addons.mozilla.org</a>.".format(thunderbird_extension_url))
+        manual_text = self.tr("Alternately, you can manually configure "
+            "your mail client to use Bitmask Email with these options:")
+        manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
+        manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
+        manual_username = self.tr("Username: your full email address")
+        manual_password = self.tr("Password: any non-empty text")
+
+        msg = help_url + self.tr(
+            "<p><strong>{0}</strong></p>"
+            "<p>{1}</p>"
+            "<p>{2}"
+            "<ul>"
+            "<li>&nbsp;{3}</li>"
+            "<li>&nbsp;{4}</li>"
+            "<li>&nbsp;{5}</li>"
+            "<li>&nbsp;{6}</li>"
+            "</ul></p>").format(email_quick_reference, thunderbird_text,
+               manual_text, manual_imap, manual_smtp,
+               manual_username, manual_password)
         QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
     def _needs_update(self):
