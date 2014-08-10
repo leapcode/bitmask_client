@@ -679,7 +679,7 @@ class Wizard(QtGui.QWizard):
         the user to enable or disable.
         """
         self.ui.grpServices.setTitle(
-            self.tr("Services by {0}").format(self._provider_details['name']))
+            self.tr("Services by {0}").format(self._provider_details['domain']))
 
         services = get_supported(self._provider_details['services'])
 
@@ -723,18 +723,11 @@ class Wizard(QtGui.QWizard):
         if pageId == self.SETUP_PROVIDER_PAGE:
             if not self._provider_setup_ok:
                 self._reset_provider_setup()
-                sub_title = self.tr("Gathering configuration options for {0}")
-                sub_title = sub_title.format(self._provider_details['name'])
-                self.page(pageId).setSubTitle(sub_title)
                 self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
                 self._provider_setup_defer = self._backend.\
                     provider_bootstrap(provider=self._domain)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
-            sub_title = self.tr("Description of services offered by {0}")
-            sub_title = sub_title.format(self._provider_details['name'])
-            self.page(pageId).setSubTitle(sub_title)
-
             details = self._provider_details
             name = "<b>{0}</b>".format(details['name'])
             domain = "https://{0}".format(details['domain'])
@@ -746,9 +739,9 @@ class Wizard(QtGui.QWizard):
             self.ui.lblProviderPolicy.setText(details['enrollment_policy'])
 
         if pageId == self.REGISTER_USER_PAGE:
-            sub_title = self.tr("Register a new user with {0}")
-            sub_title = sub_title.format(self._provider_details['name'])
-            self.page(pageId).setSubTitle(sub_title)
+            title = self.tr("Register a new user with {0}")
+            title = title.format(self._provider_details['domain'])
+            self.page(pageId).setTitle(title)
             self.ui.chkRemember.setVisible(False)
 
         if pageId == self.SERVICES_PAGE:
