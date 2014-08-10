@@ -237,8 +237,8 @@ class MainWindow(QtGui.QMainWindow):
         self._action_eip_startstop = QtGui.QAction("", self)
         self._eip_status.set_action_eip_startstop(self._action_eip_startstop)
 
-        self._action_visible = QtGui.QAction(self.tr("Hide Main Window"), self)
-        self._action_visible.triggered.connect(self._toggle_visible)
+        self._action_visible = QtGui.QAction(self.tr("Show Main Window"), self)
+        self._action_visible.triggered.connect(self._ensure_visible)
 
         # disable buttons for now, may come back later.
         # self.ui.btnPreferences.clicked.connect(self._show_preferences)
@@ -957,8 +957,6 @@ class MainWindow(QtGui.QMainWindow):
 
         Display the context menu from the tray icon
         """
-        self._update_hideshow_menu()
-
         context_menu = self._systray.contextMenu()
         if not IS_MAC:
             # for some reason, context_menu.show()
@@ -967,50 +965,38 @@ class MainWindow(QtGui.QMainWindow):
             # this works however.
             context_menu.exec_(self._systray.geometry().center())
 
-    def _update_hideshow_menu(self):
-        """
-        Update the Hide/Show main window menu text based on the
-        visibility of the window.
-        """
-        get_action = lambda visible: (
-            self.tr("Show Main Window"),
-            self.tr("Hide Main Window"))[int(visible)]
-
-        # set labels
-        visible = self.isVisible() and self.isActiveWindow()
-        self._action_visible.setText(get_action(visible))
-
     @QtCore.Slot()
-    def _toggle_visible(self):
+    def _ensure_visible(self):
         """
         TRIGGERS:
             self._action_visible.triggered
 
-        Toggle the window visibility
+        Ensure that the window is visible and raised.
         """
-        visible = self.isVisible() and self.isActiveWindow()
+        QtGui.QApplication.setQuitOnLastWindowClosed(True)
+        self.show()
+        if IS_LINUX:
+            # On ubuntu, activateWindow doesn't work reliably, so
+            # we do the following as a workaround. See
+            # https://bugreports.qt-project.org/browse/QTBUG-24932
+            # for more details
+            QtGui.QX11Info.setAppUserTime(0)
+        self.activateWindow()
+        self.raise_()
 
-        if not visible:
-            QtGui.QApplication.setQuitOnLastWindowClosed(True)
-            self.show()
-            if IS_LINUX:
-                # On ubuntu, activateWindow doesn't work reliably, so
-                # we do the following as a workaround. See
-                # https://bugreports.qt-project.org/browse/QTBUG-24932
-                # for more details
-                QtGui.QX11Info.setAppUserTime(0)
-            self.activateWindow()
-            self.raise_()
-        else:
-            # We set this in order to avoid dialogs shutting down the
-            # app on close, as they will be the only visible window.
-            # e.g.: PreferencesWindow, LoggerWindow
-            QtGui.QApplication.setQuitOnLastWindowClosed(False)
-            self.hide()
+    @QtCore.Slot()
+    def _ensure_invisible(self):
+        """
+        TRIGGERS:
+            self._action_visible.triggered
 
-        # Wait a bit until the window visibility has changed so
-        # the menu is set with the correct value.
-        QtDelayedCall(500, self._update_hideshow_menu)
+        Ensure that the window is hidden.
+        """
+        # We set this in order to avoid dialogs shutting down the
+        # app on close, as they will be the only visible window.
+        # e.g.: PreferencesWindow, LoggerWindow
+        QtGui.QApplication.setQuitOnLastWindowClosed(False)
+        self.hide()
 
     def _center_window(self):
         """
@@ -1130,19 +1116,6 @@ class MainWindow(QtGui.QMainWindow):
             "Error: API version incompatible.")
         QtGui.QMessageBox.warning(self, self.tr("Incompatible Provider"), msg)
 
-    def changeEvent(self, e):
-        """
-        Reimplementation of changeEvent method to minimize to tray
-        """
-        if not IS_MAC and \
-           QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
-           e.type() == QtCore.QEvent.WindowStateChange and \
-           self.isMinimized():
-            self._toggle_visible()
-            e.accept()
-            return
-        QtGui.QMainWindow.changeEvent(self, e)
-
     def closeEvent(self, e):
         """
         Reimplementation of closeEvent to close to tray
@@ -1155,7 +1128,7 @@ class MainWindow(QtGui.QMainWindow):
 
         if QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
                 not self._really_quit:
-            self._toggle_visible()
+            self._ensure_invisible()
             e.ignore()
             return
 
