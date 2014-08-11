@@ -70,9 +70,9 @@ class Wizard(QtGui.QWizard):
         self.setPixmap(QtGui.QWizard.LogoPixmap,
                        QtGui.QPixmap(":/images/mask-icon.png"))
 
-        self.QUESTION_ICON = QtGui.QPixmap(":/images/black/24/question.png")
-        self.ERROR_ICON = QtGui.QPixmap(":/images/black/24/off.png")
-        self.OK_ICON = QtGui.QPixmap(":/images/black/24/on.png")
+        self.QUESTION_ICON = QtGui.QPixmap(":/images/black/22/question.png")
+        self.ERROR_ICON = QtGui.QPixmap(":/images/black/22/off.png")
+        self.OK_ICON = QtGui.QPixmap(":/images/black/22/on.png")
 
         self._selected_services = set()
         self._shown_services = set()

@@ -170,7 +170,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/32/user.png</pixmap>
+      <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/32/user.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>false</bool>
@@ -209,7 +209,7 @@
        <number>0</number>
       </property>
       <property name="rightMargin">
-       <number>26</number>
+       <number>25</number>
       </property>
       <property name="bottomMargin">
        <number>18</number>
@@ -299,7 +299,7 @@
   <tabstop>chkRemember</tabstop>
  </tabstops>
  <resources>
-  <include location="../../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../../data/resources/icons.qrc"/>
  </resources>
  <connections/>
 </ui>
