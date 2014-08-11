@@ -793,6 +793,3 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         self.set_eip_status("", error=error)
         self.set_eip_status_icon("error")
-
-import eipstatus_rc
-assert(eipstatus_rc)
