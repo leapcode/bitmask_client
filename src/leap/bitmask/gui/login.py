@@ -19,6 +19,8 @@ Login widget implementation
 """
 import logging
 
+from collections import deque
+
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
@@ -43,9 +45,10 @@ class LoginWidget(QtGui.QWidget):
     cancel_login = QtCore.Signal()
     logout = QtCore.Signal()
 
-    # Emitted when the user selects "Other..." in the provider
-    # combobox or click "Create Account"
-    show_wizard = QtCore.Signal()
+    # Emitted when the user changes the provider combobox index. The object
+    # parameter is actually a boolean value that is True if "Other..." was
+    # selected, False otherwse
+    provider_changed = QtCore.Signal(object)
 
     MAX_STATUS_WIDTH = 40
 
@@ -64,7 +67,9 @@ class LoginWidget(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
 
         self._settings = settings
-        self._selected_provider_index = -1
+
+        self._providers_indexes = deque(maxlen=2)  # previous and current
+        self._providers_indexes.append(-1)
 
         self.ui = Ui_LoginWidget()
         self.ui.setupUi(self)
@@ -132,7 +137,14 @@ class LoginWidget(QtGui.QWidget):
         :type name: str
         """
         provider_index = self.ui.cmbProviders.findText(name)
+        self._providers_indexes.append(provider_index)
+
+        # block the signals during a combobox change since we don't want to
+        # trigger the default signal that makes the UI ask the user for
+        # confirmation
+        self.ui.cmbProviders.blockSignals(True)
         self.ui.cmbProviders.setCurrentIndex(provider_index)
+        self.ui.cmbProviders.blockSignals(False)
 
     def get_selected_provider(self):
         """
@@ -267,17 +279,21 @@ class LoginWidget(QtGui.QWidget):
         :param idx: the index of the new selected item
         :type idx: int
         """
-        if idx == (self.ui.cmbProviders.count() - 1):
-            self.show_wizard.emit()
-            # Leave the previously selected provider in the combobox
-            prev_provider = 0
-            if self._selected_provider_index != -1:
-                prev_provider = self._selected_provider_index
-            self.ui.cmbProviders.blockSignals(True)
-            self.ui.cmbProviders.setCurrentIndex(prev_provider)
-            self.ui.cmbProviders.blockSignals(False)
-        else:
-            self._selected_provider_index = idx
+        self._providers_indexes.append(idx)
+        is_wizard = idx == (self.ui.cmbProviders.count() - 1)
+        self.provider_changed.emit(is_wizard)
+        if is_wizard:
+            self.restore_previous_provider()
+
+    def restore_previous_provider(self):
+        """
+        Set as selected provider the one that was selected previously.
+        """
+        prev_provider = self._providers_indexes.popleft()
+        self._providers_indexes.append(prev_provider)
+        self.ui.cmbProviders.blockSignals(True)
+        self.ui.cmbProviders.setCurrentIndex(prev_provider)
+        self.ui.cmbProviders.blockSignals(False)
 
     def start_login(self):
         """
