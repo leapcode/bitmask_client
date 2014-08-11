@@ -26,7 +26,7 @@
    <string>Bitmask Provider Setup</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../../../data/resources/mainwindow.qrc">
+   <iconset resource="../../../../../data/resources/icons.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <property name="modal">
@@ -177,14 +177,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="scaledContents">
@@ -194,7 +194,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/24/question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -208,14 +208,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="scaledContents">
@@ -225,7 +225,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/24/question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -239,14 +239,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="scaledContents">
@@ -256,7 +256,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/24/question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -580,14 +580,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="scaledContents">
@@ -597,7 +597,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/24/question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -611,14 +611,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="scaledContents">
@@ -628,7 +628,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/24/question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -663,14 +663,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>24</width>
-           <height>24</height>
+           <width>22</width>
+           <height>22</height>
           </size>
          </property>
          <property name="scaledContents">
@@ -680,7 +680,7 @@
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/24/question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
          </property>
         </widget>
        </item>
@@ -883,7 +883,7 @@
   <tabstop>rdoLogin</tabstop>
  </tabstops>
  <resources>
-  <include location="../../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../../data/resources/icons.qrc"/>
   <include location="../../../../../data/resources/locale.qrc"/>
  </resources>
  <connections>

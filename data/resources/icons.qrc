@@ -1,11 +1,38 @@
 <RCC>
   <qresource prefix="/">
-    <file>../images/mail-locked.png</file>
-    <file>../images/mail-unlocked.png</file>
-    <file>../images/light/16/down-arrow.png</file>
-    <file>../images/light/16/up-arrow.png</file>
-    <file>../images/light/64/network-eip-acquiring.png</file>
-    <file>../images/light/64/network-eip-down.png</file>
-    <file>../images/light/64/network-eip-up.png</file>
+
+    <!-- used as window icon -->
+    <file>../images/mask-icon.png</file>
+
+    <!-- round status icons -->
+    <file>../images/black/off.svg</file>
+    <file>../images/black/on.svg</file>
+    <file>../images/black/question.svg</file>
+    <file>../images/black/wait.svg</file>
+    <file>../images/black/22/off.png</file>
+    <file>../images/black/22/on.png</file>
+    <file>../images/black/22/question.png</file>
+    <file>../images/black/22/wait.png</file>
+
+    <file>../images/white/off.svg</file>
+    <file>../images/white/on.svg</file>
+    <file>../images/white/question.svg</file>
+    <file>../images/white/wait.svg</file>
+    <file>../images/white/22/off.png</file>
+    <file>../images/white/22/on.png</file>
+    <file>../images/white/22/question.png</file>
+    <file>../images/white/22/wait.png</file>
+
+    <!-- used by login -->
+    <file>../images/black/32/user.png</file>
+
+    <!-- used by eip status -->
+    <file>../images/black/32/earth.png</file>
+    <file>../images/black/32/arrow-down.png</file>
+    <file>../images/black/32/arrow-up.png</file>
+
+    <!-- used by email status -->
+    <file>../images/black/32/email.png</file>
+
   </qresource>
 </RCC>
