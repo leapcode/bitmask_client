@@ -1,8 +1,5 @@
 <RCC>
   <qresource prefix="/">
-    <file>../images/white/32/off.png</file>
-    <file>../images/white/32/on.png</file>
-    <file>../images/white/32/wait.png</file>
     <file>../images/black/32/arrow-down.png</file>
     <file>../images/black/32/arrow-up.png</file>
     <file>../images/black/32/cloud.png</file>
@@ -14,25 +11,26 @@
     <file>../images/black/32/expand.png</file>
     <file>../images/black/32/gear.png</file>
     <file>../images/black/32/off.png</file>
-    <file>../images/black/32/on.png</file>
-    <file>../images/black/32/refresh.png</file>
-    <file>../images/black/32/user.png</file>
-    <file>../images/black/32/wait.png</file>
+
+    <file>../images/black/off.svg</file>
+    <file>../images/black/on.svg</file>
+    <file>../images/black/question.svg</file>
+    <file>../images/black/wait.svg</file>
+
+    <file>../images/white/off.svg</file>
+    <file>../images/white/on.svg</file>
+    <file>../images/white/question.svg</file>
+    <file>../images/white/wait.svg</file>
+
     <file>../images/mask-launcher.png</file>
     <file>../images/mask-icon.png</file>
     <file>../images/leap-gray-big.png</file>
-    <file>../images/Blue-Arrow-Right-32.png</file>
     <file>../images/leap-color-big.png</file>
-    <file>../images/Arrow-Down-32.png</file>
-    <file>../images/Arrow-Up-32.png</file>
     <file>../images/conn_connecting.png</file>
     <file>../images/conn_connected.png</file>
     <file>../images/conn_error.png</file>
     <file>../images/conn_connecting-light.png</file>
     <file>../images/conn_connected-light.png</file>
     <file>../images/conn_error-light.png</file>
-    <file>../images/Dialog-accept.png</file>
-    <file>../images/Dialog-error.png</file>
-    <file>../images/Emblem-question.png</file>
   </qresource>
 </RCC>

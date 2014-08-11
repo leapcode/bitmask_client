@@ -33,7 +33,7 @@
     <number>0</number>
    </property>
    <property name="verticalSpacing">
-    <number>-1</number>
+    <number>6</number>
    </property>
    <item row="2" column="0">
     <spacer name="horizontalSpacer_2">
@@ -79,8 +79,14 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="4" column="1">
        <widget class="QPushButton" name="btnLogin">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="text">
          <string>Log In</string>
         </property>
@@ -198,26 +204,17 @@
    </item>
    <item row="3" column="2" colspan="2">
     <widget class="QWidget" name="logged_widget" native="true">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>0</height>
-      </size>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_5">
+     <layout class="QHBoxLayout" name="horizontalLayout">
       <property name="topMargin">
        <number>0</number>
       </property>
-      <property name="bottomMargin">
-       <number>12</number>
+      <property name="rightMargin">
+       <number>26</number>
       </property>
-      <item row="0" column="0" colspan="2">
+      <property name="bottomMargin">
+       <number>18</number>
+      </property>
+      <item>
        <widget class="QLabel" name="lblUser">
         <property name="font">
          <font>
@@ -231,22 +228,41 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item>
+       <spacer name="expandingSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Expanding</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>24</width>
+          <height>24</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QPushButton" name="btnLogout">
         <property name="text">
          <string>Logout</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <spacer name="horizontalSpacer">
+      <item>
+       <spacer name="fixedSpacer">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>40</width>
-          <height>20</height>
+          <width>24</width>
+          <height>24</height>
          </size>
         </property>
        </spacer>

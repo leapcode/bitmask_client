@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Bitmask first run</string>
+   <string>Bitmask Provider Setup</string>
   </property>
   <property name="windowIcon">
    <iconset resource="../../../../../data/resources/mainwindow.qrc">
@@ -40,10 +40,10 @@
   </property>
   <widget class="WizardPage" name="introduction_page">
    <property name="title">
-    <string>Welcome</string>
+    <string>Welcome to Bitmask</string>
    </property>
    <property name="subTitle">
-    <string>This is the Bitmask first run wizard</string>
+    <string> </string>
    </property>
    <attribute name="pageId">
     <string notr="true">0</string>
@@ -59,7 +59,7 @@
     <item row="0" column="0">
      <widget class="QLabel" name="label_3">
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Now we will guide you through some configuration that is needed before you can connect for the first time.&lt;/p&gt;&lt;p&gt;If you ever need to modify these options again, you can find the wizard in the &lt;span style=&quot; font-style:italic;&quot;&gt;'Bitmask -&amp;gt; Create new account...'&lt;/span&gt; menu from the main window.&lt;/p&gt;&lt;p&gt;Do you want to &lt;span style=&quot; font-weight:600;&quot;&gt;sign up&lt;/span&gt; for a new account, or &lt;span style=&quot; font-weight:600;&quot;&gt;log in&lt;/span&gt; with an already existing username?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string></string>
       </property>
       <property name="textFormat">
        <enum>Qt::RichText</enum>
@@ -109,10 +109,10 @@
   </widget>
   <widget class="WizardPage" name="select_provider_page">
    <property name="title">
-    <string>Provider selection</string>
+    <string>Choose a provider</string>
    </property>
    <property name="subTitle">
-    <string>Please enter the domain of the provider you want to use for your connection</string>
+    <string> </string>
    </property>
    <attribute name="pageId">
     <string notr="true">1</string>
@@ -156,7 +156,7 @@
        <item row="3" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Getting provider information</string>
+          <string>Getting provider information.</string>
          </property>
         </widget>
        </item>
@@ -181,11 +181,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -203,11 +212,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -225,11 +243,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -350,10 +377,10 @@
   </widget>
   <widget class="QWizardPage" name="provider_info_page">
    <property name="title">
-    <string>Provider Information</string>
+    <string>About this provider</string>
    </property>
    <property name="subTitle">
-    <string>Description of services offered by this provider</string>
+    <string> </string>
    </property>
    <attribute name="pageId">
     <string notr="true">2</string>
@@ -495,7 +522,7 @@
     <string>Provider setup</string>
    </property>
    <property name="subTitle">
-    <string>Gathering configuration options for this provider</string>
+    <string> </string>
    </property>
    <attribute name="pageId">
     <string notr="true">3</string>
@@ -517,7 +544,7 @@
     <item>
      <widget class="QLabel" name="lblSetupProviderExpl">
       <property name="text">
-       <string>We are downloading some bits that we need to establish a secure connection with the provider for the first time.</string>
+       <string>Bitmask is attempting to establish a secure connection with this provider for the first time.</string>
       </property>
       <property name="wordWrap">
        <bool>true</bool>
@@ -557,11 +584,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -579,32 +615,41 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_9">
          <property name="text">
-          <string>Getting info from the Certificate Authority</string>
+          <string>Fetching provider credentials.</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_10">
          <property name="text">
-          <string>Do we trust this Certificate Authority?</string>
+          <string>Do we trust these credentials?</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>Establishing a trust relationship with this provider</string>
+          <string>Connecting to provider.</string>
          </property>
         </widget>
        </item>
@@ -622,11 +667,20 @@
            <height>24</height>
           </size>
          </property>
+         <property name="maximumSize">
+          <size>
+           <width>24</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
-          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/Emblem-question.png</pixmap>
+          <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/question.svg</pixmap>
          </property>
         </widget>
        </item>
@@ -666,7 +720,7 @@
     <string>Register new user</string>
    </property>
    <property name="subTitle">
-    <string>Register a new user with provider</string>
+    <string> </string>
    </property>
    <attribute name="pageId">
     <string notr="true">4</string>
@@ -791,7 +845,7 @@
     <string>Service selection</string>
    </property>
    <property name="subTitle">
-    <string>Please select the services you would like to have</string>
+    <string> </string>
    </property>
    <attribute name="pageId">
     <string notr="true">5</string>
