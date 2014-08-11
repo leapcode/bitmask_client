@@ -214,15 +214,15 @@ class EIPStatusWidget(QtGui.QWidget):
         WIN   : light icons
         """
         EIP_ICONS = EIP_ICONS_TRAY = (
-            ":/images/black/wait.svg",
-            ":/images/black/on.svg",
-            ":/images/black/off.svg")
+            ":/images/black/24/wait.png",
+            ":/images/black/24/on.png",
+            ":/images/black/24/off.png")
 
         if IS_LINUX:
             EIP_ICONS_TRAY = (
-                ":/images/white/wait.svg",
-                ":/images/white/on.svg",
-                ":/images/white/off.svg")
+                ":/images/white/24/wait.png",
+                ":/images/white/24/on.png",
+                ":/images/white/24/off.png")
 
         self.CONNECTING_ICON = QtGui.QPixmap(EIP_ICONS[0])
         self.CONNECTED_ICON = QtGui.QPixmap(EIP_ICONS[1])

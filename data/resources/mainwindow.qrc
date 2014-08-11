@@ -16,11 +16,19 @@
     <file>../images/black/on.svg</file>
     <file>../images/black/question.svg</file>
     <file>../images/black/wait.svg</file>
+    <file>../images/black/24/off.png</file>
+    <file>../images/black/24/on.png</file>
+    <file>../images/black/24/question.png</file>
+    <file>../images/black/24/wait.png</file>
 
     <file>../images/white/off.svg</file>
     <file>../images/white/on.svg</file>
     <file>../images/white/question.svg</file>
     <file>../images/white/wait.svg</file>
+    <file>../images/white/24/off.png</file>
+    <file>../images/white/24/on.png</file>
+    <file>../images/white/24/question.png</file>
+    <file>../images/white/24/wait.png</file>
 
     <file>../images/mask-launcher.png</file>
     <file>../images/mask-icon.png</file>
