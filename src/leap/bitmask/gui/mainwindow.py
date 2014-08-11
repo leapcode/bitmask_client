@@ -1062,17 +1062,19 @@ class MainWindow(QtGui.QMainWindow):
         help_url = "<p><a href='https://{0}'>{0}</a></p>".format(
             self.tr("bitmask.net/help"))
 
-        lang = QtCore.QLocale.system().name().replace('_','-')
+        lang = QtCore.QLocale.system().name().replace('_', '-')
         thunderbird_extension_url = \
             "https://addons.mozilla.org/{0}/" \
             "thunderbird/addon/bitmask/".format(lang)
 
         email_quick_reference = self.tr("Email quick reference")
-        thunderbird_text = self.tr("For Thunderbird, you can use the "
+        thunderbird_text = self.tr(
+            "For Thunderbird, you can use the "
             "Bitmask extension. Search for \"Bitmask\" in the add-on "
             "manager or download it from <a href='{0}'>"
             "addons.mozilla.org</a>.".format(thunderbird_extension_url))
-        manual_text = self.tr("Alternately, you can manually configure "
+        manual_text = self.tr(
+            "Alternately, you can manually configure "
             "your mail client to use Bitmask Email with these options:")
         manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
         manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
@@ -1089,8 +1091,8 @@ class MainWindow(QtGui.QMainWindow):
             "<li>&nbsp;{5}</li>"
             "<li>&nbsp;{6}</li>"
             "</ul></p>").format(email_quick_reference, thunderbird_text,
-               manual_text, manual_imap, manual_smtp,
-               manual_username, manual_password)
+                                manual_text, manual_imap, manual_smtp,
+                                manual_username, manual_password)
         QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
     def _needs_update(self):
@@ -1201,7 +1203,8 @@ class MainWindow(QtGui.QMainWindow):
         eip_sigs = self._eip_conductor.qtsigs
         eip_sigs.connected_signal.connect(self._download_provider_config)
         eip_sigs.disconnected_signal.connect(self._download_provider_config)
-        eip_sigs.connection_aborted_signal.connect(self._download_provider_config)
+        eip_sigs.connection_aborted_signal.connect(
+            self._download_provider_config)
         eip_sigs.connection_died_signal.connect(self._download_provider_config)
 
     def _disconnect_scheduled_login(self):
@@ -1211,17 +1214,16 @@ class MainWindow(QtGui.QMainWindow):
         try:
             eip_sigs = self._eip_conductor.qtsigs
             eip_sigs.connected_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
             eip_sigs.disconnected_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
             eip_sigs.connection_aborted_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
             eip_sigs.connection_died_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
         except Exception:
             # signal not connected
             pass
-
 
     @QtCore.Slot()
     def _login(self):
