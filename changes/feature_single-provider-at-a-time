@@ -1,0 +1,1 @@
+- Stop the services if the selected provider is changed. Related to #4704.
