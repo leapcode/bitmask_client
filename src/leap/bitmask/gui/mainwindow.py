@@ -215,8 +215,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
         self.ui.action_help.triggered.connect(self._help)
+
         self.ui.action_create_new_account.triggered.connect(
-            self._launch_wizard)
+            self._on_provider_changed)
 
         self.ui.action_advanced_key_management.triggered.connect(
             self._show_AKM)
@@ -1226,10 +1227,11 @@ class MainWindow(QtGui.QMainWindow):
             pass
 
     @QtCore.Slot(object)
-    def _on_provider_changed(self, wizard):
+    def _on_provider_changed(self, wizard=True):
         """
         TRIGGERS:
             self._login.provider_changed
+            self.ui.action_create_new_account.triggered
 
         Ask the user if really wants to change provider since a services stop
         is required for that action.
@@ -1251,6 +1253,9 @@ class MainWindow(QtGui.QMainWindow):
         text = self.tr("<b>Do you want to stop all services?</b>")
         informative_text = self.tr("In order to change the provider, the "
                                    "running services needs to be stopped.")
+        if wizard:
+            informative_text = self.tr("In order to start the wizard, the "
+                                       "running services needs to be stopped.")
 
         msg = QtGui.QMessageBox(self)
         msg.setWindowTitle(title)
