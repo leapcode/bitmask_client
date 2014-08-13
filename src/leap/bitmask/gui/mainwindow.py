@@ -153,8 +153,8 @@ class MainWindow(QtGui.QMainWindow):
 
         self._login_widget.login.connect(self._login)
         self._login_widget.cancel_login.connect(self._cancel_login)
-        self._login_widget.show_wizard.connect(self._launch_wizard)
         self._login_widget.logout.connect(self._logout)
+        self._login_widget.provider_changed.connect(self._on_provider_changed)
 
         # EIP Control redux #########################################
         self._eip_conductor = eip_conductor.EIPConductor(
@@ -174,6 +174,8 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_conductor.connect_signals()
         self._eip_conductor.qtsigs.connected_signal.connect(
             self._on_eip_connection_connected)
+        self._eip_conductor.qtsigs.disconnected_signal.connect(
+            self._on_eip_connection_disconnected)
         self._eip_conductor.qtsigs.connected_signal.connect(
             self._maybe_run_soledad_setup_checks)
 
@@ -187,7 +189,6 @@ class MainWindow(QtGui.QMainWindow):
         self._already_started_eip = False
         self._trying_to_start_eip = False
 
-        self._already_started_eip = False
         self._soledad_started = False
 
         # This is created once we have a valid provider config
@@ -214,8 +215,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
         self.ui.action_help.triggered.connect(self._help)
+
         self.ui.action_create_new_account.triggered.connect(
-            self._launch_wizard)
+            self._on_provider_changed)
 
         self.ui.action_advanced_key_management.triggered.connect(
             self._show_AKM)
@@ -502,7 +504,6 @@ class MainWindow(QtGui.QMainWindow):
     def _launch_wizard(self):
         """
         TRIGGERS:
-            self._login_widget.show_wizard
             self.ui.action_wizard.triggered
 
         Also called in first run.
@@ -1062,17 +1063,19 @@ class MainWindow(QtGui.QMainWindow):
         help_url = "<p><a href='https://{0}'>{0}</a></p>".format(
             self.tr("bitmask.net/help"))
 
-        lang = QtCore.QLocale.system().name().replace('_','-')
+        lang = QtCore.QLocale.system().name().replace('_', '-')
         thunderbird_extension_url = \
             "https://addons.mozilla.org/{0}/" \
             "thunderbird/addon/bitmask/".format(lang)
 
         email_quick_reference = self.tr("Email quick reference")
-        thunderbird_text = self.tr("For Thunderbird, you can use the "
+        thunderbird_text = self.tr(
+            "For Thunderbird, you can use the "
             "Bitmask extension. Search for \"Bitmask\" in the add-on "
             "manager or download it from <a href='{0}'>"
             "addons.mozilla.org</a>.".format(thunderbird_extension_url))
-        manual_text = self.tr("Alternately, you can manually configure "
+        manual_text = self.tr(
+            "Alternately, you can manually configure "
             "your mail client to use Bitmask Email with these options:")
         manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
         manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
@@ -1089,8 +1092,8 @@ class MainWindow(QtGui.QMainWindow):
             "<li>&nbsp;{5}</li>"
             "<li>&nbsp;{6}</li>"
             "</ul></p>").format(email_quick_reference, thunderbird_text,
-               manual_text, manual_imap, manual_smtp,
-               manual_username, manual_password)
+                                manual_text, manual_imap, manual_smtp,
+                                manual_username, manual_password)
         QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
     def _needs_update(self):
@@ -1201,7 +1204,8 @@ class MainWindow(QtGui.QMainWindow):
         eip_sigs = self._eip_conductor.qtsigs
         eip_sigs.connected_signal.connect(self._download_provider_config)
         eip_sigs.disconnected_signal.connect(self._download_provider_config)
-        eip_sigs.connection_aborted_signal.connect(self._download_provider_config)
+        eip_sigs.connection_aborted_signal.connect(
+            self._download_provider_config)
         eip_sigs.connection_died_signal.connect(self._download_provider_config)
 
     def _disconnect_scheduled_login(self):
@@ -1211,17 +1215,66 @@ class MainWindow(QtGui.QMainWindow):
         try:
             eip_sigs = self._eip_conductor.qtsigs
             eip_sigs.connected_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
             eip_sigs.disconnected_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
             eip_sigs.connection_aborted_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
             eip_sigs.connection_died_signal.disconnect(
-                    self._download_provider_config)
+                self._download_provider_config)
         except Exception:
             # signal not connected
             pass
 
+    @QtCore.Slot(object)
+    def _on_provider_changed(self, wizard=True):
+        """
+        TRIGGERS:
+            self._login.provider_changed
+            self.ui.action_create_new_account.triggered
+
+        Ask the user if really wants to change provider since a services stop
+        is required for that action.
+
+        :param wizard: whether the 'other...' option was picked or not.
+        :type wizard: bool
+        """
+        # TODO: we should handle the case that EIP is autostarting since we
+        # won't get a warning until EIP has fully started.
+        # TODO: we need to add a check for the mail status (smtp/imap/soledad)
+        something_runing = (self._logged_user is not None or
+                            self._already_started_eip)
+        if not something_runing:
+            if wizard:
+                self._launch_wizard()
+            return
+
+        title = self.tr("Stop services")
+        text = self.tr("<b>Do you want to stop all services?</b>")
+        informative_text = self.tr("In order to change the provider, the "
+                                   "running services needs to be stopped.")
+        if wizard:
+            informative_text = self.tr("In order to start the wizard, the "
+                                       "running services needs to be stopped.")
+
+        msg = QtGui.QMessageBox(self)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        msg.setInformativeText(informative_text)
+        msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
+        msg.setDefaultButton(QtGui.QMessageBox.No)
+        msg.setIcon(QtGui.QMessageBox.Warning)
+        res = msg.exec_()
+
+        if res == QtGui.QMessageBox.Yes:
+            self._stop_services()
+            self._eip_conductor.qtsigs.do_disconnect_signal.emit()
+            if wizard:
+                self._launch_wizard()
+        else:
+            if not wizard:
+                # if wizard, the widget restores itself
+                self._login_widget.restore_previous_provider()
 
     @QtCore.Slot()
     def _login(self):
@@ -1560,6 +1613,16 @@ class MainWindow(QtGui.QMainWindow):
 
         # check for connectivity
         self._backend.eip_check_dns(domain=domain)
+
+    @QtCore.Slot()
+    def _on_eip_connection_disconnected(self):
+        """
+        TRIGGERS:
+            self._eip_conductor.qtsigs.disconnected_signal
+
+        Set the eip status to not started.
+        """
+        self._already_started_eip = False
 
     @QtCore.Slot()
     def _set_eip_provider(self, country_code=None):
