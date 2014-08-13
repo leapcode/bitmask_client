@@ -266,6 +266,7 @@
  </widget>
  <resources>
   <include location="../../../../../data/resources/icons.qrc"/>
+  <include location="../../../../../data/resources/flags.qrc"/>
  </resources>
  <connections/>
 </ui>
