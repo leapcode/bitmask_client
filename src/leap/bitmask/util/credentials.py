@@ -21,7 +21,7 @@ Credentials utilities
 from PySide import QtCore, QtGui
 
 WEAK_PASSWORDS = ("123456", "qweasd", "qwerty", "password")
-USERNAME_REGEX = r"^[A-Za-z][A-Za-z\d_\-\.]+[A-Za-z\d]$"
+USERNAME_REGEX = r"^[a-z][a-z\d_\-\.]+[a-z\d]$"
 
 USERNAME_VALIDATOR = QtGui.QRegExpValidator(QtCore.QRegExp(USERNAME_REGEX))
 
@@ -69,7 +69,7 @@ def password_checks(username, password, password2):
     if message is None and not password:
         message = _tr("You can't use an empty password")
 
-    if message is None and len(password) < 6:
+    if message is None and len(password) < 8:
         message = _tr("Password too short")
 
     if message is None and password in WEAK_PASSWORDS:
