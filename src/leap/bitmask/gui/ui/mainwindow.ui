@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>524</width>
-    <height>640</height>
+    <height>600</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -32,7 +32,7 @@
    <string>Bitmask</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../../../data/resources/mainwindow.qrc">
+   <iconset resource="../../../../../data/resources/icons.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <property name="inputMethodHints">
@@ -216,6 +216,28 @@
           </property>
          </spacer>
         </item>
+        <item>
+         <widget class="QFrame" name="frame">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="autoFillBackground">
+           <bool>false</bool>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color: rgba(0,0,0,20); border-top: 1px solid rgba(0,0,0,30);</string>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>16</height>
+           </size>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </widget>
@@ -377,7 +399,7 @@
   </action>
  </widget>
  <resources>
-  <include location="../../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../../data/resources/icons.qrc"/>
   <include location="../../../../../data/resources/locale.qrc"/>
  </resources>
  <connections/>

@@ -60,7 +60,7 @@
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/32/earth.png</pixmap>
+        <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/32/earth.png</pixmap>
        </property>
       </widget>
      </item>
@@ -103,15 +103,15 @@
       <widget class="QLabel" name="lblVPNStatusIcon">
        <property name="maximumSize">
         <size>
-         <width>24</width>
-         <height>24</height>
+         <width>22</width>
+         <height>22</height>
         </size>
        </property>
        <property name="text">
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/32/off.png</pixmap>
+        <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/off.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
@@ -162,7 +162,7 @@
              <string>0.0 KB/s</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../data/resources/mainwindow.qrc">
+             <iconset resource="../../../../../data/resources/icons.qrc">
               <normaloff>:/images/black/32/arrow-down.png</normaloff>:/images/black/32/arrow-down.png</iconset>
             </property>
             <property name="flat">
@@ -213,7 +213,7 @@
              <string>0.0 KB/s</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../data/resources/mainwindow.qrc">
+             <iconset resource="../../../../../data/resources/icons.qrc">
               <normaloff>:/images/black/32/arrow-up.png</normaloff>:/images/black/32/arrow-up.png</iconset>
             </property>
             <property name="flat">
@@ -265,8 +265,8 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../../../../data/resources/mainwindow.qrc"/>
   <include location="../../../../../data/resources/icons.qrc"/>
+  <include location="../../../../../data/resources/flags.qrc"/>
  </resources>
  <connections/>
 </ui>
