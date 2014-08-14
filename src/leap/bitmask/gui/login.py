@@ -19,8 +19,6 @@ Login widget implementation
 """
 import logging
 
-from collections import deque
-
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
@@ -45,11 +43,6 @@ class LoginWidget(QtGui.QWidget):
     cancel_login = QtCore.Signal()
     logout = QtCore.Signal()
 
-    # Emitted when the user changes the provider combobox index. The object
-    # parameter is actually a boolean value that is True if "Other..." was
-    # selected, False otherwse
-    provider_changed = QtCore.Signal(object)
-
     MAX_STATUS_WIDTH = 40
 
     # Keyring
@@ -68,9 +61,6 @@ class LoginWidget(QtGui.QWidget):
 
         self._settings = settings
 
-        self._providers_indexes = deque(maxlen=2)  # previous and current
-        self._providers_indexes.append(-1)
-
         self.ui = Ui_LoginWidget()
         self.ui.setupUi(self)
 
@@ -84,9 +74,6 @@ class LoginWidget(QtGui.QWidget):
         self.ui.lnPassword.returnPressed.connect(self.login)
 
         self.ui.lnUser.returnPressed.connect(self._focus_password)
-
-        self.ui.cmbProviders.currentIndexChanged.connect(
-            self._current_provider_changed)
 
         self.ui.btnLogout.clicked.connect(
             self.logout)
@@ -115,42 +102,6 @@ class LoginWidget(QtGui.QWidget):
         """
         enable = True if state == QtCore.Qt.Checked else False
         self._settings.set_remember(enable)
-
-    def set_providers(self, provider_list):
-        """
-        Set the provider list to provider_list plus an "Other..." item
-        that triggers the wizard
-
-        :param provider_list: list of providers
-        :type provider_list: list of str
-        """
-        self.ui.cmbProviders.blockSignals(True)
-        self.ui.cmbProviders.clear()
-        self.ui.cmbProviders.addItems(provider_list + [self.tr("Other...")])
-        self.ui.cmbProviders.blockSignals(False)
-
-    def select_provider_by_name(self, name):
-        """
-        Given a provider name/domain, it selects it in the combobox
-
-        :param name: name or domain for the provider
-        :type name: str
-        """
-        provider_index = self.ui.cmbProviders.findText(name)
-        self._providers_indexes.append(provider_index)
-
-        # block the signals during a combobox change since we don't want to
-        # trigger the default signal that makes the UI ask the user for
-        # confirmation
-        self.ui.cmbProviders.blockSignals(True)
-        self.ui.cmbProviders.setCurrentIndex(provider_index)
-        self.ui.cmbProviders.blockSignals(False)
-
-    def get_selected_provider(self):
-        """
-        Returns the selected provider in the combobox
-        """
-        return self.ui.cmbProviders.currentText()
 
     def set_remember(self, value):
         """
@@ -229,7 +180,6 @@ class LoginWidget(QtGui.QWidget):
         self.ui.lnUser.setEnabled(enabled)
         self.ui.lnPassword.setEnabled(enabled)
         self.ui.chkRemember.setEnabled(enabled and has_keyring())
-        self.ui.cmbProviders.setEnabled(enabled)
 
         self._set_cancel(not enabled)
 
@@ -270,45 +220,20 @@ class LoginWidget(QtGui.QWidget):
         """
         self.ui.lnPassword.setFocus()
 
-    @QtCore.Slot(int)
-    def _current_provider_changed(self, idx):
-        """
-        TRIGGERS:
-            self.ui.cmbProviders.currentIndexChanged
-
-        :param idx: the index of the new selected item
-        :type idx: int
-        """
-        self._providers_indexes.append(idx)
-        is_wizard = idx == (self.ui.cmbProviders.count() - 1)
-        self.provider_changed.emit(is_wizard)
-        if is_wizard:
-            self.restore_previous_provider()
-
-    def restore_previous_provider(self):
-        """
-        Set as selected provider the one that was selected previously.
-        """
-        prev_provider = self._providers_indexes.popleft()
-        self._providers_indexes.append(prev_provider)
-        self.ui.cmbProviders.blockSignals(True)
-        self.ui.cmbProviders.setCurrentIndex(prev_provider)
-        self.ui.cmbProviders.blockSignals(False)
-
-    def start_login(self):
+    def start_login(self, provider):
         """
         Setups the login widgets for actually performing the login and
         performs some basic checks.
 
+        :param provider: the domain of the current provider
+        :type provider: unicode str
         :returns: True if everything's good to go, False otherwise
         :rtype: bool
         """
         username = self.get_user()
         password = self.get_password()
-        provider = self.get_selected_provider()
 
-        self._enabled_services = self._settings.get_enabled_services(
-            self.get_selected_provider())
+        self._enabled_services = self._settings.get_enabled_services(provider)
 
         if len(provider) == 0:
             self.set_status(
@@ -347,14 +272,16 @@ class LoginWidget(QtGui.QWidget):
                                  % (e,))
         return True
 
-    def logged_in(self):
+    def logged_in(self, provider):
         """
         Sets the widgets to the logged in state
+
+        :param provider: the domain of the current provider
+        :type provider: unicode str
         """
         self.ui.login_widget.hide()
         self.ui.logged_widget.show()
-        self.ui.lblUser.setText(make_address(
-            self.get_user(), self.get_selected_provider()))
+        self.ui.lblUser.setText(make_address(self.get_user(), provider))
 
         if flags.OFFLINE is False:
             self.logged_in_signal.emit()
