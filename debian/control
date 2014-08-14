@@ -33,9 +33,10 @@ Depends:
   python-jsonschema (>= 0.7.0),
   python-setuptools,
   openvpn,
-  python-pyside, 
   python-pyside.qtcore, 
   python-pyside.qtgui,
+  python-pyside.qtsvg,
+  python-twisted-core,
   python-leap-common,
   leap-mail,
   soledad-client

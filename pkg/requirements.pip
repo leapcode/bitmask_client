@@ -14,7 +14,7 @@ python-dateutil
 psutil
 
 ipaddr
-twisted
+#twisted   # removed for debian package
 python-daemon # this should not be needed for Windows.
 keyring
 zope.proxy
