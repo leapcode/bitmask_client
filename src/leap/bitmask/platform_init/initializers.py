@@ -106,6 +106,7 @@ def get_missing_helpers_dialog():
     msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
     msg.addButton("No, don't ask again", QtGui.QMessageBox.RejectRole)
     msg.setDefaultButton(QtGui.QMessageBox.Yes)
+    msg.setEscapeButton(QtGui.QMessageBox.No)
     return msg
 
 
