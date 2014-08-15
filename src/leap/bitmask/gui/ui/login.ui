@@ -69,17 +69,7 @@
       <property name="rightMargin">
        <number>24</number>
       </property>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>&lt;b&gt;Provider:&lt;/b&gt;</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
+      <item row="3" column="1">
        <widget class="QPushButton" name="btnLogin">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -92,7 +82,7 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
+      <item row="2" column="1">
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
          <widget class="QCheckBox" name="chkRemember">
@@ -116,10 +106,7 @@
         </item>
        </layout>
       </item>
-      <item row="0" column="1">
-       <widget class="QComboBox" name="cmbProviders"/>
-      </item>
-      <item row="1" column="0">
+      <item row="0" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
          <string>&lt;b&gt;Username:&lt;/b&gt;</string>
@@ -129,10 +116,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="0" column="1">
        <widget class="QLineEdit" name="lnUser"/>
       </item>
-      <item row="2" column="0">
+      <item row="1" column="0">
        <widget class="QLabel" name="label_3">
         <property name="text">
          <string>&lt;b&gt;Password:&lt;/b&gt;</string>
@@ -142,7 +129,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="1" column="1">
        <widget class="QLineEdit" name="lnPassword">
         <property name="inputMask">
          <string/>

@@ -1,1 +1,0 @@
-- Add checks to ensure that the backend is alive or notify the user. Related to #5873.
