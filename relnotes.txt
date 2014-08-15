@@ -1,8 +1,8 @@
-ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.6.0
+ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.6.1
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.6.0  of Bitmask,  the Internet Encryption  Toolkit, codename
-"nothing to see here".
+version 0.6.1 of Bitmask,  the Internet Encryption  Toolkit,  codename
+"knock knock knocking on beta's door".
 
 https://downloads.leap.se/client/
 
@@ -43,11 +43,13 @@ NOT trust your life to it.
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask   0.6.0  improves   how   email  encryption/decryption   works
-internally to  improve speed  and CPU  consumption. This  release also
-merges a big refactor we've been  working on for some time, which will
-give us  room for a  lot of improvements in  the near future.  You can
-refer to the CHANGELOG for the meat.
+Bitmask 0.6.1  is the new stable  version of the client  after the big
+refactor,  with  a  little face  lift  of  the  UI  while we  were  at
+it. Encrypted  Email is still not  stable though, so don't  use it for
+high security. Encrypted Internet is  the first service we are calling
+stable, although  its security level is  just a bit higher  than plain
+OpenSSL, so  use accordingly. You can  refer to the CHANGELOG  for the
+meat.
 
 Encrypted Internet on Linux now  helps you don't shoot yourself in the
 foot  by   leaking  traffic  outside  of  the   secure  connection  it
@@ -106,6 +108,6 @@ beyond any border.
 
 The LEAP team,
 
-July 18, 2014
+August 15, 2014
 Somewhere in the middle of the intertubes.
 EOF

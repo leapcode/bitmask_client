@@ -1,1 +1,0 @@
-- Temporarily disable username/password remembering to avoid keyring issues. Related to #4190.

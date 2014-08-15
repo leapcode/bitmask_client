@@ -6,6 +6,36 @@ History
 2014
 ====
 
+0.6.1 August 15 -- the "knock knock knocking on beta's door" release:
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+- Add checks to ensure that the backend is alive or notify the
+  user. Related to #5873.
+- Stop the backend if the frontend process does not exist any more and
+  backend is not a daemon. Related to #5873.
+- Add autostart on Linux. Closes #4989.
+- Pressing ESC on 'install helper files' defaults to No. Closes #5819.
+- Replace twisted thread with QThread and get pastebin send
+  working. Closes #5949.
+- Wait until EIP is up to autologin. Closes #5939
+- Fix the handling of vpn launcher errors in the UI. Closes: #5955
+- Fix logger window blocking the bitmask quit().
+- Set the standalone value for BaseConfig according to the global
+  flags.
+- Improve Hide and Show Window behavior on Ubuntu. Fixes #5511.
+- Use smaller height on the window so it fits better on smaller
+  resolutions. Closes #5722.
+- Disable daemon mode when we run the backend so we can spawn child
+  processes on it.
+- Restrict access to the zmq certificates folder.
+- Stop the services if the selected provider is changed. Related to
+  #4704. Closes #5912, #5554.
+- Minor adjustments to the layout of UI elements. Fixes #5514, #5515,
+  #5510.
+- Moved provider selection dropdown menu to be at the top of the main
+  windowUse same user/password restrictions as in the webapp. Closes
+  #5894.
+
 0.6.0 July 18 -- the "nothing to see here" release:
 +++++++++++++++++++++++++++++++++++++++++++++++++++
 

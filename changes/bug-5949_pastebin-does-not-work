@@ -1,1 +1,0 @@
-- Replace twisted thread with QThread and get pastebin send working. Closes #5949.

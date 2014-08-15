@@ -1,2 +1,0 @@
-- Stop the backend if the frontend process does not exist any more and backend
-  is not a daemon. Related to #5873.
