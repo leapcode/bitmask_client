@@ -159,6 +159,32 @@ update() {
     finish
 }
 
+helpers() {
+    if [[ "$1" == "cleanup" ]]; then
+        status="removing helper files"
+        echo "${cc_green}Status: $status...${cc_normal}"
+        set -x
+        sudo rm -f /usr/sbin/bitmask-root
+        sudo rm -f /usr/share/polkit-1/actions/se.leap.bitmask.policy
+        set +x
+    else
+        status="installing helper files"
+        echo "${cc_green}Status: $status...${cc_normal}"
+        set -x
+        sudo cp bitmask_client/pkg/linux/bitmask-root /usr/sbin/
+        sudo cp bitmask_client/pkg/linux/polkit/se.leap.bitmask.policy /usr/share/polkit-1/actions/
+        set +x
+    fi
+}
+
+install_dependencies() {
+    status="installing system dependencies"
+    echo "${cc_green}Status: $status...${cc_normal}"
+    set -x
+    sudo apt-get install -y git python-dev python-setuptools python-virtualenv python-pip libssl-dev python-openssl libsqlite3-dev g++ openvpn pyside-tools python-pyside libffi-dev
+    set +x
+}
+
 run() {
     shift  # remove 'run' from arg list
     passthrough_args=$@
@@ -174,13 +200,17 @@ help() {
     echo "Bootstraps the environment to start developing the bitmask client"
     echo "with all the needed repositories and dependencies."
     echo
-    echo "Usage: $0 {init | update | run | help}"
+    echo "Usage: $0 {init | update | run | help | deps | helpers}"
     echo
-    echo "   init : Initialize repositories, create virtualenv and \`python setup.py develop\` all."
-    echo "          You can use \`init ro\` in order to use the https remotes if you don't have rw access."
-    echo " update : Update the repositories and install new deps (if needed)."
-    echo "    run : Runs the client (any extra parameters will be sent to the app)."
-    echo "   help : Show this help"
+    echo "    init : Initialize repositories, create virtualenv and \`python setup.py develop\` all."
+    echo "           You can use \`init ro\` in order to use the https remotes if you don't have rw access."
+    echo "  update : Update the repositories and install new deps (if needed)."
+    echo "     run : Runs the client (any extra parameters will be sent to the app)."
+    echo "    help : Show this help"
+    echo " -- system helpers --"
+    echo "    deps : Install the system dependencies needed for bitmask dev (Debian based Linux only)."
+    echo " helpers : Install the helper files needed to use bitmask (Linux only)."
+    echo "           You can use \`helpers cleanup\` to remove those files."
     echo
 }
 
@@ -190,6 +220,12 @@ case "$1" in
         ;;
     update)
         update
+        ;;
+    helpers)
+        helpers $2
+        ;;
+    deps)
+        install_dependencies
         ;;
     run)
         run "$@"
