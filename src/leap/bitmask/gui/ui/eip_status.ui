@@ -28,12 +28,25 @@
      <property name="verticalSpacing">
       <number>0</number>
      </property>
-     <item row="0" column="4">
+     <item row="0" column="5">
       <widget class="QPushButton" name="btnEipStartStop">
        <property name="text">
         <string>Turn On</string>
        </property>
       </widget>
+     </item>
+     <item row="1" column="2">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>0</height>
+        </size>
+       </property>
+      </spacer>
      </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
@@ -47,7 +60,7 @@
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/32/earth.png</pixmap>
+        <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/32/earth.png</pixmap>
        </property>
       </widget>
      </item>
@@ -86,39 +99,26 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="5">
+     <item row="0" column="6">
       <widget class="QLabel" name="lblVPNStatusIcon">
        <property name="maximumSize">
         <size>
-         <width>24</width>
-         <height>24</height>
+         <width>22</width>
+         <height>22</height>
         </size>
        </property>
        <property name="text">
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="../../../../../data/resources/mainwindow.qrc">:/images/black/32/off.png</pixmap>
+        <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/off.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="1" column="2">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>0</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="2" column="2" colspan="4">
+     <item row="2" column="2" colspan="5">
       <widget class="QWidget" name="eip_bandwidth" native="true">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <property name="spacing">
@@ -162,7 +162,7 @@
              <string>0.0 KB/s</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../data/resources/mainwindow.qrc">
+             <iconset resource="../../../../../data/resources/icons.qrc">
               <normaloff>:/images/black/32/arrow-down.png</normaloff>:/images/black/32/arrow-down.png</iconset>
             </property>
             <property name="flat">
@@ -213,7 +213,7 @@
              <string>0.0 KB/s</string>
             </property>
             <property name="icon">
-             <iconset resource="../../../../../data/resources/mainwindow.qrc">
+             <iconset resource="../../../../../data/resources/icons.qrc">
               <normaloff>:/images/black/32/arrow-up.png</normaloff>:/images/black/32/arrow-up.png</iconset>
             </property>
             <property name="flat">
@@ -239,7 +239,7 @@
        </layout>
       </widget>
      </item>
-     <item row="0" column="3">
+     <item row="0" column="4">
       <widget class="QPushButton" name="btnFwDown">
        <property name="text">
         <string>Turn Off</string>
@@ -253,13 +253,20 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="3">
+      <widget class="QPushButton" name="btnEipCancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>
  </widget>
  <resources>
-  <include location="../../../../../data/resources/mainwindow.qrc"/>
   <include location="../../../../../data/resources/icons.qrc"/>
+  <include location="../../../../../data/resources/flags.qrc"/>
  </resources>
  <connections/>
 </ui>

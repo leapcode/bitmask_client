@@ -46,15 +46,12 @@ def _get_keyring_with_fallback():
     This is a workaround for the cases in which the keyring module chooses
     an insecure keyring by default (ie, inside a virtualenv).
     """
-    if not keyring:
+    if keyring is None:
         return None
     kr = keyring.get_keyring()
     if not canuse(kr):
-        try:
-            kr_klass = keyring.backends.SecretService
-            kr = kr_klass.Keyring()
-        except AttributeError:
-            logger.warning("Keyring cannot find SecretService Backend")
+        logger.debug("No usable keyring found")
+        return None
     logger.debug("Selected keyring: %s" % (kr.__class__,))
     if not canuse(kr):
         logger.debug("Not using default keyring since it is obsolete")
@@ -67,7 +64,7 @@ def has_keyring():
 
     :rtype: bool
     """
-    if not keyring:
+    if keyring is None:
         return False
     kr = _get_keyring_with_fallback()
     return canuse(kr)
@@ -79,7 +76,7 @@ def get_keyring():
 
     :rtype: keyringBackend or None
     """
-    if not keyring:
+    if keyring is None:
         return False
     kr = _get_keyring_with_fallback()
     return kr if canuse(kr) else None

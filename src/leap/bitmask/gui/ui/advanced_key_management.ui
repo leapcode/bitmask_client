@@ -14,7 +14,7 @@
    <string>Advanced Key Management</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../../../data/resources/mainwindow.qrc">
+   <iconset resource="../../../../../data/resources/icons.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
@@ -184,7 +184,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../../data/resources/icons.qrc"/>
  </resources>
  <connections/>
 </ui>

@@ -16,6 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 EIP Conductor module.
+
+This handles Qt Signals and triggers the calls to the backend,
+where the VPNProcess has been initialized.
 """
 import logging
 
@@ -90,7 +93,7 @@ class EIPConductor(object):
 
     def start_eip_machine(self, action):
         """
-        Initializes and starts the EIP state machine.
+        Initialize and start the EIP state machine.
         Needs the reference to the eip_status widget not to be empty.
 
         :action: QtAction
@@ -124,8 +127,12 @@ class EIPConductor(object):
     @QtCore.Slot()
     def _start_eip(self):
         """
-        Starts EIP.
+        Start EIP.
+
+        This set a couple of status flags and calls the start procedure in the
+        backend.
         """
+        # TODO status should be kept in a singleton in the backend.
         st = self._eip_status
         is_restart = st and st.is_restart
 
@@ -137,6 +144,7 @@ class EIPConductor(object):
         else:
             self._eip_status.eip_pre_up()
         self.user_stopped_eip = False
+        self.cancelled = False
         self._eip_status.hide_fw_down_button()
 
         # Until we set an option in the preferences window, we'll assume that
@@ -175,6 +183,9 @@ class EIPConductor(object):
         :param failed: whether this is the final step of a retry sequence
         :type failed: bool
         """
+        # XXX we should NOT keep status in the widget, but we do for a series
+        # of hacks related to restarts. All status should be kept in a backend
+        # object, widgets should be just widgets.
         self._eip_status.is_restart = restart
         self.user_stopped_eip = not restart and not failed
 
@@ -267,7 +278,7 @@ class EIPConductor(object):
         TRIGGERS:
             Signaler.eip_process_finished
 
-        Triggered when the EIP/VPN process finishes to set the UI
+        Triggered when the EIP/VPN process finishes, in order to set the UI
         accordingly.
 
         Ideally we would have the right exit code here,
@@ -302,17 +313,25 @@ class EIPConductor(object):
         # bitmask-root is masking the exitcode, so we might need
         # to fix it on that side.
         # if exitCode != 0 and not self.user_stopped_eip:
-        if not self.user_stopped_eip:
+
+        if not self.user_stopped_eip and not self.cancelled:
+            error = True
             eip_status_label = self._eip_status.tr(
                 "{0} finished in an unexpected manner!")
             eip_status_label = eip_status_label.format(self.eip_name)
-            self._eip_status.eip_stopped()
             self._eip_status.set_eip_status_icon("error")
             self._eip_status.set_eip_status(eip_status_label,
-                                            error=True)
+                                            error=error)
+            self._eip_status.eip_stopped()
             signal = self.qtsigs.connection_died_signal
             self._eip_status.show_fw_down_button()
             self._eip_status.eip_failed_to_connect()
+
+        if self.cancelled:
+            signal = self.qtsigs.connection_aborted_signal
+            self._eip_status.set_eip_status_icon("error")
+            self._eip_status.eip_stopped()
+            self._eip_status.set_eip_status("", error=False)
 
         if exitCode == 0 and IS_MAC:
             # XXX remove this warning after I fix cocoasudo.

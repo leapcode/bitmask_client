@@ -44,7 +44,7 @@ def signal_handler(signum, frame):
     logger.debug("{0}: SIGNAL #{1} catched.".format(pname, signum))
 
 
-def run_backend(bypass_checks, flags_dict):
+def run_backend(bypass_checks, flags_dict, frontend_pid=None):
     """
     Run the backend for the application.
 
@@ -59,5 +59,6 @@ def run_backend(bypass_checks, flags_dict):
 
     dict_to_flags(flags_dict)
 
-    backend = LeapBackend(bypass_checks=bypass_checks)
+    backend = LeapBackend(bypass_checks=bypass_checks,
+                          frontend_pid=frontend_pid)
     backend.run()

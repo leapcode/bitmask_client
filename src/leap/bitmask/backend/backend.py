@@ -14,16 +14,23 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# FIXME this is missing module documentation. It would be fine to say a couple
+# of lines about the whole backend architecture.
+# TODO use txzmq bindings instead.
+
 import json
 import threading
 import time
+
+import psutil
 
 from twisted.internet import defer, reactor, threads
 
 import zmq
 from zmq.auth.thread import ThreadAuthenticator
 
-from leap.bitmask.backend.api import API
+from leap.bitmask.backend.api import API, PING_REQUEST
 from leap.bitmask.backend.utils import get_backend_certificates
 from leap.bitmask.backend.signaler import Signaler
 
@@ -36,14 +43,22 @@ class Backend(object):
     Backend server.
     Receives signals from backend_proxy and emit signals if needed.
     """
+    # XXX this should not be hardcoded. Make it configurable.
     PORT = '5556'
+
+    # XXX we might want to make this configurable per-platform,
+    # and use the most performant socket type on each one.
     BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
 
-    def __init__(self):
+    PING_INTERVAL = 2  # secs
+
+    def __init__(self, frontend_pid=None):
         """
         Backend constructor, create needed instances.
         """
         self._signaler = Signaler()
+
+        self._frontend_pid = frontend_pid
 
         self._do_work = threading.Event()  # used to stop the worker thread.
         self._zmq_socket = None
@@ -61,6 +76,7 @@ class Backend(object):
         # Start an authenticator for this context.
         auth = ThreadAuthenticator(context)
         auth.start()
+        # XXX do not hardcode this here.
         auth.allow('127.0.0.1')
 
         # Tell authenticator to use the certificate in a directory
@@ -81,6 +97,8 @@ class Backend(object):
         Note: we use a simple while since is less resource consuming than a
         Twisted's LoopingCall.
         """
+        pid = self._frontend_pid
+        check_wait = 0
         while self._do_work.is_set():
             # Wait for next request from client
             try:
@@ -92,6 +110,20 @@ class Backend(object):
                 if e.errno != zmq.EAGAIN:
                     raise
             time.sleep(0.01)
+
+            check_wait += 0.01
+            if pid is not None and check_wait > self.PING_INTERVAL:
+                check_wait = 0
+                self._check_frontend_alive()
+
+    def _check_frontend_alive(self):
+        """
+        Check if the frontend is alive and stop the backend if it is not.
+        """
+        pid = self._frontend_pid
+        if pid is not None and not psutil.pid_exists(pid):
+            logger.critical("The frontend is down!")
+            self.stop()
 
     def _stop_reactor(self):
         """
@@ -146,6 +178,10 @@ class Backend(object):
         :param request_json: a json specification of a request.
         :type request_json: str
         """
+        if request_json == PING_REQUEST:
+            # do not process request if it's just a ping
+            return
+
         try:
             # request = zmq.utils.jsonapi.loads(request_json)
             # We use stdlib's json to ensure that we get unicode strings

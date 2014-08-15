@@ -14,7 +14,7 @@
    <string>Logs</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../../../data/resources/mainwindow.qrc">
+   <iconset resource="../../../../../data/resources/icons.qrc">
     <normaloff>:/images/mask-icon.png</normaloff>:/images/mask-icon.png</iconset>
   </property>
   <layout class="QGridLayout" name="gridLayout">
@@ -180,7 +180,7 @@
  </tabstops>
  <resources>
   <include location="../../../../../data/resources/loggerwindow.qrc"/>
-  <include location="../../../../../data/resources/mainwindow.qrc"/>
+  <include location="../../../../../data/resources/icons.qrc"/>
  </resources>
  <connections/>
 </ui>

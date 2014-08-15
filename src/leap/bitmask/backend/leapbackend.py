@@ -36,11 +36,11 @@ class LeapBackend(Backend):
     """
     Backend server subclass, used to implement the API methods.
     """
-    def __init__(self, bypass_checks=False):
+    def __init__(self, bypass_checks=False, frontend_pid=None):
         """
         Constructor for the backend.
         """
-        Backend.__init__(self)
+        Backend.__init__(self, frontend_pid)
 
         self._settings = Settings()
 
@@ -316,6 +316,12 @@ class LeapBackend(Backend):
         Signal the need to tear the fw down.
         """
         self._eip.tear_fw_down()
+
+    def bitmask_root_vpn_down(self):
+        """
+        Signal the need to bring vpn down.
+        """
+        self._eip.bitmask_root_vpn_down()
 
     def user_login(self, provider, username, password):
         """

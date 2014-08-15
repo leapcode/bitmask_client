@@ -202,7 +202,24 @@ class VPN(object):
                              "aborting openvpn launch.")
                 return
 
-        cmd = vpnproc.getCommand()
+        # FIXME it would be good to document where the
+        # errors here are catched, since we currently handle them
+        # at the frontend layer. This *should* move to be handled entirely
+        # in the backend.
+        # exception is indeed technically catched in backend, then converted
+        # into a signal, that is catched in the eip_status widget in the
+        # frontend, and converted into a signal to abort the connection that is
+        # sent to the backend again.
+
+        # the whole exception catching should be done in the backend, without
+        # the ping-pong to the frontend, and without adding any logical checks
+        # in the frontend. We should just communicate UI changes to frontend,
+        # and abstract us away from anything else.
+        try:
+            cmd = vpnproc.getCommand()
+        except Exception:
+            logger.error("Error while getting vpn command...")
+            raise
         env = os.environ
         for key, val in vpnproc.vpn_env.items():
             env[key] = val
@@ -261,6 +278,18 @@ class VPN(object):
         BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
         exitCode = subprocess.call(["pkexec",
                                     BM_ROOT, "firewall", "stop"])
+        return True if exitCode is 0 else False
+
+    def bitmask_root_vpn_down(self):
+        """
+        Bring openvpn down using the privileged wrapper.
+        """
+        if IS_MAC:
+            # We don't support Mac so far
+            return True
+        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+        exitCode = subprocess.call(["pkexec",
+                                    BM_ROOT, "openvpn", "stop"])
         return True if exitCode is 0 else False
 
     def _kill_if_left_alive(self, tries=0):

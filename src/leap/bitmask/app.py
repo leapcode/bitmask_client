@@ -180,12 +180,15 @@ def start_app():
 
     flags_dict = flags_to_dict()
 
-    backend = lambda: run_backend(opts.danger, flags_dict)
+    frontend_pid = os.getpid()
+    backend = lambda: run_backend(opts.danger, flags_dict, frontend_pid)
     backend_process = multiprocessing.Process(target=backend, name='Backend')
-    backend_process.daemon = True
+    # we don't set the 'daemon mode' since we need to start child processes in
+    # the backend
+    # backend_process.daemon = True
     backend_process.start()
 
-    run_frontend(options, flags_dict)
+    run_frontend(options, flags_dict, backend_pid=backend_process.pid)
 
 
 if __name__ == "__main__":
