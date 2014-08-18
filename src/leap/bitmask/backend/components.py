@@ -60,7 +60,7 @@ from leap.common import certs as leap_certs
 from leap.keymanager import openpgp
 from leap.keymanager.errors import KeyAddressMismatch, KeyFingerprintMismatch
 
-from leap.soledad.client import NoStorageSecret, PassphraseTooShort
+from leap.soledad.client.secrets import NoStorageSecret, PassphraseTooShort
 
 logger = logging.getLogger(__name__)
 
