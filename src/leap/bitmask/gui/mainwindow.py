@@ -1249,9 +1249,14 @@ class MainWindow(QtGui.QMainWindow):
         # TODO: we need to add a check for the mail status (smtp/imap/soledad)
         something_runing = (self._logged_user is not None or
                             self._already_started_eip)
+        provider = self._providers.get_selected_provider()
+
         if not something_runing:
             if wizard:
                 self._launch_wizard()
+            else:
+                self._settings.set_provider(provider)
+                self._settings.set_defaultprovider(provider)
             return
 
         title = self.tr("Stop services")
@@ -1269,6 +1274,9 @@ class MainWindow(QtGui.QMainWindow):
         res = msg.exec_()
 
         if res == QtGui.QMessageBox.Yes:
+            self._settings.set_provider(provider)
+            self._settings.set_defaultprovider(provider)
+            self._settings.set_autostart_eip(False)
             self._stop_services()
             self._eip_conductor.qtsigs.do_disconnect_signal.emit()
             if wizard:
