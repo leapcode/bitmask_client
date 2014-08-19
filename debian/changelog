@@ -1,3 +1,9 @@
+bitmask (0.6.1.2) unstable; urgency=medium
+
+  * Remove saucy required pydist-overrides for pyopenssl
+
+ -- Micah Anderson <micah@debian.org>  Tue, 19 Aug 2014 13:45:05 -0400
+
 bitmask (0.6.1.1) unstable; urgency=medium
 
   * Cherry-pick fix for missing openvpn.pem not being re-downloaded 
