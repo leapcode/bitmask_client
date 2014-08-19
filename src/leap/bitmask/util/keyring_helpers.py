@@ -34,10 +34,6 @@ except Exception:
     # dbus socket, or stuff like that.
     keyring = None
 
-# XXX remember password disabled right now!
-# see: https://leap.se/code/issues/4190
-keyring = None
-
 
 logger = logging.getLogger(__name__)
 
