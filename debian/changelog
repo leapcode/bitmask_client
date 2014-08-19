@@ -1,3 +1,9 @@
+bitmask (0.6.1.1) unstable; urgency=medium
+
+  * Cherry-pick fix for missing openvpn.pem not being re-downloaded 
+
+ -- Ben Carrillo <ben@futeisha.org>  Tue, 19 Aug 2014 10:01:49 -0500
+
 bitmask (0.6.1) unstable; urgency=medium
 
   * Update to 0.6.1 release
