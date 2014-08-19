@@ -1,6 +1,7 @@
 bitmask (0.6.1.1) unstable; urgency=medium
 
   * Cherry-pick fix for missing openvpn.pem not being re-downloaded 
+  * Cherry-pick fix for 2.6 syntax error with dict comprenhension
 
  -- Ben Carrillo <ben@futeisha.org>  Tue, 19 Aug 2014 10:01:49 -0500
 
