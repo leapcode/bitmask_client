@@ -151,6 +151,6 @@ def flags_to_dict():
     :rtype: dict.
     """
     items = [i for i in dir(flags) if i[0] != '_']
-    values = {i: getattr(flags, i) for i in items}
+    values = dict((i, getattr(flags, i)) for i in items)
 
     return values
