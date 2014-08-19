@@ -703,6 +703,10 @@ class MainWindow(QtGui.QMainWindow):
             self._eip_status.disable_eip_start()
             self._eip_status.set_eip_status(self.tr("Disabled"))
 
+        # this state flag is responsible for deferring the login
+        # so we must update it, otherwise we're in a deadlock.
+        self._trying_to_start_eip = False
+
     @QtCore.Slot()
     def _disable_eip_missing_helpers(self):
         """

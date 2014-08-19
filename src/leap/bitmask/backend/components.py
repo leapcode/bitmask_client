@@ -665,7 +665,7 @@ class EIP(object):
             return False
 
         client_cert_path = eip_config.\
-            get_client_cert_path(provider_config, about_to_download=False)
+            get_client_cert_path(provider_config, about_to_download=True)
 
         if leap_certs.should_redownload(client_cert_path):
             logger.error("The client should redownload the certificate,"
