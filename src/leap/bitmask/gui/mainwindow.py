@@ -1257,6 +1257,7 @@ class MainWindow(QtGui.QMainWindow):
             else:
                 self._settings.set_provider(provider)
                 self._settings.set_defaultprovider(provider)
+                self._update_eip_enabled_status()
             return
 
         title = self.tr("Stop services")
@@ -1278,6 +1279,7 @@ class MainWindow(QtGui.QMainWindow):
             self._settings.set_defaultprovider(provider)
             self._settings.set_autostart_eip(False)
             self._stop_services()
+            self._update_eip_enabled_status()
             self._eip_conductor.qtsigs.do_disconnect_signal.emit()
             if wizard:
                 self._launch_wizard()
