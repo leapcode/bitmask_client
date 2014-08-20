@@ -413,11 +413,6 @@ class MainWindow(QtGui.QMainWindow):
             "Invalid username or password."))
         conntrack(sig.srp_auth_bad_user_or_password, auth_bad_user_or_password)
 
-        # Logout signals
-        conntrack(sig.srp_logout_ok, self._logout_ok)
-        conntrack(sig.srp_logout_error, self._logout_error)
-        conntrack(sig.srp_not_logged_in_error, self._not_logged_in_error)
-
         # EIP bootstrap signals
         conntrack(sig.eip_config_ready, self._eip_intermediate_stage)
         conntrack(sig.eip_client_certificate_ready, self._finish_eip_bootstrap)
@@ -436,8 +431,12 @@ class MainWindow(QtGui.QMainWindow):
         sig.prov_unsupported_api.connect(self._incompatible_api)
         sig.prov_get_all_services.connect(self._provider_get_all_services)
 
-        # EIP start signals ==============================================
+        # Logout signals =================================================
+        sig.srp_logout_ok.connect(self._logout_ok)
+        sig.srp_logout_error.connect(self._logout_error)
+        sig.srp_not_logged_in_error.connect(self._not_logged_in_error)
 
+        # EIP start signals ==============================================
         self._eip_conductor.connect_backend_signals()
         sig.eip_can_start.connect(self._backend_can_start_eip)
         sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
