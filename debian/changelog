@@ -1,28 +1,13 @@
-bitmask (0.6.1.3) unstable; urgency=medium
+bitmask (0.6.1) unstable; urgency=medium
 
   * Cherry-pick ced7ebf and c23f2be, fixing three bugs related to
     provider change (#5995, #5996, #5997)
-
- -- Ben Carrillo <ben@futeisha.org>  Wed, 20 Aug 2014 11:01:37 -0500
-
-bitmask (0.6.1.2) unstable; urgency=medium
-
   * Remove saucy required pydist-overrides for pyopenssl
-
- -- Micah Anderson <micah@debian.org>  Tue, 19 Aug 2014 13:45:05 -0400
-
-bitmask (0.6.1.1) unstable; urgency=medium
-
   * Cherry-pick fix for missing openvpn.pem not being re-downloaded 
   * Cherry-pick fix for 2.6 syntax error with dict comprenhension
-
- -- Ben Carrillo <ben@futeisha.org>  Tue, 19 Aug 2014 10:01:49 -0500
-
-bitmask (0.6.1) unstable; urgency=medium
-
   * Update to 0.6.1 release
 
- -- Ben Carrillo <ben@futeisha.org>  Fri, 08 Aug 2014 19:11:08 -0500
+ -- Micah Anderson <micah@debian.org>  Tue, 19 Aug 2014 13:45:05 -0400
 
 bitmask (0.5.4) unstable; urgency=medium
 
