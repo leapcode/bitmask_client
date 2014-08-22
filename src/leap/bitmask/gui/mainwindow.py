@@ -656,6 +656,10 @@ class MainWindow(QtGui.QMainWindow):
         to do so, start it. Otherwise it leaves everything in place
         for the user to click Turn ON.
         """
+        if self._eip_status.missing_helpers:
+            self._eip_status.disable_eip_start()
+            return
+
         settings = self._settings
         default_provider = settings.get_defaultprovider()
         enabled_services = []
@@ -700,7 +704,9 @@ class MainWindow(QtGui.QMainWindow):
             self._eip_status.disable_eip_start()
         else:
             self._eip_status.disable_eip_start()
-            self._eip_status.set_eip_status(self.tr("Disabled"))
+            # NOTE: we shouldn't be setting the message here.
+            if not self._eip_status.missing_helpers:
+                self._eip_status.set_eip_status(self.tr("Disabled"))
 
         # this state flag is responsible for deferring the login
         # so we must update it, otherwise we're in a deadlock.
@@ -812,6 +818,15 @@ class MainWindow(QtGui.QMainWindow):
 
         self._show_hide_unsupported_services()
 
+        # XXX - HACK, kind of...
+        # With the 1ms QTimer.singleShot call we schedule the call right after
+        # other signals waiting for the qt reactor to take control.
+        # That way, the method is called right after the EIP machines' signals.
+        # We need to wait until that happens because the state-machine
+        # controlled widget shows the 'Turn On' button and we want to do the
+        # changes to that button right after, not before.
+        QtDelayedCall(1, self._update_eip_enabled_status)
+
         if self._wizard:
             possible_username = self._wizard.get_username()
             possible_password = self._wizard.get_password()
@@ -836,8 +851,6 @@ class MainWindow(QtGui.QMainWindow):
             self._wizard = None
             self._backend_connect(only_tracked=True)
         else:
-            self._update_eip_enabled_status()
-
             domain = self._settings.get_provider()
             if domain is not None:
                 self._providers.select_provider_by_name(domain)
