@@ -1,3 +1,9 @@
+bitmask (0.6.1.2) unstable; urgency=medium
+
+  * add versioned depend on leap's python-zmq until libsodium is in debian
+
+ -- Micah Anderson <micah@debian.org>  Tue, 26 Aug 2014 09:38:36 -0700
+
 bitmask (0.6.1) unstable; urgency=medium
 
   * Cherry-pick ced7ebf and c23f2be, fixing three bugs related to
