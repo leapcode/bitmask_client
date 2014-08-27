@@ -164,12 +164,19 @@ def check_missing():
             logger.debug(
                 "Setting alert_missing_scripts to False, we will not "
                 "ask again")
+            init_signals.eip_missing_helpers.emit()
             config.set_alert_missing_scripts(False)
 
     if complain_missing and missing_some:
         missing = missing_scripts() + missing_other()
         msg = _get_missing_complain_dialog(missing)
         ret = msg.exec_()
+
+    # If there is some missing file and we don't want to complain, we emit the
+    # 'missing helpers' signal so the eip status can show that some files are
+    # missing.
+    if missing_some and not alert_missing and not complain_missing:
+        init_signals.eip_missing_helpers.emit()
 
 #
 # windows initializers
