@@ -48,6 +48,7 @@ from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.providers import Providers
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
+from leap.bitmask.platform_init import locks
 from leap.bitmask.platform_init.initializers import init_platform
 from leap.bitmask.platform_init.initializers import init_signals
 
@@ -62,10 +63,6 @@ from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 from leap.bitmask.util import autostart, make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.logs.leap_log_handler import LeapLogHandler
-
-if IS_WIN:
-    from leap.bitmask.platform_init.locks import WindowsLock
-    from leap.bitmask.platform_init.locks import raise_window_ack
 
 from leap.common.events import register
 from leap.common.events import events_pb2 as proto
@@ -1865,7 +1862,7 @@ class MainWindow(QtGui.QMainWindow):
         Callback for the raise window event
         """
         if IS_WIN:
-            raise_window_ack()
+            locks.raise_window_ack()
         self.raise_window.emit()
 
     @QtCore.Slot()
@@ -2022,7 +2019,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # Remove lockfiles on a clean shutdown.
         logger.debug('Cleaning pidfiles')
-        if IS_WIN:
-            WindowsLock.release_all_locks()
+        locks.release_lock()
 
         self.close()
