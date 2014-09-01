@@ -50,8 +50,7 @@ from leap.common.check import leap_assert, leap_assert_type
 logger = logging.getLogger(__name__)
 vpnlog = logging.getLogger('leap.openvpn')
 
-from twisted.internet import protocol
-from twisted.internet import defer
+from twisted.internet import defer, protocol, reactor
 from twisted.internet import error as internet_error
 from twisted.internet.task import LoopingCall
 
@@ -157,10 +156,8 @@ class VPN(object):
         of a QObject containing the QSignals that we will pass along
         to the VPNManager.
         """
-        from twisted.internet import reactor
         self._vpnproc = None
         self._pollers = []
-        self._reactor = reactor
 
         self._signaler = kwargs['signaler']
         self._openvpn_verb = flags.OPENVPN_VERBOSITY
@@ -224,7 +221,7 @@ class VPN(object):
         for key, val in vpnproc.vpn_env.items():
             env[key] = val
 
-        self._reactor.spawnProcess(vpnproc, cmd[0], cmd, env)
+        reactor.spawnProcess(vpnproc, cmd[0], cmd, env)
         self._vpnproc = vpnproc
 
         # add pollers for status and state
@@ -300,7 +297,6 @@ class VPN(object):
         :param tries: counter of tries, used in recursion
         :type tries: int
         """
-        from twisted.internet import reactor
         while tries < self.TERMINATE_MAXTRIES:
             if self._vpnproc.transport.pid is None:
                 logger.debug("Process has been happily terminated.")
@@ -351,7 +347,6 @@ class VPN(object):
         :param restart: whether this stop is part of a hard restart.
         :type restart: bool
         """
-        from twisted.internet import reactor
         self._stop_pollers()
 
         # First we try to be polite and send a SIGTERM...
@@ -424,8 +419,6 @@ class VPNManager(object):
                          backend
         :type signaler: backend.Signaler
         """
-        from twisted.internet import reactor
-        self._reactor = reactor
         self._tn = None
         self._signaler = signaler
         self._aborted = False
@@ -602,7 +595,7 @@ class VPNManager(object):
         logger.debug('trying to connect to management')
         if not self.aborted and not self.is_connected():
             self.connect_to_management(self._socket_host, self._socket_port)
-            self._reactor.callLater(
+            reactor.callLater(
                 self.CONNECTION_RETRY_TIME,
                 self.try_to_connect_to_management, retry + 1)
 
