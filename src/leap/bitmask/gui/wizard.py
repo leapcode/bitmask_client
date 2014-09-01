@@ -672,8 +672,9 @@ class Wizard(QtGui.QWizard):
         Loads the services that the provider provides into the UI for
         the user to enable or disable.
         """
-        self.ui.grpServices.setTitle(
-            self.tr("Services by {0}").format(self._provider_details['domain']))
+        title = self.tr("Services by {0}").format(
+            self._provider_details['domain'])
+        self.ui.grpServices.setTitle(title)
 
         services = get_supported(self._provider_details['services'])
 

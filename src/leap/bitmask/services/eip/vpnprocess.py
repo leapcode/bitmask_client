@@ -371,6 +371,8 @@ class VPN(object):
                     logger.debug("Firewall down")
                 else:
                     logger.warning("Could not tear firewall down")
+        else:
+            logger.debug("VPN is not running.")
 
     def _start_pollers(self):
         """
