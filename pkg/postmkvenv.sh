@@ -27,7 +27,7 @@ LIB_VIRTUALENV_PATH=$(python -c "$GET_PYTHON_LIB_CMD")
 if [[ $platform == 'linux' ]]; then
     LIB_SYSTEM_PATH=$(${VAR[-1]} -c "$GET_PYTHON_LIB_CMD")
 elif [[ $platform == 'darwin' ]]; then
-    LIB_SYSTEM_PATH=$(/opt/local/bin/python2.6 -c "$GET_PYTHON_LIB_CMD")
+    LIB_SYSTEM_PATH=$(python -c "$GET_PYTHON_LIB_CMD")
 else
     echo "unsupported platform; not doing symlinks"
 fi
