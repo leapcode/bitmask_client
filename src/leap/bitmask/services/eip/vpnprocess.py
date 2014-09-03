@@ -214,9 +214,10 @@ class VPN(object):
         # and abstract us away from anything else.
         try:
             cmd = vpnproc.getCommand()
-        except Exception:
-            logger.error("Error while getting vpn command...")
+        except Exception as e:
+            logger.error("Error while getting vpn command... {0!r}".format(e))
             raise
+
         env = os.environ
         for key, val in vpnproc.vpn_env.items():
             env[key] = val
