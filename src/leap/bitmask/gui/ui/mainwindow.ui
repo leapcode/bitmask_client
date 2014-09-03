@@ -317,7 +317,6 @@
     <addaction name="action_advanced_key_management"/>
     <addaction name="separator"/>
     <addaction name="action_preferences"/>
-    <addaction name="action_eip_preferences"/>
     <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
@@ -338,12 +337,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Account Preferences...</string>
-   </property>
-  </action>
-  <action name="action_eip_preferences">
-   <property name="text">
-    <string>Internet Preferences...</string>
+    <string>Preferences...</string>
    </property>
   </action>
   <action name="action_quit">

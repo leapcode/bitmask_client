@@ -37,7 +37,6 @@ from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
-from leap.bitmask.gui.eip_preferenceswindow import EIPPreferencesWindow
 from leap.bitmask.gui.eip_status import EIPStatusWidget
 from leap.bitmask.gui.loggerwindow import LoggerWindow
 from leap.bitmask.gui.login import LoginWidget
@@ -96,6 +95,9 @@ class MainWindow(QtGui.QMainWindow):
 
     # We give the services some time to a halt before forcing quit.
     SERVICES_STOP_TIMEOUT = 3000  # in milliseconds
+
+    # Preferences window
+    preferences = None
 
     def __init__(self, start_hidden=False, backend_pid=None):
         """
@@ -213,8 +215,6 @@ class MainWindow(QtGui.QMainWindow):
         self._backend_connect()
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
-        self.ui.action_eip_preferences.triggered.connect(
-            self._show_eip_preferences)
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
@@ -247,7 +247,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # disable buttons for now, may come back later.
         # self.ui.btnPreferences.clicked.connect(self._show_preferences)
-        # self.ui.btnEIPPreferences.clicked.connect(self._show_eip_preferences)
 
         self._enabled_services = []
         self._ui_mx_visible = True
@@ -601,16 +600,13 @@ class MainWindow(QtGui.QMainWindow):
         """
         user = self._logged_user
         domain = self._providers.get_selected_provider()
-        mx_provided = False
-        if self._provider_details is not None:
-            mx_provided = MX_SERVICE in self._provider_details['services']
-        preferences = PreferencesWindow(self, user, domain, self._backend,
-                                        self._soledad_started, mx_provided,
-                                        self._leap_signaler)
-
-        self.soledad_ready.connect(preferences.set_soledad_ready)
-        preferences.show()
-        preferences.preferences_saved.connect(self._update_eip_enabled_status)
+        if self.preferences is not None:
+            self.preferences.close()
+        self.preferences = PreferencesWindow(self, user, domain,
+                                              self._backend,
+                                              self._soledad_started,
+                                              self._leap_signaler)
+        self.preferences.show()
 
     @QtCore.Slot()
     def _update_eip_enabled_status(self):
@@ -717,20 +713,6 @@ class MainWindow(QtGui.QMainWindow):
         Set the missing_helpers flag, so we can disable EIP.
         """
         self._eip_status.missing_helpers = True
-
-    @QtCore.Slot()
-    def _show_eip_preferences(self):
-        """
-        TRIGGERS:
-            self.ui.btnEIPPreferences.clicked
-            self.ui.action_eip_preferences (disabled for now)
-
-        Display the EIP preferences window.
-        """
-        domain = self._providers.get_selected_provider()
-        pref = EIPPreferencesWindow(self, domain,
-                                    self._backend, self._leap_signaler)
-        pref.show()
 
     #
     # updates

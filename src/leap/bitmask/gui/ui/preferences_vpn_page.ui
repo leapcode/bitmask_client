@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PreferencesVpnPage</class>
+ <widget class="QWidget" name="PreferencesVpnPage">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>362</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="flash_label">
+     <property name="text">
+      <string>&lt;flash_label&gt;</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="heading_label">
+     <property name="text">
+      <string>Default VPN Gateway:</string>
+     </property>
+     <property name="buddy">
+      <cstring>gateways_list</cstring>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QListWidget" name="gateways_list">
+     <item>
+      <property name="text">
+       <string>New Item</string>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normalon>:/images/countries/us.png</normalon>
+       </iconset>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>New Item</string>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normalon>:/images/countries/br.png</normalon>
+       </iconset>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="tip_label">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="text">
+      <string>You must reconnect for changes to take effect.</string>
+     </property>
+     <property name="scaledContents">
+      <bool>false</bool>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+     <property name="buddy">
+      <cstring>gateways_list</cstring>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../../../../../data/resources/flags.qrc"/>
+ </resources>
+ <connections/>
+</ui>
