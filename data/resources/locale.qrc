@@ -2,5 +2,6 @@
 <qresource>
 <file>../translations/vi.qm</file>
 <file>../translations/en_GB.qm</file>
+<file>../translations/es.qm</file>
 </qresource>
 </RCC>
