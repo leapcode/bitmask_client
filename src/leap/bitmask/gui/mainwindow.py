@@ -206,6 +206,9 @@ class MainWindow(QtGui.QMainWindow):
         self._finally_quitting = False
         self._system_quit = False
 
+        # Used to differentiate between a real quit and a close to tray
+        self._close_to_tray = True
+
         self._backend_connected_signals = []
         self._backend_connect()
 
@@ -228,9 +231,6 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.menuFile.menuAction().setText(self.tr("File"))
 
         self.raise_window.connect(self._do_raise_mainwindow)
-
-        # Used to differentiate between real quits and close to tray
-        self._really_quit = False
 
         self._systray = None
 
@@ -1144,7 +1144,7 @@ class MainWindow(QtGui.QMainWindow):
             return
 
         if QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
-                not self._really_quit:
+                self._close_to_tray:
             self._ensure_invisible()
             e.ignore()
             return
@@ -1889,10 +1889,9 @@ class MainWindow(QtGui.QMainWindow):
         """
         Stop services and cancel ongoing actions (if any).
         """
-        logger.debug('About to quit, doing cleanup.')
+        logger.debug('Stopping services...')
 
         self._cancel_ongoing_defers()
-
         self._services_being_stopped = set(('imap', 'eip'))
 
         imap_stopped = lambda: self._remove_service('imap')
@@ -1921,9 +1920,10 @@ class MainWindow(QtGui.QMainWindow):
         if self._quitting:
             return
 
-        autostart.set_autostart(False)
-
         self._quitting = True
+        self._close_to_tray = False
+        logger.debug('Quitting...')
+        autostart.set_autostart(False)
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
@@ -1941,8 +1941,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # Set this in case that the app is hidden
         QtGui.QApplication.setQuitOnLastWindowClosed(True)
-
-        self._really_quit = True
 
         if not self._backend.online:
             self.final_quit()

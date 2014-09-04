@@ -127,12 +127,15 @@ def check_missing():
         complain_missing = True
 
     launcher = get_vpn_launcher()
-    missing_scripts = launcher.missing_updown_scripts
-    missing_other = launcher.missing_other_files
+    missing_scripts = launcher.missing_updown_scripts()
+    missing_other = launcher.missing_other_files()
 
-    logger.debug("MISSING OTHER: %s" % (str(missing_other())))
+    if missing_scripts:
+        logger.warning("Missing scripts: %s" % (missing_scripts))
+    if missing_other:
+        logger.warning("Missing other files: %s" % (missing_other))
 
-    missing_some = missing_scripts() or missing_other()
+    missing_some = missing_scripts or missing_other
     if alert_missing and missing_some:
         msg = get_missing_helpers_dialog()
         ret = msg.exec_()
@@ -168,7 +171,7 @@ def check_missing():
             config.set_alert_missing_scripts(False)
 
     if complain_missing and missing_some:
-        missing = missing_scripts() + missing_other()
+        missing = missing_scripts + missing_other
         msg = _get_missing_complain_dialog(missing)
         ret = msg.exec_()
 

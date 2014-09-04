@@ -452,19 +452,13 @@ class EIP(object):
         else:
             logger.debug('EIP: no errors')
 
-    def _do_stop(self, shutdown=False, restart=False):
-        """
-        Stop the service. This is run in a thread to avoid blocking.
-        """
-        self._vpn.terminate(shutdown, restart)
-        if IS_LINUX:
-            self._wait_for_firewall_down()
-
     def stop(self, shutdown=False, restart=False):
         """
         Stop the service.
         """
-        return threads.deferToThread(self._do_stop, shutdown, restart)
+        self._vpn.terminate(shutdown, restart)
+        if IS_LINUX:
+            self._wait_for_firewall_down()
 
     def _wait_for_firewall_down(self):
         """

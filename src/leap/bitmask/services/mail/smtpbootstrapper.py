@@ -173,3 +173,5 @@ class SMTPBootstrapper(AbstractBootstrapper):
             logger.debug('Stopping SMTP service.')
             self._smtp_port.stopListening()
             self._smtp_service.doStop()
+        else:
+            logger.debug('SMTP service not running.')

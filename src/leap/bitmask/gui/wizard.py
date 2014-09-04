@@ -96,11 +96,6 @@ class Wizard(QtGui.QWizard):
         # this details are set when the provider download is complete.
         self._provider_details = None
 
-        # We will store a reference to the defers for eventual use
-        # (eg, to cancel them) but not doing anything with them right now.
-        self._provider_select_defer = None
-        self._provider_setup_defer = None
-
         self._connect_and_track(self.currentIdChanged,
                                 self._current_id_changed)
 
@@ -479,8 +474,7 @@ class Wizard(QtGui.QWizard):
         self.button(QtGui.QWizard.BackButton).clearFocus()
 
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
-        self._provider_select_defer = self._backend.\
-            provider_setup(provider=self._domain)
+        self._backend.provider_setup(provider=self._domain)
 
     @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
@@ -678,8 +672,9 @@ class Wizard(QtGui.QWizard):
         Loads the services that the provider provides into the UI for
         the user to enable or disable.
         """
-        self.ui.grpServices.setTitle(
-            self.tr("Services by {0}").format(self._provider_details['domain']))
+        title = self.tr("Services by {0}").format(
+            self._provider_details['domain'])
+        self.ui.grpServices.setTitle(title)
 
         services = get_supported(self._provider_details['services'])
 
@@ -724,8 +719,7 @@ class Wizard(QtGui.QWizard):
             if not self._provider_setup_ok:
                 self._reset_provider_setup()
                 self.ui.lblDownloadCaCert.setPixmap(self.QUESTION_ICON)
-                self._provider_setup_defer = self._backend.\
-                    provider_bootstrap(provider=self._domain)
+                self._backend.provider_bootstrap(provider=self._domain)
 
         if pageId == self.PRESENT_PROVIDER_PAGE:
             details = self._provider_details
