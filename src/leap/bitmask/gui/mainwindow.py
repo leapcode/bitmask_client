@@ -41,6 +41,7 @@ from leap.bitmask.gui.loggerwindow import LoggerWindow
 from leap.bitmask.gui.login import LoginWidget
 from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
+from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.providers import Providers
@@ -72,17 +73,15 @@ QtDelayedCall = QtCore.QTimer.singleShot
 logger = logging.getLogger(__name__)
 
 
-class MainWindow(QtGui.QMainWindow):
+class MainWindow(QtGui.QMainWindow, SignalTracker):
     """
     Main window for login and presenting status updates to the user
     """
     # Signals
     eip_needs_login = QtCore.Signal([])
-    offline_mode_bypass_login = QtCore.Signal([])
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
-    logout = QtCore.Signal([])
     all_services_stopped = QtCore.Signal()
 
     # We use this flag to detect abnormal terminations
@@ -103,6 +102,8 @@ class MainWindow(QtGui.QMainWindow):
         :type start_hidden: bool
         """
         QtGui.QMainWindow.__init__(self)
+        SignalTracker.__init__(self)
+
         autostart.set_autostart(True)
 
         # register leap events ########################################
@@ -127,7 +128,8 @@ class MainWindow(QtGui.QMainWindow):
         self._settings = self.app.settings
 
         # Login Widget
-        self._login_widget = LoginWidget(self._settings, self)
+        self._login_widget = LoginWidget(self._backend,
+                                         self._leap_signaler, self)
         self.ui.loginLayout.addWidget(self._login_widget)
 
         # Mail Widget
@@ -142,9 +144,10 @@ class MainWindow(QtGui.QMainWindow):
 
         self.app.service_selection_changed.connect(
             self._update_eip_enabled_status)
-        self._login_widget.login.connect(self._login)
-        self._login_widget.cancel_login.connect(self._cancel_login)
-        self._login_widget.logout.connect(self._logout)
+
+        self._login_widget.login_finished.connect(
+            self._on_user_logged_in)
+        self._login_widget.logged_out.connect(self._on_user_logged_out)
 
         self._providers.connect_provider_changed(self._on_provider_changed)
 
@@ -164,6 +167,8 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_conductor.add_eip_widget(self._eip_status)
 
         self._eip_conductor.connect_signals()
+        self._eip_conductor.qtsigs.connecting_signal.connect(
+            self._on_eip_connecting)
         self._eip_conductor.qtsigs.connected_signal.connect(
             self._on_eip_connection_connected)
         self._eip_conductor.qtsigs.disconnected_signal.connect(
@@ -171,7 +176,7 @@ class MainWindow(QtGui.QMainWindow):
         self._eip_conductor.qtsigs.connected_signal.connect(
             self._maybe_run_soledad_setup_checks)
 
-        self.offline_mode_bypass_login.connect(
+        self._login_widget.login_offline_finished.connect(
             self._maybe_run_soledad_setup_checks)
 
         self.eip_needs_login.connect(self._eip_status.disable_eip_start)
@@ -184,8 +189,6 @@ class MainWindow(QtGui.QMainWindow):
         self._soledad_started = False
 
         # This is created once we have a valid provider config
-        self._srp_auth = None
-        self._logged_user = None
         self._logged_in_offline = False
 
         # Set used to track the services being stopped and need wait.
@@ -199,7 +202,6 @@ class MainWindow(QtGui.QMainWindow):
         # Used to differentiate between a real quit and a close to tray
         self._close_to_tray = True
 
-        self._backend_connected_signals = []
         self._backend_connect()
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
@@ -254,8 +256,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.btnMore.resize(0, 0)
         #########################################
         self.ui.btnMore.clicked.connect(self._updates_details)
-        if flags.OFFLINE is True:
-            self._set_label_offline()
+
+        if flags.OFFLINE:
+            self._login_widget._set_label_offline()
 
         # Services signals/slots connection
         self.new_updates.connect(self._react_to_new_updates)
@@ -271,8 +274,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._mail_conductor = mail_conductor.MailConductor(self._backend)
         self._mail_conductor.connect_mail_signals(self._mail_status)
-
-        self.logout.connect(self._mail_conductor.stop_mail_services)
 
         if not init_platform():
             self.quit()
@@ -311,18 +312,6 @@ class MainWindow(QtGui.QMainWindow):
             self.tr("You are trying to do an operation "
                     "that requires logging in first."))
 
-    def _connect_and_track(self, signal, method):
-        """
-        Helper to connect signals and keep track of them.
-
-        :param signal: the signal to connect to.
-        :type signal: QtCore.Signal
-        :param method: the method to call when the signal is triggered.
-        :type method: callable, Slot or Signal
-        """
-        self._backend_connected_signals.append((signal, method))
-        signal.connect(method)
-
     def _backend_bad_call(self, data):
         """
         Callback for debugging bad backend calls
@@ -340,7 +329,7 @@ class MainWindow(QtGui.QMainWindow):
         We track some signals in order to disconnect them on demand.
         For instance, in the wizard we need to connect to some signals that are
         already connected in the mainwindow, so to avoid conflicts we do:
-            - disconnect signals needed in wizard (`_disconnect_and_untrack`)
+            - disconnect signals needed in wizard (`disconnect_and_untrack`)
             - use wizard
             - reconnect disconnected signals (we use the `only_tracked` param)
 
@@ -349,38 +338,11 @@ class MainWindow(QtGui.QMainWindow):
         :type only_tracked: bool
         """
         sig = self._leap_signaler
-        conntrack = self._connect_and_track
-        auth_err = self._authentication_error
-
-        conntrack(sig.prov_name_resolution, self._intermediate_stage)
-        conntrack(sig.prov_https_connection, self._intermediate_stage)
-        conntrack(sig.prov_download_ca_cert, self._intermediate_stage)
-        conntrack(sig.prov_download_provider_info, self._load_provider_config)
-        conntrack(sig.prov_check_api_certificate, self._provider_config_loaded)
+        conntrack = self.connect_and_track
+        # XXX does this goes in here? this will be triggered when the login or
+        # wizard requests provider data
         conntrack(sig.prov_check_api_certificate, self._get_provider_details)
-
-        conntrack(sig.prov_problem_with_provider, self._login_problem_provider)
-        conntrack(sig.prov_cancelled_setup, self._set_login_cancelled)
-
         conntrack(sig.prov_get_details, self._provider_get_details)
-
-        # Login signals
-        conntrack(sig.srp_auth_ok, self._authentication_finished)
-
-        auth_error = lambda: auth_err(self.tr("Unknown error."))
-        conntrack(sig.srp_auth_error, auth_error)
-
-        auth_server_error = lambda: auth_err(self.tr(
-            "There was a server problem with authentication."))
-        conntrack(sig.srp_auth_server_error, auth_server_error)
-
-        auth_connection_error = lambda: auth_err(self.tr(
-            "Could not establish a connection."))
-        conntrack(sig.srp_auth_connection_error, auth_connection_error)
-
-        auth_bad_user_or_password = lambda: auth_err(self.tr(
-            "Invalid username or password."))
-        conntrack(sig.srp_auth_bad_user_or_password, auth_bad_user_or_password)
 
         # EIP bootstrap signals
         conntrack(sig.eip_config_ready, self._eip_intermediate_stage)
@@ -401,8 +363,9 @@ class MainWindow(QtGui.QMainWindow):
         sig.prov_get_all_services.connect(self._provider_get_all_services)
 
         # Logout signals =================================================
-        sig.srp_logout_ok.connect(self._logout_ok)
-        sig.srp_logout_error.connect(self._logout_error)
+        # This error may be due a 'logout' or a 'password change', as is used
+        # on the login widget and the settings dialog the connection is made
+        # here.
         sig.srp_not_logged_in_error.connect(self._not_logged_in_error)
 
         # EIP start signals ==============================================
@@ -432,21 +395,6 @@ class MainWindow(QtGui.QMainWindow):
 
         # TODO: connect this with something
         # sig.soledad_cancelled_bootstrap.connect()
-
-    def _disconnect_and_untrack(self):
-        """
-        Helper to disconnect the tracked signals.
-
-        Some signals are emitted from the wizard, and we want to
-        ignore those.
-        """
-        for signal, method in self._backend_connected_signals:
-            try:
-                signal.disconnect(method)
-            except RuntimeError:
-                pass  # Signal was not connected
-
-        self._backend_connected_signals = []
 
     @QtCore.Slot()
     def _rejected_wizard(self):
@@ -485,7 +433,7 @@ class MainWindow(QtGui.QMainWindow):
         there.
         """
         if self._wizard is None:
-            self._disconnect_and_untrack()
+            self.disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
                                   leap_signaler=self._leap_signaler)
             self._wizard.accepted.connect(self._finish_init)
@@ -550,8 +498,7 @@ class MainWindow(QtGui.QMainWindow):
 
         Display the Advanced Key Management dialog.
         """
-        domain = self._providers.get_selected_provider()
-        logged_user = "{0}@{1}".format(self._logged_user, domain)
+        logged_user = self._login_widget.get_logged_user()
 
         details = self._provider_details
         mx_provided = False
@@ -572,8 +519,14 @@ class MainWindow(QtGui.QMainWindow):
 
         Display the preferences window.
         """
-        account = Account(self._logged_user,
-                          self._providers.get_selected_provider())
+        logged_user = self._login_widget.get_logged_user()
+        if logged_user is not None:
+            user, domain = logged_user.split('@')
+        else:
+            user = None
+            domain = self._providers.get_selected_provider()
+
+        account = Account(user, domain)
         pref_win = PreferencesWindow(self, account, self.app)
         pref_win.show()
 
@@ -767,6 +720,10 @@ class MainWindow(QtGui.QMainWindow):
 
         providers = self._settings.get_configured_providers()
         self._providers.set_providers(providers)
+
+        provider = self._providers.get_selected_provider()
+        self._login_widget.set_provider(provider)
+
         self._show_systray()
 
         if not self._start_hidden:
@@ -869,12 +826,6 @@ class MainWindow(QtGui.QMainWindow):
             self.ui.lineUnderEIP.setVisible(visible)
             self._eip_menu.setVisible(visible)
             self._ui_eip_visible = visible
-
-    def _set_label_offline(self):
-        """
-        Set the login label to reflect offline status.
-        """
-        # TODO: figure out what widget to use for this. Maybe the window title?
 
     #
     # systray
@@ -1127,76 +1078,19 @@ class MainWindow(QtGui.QMainWindow):
         return not (has_provider_on_disk and skip_first_run)
 
     @QtCore.Slot()
-    def _download_provider_config(self):
+    def _disconnect_login_wait(self):
         """
-        Start the bootstrapping sequence. It will download the
-        provider configuration if it's not present, otherwise will
-        emit the corresponding signals inmediately
-        """
-        self._disconnect_scheduled_login()
-        domain = self._providers.get_selected_provider()
-        self._backend.provider_setup(provider=domain)
-
-    @QtCore.Slot(dict)
-    def _load_provider_config(self, data):
-        """
-        TRIGGERS:
-            self._backend.signaler.prov_download_provider_info
-
-        Once the provider config has been downloaded, start the second
-        part of the bootstrapping sequence.
-
-        :param data: result from the last stage of the
-                     backend.provider_setup()
-        :type data: dict
-        """
-        if data[PASSED_KEY]:
-            selected_provider = self._providers.get_selected_provider()
-            self._backend.provider_bootstrap(provider=selected_provider)
-        else:
-            logger.error(data[ERROR_KEY])
-            self._login_problem_provider()
-
-    @QtCore.Slot()
-    def _login_problem_provider(self):
-        """
-        Warn the user about a problem with the provider during login.
-        """
-        # XXX triggers?
-        self._login_widget.set_status(
-            self.tr("Unable to login: Problem with provider"))
-        self._login_widget.set_enabled(True)
-
-    def _schedule_login(self):
-        """
-        Schedule the login sequence to go after the EIP started.
-
-        The login sequence is connected to all finishing status of EIP
-        (connected, disconnected, aborted or died) to continue with the login
-        after EIP.
-        """
-        logger.debug('Login scheduled when eip_connected is triggered')
-        eip_sigs = self._eip_conductor.qtsigs
-        eip_sigs.connected_signal.connect(self._download_provider_config)
-        eip_sigs.disconnected_signal.connect(self._download_provider_config)
-        eip_sigs.connection_aborted_signal.connect(
-            self._download_provider_config)
-        eip_sigs.connection_died_signal.connect(self._download_provider_config)
-
-    def _disconnect_scheduled_login(self):
-        """
-        Disconnect scheduled login signals if exists
+        Disconnect the EIP finishing signal to the wait flag on the login
+        widget.
         """
         try:
             eip_sigs = self._eip_conductor.qtsigs
-            eip_sigs.connected_signal.disconnect(
-                self._download_provider_config)
-            eip_sigs.disconnected_signal.disconnect(
-                self._download_provider_config)
-            eip_sigs.connection_aborted_signal.disconnect(
-                self._download_provider_config)
-            eip_sigs.connection_died_signal.disconnect(
-                self._download_provider_config)
+            slot = lambda: self._login_widget.wait_for_login(False)
+
+            eip_sigs.connected_signal.disconnect(slot)
+            eip_sigs.disconnected_signal.disconnect(slot)
+            eip_sigs.connection_aborted_signal.disconnect(slot)
+            eip_sigs.connection_died_signal.disconnect(slot)
         except Exception:
             # signal not connected
             pass
@@ -1217,9 +1111,10 @@ class MainWindow(QtGui.QMainWindow):
         # TODO: we should handle the case that EIP is autostarting since we
         # won't get a warning until EIP has fully started.
         # TODO: we need to add a check for the mail status (smtp/imap/soledad)
-        something_runing = (self._logged_user is not None or
+        something_runing = (self._login_widget.get_logged_user() is not None or
                             self._already_started_eip)
         provider = self._providers.get_selected_provider()
+        self._login_widget.set_provider(provider)
 
         if not something_runing:
             if wizard:
@@ -1269,118 +1164,35 @@ class MainWindow(QtGui.QMainWindow):
         start the SRP authentication, and as the last step
         bootstrapping the EIP service
         """
-        # TODO most of this could ve handled by the login widget,
-        provider = self._providers.get_selected_provider()
-        if flags.OFFLINE is True:
-            logger.debug("OFFLINE mode! bypassing remote login")
-            # TODO reminder, we're not handling logout for offline
-            # mode.
-            self._login_widget.logged_in(provider)
-            self._logged_in_offline = True
-            self._set_label_offline()
-            self.offline_mode_bypass_login.emit()
-        else:
-            self.ui.action_create_new_account.setEnabled(False)
-            if self._login_widget.start_login(provider):
-                if self._trying_to_start_eip:
-                    self._schedule_login()
-                else:
-                    self._download_provider_config()
+        self.ui.action_create_new_account.setEnabled(False)
 
-    @QtCore.Slot(unicode)
-    def _authentication_error(self, msg):
-        """
-        TRIGGERS:
-            Signaler.srp_auth_error
-            Signaler.srp_auth_server_error
-            Signaler.srp_auth_connection_error
-            Signaler.srp_auth_bad_user_or_password
-
-        Handle the authentication errors.
-
-        :param msg: the message to show to the user.
-        :type msg: unicode
-        """
-        self._login_widget.set_status(msg)
-        self._login_widget.set_enabled(True)
-        self.ui.action_create_new_account.setEnabled(True)
-
-    @QtCore.Slot()
-    def _cancel_login(self):
-        """
-        TRIGGERS:
-            self._login_widget.cancel_login
-
-        Stop the login sequence.
-        """
-        logger.debug("Cancelling log in.")
-        self._disconnect_scheduled_login()
-
-        self._cancel_ongoing_defers()
-
-        # Needed in case of EIP starting and login deferer never set
-        self._set_login_cancelled()
+        ok = self._login_widget.do_login()
+        if not ok:
+            logger.error("There was a problem triggering the login.")
+            return
 
     def _cancel_ongoing_defers(self):
         """
         Cancel the running defers to avoid app blocking.
         """
         # XXX: Should we stop all the backend defers?
-        self._backend.provider_cancel_setup()
-        self._backend.user_cancel_login()
         self._backend.soledad_cancel_bootstrap()
         self._backend.soledad_close()
 
         self._soledad_started = False
 
     @QtCore.Slot()
-    def _set_login_cancelled(self):
+    def _on_user_logged_in(self):
         """
         TRIGGERS:
-            Signaler.prov_cancelled_setup fired by
-            self._backend.provider_cancel_setup()
-
-        Re-enable the login widget and display a message for
-        the cancelled operation.
-        """
-        self._login_widget.set_status(self.tr("Log in cancelled by the user."))
-        self._login_widget.set_enabled(True)
-
-    @QtCore.Slot(dict)
-    def _provider_config_loaded(self, data):
-        """
-        TRIGGERS:
-            self._backend.signaler.prov_check_api_certificate
-
-        Once the provider configuration is loaded, this starts the SRP
-        authentication
-        """
-        if data[PASSED_KEY]:
-            username = self._login_widget.get_user()
-            password = self._login_widget.get_password()
-
-            self._show_hide_unsupported_services()
-
-            domain = self._providers.get_selected_provider()
-            self._backend.user_login(provider=domain,
-                                     username=username, password=password)
-        else:
-            logger.error(data[ERROR_KEY])
-            self._login_problem_provider()
-
-    @QtCore.Slot()
-    def _authentication_finished(self):
-        """
-        TRIGGERS:
-            self._srp_auth.authentication_finished
+            self._login_widget.logged_in
 
         Once the user is properly authenticated, try starting the EIP
-        service
+        service.
         """
-        self._login_widget.set_status(self.tr("Succeeded"), error=False)
+        self._disconnect_login_wait()
 
-        self._logged_user = self._login_widget.get_user()
-        user = self._logged_user
+        user = self._login_widget.get_logged_user()
         domain = self._providers.get_selected_provider()
         full_user_id = make_address(user, domain)
         self._mail_conductor.userid = full_user_id
@@ -1398,15 +1210,25 @@ class MainWindow(QtGui.QMainWindow):
         if MX_SERVICE not in self._provider_details['services']:
             self._set_mx_visible(False)
 
+    @QtCore.Slot()
+    def _on_user_logged_out(self):
+        """
+        TRIGGER:
+            self._login_widget.logged_out
+
+        Switch the stackedWidget back to the login stage after
+        logging out
+        """
+        self._mail_conductor.stop_mail_services()
+        self._mail_status.mail_state_disabled()
+        self._show_hide_unsupported_services()
+
     def _start_eip_bootstrap(self):
         """
         Change the stackedWidget index to the EIP status one and
         triggers the eip bootstrapping.
         """
-
         domain = self._providers.get_selected_provider()
-        self._login_widget.logged_in(domain)
-
         self._enabled_services = self._settings.get_enabled_services(domain)
 
         # TODO separate UI from logic.
@@ -1475,8 +1297,13 @@ class MainWindow(QtGui.QMainWindow):
 
         return eip_enabled and eip_provided
 
+    @QtCore.Slot()
     def _maybe_run_soledad_setup_checks(self):
         """
+        TRIGGERS:
+            self._eip_conductor.qtsigs.connected_signal
+            self._login_widget.login_offline_finished
+
         Conditionally start Soledad.
         """
         # TODO split.
@@ -1501,8 +1328,9 @@ class MainWindow(QtGui.QMainWindow):
             self._backend.soledad_load_offline(username=full_user_id,
                                                password=password, uuid=uuid)
         else:
-            if self._logged_user is not None:
-                domain = self._providers.get_selected_provider()
+            logged_user = self._login_widget.get_logged_user()
+            if logged_user is not None:
+                username, domain = logged_user.split('@')
                 self._backend.soledad_bootstrap(username=username,
                                                 domain=domain,
                                                 password=password)
@@ -1548,6 +1376,30 @@ class MainWindow(QtGui.QMainWindow):
         """
         self._action_eip_startstop.setEnabled(True)
         self._eip_status.enable_eip_start()
+
+    @QtCore.Slot()
+    def _on_eip_connecting(self):
+        """
+        TRIGGERS:
+            self._eip_conductor.qtsigs.connecting_signal
+
+        This is triggered when EIP starts connecting.
+
+        React to any EIP finishing signal[1] that means that the network is
+        ready to be used and trigger the "don't keep waiting" action on the
+        login widget.
+
+        [1] finishing signal => connected, disconnected, aborted or died
+        """
+        self._login_widget.wait_for_login(True)
+
+        eip_sigs = self._eip_conductor.qtsigs
+        slot = lambda: self._login_widget.wait_for_login(False)
+
+        eip_sigs.connected_signal.connect(slot)
+        eip_sigs.disconnected_signal.connect(slot)
+        eip_sigs.connection_aborted_signal.connect(slot)
+        eip_sigs.connection_died_signal.connect(slot)
 
     @QtCore.Slot()
     def _on_eip_connection_connected(self):
@@ -1672,8 +1524,7 @@ class MainWindow(QtGui.QMainWindow):
             if not self._already_started_eip:
                 if EIP_SERVICE in self._enabled_services:
                     if missing_helpers:
-                        msg = self.tr(
-                            "Disabled: missing helper files")
+                        msg = self.tr("Disabled: missing helper files")
                     else:
                         msg = self.tr("Not supported"),
                     self._eip_status.set_eip_status(msg, error=True)
@@ -1727,68 +1578,6 @@ class MainWindow(QtGui.QMainWindow):
 
     # end of EIP methods ---------------------------------------------
 
-    @QtCore.Slot()
-    def _logout(self):
-        """
-        TRIGGERS:
-            self._login_widget.logout
-
-        Start the logout sequence
-        """
-        self._cancel_ongoing_defers()
-
-        # XXX: If other defers are doing authenticated stuff, this
-        # might conflict with those. CHECK!
-        self._backend.user_logout()
-        self.logout.emit()
-
-    @QtCore.Slot()
-    def _logout_error(self):
-        """
-        TRIGGER:
-            self._srp_auth.logout_error
-
-        Inform the user about a logout error.
-        """
-        self._login_widget.done_logout()
-        self._login_widget.set_status(
-            self.tr("Something went wrong with the logout."))
-
-    @QtCore.Slot()
-    def _logout_ok(self):
-        """
-        TRIGGER:
-            self._srp_auth.logout_ok
-
-        Switch the stackedWidget back to the login stage after
-        logging out
-        """
-        self._login_widget.done_logout()
-
-        self._logged_user = None
-        self._login_widget.logged_out()
-        self._mail_status.mail_state_disabled()
-
-        self._show_hide_unsupported_services()
-
-    @QtCore.Slot(dict)
-    def _intermediate_stage(self, data):
-        # TODO this method name is confusing as hell.
-        """
-        TRIGGERS:
-            self._backend.signaler.prov_name_resolution
-            self._backend.signaler.prov_https_connection
-            self._backend.signaler.prov_download_ca_cert
-
-        If there was a problem, display it, otherwise it does nothing.
-        This is used for intermediate bootstrapping stages, in case
-        they fail.
-        """
-        passed = data[PASSED_KEY]
-        if not passed:
-            logger.error(data[ERROR_KEY])
-            self._login_problem_provider()
-
     #
     # window handling methods
     #
@@ -1840,9 +1629,8 @@ class MainWindow(QtGui.QMainWindow):
         logger.debug('Stopping mail services')
         self._mail_conductor.stop_mail_services()
 
-        if self._logged_user is not None:
-            logger.debug("Doing logout")
-            self._backend.user_logout()
+        logger.debug("Doing logout")
+        self._login_widget.do_logout()
 
         logger.debug('Terminating vpn')
         self._backend.eip_stop(shutdown=True)
