@@ -22,15 +22,12 @@ import logging
 
 from PySide import QtCore, QtGui
 
-from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
-
 from leap.bitmask.gui.preferences_account_page import PreferencesAccountPage
 from leap.bitmask.gui.preferences_vpn_page import PreferencesVpnPage
 from leap.bitmask.gui.preferences_email_page import PreferencesEmailPage
-
-from leap.bitmask.services import get_service_display_name, MX_SERVICE
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +36,8 @@ class PreferencesWindow(QtGui.QDialog):
     """
     Window that displays the preferences.
     """
-    preferences_saved = QtCore.Signal()
 
-    def __init__(self, parent, username, domain, backend, soledad_started, leap_signaler):
+    def __init__(self, parent, account, app):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
@@ -51,30 +47,26 @@ class PreferencesWindow(QtGui.QDialog):
         :type domain: unicode
         :param backend: Backend being used
         :type backend: Backend
-        :param soledad_started: whether soledad has started or not
-        :type soledad_started: bool
         :param leap_signaler: signal server
         :type leap_signaler: LeapSignaler
         """
         QtGui.QDialog.__init__(self, parent)
 
         self._parent = parent
-        self._username = username
-        self._domain = domain
-        self._leap_signaler = leap_signaler
-        self._backend = backend
-        self._soledad_started = soledad_started
+        self.account = account
+        self.app = app
 
-        self._settings = LeapSettings()
-
-        # Load UI
         self.ui = Ui_Preferences()
         self.ui.setupUi(self)
 
         self.ui.close_button.clicked.connect(self.close)
+        self.ui.account_label.setText(account.address)
+
+        self.app.service_selection_changed.connect(self._update_icons)
 
         self._add_icons()
         self._add_pages()
+        self._update_icons(self.account, self.account.services())
 
     def _add_icons(self):
         """
@@ -86,26 +78,31 @@ class PreferencesWindow(QtGui.QDialog):
           icon_width = list_widget.width - (2 x nav_widget.spacing) - 2
           icon_height = 56 seems to look ok
         """
-        account_button = QtGui.QListWidgetItem(self.ui.nav_widget)
-        account_button.setIcon(QtGui.QIcon(":/images/black/32/user.png"))
-        account_button.setText(self.tr("Account"))
-        account_button.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        account_button.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        account_button.setSizeHint(QtCore.QSize(98,56))
+        account_item = QtGui.QListWidgetItem(self.ui.nav_widget)
+        account_item.setIcon(QtGui.QIcon(":/images/black/32/user.png"))
+        account_item.setText(self.tr("Account"))
+        account_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        account_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        account_item.setSizeHint(QtCore.QSize(98,56))
+        self._account_item = account_item
 
-        vpn_button = QtGui.QListWidgetItem(self.ui.nav_widget)
-        vpn_button.setIcon(QtGui.QIcon(":/images/black/32/earth.png"))
-        vpn_button.setText(self.tr("VPN"))
-        vpn_button.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        vpn_button.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        vpn_button.setSizeHint(QtCore.QSize(98,56))
+        vpn_item = QtGui.QListWidgetItem(self.ui.nav_widget)
+        vpn_item.setHidden(True)
+        vpn_item.setIcon(QtGui.QIcon(":/images/black/32/earth.png"))
+        vpn_item.setText(self.tr("VPN"))
+        vpn_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        vpn_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        vpn_item.setSizeHint(QtCore.QSize(98,56))
+        self._vpn_item = vpn_item
 
-        email_button = QtGui.QListWidgetItem(self.ui.nav_widget)
-        email_button.setIcon(QtGui.QIcon(":/images/black/32/email.png"))
-        email_button.setText(self.tr("Email"))
-        email_button.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        email_button.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        email_button.setSizeHint(QtCore.QSize(98,56))
+        email_item = QtGui.QListWidgetItem(self.ui.nav_widget)
+        email_item.setHidden(True)
+        email_item.setIcon(QtGui.QIcon(":/images/black/32/email.png"))
+        email_item.setText(self.tr("Email"))
+        email_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        email_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        email_item.setSizeHint(QtCore.QSize(98,56))
+        self._email_item = email_item
 
         self.ui.nav_widget.currentItemChanged.connect(self._change_page)
         self.ui.nav_widget.setCurrentRow(0)
@@ -114,9 +111,9 @@ class PreferencesWindow(QtGui.QDialog):
         """
         Adds the pages for the different configuration categories.
         """
-        self.ui.pages_widget.addWidget(PreferencesAccountPage(self))
-        self.ui.pages_widget.addWidget(PreferencesVpnPage(self, self._domain, self._backend, self._leap_signaler))
-        self.ui.pages_widget.addWidget(PreferencesEmailPage(self))
+        self.ui.pages_widget.addWidget(PreferencesAccountPage(self, self.account, self.app))
+        self.ui.pages_widget.addWidget(PreferencesVpnPage(self, self.account, self.app))
+        self.ui.pages_widget.addWidget(PreferencesEmailPage(self, self.account, self.app))
 
     #
     # Slots
@@ -144,3 +141,18 @@ class PreferencesWindow(QtGui.QDialog):
         if not current:
             current = previous
         self.ui.pages_widget.setCurrentIndex(self.ui.nav_widget.row(current))
+
+    @QtCore.Slot(object, list)
+    def _update_icons(self, account, services):
+        """
+        TRIGGERS:
+            self.app.service_selection_changed
+
+        Change which icons are visible.
+        """
+        if account != self.account:
+            return
+
+        self._vpn_item.setHidden(not EIP_SERVICE in services)
+        #self._email_item.setHidden(not MX_SERVICE in services)
+        # ^^ disable email for now, there is nothing there yet.

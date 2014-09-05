@@ -22,35 +22,29 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 from ui_preferences_account_page import Ui_PreferencesAccountPage
+from leap.bitmask.services import get_service_display_name
+from leap.bitmask.config.leapsettings import LeapSettings
 
 logger = logging.getLogger(__name__)
 
 class PreferencesAccountPage(QtGui.QWidget):
-    """
 
-    """
-
-    def __init__(self, parent):
+    def __init__(self, parent, account, app):
         """
         """
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_PreferencesAccountPage()
         self.ui.setupUi(self)
-        self.show()
+
+        self.account = account
+        self.app = app
 
         self._selected_services = set()
-        #self._leap_signaler.prov_get_supported_services.connect(self._load_services)
+        self.ui.change_password_label.setVisible(False)
+        self.ui.provider_services_label.setVisible(False)
 
-    @QtCore.Slot()
-    def set_soledad_ready(self):
-        """
-        TRIGGERS:
-            parent.soledad_ready
-
-        It notifies when the soledad object as ready to use.
-        """
-        #self.ui.lblPasswordChangeStatus.setVisible(False)
-        #self.ui.gbPasswordChange.setEnabled(True)
+        app.signaler.prov_get_supported_services.connect(self._load_services)
+        app.backend.provider_get_supported_services(domain=account.domain)
 
     @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
@@ -72,94 +66,49 @@ class PreferencesAccountPage(QtGui.QWidget):
         else:
             self._selected_services = \
                 self._selected_services.difference(set([service]))
+        services = list(self._selected_services)
 
         # We hide the maybe-visible status label after a change
-        self.ui.lblProvidersServicesStatus.setVisible(False)
+        self.ui.provider_services_label.setVisible(False)
 
-    @QtCore.Slot(str)
-    def _populate_services(self, domain):
-        """
-        TRIGGERS:
-            self.ui.cbProvidersServices.currentIndexChanged[unicode]
+        # write to config
+        self.app.settings.set_enabled_services(self.account.domain, services)
 
-        Fill the services list with the selected provider's services.
+        # emit signal alerting change
+        self.app.service_selection_changed.emit(self.account, services)
 
-        :param domain: the domain of the provider to load services from.
-        :type domain: str
-        """
-        # We hide the maybe-visible status label after a change
-        self.ui.lblProvidersServicesStatus.setVisible(False)
-
-        if not domain:
-            return
-
-        # set the proper connection for the 'save' button
-        try:
-            self.ui.pbSaveServices.clicked.disconnect()
-        except RuntimeError:
-            pass  # Signal was not connected
-
-        save_services = partial(self._save_enabled_services, domain)
-        self.ui.pbSaveServices.clicked.connect(save_services)
-
-        self._backend.provider_get_supported_services(domain=domain)
 
     @QtCore.Slot(str)
     def _load_services(self, services):
         """
         TRIGGERS:
-            self.ui.cbProvidersServices.currentIndexChanged[unicode]
+            prov_get_supported_services
 
         Loads the services that the provider provides into the UI for
         the user to enable or disable.
 
-        :param domain: the domain of the provider to load services from.
-        :type domain: str
+        :param services: list of supported service names
+        :type services: list of str
         """
-        domain = self.ui.cbProvidersServices.currentText()
-        services_conf = self._settings.get_enabled_services(domain)
+        services_conf = self.account.services()
 
-        # discard changes if other provider is selected
         self._selected_services = set()
 
-        # from: http://stackoverflow.com/a/13103617/687989
         # remove existing checkboxes
-        layout = self.ui.vlServices
+        layout = self.ui.provider_services_layout
         for i in reversed(range(layout.count())):
             layout.itemAt(i).widget().setParent(None)
 
-        # add one checkbox per service and set the current configured value
+        # add one checkbox per service and set the current value
+        # from what is saved in settings.
         for service in services:
             try:
-                checkbox = QtGui.QCheckBox(self)
-                service_label = get_service_display_name(service)
-                checkbox.setText(service_label)
-
-                self.ui.vlServices.addWidget(checkbox)
+                checkbox = QtGui.QCheckBox(
+                    get_service_display_name(service), self)
+                self.ui.provider_services_layout.addWidget(checkbox)
                 checkbox.stateChanged.connect(
                     partial(self._service_selection_changed, service))
-
                 checkbox.setChecked(service in services_conf)
             except ValueError:
                 logger.error("Something went wrong while trying to "
                              "load service %s" % (service,))
-
-    @QtCore.Slot(str)
-    def _save_enabled_services(self, provider):
-        """
-        TRIGGERS:
-            self.ui.pbSaveServices.clicked
-
-        Saves the new enabled services settings to the configuration file.
-
-        :param provider: the provider config that we need to save.
-        :type provider: str
-        """
-        services = list(self._selected_services)
-        self._settings.set_enabled_services(provider, services)
-
-        msg = self.tr(
-            "Services settings for provider '{0}' saved.".format(provider))
-        logger.debug(msg)
-        self._set_providers_services_status(msg, success=True)
-        self.preferences_saved.emit()

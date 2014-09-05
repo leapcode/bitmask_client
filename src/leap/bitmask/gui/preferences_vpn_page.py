@@ -28,23 +28,22 @@ class PreferencesVpnPage(QtGui.QWidget):
     Page in the preferences window that shows VPN settings
     """
 
-    def __init__(self, parent, domain, backend, leap_signaler):
+    def __init__(self, parent, account, app):
         """
         :param parent: parent object of the EIPPreferencesWindow.
         :type parent: QWidget
 
-        :param domain: the selected by default domain.
-        :type domain: unicode
+        :param account: the currently active account
+        :type account: Account
 
-        :param backend: Backend being used
-        :type backend: Backend
+        :param app: shared App instance
+        :type app: App
         """
         QtGui.QWidget.__init__(self, parent)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
 
-        self._settings = LeapSettings()
-        self._leap_signaler = leap_signaler
-        self._backend = backend
+        self.account = account
+        self.app = app
 
         # Load UI
         self.ui = Ui_PreferencesVpnPage()
@@ -53,10 +52,14 @@ class PreferencesVpnPage(QtGui.QWidget):
 
         # Connections
         self.ui.gateways_list.clicked.connect(self._save_selected_gateway)
+        sig = self.app.signaler
+        sig.eip_get_gateways_list.connect(self._update_gateways_list)
+        sig.eip_get_gateways_list_error.connect(self._gateways_list_error)
+        sig.eip_uninitialized_provider.connect(
+            self._gateways_list_uninitialized)
 
-        self._domain = domain
-        self._backend_connect()
-        self._backend.eip_get_gateways_list(domain=domain)
+        # Trigger update
+        self.app.backend.eip_get_gateways_list(domain=self.account.domain)
 
     def _flash_error(self, message):
         """
@@ -94,12 +97,13 @@ class PreferencesVpnPage(QtGui.QWidget):
         item = self.ui.gateways_list.currentItem()
 
         if item.text() == self.AUTOMATIC_GATEWAY_LABEL:
-            gateway = self._settings.GATEWAY_AUTOMATIC
+            gateway = self.app.settings.GATEWAY_AUTOMATIC
         else:
             gateway = item.data(QtCore.Qt.UserRole)
-        self._settings.set_selected_gateway(self._domain, gateway)
-        self._backend.settings_set_selected_gateway(provider=self._domain,
-                                                    gateway=gateway)
+        self.app.settings.set_selected_gateway(self.account.domain, gateway)
+        self.app.backend.settings_set_selected_gateway(
+            provider=self.account.domain,
+            gateway=gateway)
 
     @QtCore.Slot(list)
     def _update_gateways_list(self, gateways):
@@ -116,8 +120,8 @@ class PreferencesVpnPage(QtGui.QWidget):
         self.ui.gateways_list.clear()
         self.ui.gateways_list.addItem(self.AUTOMATIC_GATEWAY_LABEL)
 
-        selected_gateway = self._settings.get_selected_gateway(
-            self._domain)
+        selected_gateway = self.app.settings.get_selected_gateway(
+            self.account.domain)
 
         index = 0
         for idx, (gw_name, gw_ip, gw_country) in enumerate(gateways):
@@ -144,7 +148,15 @@ class PreferencesVpnPage(QtGui.QWidget):
             self.tr("Error loading configuration file."))
         self.ui.gateways_list.setEnabled(False)
 
-    def _backend_connect(self):
-        sig = self._leap_signaler
-        sig.eip_get_gateways_list.connect(self._update_gateways_list)
-        sig.eip_get_gateways_list_error.connect(self._gateways_list_error)
+    @QtCore.Slot()
+    def _gateways_list_uninitialized(self):
+        """
+        TRIGGERS:
+            Signaler.eip_uninitialized_provider
+
+        The requested provider in not initialized yet, so we give the user an
+        error msg.
+        """
+        self._flash_error(
+            self.tr("This is an uninitialized provider, please log in first."))
+        self.ui.gateways_list.setEnabled(False)

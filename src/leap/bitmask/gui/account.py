@@ -14,28 +14,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-Widget for "email" preferences
+A frontend GUI object to hold the current username and domain.
 """
-import logging
 
-from PySide import QtCore, QtGui
-from ui_preferences_email_page import Ui_PreferencesEmailPage
+from leap.bitmask.util import make_address
+from leap.bitmask.config.leapsettings import LeapSettings
 
-logger = logging.getLogger(__name__)
+class Account():
 
-class PreferencesEmailPage(QtGui.QWidget):
-    """
+    def __init__(self, username, domain):
+        self._settings = LeapSettings()
+        self.username = username
+        self.domain = domain
 
-    """
+        if self.username is not None:
+          self.address = make_address(self.username, self.domain)
+        else:
+          self.address = self.domain
 
-    def __init__(self, parent, account, app):
-        """
-        """
-        QtGui.QWidget.__init__(self, parent)
-        self.ui = Ui_PreferencesEmailPage()
-        self.ui.setupUi(self)
+    def services(self):
+      """
+      returns a list of service name strings
 
-        self.parent = parent
-        self.account = account
-        self.app = app
+      TODO: this should depend not just on the domain
+      """
+      return self._settings.get_enabled_services(self.domain)
+
 

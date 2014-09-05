@@ -45,6 +45,8 @@ from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.providers import Providers
+from leap.bitmask.gui.account import Account
+from leap.bitmask.gui.app import App
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init import locks
@@ -126,19 +128,10 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.setupUi(self)
         self.menuBar().setNativeMenuBar(not IS_LINUX)
 
-        self._backend = BackendProxy()
-
-        # periodically check if the backend is alive
-        self._backend_checker = QtCore.QTimer(self)
-        self._backend_checker.timeout.connect(self._check_backend_status)
-        self._backend_checker.start(2000)
-
-        self._leap_signaler = LeapSignaler()
-        self._leap_signaler.start()
-
-        self._settings = LeapSettings()
-        # gateway = self._settings.get_selected_gateway(provider)
-        # self._backend.settings_set_selected_gateway(provider, gateway)
+        self.app = App()
+        self._backend = self.app.backend
+        self._leap_signaler = self.app.signaler
+        self._settings = self.app.settings
 
         # Login Widget
         self._login_widget = LoginWidget(self._settings, self)
@@ -154,6 +147,7 @@ class MainWindow(QtGui.QMainWindow):
         # Qt Signal Connections #####################################
         # TODO separate logic from ui signals.
 
+        self.app.service_selection_changed.connect(self._update_eip_enabled_status)
         self._login_widget.login.connect(self._login)
         self._login_widget.cancel_login.connect(self._cancel_login)
         self._login_widget.logout.connect(self._logout)
@@ -244,9 +238,6 @@ class MainWindow(QtGui.QMainWindow):
 
         self._action_visible = QtGui.QAction(self.tr("Show Main Window"), self)
         self._action_visible.triggered.connect(self._ensure_visible)
-
-        # disable buttons for now, may come back later.
-        # self.ui.btnPreferences.clicked.connect(self._show_preferences)
 
         self._enabled_services = []
         self._ui_mx_visible = True
@@ -341,23 +332,6 @@ class MainWindow(QtGui.QMainWindow):
         """
         logger.error("Bad call to the backend:")
         logger.error(data)
-
-    @QtCore.Slot()
-    def _check_backend_status(self):
-        """
-        TRIGGERS:
-            self._backend_checker.timeout
-
-        Check that the backend is running. Otherwise show an error to the user.
-        """
-        online = self._backend.online
-        if not online:
-            logger.critical("Backend is not online.")
-            QtGui.QMessageBox.critical(
-                self, self.tr("Application error"),
-                self.tr("There is a problem contacting the backend, please "
-                        "restart Bitmask."))
-            self._backend_checker.stop()
 
     def _backend_connect(self, only_tracked=False):
         """
@@ -598,21 +572,18 @@ class MainWindow(QtGui.QMainWindow):
 
         Display the preferences window.
         """
-        user = self._logged_user
-        domain = self._providers.get_selected_provider()
+        account = Account(self._logged_user,
+                          self._providers.get_selected_provider())
         if self.preferences is not None:
             self.preferences.close()
-        self.preferences = PreferencesWindow(self, user, domain,
-                                              self._backend,
-                                              self._soledad_started,
-                                              self._leap_signaler)
+        self.preferences = PreferencesWindow(self, account, self.app)
         self.preferences.show()
 
-    @QtCore.Slot()
-    def _update_eip_enabled_status(self):
+    @QtCore.Slot(object, list)
+    def _update_eip_enabled_status(self, account=None, services=None):
         """
         TRIGGER:
-            PreferencesWindow.preferences_saved
+            App.service_selection_changed
 
         Enable or disable the EIP start/stop actions and stop EIP if the user
         disabled that service.
@@ -620,24 +591,35 @@ class MainWindow(QtGui.QMainWindow):
         :returns: if the eip actions were enabled or disabled
         :rtype: bool
         """
-        settings = self._settings
-        default_provider = settings.get_defaultprovider()
+        if account is not None:
+            domain = account.domain
+        else:
+            # I am not sure why, but asking for the currently selected
+            # provider here give you the WRONG provider
+            domain = self.app.settings.get_defaultprovider()
 
-        if default_provider is None:
+        if domain is None:
             logger.warning("Trying to update eip enabled status but there's no"
                            " default provider. Disabling EIP for the time"
                            " being...")
             self._backend_cannot_start_eip()
             return
 
-        self._trying_to_start_eip = settings.get_autostart_eip()
-        self._backend.eip_can_start(domain=default_provider)
+        if not EIP_SERVICE in self.app.settings.get_enabled_services(domain):
+            self._eip_conductor.terminate()
+            def hide():
+              self.app.backend.eip_can_start(domain=domain)
+            QtDelayedCall(100, hide)
+            # ^^ VERY VERY Hacky, but with the simple state machine,
+            # there is no way to signal 'disconnect and then disable'
 
-        # If we don't want to start eip, we leave everything
-        # initialized to quickly start it
-        if not self._trying_to_start_eip:
-            self._backend.eip_setup(provider=default_provider,
-                                    skip_network=True)
+        else:
+            self._trying_to_start_eip = self.app.settings.get_autostart_eip()
+            if not self._trying_to_start_eip:
+                self._backend.eip_setup(provider=domain, skip_network=True)
+            # check if EIP can start (will trigger widget update)
+            self.app.backend.eip_can_start(domain=domain)
+
 
     def _backend_can_start_eip(self):
         """
@@ -657,7 +639,6 @@ class MainWindow(QtGui.QMainWindow):
         enabled_services = []
         if default_provider is not None:
             enabled_services = settings.get_enabled_services(default_provider)
-
         eip_enabled = False
         if EIP_SERVICE in enabled_services:
             eip_enabled = True
