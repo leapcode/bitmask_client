@@ -22,6 +22,7 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 from ui_preferences_account_page import Ui_PreferencesAccountPage
+from passwordwindow import PasswordWindow
 from leap.bitmask.services import get_service_display_name
 from leap.bitmask.config.leapsettings import LeapSettings
 
@@ -43,8 +44,16 @@ class PreferencesAccountPage(QtGui.QWidget):
         self.ui.change_password_label.setVisible(False)
         self.ui.provider_services_label.setVisible(False)
 
+        self.ui.change_password_button.clicked.connect(
+            self._show_change_password)
         app.signaler.prov_get_supported_services.connect(self._load_services)
         app.backend.provider_get_supported_services(domain=account.domain)
+
+        if account.username is None:
+            self.ui.change_password_label.setText(
+                self.tr('You must be logged in to change your password.'))
+            self.ui.change_password_label.setVisible(True)
+            self.ui.change_password_button.setEnabled(False)
 
     @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
@@ -112,3 +121,9 @@ class PreferencesAccountPage(QtGui.QWidget):
             except ValueError:
                 logger.error("Something went wrong while trying to "
                              "load service %s" % (service,))
+
+    @QtCore.Slot()
+    def _show_change_password(self):
+        change_password_window = PasswordWindow(self, self.account, self.app)
+        change_password_window.show()
+

@@ -19,6 +19,7 @@ A frontend GUI object to hold the current username and domain.
 
 from leap.bitmask.util import make_address
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
 class Account():
 
@@ -33,11 +34,16 @@ class Account():
           self.address = self.domain
 
     def services(self):
-      """
-      returns a list of service name strings
+        """
+        returns a list of service name strings
 
-      TODO: this should depend not just on the domain
-      """
-      return self._settings.get_enabled_services(self.domain)
+        TODO: this should depend not just on the domain
+        """
+        return self._settings.get_enabled_services(self.domain)
 
+    def is_email_enabled(self):
+        MX_SERVICE in self.services()
+
+    def is_eip_enabled(self):
+        EIP_SERVICE in self.services()
 
