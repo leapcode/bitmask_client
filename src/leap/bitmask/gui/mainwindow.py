@@ -271,9 +271,7 @@ class MainWindow(QtGui.QMainWindow):
         # Services signals/slots connection
         self.new_updates.connect(self._react_to_new_updates)
 
-        # XXX should connect to mail_conductor.start_mail_service instead
-        self.soledad_ready.connect(self._start_smtp_bootstrapping)
-        self.soledad_ready.connect(self._start_imap_service)
+        self.soledad_ready.connect(self._start_mail_service)
         # ################################ end Qt Signals connection ########
 
         init_platform()
@@ -1563,37 +1561,12 @@ class MainWindow(QtGui.QMainWindow):
         self.soledad_ready.emit()
 
     ###################################################################
-    # Service control methods: smtp
-
+    # Service control methods: mail
     @QtCore.Slot()
-    def _start_smtp_bootstrapping(self):
-        """
-        TRIGGERS:
-            self.soledad_ready
-        """
-        if flags.OFFLINE is True:
-            logger.debug("not starting smtp in offline mode")
-            return
-
-        if self._provides_mx_and_enabled():
-            self._mail_conductor.start_smtp_service(download_if_needed=True)
-
-    ###################################################################
-    # Service control methods: imap
-
-    @QtCore.Slot()
-    def _start_imap_service(self):
-        """
-        TRIGGERS:
-            self.soledad_ready
-        """
-        # TODO in the OFFLINE mode we should also modify the  rules
-        # in the mail state machine so it shows that imap is active
-        # (but not smtp since it's not yet ready for offline use)
+    def _start_mail_service(self):
         if self._provides_mx_and_enabled() or flags.OFFLINE:
-            self._mail_conductor.start_imap_service()
-
-    # end service control methods (imap)
+            self._mail_conductor.start_mail_service(download_if_needed=True,
+                                                    offline=flags.OFFLINE)
 
     ###################################################################
     # Service control methods: eip
@@ -1902,8 +1875,7 @@ class MainWindow(QtGui.QMainWindow):
         self._leap_signaler.eip_stopped.connect(eip_stopped)
 
         logger.debug('Stopping mail services')
-        self._backend.imap_stop_service()
-        self._backend.smtp_stop_service()
+        self._mail_conductor.stop_mail_services()
 
         if self._logged_user is not None:
             logger.debug("Doing logout")

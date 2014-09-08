@@ -25,6 +25,8 @@ USAGE:
   bitmask-root firewall start [restart] GATEWAY1 GATEWAY2 ...
   bitmask-root openvpn stop
   bitmask-root openvpn start CONFIG1 CONFIG1 ...
+  bitmask-root fw-email stop
+  bitmask-root fw-email start uid
 
 All actions return exit code 0 for success, non-zero otherwise.
 
@@ -55,6 +57,11 @@ NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
 BITMASK_CHAIN_NAT_OUT = "bitmask"
 BITMASK_CHAIN_NAT_POST = "bitmask_postrouting"
+BITMASK_CHAIN_EMAIL = "bitmask_email"
+BITMASK_CHAIN_EMAIL_OUT = "bitmask_email_output"
+LOCAL_INTERFACE = "lo"
+IMAP_PORT = "1984"
+SMTP_PORT = "2013"
 
 IP = "/bin/ip"
 IPTABLES = "/sbin/iptables"
@@ -101,7 +108,8 @@ PARAM_FORMATS = {
         "^[a-zA-Z0-9_\.\@][a-zA-Z0-9_\-\.\@]*\$?$", s),  # IEEE Std 1003.1-2001
     "FILE": lambda s: os.path.isfile(s),
     "DIR": lambda s: os.path.isdir(os.path.split(s)[0]),
-    "UNIXSOCKET": lambda s: s == "unix"
+    "UNIXSOCKET": lambda s: s == "unix",
+    "UID": lambda s: re.match("^[a-zA-Z0-9]+$", s)
 }
 
 
@@ -740,6 +748,119 @@ def firewall_stop():
                         "Please try `firewall stop` again.")
 
 
+def fw_email_start(args):
+    """
+    Bring up the email firewall.
+
+    :param args: the user uid of the bitmask process
+    :type args: list
+    """
+    # add custom chain "bitmask_email" to front of INPUT chain
+    if not ipv4_chain_exists(BITMASK_CHAIN_EMAIL):
+        ip4tables("--new-chain", BITMASK_CHAIN_EMAIL)
+    if not ipv6_chain_exists(BITMASK_CHAIN_EMAIL):
+        ip6tables("--new-chain", BITMASK_CHAIN_EMAIL)
+    iptables("--insert", "INPUT", "--jump", BITMASK_CHAIN_EMAIL)
+
+    # add custom chain "bitmask_email_output" to front of OUTPUT chain
+    if not ipv4_chain_exists(BITMASK_CHAIN_EMAIL_OUT):
+        ip4tables("--new-chain", BITMASK_CHAIN_EMAIL_OUT)
+    if not ipv6_chain_exists(BITMASK_CHAIN_EMAIL_OUT):
+        ip6tables("--new-chain", BITMASK_CHAIN_EMAIL_OUT)
+    iptables("--insert", "OUTPUT", "--jump", BITMASK_CHAIN_EMAIL_OUT)
+
+    # Disable the access to imap and smtp from outside
+    iptables("--append", BITMASK_CHAIN_EMAIL,
+             "--in-interface", LOCAL_INTERFACE, "--protocol", "tcp",
+             "--dport", IMAP_PORT, "--jump", "ACCEPT")
+    iptables("--append", BITMASK_CHAIN_EMAIL,
+             "--in-interface", LOCAL_INTERFACE, "--protocol", "tcp",
+             "--dport", SMTP_PORT, "--jump", "ACCEPT")
+    iptables("--append", BITMASK_CHAIN_EMAIL,
+             "--protocol", "tcp", "--dport", IMAP_PORT, "--jump", "REJECT")
+    iptables("--append", BITMASK_CHAIN_EMAIL,
+             "--protocol", "tcp", "--dport", SMTP_PORT, "--jump", "REJECT")
+
+    if not args or not PARAM_FORMATS["UID"](args[0]):
+        raise Exception("No uid given")
+    uid = args[0]
+
+    # Only the unix 'uid' have access to the email imap and smtp ports
+    iptables("--append", BITMASK_CHAIN_EMAIL_OUT,
+             "--out-interface", LOCAL_INTERFACE,
+             "--match", "owner", "--uid-owner", uid, "--protocol", "tcp",
+             "--dport", IMAP_PORT, "--jump", "ACCEPT")
+    iptables("--append", BITMASK_CHAIN_EMAIL_OUT,
+             "--out-interface", LOCAL_INTERFACE,
+             "--match", "owner", "--uid-owner", uid, "--protocol", "tcp",
+             "--dport", SMTP_PORT, "--jump", "ACCEPT")
+    iptables("--append", BITMASK_CHAIN_EMAIL_OUT,
+             "--out-interface", LOCAL_INTERFACE,
+             "--protocol", "tcp", "--dport", IMAP_PORT, "--jump", "REJECT")
+    iptables("--append", BITMASK_CHAIN_EMAIL_OUT,
+             "--out-interface", LOCAL_INTERFACE,
+             "--protocol", "tcp", "--dport", SMTP_PORT, "--jump", "REJECT")
+
+
+def fw_email_stop():
+    """
+    Stop the email firewall.
+    """
+    ok = True
+
+    try:
+        iptables("--delete", "INPUT", "--jump", BITMASK_CHAIN_EMAIL,
+                 throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to remove bitmask email firewall from INPUT "
+              "chain (maybe it is already removed?)", exc)
+        ok = False
+
+    try:
+        iptables("--delete", "OUTPUT", "--jump", BITMASK_CHAIN_EMAIL_OUT,
+                 throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to remove bitmask email firewall from OUTPUT "
+              "chain (maybe it is already removed?)", exc)
+        ok = False
+
+    try:
+        ip4tables("--flush", BITMASK_CHAIN_EMAIL, throw=True)
+        ip4tables("--delete-chain", BITMASK_CHAIN_EMAIL, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv4 email firewall "
+              "chain (maybe it is already destroyed?)", exc)
+        ok = False
+
+    try:
+        ip6tables("--flush", BITMASK_CHAIN_EMAIL, throw=True)
+        ip6tables("--delete-chain", BITMASK_CHAIN_EMAIL, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv6 email firewall "
+              "chain (maybe it is already destroyed?)", exc)
+        ok = False
+
+    try:
+        ip4tables("--flush", BITMASK_CHAIN_EMAIL_OUT, throw=True)
+        ip4tables("--delete-chain", BITMASK_CHAIN_EMAIL_OUT, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv4 email firewall "
+              "chain (maybe it is already destroyed?)", exc)
+        ok = False
+
+    try:
+        ip6tables("--flush", BITMASK_CHAIN_EMAIL_OUT, throw=True)
+        ip6tables("--delete-chain", BITMASK_CHAIN_EMAIL_OUT, throw=True)
+    except subprocess.CalledProcessError as exc:
+        debug("INFO: not able to flush and delete bitmask ipv6 email firewall "
+              "chain (maybe it is already destroyed?)", exc)
+        ok = False
+
+    if not (ok or ipv4_chain_exists or ipv6_chain_exists):
+        raise Exception("email firewall might still be left up. "
+                        "Please try `fw-email stop` again.")
+
+
 #
 # MAIN
 #
@@ -792,6 +913,26 @@ def main():
                 log("%s: INFO: bitmask firewall is up" % (SCRIPT,))
             else:
                 bail("INFO: bitmask firewall is down")
+
+        elif command == "fw-email_start":
+            try:
+                fw_email_start(args)
+            except Exception as ex:
+                if not is_restart:
+                    fw_email_stop()
+                bail("ERROR: could not start email firewall", ex)
+
+        elif command == "fw-email_stop":
+            try:
+                fw_email_stop()
+            except Exception as ex:
+                bail("ERROR: could not stop email firewall", ex)
+
+        elif command == "fw-email_isup":
+            if ipv4_chain_exists(BITMASK_CHAIN_EMAIL):
+                log("%s: INFO: bitmask email firewall is up" % (SCRIPT,))
+            else:
+                bail("INFO: bitmask email firewall is down")
 
         else:
             bail("ERROR: No such command")

@@ -49,6 +49,19 @@ firewall
 
 **stop**               Stops the firewall.
 
+**isup**               Check if the firewall is up.
+
+
+fw-email
+---------
+
+**start** UID          Starts the email firewall. UID is the user name or unix
+                       id that will have access to the email.
+
+**stop**               Stops the email firewall.
+
+**isup**               Check if the email firewall is up.
+
 version
 --------
 
