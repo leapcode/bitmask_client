@@ -20,17 +20,15 @@ Linux VPN launcher implementation.
 import commands
 import logging
 import os
-import subprocess
 import sys
-import time
 
 from leap.bitmask.config import flags
 from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
-from leap.common.files import which
+from leap.bitmask.util.privilege_policies import NoPolkitAuthAgentAvailable
+from leap.bitmask.util.privilege_policies import NoPkexecAvailable
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncher
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncherException
 from leap.bitmask.util import get_path_prefix, force_eval
-from leap.common.check import leap_assert
 from leap.bitmask.util import first
 
 logger = logging.getLogger(__name__)
@@ -46,66 +44,11 @@ class EIPNoPkexecAvailable(VPNLauncherException):
     pass
 
 
-def _is_pkexec_in_system():
-    """
-    Checks the existence of the pkexec binary in system.
-    """
-    pkexec_path = which('pkexec')
-    if len(pkexec_path) == 0:
-        return False
-    return True
-
-
-def _is_auth_agent_running():
-    """
-    Checks if a polkit daemon is running.
-
-    :return: True if it's running, False if it's not.
-    :rtype: boolean
-    """
-    # Note that gnome-shell does not uses a separate process for the
-    # polkit-agent, it uses a polkit-agent within its own process so we can't
-    # ps-grep a polkit process, we can ps-grep gnome-shell itself.
-
-    # the [x] thing is to avoid grep match itself
-    polkit_options = [
-        'ps aux | grep "polkit-[g]nome-authentication-agent-1"',
-        'ps aux | grep "polkit-[k]de-authentication-agent-1"',
-        'ps aux | grep "polkit-[m]ate-authentication-agent-1"',
-        'ps aux | grep "[l]xpolkit"',
-        'ps aux | grep "[g]nome-shell"',
-        'ps aux | grep "[f]ingerprint-polkit-agent"',
-    ]
-    is_running = [commands.getoutput(cmd) for cmd in polkit_options]
-
-    return any(is_running)
-
-
-def _try_to_launch_agent():
-    """
-    Tries to launch a polkit daemon.
-    """
-    env = None
-    if flags.STANDALONE:
-        env = {"PYTHONPATH": os.path.abspath('../../../../lib/')}
-    try:
-        # We need to quote the command because subprocess call
-        # will do "sh -c 'foo'", so if we do not quoute it we'll end
-        # up with a invocation to the python interpreter. And that
-        # is bad.
-        logger.debug("Trying to launch polkit agent")
-        subprocess.call(["python -m leap.bitmask.util.polkit_agent"],
-                        shell=True, env=env)
-    except Exception as exc:
-        logger.exception(exc)
-
-
 SYSTEM_CONFIG = "/etc/leap"
 leapfile = lambda f: "%s/%s" % (SYSTEM_CONFIG, f)
 
 
 class LinuxVPNLauncher(VPNLauncher):
-    PKEXEC_BIN = 'pkexec'
 
     # The following classes depend on force_eval to be called against
     # the classes, to get the evaluation of the standalone flag on runtine.
@@ -128,36 +71,6 @@ class LinuxVPNLauncher(VPNLauncher):
             return LinuxPolicyChecker.get_polkit_path()
 
     OTHER_FILES = (POLKIT_PATH, BITMASK_ROOT, OPENVPN_BIN_PATH)
-
-    @classmethod
-    def maybe_pkexec(kls):
-        """
-        Checks whether pkexec is available in the system, and
-        returns the path if found.
-
-        Might raise:
-            EIPNoPkexecAvailable,
-            EIPNoPolkitAuthAgentAvailable.
-
-        :returns: a list of the paths where pkexec is to be found
-        :rtype: list
-        """
-        if _is_pkexec_in_system():
-            if not _is_auth_agent_running():
-                _try_to_launch_agent()
-                time.sleep(2)
-            if _is_auth_agent_running():
-                pkexec_possibilities = which(kls.PKEXEC_BIN)
-                leap_assert(len(pkexec_possibilities) > 0,
-                            "We couldn't find pkexec")
-                return pkexec_possibilities
-            else:
-                logger.warning("No polkit auth agent found. pkexec " +
-                               "will use its own auth agent.")
-                raise EIPNoPolkitAuthAgentAvailable()
-        else:
-            logger.warning("System has no pkexec")
-            raise EIPNoPkexecAvailable()
 
     @classmethod
     def get_vpn_command(kls, eipconfig, providerconfig, socket_host,
@@ -194,7 +107,13 @@ class LinuxVPNLauncher(VPNLauncher):
         command.insert(1, "openvpn")
         command.insert(2, "start")
 
-        pkexec = kls.maybe_pkexec()
+        policyChecker = LinuxPolicyChecker()
+        try:
+            pkexec = policyChecker.maybe_pkexec()
+        except NoPolkitAuthAgentAvailable:
+            raise EIPNoPolkitAuthAgentAvailable()
+        except NoPkexecAvailable:
+            raise EIPNoPkexecAvailable()
         if pkexec:
             command.insert(0, first(pkexec))
 
