@@ -29,9 +29,9 @@ from PySide import QtGui, QtCore
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.services.eip import get_vpn_launcher
-from leap.bitmask.services.eip.linuxvpnlauncher import LinuxVPNLauncher
 from leap.bitmask.services.eip.darwinvpnlauncher import DarwinVPNLauncher
 from leap.bitmask.util import first
+from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
 
 
 logger = logging.getLogger(__name__)
@@ -445,7 +445,6 @@ def _linux_install_missing_scripts(badexec, notfound):
     success = False
     installer_path = os.path.abspath(
         os.path.join(os.getcwd(), "apps", "eip", "files"))
-    launcher = LinuxVPNLauncher
 
     install_helper = "leap-install-helper.sh"
     install_helper_path = os.path.join(installer_path, install_helper)
@@ -456,7 +455,8 @@ def _linux_install_missing_scripts(badexec, notfound):
 
     if os.path.isdir(installer_path):
         try:
-            pkexec = first(launcher.maybe_pkexec())
+            policyChecker = LinuxPolicyChecker()
+            pkexec = first(policyChecker.maybe_pkexec())
             cmdline = ["%s %s %s" % (
                 pkexec, install_helper_path, install_opts)]
 
