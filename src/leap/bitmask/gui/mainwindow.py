@@ -934,7 +934,7 @@ class MainWindow(QtGui.QMainWindow):
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
 
-        eip_status_label = "{0}: {1}".format(
+        eip_status_label = u"{0}: {1}".format(
             self._eip_conductor.eip_name, self.tr("OFF"))
         self._eip_menu = eip_menu = systrayMenu.addMenu(eip_status_label)
         eip_menu.addAction(self._action_eip_startstop)
