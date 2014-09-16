@@ -29,9 +29,8 @@ from leap.bitmask.backend.leapsignaler import LeapSignaler
 
 logger = logging.getLogger(__name__)
 
-class App(QtGui.QWidget):
 
-    #preferences_saved = QtCore.Signal()
+class App(QtGui.QWidget):
 
     # the user has changed which services are enabled for a particular account
     # args: account (Account), active services (list of str)
@@ -49,7 +48,6 @@ class App(QtGui.QWidget):
         self._backend_checker = QtCore.QTimer(self)
         self._backend_checker.timeout.connect(self._check_backend_status)
         self._backend_checker.start(2000)
-
 
     @QtCore.Slot()
     def _check_backend_status(self):

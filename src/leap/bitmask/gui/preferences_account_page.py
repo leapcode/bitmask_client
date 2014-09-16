@@ -28,6 +28,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 
 logger = logging.getLogger(__name__)
 
+
 class PreferencesAccountPage(QtGui.QWidget):
 
     def __init__(self, parent, account, app):
@@ -86,7 +87,6 @@ class PreferencesAccountPage(QtGui.QWidget):
         # emit signal alerting change
         self.app.service_selection_changed.emit(self.account, services)
 
-
     @QtCore.Slot(str)
     def _load_services(self, services):
         """
@@ -126,4 +126,3 @@ class PreferencesAccountPage(QtGui.QWidget):
     def _show_change_password(self):
         change_password_window = PasswordWindow(self, self.account, self.app)
         change_password_window.show()
-

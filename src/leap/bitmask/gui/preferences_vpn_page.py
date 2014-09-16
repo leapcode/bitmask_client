@@ -24,6 +24,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 
 
 class PreferencesVpnPage(QtGui.QWidget):
+
     """
     Page in the preferences window that shows VPN settings
     """

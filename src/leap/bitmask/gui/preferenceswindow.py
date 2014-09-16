@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 class PreferencesWindow(QtGui.QDialog):
+
     """
     Window that displays the preferences.
     """
@@ -81,27 +82,32 @@ class PreferencesWindow(QtGui.QDialog):
         account_item = QtGui.QListWidgetItem(self.ui.nav_widget)
         account_item.setIcon(QtGui.QIcon(":/images/black/32/user.png"))
         account_item.setText(self.tr("Account"))
-        account_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        account_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        account_item.setSizeHint(QtCore.QSize(98,56))
+        account_item.setTextAlignment(
+            QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        account_item.setFlags(
+            QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        account_item.setSizeHint(QtCore.QSize(98, 56))
         self._account_item = account_item
 
         vpn_item = QtGui.QListWidgetItem(self.ui.nav_widget)
         vpn_item.setHidden(True)
         vpn_item.setIcon(QtGui.QIcon(":/images/black/32/earth.png"))
         vpn_item.setText(self.tr("VPN"))
-        vpn_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        vpn_item.setTextAlignment(
+            QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
         vpn_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        vpn_item.setSizeHint(QtCore.QSize(98,56))
+        vpn_item.setSizeHint(QtCore.QSize(98, 56))
         self._vpn_item = vpn_item
 
         email_item = QtGui.QListWidgetItem(self.ui.nav_widget)
         email_item.setHidden(True)
         email_item.setIcon(QtGui.QIcon(":/images/black/32/email.png"))
         email_item.setText(self.tr("Email"))
-        email_item.setTextAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
-        email_item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
-        email_item.setSizeHint(QtCore.QSize(98,56))
+        email_item.setTextAlignment(
+            QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        email_item.setFlags(
+            QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+        email_item.setSizeHint(QtCore.QSize(98, 56))
         self._email_item = email_item
 
         self.ui.nav_widget.currentItemChanged.connect(self._change_page)
@@ -111,9 +117,12 @@ class PreferencesWindow(QtGui.QDialog):
         """
         Adds the pages for the different configuration categories.
         """
-        self.ui.pages_widget.addWidget(PreferencesAccountPage(self, self.account, self.app))
-        self.ui.pages_widget.addWidget(PreferencesVpnPage(self, self.account, self.app))
-        self.ui.pages_widget.addWidget(PreferencesEmailPage(self, self.account, self.app))
+        self.ui.pages_widget.addWidget(
+            PreferencesAccountPage(self, self.account, self.app))
+        self.ui.pages_widget.addWidget(
+            PreferencesVpnPage(self, self.account, self.app))
+        self.ui.pages_widget.addWidget(
+            PreferencesEmailPage(self, self.account, self.app))
 
     #
     # Slots
@@ -154,5 +163,5 @@ class PreferencesWindow(QtGui.QDialog):
             return
 
         self._vpn_item.setHidden(not EIP_SERVICE in services)
-        #self._email_item.setHidden(not MX_SERVICE in services)
+        # self._email_item.setHidden(not MX_SERVICE in services)
         # ^^ disable email for now, there is nothing there yet.

@@ -21,6 +21,7 @@ from leap.bitmask.util import make_address
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
+
 class Account():
 
     def __init__(self, username, domain):
@@ -29,9 +30,9 @@ class Account():
         self.domain = domain
 
         if self.username is not None:
-          self.address = make_address(self.username, self.domain)
+            self.address = make_address(self.username, self.domain)
         else:
-          self.address = self.domain
+            self.address = self.domain
 
     def services(self):
         """
@@ -46,4 +47,3 @@ class Account():
 
     def is_eip_enabled(self):
         EIP_SERVICE in self.services()
-

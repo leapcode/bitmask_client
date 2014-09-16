@@ -23,7 +23,9 @@ from ui_preferences_email_page import Ui_PreferencesEmailPage
 
 logger = logging.getLogger(__name__)
 
+
 class PreferencesEmailPage(QtGui.QWidget):
+
     """
 
     """
@@ -38,4 +40,3 @@ class PreferencesEmailPage(QtGui.QWidget):
         self.parent = parent
         self.account = account
         self.app = app
-

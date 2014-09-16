@@ -28,6 +28,7 @@ from leap.bitmask.gui.flashable import Flashable
 import logging
 logger = logging.getLogger(__name__)
 
+
 class PasswordWindow(QtGui.QDialog, Flashable):
 
     def __init__(self, parent, account, app):
@@ -55,7 +56,7 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         self.ui.cancel_button.clicked.connect(self._close)
         self.ui.username_lineedit.setText(account.address)
 
-        self._disabled = False # if set to True, never again enable widgets.
+        self._disabled = False  # if set to True, never again enable widgets.
 
         if account.username is None:
             # should not ever happen, but just in case
@@ -153,7 +154,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         self._soledad_ready = False
         sig.soledad_bootstrap_finished.connect(self._on_soledad_ready)
 
-
     @QtCore.Slot()
     def _change_password(self):
         """
@@ -174,7 +174,7 @@ class PasswordWindow(QtGui.QDialog, Flashable):
             return
 
         ok, msg, field = password_checks(self.account.username, new_password,
-                                  new_password2)
+                                         new_password2)
         if not ok:
             self.flash_error(msg)
             if field == 'new_password':
@@ -257,7 +257,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         logger.error("Error changing soledad password: %s" % (msg,))
         self._enable_password_widgets(True)
         self.flash_error(msg)
-
 
     @QtCore.Slot()
     def _on_soledad_ready(self):
