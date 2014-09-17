@@ -1,0 +1,2 @@
+- Remove the Advanced Key Management since we don't support stable mail yet.
+  Closes #6087.

@@ -224,8 +224,9 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_create_new_account.triggered.connect(
             self._on_provider_changed)
 
-        self.ui.action_advanced_key_management.triggered.connect(
-            self._show_AKM)
+        # Action item hidden since we don't provide stable mail yet.
+        # self.ui.action_advanced_key_management.triggered.connect(
+        #     self._show_AKM)
 
         if IS_MAC:
             self.ui.menuFile.menuAction().setText(self.tr("File"))
