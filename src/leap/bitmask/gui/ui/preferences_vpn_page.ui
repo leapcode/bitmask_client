@@ -36,26 +36,6 @@
    </item>
    <item>
     <widget class="QListWidget" name="gateways_list">
-     <item>
-      <property name="text">
-       <string>New Item</string>
-      </property>
-      <property name="icon">
-       <iconset>
-        <normalon>:/images/countries/us.png</normalon>
-       </iconset>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>New Item</string>
-      </property>
-      <property name="icon">
-       <iconset>
-        <normalon>:/images/countries/br.png</normalon>
-       </iconset>
-      </property>
-     </item>
     </widget>
    </item>
    <item>

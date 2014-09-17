@@ -21,9 +21,9 @@ from PySide import QtCore, QtGui
 from ui_preferences_vpn_page import Ui_PreferencesVpnPage
 
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.gui.flashable import Flashable
 
-
-class PreferencesVpnPage(QtGui.QWidget):
+class PreferencesVpnPage(QtGui.QWidget, Flashable):
 
     """
     Page in the preferences window that shows VPN settings
@@ -50,6 +50,7 @@ class PreferencesVpnPage(QtGui.QWidget):
         self.ui = Ui_PreferencesVpnPage()
         self.ui.setupUi(self)
         self.ui.flash_label.setVisible(False)
+        self.hide_flash()
 
         # Connections
         self.ui.gateways_list.clicked.connect(self._save_selected_gateway)
@@ -61,28 +62,6 @@ class PreferencesVpnPage(QtGui.QWidget):
 
         # Trigger update
         self.app.backend.eip_get_gateways_list(domain=self.account.domain)
-
-    def _flash_error(self, message):
-        """
-        Sets string for the flash message.
-
-        :param message: the text to be displayed
-        :type message: str
-        """
-        message = "<font color='red'><b>%s</b></font>" % (message,)
-        self.ui.flash_label.setVisible(True)
-        self.ui.flash_label.setText(message)
-
-    # def _flash_success(self, message):
-    #     """
-    #     Sets string for the flash message.
-    #
-    #     :param message: the text to be displayed
-    #     :type message: str
-    #     """
-    #     message = "<font color='green'><b>%s</b></font>" % (message,)
-    #     self.ui.flash_label.setVisible(True)
-    #     self.ui.flash_label.setText(message)
 
     @QtCore.Slot(str)
     def _save_selected_gateway(self, index):
@@ -145,7 +124,7 @@ class PreferencesVpnPage(QtGui.QWidget):
         An error has occurred retrieving the gateway list
         so we inform the user.
         """
-        self._flash_error(
+        self.flash_error(
             self.tr("Error loading configuration file."))
         self.ui.gateways_list.setEnabled(False)
 
@@ -158,6 +137,6 @@ class PreferencesVpnPage(QtGui.QWidget):
         The requested provider in not initialized yet, so we give the user an
         error msg.
         """
-        self._flash_error(
+        self.flash_error(
             self.tr("This is an uninitialized provider, please log in first."))
         self.ui.gateways_list.setEnabled(False)
