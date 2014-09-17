@@ -18,10 +18,11 @@ Widget for "vpn" preferences
 """
 
 from PySide import QtCore, QtGui
-from ui_preferences_vpn_page import Ui_PreferencesVpnPage
+from leap.bitmask.gui.ui_preferences_vpn_page import Ui_PreferencesVpnPage
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.flashable import Flashable
+
 
 class PreferencesVpnPage(QtGui.QWidget, Flashable):
 

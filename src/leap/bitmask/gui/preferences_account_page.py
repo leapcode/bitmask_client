@@ -21,10 +21,9 @@ import logging
 from functools import partial
 
 from PySide import QtCore, QtGui
-from ui_preferences_account_page import Ui_PreferencesAccountPage
-from passwordwindow import PasswordWindow
+from leap.bitmask.gui.ui_preferences_account_page import Ui_PreferencesAccountPage
+from leap.bitmask.gui.passwordwindow import PasswordWindow
 from leap.bitmask.services import get_service_display_name
-from leap.bitmask.config.leapsettings import LeapSettings
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +32,14 @@ class PreferencesAccountPage(QtGui.QWidget):
 
     def __init__(self, parent, account, app):
         """
+        :param parent: parent object of the PreferencesWindow.
+        :parent type: QWidget
+
+        :param account: user account (user + provider or just provider)
+        :type account: Account
+
+        :param app: the current App object
+        :type app: App
         """
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_PreferencesAccountPage()
@@ -103,7 +110,11 @@ class PreferencesAccountPage(QtGui.QWidget):
 
         self._selected_services = set()
 
-        # remove existing checkboxes
+        # Remove existing checkboxes
+        # (the new widget is deleted when its parent is deleted.
+        #  We need to loop backwards because removing things from the
+        #  beginning shifts items and changes the order of items in the layout.
+        #  Using `QObject.deleteLater` doesn't seem to work.)
         layout = self.ui.provider_services_layout
         for i in reversed(range(layout.count())):
             layout.itemAt(i).widget().setParent(None)

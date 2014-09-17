@@ -19,24 +19,17 @@ Widget for "email" preferences
 import logging
 
 from PySide import QtCore, QtGui
-from ui_preferences_email_page import Ui_PreferencesEmailPage
+from leap.bitmask.gui.ui_preferences_email_page import Ui_PreferencesEmailPage
 
 logger = logging.getLogger(__name__)
 
 
 class PreferencesEmailPage(QtGui.QWidget):
 
-    """
-
-    """
-
     def __init__(self, parent, account, app):
-        """
-        """
         QtGui.QWidget.__init__(self, parent)
         self.ui = Ui_PreferencesEmailPage()
         self.ui.setupUi(self)
 
-        self.parent = parent
         self.account = account
         self.app = app

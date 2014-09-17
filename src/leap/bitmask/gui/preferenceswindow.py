@@ -150,6 +150,12 @@ class PreferencesWindow(QtGui.QDialog):
             self.ui.nav_widget.currentItemChanged
 
         Changes what page is displayed.
+
+        :param current: the currently selected item (might be None?)
+        :type current: PySide.QtGui.QListWidgetItem
+
+        :param previous: the previously selected item (might be None)
+        :type previous: PySide.QtGui.QListWidgetItem
         """
         if not current:
             current = previous
