@@ -38,22 +38,21 @@ class PreferencesWindow(QtGui.QDialog):
     Window that displays the preferences.
     """
 
+    _current_window = None # currently visible preferences window
+
     def __init__(self, parent, account, app):
         """
         :param parent: parent object of the PreferencesWindow.
         :parent type: QWidget
-        :param username: the user set in the login widget
-        :type username: unicode
-        :param domain: the selected domain in the login widget
-        :type domain: unicode
-        :param backend: Backend being used
-        :type backend: Backend
-        :param leap_signaler: signal server
-        :type leap_signaler: LeapSignaler
+
+        :param account: the user or provider
+        :type account: Account
+
+        :param app: the current App object
+        :type app: App
         """
         QtGui.QDialog.__init__(self, parent)
 
-        self._parent = parent
         self.account = account
         self.app = app
 
@@ -68,6 +67,11 @@ class PreferencesWindow(QtGui.QDialog):
         self._add_icons()
         self._add_pages()
         self._update_icons(self.account, self.account.services())
+
+        # only allow a single preferrences window at a time.
+        if PreferencesWindow._current_window is not None:
+            PreferencesWindow._current_window.close()
+        PreferencesWindow._current_window = self
 
     def _add_icons(self):
         """
@@ -136,7 +140,7 @@ class PreferencesWindow(QtGui.QDialog):
 
         Close this dialog
         """
-        self._parent.preferences = None
+        PreferencesWindow._current_window = None
         self.hide()
 
     @QtCore.Slot()

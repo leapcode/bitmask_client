@@ -98,9 +98,6 @@ class MainWindow(QtGui.QMainWindow):
     # We give the services some time to a halt before forcing quit.
     SERVICES_STOP_TIMEOUT = 3000  # in milliseconds
 
-    # Preferences window
-    preferences = None
-
     def __init__(self, start_hidden=False, backend_pid=None):
         """
         Constructor for the client main window
@@ -574,10 +571,8 @@ class MainWindow(QtGui.QMainWindow):
         """
         account = Account(self._logged_user,
                           self._providers.get_selected_provider())
-        if self.preferences is not None:
-            self.preferences.close()
-        self.preferences = PreferencesWindow(self, account, self.app)
-        self.preferences.show()
+        pref_win = PreferencesWindow(self, account, self.app)
+        pref_win.show()
 
     @QtCore.Slot(object, list)
     def _update_eip_enabled_status(self, account=None, services=None):
