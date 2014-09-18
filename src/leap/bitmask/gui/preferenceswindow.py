@@ -38,7 +38,7 @@ class PreferencesWindow(QtGui.QDialog):
     Window that displays the preferences.
     """
 
-    _current_window = None # currently visible preferences window
+    _current_window = None  # currently visible preferences window
 
     def __init__(self, parent, account, app):
         """
@@ -59,7 +59,7 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui = Ui_Preferences()
         self.ui.setupUi(self)
 
-        self.ui.close_button.clicked.connect(self.close)
+        self.ui.close_button.clicked.connect(self.close_window)
         self.ui.account_label.setText(account.address)
 
         self.app.service_selection_changed.connect(self._update_icons)
@@ -68,9 +68,9 @@ class PreferencesWindow(QtGui.QDialog):
         self._add_pages()
         self._update_icons(self.account, self.account.services())
 
-        # only allow a single preferrences window at a time.
+        # only allow a single preferences window at a time.
         if PreferencesWindow._current_window is not None:
-            PreferencesWindow._current_window.close()
+            PreferencesWindow._current_window.close_window()
         PreferencesWindow._current_window = self
 
     def _add_icons(self):
@@ -121,27 +121,42 @@ class PreferencesWindow(QtGui.QDialog):
         """
         Adds the pages for the different configuration categories.
         """
-        self.ui.pages_widget.addWidget(
-            PreferencesAccountPage(self, self.account, self.app))
-        self.ui.pages_widget.addWidget(
-            PreferencesVpnPage(self, self.account, self.app))
-        self.ui.pages_widget.addWidget(
-            PreferencesEmailPage(self, self.account, self.app))
+        self._account_page = PreferencesAccountPage(self, self.account, self.app)
+        self._vpn_page = PreferencesVpnPage(self, self.account, self.app)
+        self._email_page = PreferencesEmailPage(self, self.account, self.app)
+
+        self.ui.pages_widget.addWidget(self._account_page)
+        self.ui.pages_widget.addWidget(self._vpn_page)
+        self.ui.pages_widget.addWidget(self._email_page)
+
+    def closeEvent(self, e):
+        """
+        Override closeEvent to capture when user closes the window.
+        """
+        self.close_window()
 
     #
     # Slots
     #
 
     @QtCore.Slot()
-    def close(self):
+    def close_window(self):
         """
         TRIGGERS:
             self.ui.close_button.clicked
 
-        Close this dialog
+        Close this dialog and destroy it.
         """
         PreferencesWindow._current_window = None
-        self.hide()
+        self.close()
+
+        # deleteLater does not seem to cascade to items in stackLayout
+        # (even with QtCore.Qt.WA_DeleteOnClose attribute).
+        # so, here we call deleteLater() explicitly:
+        self._account_page.deleteLater()
+        self._vpn_page.deleteLater()
+        self._email_page.deleteLater()
+        self.deleteLater()
 
     @QtCore.Slot()
     def _change_page(self, current, previous):
