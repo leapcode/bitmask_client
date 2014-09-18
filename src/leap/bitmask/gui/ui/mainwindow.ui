@@ -337,7 +337,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Preferences...</string>
+    <string>Pr&amp;eferences...</string>
    </property>
   </action>
   <action name="action_quit">
