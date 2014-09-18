@@ -95,5 +95,19 @@ resource_graph:
 	./pkg/scripts/monitor_resource.zsh `pgrep bitmask` $(RESOURCE_TIME)
 	display bitmask-resources.png
 
+get_wheels:
+	pip install --upgrade setuptools
+	pip install --upgrade pip
+	pip install wheel
+
+gather_wheels:
+	pip wheel --wheel-dir=../wheelhouse pyzmq --build-option "--zmq=bundled"
+	# because fuck u1db externals, that's why...
+	pip wheel --wheel-dir=../wheelhouse --allow-external dirspec --allow-unverified dirspec --allow-external u1db --allow-unverified u1db -r pkg/requirements.pip
+
+install_wheel:
+	# if it's the first time, you'll need to get_wheels first
+	pip install --pre --use-wheel --no-index --find-links=../wheelhouse -r pkg/requirements.pip
+
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
