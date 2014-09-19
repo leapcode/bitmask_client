@@ -31,6 +31,8 @@ logger = logging.getLogger(__name__)
 
 class PasswordWindow(QtGui.QDialog, Flashable):
 
+    _current_window = None  # currently visible password window
+
     def __init__(self, parent, account, app):
         """
         :param parent: parent object of the PreferencesWindow.
@@ -53,8 +55,12 @@ class PasswordWindow(QtGui.QDialog, Flashable):
 
         self.hide_flash()
         self.ui.ok_button.clicked.connect(self._change_password)
-        self.ui.cancel_button.clicked.connect(self._close)
+        self.ui.cancel_button.clicked.connect(self.close)
         self.ui.username_lineedit.setText(account.address)
+
+        if PasswordWindow._current_window is not None:
+            PasswordWindow._current_window.close()
+        PasswordWindow._current_window = self
 
         self._disabled = False  # if set to True, never again enable widgets.
 
@@ -132,22 +138,11 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         Helper to connect to backend signals
         """
         sig = self.app.signaler
-
         sig.srp_password_change_ok.connect(self._srp_change_password_ok)
-
-        pwd_change_error = lambda: self._srp_change_password_problem(
-            self.tr("There was a problem changing the password."),
-            None)
-        sig.srp_password_change_error.connect(pwd_change_error)
-
-        pwd_change_badpw = lambda: self._srp_change_password_problem(
-            self.tr("You did not enter a correct current password."),
-            'current_password')
-        sig.srp_password_change_badpw.connect(pwd_change_badpw)
-
+        sig.srp_password_change_error.connect(self._srp_password_change_error)
+        sig.srp_password_change_badpw.connect(self._srp_password_change_badpw)
         sig.soledad_password_change_ok.connect(
             self._soledad_change_password_ok)
-
         sig.soledad_password_change_error.connect(
             self._soledad_change_password_problem)
 
@@ -188,15 +183,16 @@ class PasswordWindow(QtGui.QDialog, Flashable):
             current_password=current_password,
             new_password=new_password)
 
-    @QtCore.Slot()
-    def _close(self):
+    def closeEvent(self, event=None):
         """
         TRIGGERS:
-            self.ui.buttonBox.rejected
+            cancel_button (indirectly via self.close())
+            or when window is closed
 
-        Close this dialog
+        Close this dialog & delete ourselves to clean up signals.
         """
-        self.hide()
+        PasswordWindow._current_window = None
+        self.deleteLater()
 
     @QtCore.Slot()
     def _srp_change_password_ok(self):
@@ -214,23 +210,32 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         else:
             self._change_password_success()
 
-    @QtCore.Slot(unicode)
-    def _srp_change_password_problem(self, msg, field):
+    @QtCore.Slot()
+    def _srp_password_change_error(self):
         """
         TRIGGERS:
             self._backend.signaler.srp_password_change_error
-            self._backend.signaler.srp_password_change_badpw
 
-        Callback used to display an error on changing password.
-
-        :param msg: the message to show to the user.
-        :type msg: unicode
+        Unknown problem changing password
         """
-        logger.error("Error changing password: %s" % (msg,))
+        msg = self.tr("There was a problem changing the password.")
+        logger.error(msg)
         self._enable_password_widgets(True)
         self.flash_error(msg)
-        if field == 'current_password':
-            self.ui.current_password_lineedit.setFocus()
+
+    @QtCore.Slot()
+    def _srp_password_change_badpw(self):
+        """
+        TRIGGERS:
+            self._backend.signaler.srp_password_change_badpw
+
+        The password the user entered was wrong.
+        """
+        msg = self.tr("You did not enter a correct current password.")
+        logger.error(msg)
+        self._enable_password_widgets(True)
+        self.flash_error(msg)
+        self.ui.current_password_lineedit.setFocus()
 
     @QtCore.Slot()
     def _soledad_change_password_ok(self):

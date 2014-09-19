@@ -59,7 +59,7 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui = Ui_Preferences()
         self.ui.setupUi(self)
 
-        self.ui.close_button.clicked.connect(self.close_window)
+        self.ui.close_button.clicked.connect(self.close)
         self.ui.account_label.setText(account.address)
 
         self.app.service_selection_changed.connect(self._update_icons)
@@ -129,26 +129,20 @@ class PreferencesWindow(QtGui.QDialog):
         self.ui.pages_widget.addWidget(self._vpn_page)
         self.ui.pages_widget.addWidget(self._email_page)
 
-    def closeEvent(self, e):
-        """
-        Override closeEvent to capture when user closes the window.
-        """
-        self.close_window()
-
     #
     # Slots
     #
 
-    @QtCore.Slot()
-    def close_window(self):
+    def closeEvent(self, e):
         """
         TRIGGERS:
             self.ui.close_button.clicked
+              (since self.close() will trigger closeEvent)
+            whenever the window is closed
 
         Close this dialog and destroy it.
         """
         PreferencesWindow._current_window = None
-        self.close()
 
         # deleteLater does not seem to cascade to items in stackLayout
         # (even with QtCore.Qt.WA_DeleteOnClose attribute).
