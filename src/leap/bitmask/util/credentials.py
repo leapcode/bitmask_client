@@ -38,7 +38,7 @@ def username_checks(username):
     valid = USERNAME_VALIDATOR.validate(username, 0)
     valid_username = valid[0] == QtGui.QValidator.State.Acceptable
     if message is None and not valid_username:
-        message = _tr("Invalid username")
+        message = _tr("That username is not allowed. Try another.")
 
     return message is None, message
 
@@ -54,28 +54,34 @@ def password_checks(username, password, password2):
     :param password2: second password from the registration form
     :type password: str
 
-    :returns: True and empty message if all the checks pass,
-              False and an error message otherwise
-    :rtype: tuple(bool, str)
+    :returns: (True, None, None) if all the checks pass,
+              (False, message, field name) otherwise
+    :rtype: tuple(bool, str, str)
     """
     # translation helper
     _tr = QtCore.QObject().tr
 
     message = None
+    field = None
 
     if message is None and password != password2:
         message = _tr("Passwords don't match")
+        field = 'new_password_confirmation'
 
     if message is None and not password:
-        message = _tr("You can't use an empty password")
+        message = _tr("Password is empty")
+        field = 'new_password'
 
     if message is None and len(password) < 8:
-        message = _tr("Password too short")
+        message = _tr("Password is too short")
+        field = 'new_password'
 
     if message is None and password in WEAK_PASSWORDS:
-        message = _tr("Password too easy")
+        message = _tr("Password is too easy")
+        field = 'new_password'
 
     if message is None and username == password:
-        message = _tr("Password equal to username")
+        message = _tr("Password can't be the same as username")
+        field = 'new_password'
 
-    return message is None, message
+    return message is None, message, field

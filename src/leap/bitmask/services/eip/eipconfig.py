@@ -113,39 +113,38 @@ class VPNGatewaySelector(object):
         """
         Return the existing gateways, sorted by timezone proximity.
 
-        :rtype: list of tuples (location, ip)
-                (str, IPv4Address or IPv6Address object)
+        :rtype: list of tuples (label, ip, country_code)
+                (str, IPv4Address or IPv6Address object, str)
         """
         gateways_timezones = []
         locations = self._eipconfig.get_locations()
         gateways = self._eipconfig.get_gateways()
 
         for idx, gateway in enumerate(gateways):
-            gateway_location = gateway.get('location')
-            gateway_distance = 99  # if hasn't location -> should go last
-
-            if gateway_location is not None:
-                timezone = locations[gateway['location']]['timezone']
-                gateway_name = locations[gateway['location']].get('name', None)
-                if gateway_name is not None:
-                    gateway_location = gateway_name
-
-                gw_offset = int(timezone)
-                if gw_offset in self.equivalent_timezones:
-                    gw_offset = self.equivalent_timezones[gw_offset]
-
-                gateway_distance = self._get_timezone_distance(gw_offset)
+            distance = 99  # if hasn't location -> should go last
+            location = locations.get(gateway.get('location'))
+            label = gateway.get('location', 'Unknown')
+            country = 'XX'
+            if location is not None:
+                country = location.get('country_code', 'XX')
+                label = location.get('name', label)
+                timezone = location.get('timezone')
+                if timezone is not None:
+                    offset = int(timezone)
+                    if offset in self.equivalent_timezones:
+                        offset = self.equivalent_timezones[offset]
+                    distance = self._get_timezone_distance(offset)
 
             ip = self._eipconfig.get_gateway_ip(idx)
-            gateways_timezones.append((ip, gateway_distance, gateway_location))
+            gateways_timezones.append((ip, distance, label, country))
 
         gateways_timezones = sorted(gateways_timezones, key=lambda gw: gw[1])
 
-        gateways = []
-        for ip, distance, location in gateways_timezones:
-            gateways.append((location, ip))
+        result = []
+        for ip, distance, label, country in gateways_timezones:
+            result.append((label, ip, country))
 
-        return gateways
+        return result
 
     def get_gateways(self):
         """
@@ -153,7 +152,7 @@ class VPNGatewaySelector(object):
 
         :rtype: list of IPv4Address or IPv6Address object.
         """
-        gateways = [ip for location, ip in self.get_gateways_list()][:4]
+        gateways = [gateway[1] for gateway in self.get_gateways_list()][:4]
         return gateways
 
     def get_gateways_country_code(self):

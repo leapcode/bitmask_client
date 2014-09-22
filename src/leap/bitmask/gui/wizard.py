@@ -42,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 
 class Wizard(QtGui.QWizard):
+
     """
     First run wizard to register a user and setup a provider
     """
@@ -317,7 +318,8 @@ class Wizard(QtGui.QWizard):
 
         user_ok, msg = username_checks(username)
         if user_ok:
-            pass_ok, msg = password_checks(username, password, password2)
+            pass_ok, msg, field = password_checks(
+                username, password, password2)
 
         if user_ok and pass_ok:
             self._set_register_status(self.tr("Starting registration..."))
