@@ -46,7 +46,7 @@ from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
 from leap.soledad.common.errors import InvalidAuthTokenError
 from leap.soledad.client import Soledad
-from leap.soledad.client.secrets import BootstrapSequenceError
+from leap.soledad.client import BootstrapSequenceError
 
 logger = logging.getLogger(__name__)
 
