@@ -116,11 +116,14 @@ class EIPPreferencesWindow(QtGui.QDialog):
             self.ui.gbGatewaySelector.setEnabled(False)
             return
 
+        # block signals so the currentIndexChanged slot doesn't get triggered
+        self.ui.cbProvidersGateway.blockSignals(True)
         for provider, is_initialized in providers:
             label = provider
             if not is_initialized:
                 label += self.tr(" (uninitialized)")
             self.ui.cbProvidersGateway.addItem(label, userData=provider)
+        self.ui.cbProvidersGateway.blockSignals(False)
 
         # Select provider by name
         domain = self._selected_domain

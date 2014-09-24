@@ -97,7 +97,7 @@ class EIPStatusWidget(QtGui.QWidget):
 
         # Action for the systray
         self._eip_disabled_action = QtGui.QAction(
-            "{0} is {1}".format(self._service_name, self.tr("disabled")), self)
+            u"{0} is {1}".format(self._service_name, self.tr("disabled")), self)
 
     def connect_backend_signals(self):
         """
@@ -303,7 +303,6 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         # XXX this name is unfortunate. "disable" is also applied to a
         # pushbutton being grayed out.
-
         logger.debug('Hiding EIP start button')
         # you might be tempted to change this for a .setEnabled(False).
         # it won't work. it's under the claws of the state machine.
@@ -334,7 +333,7 @@ class EIPStatusWidget(QtGui.QWidget):
         Triggered after a successful login.
         Enables the start button.
         """
-        # logger.debug('Showing EIP start button')
+        logger.debug('Showing EIP start button')
         self.eip_button.show()
         self.hide_eip_cancel_button()
 

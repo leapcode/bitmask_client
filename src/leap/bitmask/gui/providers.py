@@ -109,6 +109,6 @@ class Providers(QtCore.QObject):
         """
         self._providers_indexes.append(idx)
         is_wizard = idx == (self._combo.count() - 1)
-        self._provider_changed.emit(is_wizard)
         if is_wizard:
             self.restore_previous_provider()
+        self._provider_changed.emit(is_wizard)

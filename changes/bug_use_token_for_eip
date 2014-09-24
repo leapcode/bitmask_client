@@ -1,0 +1,1 @@
+- Properly send the token for querying the EIP certificate. Fixes #6060.

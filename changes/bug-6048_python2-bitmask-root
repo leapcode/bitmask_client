@@ -1,0 +1,1 @@
+- Use python2 to run bitmask-root to work fine on systems with python3 as default. Closes #6048.

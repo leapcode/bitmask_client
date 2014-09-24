@@ -9,7 +9,7 @@ privileged helper for bitmask, the encrypted internet access toolkit.
 :Author: LEAP Encryption Access Project https://leap.se
 :Date:   2014-06-05
 :Copyright: GPLv3+
-:Version: 0.5.2
+:Version: 0.7.0
 :Manual section: 1
 :Manual group: General Commands Manual
 
@@ -49,6 +49,18 @@ firewall
 
 **stop**               Stops the firewall.
 
+**isup**               Check if the firewall is up.
+
+
+fw-email
+---------
+
+**start** UID          Starts the email firewall. UID is the user name or unix
+                       id that will have access to the email.
+
+**stop**               Stops the email firewall.
+
+**isup**               Check if the email firewall is up.
 
 version
 -------

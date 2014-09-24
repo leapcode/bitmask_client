@@ -60,7 +60,7 @@ from leap.common import certs as leap_certs
 from leap.keymanager import openpgp
 from leap.keymanager.errors import KeyAddressMismatch, KeyFingerprintMismatch
 
-from leap.soledad.client import NoStorageSecret, PassphraseTooShort
+from leap.soledad.client.secrets import NoStorageSecret, PassphraseTooShort
 
 logger = logging.getLogger(__name__)
 
@@ -452,19 +452,13 @@ class EIP(object):
         else:
             logger.debug('EIP: no errors')
 
-    def _do_stop(self, shutdown=False, restart=False):
-        """
-        Stop the service. This is run in a thread to avoid blocking.
-        """
-        self._vpn.terminate(shutdown, restart)
-        if IS_LINUX:
-            self._wait_for_firewall_down()
-
     def stop(self, shutdown=False, restart=False):
         """
         Stop the service.
         """
-        return threads.deferToThread(self._do_stop, shutdown, restart)
+        self._vpn.terminate(shutdown, restart)
+        if IS_LINUX:
+            self._wait_for_firewall_down()
 
     def _wait_for_firewall_down(self):
         """

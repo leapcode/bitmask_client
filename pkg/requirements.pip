@@ -9,7 +9,10 @@ argparse
 requests>=1.1.0
 srp>=1.0.2
 pyopenssl
-python-dateutil
+
+# This won't be needed after we refactor leap.common.events
+# to use zmq.
+python-dateutil==1.4  # See  https://leap.se/code/issues/6099
 
 psutil
 
@@ -19,6 +22,8 @@ python-daemon # this should not be needed for Windows.
 keyring
 zope.proxy
 
+# You will want to install this bundled if you don't have sodium in your system:
+# pip install pyzmq --install-option="--zmq=bundled"
 pyzmq
 
 leap.common>=0.3.7
