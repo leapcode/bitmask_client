@@ -12,7 +12,7 @@ pyopenssl
 
 # This won't be needed after we refactor leap.common.events
 # to use zmq.
-python-dateutil==1.4  # See  https://leap.se/code/issues/6099
+python-dateutil  #==1.4  # See  https://leap.se/code/issues/6099
 
 psutil
 
