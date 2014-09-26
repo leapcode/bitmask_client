@@ -75,7 +75,7 @@
          <x>0</x>
          <y>0</y>
          <width>524</width>
-         <height>540</height>
+         <height>549</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -306,7 +306,7 @@
      <x>0</x>
      <y>0</y>
      <width>524</width>
-     <height>25</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -317,7 +317,6 @@
     <addaction name="action_advanced_key_management"/>
     <addaction name="separator"/>
     <addaction name="action_preferences"/>
-    <addaction name="action_eip_preferences"/>
     <addaction name="separator"/>
     <addaction name="action_quit"/>
    </widget>
@@ -338,12 +337,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Account Preferences...</string>
-   </property>
-  </action>
-  <action name="action_eip_preferences">
-   <property name="text">
-    <string>Internet Preferences...</string>
+    <string>Pr&amp;eferences...</string>
    </property>
   </action>
   <action name="action_quit">
@@ -378,10 +372,13 @@
   </action>
   <action name="action_advanced_key_management">
    <property name="enabled">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="text">
     <string>Advanced Key Management</string>
+   </property>
+   <property name="visible">
+    <bool>false</bool>
    </property>
   </action>
  </widget>

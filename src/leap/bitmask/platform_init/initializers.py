@@ -29,9 +29,9 @@ from PySide import QtGui, QtCore
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.services.eip import get_vpn_launcher
-from leap.bitmask.services.eip.linuxvpnlauncher import LinuxVPNLauncher
 from leap.bitmask.services.eip.darwinvpnlauncher import DarwinVPNLauncher
 from leap.bitmask.util import first
+from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
 
 
 logger = logging.getLogger(__name__)
@@ -127,12 +127,15 @@ def check_missing():
         complain_missing = True
 
     launcher = get_vpn_launcher()
-    missing_scripts = launcher.missing_updown_scripts
-    missing_other = launcher.missing_other_files
+    missing_scripts = launcher.missing_updown_scripts()
+    missing_other = launcher.missing_other_files()
 
-    logger.debug("MISSING OTHER: %s" % (str(missing_other())))
+    if missing_scripts:
+        logger.warning("Missing scripts: %s" % (missing_scripts))
+    if missing_other:
+        logger.warning("Missing other files: %s" % (missing_other))
 
-    missing_some = missing_scripts() or missing_other()
+    missing_some = missing_scripts or missing_other
     if alert_missing and missing_some:
         msg = get_missing_helpers_dialog()
         ret = msg.exec_()
@@ -164,12 +167,19 @@ def check_missing():
             logger.debug(
                 "Setting alert_missing_scripts to False, we will not "
                 "ask again")
+            init_signals.eip_missing_helpers.emit()
             config.set_alert_missing_scripts(False)
 
     if complain_missing and missing_some:
-        missing = missing_scripts() + missing_other()
+        missing = missing_scripts + missing_other
         msg = _get_missing_complain_dialog(missing)
         ret = msg.exec_()
+
+    # If there is some missing file and we don't want to complain, we emit the
+    # 'missing helpers' signal so the eip status can show that some files are
+    # missing.
+    if missing_some and not alert_missing and not complain_missing:
+        init_signals.eip_missing_helpers.emit()
 
 #
 # windows initializers
@@ -435,7 +445,6 @@ def _linux_install_missing_scripts(badexec, notfound):
     success = False
     installer_path = os.path.abspath(
         os.path.join(os.getcwd(), "apps", "eip", "files"))
-    launcher = LinuxVPNLauncher
 
     install_helper = "leap-install-helper.sh"
     install_helper_path = os.path.join(installer_path, install_helper)
@@ -446,7 +455,8 @@ def _linux_install_missing_scripts(badexec, notfound):
 
     if os.path.isdir(installer_path):
         try:
-            pkexec = first(launcher.maybe_pkexec())
+            policyChecker = LinuxPolicyChecker()
+            pkexec = first(policyChecker.maybe_pkexec())
             cmdline = ["%s %s %s" % (
                 pkexec, install_helper_path, install_opts)]
 

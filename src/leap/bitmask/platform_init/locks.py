@@ -22,11 +22,11 @@ import errno
 import os
 import platform
 
-from leap.bitmask import platform_init
+from leap.bitmask.platform_init import IS_WIN, IS_UNIX
 from leap.common.events import signal as signal_event
 from leap.common.events import events_pb2 as proto
 
-if platform_init.IS_UNIX:
+if IS_UNIX:
     from fcntl import flock, LOCK_EX, LOCK_NB
 else:  # WINDOWS
     import datetime
@@ -40,7 +40,7 @@ else:  # WINDOWS
 
 logger = logging.getLogger(__name__)
 
-if platform_init.IS_UNIX:
+if IS_UNIX:
 
     class UnixLock(object):
         """
@@ -48,14 +48,13 @@ if platform_init.IS_UNIX:
         See man 2 flock
         """
 
-        def __init__(self, path):
-            """
-            iniializes t he UnixLock with the path of the
-            desired lockfile
-            """
+        _LOCK_FILE = '/tmp/bitmask.lock'
 
+        def __init__(self):
+            """
+            Initialize the UnixLock.
+            """
             self._fd = None
-            self.path = path
 
         def get_lock(self):
             """
@@ -77,7 +76,7 @@ if platform_init.IS_UNIX:
 
             :rtype: bool
             """
-            self._fd = os.open(self.path, os.O_CREAT | os.O_RDWR)
+            self._fd = os.open(self._LOCK_FILE, os.O_CREAT | os.O_RDWR)
 
             try:
                 flock(self._fd, LOCK_EX | LOCK_NB)
@@ -102,6 +101,21 @@ if platform_init.IS_UNIX:
             gotit, pid = self._get_lock_and_pid()
             return pid == os.getpid()
 
+        @classmethod
+        def release_lock(self):
+            """
+            Release the lock.
+
+            :return: True if the lock was released, False otherwise
+            :rtype: bool
+            """
+            try:
+                os.remove(self._LOCK_FILE)
+                return True
+            except Exception as e:
+                logger.debug("Problem removing lock, {0!r}".format(e))
+                return False
+
         def _get_lock_and_pid(self):
             """
             Tries to get a lock over the file.
@@ -109,7 +123,6 @@ if platform_init.IS_UNIX:
 
             :rtype: tuple
             """
-
             if self._get_lock():
                 self._write_to_pidfile()
                 return True, None
@@ -121,9 +134,7 @@ if platform_init.IS_UNIX:
             Tries to read pid from the pidfile,
             returns False if no content found.
             """
-
-            pidfile = os.read(
-                self._fd, 16)
+            pidfile = os.read(self._fd, 16)
             if not pidfile:
                 return False
 
@@ -144,7 +155,7 @@ if platform_init.IS_UNIX:
             os.fsync(fd)
 
 
-if platform_init.IS_WIN:
+if IS_WIN:
 
     # Time to wait (in secs) before assuming a raise window signal has not been
     # ack-ed.
@@ -348,17 +359,15 @@ def we_are_the_one_and_only():
 
     :rtype: bool
     """
-    _sys = platform.system()
-
-    if _sys in ("Linux", "Darwin"):
-        locker = UnixLock('/tmp/bitmask.lock')
+    if IS_UNIX:
+        locker = UnixLock()
         locker.get_lock()
         we_are_the_one = locker.locked_by_us
         if not we_are_the_one:
             signal_event(proto.RAISE_WINDOW)
         return we_are_the_one
 
-    elif _sys == "Windows":
+    elif IS_WIN:
         locker = WindowsLock()
         locker.get_lock()
         we_are_the_one = locker.locked_by_us
@@ -398,6 +407,16 @@ def we_are_the_one_and_only():
 
     else:
         logger.warning("Multi-instance checker "
-                       "not implemented for %s" % (_sys))
+                       "not implemented for %s" % (platform.system()))
         # lies, lies, lies...
         return True
+
+
+def release_lock():
+    """
+    Release the acquired lock.
+    """
+    if IS_WIN:
+        WindowsLock.release_all_locks()
+    elif IS_UNIX:
+        UnixLock.release_lock()

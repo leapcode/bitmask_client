@@ -19,9 +19,19 @@ TRANSLAT_DIR = data/translations
 #Project file, used for translations
 PROJFILE = data/bitmask.pro
 
-#UI files to compile
-UI_FILES = loggerwindow.ui mainwindow.ui wizard.ui login.ui preferences.ui eip_status.ui mail_status.ui eippreferences.ui advanced_key_management.ui
-#Qt resource files to compile
+# UI files to compile
+UI_FILES = \
+  loggerwindow.ui \
+  wizard.ui \
+  mainwindow.ui login.ui eip_status.ui mail_status.ui \
+  preferences.ui \
+    preferences_account_page.ui \
+    preferences_vpn_page.ui \
+    preferences_email_page.ui \
+    password_change.ui \
+    advanced_key_management.ui
+
+# Qt resource files to compile
 RESOURCES = icons.qrc flags.qrc locale.qrc loggerwindow.qrc
 
 #pyuic4 and pyrcc4 binaries
@@ -94,6 +104,20 @@ resource_graph:
 	#./pkg/scripts/monitor_resource.zsh `ps aux | grep app.py | head -1 | awk '{print $$2}'` $(RESOURCE_TIME)
 	./pkg/scripts/monitor_resource.zsh `pgrep bitmask` $(RESOURCE_TIME)
 	display bitmask-resources.png
+
+get_wheels:
+	pip install --upgrade setuptools
+	pip install --upgrade pip
+	pip install wheel
+
+gather_wheels:
+	pip wheel --wheel-dir=../wheelhouse pyzmq --build-option "--zmq=bundled"
+	# because fuck u1db externals, that's why...
+	pip wheel --wheel-dir=../wheelhouse --allow-external dirspec --allow-unverified dirspec --allow-external u1db --allow-unverified u1db -r pkg/requirements.pip
+
+install_wheel:
+	# if it's the first time, you'll need to get_wheels first
+	pip install --pre --use-wheel --no-index --find-links=../wheelhouse -r pkg/requirements.pip
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)

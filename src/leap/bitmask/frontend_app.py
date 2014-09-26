@@ -76,15 +76,24 @@ def run_frontend(options, flags_dict, backend_pid):
 
     qApp = QtGui.QApplication(sys.argv)
 
-    # To test:
-    # $ LANG=es ./app.py
-    locale = QtCore.QLocale.system().name()
-    qtTranslator = QtCore.QTranslator()
-    if qtTranslator.load("qt_%s" % locale, ":/translations"):
-        qApp.installTranslator(qtTranslator)
-    appTranslator = QtCore.QTranslator()
-    if appTranslator.load("%s.qm" % locale[:2], ":/translations"):
-        qApp.installTranslator(appTranslator)
+    # To test the app in other language you can do:
+    #     shell> LANG=es bitmask
+    # or in some rare case if the code above didn't work:
+    #     shell> LC_ALL=es LANG=es bitmask
+    locale = QtCore.QLocale.system().name()  # en_US, es_AR, ar_SA, etc
+    locale_short = locale[:2]  # en, es, ar, etc
+    rtl_languages = ('ar', )  # right now tested on 'arabic' only.
+
+    systemQtTranslator = QtCore.QTranslator()
+    if systemQtTranslator.load("qt_%s" % locale, ":/translations"):
+        qApp.installTranslator(systemQtTranslator)
+
+    bitmaskQtTranslator = QtCore.QTranslator()
+    if bitmaskQtTranslator.load("%s.qm" % locale_short, ":/translations"):
+        qApp.installTranslator(bitmaskQtTranslator)
+
+    if locale_short in rtl_languages:
+        qApp.setLayoutDirection(QtCore.Qt.LayoutDirection.RightToLeft)
 
     # Needed for initializing qsettings it will write
     # .config/leap/leap.conf top level app settings in a platform

@@ -22,6 +22,7 @@ import logging
 from leap.bitmask.config import flags
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
+from leap.bitmask.services.mail.emailfirewall import get_email_firewall
 
 from leap.common.events import events_pb2 as leap_events
 from leap.common.events import register as leap_register
@@ -211,6 +212,11 @@ class MailConductor(IMAPControl, SMTPControl):
         self._mail_connection = mail_connection.MailConnection()
 
         self._userid = None
+        try:
+            self._firewall = get_email_firewall()
+        except NotImplementedError:
+            self._firewall = None
+            logger.info("Email firewall is not implemented in this platform")
 
     @property
     def userid(self):
@@ -247,12 +253,25 @@ class MailConductor(IMAPControl, SMTPControl):
         self._smtp_machine = smtp
         self._smtp_machine.start()
 
+    def start_mail_service(self, download_if_needed=False, offline=False):
+        """
+        Start the IMAP and SMTP servcies.
+        """
+        if self._firewall is not None:
+            self._firewall.start()
+        if not offline:
+            logger.debug("not starting smtp in offline mode")
+            self.start_smtp_service(download_if_needed=download_if_needed)
+        self.start_imap_service()
+
     def stop_mail_services(self):
         """
         Stop the IMAP and SMTP services.
         """
         self.stop_imap_service()
         self.stop_smtp_service()
+        if self._firewall is not None:
+            self._firewall.stop()
 
     def connect_mail_signals(self, widget):
         """

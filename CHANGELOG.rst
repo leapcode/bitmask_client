@@ -6,6 +6,34 @@ History
 2014
 ====
 
+0.7.0 September 26 -- the "one time download, all time updates" release:
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+- Select current provider on EIP preferences. Closes #5815.
+- Handle logout correctly when we stop_services to launch the
+  wizard. Related to #5815.
+- Properly remove /tmp/bitmask.lock. Closes #5866.
+- Hide EIP Start button and display correct warning on missing helpers
+  files. Closes #5945.
+- Save default provider if changed on the combo box. Closes #5995.
+- Update the EIP status on provider change. Closes #5996.
+- Update and get ready to start a provider on change. Closes #5997.
+- Use python2 to run bitmask-root to work fine on systems with python3
+  as default. Closes #6048.
+- Use python2.7 in bitmask-root shebang since is the common name for
+  python 2 in Ubuntu, Debian, Arch. Related to #6048.
+- Remove dict comprenension in util, for 2.6 compat.
+- Login shall not wait for eip to finish if eip is not able to
+  start. Closes #5994
+- Properly send the token for querying the EIP certificate. Fixes
+  #6060.
+- Code cleanup and logging improvements.
+- Add email firewall blocking other users to access bitmask imap &
+  smtp. Closes #6040
+- Remove the Advanced Key Management since we don't support stable
+  mail yet. Closes #6087.
+- Single combined preferences window. Closes #4704, #4119, #5885.
+
 0.6.1 August 15 -- the "knock knock knocking on beta's door" release:
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 

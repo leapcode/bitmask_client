@@ -124,6 +124,12 @@ class EIPConductor(object):
         """
         self._backend.tear_fw_down()
 
+    def terminate(self):
+        """
+        Turn off VPN
+        """
+        self.qtsigs.do_disconnect_signal.emit()
+
     @QtCore.Slot()
     def _start_eip(self):
         """

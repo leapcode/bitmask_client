@@ -1,7 +1,7 @@
 [main]
 host = https://www.transifex.com
 
-[bitmask.bitmask]
+[bitmask.bitmask_client]
 
 file_filter = data/translations/<lang>.ts
 source_file = data/ts/en_US.ts
