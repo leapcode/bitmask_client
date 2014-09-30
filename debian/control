@@ -42,7 +42,10 @@ Depends:
   python-leap-common,
   leap-mail,
   soledad-client
-Recommends: xul-ext-bitmask
+
+# Let's skip the Thunderbird Extension, which is installed by default, until we do a public
+# mail release.
+# Recommends: xul-ext-bitmask
 Suggests: policykit-1-gnome
 Enhances: openvpn
 Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
