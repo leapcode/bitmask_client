@@ -54,6 +54,7 @@ from leap.bitmask.services.mail.smtpconfig import SMTPConfig
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
 from leap.bitmask.util import force_eval
+from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
 
 from leap.common import certs as leap_certs
 
@@ -638,6 +639,10 @@ class EIP(object):
         :param domain: the domain for the provider to check
         :type domain: str
         """
+        if not LinuxPolicyChecker.is_up():
+            logger.error("No polkit agent running.")
+            return False
+
         eip_config = eipconfig.EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
 

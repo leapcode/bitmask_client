@@ -263,8 +263,6 @@ class MainWindow(QtGui.QMainWindow):
         self.soledad_ready.connect(self._start_mail_service)
         # ################################ end Qt Signals connection ########
 
-        init_platform()
-
         self._wizard = None
         self._wizard_firstrun = False
 
@@ -275,6 +273,10 @@ class MainWindow(QtGui.QMainWindow):
         self._mail_conductor.connect_mail_signals(self._mail_status)
 
         self.logout.connect(self._mail_conductor.stop_mail_services)
+
+        if not init_platform():
+            self.quit()
+            return
 
         # start event machines from within the eip and mail conductors
 
