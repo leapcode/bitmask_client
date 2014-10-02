@@ -29,7 +29,6 @@ import sys
 
 from tuf.repository_tool import load_repository
 from tuf.repository_tool import import_rsa_privatekey_from_file
-from tuf.repository_tool import import_rsa_publickey_from_file
 
 """
 Days until the expiration of targets.json and snapshot.json. After this ammount
@@ -102,12 +101,34 @@ class Targets(object):
             recursive_walk=True,
             followlinks=True)
 
+        self._remove_obsolete_targets(target_list)
+
         for target in target_list:
             octal_file_permissions = oct(os.stat(target).st_mode)[3:]
             custom_file_permissions = {
                 'file_permissions': octal_file_permissions
             }
             self._repo.targets.add_target(target, custom_file_permissions)
+
+    def _remove_obsolete_targets(self, target_list):
+        """
+        Remove obsolete targets from TUF targets
+
+        :param target_list: list of targets on full path comming from TUF
+                            get_filepaths_in_directory
+        :type target_list: list(str)
+        """
+        targets_path = os.path.join(self._repo_path, 'targets')
+        relative_path_list = map(lambda t: t.split("/targets")[1], target_list)
+        removed_targets = (set(self._repo.targets.target_files.keys())
+                           - set(relative_path_list))
+
+        for target in removed_targets:
+            target_rel_path = target
+            if target[0] == '/':
+                target_rel_path = target[1:]
+            target_path = os.path.join(targets_path, target_rel_path)
+            self._repo.targets.remove_target(target_path)
 
 
 if __name__ == "__main__":
