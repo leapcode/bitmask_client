@@ -52,7 +52,8 @@ if __name__ == '__main__':
 
     # Source files
     includes = ["*.py"]
-    excludes = ['__init__.py', '_version.py', 'ui_*.py', '*_rc.py']
+    excludes = ['__init__.py', '_version.py', 'ui_*.py', '*_rc.py',
+                'pinned*.py', 'tests']
     sources = list_files(includes, excludes, SOURCE_ROOT)
     sources = " \\\n".join(["../{0}".format(f) for f in sources])
 
