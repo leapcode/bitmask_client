@@ -721,11 +721,6 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="232"/>
-        <source>Starting&#xe2;&#x80;&#xa6;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/leap/bitmask/gui/mail_status.py" line="308"/>
         <source>Initial sync in progress, please wait...</source>
         <translation type="unfinished"></translation>
