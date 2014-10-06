@@ -914,6 +914,8 @@ class Keymanager(object):
 
         keymanager = self._keymanager_proxy
         try:
+            # NOTE: parse_openpgp_ascii_key is not in keymanager anymore
+            #       the API for that will need some thinking 
             public_key, private_key = keymanager.parse_openpgp_ascii_key(
                 new_key)
         except (KeyAddressMismatch, KeyFingerprintMismatch) as e:
@@ -974,7 +976,7 @@ class Keymanager(object):
         """
         List all the keys stored in the local DB.
         """
-        keys = self._keymanager_proxy.get_all_keys_in_local_db()
+        keys = self._keymanager_proxy.get_all_keys()
         self._signaler.signal(self._signaler.keymanager_keys_list, keys)
 
     def get_key_details(self, username):
