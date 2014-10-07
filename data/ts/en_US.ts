@@ -117,11 +117,6 @@ Import canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="125"/>
-        <source>Are you sure that you want to replace the current key pair whith the imported?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="144"/>
         <source>Import Successful</source>
         <translation type="unfinished"></translation>
@@ -166,6 +161,11 @@ Export canceled.</source>
     <message>
         <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="110"/>
         <source>&lt;span style=&apos;color:#0000FF;&apos;&gt;NOTE&lt;/span&gt;: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="125"/>
+        <source>Are you sure that you want to replace the current key pair with the imported?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -379,11 +379,6 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/eip_status.py" line="746"/>
-        <source>We could not find any authentication agent in your system.&lt;br/&gt;Make sure you have&lt;b&gt;polkit-gnome-authentication-agent-1&lt;/b&gt; running andtry again.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="754"/>
         <source>We could not find &lt;b&gt;pkexec&lt;/b&gt; in your system.</source>
         <translation type="unfinished"></translation>
@@ -411,6 +406,11 @@ Export canceled.</source>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="734"/>
         <source>Encrypted Internet failed to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/eip_status.py" line="746"/>
+        <source>We could not find any authentication agent in your system.&lt;br/&gt;Make sure you have &lt;b&gt;polkit-gnome-authentication-agent-1&lt;/b&gt; running and try again.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1177,11 +1177,6 @@ Export canceled.</source>
     <message>
         <location filename="../src/leap/bitmask/gui/ui/preferences_email_page.ui" line="14"/>
         <source>Form</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/leap/bitmask/gui/ui/preferences_email_page.ui" line="26"/>
-        <source>PushButton</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
