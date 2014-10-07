@@ -8,3 +8,4 @@
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
+leap.keymanager>=0.4.0
