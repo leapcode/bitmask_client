@@ -121,7 +121,7 @@ class AdvancedKeyManagement(QtGui.QDialog):
 
         if file_name:
             question = self.tr("Are you sure that you want to replace "
-                               "the current key pair whith the imported?")
+                               "the current key pair with the imported?")
             res = QtGui.QMessageBox.question(
                 None, "Change key pair", question,
                 QtGui.QMessageBox.Yes | QtGui.QMessageBox.No,
