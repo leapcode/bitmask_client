@@ -1,7 +1,7 @@
 ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.7.0
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.6.1 of Bitmask,  the Internet Encryption  Toolkit,  codename
+version 0.7.0 of Bitmask,  the Internet Encryption  Toolkit,  codename
 "one time download, all time updates".
 
 https://downloads.leap.se/client/
@@ -107,6 +107,6 @@ beyond any border.
 
 The LEAP team,
 
-Setptember 26, 2014
+October 09, 2014
 Somewhere in the middle of the intertubes.
 EOF
