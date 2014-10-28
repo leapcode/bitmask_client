@@ -6,8 +6,8 @@ History
 2014
 ====
 
-0.7.0 September 26 -- the "one time download, all time updates" release:
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+0.7.0rc3 October 28 -- the "One window to rule them all, and in the darkness bind them." release:
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 - Select current provider on EIP preferences. Closes #5815.
 - Handle logout correctly when we stop_services to launch the
@@ -33,6 +33,9 @@ History
 - Remove the Advanced Key Management since we don't support stable
   mail yet. Closes #6087.
 - Single combined preferences window. Closes #4704, #4119, #5885.
+- Fix soledad imports (#5989).
+- Make pkg/tuf/release.py handle removals in the repo
+
 
 0.6.1 August 15 -- the "knock knock knocking on beta's door" release:
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
