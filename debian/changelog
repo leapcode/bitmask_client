@@ -1,6 +1,6 @@
-bitmask (0.7.0~rc1) UNRELEASED; urgency=medium
+bitmask (0.7.0~rc3) unstable; urgency=medium
 
-  * Release candidate for 0.7.0 
+  * Release candidate 3 for 0.7.0 
 
  -- Ben Carrillo <ben@futeisha.org>  Wed, 24 Sep 2014 13:33:49 -0500
 
