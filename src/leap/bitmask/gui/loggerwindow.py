@@ -225,7 +225,7 @@ class LoggerWindow(QtGui.QDialog):
 
         msg = self.tr("Sending logs to Pastebin failed!")
         if isinstance(failure, pastebin.PostLimitError):
-            msg = self.tr('Maximum posts per day reached')
+            msg = self.tr('Maximum amount of submissions reached for today.')
 
         # We save the dialog in an instance member to avoid dialog being
         # deleted right after we exit this method
