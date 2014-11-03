@@ -42,7 +42,6 @@ Depends:
   python-leap-common,
   leap-mail,
   soledad-client
-
 # Let's skip the Thunderbird Extension, which is installed by default, until we do a public
 # mail release.
 # Recommends: xul-ext-bitmask
