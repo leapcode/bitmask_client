@@ -148,7 +148,6 @@ class ProviderBootstrapper(AbstractBootstrapper):
                                     timeout=REQUEST_TIMEOUT)
             res.raise_for_status()
         except requests.exceptions.SSLError as exc:
-            logger.exception(exc)
             self._err_msg = self.tr("Provider certificate could "
                                     "not be verified")
             raise
@@ -156,7 +155,6 @@ class ProviderBootstrapper(AbstractBootstrapper):
             # XXX careful!. The error might be also a SSL handshake
             # timeout error, in which case we should retry a couple of times
             # more, for cases where the ssl server gives high latencies.
-            logger.exception(exc)
             self._err_msg = self.tr("Provider does not support HTTPS")
             raise
 
