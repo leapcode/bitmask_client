@@ -1,1 +1,0 @@
-- Remove dict comprenension in util, for 2.6 compat.

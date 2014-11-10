@@ -1,8 +1,8 @@
-ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.6.1
+ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.7.0rc3
 
 The LEAP  team is  pleased to announce  the immediate  availability of
-version 0.6.1 of Bitmask,  the Internet Encryption  Toolkit,  codename
-"knock knock knocking on beta's door".
+version 0.7.0rc3 of Bitmask, the Internet Encryption Toolkit, codename
+"One window to rule them all, and in the darkness bind them."
 
 https://downloads.leap.se/client/
 
@@ -34,16 +34,14 @@ NOT trust your life to it.
 
 WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
 
-Bitmask 0.6.1  is the new stable  version of the client  after the big
-refactor,  with  a  little face  lift  of  the  UI  while we  were  at
-it. Encrypted  Email is still not  stable though, so don't  use it for
-high security. Encrypted Internet is  the first service we are calling
-stable, although  its security level is  just a bit higher  than plain
-OpenVPN, so  use accordingly. You can  refer to the CHANGELOG  for the
-meat.
+Bitmask 0.7.0 brings with tremendous  joy automatic and secure updates
+through  The Update  Framework. Right  beside TUF  there are  some bug
+fixes and a new settings panel.
 
-Encrypted Internet on  Linux now  avoids leaking  traffic  outside  of
-the secure  connection it establishes. This  will  be  added to  other
+You can read more about TUF in http://theupdateframework.com/
+
+Encrypted  Internet on  Linux avoids  leaking traffic  outside of  the
+secure  connection  it  establishes.  This  will  be  added  to  other
 platforms in the future.
 
 The Encrypted Mail services will run local SMTP and IMAP proxies that,
@@ -90,7 +88,7 @@ You can send the bugs our way  by pointing your telnet session to port
 our intensive bug-reeducation program.
 
 
-LINUX  ONLY:   If   you  ever run  into the situation  where you cannot 
+LINUX  ONLY:   If   you  ever run  into the situation  where you cannot
 access  internet, open  the  terminal  and  run the  following  command:
 
 $ pkexec /usr/local/sbin/bitmask-root firewall stop
@@ -109,6 +107,6 @@ beyond any border.
 
 The LEAP team,
 
-August 15, 2014
+October 28, 2014
 Somewhere in the middle of the intertubes.
 EOF

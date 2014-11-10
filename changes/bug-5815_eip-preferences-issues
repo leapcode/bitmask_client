@@ -1,2 +1,0 @@
-- Select current provider on EIP preferences. Closes #5815.
-- Handle logout correctly when we stop_services to launch the wizard. Related to #5815.

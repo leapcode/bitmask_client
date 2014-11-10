@@ -1,8 +1,10 @@
-bitmask (0.7.0~rc1) UNRELEASED; urgency=medium
+bitmask (0.7.0~rc4) UNRELEASED; urgency=medium
 
-  * Release candidate for 0.7.0 
+  * Release candidate 4 for 0.7.0 
+  * Fixes for #6219 and #6133
 
- -- Ben Carrillo <ben@futeisha.org>  Wed, 24 Sep 2014 13:33:49 -0500
+ -- Ben Carrillo <ben@futeisha.org>  Mon, 10 Nov 2014 16:03:26 +0100
+
 
 bitmask (0.6.1.2) unstable; urgency=medium
 
