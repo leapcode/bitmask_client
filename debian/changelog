@@ -1,10 +1,9 @@
 bitmask (0.7.0~rc4) UNRELEASED; urgency=medium
 
   * Release candidate 4 for 0.7.0 
-  * Fixes for #6219 and #6133
+  * Workarounds for #6219 and #6133
 
  -- Ben Carrillo <ben@futeisha.org>  Mon, 10 Nov 2014 16:03:26 +0100
-
 
 bitmask (0.6.1.2) unstable; urgency=medium
 
