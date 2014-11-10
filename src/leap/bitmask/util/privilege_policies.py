@@ -179,6 +179,7 @@ class LinuxPolicyChecker(PolicyChecker):
             'ps aux | grep "polkit-[k]de-authentication-agent-1"',
             'ps aux | grep "polkit-[m]ate-authentication-agent-1"',
             'ps aux | grep "[l]xpolkit"',
+            'ps aux | grep "[l]xsession"',
             'ps aux | grep "[g]nome-shell"',
             'ps aux | grep "[f]ingerprint-polkit-agent"',
         ]
