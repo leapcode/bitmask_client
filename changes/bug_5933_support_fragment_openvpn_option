@@ -1,0 +1,1 @@
+- Allow the server to set a custom --fragment openvpn option (#5933)
