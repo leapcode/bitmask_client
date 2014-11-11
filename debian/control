@@ -32,7 +32,7 @@ Depends:
   python-xdg,
   python-jsonschema (>= 0.7.0),
 # temporal pinning until libsodium is in debian
-  python-zmq (>= 14.3.1-2),
+  python-zmq (>= 14.4.1-1.1),
   python-setuptools,
   openvpn,
   python-pyside.qtcore, 
