@@ -96,7 +96,8 @@ ALLOWED_FLAGS = {
     "--management-client-user": ["USER"],
     "--cert": ["FILE"],
     "--key": ["FILE"],
-    "--ca": ["FILE"]
+    "--ca": ["FILE"],
+    "--fragment": ["NUMBER"]
 }
 
 PARAM_FORMATS = {

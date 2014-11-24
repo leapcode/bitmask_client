@@ -34,7 +34,6 @@ from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 
 from leap.bitmask.config import flags
-from leap.bitmask.config.leapsettings import LeapSettings
 
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.eip_status import EIPStatusWidget
@@ -52,9 +51,6 @@ from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
 from leap.bitmask.platform_init import locks
 from leap.bitmask.platform_init.initializers import init_platform
 from leap.bitmask.platform_init.initializers import init_signals
-
-from leap.bitmask.backend.backend_proxy import BackendProxy
-from leap.bitmask.backend.leapsignaler import LeapSignaler
 
 from leap.bitmask.services.eip import conductor as eip_conductor
 from leap.bitmask.services.mail import conductor as mail_conductor
@@ -144,7 +140,8 @@ class MainWindow(QtGui.QMainWindow):
         # Qt Signal Connections #####################################
         # TODO separate logic from ui signals.
 
-        self.app.service_selection_changed.connect(self._update_eip_enabled_status)
+        self.app.service_selection_changed.connect(
+            self._update_eip_enabled_status)
         self._login_widget.login.connect(self._login)
         self._login_widget.cancel_login.connect(self._cancel_login)
         self._login_widget.logout.connect(self._logout)
@@ -210,7 +207,11 @@ class MainWindow(QtGui.QMainWindow):
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._launch_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
-        self.ui.action_help.triggered.connect(self._help)
+
+        # XXX hide the help menu since it only shows email information and
+        # right now we don't have stable mail and just confuses users.
+        self.ui.action_help.setVisible(False)
+        # self.ui.action_help.triggered.connect(self._help)
 
         self.ui.action_create_new_account.triggered.connect(
             self._on_provider_changed)
@@ -600,10 +601,12 @@ class MainWindow(QtGui.QMainWindow):
             self._backend_cannot_start_eip()
             return
 
-        if not EIP_SERVICE in self.app.settings.get_enabled_services(domain):
+        if EIP_SERVICE not in self.app.settings.get_enabled_services(domain):
             self._eip_conductor.terminate()
+
             def hide():
-              self.app.backend.eip_can_start(domain=domain)
+                self.app.backend.eip_can_start(domain=domain)
+
             QtDelayedCall(100, hide)
             # ^^ VERY VERY Hacky, but with the simple state machine,
             # there is no way to signal 'disconnect and then disable'
@@ -614,7 +617,6 @@ class MainWindow(QtGui.QMainWindow):
                 self._backend.eip_setup(provider=domain, skip_network=True)
             # check if EIP can start (will trigger widget update)
             self.app.backend.eip_can_start(domain=domain)
-
 
     def _backend_can_start_eip(self):
         """
@@ -1007,22 +1009,22 @@ class MainWindow(QtGui.QMainWindow):
         today = datetime.now().date()
         greet = ("Happy New 1984!... or not ;)<br><br>"
                  if today.month == 1 and today.day < 15 else "")
-        QtGui.QMessageBox.about(
-            self, self.tr("About Bitmask - %s") % (VERSION,),
-            self.tr("Version: <b>%s</b> (%s)<br>"
-                    "<br>%s"
-                    "Bitmask is the Desktop client application for "
-                    "the LEAP platform, supporting encrypted internet "
-                    "proxy, secure email, and secure chat (coming soon).<br>"
-                    "<br>"
-                    "LEAP is a non-profit dedicated to giving "
-                    "all internet users access to secure "
-                    "communication. Our focus is on adapting "
-                    "encryption technology to make it easy to use "
-                    "and widely available. <br>"
-                    "<br>"
-                    "<a href='https://leap.se'>More about LEAP"
-                    "</a>") % (VERSION, VERSION_HASH[:10], greet))
+        title = self.tr("About Bitmask - %s") % (VERSION,)
+        msg = self.tr(
+            "Version: <b>{ver}</b> ({ver_hash})<br>"
+            "<br>{greet}"
+            "Bitmask is the Desktop client application for the LEAP "
+            "platform, supporting encrypted internet proxy.<br>"
+            # "Secure email is comming soon.<br>"
+            "<br>"
+            "LEAP is a non-profit dedicated to giving all internet users "
+            "access to secure communication. Our focus is on adapting "
+            "encryption technology to make it easy to use and widely "
+            "available.<br>"
+            "<br>"
+            "<a href='https://leap.se'>More about LEAP</a>")
+        msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10], greet=greet)
+        QtGui.QMessageBox.about(self, title, msg)
 
     @QtCore.Slot()
     def _help(self):

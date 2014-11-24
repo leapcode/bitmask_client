@@ -6,8 +6,8 @@ History
 2014
 ====
 
-0.7.0rc3 October 28 -- the "One window to rule them all, and in the darkness bind them." release:
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+0.7.0rc5 November 14 -- the "One window to rule them all, and in the darkness bind them." release:
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 - Select current provider on EIP preferences. Closes #5815.
 - Handle logout correctly when we stop_services to launch the
@@ -35,7 +35,9 @@ History
 - Single combined preferences window. Closes #4704, #4119, #5885.
 - Fix soledad imports (#5989).
 - Make pkg/tuf/release.py handle removals in the repo
-
+- Remove instructions/references of mail from the client. Closes #6140.
+- Add support for the internal LXDE polkit agent. Closes #6043.
+- Allow the server to set a custom --fragment openvpn option (#5933)
 
 0.6.1 August 15 -- the "knock knock knocking on beta's door" release:
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
