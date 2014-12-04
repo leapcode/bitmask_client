@@ -906,52 +906,6 @@ class Keymanager(object):
         # NOTE: This feature is disabled right now since is dangerous
         return
 
-        new_key = ''
-        signal = None
-        try:
-            with open(filename, 'r') as keys_file:
-                new_key = keys_file.read()
-        except IOError as e:
-            logger.error("IOError importing key. {0!r}".format(e))
-            signal = self._signaler.keymanager_import_ioerror
-            self._signaler.signal(signal)
-            return
-
-        keymanager = self._keymanager_proxy
-        try:
-            # NOTE: parse_openpgp_ascii_key is not in keymanager anymore
-            #       the API for that will need some thinking 
-            public_key, private_key = keymanager.parse_openpgp_ascii_key(
-                new_key)
-        except (KeyAddressMismatch, KeyFingerprintMismatch) as e:
-            logger.error(repr(e))
-            signal = self._signaler.keymanager_import_datamismatch
-            self._signaler.signal(signal)
-            return
-
-        if public_key is None or private_key is None:
-            signal = self._signaler.keymanager_import_missingkey
-            self._signaler.signal(signal)
-            return
-
-        current_public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
-        if public_key.address != current_public_key.address:
-            logger.error("The key does not match the ID")
-            signal = self._signaler.keymanager_import_addressmismatch
-            self._signaler.signal(signal)
-            return
-
-        keymanager.delete_key(self._key)
-        keymanager.delete_key(self._key_priv)
-        keymanager.put_key(public_key)
-        keymanager.put_key(private_key)
-        keymanager.send_key(openpgp.OpenPGPKey)
-
-        logger.debug('Import ok')
-        signal = self._signaler.keymanager_import_ok
-
-        self._signaler.signal(signal)
-
     def export_keys(self, username, filename):
         """
         Export the given username's keys to a file.
@@ -963,35 +917,50 @@ class Keymanager(object):
         """
         keymanager = self._keymanager_proxy
 
-        public_key = keymanager.get_key(username, openpgp.OpenPGPKey)
-        private_key = keymanager.get_key(username, openpgp.OpenPGPKey,
-                                         private=True)
-        try:
+        def export(keys):
+            public_key, private_key = keys
+            # XXX: This is blocking. We could use writeToFD, but is POSIX only
+            #      https://twistedmatrix.com/documents/current/api/twisted.internet.fdesc.html#writeToFD
             with open(filename, 'w') as keys_file:
                 keys_file.write(public_key.key_data)
                 keys_file.write(private_key.key_data)
 
             logger.debug('Export ok')
             self._signaler.signal(self._signaler.keymanager_export_ok)
-        except IOError as e:
-            logger.error("IOError exporting key. {0!r}".format(e))
+
+        def log_error(failure):
+            logger.error(
+                "Error exporting key. {0!r}".format(failure.value))
             self._signaler.signal(self._signaler.keymanager_export_error)
+
+        dpub = keymanager.get_key(username, openpgp.OpenPGPKey)
+        dpriv = keymanager.get_key(username, openpgp.OpenPGPKey,
+                                   private=True)
+        d = defer.gatherResults([dpub, dpriv])
+        d.addCallback(export)
+        d.addErrback(log_error)
 
     def list_keys(self):
         """
         List all the keys stored in the local DB.
         """
-        keys = self._keymanager_proxy.get_all_keys()
-        self._signaler.signal(self._signaler.keymanager_keys_list, keys)
+        d = self._keymanager_proxy.get_all_keys()
+        d.addCallback(
+            lambda keys:
+            self._signaler.signal(self._signaler.keymanager_keys_list, keys))
 
     def get_key_details(self, username):
         """
         List all the keys stored in the local DB.
         """
-        public_key = self._keymanager_proxy.get_key(username,
-                                                    openpgp.OpenPGPKey)
-        details = (public_key.key_id, public_key.fingerprint)
-        self._signaler.signal(self._signaler.keymanager_key_details, details)
+        def signal_details(public_key):
+            details = (public_key.key_id, public_key.fingerprint)
+            self._signaler.signal(self._signaler.keymanager_key_details,
+                                  details)
+
+        d = self._keymanager_proxy.get_key(username,
+                                           openpgp.OpenPGPKey)
+        d.addCallback(signal_details)
 
 
 class Mail(object):
