@@ -19,6 +19,7 @@ Pinned Providers
 """
 import logging
 
+from leap.bitmask.provider import pinned_calyx
 from leap.bitmask.provider import pinned_demobitmask
 from leap.bitmask.provider import pinned_riseup
 
@@ -35,6 +36,10 @@ class PinnedProviders(object):
     PREFERRED_PROVIDER = pinned_demobitmask.DOMAIN
 
     PROVIDERS = {
+        pinned_calyx.DOMAIN: {
+            CONFIG_KEY: pinned_calyx.PROVIDER_JSON,
+            CACERT_KEY: pinned_calyx.CACERT_PEM,
+        },
         pinned_demobitmask.DOMAIN: {
             CONFIG_KEY: pinned_demobitmask.PROVIDER_JSON,
             CACERT_KEY: pinned_demobitmask.CACERT_PEM,

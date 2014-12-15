@@ -216,7 +216,7 @@ class EIPConfig(ServiceConfig):
     """
     _service_name = "eip"
 
-    OPENVPN_ALLOWED_KEYS = ("auth", "cipher", "tls-cipher")
+    OPENVPN_ALLOWED_KEYS = ("auth", "cipher", "tls-cipher", "fragment")
     OPENVPN_CIPHERS_REGEX = re.compile("[A-Z0-9\-]+")
 
     def __init__(self):
@@ -255,6 +255,11 @@ class EIPConfig(ServiceConfig):
 
         These are sanitized with alphanumeric whitelist.
 
+        NOTE: some openvpn config option don't take a value, but
+        this method currently requires that every option has a value.
+        Also, this does not yet work with values with spaces, like
+        `keepalive 10 30`
+
         :returns: openvpn configuration dict
         :rtype: C{dict}
         """
@@ -262,7 +267,7 @@ class EIPConfig(ServiceConfig):
         config = {}
         for key, value in ovpncfg.items():
             if key in self.OPENVPN_ALLOWED_KEYS and value is not None:
-                sanitized_val = self.OPENVPN_CIPHERS_REGEX.findall(value)
+                sanitized_val = self.OPENVPN_CIPHERS_REGEX.findall(str(value))
                 if len(sanitized_val) != 0:
                     _val = sanitized_val[0]
                     config[str(key)] = str(_val)

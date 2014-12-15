@@ -201,7 +201,8 @@ class ProviderConfig(BaseConfig):
             leap_check(cert_exists, error_msg, MissingCACert)
             logger.debug("Going to verify SSL against %s" % (cert_path,))
 
-        return cert_path
+        # OpenSSL does not handle unicode.
+        return cert_path.encode('utf-8')
 
     def provides_eip(self):
         """
