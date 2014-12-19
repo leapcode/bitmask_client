@@ -28,6 +28,7 @@ import time
 import zmq
 
 from leap.bitmask.backend.api import API, STOP_REQUEST, PING_REQUEST
+from leap.bitmask.backend.utils import generate_zmq_certificates_if_needed
 from leap.bitmask.backend.utils import get_backend_certificates
 
 import logging
@@ -49,6 +50,8 @@ class BackendProxy(object):
     PING_INTERVAL = 2  # secs
 
     def __init__(self):
+        generate_zmq_certificates_if_needed()
+
         self._socket = None
 
         # initialize ZMQ stuff:

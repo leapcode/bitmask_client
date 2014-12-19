@@ -288,7 +288,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         if self._first_run():
             self._wizard_firstrun = True
-            self._disconnect_and_untrack()
+            self.disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
                                   leap_signaler=self._leap_signaler)
             # Give this window time to finish init and then show the wizard

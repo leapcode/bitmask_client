@@ -22,7 +22,7 @@ import multiprocessing
 import signal
 
 from leap.bitmask.backend.leapbackend import LeapBackend
-from leap.bitmask.backend.utils import generate_certificates
+from leap.bitmask.backend.utils import generate_zmq_certificates
 from leap.bitmask.logs.utils import create_logger
 from leap.bitmask.util import dict_to_flags
 
@@ -55,6 +55,10 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     :param flags_dict: a dict containing the flag values set on app start.
     :type flags_dict: dict
     """
+    # The backend is the one who always creates the certificates. Either if it
+    # is run separately or in a process in the same app as the frontend.
+    generate_zmq_certificates()
+
     # ignore SIGINT since app.py takes care of signaling SIGTERM to us.
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -69,5 +73,4 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
 
 if __name__ == '__main__':
     logger = create_logger(debug=True)
-    generate_certificates()
     run_backend()

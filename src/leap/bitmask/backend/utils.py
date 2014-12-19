@@ -17,6 +17,7 @@
 """
 Backend utilities to handle ZMQ certificates.
 """
+import logging
 import os
 import shutil
 import stat
@@ -26,10 +27,12 @@ import zmq.auth
 from leap.bitmask.util import get_path_prefix
 from leap.common.files import mkdir_p
 
+logger = logging.getLogger(__name__)
+
 KEYS_DIR = os.path.join(get_path_prefix(), 'leap', 'zmq_certificates')
 
 
-def generate_certificates():
+def generate_zmq_certificates():
     """
     Generate client and server CURVE certificate files.
     """
@@ -62,3 +65,24 @@ def get_backend_certificates(base_dir='.'):
     backend_secret_file = os.path.join(KEYS_DIR, "backend.key_secret")
     public, secret = zmq.auth.load_certificate(backend_secret_file)
     return public, secret
+
+
+def _certificates_exist():
+    """
+    Return whether there are certificates in place or not.
+
+    :rtype: bool
+    """
+    frontend_secret_file = os.path.join(KEYS_DIR, "frontend.key_secret")
+    backend_secret_file = os.path.join(KEYS_DIR, "backend.key_secret")
+    return os.path.isfile(frontend_secret_file) and \
+        os.path.isfile(backend_secret_file)
+
+
+def generate_zmq_certificates_if_needed():
+    """
+    Generate the needed ZMQ certificates for backend/frontend communication if
+    needed.
+    """
+    if not _certificates_exist():
+        generate_zmq_certificates()

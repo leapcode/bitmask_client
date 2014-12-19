@@ -45,7 +45,6 @@ import sys
 
 
 from leap.bitmask.backend.backend_proxy import BackendProxy
-from leap.bitmask.backend.utils import generate_certificates
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config import flags
@@ -179,13 +178,8 @@ def start_app():
 
     logger.info('Starting app')
 
-    backend = BackendProxy()
-    backend_running = backend.check_online()
-
+    backend_running = BackendProxy().check_online()
     logger.debug("Backend online: {0}".format(backend_running))
-
-    if not backend_running:
-        generate_certificates()
 
     flags_dict = flags_to_dict()
 
