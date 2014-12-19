@@ -127,7 +127,9 @@ def start_app():
     }
 
     flags.STANDALONE = opts.standalone
-    flags.OFFLINE = opts.offline
+    # XXX Disabled right now since it's not tested after login refactor
+    # flags.OFFLINE = opts.offline
+    flags.OFFLINE = False
     flags.MAIL_LOGFILE = opts.mail_log_file
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
