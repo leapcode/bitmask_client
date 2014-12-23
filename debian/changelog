@@ -1,6 +1,6 @@
-bitmask (0.7.0~rc5) UNRELEASED; urgency=medium
+bitmask (0.7.0) unstable; urgency=medium
 
-  * Release candidate 5 for 0.7.0 
+  * Update to 0.7.0 release
   * Workarounds for #6219 and #6133
   * Bump python-zmq package requirement to use leap
     provided build against libsodium
