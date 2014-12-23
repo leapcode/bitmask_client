@@ -51,7 +51,7 @@ cmdcheck = subprocess.check_output
 # CONSTANTS
 #
 
-VERSION = "3"
+VERSION = "4"
 SCRIPT = "bitmask-root"
 NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
