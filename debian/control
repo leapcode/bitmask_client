@@ -25,6 +25,7 @@ Depends:
   python-keyring (>= 0.9.2),
   python-srp,
   python-dateutil,
+  python-daemon,
   python-argparse,
   python-psutil,
   python-netifaces,
