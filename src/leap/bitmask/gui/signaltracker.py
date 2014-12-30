@@ -14,8 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 from PySide import QtCore
+
+logger = logging.getLogger(__name__)
 
 
 class SignalTracker(QtCore.QObject):
@@ -39,6 +42,10 @@ class SignalTracker(QtCore.QObject):
         :param method: the method to call when the signal is triggered.
         :type method: callable, Slot or Signal
         """
+        if (signal, method) in self._connected_signals:
+            logger.warning("Signal already connected.")
+            return
+
         self._connected_signals.append((signal, method))
         signal.connect(method)
 
@@ -49,7 +56,9 @@ class SignalTracker(QtCore.QObject):
         for signal, method in self._connected_signals:
             try:
                 signal.disconnect(method)
-            except RuntimeError:
-                pass  # Signal was not connected
+            except (TypeError, RuntimeError) as e:
+                # most likely the signal was not connected
+                logger.warning("Disconnect error: {0!r}".format(e))
+                logger.warning("Signal: {0!r} -> {1!r}".format(signal, method))
 
         self._connected_signals = []

@@ -288,7 +288,11 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         if self._first_run():
             self._wizard_firstrun = True
-            self.disconnect_and_untrack()
+
+            # HACK FIX: disconnection of signals triggers a reconnection later
+            # chich segfaults on wizard quit
+            # self.disconnect_and_untrack()
+
             self._wizard = Wizard(backend=self._backend,
                                   leap_signaler=self._leap_signaler)
             # Give this window time to finish init and then show the wizard
@@ -341,6 +345,8 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         conntrack = self.connect_and_track
         # XXX does this goes in here? this will be triggered when the login or
         # wizard requests provider data
+
+        # XXX - here segfaults if we did a disconnect_and_untrack
         conntrack(sig.prov_check_api_certificate, self._get_provider_details)
         conntrack(sig.prov_get_details, self._provider_get_details)
 
@@ -417,7 +423,11 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # This happens if the user finishes the provider
             # setup but does not register
             self._wizard = None
-            self._backend_connect(only_tracked=True)
+
+            # HACK FIX: disconnection of signals triggers a reconnection later
+            # chich segfaults on wizard quit
+            # self._backend_connect(only_tracked=True)
+
             if self._wizard_firstrun:
                 self._finish_init()
 
@@ -433,7 +443,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         there.
         """
         if self._wizard is None:
-            self.disconnect_and_untrack()
+            # HACK FIX: disconnection of signals triggers a reconnection later
+            # chich segfaults on wizard quit
+            # self.disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
                                   leap_signaler=self._leap_signaler)
             self._wizard.accepted.connect(self._finish_init)
@@ -764,7 +776,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                 self.eip_needs_login.emit()
 
             self._wizard = None
-            self._backend_connect(only_tracked=True)
+            # HACK FIX: disconnection of signals triggers a reconnection later
+            # chich segfaults on wizard quit
+            # self._backend_connect(only_tracked=True)
         else:
             domain = self._settings.get_provider()
             if domain is not None:
