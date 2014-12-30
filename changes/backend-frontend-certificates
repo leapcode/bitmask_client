@@ -1,0 +1,3 @@
+- Allow frontend and backend to be run separately. Closes #5873.
+- Reduce the wait for running threads timeout on quit.
+- Create zmq certificates if they don't exist.
