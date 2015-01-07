@@ -51,7 +51,29 @@ cmdcheck = subprocess.check_output
 # CONSTANTS
 #
 
-VERSION = "4"
+
+def get_no_group_name():
+    """
+    Return the right group name to use for the current OS.
+    Examples:
+        - Ubuntu: nogroup
+        - Arch: nobody
+
+    :rtype: str or None
+    """
+    import grp
+    try:
+        grp.getgrnam('nobody')
+        return 'nobody'
+    except KeyError:
+        try:
+            grp.getgrnam('nogroup')
+            return 'nogroup'
+        except KeyError:
+            return None
+
+
+VERSION = "5"
 SCRIPT = "bitmask-root"
 NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
@@ -68,7 +90,7 @@ IPTABLES = "/sbin/iptables"
 IP6TABLES = "/sbin/ip6tables"
 
 OPENVPN_USER = "nobody"
-OPENVPN_GROUP = "nogroup"
+OPENVPN_GROUP = get_no_group_name()
 LEAPOPENVPN = "LEAPOPENVPN"
 OPENVPN_SYSTEM_BIN = "/usr/sbin/openvpn"  # Debian location
 OPENVPN_LEAP_BIN = "/usr/local/sbin/leap-openvpn"  # installed by bundle
@@ -83,9 +105,11 @@ FIXED_FLAGS = [
     "--management-signal",
     "--script-security", "1",
     "--user", "nobody",
-    "--group", "nogroup",
     "--remap-usr1", "SIGTERM",
 ]
+
+if OPENVPN_GROUP is not None:
+    FIXED_FLAGS.extend(["--group", OPENVPN_GROUP])
 
 ALLOWED_FLAGS = {
     "--remote": ["IP", "NUMBER", "PROTO"],
