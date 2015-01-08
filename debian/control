@@ -41,7 +41,7 @@ Depends:
   python-pyside.qtsvg,
   python-twisted-core,
   python-leap-common,
-  leap-mail,
+  leap-mail (>= 0.3.11),
   soledad-client
 # Let's skip the Thunderbird Extension, which is installed by default, until we do a public
 # mail release.
