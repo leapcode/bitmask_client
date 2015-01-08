@@ -561,6 +561,14 @@ class SRPAuth(object):
 
             self._reset_session()
 
+            # FIXME ---------------------------------------------------------
+            # 1. it makes no sense to defer each callback to a thread
+            # 2. the decision to use threads should be at another level.
+            #    (although it's not really needed, that was a hack around
+            #    the gui blocks)
+            #    it makes very hard to test this. The  __impl could be
+            #    separated and decoupled from the provider_config abstraction.
+
             d = threads.deferToThread(self._authentication_preprocessing,
                                       username=username,
                                       password=password)
@@ -736,6 +744,8 @@ class SRPAuth(object):
         :type username: str
         :param password: password for this user
         :type password: str
+        :returns: a Deferred that will fire when the authentication is done
+        :rtype: Deferred
         """
         username = username.lower()
         d = self.__instance.authenticate(username, password)

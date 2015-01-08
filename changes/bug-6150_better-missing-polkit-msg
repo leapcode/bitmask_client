@@ -1,0 +1,1 @@
+- Do not allow Bitmask to start if there is no polkit agent running. Closes #6150.

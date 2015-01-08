@@ -18,6 +18,7 @@
 Daemonizes polkit authentication agent.
 """
 import logging
+import os
 import subprocess
 
 import daemon
@@ -30,21 +31,52 @@ BASE_PATH_KDE = "/usr/lib/kde4/libexec/"
 GNO_PATH = BASE_PATH_GNO + AUTH_FILE % ("gnome",)
 KDE_PATH = BASE_PATH_KDE + AUTH_FILE % ("kde",)
 
+POLKIT_PATHS = {
+    '/usr/lib/lxpolkit/lxpolkit',
+    '/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1',
+    '/usr/lib/mate-polkit/polkit-mate-authentication-agent-1',
+    '/usr/lib/kde4/libexec/polkit-kde-authentication-agent-1',
+}
+
+
+def _get_polkit_agent():
+    """
+    Return a valid polkit agent to use.
+
+    :rtype: str or None
+    """
+    # TODO: in caso of having more than one polkit agent we may want to
+    # stablish priorities. E.g.: lxpolkit over gnome-polkit for minimalistic
+    # desktops.
+    for polkit in POLKIT_PATHS:
+        if os.path.isfile(polkit):
+            return polkit
+
+    return None
+
 
 def _launch_agent():
+    """
+    Launch a polkit authentication agent on a subprocess.
+    """
+    polkit_agent = _get_polkit_agent()
+
+    if polkit_agent is None:
+        logger.erro("No usable polkit was found.")
+        return
+
     logger.debug('Launching polkit auth agent')
     try:
-        subprocess.call(GNO_PATH)
-    except Exception as exc:
-        logger.error('Exception while running polkit authentication agent '
-                     '%s' % (exc,))
         # XXX fix KDE launch. See: #3755
-        # try:
-        #     subprocess.call(KDE_PATH)
-        # except Exception as exc:
+        subprocess.call(polkit_agent)
+    except Exception as e:
+        logger.error('Error launching polkit authentication agent %r' % (e, ))
 
 
 def launch():
+    """
+    Launch a polkit authentication agent as a daemon.
+    """
     with daemon.DaemonContext():
         _launch_agent()
 

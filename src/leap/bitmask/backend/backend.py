@@ -135,7 +135,7 @@ class Backend(object):
         i.e.:
             use threads.deferToThread(this_method) instead of this_method()
         """
-        wait_max = 5  # seconds
+        wait_max = 3  # seconds
         wait_step = 0.5
         wait = 0
         while self._ongoing_defers and wait < wait_max:

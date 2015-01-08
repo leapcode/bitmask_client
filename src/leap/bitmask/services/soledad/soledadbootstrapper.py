@@ -276,13 +276,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
                     server_url, cert_file, token)
                 logger.debug("Soledad has been initialized.")
                 return
-            except Exception:
+            except Exception as exc:
                 init_tries += 1
                 msg = "Init failed, retrying... (retry {0} of {1})".format(
                     init_tries, self.MAX_INIT_RETRIES)
                 logger.warning(msg)
                 continue
 
+        logger.exception(exc)
         raise SoledadInitError()
 
     def load_and_sync_soledad(self, uuid=None, offline=False):

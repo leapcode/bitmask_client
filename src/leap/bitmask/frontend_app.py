@@ -54,7 +54,7 @@ def signal_handler(window, pid, signum, frame):
         window.quit()
 
 
-def run_frontend(options, flags_dict, backend_pid):
+def run_frontend(options, flags_dict, backend_pid=None):
     """
     Run the GUI for the application.
 

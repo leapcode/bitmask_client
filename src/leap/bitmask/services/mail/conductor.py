@@ -207,6 +207,8 @@ class MailConductor(IMAPControl, SMTPControl):
         IMAPControl.__init__(self)
         SMTPControl.__init__(self)
 
+        self._mail_services_started = False
+
         self._backend = backend
         self._mail_machine = None
         self._mail_connection = mail_connection.MailConnection()
@@ -264,10 +266,16 @@ class MailConductor(IMAPControl, SMTPControl):
             self.start_smtp_service(download_if_needed=download_if_needed)
         self.start_imap_service()
 
+        self._mail_services_started = True
+
     def stop_mail_services(self):
         """
         Stop the IMAP and SMTP services.
         """
+        if not self._mail_services_started:
+            logger.debug("Mail services not started.")
+            return
+
         self.stop_imap_service()
         self.stop_smtp_service()
         if self._firewall is not None:

@@ -56,19 +56,24 @@ init_signals = InitSignals()
 
 def init_platform():
     """
-    Return the right initializer for the platform we are running in, or
-    None if no proper initializer is found
+    Run the right initializer for the platform we are running in.
+
+    :return: whether the initializacion succeeded or not.
+    :rtype: bool
     """
     initializer = None
+    ok = False
     try:
         initializer = globals()[_system + "Initializer"]
     except:
         pass
     if initializer:
-        logger.debug("Running initializer for %s" % (platform.system(),))
-        initializer()
+        logger.debug("Running initializer for %s" % (_system, ))
+        ok = initializer()
     else:
-        logger.debug("Initializer not found for %s" % (platform.system(),))
+        logger.debug("Initializer not found for %s" % (_system, ))
+
+    return ok
 
 
 #
@@ -180,6 +185,38 @@ def check_missing():
     # missing.
     if missing_some and not alert_missing and not complain_missing:
         init_signals.eip_missing_helpers.emit()
+
+
+def check_polkit():
+    """
+    Check if we have a running polkit agent and tries to launch an agent if
+    needed.
+    Show an error message if there is no agent and we couldn't run one.
+
+    :return: True if we have a polkit running (or if we started one), False
+             otherwise
+    :rtype: bool
+    """
+    if LinuxPolicyChecker.is_up():
+        return True
+
+    try:
+        LinuxPolicyChecker.maybe_pkexec()
+    except Exception:
+        logger.error("No polkit agent running.")
+
+        msg = QtGui.QMessageBox()
+        msg.setWindowTitle(msg.tr("No polkit agent running"))
+        msg.setText(
+            msg.tr('There is no polkit agent running and it is needed to run '
+                   'the Bitmask services.<br>Take a look at the '
+                   '<a href="https://leap.se/en/docs/client/known-issues">'
+                   'known issues</a> page'))
+        msg.setIcon(QtGui.QMessageBox.Critical)
+        msg.exec_()
+
+        return False
+
 
 #
 # windows initializers
@@ -377,6 +414,7 @@ def DarwinInitializer():
 
     # Second check, for missing scripts.
     check_missing()
+    return True
 
 
 #
@@ -483,5 +521,13 @@ def LinuxInitializer():
     Missing files can be either bitmask-root policykit file.
     The dialog will also be raised if some of those files are
     found to have incorrect permissions.
+
+    :return: whether the operations went ok or not, if False, it's recommended
+    not to continue with the app run.
+    :rtype: bool
     """
+    if not check_polkit():
+        return False
+
     check_missing()
+    return True

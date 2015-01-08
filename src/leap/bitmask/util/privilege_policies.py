@@ -149,7 +149,12 @@ class LinuxPolicyChecker(PolicyChecker):
         """
         env = None
         if flags.STANDALONE:
-            env = {"PYTHONPATH": os.path.abspath('../../../../lib/')}
+            # This allows us to send to subprocess the environment configs that
+            # works for the standalone bundle (like the PYTHONPATH)
+            env = dict(os.environ)
+            # The LD_LIBRARY_PATH is set on the launcher but not forwarded to
+            # subprocess unless we do so explicitly.
+            env["LD_LIBRARY_PATH"] = os.path.abspath("./lib/")
         try:
             # We need to quote the command because subprocess call
             # will do "sh -c 'foo'", so if we do not quoute it we'll end

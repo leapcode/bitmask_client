@@ -41,6 +41,7 @@ class App(QtGui.QWidget):
 
         self.settings = LeapSettings()
         self.backend = BackendProxy()
+        self.backend.start()
         self.signaler = LeapSignaler()
         self.signaler.start()
 

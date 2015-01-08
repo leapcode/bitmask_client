@@ -44,7 +44,7 @@ import os
 import sys
 
 
-from leap.bitmask.backend.utils import generate_certificates
+from leap.bitmask.backend.backend_proxy import BackendProxy
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.config import flags
@@ -127,7 +127,9 @@ def start_app():
     }
 
     flags.STANDALONE = opts.standalone
-    flags.OFFLINE = opts.offline
+    # XXX Disabled right now since it's not tested after login refactor
+    # flags.OFFLINE = opts.offline
+    flags.OFFLINE = False
     flags.MAIL_LOGFILE = opts.mail_log_file
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
@@ -176,19 +178,24 @@ def start_app():
 
     logger.info('Starting app')
 
-    generate_certificates()
+    backend_running = BackendProxy().check_online()
+    logger.debug("Backend online: {0}".format(backend_running))
 
     flags_dict = flags_to_dict()
 
-    frontend_pid = os.getpid()
-    backend = lambda: run_backend(opts.danger, flags_dict, frontend_pid)
-    backend_process = multiprocessing.Process(target=backend, name='Backend')
-    # we don't set the 'daemon mode' since we need to start child processes in
-    # the backend
-    # backend_process.daemon = True
-    backend_process.start()
+    backend_pid = None
+    if not backend_running:
+        frontend_pid = os.getpid()
+        backend = lambda: run_backend(opts.danger, flags_dict, frontend_pid)
+        backend_process = multiprocessing.Process(target=backend,
+                                                  name='Backend')
+        # we don't set the 'daemon mode' since we need to start child processes
+        # in the backend
+        # backend_process.daemon = True
+        backend_process.start()
+        backend_pid = backend_process.pid
 
-    run_frontend(options, flags_dict, backend_pid=backend_process.pid)
+    run_frontend(options, flags_dict, backend_pid=backend_pid)
 
 
 if __name__ == "__main__":

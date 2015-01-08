@@ -28,6 +28,7 @@ import time
 import zmq
 
 from leap.bitmask.backend.api import API, STOP_REQUEST, PING_REQUEST
+from leap.bitmask.backend.utils import generate_zmq_certificates_if_needed
 from leap.bitmask.backend.utils import get_backend_certificates
 
 import logging
@@ -49,6 +50,8 @@ class BackendProxy(object):
     PING_INTERVAL = 2  # secs
 
     def __init__(self):
+        generate_zmq_certificates_if_needed()
+
         self._socket = None
 
         # initialize ZMQ stuff:
@@ -67,6 +70,7 @@ class BackendProxy(object):
         socket.curve_serverkey = public
 
         socket.setsockopt(zmq.RCVTIMEO, 1000)
+        socket.setsockopt(zmq.LINGER, 0)  # Terminate early
         socket.connect(self.SERVER)
         self._socket = socket
 
@@ -75,7 +79,22 @@ class BackendProxy(object):
 
         self._call_queue = Queue.Queue()
         self._worker_caller = threading.Thread(target=self._worker)
+
+    def start(self):
         self._worker_caller.start()
+
+    def check_online(self):
+        """
+        Return whether the backend is accessible or not.
+        You don't need to do `run` in order to use this.
+
+        :rtype: bool
+        """
+        # we use a small timeout in order to response quickly if the backend is
+        # offline
+        self._send_request(PING_REQUEST, retry=False, timeout=500)
+        self._socket.close()
+        return self.online
 
     def _worker(self):
         """
@@ -150,7 +169,7 @@ class BackendProxy(object):
         if api_method == STOP_REQUEST:
             self._call_queue.put(STOP_REQUEST)
 
-    def _send_request(self, request):
+    def _send_request(self, request, retry=True, timeout=None):
         """
         Send the given request to the server.
         This is used from a thread safe loop in order to avoid sending a
@@ -158,6 +177,10 @@ class BackendProxy(object):
 
         :param request: the request to send.
         :type request: str
+        :param retry: whether we should retry or not in case of timeout.
+        :type retry: bool
+        :param timeout: a custom timeout (milliseconds) to wait for a response.
+        :type timeout: int
         """
         # logger.debug("Sending request to backend: {0}".format(request))
         self._socket.send(request)
@@ -166,10 +189,16 @@ class BackendProxy(object):
         poll.register(self._socket, zmq.POLLIN)
 
         reply = None
+
         tries = 0
+        if not retry:
+            tries = self.POLL_TRIES + 1  # this means: no retries left
+
+        if timeout is None:
+            timeout = self.POLL_TIMEOUT
 
         while True:
-            socks = dict(poll.poll(self.POLL_TIMEOUT))
+            socks = dict(poll.poll(timeout))
             if socks.get(self._socket) == zmq.POLLIN:
                 reply = self._socket.recv()
                 break

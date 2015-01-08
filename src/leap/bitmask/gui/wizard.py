@@ -30,6 +30,7 @@ from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.services import get_service_display_name, get_supported
 from leap.bitmask.util.credentials import password_checks, username_checks
 from leap.bitmask.util.credentials import USERNAME_REGEX
@@ -41,8 +42,7 @@ QtDelayedCall = QtCore.QTimer.singleShot
 logger = logging.getLogger(__name__)
 
 
-class Wizard(QtGui.QWizard):
-
+class Wizard(QtGui.QWizard, SignalTracker):
     """
     First run wizard to register a user and setup a provider
     """
@@ -62,11 +62,10 @@ class Wizard(QtGui.QWizard):
         :type backend: Backend
         """
         QtGui.QWizard.__init__(self)
+        SignalTracker.__init__(self)
 
         self.ui = Ui_Wizard()
         self.ui.setupUi(self)
-
-        self._connected_signals = []
 
         self.setPixmap(QtGui.QWizard.LogoPixmap,
                        QtGui.QPixmap(":/images/mask-icon.png"))
@@ -83,9 +82,9 @@ class Wizard(QtGui.QWizard):
         self._use_existing_provider = False
 
         self.ui.grpCheckProvider.setVisible(False)
-        self._connect_and_track(self.ui.btnCheck.clicked, self._check_provider)
-        self._connect_and_track(self.ui.lnProvider.returnPressed,
-                                self._check_provider)
+        conntrack = self.connect_and_track
+        conntrack(self.ui.btnCheck.clicked, self._check_provider)
+        conntrack(self.ui.lnProvider.returnPressed, self._check_provider)
 
         self._leap_signaler = leap_signaler
 
@@ -97,27 +96,22 @@ class Wizard(QtGui.QWizard):
         # this details are set when the provider download is complete.
         self._provider_details = None
 
-        self._connect_and_track(self.currentIdChanged,
-                                self._current_id_changed)
+        conntrack(self.currentIdChanged, self._current_id_changed)
 
-        self._connect_and_track(self.ui.lnProvider.textChanged,
-                                self._enable_check)
-        self._connect_and_track(self.ui.rbNewProvider.toggled,
-                                lambda x: self._enable_check())
-        self._connect_and_track(self.ui.cbProviders.currentIndexChanged[int],
-                                self._reset_provider_check)
+        conntrack(self.ui.lnProvider.textChanged, self._enable_check)
+        conntrack(self.ui.rbNewProvider.toggled,
+                  lambda x: self._enable_check())
+        conntrack(self.ui.cbProviders.currentIndexChanged[int],
+                  self._reset_provider_check)
 
-        self._connect_and_track(self.ui.lblUser.returnPressed,
-                                self._focus_password)
-        self._connect_and_track(self.ui.lblPassword.returnPressed,
-                                self._focus_second_password)
-        self._connect_and_track(self.ui.lblPassword2.returnPressed,
-                                self._register)
-        self._connect_and_track(self.ui.btnRegister.clicked,
-                                self._register)
+        conntrack(self.ui.lblUser.returnPressed, self._focus_password)
+        conntrack(self.ui.lblPassword.returnPressed,
+                  self._focus_second_password)
+        conntrack(self.ui.lblPassword2.returnPressed, self._register)
+        conntrack(self.ui.btnRegister.clicked, self._register)
 
-        self._connect_and_track(self.ui.rbExistingProvider.toggled,
-                                self._skip_provider_checks)
+        conntrack(self.ui.rbExistingProvider.toggled,
+                  self._skip_provider_checks)
 
         usernameRe = QtCore.QRegExp(USERNAME_REGEX)
         self.ui.lblUser.setValidator(
@@ -142,19 +136,7 @@ class Wizard(QtGui.QWizard):
 
         self._provider_checks_ok = False
         self._provider_setup_ok = False
-        self._connect_and_track(self.finished, self._wizard_finished)
-
-    def _connect_and_track(self, signal, method):
-        """
-        Helper to connect signals and keep track of them.
-
-        :param signal: the signal to connect to.
-        :type signal: QtCore.Signal
-        :param method: the method to call when the signal is triggered.
-        :type method: callable, Slot or Signal
-        """
-        self._connected_signals.append((signal, method))
-        signal.connect(method)
+        conntrack(self.finished, self._wizard_finished)
 
     @QtCore.Slot()
     def _wizard_finished(self):
@@ -170,7 +152,8 @@ class Wizard(QtGui.QWizard):
         self._provider_setup_ok = False
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
-        self._disconnect_tracked()
+        # HACK FIX: disconnection of signals triggers a segfault on quit
+        # self.disconnect_and_untrack()
 
     def _load_configured_providers(self):
         """
@@ -781,7 +764,7 @@ class Wizard(QtGui.QWizard):
         Connects all the backend signals with the wizard.
         """
         sig = self._leap_signaler
-        conntrack = self._connect_and_track
+        conntrack = self.connect_and_track
         conntrack(sig.prov_name_resolution, self._name_resolution)
         conntrack(sig.prov_https_connection, self._https_connection)
         conntrack(sig.prov_download_provider_info,
@@ -797,14 +780,3 @@ class Wizard(QtGui.QWizard):
         conntrack(sig.srp_registration_finished, self._registration_finished)
         conntrack(sig.srp_registration_failed, self._registration_failed)
         conntrack(sig.srp_registration_taken, self._registration_taken)
-
-    def _disconnect_tracked(self):
-        """
-        This method is called when the wizard dialog is closed.
-        We disconnect all the signals in here.
-        """
-        for signal, method in self._connected_signals:
-            try:
-                signal.disconnect(method)
-            except RuntimeError:
-                pass  # Signal was not connected

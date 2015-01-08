@@ -29,11 +29,11 @@
    <string notr="true"/>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <property name="margin">
-    <number>0</number>
-   </property>
    <property name="verticalSpacing">
     <number>6</number>
+   </property>
+   <property name="margin">
+    <number>0</number>
    </property>
    <item row="2" column="0">
     <spacer name="horizontalSpacer_2">
@@ -71,6 +71,9 @@
       </property>
       <item row="3" column="1">
        <widget class="QPushButton" name="btnLogin">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
         <property name="sizePolicy">
          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -133,6 +136,9 @@
        <widget class="QLineEdit" name="lnPassword">
         <property name="inputMask">
          <string/>
+        </property>
+        <property name="echoMode">
+         <enum>QLineEdit::Password</enum>
         </property>
        </widget>
       </item>
@@ -283,10 +289,47 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>lnUser</tabstop>
+  <tabstop>lnPassword</tabstop>
   <tabstop>chkRemember</tabstop>
+  <tabstop>btnLogin</tabstop>
+  <tabstop>btnLogout</tabstop>
  </tabstops>
  <resources>
   <include location="../../../../../data/resources/icons.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>lnPassword</sender>
+   <signal>returnPressed()</signal>
+   <receiver>btnLogin</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>212</x>
+     <y>171</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>169</x>
+     <y>234</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lnUser</sender>
+   <signal>returnPressed()</signal>
+   <receiver>lnPassword</receiver>
+   <slot>setFocus()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>309</x>
+     <y>140</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>304</x>
+     <y>163</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

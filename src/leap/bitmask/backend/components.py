@@ -54,6 +54,7 @@ from leap.bitmask.services.mail.smtpconfig import SMTPConfig
 from leap.bitmask.services.soledad.soledadbootstrapper import \
     SoledadBootstrapper
 from leap.bitmask.util import force_eval
+from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
 
 from leap.common import certs as leap_certs
 
@@ -638,6 +639,10 @@ class EIP(object):
         :param domain: the domain for the provider to check
         :type domain: str
         """
+        if not LinuxPolicyChecker.is_up():
+            logger.error("No polkit agent running.")
+            return False
+
         eip_config = eipconfig.EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
 
@@ -914,6 +919,8 @@ class Keymanager(object):
 
         keymanager = self._keymanager_proxy
         try:
+            # NOTE: parse_openpgp_ascii_key is not in keymanager anymore
+            #       the API for that will need some thinking 
             public_key, private_key = keymanager.parse_openpgp_ascii_key(
                 new_key)
         except (KeyAddressMismatch, KeyFingerprintMismatch) as e:
@@ -974,7 +981,7 @@ class Keymanager(object):
         """
         List all the keys stored in the local DB.
         """
-        keys = self._keymanager_proxy.get_all_keys_in_local_db()
+        keys = self._keymanager_proxy.get_all_keys()
         self._signaler.signal(self._signaler.keymanager_keys_list, keys)
 
     def get_key_details(self, username):

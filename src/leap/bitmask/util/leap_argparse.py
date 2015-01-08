@@ -74,9 +74,10 @@ def build_parser():
                         help='Verbosity level for openvpn logs [1-6]')
 
     # mail stuff
-    parser.add_argument('-o', '--offline', action="store_true",
-                        help='Starts Bitmask in offline mode: will not '
-                             'try to sync with remote replicas for email.')
+    # XXX Disabled right now since it's not tested after login refactor
+    # parser.add_argument('-o', '--offline', action="store_true",
+    #                     help='Starts Bitmask in offline mode: will not '
+    #                          'try to sync with remote replicas for email.')
 
     parser.add_argument('--acct', metavar="user@provider",
                         nargs='?',
