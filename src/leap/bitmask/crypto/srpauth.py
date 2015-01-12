@@ -562,7 +562,7 @@ class SRPAuth(object):
             self._reset_session()
 
             # FIXME ---------------------------------------------------------
-            # 1. it makes no sense to defer each callback to a thread
+            # 1. it makes no sense to defer each callback to a thread - DONE
             # 2. the decision to use threads should be at another level.
             #    (although it's not really needed, that was a hack around
             #    the gui blocks)
@@ -573,20 +573,10 @@ class SRPAuth(object):
                                       username=username,
                                       password=password)
 
-            d.addCallback(
-                partial(self._threader,
-                        self._start_authentication),
-                username=username)
-            d.addCallback(
-                partial(self._threader,
-                        self._process_challenge),
-                username=username)
-            d.addCallback(
-                partial(self._threader,
-                        self._extract_data))
-            d.addCallback(partial(self._threader,
-                                  self._verify_session))
-
+            d.addCallback(partial(self._start_authentication, username=username))
+            d.addCallback(partial(self._process_challenge, username=username))
+            d.addCallback(self._extract_data)
+            d.addCallback(self._verify_session)
             d.addCallback(self._authenticate_ok)
             d.addErrback(self._authenticate_error)
             return d
