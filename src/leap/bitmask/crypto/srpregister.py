@@ -33,40 +33,18 @@ from leap.common.check import leap_assert, leap_assert_type
 logger = logging.getLogger(__name__)
 
 
-class SRPRegister(QtCore.QObject):
-    """
-    Registers a user to a specific provider using SRP
-    """
+class SRPRegisterImpl:
 
     USER_LOGIN_KEY = 'user[login]'
     USER_VERIFIER_KEY = 'user[password_verifier]'
     USER_SALT_KEY = 'user[password_salt]'
-
-    STATUS_OK = (200, 201)
-    STATUS_TAKEN = 422
     STATUS_ERROR = -999  # Custom error status
 
-    def __init__(self, signaler=None,
-                 provider_config=None, register_path="users"):
-        """
-        Constructor
-
-        :param signaler: Signaler object used to receive notifications
-                         from the backend
-        :type signaler: Signaler
-        :param provider_config: provider configuration instance,
-                                properly loaded
-        :type privider_config: ProviderConfig
-        :param register_path: webapp path for registering users
-        :type register_path; str
-        """
-        QtCore.QObject.__init__(self)
+    def __init__(self, provider_config, register_path):
         leap_assert(provider_config, "Please provide a provider")
         leap_assert_type(provider_config, ProviderConfig)
 
         self._provider_config = provider_config
-        self._signaler = signaler
-
         # **************************************************** #
         # Dependency injection helpers, override this for more
         # granular testing
@@ -83,24 +61,7 @@ class SRPRegister(QtCore.QObject):
             self._port = "443"
 
         self._register_path = register_path
-
         self._session = self._fetcher.session()
-
-    def _get_registration_uri(self):
-        """
-        Returns the URI where the register request should be made for
-        the provider
-
-        :rtype: str
-        """
-
-        uri = "https://%s:%s/%s/%s" % (
-            self._provider,
-            self._port,
-            self._provider_config.get_api_version(),
-            self._register_path)
-
-        return uri
 
     def register_user(self, username, password):
         """
@@ -152,7 +113,6 @@ class SRPRegister(QtCore.QObject):
         status_code = self.STATUS_ERROR
         if req is not None:
             status_code = req.status_code
-        self._emit_result(status_code)
 
         if not ok:
             try:
@@ -165,6 +125,67 @@ class SRPRegister(QtCore.QObject):
             except Exception as e:
                 logger.error("Unknown error: %r" % (e, ))
 
+        return ok, status_code
+
+    def _get_registration_uri(self):
+        """
+        Returns the URI where the register request should be made for
+        the provider
+
+        :rtype: str
+        """
+
+        uri = "https://%s:%s/%s/%s" % (
+            self._provider,
+            self._port,
+            self._provider_config.get_api_version(),
+            self._register_path)
+
+        return uri
+
+
+class SRPRegister(QtCore.QObject):
+    """
+    Registers a user to a specific provider using SRP
+    """
+
+    STATUS_OK = (200, 201)
+    STATUS_TAKEN = 422
+
+
+    def __init__(self, signaler=None,
+                 provider_config=None, register_path="users"):
+        """
+        Constructor
+
+        :param signaler: Signaler object used to receive notifications
+                         from the backend
+        :type signaler: Signaler
+        :param provider_config: provider configuration instance,
+                                properly loaded
+        :type privider_config: ProviderConfig
+        :param register_path: webapp path for registering users
+        :type register_path; str
+        """
+        self._srp_register = SRPRegisterImpl(provider_config, register_path)
+        QtCore.QObject.__init__(self)
+
+        self._signaler = signaler
+
+    def register_user(self, username, password):
+        """
+        Registers a user with the validator based on the password provider
+
+        :param username: username to register
+        :type username: str
+        :param password: password for this username
+        :type password: str
+
+        :returns: if the registration went ok or not.
+        :rtype: bool
+        """
+        ok, status_code = self._srp_register.register_user(username, password)
+        self._emit_result(status_code)
         return ok
 
     def _emit_result(self, status_code):
