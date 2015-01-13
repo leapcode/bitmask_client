@@ -5,7 +5,7 @@ Source: <http://github.com/leapcode/leap_client/>
 
 Files: *
 Copyright: 2012,2013 The LEAP Encryption Access Project 
-License: GPL-3+ OpenSSL
+License: GPL-3+ with OpenSSL exception
  This package is released under the GNU GPL, version 3 or a later revision.
  For further details see the COPYING file.
  .
