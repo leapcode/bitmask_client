@@ -152,7 +152,6 @@ class SRPRegister(QtCore.QObject):
     STATUS_OK = (200, 201)
     STATUS_TAKEN = 422
 
-
     def __init__(self, signaler=None,
                  provider_config=None, register_path="users"):
         """

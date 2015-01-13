@@ -535,8 +535,8 @@ class SRPAuthImpl(object):
         d = threads.deferToThread(self._authentication_preprocessing,
                                   username=username,
                                   password=password)
-        
         d.addCallback(partial(self._start_authentication, username=username))
+
         d.addCallback(partial(self._process_challenge, username=username))
         d.addCallback(self._extract_data)
         d.addCallback(self._verify_session)
@@ -682,7 +682,8 @@ class SRPAuth(object):
             :param new_password: the new password for the user
             :type new_password: str
             """
-            d = SRPAuthImpl.change_password(self, current_password, new_password)
+            d = SRPAuthImpl.change_password(self, current_password,
+                                            new_password)
             d.addCallback(self._change_password_ok)
             d.addErrback(self._change_password_error)
             return d
@@ -717,7 +718,6 @@ class SRPAuth(object):
                 if self._signaler is not None:
                     self._signaler.signal(self._signaler.srp_logout_error)
                 raise
-
 
     __instance = None
 
