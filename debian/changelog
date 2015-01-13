@@ -4,6 +4,7 @@ bitmask (0.8.0~rc3) unstable; urgency=medium
   * Change build-depends on python-requests to not build on -1 revision
   * Update debian/copyright to fix space-in-std-shortname
   * Update debian/copyright to fix dep5 copyright short name
+  * Update standards version to 3.9.6 - no changes
 
  -- Ben Carrillo <ben@futeisha.org>  Thu, 08 Jan 2015 14:34:29 -0400
 
