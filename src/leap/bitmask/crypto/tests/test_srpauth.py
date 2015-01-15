@@ -27,6 +27,7 @@ import sys
 import binascii
 import requests
 import mock
+import shutil
 
 from functools import partial
 
@@ -42,6 +43,7 @@ from leap.bitmask.crypto import srpregister, srpauth
 from leap.bitmask.crypto.tests import fake_provider
 from leap.bitmask.util.request_helpers import get_content
 from leap.common.testing.https_server import where
+from leap.common.files import mkdir_p
 
 log.startLogging(sys.stdout)
 
@@ -118,6 +120,10 @@ class SRPAuthTestCase(unittest.TestCase):
         self.old_cookie_get = self.auth_backend._session.cookies.get
         self.old_auth = self.auth_backend.authenticate
 
+        # HACK: this is needed since it seems that the backend settings path is
+        # not using the right path
+        mkdir_p('config/leap')
+
     def tearDown(self):
         self.auth_backend._session.post = self.old_post
         self.auth_backend._session.put = self.old_put
@@ -131,6 +137,10 @@ class SRPAuthTestCase(unittest.TestCase):
         self.auth_backend.get_session_id = self.old_get_sid
         self.auth_backend._session.cookies.get = self.old_cookie_get
         self.auth_backend.authenticate = self.old_auth
+
+        # HACK: see 'setUp'
+        if os.path.exists('config'):
+            shutil.rmtree('config')
 
     # helper methods
 
@@ -709,56 +719,6 @@ class SRPAuthSingletonTestCase(unittest.TestCase):
         obj1 = srpauth.SRPAuth(ProviderConfig())
         obj2 = srpauth.SRPAuth(ProviderConfig())
         self.assertEqual(obj1._SRPAuth__instance, obj2._SRPAuth__instance)
-
-    @deferred()
-    def test_authenticate_notifies_gui(self):
-        auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.authenticate = mock.create_autospec(
-            auth._SRPAuth__instance.authenticate,
-            return_value=threads.deferToThread(lambda: None))
-        auth._gui_notify = mock.create_autospec(
-            auth._gui_notify)
-
-        d = auth.authenticate("", "")
-
-        def check(*args):
-            auth._gui_notify.assert_called_once_with(None)
-
-        d.addCallback(check)
-        return d
-
-    @deferred()
-    def test_authenticate_errsback(self):
-        auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.authenticate = mock.create_autospec(
-            auth._SRPAuth__instance.authenticate,
-            return_value=threads.deferToThread(MagicMock(
-                side_effect=Exception())))
-        auth._gui_notify = mock.create_autospec(
-            auth._gui_notify)
-        auth._errback = mock.create_autospec(
-            auth._errback)
-
-        d = auth.authenticate("", "")
-
-        def check(*args):
-            self.assertFalse(auth._gui_notify.called)
-            self.assertEqual(auth._errback.call_count, 1)
-
-        d.addCallback(check)
-        return d
-
-    @deferred()
-    def test_authenticate_runs_cleanly_when_raises(self):
-        auth = srpauth.SRPAuth(ProviderConfig())
-        auth._SRPAuth__instance.authenticate = mock.create_autospec(
-            auth._SRPAuth__instance.authenticate,
-            return_value=threads.deferToThread(MagicMock(
-                side_effect=Exception())))
-
-        d = auth.authenticate("", "")
-
-        return d
 
     @deferred()
     def test_authenticate_runs_cleanly(self):
