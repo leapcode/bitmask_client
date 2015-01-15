@@ -262,7 +262,7 @@ class MailConductor(IMAPControl, SMTPControl):
         if self._firewall is not None:
             self._firewall.start()
         if not offline:
-            logger.debug("not starting smtp in offline mode")
+            logger.debug("Starting smtp service...")
             self.start_smtp_service(download_if_needed=download_if_needed)
         self.start_imap_service()
 
