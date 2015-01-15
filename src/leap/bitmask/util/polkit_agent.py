@@ -31,12 +31,12 @@ BASE_PATH_KDE = "/usr/lib/kde4/libexec/"
 GNO_PATH = BASE_PATH_GNO + AUTH_FILE % ("gnome",)
 KDE_PATH = BASE_PATH_KDE + AUTH_FILE % ("kde",)
 
-POLKIT_PATHS = {
+POLKIT_PATHS = (
     '/usr/lib/lxpolkit/lxpolkit',
     '/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1',
     '/usr/lib/mate-polkit/polkit-mate-authentication-agent-1',
     '/usr/lib/kde4/libexec/polkit-kde-authentication-agent-1',
-}
+)
 
 
 def _get_polkit_agent():
