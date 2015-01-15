@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+
+"""
+Filter bitmask dependencies.
+
+Usage: pipdeptree | filter-bitmask-deps
+"""
+import fileinput
+
+TARGET = "leap.bitmask"
+
+
+def get_bitmask_deps(dep_lines):
+    res = []
+    begin = False
+    for dep in dep_lines:
+        if dep.startswith(TARGET):
+            begin = True
+            res.append(dep)
+            continue
+        elif dep.startswith(' ') and begin:
+            res.append(dep)
+            continue
+        if begin:
+            return res
+
+
+if __name__ == "__main__":
+    lines = []
+    for line in fileinput.input():
+        lines.append(line)
+
+    bitmask_deps = get_bitmask_deps(lines)
+    for line in bitmask_deps:
+        print line[:-1]

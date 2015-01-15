@@ -119,5 +119,8 @@ install_wheel:
 	# if it's the first time, you'll need to get_wheels first
 	pip install --pre --use-wheel --no-index --find-links=../wheelhouse -r pkg/requirements.pip
 
+gather_deps:
+	pipdeptree | pkg/scripts/filter-bitmask-deps
+
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
