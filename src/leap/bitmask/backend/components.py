@@ -17,13 +17,16 @@
 """
 Backend components
 """
+
+# TODO [ ] Get rid of all this deferToThread mess, or at least contain
+#          all of it into its own threadpool.
+
 import logging
 import os
 import socket
 import time
 
 from functools import partial
-from threading import Condition
 
 from twisted.internet import threads, defer
 from twisted.python import log
@@ -1038,12 +1041,10 @@ class Mail(object):
         """
         Stop imap and wait until the service is stopped to signal that is done.
         """
-        cv = Condition()
-        cv.acquire()
-        threads.deferToThread(self._imap_controller.stop_imap_service, cv)
+        # FIXME just get a fucking deferred and signal as a callback, with
+        # timeout and cancellability
+        threads.deferToThread(self._imap_controller.stop_imap_service)
         logger.debug('Waiting for imap service to stop.')
-        cv.wait(self.SERVICE_STOP_TIMEOUT)
-        logger.debug('IMAP stopped')
         self._signaler.signal(self._signaler.imap_stopped)
 
     def stop_imap_service(self):
