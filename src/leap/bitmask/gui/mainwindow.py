@@ -1191,9 +1191,13 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._disconnect_login_wait()
 
         user = self._login_widget.get_logged_user()
-        domain = self._providers.get_selected_provider()
-        full_user_id = make_address(user, domain)
-        self._mail_conductor.userid = full_user_id
+        # XXX the widget now gives us the full user id.
+        # this is confusing.
+        #domain = self._providers.get_selected_provider()
+        #full_user_id = make_address(user, domain)
+        # XXX the casting to str (needed by smtp gateway) should be done
+        # in a better place.
+        self._mail_conductor.userid = str(user)
         self._start_eip_bootstrap()
         self.ui.action_create_new_account.setEnabled(True)
 
