@@ -120,6 +120,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
             self._provider_config, about_to_download=True)
 
         from leap.mail.smtp import setup_smtp_gateway
+
         self._smtp_service, self._smtp_port = setup_smtp_gateway(
             port=2013,
             userid=self._userid,
@@ -152,7 +153,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
         self._provider_config = ProviderConfig.get_provider_config(domain)
         self._keymanager = keymanager
         self._smtp_config = SMTPConfig()
-        self._userid = userid
+        self._userid = str(userid)
         self._download_if_needed = download_if_needed
 
         try:
