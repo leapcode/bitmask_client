@@ -84,16 +84,16 @@ class IMAPController(object):
             d.addCallback(assign_incoming_service)
             d.addErrback(lambda f: logger.error(f.printTraceback()))
 
-    def stop_imap_service(self, cv):
+    def stop_imap_service(self):
         """
         Stop IMAP service (fetcher, factory and port).
-
-        :param cv: A condition variable to which we can signal when imap
-                   indeed stops.
-        :type cv: threading.Condition
         """
         if self.incoming_mail_service is not None:
             # Stop the loop call in the fetcher
+
+            # XXX BUG -- the deletion of the reference should be made
+            # after stopService() triggers its deferred (ie, cleanup has been
+            # made)
             self.incoming_mail_service.stopService()
             self.incoming_mail_service = None
 
@@ -103,12 +103,7 @@ class IMAPController(object):
 
             # Stop the protocol
             self.imap_factory.theAccount.closed = True
-            self.imap_factory.doStop(cv)
-        else:
-            # Release the condition variable so the caller doesn't have to wait
-            cv.acquire()
-            cv.notify()
-            cv.release()
+            self.imap_factory.doStop()
 
     def fetch_incoming_mail(self):
         """
