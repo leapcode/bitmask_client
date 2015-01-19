@@ -23,22 +23,18 @@ import subprocess
 
 import daemon
 
+# TODO --- logger won't work when daemoninzed. Log to syslog instead?
 logger = logging.getLogger(__name__)
-
-AUTH_FILE = "polkit-%s-authentication-agent-1"
-BASE_PATH_GNO = "/usr/lib/policykit-1-gnome/"
-BASE_PATH_KDE = "/usr/lib/kde4/libexec/"
-GNO_PATH = BASE_PATH_GNO + AUTH_FILE % ("gnome",)
-KDE_PATH = BASE_PATH_KDE + AUTH_FILE % ("kde",)
 
 POLKIT_PATHS = (
     '/usr/lib/lxpolkit/lxpolkit',
-    '/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1',
+    '/usr/lib/policykit-1-gnome/polkit-gnome-authentication-agent-1',
     '/usr/lib/mate-polkit/polkit-mate-authentication-agent-1',
     '/usr/lib/kde4/libexec/polkit-kde-authentication-agent-1',
 )
 
 
+# TODO write tests for this piece.
 def _get_polkit_agent():
     """
     Return a valid polkit agent to use.
@@ -62,7 +58,7 @@ def _launch_agent():
     polkit_agent = _get_polkit_agent()
 
     if polkit_agent is None:
-        logger.erro("No usable polkit was found.")
+        logger.error("No usable polkit was found.")
         return
 
     logger.debug('Launching polkit auth agent')
@@ -81,4 +77,6 @@ def launch():
         _launch_agent()
 
 if __name__ == "__main__":
+    # TODO pass a --nodaemon flag so that we can launch this in the foreground
+    # and debug this module, getting errors to stderr.
     launch()
