@@ -102,7 +102,6 @@ class IMAPController(object):
             self.imap_port.stopListening()
 
             # Stop the protocol
-            self.imap_factory.theAccount.closed = True
             self.imap_factory.doStop()
 
     def fetch_incoming_mail(self):
