@@ -153,7 +153,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
         # HACK FIX: disconnection of signals triggers a segfault on quit
-        # self.disconnect_and_untrack()
+        self.disconnect_and_untrack()
 
     def _load_configured_providers(self):
         """
