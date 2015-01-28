@@ -20,7 +20,6 @@ and the signaler get signals from the backend.
 """
 import logging
 
-from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask.config.leapsettings import LeapSettings

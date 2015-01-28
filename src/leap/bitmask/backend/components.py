@@ -63,7 +63,8 @@ from leap.common import certs as leap_certs
 
 from leap.keymanager import openpgp
 
-from leap.soledad.client.secrets import NoStorageSecret, PassphraseTooShort
+from leap.soledad.client.secrets import PassphraseTooShort
+from leap.soledad.client.secrets import NoStorageSecret
 
 logger = logging.getLogger(__name__)
 
