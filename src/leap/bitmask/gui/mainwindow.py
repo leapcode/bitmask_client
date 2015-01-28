@@ -515,7 +515,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                 return h
         return None
 
-    @QtCore.Slot()
     def _show_logger_window(self):
         """
         TRIGGERS:
@@ -532,7 +531,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             lw = LoggerWindow(self, handler=leap_log_handler)
             lw.show()
 
-    @QtCore.Slot()
     def _show_AKM(self):
         """
         TRIGGERS:
@@ -552,7 +550,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                                     self._backend, self._soledad_started)
         akm.show()
 
-    @QtCore.Slot()
     def _show_preferences(self):
         """
         TRIGGERS:
@@ -572,7 +569,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         pref_win = PreferencesWindow(self, account, self.app)
         pref_win.show()
 
-    @QtCore.Slot(object, list)
     def _update_eip_enabled_status(self, account=None, services=None):
         """
         TRIGGER:
@@ -679,7 +675,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # so we must update it, otherwise we're in a deadlock.
         self._trying_to_start_eip = False
 
-    @QtCore.Slot()
     def _disable_eip_missing_helpers(self):
         """
         TRIGGERS:
@@ -702,7 +697,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         """
         self.new_updates.emit(req)
 
-    @QtCore.Slot(object)
     def _react_to_new_updates(self, req):
         """
         TRIGGERS:
@@ -718,7 +712,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.ui.btnMore.setVisible(True)
         self._updates_content = req.content
 
-    @QtCore.Slot()
     def _updates_details(self):
         """
         TRIGGERS:
@@ -746,7 +739,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                                       self.tr("Updates available"),
                                       msg)
 
-    @QtCore.Slot()
     def _finish_init(self):
         """
         TRIGGERS:
@@ -893,7 +885,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # we wait for the systray to be ready
             QtDelayedCall(1000, hello)
 
-    @QtCore.Slot(int)
     def _tray_activated(self, reason=None):
         """
         TRIGGERS:
@@ -912,7 +903,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # this works however.
             context_menu.exec_(self._systray.geometry().center())
 
-    @QtCore.Slot()
     def _ensure_visible(self):
         """
         TRIGGERS:
@@ -931,7 +921,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.activateWindow()
         self.raise_()
 
-    @QtCore.Slot()
     def _ensure_invisible(self):
         """
         TRIGGERS:
@@ -967,7 +956,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if state is not None:
             self.restoreState(state)
 
-    @QtCore.Slot()
     def _about(self):
         """
         TRIGGERS:
@@ -995,7 +983,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10], greet=greet)
         QtGui.QMessageBox.about(self, title, msg)
 
-    @QtCore.Slot()
     def _help(self):
         """
         TRIGGERS:
@@ -1097,7 +1084,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         skip_first_run = self._settings.get_skip_first_run()
         return not (has_provider_on_disk and skip_first_run)
 
-    @QtCore.Slot()
     def _disconnect_login_wait(self):
         """
         Disconnect the EIP finishing signal to the wait flag on the login
@@ -1115,7 +1101,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # signal not connected
             pass
 
-    @QtCore.Slot(object)
     def _on_provider_changed(self, wizard=True):
         """
         TRIGGERS:
@@ -1173,7 +1158,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                 # if wizard, the widget restores itself
                 self._providers.restore_previous_provider()
 
-    @QtCore.Slot()
     def _login(self):
         """
         TRIGGERS:
@@ -1201,7 +1185,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._soledad_started = False
 
-    @QtCore.Slot()
     def _on_user_logged_in(self):
         """
         TRIGGERS:
@@ -1230,7 +1213,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if MX_SERVICE not in self._provider_details['services']:
             self._set_mx_visible(False)
 
-    @QtCore.Slot()
     def _on_user_logged_out(self):
         """
         TRIGGER:
@@ -1259,7 +1241,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._maybe_start_eip()
 
-    @QtCore.Slot()
     def _get_provider_details(self, data):
         """
         TRIGGERS:
@@ -1273,7 +1254,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         lang = QtCore.QLocale.system().name()
         self._backend.provider_get_details(domain=domain, lang=lang)
 
-    @QtCore.Slot()
     def _provider_get_details(self, details):
         """
         Set the details for the just downloaded provider.
@@ -1317,7 +1297,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         return eip_enabled and eip_provided
 
-    @QtCore.Slot()
     def _maybe_run_soledad_setup_checks(self):
         """
         TRIGGERS:
@@ -1358,7 +1337,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     ###################################################################
     # Service control methods: soledad
 
-    @QtCore.Slot()
     def _on_soledad_ready(self):
         """
         TRIGGERS:
@@ -1373,7 +1351,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
     ###################################################################
     # Service control methods: mail
-    @QtCore.Slot()
     def _start_mail_service(self):
         if self._provides_mx_and_enabled() or flags.OFFLINE:
             self._mail_conductor.start_mail_service(download_if_needed=True,
@@ -1382,14 +1359,12 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     ###################################################################
     # Service control methods: eip
 
-    @QtCore.Slot()
     def _disable_eip_start_action(self):
         """
         Disable the EIP start action in the systray menu.
         """
         self._action_eip_startstop.setEnabled(False)
 
-    @QtCore.Slot()
     def _enable_eip_start_action(self):
         """
         Enable the EIP start action in the systray menu.
@@ -1397,7 +1372,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._action_eip_startstop.setEnabled(True)
         self._eip_status.enable_eip_start()
 
-    @QtCore.Slot()
     def _on_eip_connecting(self):
         """
         TRIGGERS:
@@ -1421,7 +1395,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         eip_sigs.connection_aborted_signal.connect(slot)
         eip_sigs.connection_died_signal.connect(slot)
 
-    @QtCore.Slot()
     def _on_eip_connection_connected(self):
         """
         TRIGGERS:
@@ -1441,7 +1414,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # check for connectivity
         self._backend.eip_check_dns(domain=domain)
 
-    @QtCore.Slot()
     def _on_eip_connection_disconnected(self):
         """
         TRIGGERS:
@@ -1451,7 +1423,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         """
         self._already_started_eip = False
 
-    @QtCore.Slot()
     def _set_eip_provider(self, country_code=None):
         """
         TRIGGERS:
@@ -1463,7 +1434,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         domain = self._providers.get_selected_provider()
         self._eip_status.set_provider(domain, country_code)
 
-    @QtCore.Slot()
     def _eip_dns_error(self):
         """
         Trigger this if we don't have a working DNS resolver.
@@ -1555,7 +1525,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # eip will not start, so we start soledad anyway
             self._maybe_run_soledad_setup_checks()
 
-    @QtCore.Slot(dict)
     def _finish_eip_bootstrap(self, data):
         """
         TRIGGERS:
@@ -1576,7 +1545,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # DO START EIP Connection!
         self._eip_conductor.do_connect()
 
-    @QtCore.Slot(dict)
     def _eip_intermediate_stage(self, data):
         # TODO missing param documentation
         """
@@ -1610,7 +1578,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             locks.raise_window_ack()
         self.raise_window.emit()
 
-    @QtCore.Slot()
     def _do_raise_mainwindow(self):
         """
         TRIGGERS:
@@ -1713,7 +1680,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             logger.debug("Killing backend")
             psutil.Process(self._backend_pid).kill()
 
-    @QtCore.Slot()
     def _remove_service(self, service):
         """
         Remove the given service from the waiting list and check if we have
@@ -1730,7 +1696,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             logger.debug("All services stopped.")
             self.all_services_stopped.emit()
 
-    @QtCore.Slot()
     def final_quit(self):
         """
         Final steps to quit the app, starting from here we don't care about

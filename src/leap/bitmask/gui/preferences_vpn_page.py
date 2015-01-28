@@ -64,7 +64,6 @@ class PreferencesVpnPage(QtGui.QWidget, Flashable):
         # Trigger update
         self.app.backend.eip_get_gateways_list(domain=self.account.domain)
 
-    @QtCore.Slot(str)
     def _save_selected_gateway(self, index):
         """
         TRIGGERS:
@@ -86,7 +85,6 @@ class PreferencesVpnPage(QtGui.QWidget, Flashable):
             provider=self.account.domain,
             gateway=gateway)
 
-    @QtCore.Slot(list)
     def _update_gateways_list(self, gateways):
         """
         TRIGGERS:
@@ -116,7 +114,6 @@ class PreferencesVpnPage(QtGui.QWidget, Flashable):
                 index = idx + 1
         self.ui.gateways_list.setCurrentRow(index)
 
-    @QtCore.Slot()
     def _gateways_list_error(self):
         """
         TRIGGERS:
@@ -129,7 +126,6 @@ class PreferencesVpnPage(QtGui.QWidget, Flashable):
             self.tr("Error loading configuration file."))
         self.ui.gateways_list.setEnabled(False)
 
-    @QtCore.Slot()
     def _gateways_list_uninitialized(self):
         """
         TRIGGERS:

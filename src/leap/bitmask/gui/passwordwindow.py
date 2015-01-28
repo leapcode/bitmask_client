@@ -149,7 +149,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         self._soledad_ready = False
         sig.soledad_bootstrap_finished.connect(self._on_soledad_ready)
 
-    @QtCore.Slot()
     def _change_password(self):
         """
         TRIGGERS:
@@ -194,7 +193,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         PasswordWindow._current_window = None
         self.deleteLater()
 
-    @QtCore.Slot()
     def _srp_change_password_ok(self):
         """
         TRIGGERS:
@@ -210,7 +208,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         else:
             self._change_password_success()
 
-    @QtCore.Slot()
     def _srp_password_change_error(self):
         """
         TRIGGERS:
@@ -223,7 +220,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         self._enable_password_widgets(True)
         self.flash_error(msg)
 
-    @QtCore.Slot()
     def _srp_password_change_badpw(self):
         """
         TRIGGERS:
@@ -237,7 +233,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         self.flash_error(msg)
         self.ui.current_password_lineedit.setFocus()
 
-    @QtCore.Slot()
     def _soledad_change_password_ok(self):
         """
         TRIGGERS:
@@ -248,7 +243,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         logger.debug("Soledad password changed successfully.")
         self._change_password_success()
 
-    @QtCore.Slot(unicode)
     def _soledad_change_password_problem(self, msg):
         """
         TRIGGERS:
@@ -263,7 +257,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         self._enable_password_widgets(True)
         self.flash_error(msg)
 
-    @QtCore.Slot()
     def _on_soledad_ready(self):
         """
         TRIGGERS:
