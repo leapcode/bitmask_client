@@ -82,9 +82,8 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self._use_existing_provider = False
 
         self.ui.grpCheckProvider.setVisible(False)
-        conntrack = self.connect_and_track
-        conntrack(self.ui.btnCheck.clicked, self._check_provider)
-        conntrack(self.ui.lnProvider.returnPressed, self._check_provider)
+        self.ui.btnCheck.clicked.connect(self._check_provider)
+        self.ui.lnProvider.returnPressed.connect(self._check_provider)
 
         self._leap_signaler = leap_signaler
 
@@ -96,22 +95,19 @@ class Wizard(QtGui.QWizard, SignalTracker):
         # this details are set when the provider download is complete.
         self._provider_details = None
 
-        conntrack(self.currentIdChanged, self._current_id_changed)
+        self.currentIdChanged.connect(self._current_id_changed)
 
-        conntrack(self.ui.lnProvider.textChanged, self._enable_check)
-        conntrack(self.ui.rbNewProvider.toggled,
-                  lambda x: self._enable_check())
-        conntrack(self.ui.cbProviders.currentIndexChanged[int],
-                  self._reset_provider_check)
+        self.ui.lnProvider.textChanged.connect(self._enable_check)
+        self.ui.rbNewProvider.toggled.connect(lambda x: self._enable_check())
+        self.ui.cbProviders.currentIndexChanged[int].connect(
+            self._reset_provider_check)
 
-        conntrack(self.ui.lblUser.returnPressed, self._focus_password)
-        conntrack(self.ui.lblPassword.returnPressed,
-                  self._focus_second_password)
-        conntrack(self.ui.lblPassword2.returnPressed, self._register)
-        conntrack(self.ui.btnRegister.clicked, self._register)
+        self.ui.lblUser.returnPressed.connect(self._focus_password)
+        self.ui.lblPassword.returnPressed.connect(self._focus_second_password)
+        self.ui.lblPassword2.returnPressed.connect(self._register)
+        self.ui.btnRegister.clicked.connect(self._register)
 
-        conntrack(self.ui.rbExistingProvider.toggled,
-                  self._skip_provider_checks)
+        self.ui.rbExistingProvider.toggled.connect(self._skip_provider_checks)
 
         usernameRe = QtCore.QRegExp(USERNAME_REGEX)
         self.ui.lblUser.setValidator(
@@ -136,7 +132,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
 
         self._provider_checks_ok = False
         self._provider_setup_ok = False
-        conntrack(self.finished, self._wizard_finished)
+        self.finished.connect(self._wizard_finished)
 
     @QtCore.Slot()
     def _wizard_finished(self):
@@ -152,7 +148,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self._provider_setup_ok = False
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
-        # HACK FIX: disconnection of signals triggers a segfault on quit
         self.disconnect_and_untrack()
 
     def _load_configured_providers(self):

@@ -336,7 +336,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # XXX does this goes in here? this will be triggered when the login or
         # wizard requests provider data
 
-        # XXX - here segfaults if we did a disconnect_and_untrack
         conntrack(sig.prov_check_api_certificate, self._get_provider_details)
         conntrack(sig.prov_get_details, self._provider_get_details)
 
@@ -428,7 +427,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         Called when the wizard has finished.
         """
-        # NOTE: we used to call _finish_init on wizard finished
         self.setVisible(True)
         self._backend_connect(only_tracked=True)
 
@@ -1262,7 +1260,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._maybe_start_eip()
 
     @QtCore.Slot()
-    def _get_provider_details(self):
+    def _get_provider_details(self, data):
         """
         TRIGGERS:
             prov_check_api_certificate

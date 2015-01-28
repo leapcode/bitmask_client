@@ -538,6 +538,7 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         """
         self.set_status(self.tr("Succeeded"), error=False)
         self._set_logged_in()
+        self.disconnect_and_untrack()
 
         if not flags.OFFLINE:
             self.login_finished.emit()
