@@ -471,18 +471,13 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         Load the resulting information of the user going through the Wizard.
         Trigger the login sequence if needed.
         """
-        # providers = self._settings.get_configured_providers()
-        # self._providers.set_providers(providers)
-
-        # provider = self._providers.get_selected_provider()
-        # self._login_widget.set_provider(provider)
-
         possible_username = self._wizard.get_username()
         possible_password = self._wizard.get_password()
 
         # select the configured provider in the combo box
         domain = self._wizard.get_domain()
         self._providers.select_provider_by_name(domain)
+        self._login_widget.set_provider(domain)
 
         self._login_widget.set_remember(self._wizard.get_remember())
         self._enabled_services = list(self._wizard.get_services())
