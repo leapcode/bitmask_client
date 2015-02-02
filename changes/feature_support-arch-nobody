@@ -1,1 +1,0 @@
-- Support 'nobody' (used on Arch) as well as 'nogroup' as group names. Related to #6058.
