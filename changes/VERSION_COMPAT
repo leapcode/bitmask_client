@@ -4,6 +4,9 @@
 # Add your changes here so we can properly update
 # requirements.pip during the release process.
 # (leave header when resetting)
+#
+# When bumping it during the release cycle
+# remember to update also pkg/leap_versions.txt
 #################################################
 #
 # BEGIN DEPENDENCY LIST -------------------------

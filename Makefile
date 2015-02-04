@@ -122,5 +122,14 @@ install_wheel:
 gather_deps:
 	pipdeptree | pkg/scripts/filter-bitmask-deps
 
+all_leap_develop:
+	cd ../keymanager && git checkout develop
+	cd ../leap_common && git checkout develop
+	cd ../leap_mail && git checkout develop
+	cd ../soledad && git checkout develop
+
+all_leap_release_tags:
+	pkg/scripts/checkout_leap_versions.sh
+
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)

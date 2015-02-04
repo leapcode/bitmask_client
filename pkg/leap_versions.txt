@@ -1,0 +1,4 @@
+soledad 	0.6.3
+keymanager	0.3.8
+leap_common	0.3.9
+leap_mail	0.3.11
