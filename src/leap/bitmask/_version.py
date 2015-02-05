@@ -6,7 +6,7 @@
 # of this file.
 
 version_version = '0.8.0'
-version_full = '454529d5b9aeb80f46135984760846014f43bc3e'
+version_full = '3d2a81965026535f73d55a0ba63bb9c6c39663aa'
 
 
 def get_versions(default={}, verbose=False):
