@@ -133,7 +133,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
 
         self._set_logged_out()
 
-    @QtCore.Slot(int)
     def _remember_state_changed(self, state):
         """
         Save the remember state in the LeapSettings.
@@ -145,7 +144,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         # are: Checked, Unchecked and PartiallyChecked
         self._settings.set_remember(state == QtCore.Qt.Checked)
 
-    @QtCore.Slot(unicode)
     def _credentials_changed(self, text):
         """
         TRIGGER:
@@ -431,7 +429,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         self._backend.user_cancel_login()
         self._set_logged_out()
 
-    @QtCore.Slot()
     def _set_login_cancelled(self):
         """
         TRIGGERS:
@@ -443,7 +440,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         self.set_status(self.tr("Log in cancelled by the user."))
         self.set_enabled(True)
 
-    @QtCore.Slot(dict)
     def _provider_setup_intermediate(self, data):
         """
         TRIGGERS:
@@ -457,7 +453,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
             logger.error(data[ERROR_KEY])
             self._login_problem_provider()
 
-    @QtCore.Slot()
     def _login_problem_provider(self):
         """
         Warn the user about a problem with the provider during login.
@@ -465,7 +460,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         self.set_status(self.tr("Unable to login: Problem with provider"))
         self.set_enabled(True)
 
-    @QtCore.Slot(dict)
     def _load_provider_config(self, data):
         """
         TRIGGERS:
@@ -485,7 +479,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
 
         self._backend.provider_bootstrap(provider=self._provider)
 
-    @QtCore.Slot(dict)
     def _provider_config_loaded(self, data):
         """
         TRIGGERS:
@@ -528,7 +521,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         self.ui.logged_widget.show()
         self.ui.lblUser.setText(fullname)
 
-    @QtCore.Slot()
     def _authentication_finished(self):
         """
         TRIGGERS:
@@ -538,11 +530,11 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         """
         self.set_status(self.tr("Succeeded"), error=False)
         self._set_logged_in()
+        self.disconnect_and_untrack()
 
         if not flags.OFFLINE:
             self.login_finished.emit()
 
-    @QtCore.Slot(unicode)
     def _authentication_error(self, msg):
         """
         TRIGGERS:
@@ -574,7 +566,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         self.set_enabled(True)
         self.set_status("", error=False)
 
-    @QtCore.Slot()
     def do_logout(self):
         """
         TRIGGER:
@@ -612,7 +603,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
             self.ui.btnLogout.setEnabled(True)
             self.ui.clblErrorMsg.hide()
 
-    @QtCore.Slot()
     def _logout_error(self):
         """
         TRIGGER:
@@ -623,7 +613,6 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
         self._set_logging_out(False)
         self.set_status(self.tr("Something went wrong with the logout."))
 
-    @QtCore.Slot()
     def _logout_ok(self):
         """
         TRIGGER:

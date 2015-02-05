@@ -57,7 +57,6 @@ class SignalTracker(QtCore.QObject):
             try:
                 signal.disconnect(method)
             except (TypeError, RuntimeError) as e:
-                # most likely the signal was not connected
                 logger.warning("Disconnect error: {0!r}".format(e))
                 logger.warning("Signal: {0!r} -> {1!r}".format(signal, method))
 

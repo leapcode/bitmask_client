@@ -130,7 +130,6 @@ class EIPConductor(object):
         """
         self.qtsigs.do_disconnect_signal.emit()
 
-    @QtCore.Slot()
     def _start_eip(self):
         """
         Start EIP.
@@ -174,7 +173,6 @@ class EIPConductor(object):
         self.qtsigs.disconnecting_signal.disconnect()
         self.qtsigs.disconnecting_signal.connect(do_stop)
 
-    @QtCore.Slot()
     def _stop_eip(self, restart=False, failed=False):
         """
         TRIGGERS:
@@ -244,7 +242,6 @@ class EIPConductor(object):
         if restart:
             QtDelayedCall(2000, self.reconnect_stop_signal)
 
-    @QtCore.Slot()
     def _do_eip_restart(self):
         """
         TRIGGERS:
@@ -266,7 +263,6 @@ class EIPConductor(object):
         self.qtsigs.disconnecting_signal.connect(do_stop)
         self.qtsigs.do_disconnect_signal.emit()
 
-    @QtCore.Slot()
     def _do_eip_failed(self):
         """
         Stop EIP after a failure to start.
@@ -278,7 +274,6 @@ class EIPConductor(object):
         self.qtsigs.connection_died_signal.emit()
         QtDelayedCall(1000, self._eip_status.eip_failed_to_connect)
 
-    @QtCore.Slot(int)
     def _eip_finished(self, exitCode):
         """
         TRIGGERS:

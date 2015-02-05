@@ -225,8 +225,9 @@ class ProviderBootstrapper(AbstractBootstrapper):
             if flags.APP_VERSION_CHECK:
                 # TODO split
                 if not provider.supports_client(min_client_version):
-                    self._signaler.signal(
-                        self._signaler.prov_unsupported_client)
+                    if self._signaler is not None:
+                        self._signaler.signal(
+                            self._signaler.prov_unsupported_client)
                     raise UnsupportedClientVersionError()
 
             provider_definition, mtime = get_content(res)
@@ -248,7 +249,9 @@ class ProviderBootstrapper(AbstractBootstrapper):
                              'Found: {1}.').format(api_supported, api_version)
 
                     logger.error(error)
-                    self._signaler.signal(self._signaler.prov_unsupported_api)
+                    if self._signaler is not None:
+                        self._signaler.signal(
+                            self._signaler.prov_unsupported_api)
                     raise UnsupportedProviderAPI(error)
 
     def run_provider_select_checks(self, domain, download_if_needed=False):
@@ -267,12 +270,18 @@ class ProviderBootstrapper(AbstractBootstrapper):
         self._domain = ProviderConfig.sanitize_path_component(domain)
         self._download_if_needed = download_if_needed
 
+        name_resolution = None
+        https_connection = None
+        down_provider_info = None
+        if self._signaler is not None:
+            name_resolution = self._signaler.prov_name_resolution
+            https_connection = self._signaler.prov_https_connection
+            down_provider_info = self._signaler.prov_download_provider_info
+
         cb_chain = [
-            (self._check_name_resolution,
-             self._signaler.prov_name_resolution),
-            (self._check_https, self._signaler.prov_https_connection),
-            (self._download_provider_info,
-             self._signaler.prov_download_provider_info)
+            (self._check_name_resolution, name_resolution),
+            (self._check_https, https_connection),
+            (self._download_provider_info, down_provider_info)
         ]
 
         return self.addCallbackChain(cb_chain)
@@ -398,12 +407,18 @@ class ProviderBootstrapper(AbstractBootstrapper):
         self._provider_config = provider_config
         self._download_if_needed = download_if_needed
 
+        download_ca_cert = None
+        check_ca_fingerprint = None
+        check_api_certificate = None
+        if self._signaler is not None:
+            download_ca_cert = self._signaler.prov_download_ca_cert
+            check_ca_fingerprint = self._signaler.prov_check_ca_fingerprint
+            check_api_certificate = self._signaler.prov_check_api_certificate
+
         cb_chain = [
-            (self._download_ca_cert, self._signaler.prov_download_ca_cert),
-            (self._check_ca_fingerprint,
-             self._signaler.prov_check_ca_fingerprint),
-            (self._check_api_certificate,
-             self._signaler.prov_check_api_certificate)
+            (self._download_ca_cert, download_ca_cert),
+            (self._check_ca_fingerprint, check_ca_fingerprint),
+            (self._check_api_certificate, check_api_certificate)
         ]
 
         return self.addCallbackChain(cb_chain)

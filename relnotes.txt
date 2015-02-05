@@ -1,112 +1,46 @@
-ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.7.0.
+ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.8.0.
 
-The LEAP  team is  pleased to announce  the immediate  availability of
-version  0.7.0 of Bitmask, the  Internet Encryption Toolkit,  codename
-"One window to rule them all, and in the darkness bind them."
+The LEAP team is  pleased to announce  the immediate  availability of version
+0.8.0 of Bitmask, the  Internet Encryption Toolkit,  codename "Charlie and the
+code refactory"
 
-https://downloads.leap.se/client/
+This release focused on fixing bugs, particularly with the UI, and refactoring
+much of the core backend code for the client. There are no new features in this
+version.
 
-LEAP  (LEAP  Encryption Access  Project)  develops  a plan  to  secure
-everyday communication, breaking down into discrete services.
+Currently, Bitmask desktop client only support Debian and Ubuntu Linux. Support
+for Mac, Windows, and other Linux distributions is coming.
 
-Bitmask is  the desktop client to  connect to the services  offered by
-the LEAP  Platform.  In the  current phase the supported  services are
-Encrypted Internet Proxy and Encrypted Mail.
+Upgrading:
 
-The   Encrypted  Internet   Proxy  provides   circumvention,  location
-anonymization, and traffic encryption  in a hassle-free, automatically
-self-configuring fashion.
+* From bundle: if you are running bundle version 0.7 or new then Bitmask should
+  update automatically.
 
-Encrypted  Mail offers  automatic encryption  and decryption  for both
-outgoing and  incoming email, adding  public key cryptography  to your
-mail  without you  ever  having  to worry  about  key distribution  or
-signature verification.
+* From package: if you have added deb.bitmask.net to your sources.list, then
+  Bitmask should update automatically (make sure it is not commented out).
 
-You can read about this and many  other cool things in the user manual
-and the developer notes, which can be found online at:
-
-https://leap.se/en/docs/client
-
-WARNING: This is still  part of a beta release of  our software, a lot
-of testing and auditing is still needed, so indeed use it, and feed us
-back, fork it  and contribute to its development, but  by any means DO
-NOT trust your life to it.
-
-WHAT CAN THIS VERSION OF BITMASK DO FOR ME?
-
-Bitmask 0.7.0 brings with tremendous  joy automatic and secure updates
-through  The Update  Framework. Right  beside TUF  there are  some bug
-fixes and a new settings panel.
-
-You can read more about TUF in http://theupdateframework.com/
-
-Encrypted  Internet on  Linux avoids  leaking traffic  outside of  the
-secure  connection  it  establishes.  This  will  be  added  to  other
-platforms in the future.
-
-The Encrypted Mail services will run local SMTP and IMAP proxies that,
-once you configure the mail  client of your choice, will automatically
-encrypt and decrypt your email using GPG encryption under the hood.
-
-If it  is the first  time you run Bitmask,  the first run  wizard will
-help you registering an user  with your selected provider, downloading
-all the config files needed to connect to the various LEAP services.
+If you have a bundle version older than 0.7, please reinstall Bitmask.
 
 LICENSE
 
-You may  use Bitmask under the  GNU General Public License,  version 3
-or, at your option, any later  version. See the file "LICENSE" for the
-terms of the GNU General Public License, version 3.
+You may use Bitmask under the GNU General Public License, version 3 or, at your
+option, any later version. See the file "LICENSE" for the terms of the GNU
+General Public License, version 3.
 
-In  addition,  as a  special  exception,  the copyright  holders  give
-permission  to link  the code  of portions  of this  program with  the
-OpenSSL  library  under  certain   conditions  as  described  in  each
-individual source  file, and distribute linked  combinations including
-the two.
+USAGE
 
-INSTALLATION
-
-We distribute the current version of Bitmask as standalone bundles for
-GNU/Linux, OSX and Windows, but it is likely  that you are able to run
-it under other systems, specially if you are  skillful and patience is
-one of your virtues.
-
-Have a look at "docs/user/install.rst".
-
-Packages  are  also  provided  for  debian  and  ubuntu,  add the leap
-repository to your apt sources:
-
-deb http://deb.leap.se/debian wheezy main
-
-We  will  love  to hear if you want to make packages available for any
-other system.
-
-BUGS
-
-You can send the bugs our way  by pointing your telnet session to port
-443 on https://leap.se/code.  We will do  our best to make them follow
-our intensive bug-reeducation program.
-
-
-LINUX  ONLY:   If   you  ever run  into the situation  where you cannot
-access  internet, open  the  terminal  and  run the  following  command:
-
-$ pkexec /usr/local/sbin/bitmask-root firewall stop
-
-If for  some reason that  doesn't work, you  will need to  reboot your
-computer.
-
+See https://bitmask.net/help
 
 HACKING
 
-You can find us in the #leap channel on the freenode network.
+See https://leap.se/en/docs/get-involved for tips on contacting the developers,
+getting start hacking on Bitmask, and reporting bugs.
 
-If you are lucky enough, you can also spot us drinking mate, sleepless
-in night  trains, rooftops,  rainforests, lonely islands  and, always,
-beyond any border.
+If you are lucky enough, you can also spot us drinking mate, sleepless in night
+trains, rooftops,  rainforests, lonely islands  and, always, beyond any border.
 
 The LEAP team,
 
-December 12, 2014
+February 4, 2015
 Somewhere in the middle of the intertubes.
 EOF

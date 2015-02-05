@@ -38,7 +38,6 @@ from requests.models import Response
 
 from leap.bitmask import provider
 from leap.bitmask import util
-from leap.bitmask.backend import Signaler
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.tests import fake_provider
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
@@ -51,7 +50,7 @@ from leap.common.testing.https_server import where
 
 class ProviderBootstrapperTest(BaseLeapTest):
     def setUp(self):
-        self.pb = ProviderBootstrapper(Signaler())
+        self.pb = ProviderBootstrapper()
 
     def tearDown(self):
         pass

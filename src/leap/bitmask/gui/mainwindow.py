@@ -207,7 +207,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.ui.action_preferences.triggered.connect(self._show_preferences)
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
-        self.ui.action_wizard.triggered.connect(self._launch_wizard)
+        self.ui.action_wizard.triggered.connect(self._show_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
 
         # XXX hide the help menu since it only shows email information and
@@ -288,17 +288,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         if self._first_run():
             self._wizard_firstrun = True
-
-            # HACK FIX: disconnection of signals triggers a reconnection later
-            # chich segfaults on wizard quit
-            # self.disconnect_and_untrack()
-
-            self._wizard = Wizard(backend=self._backend,
-                                  leap_signaler=self._leap_signaler)
-            # Give this window time to finish init and then show the wizard
-            QtDelayedCall(1, self._launch_wizard)
-            self._wizard.accepted.connect(self._finish_init)
-            self._wizard.rejected.connect(self._rejected_wizard)
+            self._show_wizard()
         else:
             # during finish_init, we disable the eip start button
             # so this has to be done after eip_machine is started
@@ -346,7 +336,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # XXX does this goes in here? this will be triggered when the login or
         # wizard requests provider data
 
-        # XXX - here segfaults if we did a disconnect_and_untrack
         conntrack(sig.prov_check_api_certificate, self._get_provider_details)
         conntrack(sig.prov_get_details, self._provider_get_details)
 
@@ -402,54 +391,26 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # TODO: connect this with something
         # sig.soledad_cancelled_bootstrap.connect()
 
-    @QtCore.Slot()
-    def _rejected_wizard(self):
-        """
-        TRIGGERS:
-            self._wizard.rejected
-
-        Called if the wizard has been cancelled or closed before
-        finishing.
-        This is executed for the first run wizard only. Any other execution of
-        the wizard won't reach this point.
-        """
-        providers = self._settings.get_configured_providers()
-        has_provider_on_disk = len(providers) != 0
-        if not has_provider_on_disk:
-            # if we don't have any provider configured (included a pinned
-            # one) we can't use the application, so quit.
-            self.quit()
-        else:
-            # This happens if the user finishes the provider
-            # setup but does not register
-            self._wizard = None
-
-            # HACK FIX: disconnection of signals triggers a reconnection later
-            # chich segfaults on wizard quit
-            # self._backend_connect(only_tracked=True)
-
-            if self._wizard_firstrun:
-                self._finish_init()
-
-    @QtCore.Slot()
-    def _launch_wizard(self):
+    def _show_wizard(self):
         """
         TRIGGERS:
             self.ui.action_wizard.triggered
 
-        Also called in first run.
+        This is called during the Bitmask's first run.
 
-        Launches the wizard, creating the object itself if not already
-        there.
+        Open the wizard window, hiding the mainwindow window.
+        This reuses an existing wizard object or creates a new one if needed.
         """
+        # Disconnect signals to avoid conflicts between mainwindow and wizard
+        # connections
+        self.disconnect_and_untrack()
+
         if self._wizard is None:
-            # HACK FIX: disconnection of signals triggers a reconnection later
-            # chich segfaults on wizard quit
-            # self.disconnect_and_untrack()
             self._wizard = Wizard(backend=self._backend,
                                   leap_signaler=self._leap_signaler)
-            self._wizard.accepted.connect(self._finish_init)
-            self._wizard.rejected.connect(self._rejected_wizard)
+            self._wizard.accepted.connect(self._wizard_accepted)
+            self._wizard.rejected.connect(self._wizard_rejected)
+            self._wizard.finished.connect(self._wizard_finished)
 
         self.setVisible(False)
         # Do NOT use exec_, it will use a child event loop!
@@ -457,10 +418,8 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._wizard.show()
         if IS_MAC:
             self._wizard.raise_()
-        self._wizard.finished.connect(self._wizard_finished)
         self._settings.set_skip_first_run(True)
 
-    @QtCore.Slot()
     def _wizard_finished(self):
         """
         TRIGGERS:
@@ -469,6 +428,72 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         Called when the wizard has finished.
         """
         self.setVisible(True)
+        self._backend_connect(only_tracked=True)
+
+    def _wizard_rejected(self):
+        """
+        TRIGGERS:
+            self._wizard.rejected
+
+        Called if the wizard has been cancelled or closed before finishing.
+        """
+        # NOTE: We need to verify if we have configured providers.
+        # If not then we should quit
+        # see self._rejected_wizard()
+        providers = self._settings.get_configured_providers()
+        has_provider_on_disk = len(providers) != 0
+        if not has_provider_on_disk:
+            # if we don't have any provider configured (included a pinned
+            # one) we can't use the application, so quit.
+            self._wizard = None
+            self.quit()
+        else:
+            # This happens if the user finishes the provider
+            # setup but does not register
+            self._wizard = None
+
+            # self._backend_connect(only_tracked=True)
+            # if self._wizard_firstrun:
+            #     self._finish_init()
+
+    def _wizard_accepted(self):
+        """
+        TRIGGERS:
+            self._wizard.accepted
+
+        Called when the wizard has accepted.
+        """
+        self.setVisible(True)
+        self._finish_init()
+
+    def _load_from_wizard(self):
+        """
+        Load the resulting information of the user going through the Wizard.
+        Trigger the login sequence if needed.
+        """
+        possible_username = self._wizard.get_username()
+        possible_password = self._wizard.get_password()
+
+        # select the configured provider in the combo box
+        domain = self._wizard.get_domain()
+        self._providers.select_provider_by_name(domain)
+        self._login_widget.set_provider(domain)
+
+        self._login_widget.set_remember(self._wizard.get_remember())
+        self._enabled_services = list(self._wizard.get_services())
+        self._settings.set_enabled_services(
+            self._providers.get_selected_provider(),
+            self._enabled_services)
+
+        if possible_username is not None:
+            self._login_widget.set_user(possible_username)
+        if possible_password is not None:
+            self._login_widget.set_password(possible_password)
+            self._login()
+        else:
+            self.eip_needs_login.emit()
+
+        self._wizard = None
 
     def _get_leap_logging_handler(self):
         """
@@ -485,7 +510,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                 return h
         return None
 
-    @QtCore.Slot()
     def _show_logger_window(self):
         """
         TRIGGERS:
@@ -502,7 +526,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             lw = LoggerWindow(self, handler=leap_log_handler)
             lw.show()
 
-    @QtCore.Slot()
     def _show_AKM(self):
         """
         TRIGGERS:
@@ -522,7 +545,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                                     self._backend, self._soledad_started)
         akm.show()
 
-    @QtCore.Slot()
     def _show_preferences(self):
         """
         TRIGGERS:
@@ -542,7 +564,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         pref_win = PreferencesWindow(self, account, self.app)
         pref_win.show()
 
-    @QtCore.Slot(object, list)
     def _update_eip_enabled_status(self, account=None, services=None):
         """
         TRIGGER:
@@ -649,7 +670,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # so we must update it, otherwise we're in a deadlock.
         self._trying_to_start_eip = False
 
-    @QtCore.Slot()
     def _disable_eip_missing_helpers(self):
         """
         TRIGGERS:
@@ -672,7 +692,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         """
         self.new_updates.emit(req)
 
-    @QtCore.Slot(object)
     def _react_to_new_updates(self, req):
         """
         TRIGGERS:
@@ -688,7 +707,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.ui.btnMore.setVisible(True)
         self._updates_content = req.content
 
-    @QtCore.Slot()
     def _updates_details(self):
         """
         TRIGGERS:
@@ -716,7 +734,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                                       self.tr("Updates available"),
                                       msg)
 
-    @QtCore.Slot()
     def _finish_init(self):
         """
         TRIGGERS:
@@ -729,7 +746,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         the wizard has been executed.
         """
         # XXX: May be this can be divided into two methods?
-
         providers = self._settings.get_configured_providers()
         self._providers.set_providers(providers)
 
@@ -755,30 +771,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         QtDelayedCall(1, self._update_eip_enabled_status)
 
         if self._wizard:
-            possible_username = self._wizard.get_username()
-            possible_password = self._wizard.get_password()
-
-            # select the configured provider in the combo box
-            domain = self._wizard.get_domain()
-            self._providers.select_provider_by_name(domain)
-
-            self._login_widget.set_remember(self._wizard.get_remember())
-            self._enabled_services = list(self._wizard.get_services())
-            self._settings.set_enabled_services(
-                self._providers.get_selected_provider(),
-                self._enabled_services)
-            if possible_username is not None:
-                self._login_widget.set_user(possible_username)
-            if possible_password is not None:
-                self._login_widget.set_password(possible_password)
-                self._login()
-            else:
-                self.eip_needs_login.emit()
-
-            self._wizard = None
-            # HACK FIX: disconnection of signals triggers a reconnection later
-            # chich segfaults on wizard quit
-            # self._backend_connect(only_tracked=True)
+            self._load_from_wizard()
         else:
             domain = self._settings.get_provider()
             if domain is not None:
@@ -887,7 +880,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # we wait for the systray to be ready
             QtDelayedCall(1000, hello)
 
-    @QtCore.Slot(int)
     def _tray_activated(self, reason=None):
         """
         TRIGGERS:
@@ -906,7 +898,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # this works however.
             context_menu.exec_(self._systray.geometry().center())
 
-    @QtCore.Slot()
     def _ensure_visible(self):
         """
         TRIGGERS:
@@ -925,7 +916,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.activateWindow()
         self.raise_()
 
-    @QtCore.Slot()
     def _ensure_invisible(self):
         """
         TRIGGERS:
@@ -961,7 +951,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if state is not None:
             self.restoreState(state)
 
-    @QtCore.Slot()
     def _about(self):
         """
         TRIGGERS:
@@ -989,7 +978,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10], greet=greet)
         QtGui.QMessageBox.about(self, title, msg)
 
-    @QtCore.Slot()
     def _help(self):
         """
         TRIGGERS:
@@ -1091,7 +1079,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         skip_first_run = self._settings.get_skip_first_run()
         return not (has_provider_on_disk and skip_first_run)
 
-    @QtCore.Slot()
     def _disconnect_login_wait(self):
         """
         Disconnect the EIP finishing signal to the wait flag on the login
@@ -1109,7 +1096,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # signal not connected
             pass
 
-    @QtCore.Slot(object)
     def _on_provider_changed(self, wizard=True):
         """
         TRIGGERS:
@@ -1132,7 +1118,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         if not something_runing:
             if wizard:
-                self._launch_wizard()
+                self._show_wizard()
             else:
                 self._settings.set_provider(provider)
                 self._settings.set_defaultprovider(provider)
@@ -1161,13 +1147,12 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             self._update_eip_enabled_status()
             self._eip_conductor.qtsigs.do_disconnect_signal.emit()
             if wizard:
-                self._launch_wizard()
+                self._show_wizard()
         else:
             if not wizard:
                 # if wizard, the widget restores itself
                 self._providers.restore_previous_provider()
 
-    @QtCore.Slot()
     def _login(self):
         """
         TRIGGERS:
@@ -1195,7 +1180,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._soledad_started = False
 
-    @QtCore.Slot()
     def _on_user_logged_in(self):
         """
         TRIGGERS:
@@ -1224,7 +1208,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if MX_SERVICE not in self._provider_details['services']:
             self._set_mx_visible(False)
 
-    @QtCore.Slot()
     def _on_user_logged_out(self):
         """
         TRIGGER:
@@ -1253,8 +1236,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._maybe_start_eip()
 
-    @QtCore.Slot()
-    def _get_provider_details(self):
+    def _get_provider_details(self, data):
         """
         TRIGGERS:
             prov_check_api_certificate
@@ -1267,7 +1249,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         lang = QtCore.QLocale.system().name()
         self._backend.provider_get_details(domain=domain, lang=lang)
 
-    @QtCore.Slot()
     def _provider_get_details(self, details):
         """
         Set the details for the just downloaded provider.
@@ -1311,7 +1292,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         return eip_enabled and eip_provided
 
-    @QtCore.Slot()
     def _maybe_run_soledad_setup_checks(self):
         """
         TRIGGERS:
@@ -1352,7 +1332,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     ###################################################################
     # Service control methods: soledad
 
-    @QtCore.Slot()
     def _on_soledad_ready(self):
         """
         TRIGGERS:
@@ -1367,7 +1346,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
     ###################################################################
     # Service control methods: mail
-    @QtCore.Slot()
     def _start_mail_service(self):
         if self._provides_mx_and_enabled() or flags.OFFLINE:
             self._mail_conductor.start_mail_service(download_if_needed=True,
@@ -1376,14 +1354,12 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     ###################################################################
     # Service control methods: eip
 
-    @QtCore.Slot()
     def _disable_eip_start_action(self):
         """
         Disable the EIP start action in the systray menu.
         """
         self._action_eip_startstop.setEnabled(False)
 
-    @QtCore.Slot()
     def _enable_eip_start_action(self):
         """
         Enable the EIP start action in the systray menu.
@@ -1391,7 +1367,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._action_eip_startstop.setEnabled(True)
         self._eip_status.enable_eip_start()
 
-    @QtCore.Slot()
     def _on_eip_connecting(self):
         """
         TRIGGERS:
@@ -1415,7 +1390,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         eip_sigs.connection_aborted_signal.connect(slot)
         eip_sigs.connection_died_signal.connect(slot)
 
-    @QtCore.Slot()
     def _on_eip_connection_connected(self):
         """
         TRIGGERS:
@@ -1435,7 +1409,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # check for connectivity
         self._backend.eip_check_dns(domain=domain)
 
-    @QtCore.Slot()
     def _on_eip_connection_disconnected(self):
         """
         TRIGGERS:
@@ -1445,7 +1418,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         """
         self._already_started_eip = False
 
-    @QtCore.Slot()
     def _set_eip_provider(self, country_code=None):
         """
         TRIGGERS:
@@ -1457,7 +1429,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         domain = self._providers.get_selected_provider()
         self._eip_status.set_provider(domain, country_code)
 
-    @QtCore.Slot()
     def _eip_dns_error(self):
         """
         Trigger this if we don't have a working DNS resolver.
@@ -1549,7 +1520,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             # eip will not start, so we start soledad anyway
             self._maybe_run_soledad_setup_checks()
 
-    @QtCore.Slot(dict)
     def _finish_eip_bootstrap(self, data):
         """
         TRIGGERS:
@@ -1570,7 +1540,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # DO START EIP Connection!
         self._eip_conductor.do_connect()
 
-    @QtCore.Slot(dict)
     def _eip_intermediate_stage(self, data):
         # TODO missing param documentation
         """
@@ -1604,7 +1573,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             locks.raise_window_ack()
         self.raise_window.emit()
 
-    @QtCore.Slot()
     def _do_raise_mainwindow(self):
         """
         TRIGGERS:
@@ -1707,7 +1675,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             logger.debug("Killing backend")
             psutil.Process(self._backend_pid).kill()
 
-    @QtCore.Slot()
     def _remove_service(self, service):
         """
         Remove the given service from the waiting list and check if we have
@@ -1724,7 +1691,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             logger.debug("All services stopped.")
             self.all_services_stopped.emit()
 
-    @QtCore.Slot()
     def final_quit(self):
         """
         Final steps to quit the app, starting from here we don't care about
