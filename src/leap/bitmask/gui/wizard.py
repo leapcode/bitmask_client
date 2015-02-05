@@ -82,9 +82,8 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self._use_existing_provider = False
 
         self.ui.grpCheckProvider.setVisible(False)
-        conntrack = self.connect_and_track
-        conntrack(self.ui.btnCheck.clicked, self._check_provider)
-        conntrack(self.ui.lnProvider.returnPressed, self._check_provider)
+        self.ui.btnCheck.clicked.connect(self._check_provider)
+        self.ui.lnProvider.returnPressed.connect(self._check_provider)
 
         self._leap_signaler = leap_signaler
 
@@ -96,22 +95,19 @@ class Wizard(QtGui.QWizard, SignalTracker):
         # this details are set when the provider download is complete.
         self._provider_details = None
 
-        conntrack(self.currentIdChanged, self._current_id_changed)
+        self.currentIdChanged.connect(self._current_id_changed)
 
-        conntrack(self.ui.lnProvider.textChanged, self._enable_check)
-        conntrack(self.ui.rbNewProvider.toggled,
-                  lambda x: self._enable_check())
-        conntrack(self.ui.cbProviders.currentIndexChanged[int],
-                  self._reset_provider_check)
+        self.ui.lnProvider.textChanged.connect(self._enable_check)
+        self.ui.rbNewProvider.toggled.connect(lambda x: self._enable_check())
+        self.ui.cbProviders.currentIndexChanged[int].connect(
+            self._reset_provider_check)
 
-        conntrack(self.ui.lblUser.returnPressed, self._focus_password)
-        conntrack(self.ui.lblPassword.returnPressed,
-                  self._focus_second_password)
-        conntrack(self.ui.lblPassword2.returnPressed, self._register)
-        conntrack(self.ui.btnRegister.clicked, self._register)
+        self.ui.lblUser.returnPressed.connect(self._focus_password)
+        self.ui.lblPassword.returnPressed.connect(self._focus_second_password)
+        self.ui.lblPassword2.returnPressed.connect(self._register)
+        self.ui.btnRegister.clicked.connect(self._register)
 
-        conntrack(self.ui.rbExistingProvider.toggled,
-                  self._skip_provider_checks)
+        self.ui.rbExistingProvider.toggled.connect(self._skip_provider_checks)
 
         usernameRe = QtCore.QRegExp(USERNAME_REGEX)
         self.ui.lblUser.setValidator(
@@ -136,9 +132,8 @@ class Wizard(QtGui.QWizard, SignalTracker):
 
         self._provider_checks_ok = False
         self._provider_setup_ok = False
-        conntrack(self.finished, self._wizard_finished)
+        self.finished.connect(self._wizard_finished)
 
-    @QtCore.Slot()
     def _wizard_finished(self):
         """
         TRIGGERS:
@@ -152,8 +147,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self._provider_setup_ok = False
         self.ui.lnProvider.setText('')
         self.ui.grpCheckProvider.setVisible(False)
-        # HACK FIX: disconnection of signals triggers a segfault on quit
-        # self.disconnect_and_untrack()
+        self.disconnect_and_untrack()
 
     def _load_configured_providers(self):
         """
@@ -250,7 +244,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
     def get_services(self):
         return self._selected_services
 
-    @QtCore.Slot(unicode)
     def _enable_check(self, reset=True):
         """
         TRIGGERS:
@@ -340,7 +333,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         # register button
         self.ui.btnRegister.setVisible(visible)
 
-    @QtCore.Slot()
     def _registration_finished(self):
         """
         TRIGGERS:
@@ -366,7 +358,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.page(self.REGISTER_USER_PAGE).set_completed()
         self.button(QtGui.QWizard.BackButton).setEnabled(False)
 
-    @QtCore.Slot()
     def _registration_failed(self):
         """
         TRIGGERS:
@@ -380,7 +371,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self._set_register_status(error_msg, error=True)
         self.ui.btnRegister.setEnabled(True)
 
-    @QtCore.Slot()
     def _registration_taken(self):
         """
         TRIGGERS:
@@ -427,7 +417,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.ui.lblCheckCaFpr.setPixmap(None)
         self.ui.lblCheckApiCert.setPixmap(None)
 
-    @QtCore.Slot()
     def _check_provider(self):
         """
         TRIGGERS:
@@ -461,7 +450,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.ui.lblNameResolution.setPixmap(self.QUESTION_ICON)
         self._backend.provider_setup(provider=self._domain)
 
-    @QtCore.Slot(bool)
     def _skip_provider_checks(self, skip):
         """
         TRIGGERS:
@@ -505,7 +493,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
             label.setPixmap(self.ERROR_ICON)
             logger.error(error)
 
-    @QtCore.Slot(dict)
     def _name_resolution(self, data):
         """
         TRIGGERS:
@@ -525,7 +512,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
 
-    @QtCore.Slot(dict)
     def _https_connection(self, data):
         """
         TRIGGERS:
@@ -545,7 +531,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.ui.btnCheck.setEnabled(not passed)
         self.ui.lnProvider.setEnabled(not passed)
 
-    @QtCore.Slot(dict)
     def _download_provider_info(self, data):
         """
         TRIGGERS:
@@ -581,7 +566,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         else:
             self.ui.cbProviders.setEnabled(True)
 
-    @QtCore.Slot()
     def _provider_get_details(self, details):
         """
         Set the details for the just downloaded provider.
@@ -591,7 +575,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         """
         self._provider_details = details
 
-    @QtCore.Slot(dict)
     def _download_ca_cert(self, data):
         """
         TRIGGERS:
@@ -604,7 +587,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         if passed:
             self.ui.lblCheckCaFpr.setPixmap(self.QUESTION_ICON)
 
-    @QtCore.Slot(dict)
     def _check_ca_fingerprint(self, data):
         """
         TRIGGERS:
@@ -617,7 +599,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         if passed:
             self.ui.lblCheckApiCert.setPixmap(self.QUESTION_ICON)
 
-    @QtCore.Slot(dict)
     def _check_api_certificate(self, data):
         """
         TRIGGERS:
@@ -631,7 +612,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
                             True, self.SETUP_PROVIDER_PAGE)
         self._provider_setup_ok = True
 
-    @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
         """
         TRIGGERS:
@@ -680,7 +660,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
                     self.tr("Something went wrong while trying to "
                             "load service %s" % (service,)))
 
-    @QtCore.Slot(int)
     def _current_id_changed(self, pageId):
         """
         TRIGGERS:

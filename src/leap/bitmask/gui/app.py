@@ -50,7 +50,6 @@ class App(QtGui.QWidget):
         self._backend_checker.timeout.connect(self._check_backend_status)
         self._backend_checker.start(2000)
 
-    @QtCore.Slot()
     def _check_backend_status(self):
         """
         TRIGGERS:

@@ -98,7 +98,6 @@ class Providers(QtCore.QObject):
         self._combo.setCurrentIndex(prev_provider)
         self._combo.blockSignals(False)
 
-    @QtCore.Slot(int)
     def _current_provider_changed(self, idx):
         """
         TRIGGERS:

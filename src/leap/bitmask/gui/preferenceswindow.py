@@ -152,7 +152,6 @@ class PreferencesWindow(QtGui.QDialog):
         self._email_page.deleteLater()
         self.deleteLater()
 
-    @QtCore.Slot()
     def _change_page(self, current, previous):
         """
         TRIGGERS:
@@ -170,7 +169,6 @@ class PreferencesWindow(QtGui.QDialog):
             current = previous
         self.ui.pages_widget.setCurrentIndex(self.ui.nav_widget.row(current))
 
-    @QtCore.Slot(object, list)
     def _update_icons(self, account, services):
         """
         TRIGGERS:

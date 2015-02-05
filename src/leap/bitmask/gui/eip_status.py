@@ -137,7 +137,6 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.btnUpload.clicked.connect(onclicked)
         self.ui.btnDownload.clicked.connect(onclicked)
 
-    @QtCore.Slot()
     def _on_VPN_status_clicked(self):
         """
         TRIGGERS:
@@ -295,7 +294,6 @@ class EIPStatusWidget(QtGui.QWidget):
         msg = self.tr("Encrypted Internet is starting")
         self.set_eip_message(msg)
 
-    @QtCore.Slot()
     def disable_eip_start(self):
         """
         Triggered when a default provider_config has not been found.
@@ -327,7 +325,6 @@ class EIPStatusWidget(QtGui.QWidget):
                 self._eip_disabled_action)
             self._eip_status_menu.menuAction().setVisible(False)
 
-    @QtCore.Slot()
     def enable_eip_start(self):
         """
         Triggered after a successful login.
@@ -452,7 +449,6 @@ class EIPStatusWidget(QtGui.QWidget):
         self.user_cancelled = True
         self.hide_eip_cancel_button()
 
-    @QtCore.Slot(dict)
     def eip_stopped(self, restart=False, failed=False):
         """
         TRIGGERS:
@@ -500,7 +496,6 @@ class EIPStatusWidget(QtGui.QWidget):
                                     "unencrypted traffic."))
         self.show_fw_down_button()
 
-    @QtCore.Slot(dict)
     def update_vpn_status(self, data=None):
         """
         TRIGGERS:
@@ -535,7 +530,6 @@ class EIPStatusWidget(QtGui.QWidget):
         self.ui.btnUpload.setText(upload_str)
         self.ui.btnDownload.setText(download_str)
 
-    @QtCore.Slot(dict)
     def update_vpn_state(self, vpn_state):
         """
         TRIGGERS:
@@ -674,7 +668,6 @@ class EIPStatusWidget(QtGui.QWidget):
     # Slots for signals
     #
 
-    @QtCore.Slot()
     def _on_eip_connection_aborted(self):
         """
         TRIGGERS:
@@ -773,7 +766,6 @@ class EIPStatusWidget(QtGui.QWidget):
         """
         self.eip_conductor.reconnect_stop_signal()
 
-    @QtCore.Slot()
     def _on_eip_network_unreachable(self):
         """
         TRIGGERS:

@@ -118,6 +118,8 @@ class VPNGatewaySelector(object):
         """
         gateways_timezones = []
         locations = self._eipconfig.get_locations()
+        if not locations:
+            locations = {}
         gateways = self._eipconfig.get_gateways()
 
         for idx, gateway in enumerate(gateways):

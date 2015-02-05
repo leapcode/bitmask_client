@@ -184,7 +184,6 @@ class MailStatusWidget(QtGui.QWidget):
         leap_assert_type(action_mail_status, QtGui.QAction)
         self._action_mail_status = action_mail_status
 
-    @QtCore.Slot()
     def set_soledad_failed(self):
         """
         TRIGGERS:
@@ -195,7 +194,6 @@ class MailStatusWidget(QtGui.QWidget):
         msg = self.tr("There was an unexpected problem with Soledad.")
         self._set_mail_status(msg, ready=-1)
 
-    @QtCore.Slot()
     def set_soledad_invalid_auth_token(self):
         """
         TRIGGERS:
@@ -250,7 +248,6 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._soledad_event.emit(req)
 
-    @QtCore.Slot(object)
     def _mail_handle_soledad_events_slot(self, req):
         """
         TRIGGERS:
@@ -285,7 +282,6 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._keymanager_event.emit(req)
 
-    @QtCore.Slot(object)
     def _mail_handle_keymanager_events_slot(self, req):
         """
         TRIGGERS:
@@ -332,7 +328,6 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._smtp_event.emit(req)
 
-    @QtCore.Slot(object)
     def _mail_handle_smtp_events_slot(self, req):
         """
         TRIGGERS:
@@ -367,7 +362,6 @@ class MailStatusWidget(QtGui.QWidget):
         """
         self._imap_event.emit(req)
 
-    @QtCore.Slot(object)
     def _mail_handle_imap_events_slot(self, req):
         """
         TRIGGERS:
@@ -419,7 +413,6 @@ class MailStatusWidget(QtGui.QWidget):
 
     # XXX make the signal emit the label and state.
 
-    @QtCore.Slot()
     def mail_state_disconnected(self):
         """
         Display the correct UI for the disconnected state.
@@ -431,7 +424,6 @@ class MailStatusWidget(QtGui.QWidget):
         else:
             self._set_mail_status(self.tr("OFF"), -1)
 
-    @QtCore.Slot()
     def mail_state_connecting(self):
         """
         Display the correct UI for the connecting state.
@@ -440,21 +432,18 @@ class MailStatusWidget(QtGui.QWidget):
         self._started = True
         self._set_mail_status(self.tr("Starting..."), 1)
 
-    @QtCore.Slot()
     def mail_state_disconnecting(self):
         """
         Display the correct UI for the connecting state.
         """
         self._set_mail_status(self.tr("Disconnecting..."), 1)
 
-    @QtCore.Slot()
     def mail_state_connected(self):
         """
         Display the correct UI for the connected state.
         """
         self._set_mail_status(self.tr("ON"), 2)
 
-    @QtCore.Slot()
     def mail_state_disabled(self):
         """
         Display the correct UI for the disabled state.
@@ -464,7 +453,6 @@ class MailStatusWidget(QtGui.QWidget):
             self._service_name)
         self._set_mail_status(status, -1)
 
-    @QtCore.Slot()
     def soledad_invalid_auth_token(self):
         """
         Display the correct UI for the invalid token state

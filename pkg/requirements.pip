@@ -10,9 +10,8 @@ requests>=1.1.0
 srp>=1.0.2
 pyopenssl
 
-# This won't be needed after we refactor leap.common.events
-# to use zmq.
-python-dateutil  #==1.4  # See  https://leap.se/code/issues/6099
+# This won't be needed after we refactor leap.common.events to use zmq.
+python-dateutil
 
 psutil
 

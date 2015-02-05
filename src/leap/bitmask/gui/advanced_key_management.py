@@ -132,7 +132,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
         else:
             logger.debug('Import canceled by the user.')
 
-    @QtCore.Slot()
     def _keymanager_import_ok(self):
         """
         TRIGGERS:
@@ -144,7 +143,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
             self, self.tr("Import Successful"),
             self.tr("The key pair was imported successfully."))
 
-    @QtCore.Slot()
     def _import_ioerror(self):
         """
         TRIGGERS:
@@ -157,7 +155,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
             self.tr("There was an error accessing the file.\n"
                     "Import canceled."))
 
-    @QtCore.Slot()
     def _import_datamismatch(self):
         """
         TRIGGERS:
@@ -171,7 +168,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
                     "same address and fingerprint.\n"
                     "Import canceled."))
 
-    @QtCore.Slot()
     def _import_missingkey(self):
         """
         TRIGGERS:
@@ -185,7 +181,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
                     "key in the same file.\n"
                     "Import canceled."))
 
-    @QtCore.Slot()
     def _import_addressmismatch(self):
         """
         TRIGGERS:
@@ -212,7 +207,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
         else:
             logger.debug('Export canceled by the user.')
 
-    @QtCore.Slot()
     def _keymanager_export_ok(self):
         """
         TRIGGERS:
@@ -225,7 +219,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
             self.tr("The key pair was exported successfully.\n"
                     "Please, store your private key in a safe place."))
 
-    @QtCore.Slot()
     def _keymanager_export_error(self):
         """
         TRIGGERS:
@@ -238,7 +231,6 @@ class AdvancedKeyManagement(QtGui.QDialog):
             self.tr("There was an error accessing the file.\n"
                     "Export canceled."))
 
-    @QtCore.Slot()
     def _keymanager_keys_list(self, keys):
         """
         TRIGGERS:

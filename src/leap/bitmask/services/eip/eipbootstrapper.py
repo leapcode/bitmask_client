@@ -115,10 +115,15 @@ class EIPBootstrapper(AbstractBootstrapper):
         self._provider_config = provider_config
         self._download_if_needed = download_if_needed
 
+        eip_config_ready = None
+        eip_certificate_ready = None
+        if self._signaler is not None:
+            eip_config_ready = self._signaler.eip_config_ready
+            eip_certificate_ready = self._signaler.eip_client_certificate_ready
+
         cb_chain = [
-            (self._download_config, self._signaler.eip_config_ready),
-            (self._download_client_certificates,
-             self._signaler.eip_client_certificate_ready)
+            (self._download_config, eip_config_ready),
+            (self._download_client_certificates, eip_certificate_ready)
         ]
 
         return self.addCallbackChain(cb_chain)

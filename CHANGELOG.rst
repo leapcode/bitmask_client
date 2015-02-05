@@ -3,6 +3,32 @@
 History
 -------
 
+2015
+====
+
+0.8.0 January xx -- "Charlie and the code refactory"
+++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Features
+--------
+- #5873: Allow frontend and backend to be run separately.
+- Refactor login widgets/logic.
+- Improved changelog :).
+
+Bugfixes
+--------
+- #6058: Support 'nobody' (used on Arch) as well as 'nogroup' as group names.
+- #6123: Forward the right environment data to subprocess call.
+- #6150: Do not allow Bitmask to start if there is no polkit agent running.
+- #6631: Fix failing tests.
+- #6638: Fix set initialization to support python 2.6.
+- #6652: Fix regression: polkit agent is not automatically launched.
+- #6654: Login attempt is made against previously selected provider.
+- Create zmq certificates if they don't exist.
+- Disable '--offline' flag temporarily.
+- Make pkg/tuf/release.py handle removals in the repo.
+- Reduce the wait for running threads timeout on quit.
+
 2014
 ====
 

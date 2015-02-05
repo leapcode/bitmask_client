@@ -258,18 +258,6 @@ class ProviderConfigTest(BaseLeapTest):
         pc.load(data=json_string)
         self.assertTrue('unknown' in pc.get_services())
 
-    def test_get_services_string(self):
-        pc = self._provider_config
-        config = copy.deepcopy(sample_config)
-        config['services'] = [
-            'openvpn', 'asdf', 'openvpn', 'not_supported_service']
-        json_string = json.dumps(config)
-        pc.load(data=json_string)
-
-        self.assertEqual(pc.get_services_string(),
-                         "Encrypted Internet, asdf, Encrypted Internet,"
-                         " not_supported_service")
-
 
 if __name__ == "__main__":
     unittest.main()

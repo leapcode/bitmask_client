@@ -63,7 +63,6 @@ class PreferencesAccountPage(QtGui.QWidget):
             self.ui.change_password_label.setVisible(True)
             self.ui.change_password_button.setEnabled(False)
 
-    @QtCore.Slot(str, int)
     def _service_selection_changed(self, service, state):
         """
         TRIGGERS:
@@ -94,7 +93,6 @@ class PreferencesAccountPage(QtGui.QWidget):
         # emit signal alerting change
         self.app.service_selection_changed.emit(self.account, services)
 
-    @QtCore.Slot(str)
     def _load_services(self, services):
         """
         TRIGGERS:
@@ -133,7 +131,6 @@ class PreferencesAccountPage(QtGui.QWidget):
                 logger.error("Something went wrong while trying to "
                              "load service %s" % (service,))
 
-    @QtCore.Slot()
     def _show_change_password(self):
         change_password_window = PasswordWindow(self, self.account, self.app)
         change_password_window.show()
