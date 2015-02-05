@@ -1,12 +1,12 @@
-bitmask (0.8.0~rc3) unstable; urgency=medium
+bitmask (0.8.0) unstable; urgency=medium
 
-  * Update to 0.8.0rc3 release.
+  * Update to 0.8.0 release.
   * Change build-depends on python-requests to not build on -1 revision
   * Update debian/copyright to fix space-in-std-shortname
   * Update debian/copyright to fix dep5 copyright short name
   * Update standards version to 3.9.6 - no changes
 
- -- Ben Carrillo <ben@futeisha.org>  Thu, 08 Jan 2015 14:34:29 -0400
+ -- Ben Carrillo <ben@futeisha.org>  Thu, 05 Feb 2015 15:23:14 -0400
 
 bitmask (0.7.0.1) unstable; urgency=medium
 
