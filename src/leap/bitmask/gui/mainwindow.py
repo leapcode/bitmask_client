@@ -210,10 +210,8 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.ui.action_wizard.triggered.connect(self._show_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
 
-        # XXX hide the help menu since it only shows email information and
-        # right now we don't have stable mail and just confuses users.
-        self.ui.action_help.setVisible(False)
-        # self.ui.action_help.triggered.connect(self._help)
+        self.ui.action_help.setVisible(True)
+        self.ui.action_help.triggered.connect(self._help)
 
         self.ui.action_create_new_account.triggered.connect(
             self._on_provider_changed)
