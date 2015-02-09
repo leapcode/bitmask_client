@@ -3,6 +3,7 @@
 History
 -------
 
+====
 2015
 ====
 
@@ -10,13 +11,13 @@ History
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Features
---------
+~~~~~~~~
 - #5873: Allow frontend and backend to be run separately.
 - Refactor login widgets/logic.
 - Improved changelog :).
 
 Bugfixes
---------
+~~~~~~~~
 - #6058: Support 'nobody' (used on Arch) as well as 'nogroup' as group names.
 - #6123: Forward the right environment data to subprocess call.
 - #6150: Do not allow Bitmask to start if there is no polkit agent running.
@@ -29,6 +30,7 @@ Bugfixes
 - Make pkg/tuf/release.py handle removals in the repo.
 - Reduce the wait for running threads timeout on quit.
 
+====
 2014
 ====
 
@@ -304,6 +306,7 @@ Bugfixes
   module, obscuring all the details.
 - Remove qt4reactor as a dependency.
 
+====
 2013
 ====
 
