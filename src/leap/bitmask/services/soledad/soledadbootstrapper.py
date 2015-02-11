@@ -27,7 +27,7 @@ from ssl import SSLError
 from sqlite3 import ProgrammingError as sqlite_ProgrammingError
 
 from u1db import errors as u1db_errors
-from twisted.internet import threads
+from twisted.internet import threads, defer
 from zope.proxy import sameProxiedObjects
 from pysqlcipher.dbapi2 import ProgrammingError as sqlcipher_ProgrammingError
 
@@ -45,7 +45,8 @@ from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
 from leap.soledad.common.errors import InvalidAuthTokenError
-from leap.soledad.client import Soledad, BootstrapSequenceError
+from leap.soledad.client import Soledad
+from leap.soledad.client.secrets import BootstrapSequenceError
 
 logger = logging.getLogger(__name__)
 
@@ -317,19 +318,26 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if flags.OFFLINE:
             self._init_keymanager(self._address, token)
         else:
-            try:
-                address = make_address(
-                    self._user, self._provider_config.get_domain())
-                self._init_keymanager(address, token)
-                self._keymanager.get_key(
+            address = make_address(
+                self._user, self._provider_config.get_domain())
+
+            def key_not_found(failure):
+                if failure.check(KeyNotFound):
+                    logger.debug("Key not found. Generating key for %s" %
+                                 (address,))
+                    self._do_soledad_sync()
+                else:
+                    return failure
+
+            d = self._init_keymanager(address, token)
+            d.addCallback(
+                lambda _: self._keymanager.get_key(
                     address, openpgp.OpenPGPKey,
-                    private=True, fetch_remote=False)
-                d = threads.deferToThread(self._do_soledad_sync)
-                d.addErrback(self._soledad_sync_errback)
-            except KeyNotFound:
-                logger.debug("Key not found. Generating key for %s" %
-                             (address,))
-                self._do_soledad_sync()
+                    private=True, fetch_remote=False))
+            d.addCallbacks(
+                lambda _: threads.deferToThread(self._do_soledad_sync),
+                key_not_found)
+            d.addErrback(self._soledad_sync_errback)
 
     def _pick_server(self, uuid):
         """
@@ -537,6 +545,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :type address: str
         :param token: the auth token for accessing webapp.
         :type token: str
+        :rtype: Deferred
         """
         srp_auth = self.srpauth
         logger.debug('initializing keymanager...')
@@ -576,20 +585,27 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if flags.OFFLINE is False:
             # make sure key is in server
             logger.debug('Trying to send key to server...')
-            try:
-                self._keymanager.send_key(openpgp.OpenPGPKey)
-            except KeyNotFound:
-                logger.debug('No key found for %s, will generate soon.'
-                             % address)
-            except Exception as exc:
-                logger.error("Error sending key to server.")
-                logger.exception(exc)
-                # but we do not raise
+
+            def send_errback(failure):
+                if failure.check(KeyNotFound):
+                    logger.debug('No key found for %s, will generate soon.'
+                                 % address)
+                else:
+                    logger.error("Error sending key to server.")
+                    logger.exception(failure.value)
+                    # but we do not raise
+
+            d = self._keymanager.send_key(openpgp.OpenPGPKey)
+            d.addErrback(send_errback)
+            return d
+        else:
+            return defer.succeed(None)
 
     def _gen_key(self):
         """
         Generates the key pair if needed, uploads it to the webapp and
         nickserver
+        :rtype: Deferred
         """
         leap_assert(self._provider_config is not None,
                     "We need a provider configuration!")
@@ -600,30 +616,33 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self._user, self._provider_config.get_domain())
         logger.debug("Retrieving key for %s" % (address,))
 
-        try:
-            self._keymanager.get_key(
-                address, openpgp.OpenPGPKey, private=True, fetch_remote=False)
-            return
-        except KeyNotFound:
-            logger.debug("Key not found. Generating key for %s" % (address,))
+        def if_not_found_generate(failure):
+            if failure.check(KeyNotFound):
+                logger.debug("Key not found. Generating key for %s"
+                             % (address,))
+                d = self._keymanager.gen_key(openpgp.OpenPGPKey)
+                d.addCallbacks(send_key, log_key_error("generating"))
+                return d
+            else:
+                return failure
 
-        # generate key
-        try:
-            self._keymanager.gen_key(openpgp.OpenPGPKey)
-        except Exception as exc:
-            logger.error("Error while generating key!")
-            logger.exception(exc)
-            raise
+        def send_key(_):
+            d = self._keymanager.send_key(openpgp.OpenPGPKey)
+            d.addCallbacks(
+                lambda _: logger.debug("Key generated successfully."),
+                log_key_error("sending"))
 
-        # send key
-        try:
-            self._keymanager.send_key(openpgp.OpenPGPKey)
-        except Exception as exc:
-            logger.error("Error while sending key!")
-            logger.exception(exc)
-            raise
+        def log_key_error(step):
+            def log_err(failure):
+                logger.error("Error while %s key!", (step,))
+                logger.exception(failure.value)
+                return failure
+            return log_err
 
-        logger.debug("Key generated successfully.")
+        d = self._keymanager.get_key(
+            address, openpgp.OpenPGPKey, private=True, fetch_remote=False)
+        d.addErrback(if_not_found_generate)
+        return d
 
     def run_soledad_setup_checks(self, provider_config, user, password,
                                  download_if_needed=False):
@@ -664,9 +683,10 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self.load_and_sync_soledad(uuid)
 
             if not flags.OFFLINE:
-                self._gen_key()
-
-            self._signaler.signal(signal_finished)
+                d = self._gen_key()
+                d.addCallback(lambda _: self._signaler.signal(signal_finished))
+            else:
+                self._signaler.signal(signal_finished)
         except Exception as e:
             # TODO: we should handle more specific exceptions in here
             self._soledad = None

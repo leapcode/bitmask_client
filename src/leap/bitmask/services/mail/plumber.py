@@ -17,6 +17,8 @@
 """
 Utils for manipulating local mailboxes.
 """
+# TODO --- this module has not yet catched up with 0.9.0
+
 import getpass
 import logging
 import os
@@ -32,9 +34,7 @@ from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
 from leap.bitmask.util import flatten, get_path_prefix
 
-from leap.mail.imap.account import SoledadBackedAccount
-from leap.mail.imap.memorystore import MemoryStore
-from leap.mail.imap.soledadstore import SoledadStore
+from leap.mail.imap.account import IMAPAccount
 from leap.soledad.client import Soledad
 
 logger = logging.getLogger(__name__)
@@ -140,11 +140,7 @@ class MBOXPlumber(object):
         self.sol = initialize_soledad(
             self.uuid, self.userid, self.passwd,
             secrets, localdb, "/tmp", "/tmp")
-        memstore = MemoryStore(
-            permanent_store=SoledadStore(self.sol),
-            write_period=5)
-        self.acct = SoledadBackedAccount(self.userid, self.sol,
-                                         memstore=memstore)
+        self.acct = IMAPAccount(self.userid, self.sol)
         return True
 
     #
