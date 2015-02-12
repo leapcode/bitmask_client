@@ -126,6 +126,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._backend = self.app.backend
         self._leap_signaler = self.app.signaler
         self._settings = self.app.settings
+        self._backend_settings = self._backend.settings
 
         # Login Widget
         self._login_widget = LoginWidget(self._backend,
@@ -1191,8 +1192,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         user = self._login_widget.get_logged_user()
         # XXX the widget now gives us the full user id.
         # this is confusing.
-        #domain = self._providers.get_selected_provider()
-        #full_user_id = make_address(user, domain)
+        # domain = self._providers.get_selected_provider()
+        # full_user_id = make_address(user, domain)
+
         # XXX the casting to str (needed by smtp gateway) should be done
         # in a better place.
         self._mail_conductor.userid = str(user)
@@ -1313,10 +1315,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         if flags.OFFLINE:
             full_user_id = make_address(username, provider_domain)
-            uuid = self._settings.get_uuid(full_user_id)
+            uuid = self._backend_settings.get_uuid(full_user_id)
             self._mail_conductor.userid = full_user_id
 
-            if uuid is None:
+            if not uuid:
                 # We don't need more visibility at the moment,
                 # this is mostly for internal use/debug for now.
                 logger.warning("Sorry! Log-in at least one time.")

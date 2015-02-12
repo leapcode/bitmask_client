@@ -28,6 +28,7 @@ from sqlite3 import ProgrammingError as sqlite_ProgrammingError
 
 from u1db import errors as u1db_errors
 from twisted.internet import threads, defer
+import zope.proxy
 from zope.proxy import sameProxiedObjects
 from pysqlcipher.dbapi2 import ProgrammingError as sqlcipher_ProgrammingError
 
@@ -58,31 +59,6 @@ during the use of the offline mode.
 They should not be needed after we allow a null remote initialization in the
 soledad client, and a switch to remote sync-able mode during runtime.
 """
-
-
-class Mock(object):
-    """
-    A generic simple mock class
-    """
-    def __init__(self, return_value=None):
-        self._return = return_value
-
-    def __call__(self, *args, **kwargs):
-        return self._return
-
-
-class MockSharedDB(object):
-    """
-    Mocked  SharedDB object to replace in soledad before
-    instantiating it in offline mode.
-    """
-    get_doc = Mock()
-    put_doc = Mock()
-    lock = Mock(return_value=('atoken', 300))
-    unlock = Mock(return_value=True)
-
-    def __call__(self):
-        return self
 
 # TODO these exceptions could be moved to soledad itself
 # after settling this down.
@@ -146,7 +122,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         self._provider_config = None
         self._soledad_config = None
-        self._keymanager = None
         self._download_if_needed = False
 
         self._user = ""
@@ -155,7 +130,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._uuid = ""
 
         self._srpauth = None
-        self._soledad = None
+
+        self._soledad = zope.proxy.ProxyBase(None)
+        self._keymanager = zope.proxy.ProxyBase(None)
 
     @property
     def keymanager(self):
@@ -190,9 +167,13 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._password = password
         self._uuid = uuid
         try:
-            self.load_and_sync_soledad(uuid, offline=True)
-            self._signaler.signal(self._signaler.soledad_offline_finished)
+            d = self.load_and_sync_soledad(uuid, offline=True)
+            d.addCallback(
+                lambda _: self._signaler.signal(
+                    self._signaler.soledad_offline_finished))
+            return d
         except Exception as e:
+            # XXX convert exception into failure.trap
             # TODO: we should handle more specific exceptions in here
             logger.exception(e)
             self._signaler.signal(self._signaler.soledad_offline_failed)
@@ -248,7 +229,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # warned the user in _do_soledad_sync()
 
     def _do_soledad_init(self, uuid, secrets_path, local_db_path,
-                         server_url, cert_file, token):
+                         server_url, cert_file, token, syncable):
         """
         Initialize soledad, retry if necessary and raise an exception if we
         can't succeed.
@@ -274,7 +255,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 logger.debug("Trying to init soledad....")
                 self._try_soledad_init(
                     uuid, secrets_path, local_db_path,
-                    server_url, cert_file, token)
+                    server_url, cert_file, token, syncable)
                 logger.debug("Soledad has been initialized.")
                 return
             except Exception as exc:
@@ -296,6 +277,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :type uuid: unicode, or None.
         :param offline: whether to instantiate soledad for offline use.
         :type offline: bool
+
+        :rtype: defer.Deferred
         """
         local_param = self._get_soledad_local_params(uuid, offline)
         remote_param = self._get_soledad_server_params(uuid, offline)
@@ -303,21 +286,26 @@ class SoledadBootstrapper(AbstractBootstrapper):
         secrets_path, local_db_path, token = local_param
         server_url, cert_file = remote_param
 
-        try:
-            self._do_soledad_init(uuid, secrets_path, local_db_path,
-                                  server_url, cert_file, token)
-        except SoledadInitError:
-            # re-raise the exceptions from try_init,
-            # we're currently handling the retries from the
-            # soledad-launcher in the gui.
-            raise
+        if offline:
+            return self._load_soledad_nosync(
+                uuid, secrets_path, local_db_path, cert_file, token)
 
-        leap_assert(not sameProxiedObjects(self._soledad, None),
-                    "Null soledad, error while initializing")
-
-        if flags.OFFLINE:
-            self._init_keymanager(self._address, token)
         else:
+            # We assume online operation from here on.
+            # XXX split in subfunction
+            syncable = True
+            try:
+                self._do_soledad_init(uuid, secrets_path, local_db_path,
+                                      server_url, cert_file, token, syncable)
+            except SoledadInitError:
+                # re-raise the exceptions from try_init,
+                # we're currently handling the retries from the
+                # soledad-launcher in the gui.
+                raise
+
+            leap_assert(not sameProxiedObjects(self._soledad, None),
+                        "Null soledad, error while initializing")
+
             address = make_address(
                 self._user, self._provider_config.get_domain())
 
@@ -335,9 +323,21 @@ class SoledadBootstrapper(AbstractBootstrapper):
                     address, openpgp.OpenPGPKey,
                     private=True, fetch_remote=False))
             d.addCallbacks(
+                # XXX WTF --- FIXME remove this call to thread, soledad already
+                # does the sync in its own threadpool. -- kali
                 lambda _: threads.deferToThread(self._do_soledad_sync),
                 key_not_found)
             d.addErrback(self._soledad_sync_errback)
+            return d
+
+    def _load_soledad_nosync(self, uuid, secrets_path, local_db_path,
+                             cert_file, token):
+
+        syncable = False
+        self._do_soledad_init(uuid, secrets_path, local_db_path,
+                              "", cert_file, token, syncable)
+        d = self._init_keymanager(self._address, token)
+        return d
 
     def _pick_server(self, uuid):
         """
@@ -410,7 +410,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
         raise SoledadSyncError()
 
     def _try_soledad_init(self, uuid, secrets_path, local_db_path,
-                          server_url, cert_file, auth_token):
+                          server_url, cert_file, auth_token, syncable):
         """
         Try to initialize soledad.
 
@@ -433,9 +433,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # (issue #3309)
         encoding = sys.getfilesystemencoding()
 
-        # XXX We should get a flag in soledad itself
-        if flags.OFFLINE is True:
-            Soledad._shared_db = MockSharedDB()
         try:
             self._soledad = Soledad(
                 uuid,
@@ -445,7 +442,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 server_url=server_url,
                 cert_file=cert_file.encode(encoding),
                 auth_token=auth_token,
-                defer_encryption=True)
+                defer_encryption=True,
+                syncable=syncable)
 
         # XXX All these errors should be handled by soledad itself,
         # and return a subclass of SoledadInitializationFailed
@@ -668,7 +666,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._user = user
         self._password = password
 
-        if flags.OFFLINE:
+        is_offline = flags.OFFLINE
+
+        if is_offline:
             signal_finished = self._signaler.soledad_offline_finished
             signal_failed = self._signaler.soledad_offline_failed
         else:
@@ -676,17 +676,23 @@ class SoledadBootstrapper(AbstractBootstrapper):
             signal_failed = self._signaler.soledad_bootstrap_failed
 
         try:
-            self._download_config()
+            if not is_offline:
+                # XXX FIXME make this async too! (use txrequests)
+                # Also, why the fuck would we want to download it *every time*?
+                # We should be fine by using last-time config, or at least
+                # trying it.
+                self._download_config()
 
-            # soledad config is ok, let's proceed to load and sync soledad
-            uuid = self.srpauth.get_uuid()
-            self.load_and_sync_soledad(uuid)
+                # soledad config is ok, let's proceed to load and sync soledad
+                uuid = self.srpauth.get_uuid()
+                self.load_and_sync_soledad(uuid)
 
-            if not flags.OFFLINE:
                 d = self._gen_key()
                 d.addCallback(lambda _: self._signaler.signal(signal_finished))
+                return d
             else:
                 self._signaler.signal(signal_finished)
+                return defer.succeed(True)
         except Exception as e:
             # TODO: we should handle more specific exceptions in here
             self._soledad = None

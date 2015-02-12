@@ -779,6 +779,8 @@ class Soledad(object):
         """
         provider_config = ProviderConfig.get_provider_config(domain)
         if provider_config is not None:
+            # XXX FIXME --- remove defer-to-thread or at least put it in a
+            # separate threadpool.
             self._soledad_defer = threads.deferToThread(
                 self._soledad_bootstrapper.run_soledad_setup_checks,
                 provider_config, username, password,
@@ -816,8 +818,9 @@ class Soledad(object):
             Signaler.soledad_offline_finished
             Signaler.soledad_offline_failed
         """
-        self._soledad_bootstrapper.load_offline_soledad(
+        d = self._soledad_bootstrapper.load_offline_soledad(
             username, password, uuid)
+        d.addCallback(self._set_proxies_cb)
 
     def cancel_bootstrap(self):
         """

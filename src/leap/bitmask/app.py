@@ -127,9 +127,7 @@ def start_app():
     }
 
     flags.STANDALONE = opts.standalone
-    # XXX Disabled right now since it's not tested after login refactor
-    # flags.OFFLINE = opts.offline
-    flags.OFFLINE = False
+    flags.OFFLINE = opts.offline
     flags.MAIL_LOGFILE = opts.mail_log_file
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
@@ -139,16 +137,19 @@ def start_app():
     flags.CA_CERT_FILE = opts.ca_cert_file
 
     replace_stdout = True
-    if opts.repair or opts.import_maildir:
-        # We don't want too much clutter on the comand mode
-        # this could be more generic with a Command class.
-        replace_stdout = False
+
+    # XXX mail repair commands disabled for now
+    # if opts.repair or opts.import_maildir:
+    #    We don't want too much clutter on the comand mode
+    #    this could be more generic with a Command class.
+    #    replace_stdout = False
 
     logger = create_logger(opts.debug, opts.log_file, replace_stdout)
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.
-    do_mail_plumbing(opts)
+    # XXX mail repair commands disabled for now
+    # do_mail_plumbing(opts)
 
     try:
         event_server.ensure_server(event_server.SERVER_PORT)

@@ -74,26 +74,27 @@ def build_parser():
                         help='Verbosity level for openvpn logs [1-6]')
 
     # mail stuff
-    # XXX Disabled right now since it's not tested after login refactor
-    # parser.add_argument('-o', '--offline', action="store_true",
-    #                     help='Starts Bitmask in offline mode: will not '
-    #                          'try to sync with remote replicas for email.')
+    parser.add_argument('-o', '--offline', action="store_true",
+                        help='Starts Bitmask in offline mode: will not '
+                             'try to sync with remote replicas for email.')
 
-    parser.add_argument('--acct', metavar="user@provider",
-                        nargs='?',
-                        action="store", dest="acct",
-                        help='Manipulate mailboxes for this account')
-    parser.add_argument('-r', '--repair-mailboxes', default=False,
-                        action="store_true", dest="repair",
-                        help='Repair mailboxes for a given account. '
-                             'Use when upgrading versions after a schema '
-                             'change. Use with --acct')
-    parser.add_argument('--import-maildir', metavar="/path/to/Maildir",
-                        nargs='?',
-                        action="store", dest="import_maildir",
-                        help='Import the given maildir. Use with the '
-                             '--to-mbox flag to import to folders other '
-                             'than INBOX. Use with --acct')
+    # XXX not yet updated to new mail api for mail 0.4.0
+
+    # parser.add_argument('--acct', metavar="user@provider",
+                         #nargs='?',
+                         #action="store", dest="acct",
+                         #help='Manipulate mailboxes for this account')
+    # parser.add_argument('-r', '--repair-mailboxes', default=False,
+                         #action="store_true", dest="repair",
+                         #help='Repair mailboxes for a given account. '
+                             #'Use when upgrading versions after a schema '
+                             #'change. Use with --acct')
+    # parser.add_argument('--import-maildir', metavar="/path/to/Maildir",
+                          #nargs='?',
+                          #action="store", dest="import_maildir",
+                          #help='Import the given maildir. Use with the '
+                               #'--to-mbox flag to import to folders other '
+                               #'than INBOX. Use with --acct')
 
     if not IS_RELEASE_VERSION:
         help_text = ("Bypasses the certificate check during provider "

@@ -353,35 +353,3 @@ class LeapSettings(object):
         """
         leap_assert_type(skip, bool)
         self._settings.setValue(self.SKIPFIRSTRUN_KEY, skip)
-
-    def get_uuid(self, username):
-        """
-        Gets the uuid for a given username.
-
-        :param username: the full user identifier in the form user@provider
-        :type username: basestring
-        """
-        leap_assert("@" in username,
-                    "Expected username in the form user@provider")
-        user, provider = username.split('@')
-        return self._settings.value(
-            self.UUIDFORUSER_KEY % (provider, user), "")
-
-    def set_uuid(self, username, value):
-        """
-        Sets the uuid for a given username.
-
-        :param username: the full user identifier in the form user@provider
-        :type username: str or unicode
-        :param value: the uuid to save or None to remove it
-        :type value: str or unicode or None
-        """
-        leap_assert("@" in username,
-                    "Expected username in the form user@provider")
-        user, provider = username.split('@')
-        key = self.UUIDFORUSER_KEY % (provider, user)
-        if value is None:
-            self._settings.remove(key)
-        else:
-            leap_assert(len(value) > 0, "We cannot save an empty uuid")
-            self._settings.setValue(key, value)
