@@ -1,3 +1,13 @@
+# ------------------------------------
+# -- useful tools that you probably --
+# --  will want during development  --
+# ------------------------------------
+
+wheel
+sphinx
+ipdb
+pipdeptree
+
 # ---------------------------
 # -- external requirements --
 # -- during development    --
@@ -11,11 +21,7 @@
 #       to install it. (do it after python setup.py develop and it
 #       will only install this)
 #
-wheel
-sphinx
-ipdb
 
 # in case you want to install a package from a git source, you can use this:
 # Useful to test pre-release branches together.
 #-e git+https://github.com/leapcode/leap_pycommon.git@develop#egg=leap.common
-#-e git+https://github.com/leapcode/soledad.git@develop#egg=leap.soledad
