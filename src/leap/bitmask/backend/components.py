@@ -779,10 +779,8 @@ class Soledad(object):
         """
         provider_config = ProviderConfig.get_provider_config(domain)
         if provider_config is not None:
-            # XXX FIXME --- remove defer-to-thread or at least put it in a
-            # separate threadpool.
-            self._soledad_defer = threads.deferToThread(
-                self._soledad_bootstrapper.run_soledad_setup_checks,
+            sb = self._soledad_bootstrapper
+            self._soledad_defer = sb.run_soledad_setup_checks(
                 provider_config, username, password,
                 download_if_needed=True)
             self._soledad_defer.addCallback(self._set_proxies_cb)
