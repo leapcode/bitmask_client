@@ -135,6 +135,14 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self._srpauth = SRPAuth(self._provider_config)
         return self._srpauth
 
+    @property
+    def soledad(self):
+        return self._soledad
+
+    @property
+    def keymanager(self):
+        return self._keymanager
+
     # initialization
 
     def load_offline_soledad(self, username, password, uuid):
