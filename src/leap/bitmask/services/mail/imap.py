@@ -83,7 +83,7 @@ def start_incoming_mail_service(keymanager, soledad, imap_factory, userid):
         incoming_mail = IncomingMail(
             keymanager,
             soledad,
-            inbox,
+            inbox.collection,
             userid,
             check_period=get_mail_check_period())
         return incoming_mail
