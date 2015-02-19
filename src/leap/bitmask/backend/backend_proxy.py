@@ -30,6 +30,7 @@ import zmq
 from leap.bitmask.backend.api import API, STOP_REQUEST, PING_REQUEST
 from leap.bitmask.backend.utils import generate_zmq_certificates_if_needed
 from leap.bitmask.backend.utils import get_backend_certificates
+from leap.bitmask.config import flags
 
 import logging
 logger = logging.getLogger(__name__)
@@ -59,15 +60,16 @@ class BackendProxy(object):
         logger.debug("Connecting to server...")
         socket = context.socket(zmq.REQ)
 
-        # public, secret = zmq.curve_keypair()
-        client_keys = zmq.curve_keypair()
-        socket.curve_publickey = client_keys[0]
-        socket.curve_secretkey = client_keys[1]
+        if flags.ZMQ_HAS_CURVE:
+            # public, secret = zmq.curve_keypair()
+            client_keys = zmq.curve_keypair()
+            socket.curve_publickey = client_keys[0]
+            socket.curve_secretkey = client_keys[1]
 
-        # The client must know the server's public key to make a CURVE
-        # connection.
-        public, _ = get_backend_certificates()
-        socket.curve_serverkey = public
+            # The client must know the server's public key to make a CURVE
+            # connection.
+            public, _ = get_backend_certificates()
+            socket.curve_serverkey = public
 
         socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.setsockopt(zmq.LINGER, 0)  # Terminate early

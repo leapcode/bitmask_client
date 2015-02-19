@@ -24,10 +24,14 @@ import time
 from PySide import QtCore
 
 import zmq
-from zmq.auth.thread import ThreadAuthenticator
+try:
+    from zmq.auth.thread import ThreadAuthenticator
+except ImportError:
+    pass
 
 from leap.bitmask.backend.api import SIGNALS
 from leap.bitmask.backend.utils import get_frontend_certificates
+from leap.bitmask.config import flags
 
 import logging
 logger = logging.getLogger(__name__)
@@ -67,17 +71,18 @@ class SignalerQt(QtCore.QObject):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
 
-        # Start an authenticator for this context.
-        auth = ThreadAuthenticator(context)
-        auth.start()
-        auth.allow('127.0.0.1')
+        if flags.ZMQ_HAS_CURVE:
+            # Start an authenticator for this context.
+            auth = ThreadAuthenticator(context)
+            auth.start()
+            auth.allow('127.0.0.1')
 
-        # Tell authenticator to use the certificate in a directory
-        auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
-        public, secret = get_frontend_certificates()
-        socket.curve_publickey = public
-        socket.curve_secretkey = secret
-        socket.curve_server = True  # must come before bind
+            # Tell authenticator to use the certificate in a directory
+            auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
+            public, secret = get_frontend_certificates()
+            socket.curve_publickey = public
+            socket.curve_secretkey = secret
+            socket.curve_server = True  # must come before bind
 
         socket.bind(self.BIND_ADDR)
 

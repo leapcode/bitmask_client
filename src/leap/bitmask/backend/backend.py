@@ -28,10 +28,14 @@ import psutil
 from twisted.internet import defer, reactor, threads
 
 import zmq
-from zmq.auth.thread import ThreadAuthenticator
+try:
+    from zmq.auth.thread import ThreadAuthenticator
+except ImportError:
+    pass
 
 from leap.bitmask.backend.api import API, PING_REQUEST
 from leap.bitmask.backend.utils import get_backend_certificates
+from leap.bitmask.config import flags
 from leap.bitmask.backend.signaler import Signaler
 
 import logging
@@ -73,18 +77,19 @@ class Backend(object):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
 
-        # Start an authenticator for this context.
-        auth = ThreadAuthenticator(context)
-        auth.start()
-        # XXX do not hardcode this here.
-        auth.allow('127.0.0.1')
+        if flags.ZMQ_HAS_CURVE:
+            # Start an authenticator for this context.
+            auth = ThreadAuthenticator(context)
+            auth.start()
+            # XXX do not hardcode this here.
+            auth.allow('127.0.0.1')
 
-        # Tell authenticator to use the certificate in a directory
-        auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
-        public, secret = get_backend_certificates()
-        socket.curve_publickey = public
-        socket.curve_secretkey = secret
-        socket.curve_server = True  # must come before bind
+            # Tell authenticator to use the certificate in a directory
+            auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
+            public, secret = get_backend_certificates()
+            socket.curve_publickey = public
+            socket.curve_secretkey = secret
+            socket.curve_server = True  # must come before bind
 
         socket.bind(self.BIND_ADDR)
 

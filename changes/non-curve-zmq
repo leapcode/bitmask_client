@@ -1,0 +1,1 @@
+- Gracefully fall back to plain ZMQ if CurveZMQ is not available (Feature #6646)
