@@ -1,0 +1,1 @@
+- Gracefully fall back to ZMQ ipc sockets with restricted access if CurveZMQ is not available (Feature #6646)

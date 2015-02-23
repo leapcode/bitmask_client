@@ -20,6 +20,7 @@
 # TODO use txzmq bindings instead.
 
 import json
+import os
 import threading
 import time
 
@@ -28,10 +29,14 @@ import psutil
 from twisted.internet import defer, reactor, threads
 
 import zmq
-from zmq.auth.thread import ThreadAuthenticator
+try:
+    from zmq.auth.thread import ThreadAuthenticator
+except ImportError:
+    pass
 
 from leap.bitmask.backend.api import API, PING_REQUEST
 from leap.bitmask.backend.utils import get_backend_certificates
+from leap.bitmask.config import flags
 from leap.bitmask.backend.signaler import Signaler
 
 import logging
@@ -43,12 +48,15 @@ class Backend(object):
     Backend server.
     Receives signals from backend_proxy and emit signals if needed.
     """
-    # XXX this should not be hardcoded. Make it configurable.
-    PORT = '5556'
-
     # XXX we might want to make this configurable per-platform,
     # and use the most performant socket type on each one.
-    BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
+    if flags.ZMQ_HAS_CURVE:
+        # XXX this should not be hardcoded. Make it configurable.
+        PORT = '5556'
+        BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
+    else:
+        SOCKET_FILE = "/tmp/bitmask.socket.0"
+        BIND_ADDR = "ipc://%s" % SOCKET_FILE
 
     PING_INTERVAL = 2  # secs
 
@@ -73,20 +81,23 @@ class Backend(object):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
 
-        # Start an authenticator for this context.
-        auth = ThreadAuthenticator(context)
-        auth.start()
-        # XXX do not hardcode this here.
-        auth.allow('127.0.0.1')
+        if flags.ZMQ_HAS_CURVE:
+            # Start an authenticator for this context.
+            auth = ThreadAuthenticator(context)
+            auth.start()
+            # XXX do not hardcode this here.
+            auth.allow('127.0.0.1')
 
-        # Tell authenticator to use the certificate in a directory
-        auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
-        public, secret = get_backend_certificates()
-        socket.curve_publickey = public
-        socket.curve_secretkey = secret
-        socket.curve_server = True  # must come before bind
+            # Tell authenticator to use the certificate in a directory
+            auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
+            public, secret = get_backend_certificates()
+            socket.curve_publickey = public
+            socket.curve_secretkey = secret
+            socket.curve_server = True  # must come before bind
 
         socket.bind(self.BIND_ADDR)
+        if not flags.ZMQ_HAS_CURVE:
+            os.chmod(self.SOCKET_FILE, 0600)
 
         self._zmq_socket = socket
 

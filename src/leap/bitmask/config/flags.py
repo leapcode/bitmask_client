@@ -55,3 +55,6 @@ OPENVPN_VERBOSITY = 1
 
 # Skip the checks in the wizard, use for testing purposes only!
 SKIP_WIZARD_CHECKS = False
+
+# This flag tells us whether the current pyzmq supports using CurveZMQ or not.
+ZMQ_HAS_CURVE = None
