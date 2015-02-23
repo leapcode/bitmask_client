@@ -18,6 +18,7 @@
 Signaling server.
 Receives signals from the signaling client and emit Qt signals for the GUI.
 """
+import os
 import threading
 import time
 
@@ -42,8 +43,12 @@ class SignalerQt(QtCore.QObject):
     Signaling server.
     Receives signals from the signaling client and emit Qt signals for the GUI.
     """
-    PORT = "5667"
-    BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
+    if flags.ZMQ_HAS_CURVE:
+        PORT = "5667"
+        BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
+    else:
+        SOCKET_FILE = "/tmp/bitmask.socket.1"
+        BIND_ADDR = "ipc://%s" % SOCKET_FILE
 
     def __init__(self):
         QtCore.QObject.__init__(self)
@@ -85,6 +90,9 @@ class SignalerQt(QtCore.QObject):
             socket.curve_server = True  # must come before bind
 
         socket.bind(self.BIND_ADDR)
+
+        if not flags.ZMQ_HAS_CURVE:
+            os.chmod(self.SOCKET_FILE, 0600)
 
         while self._do_work.is_set():
             # Wait for next request from client

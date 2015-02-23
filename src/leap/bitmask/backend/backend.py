@@ -20,6 +20,7 @@
 # TODO use txzmq bindings instead.
 
 import json
+import os
 import threading
 import time
 
@@ -47,12 +48,15 @@ class Backend(object):
     Backend server.
     Receives signals from backend_proxy and emit signals if needed.
     """
-    # XXX this should not be hardcoded. Make it configurable.
-    PORT = '5556'
-
     # XXX we might want to make this configurable per-platform,
     # and use the most performant socket type on each one.
-    BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
+    if flags.ZMQ_HAS_CURVE:
+        # XXX this should not be hardcoded. Make it configurable.
+        PORT = '5556'
+        BIND_ADDR = "tcp://127.0.0.1:%s" % PORT
+    else:
+        SOCKET_FILE = "/tmp/bitmask.socket.0"
+        BIND_ADDR = "ipc://%s" % SOCKET_FILE
 
     PING_INTERVAL = 2  # secs
 
@@ -92,6 +96,8 @@ class Backend(object):
             socket.curve_server = True  # must come before bind
 
         socket.bind(self.BIND_ADDR)
+        if not flags.ZMQ_HAS_CURVE:
+            os.chmod(self.SOCKET_FILE, 0600)
 
         self._zmq_socket = socket
 

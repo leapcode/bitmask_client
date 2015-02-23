@@ -42,8 +42,11 @@ class BackendProxy(object):
     to the backend.
     """
 
-    PORT = '5556'
-    SERVER = "tcp://localhost:%s" % PORT
+    if flags.ZMQ_HAS_CURVE:
+        PORT = '5556'
+        SERVER = "tcp://localhost:%s" % PORT
+    else:
+        SERVER = "ipc:///tmp/bitmask.socket.0"
 
     POLL_TIMEOUT = 4000  # ms
     POLL_TRIES = 3

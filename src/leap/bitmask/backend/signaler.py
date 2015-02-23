@@ -37,8 +37,11 @@ class Signaler(object):
     Signaler client.
     Receives signals from the backend and sends to the signaling server.
     """
-    PORT = "5667"
-    SERVER = "tcp://localhost:%s" % PORT
+    if flags.ZMQ_HAS_CURVE:
+        PORT = "5667"
+        SERVER = "tcp://localhost:%s" % PORT
+    else:
+        SERVER = "ipc:///tmp/bitmask.socket.1"
     POLL_TIMEOUT = 2000  # ms
     POLL_TRIES = 500
 
