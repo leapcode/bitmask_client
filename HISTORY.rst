@@ -7,7 +7,20 @@ History
 2015
 ====
 
-0.8.0 January xx -- "Charlie and the code refactory"
+0.8.1 February 25
++++++++++++++++++
+
+Features
+~~~~~~~~
+- `#6646 <https://leap.se/code/issues/6658>`_: Gracefully fall back to ZMQ ipc sockets with restricted access if CurveZMQ is not available.
+- `#6717 <https://leap.se/code/issues/6717>`_: Split changes log into changelog and history.
+
+Bugfixes
+~~~~~~~~
+- `#6654 <https://leap.se/code/issues/6654>`_: Regression fix, login attempt is made against previously selected provider.
+- `#6058 <https://leap.se/code/issues/6058>`_: Support 'nobody' (used on Arch) as well as 'nogroup' as group names.
+
+0.8.0 January 04 -- "Charlie and the code refactory"
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Features
