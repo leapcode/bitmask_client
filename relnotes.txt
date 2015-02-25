@@ -1,12 +1,10 @@
-ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.8.0.
+ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.8.1.
 
-The LEAP team is  pleased to announce  the immediate  availability of version
-0.8.0 of Bitmask, the  Internet Encryption Toolkit,  codename "Charlie and the
-code refactory"
+The LEAP team is pleased to announce the immediate availability of version
+0.8.1 of Bitmask, the Internet Encryption Toolkit, a bugfix release for 0.8.0.
 
-This release focused on fixing bugs, particularly with the UI, and refactoring
-much of the core backend code for the client. There are no new features in this
-version.
+This release includes a couple of important bugfixes and a secure ZMQ fallback
+for distros that does not have CurveZMQ available.
 
 Currently, Bitmask desktop client only support Debian and Ubuntu Linux. Support
 for Mac, Windows, and other Linux distributions is coming.
@@ -37,10 +35,10 @@ See https://leap.se/en/docs/get-involved for tips on contacting the developers,
 getting start hacking on Bitmask, and reporting bugs.
 
 If you are lucky enough, you can also spot us drinking mate, sleepless in night
-trains, rooftops,  rainforests, lonely islands  and, always, beyond any border.
+trains, rooftops, rainforests, lonely islands and, always, beyond any border.
 
 The LEAP team,
 
-February 4, 2015
+February 25, 2015
 Somewhere in the middle of the intertubes.
 EOF
