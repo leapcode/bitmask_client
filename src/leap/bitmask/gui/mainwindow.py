@@ -776,6 +776,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             domain = self._settings.get_provider()
             if domain is not None:
                 self._providers.select_provider_by_name(domain)
+                self._login_widget.set_provider(domain)
 
             if not self._settings.get_remember():
                 # nothing to do here

@@ -26,6 +26,7 @@ import zmq
 
 from leap.bitmask.backend.api import SIGNALS
 from leap.bitmask.backend.utils import get_frontend_certificates
+from leap.bitmask.config import flags
 
 import logging
 logger = logging.getLogger(__name__)
@@ -36,8 +37,11 @@ class Signaler(object):
     Signaler client.
     Receives signals from the backend and sends to the signaling server.
     """
-    PORT = "5667"
-    SERVER = "tcp://localhost:%s" % PORT
+    if flags.ZMQ_HAS_CURVE:
+        PORT = "5667"
+        SERVER = "tcp://localhost:%s" % PORT
+    else:
+        SERVER = "ipc:///tmp/bitmask.socket.1"
     POLL_TIMEOUT = 2000  # ms
     POLL_TRIES = 500
 
@@ -49,15 +53,16 @@ class Signaler(object):
         logger.debug("Connecting to signaling server...")
         socket = context.socket(zmq.REQ)
 
-        # public, secret = zmq.curve_keypair()
-        client_keys = zmq.curve_keypair()
-        socket.curve_publickey = client_keys[0]
-        socket.curve_secretkey = client_keys[1]
+        if flags.ZMQ_HAS_CURVE:
+            # public, secret = zmq.curve_keypair()
+            client_keys = zmq.curve_keypair()
+            socket.curve_publickey = client_keys[0]
+            socket.curve_secretkey = client_keys[1]
 
-        # The client must know the server's public key to make a CURVE
-        # connection.
-        public, _ = get_frontend_certificates()
-        socket.curve_serverkey = public
+            # The client must know the server's public key to make a CURVE
+            # connection.
+            public, _ = get_frontend_certificates()
+            socket.curve_serverkey = public
 
         socket.setsockopt(zmq.RCVTIMEO, 1000)
         socket.setsockopt(zmq.LINGER, 0)  # Terminate early
