@@ -302,6 +302,24 @@ class EIPConfig(ServiceConfig):
             logger.error("Invalid ip address in config: %s" % (ip_addr_str,))
             return None
 
+    def get_gateway_ports(self, index=0):
+        """
+        Return the ports of the gateway.
+
+        :param index: the gateway number to get the ports from
+        :type index: int
+
+        :rtype: list of int
+        """
+        gateways = self.get_gateways()
+        leap_assert(len(gateways) > 0, "We don't have any gateway!")
+        if index > len(gateways):
+            index = 0
+            logger.warning("Provided an unknown gateway index %s, " +
+                           "defaulting to 0")
+
+        return gateways[index]["capabilities"]["ports"]
+
     def get_client_cert_path(self,
                              providerconfig=None,
                              about_to_download=False):

@@ -106,12 +106,15 @@ class VPNLauncher(object):
     UP_SCRIPT = None
     DOWN_SCRIPT = None
 
+    PREFERRED_PORTS = ("443", "80", "53", "1194")
+
     @classmethod
     @abstractmethod
     def get_gateways(kls, eipconfig, providerconfig):
         """
-        Return the selected gateways for a given provider, looking at the EIP
-        config file.
+        Return a list with the selected gateways for a given provider, looking
+        at the EIP config file.
+        Each item of the list is a tuple containing (gateway, port).
 
         :param eipconfig: eip configuration object
         :type eipconfig: EIPConfig
@@ -122,21 +125,37 @@ class VPNLauncher(object):
         :rtype: list
         """
         gateways = []
+
         settings = Settings()
         domain = providerconfig.get_domain()
         gateway_conf = settings.get_selected_gateway(domain)
         gateway_selector = VPNGatewaySelector(eipconfig)
 
         if gateway_conf == GATEWAY_AUTOMATIC:
-            gateways = gateway_selector.get_gateways()
+            gws = gateway_selector.get_gateways()
         else:
-            gateways = [gateway_conf]
+            gws = [gateway_conf]
 
-        if not gateways:
+        if not gws:
             logger.error('No gateway was found!')
             raise VPNLauncherException('No gateway was found!')
 
-        logger.debug("Using gateways ips: {0}".format(', '.join(gateways)))
+        for idx, gw in enumerate(gws):
+            ports = eipconfig.get_gateway_ports(idx)
+
+            the_port = "1194"  # default port
+
+            # pick the port preferring this order:
+            for port in kls.PREFERRED_PORTS:
+                if port in ports:
+                    the_port = port
+                    break
+                else:
+                    continue
+
+            gateways.append((gw, the_port))
+
+        logger.debug("Using gateways (ip, port): {0!r}".format(gateways))
         return gateways
 
     @classmethod
@@ -194,8 +213,8 @@ class VPNLauncher(object):
 
         gateways = kls.get_gateways(eipconfig, providerconfig)
 
-        for gw in gateways:
-            args += ['--remote', gw, '1194', 'udp']
+        for ip, port in gateways:
+            args += ['--remote', ip, port, 'udp']
 
         args += [
             '--client',

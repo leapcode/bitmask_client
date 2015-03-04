@@ -961,9 +961,11 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
 
         :rtype: list
         """
-        gateways = self._launcher.get_gateways(
+        gateways_ports = self._launcher.get_gateways(
             self._eipconfig, self._providerconfig)
-        return gateways
+
+        # filter out ports since we don't need that info
+        return [gateway for gateway, port in gateways_ports]
 
     # shutdown
 
