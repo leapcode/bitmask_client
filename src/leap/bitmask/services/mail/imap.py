@@ -93,11 +93,6 @@ def start_incoming_mail_service(keymanager, soledad, imap_factory, userid):
     # the account, and passing the mailbox to the incoming service.
     # In an even better world, we just would subscribe to a channel that would
     # pass us the serialized object to be inserted.
-    # XXX: I think we might be at risk here because the account top object
-    # currently just returns as many mailbox objects as it's asked for, so
-    # we should be careful about concurrent operations (ie, maybe just use
-    # this one to do inserts, or let account have an in-memory map of
-    # mailboxes, and just return references to them).
     acc = imap_factory.theAccount
     d = acc.callWhenReady(lambda _: acc.getMailbox(INBOX_NAME))
     d.addCallback(setUpIncomingMail)
