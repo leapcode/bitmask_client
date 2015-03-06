@@ -1193,7 +1193,12 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         user = self._login_widget.get_logged_user()
         domain = self._providers.get_selected_provider()
-        full_user_id = make_address(user, domain)
+
+        # XXX fix for 0.8.2: this user id has changed!
+        # BUG -- do not merge into develop, it's already fixed there.
+        # full_user_id = make_address(user, domain)
+        full_user_id = user
+
         self._mail_conductor.userid = full_user_id
         self._start_eip_bootstrap()
         self.ui.action_create_new_account.setEnabled(True)
@@ -1311,7 +1316,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         provider_domain = self._providers.get_selected_provider()
 
         if flags.OFFLINE:
-            full_user_id = make_address(username, provider_domain)
+            # BUG --- fix for 0.8.2
+            # full_user_id = make_address(username, provider_domain)
+            full_user_id = username
             uuid = self._settings.get_uuid(full_user_id)
             self._mail_conductor.userid = full_user_id
 

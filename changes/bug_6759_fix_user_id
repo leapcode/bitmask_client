@@ -1,0 +1,1 @@
+- #6759 Fix formation of full_userid, allowing the right id to be passed to keymanager and mail services
