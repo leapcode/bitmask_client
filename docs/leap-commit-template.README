@@ -1,0 +1,47 @@
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+HOW TO USE THIS TEMPLATE:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Run `git config commit.template docs/leap-commit-template` or
+edit the .git/config for this project and add
+`template = docs/leap-commit-template` 
+under the [commit] block
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+COMMIT TEMPLATE FORMAT EXPLAINED
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[type] <subject>
+
+<body>
+<footer>
+
+Type should be one of the following:
+- bug (bug fix)
+- feat (new feature)
+- docs (changes to documentation)
+- style (formatting, pep8 violations, etc; no code change)
+- refactor (refactoring production code)
+- test (adding missing tests, refactoring tests; no production code change)
+- pkg (packaging related changes; no production code change)
+- i18n translation related changes
+
+Subject should use imperative tone and say what you did.
+For example, use 'change', NOT 'changed' or 'changes'.
+
+The body should go into detail about changes made.
+
+The footer should contain any issue references or actions.
+You can use one or several of the following:
+
+- Resolves: #XYZ
+- Related: #XYZ
+- Documentation: #XYZ
+- Releases: XYZ
+
+The Documentation field should be included in every new feature commit, and it
+should link to an issue in the bug tracker where the new feature is analyzed
+and documented.
+
+For a full example of how to write a good commit message, check out
+https://github.com/sparkbox/how_to/tree/master/style/git
