@@ -673,5 +673,5 @@ class Syncer(object):
             self._try_sync()
         else:
             logger.error("Sync failed {0} times".format(self._tries))
-            self._callback_deferred.fail(
+            self._callback_deferred.errback(
                 SoledadSyncError("Too many retries"))
