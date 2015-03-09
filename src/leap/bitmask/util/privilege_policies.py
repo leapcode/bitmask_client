@@ -187,6 +187,7 @@ class LinuxPolicyChecker(PolicyChecker):
             'ps aux | grep "[l]xsession"',
             'ps aux | grep "[g]nome-shell"',
             'ps aux | grep "[f]ingerprint-polkit-agent"',
+            'ps aux | grep "[x]fce-polkit"',
         ]
         is_running = [commands.getoutput(cmd) for cmd in polkit_options]
 
