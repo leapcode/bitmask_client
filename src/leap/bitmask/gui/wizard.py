@@ -675,6 +675,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
             skip = self.ui.rbExistingProvider.isChecked()
             if not self._provider_checks_ok:
                 self._enable_check()
+                self.ui.btnCheck.setFocus()
                 self._skip_provider_checks(skip)
             else:
                 self._enable_check(reset=False)
