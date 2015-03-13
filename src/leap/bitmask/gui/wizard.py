@@ -264,6 +264,20 @@ class Wizard(QtGui.QWizard, SignalTracker):
         if reset:
             self._reset_provider_check()
 
+    def _provider_widget_set_enabled(self, enabled):
+        """
+        Enable/Disable the provider widget.
+        The widget to use depends on whether the used decided to use an
+        existing provider or a new one.
+
+        :param enabled: the new state for the widget
+        :type enabled: bool
+        """
+        if self.ui.rbNewProvider.isChecked():
+            self.ui.lnProvider.setEnabled(enabled)
+        else:
+            self.ui.cbProviders.setEnabled(enabled)
+
     def _focus_username(self):
         """
         Focus at the username lineedit for the registration page
@@ -439,11 +453,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
 
-        # Disable provider widget
-        if self.ui.rbNewProvider.isChecked():
-            self.ui.lnProvider.setEnabled(False)
-        else:
-            self.ui.cbProviders.setEnabled(False)
+        self._provider_widget_set_enabled(False)
 
         self.button(QtGui.QWizard.BackButton).clearFocus()
 
@@ -510,7 +520,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
             self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
         self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(not passed)
-        self.ui.lnProvider.setEnabled(not passed)
+        self._provider_widget_set_enabled(not passed)
 
     def _https_connection(self, data):
         """
@@ -529,7 +539,8 @@ class Wizard(QtGui.QWizard, SignalTracker):
         else:
             self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
         self.ui.btnCheck.setEnabled(not passed)
-        self.ui.lnProvider.setEnabled(not passed)
+
+        self._provider_widget_set_enabled(not passed)
 
     def _download_provider_info(self, data):
         """
@@ -558,13 +569,9 @@ class Wizard(QtGui.QWizard, SignalTracker):
             status = self.tr("<font color='red'><b>Not a valid provider"
                              "</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
-        self.ui.btnCheck.setEnabled(True)
 
-        # Enable provider widget
-        if self.ui.rbNewProvider.isChecked():
-            self.ui.lnProvider.setEnabled(True)
-        else:
-            self.ui.cbProviders.setEnabled(True)
+        self.ui.btnCheck.setEnabled(True)
+        self._provider_widget_set_enabled(True)
 
     def _provider_get_details(self, details):
         """
