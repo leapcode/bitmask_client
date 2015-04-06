@@ -39,6 +39,7 @@
 # M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
 # M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
 #                (thanks to: http://www.glassgiant.com/ascii/)
+import atexit
 import multiprocessing
 import os
 import sys
@@ -73,6 +74,7 @@ def kill_the_children():
     me = os.getpid()
     parent = psutil.Process(me)
     print "Killing all the children processes..."
+
     for child in parent.get_children(recursive=True):
         try:
             child.terminate()
@@ -81,7 +83,7 @@ def kill_the_children():
 
 # XXX This is currently broken, but we need to fix it to avoid
 # orphaned processes in case of a crash.
-# atexit.register(kill_the_children)
+atexit.register(kill_the_children)
 
 
 def do_display_version(opts):
