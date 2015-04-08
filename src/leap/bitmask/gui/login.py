@@ -32,6 +32,7 @@ The login sequence is the following:
 """
 import logging
 
+from keyring.errors import InitError as KeyringInitError
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
@@ -365,6 +366,9 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
                 # Only save the username if it was saved correctly in
                 # the keyring
                 self._settings.set_user(full_user_id)
+            except KeyringInitError as e:
+                logger.error("Failed to unlock keyring, maybe the user "
+                             "cancelled the operation {0!r}".format(e))
             except Exception as e:
                 logger.exception("Problem saving data to keyring. %r" % (e,))
 
@@ -653,6 +657,9 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
             saved_password = keyring.get_password(self.KEYRING_KEY, u_user)
         except ValueError as e:
             logger.debug("Incorrect Password. %r." % (e,))
+        except KeyringInitError as e:
+            logger.error("Failed to unlock keyring, maybe the user "
+                         "cancelled the operation {0!r}".format(e))
 
         if saved_password is not None:
             self.set_password(saved_password)
