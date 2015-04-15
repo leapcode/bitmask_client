@@ -1,0 +1,1 @@
+- Do not disable autostart if the quit is triggered by a system logout. Resolves Bug #6424.

@@ -1054,7 +1054,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if not e.spontaneous():
             # if the system requested the `close` then we should quit.
             self._system_quit = True
-            self.quit()
+            self.quit(disable_autostart=False)
             return
 
         if QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
@@ -1622,18 +1622,24 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         logger.debug('Terminating vpn')
         self._backend.eip_stop(shutdown=True)
 
-    def quit(self):
+    def quit(self, disable_autostart=True):
         """
         Start the quit sequence and wait for services to finish.
         Cleanup and close the main window before quitting.
+
+        :param disable_autostart: whether we should disable the autostart
+                                  feature or not
+        :type disable_autostart: bool
         """
         if self._quitting:
             return
 
+        if disable_autostart:
+            autostart.set_autostart(False)
+
         self._quitting = True
         self._close_to_tray = False
         logger.debug('Quitting...')
-        autostart.set_autostart(False)
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
