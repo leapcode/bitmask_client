@@ -385,6 +385,19 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self._set_register_status(error_msg, error=True)
         self.ui.btnRegister.setEnabled(True)
 
+    def _registration_disabled(self):
+        """
+        TRIGGERS:
+            self._backend.signaler.srp_registration_disabled
+
+        The registration is disabled in the current provider.
+        """
+        self._username = self._password = None
+
+        error_msg = self.tr("The registration is disabled for this provider.")
+        self._set_register_status(error_msg, error=True)
+        self.ui.btnRegister.setEnabled(True)
+
     def _registration_taken(self):
         """
         TRIGGERS:
@@ -581,6 +594,22 @@ class Wizard(QtGui.QWizard, SignalTracker):
         :type details: dict
         """
         self._provider_details = details
+        self._check_registration_allowed()
+
+    def _check_registration_allowed(self):
+        """
+        Check whether the provider allows new users registration or not.
+        If it is not allowed we display a message and prevent the user moving
+        forward on the wizard.
+        """
+        if self._show_register:  # user wants to register a new account
+            if not self._provider_details['allow_registration']:
+                logger.debug("Registration not allowed")
+                status = ("<font color='red'><b>" +
+                          self.tr("The provider has disabled registration") +
+                          "</b></font>")
+                self.ui.lblProviderSelectStatus.setText(status)
+                self.button(QtGui.QWizard.NextButton).setEnabled(False)
 
     def _download_ca_cert(self, data):
         """
@@ -686,6 +715,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
                 self._skip_provider_checks(skip)
             else:
                 self._enable_check(reset=False)
+                self._check_registration_allowed()
 
         if pageId == self.SETUP_PROVIDER_PAGE:
             if not self._provider_setup_ok:
@@ -765,5 +795,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         conntrack(sig.prov_check_api_certificate, self._check_api_certificate)
 
         conntrack(sig.srp_registration_finished, self._registration_finished)
+        conntrack(sig.srp_registration_disabled, self._registration_disabled)
         conntrack(sig.srp_registration_failed, self._registration_failed)
         conntrack(sig.srp_registration_taken, self._registration_taken)

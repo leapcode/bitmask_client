@@ -153,6 +153,7 @@ class SRPRegister(QtCore.QObject):
 
     STATUS_OK = (200, 201)
     STATUS_TAKEN = 422
+    STATUS_FORBIDDEN = 403
 
     def __init__(self, signaler=None,
                  provider_config=None, register_path="users"):
@@ -204,6 +205,8 @@ class SRPRegister(QtCore.QObject):
             self._signaler.signal(self._signaler.srp_registration_finished)
         elif status_code == self.STATUS_TAKEN:
             self._signaler.signal(self._signaler.srp_registration_taken)
+        elif status_code == self.STATUS_FORBIDDEN:
+            self._signaler.signal(self._signaler.srp_registration_disabled)
         else:
             self._signaler.signal(self._signaler.srp_registration_failed)
 

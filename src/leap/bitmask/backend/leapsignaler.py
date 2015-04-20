@@ -109,6 +109,7 @@ class LeapSignaler(SignalerQt):
     srp_password_change_badpw = QtCore.Signal()
     srp_password_change_error = QtCore.Signal()
     srp_password_change_ok = QtCore.Signal()
+    srp_registration_disabled = QtCore.Signal()
     srp_registration_failed = QtCore.Signal()
     srp_registration_finished = QtCore.Signal()
     srp_registration_taken = QtCore.Signal()
