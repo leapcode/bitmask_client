@@ -21,16 +21,18 @@ LIBS=( PySide pysideuic )
 PYTHON_VERSION=python$(python -c "import sys; print (str(sys.version_info[0])+'.'+str(sys.version_info[1]))")
 VAR=( $(which -a $PYTHON_VERSION) )
 
-GET_PYTHON_LIB_CMD="from distutils.sysconfig import get_python_lib; print (get_python_lib())"
+# this takes care of the /usr/lib vs /usr/lib64 differences between platforms
+GET_PYTHON_LIB_CMD="from distutils.sysconfig import get_python_lib; print (get_python_lib(plat_specific=True))"
+
 LIB_VIRTUALENV_PATH=$(python -c "$GET_PYTHON_LIB_CMD")
 
 if [[ $platform == 'linux' ]]; then
     LIB_SYSTEM_PATH=$(${VAR[-1]} -c "$GET_PYTHON_LIB_CMD")
 elif [[ $platform == 'darwin' ]]; then
     ORIGINAL_PATH=$PATH
-    #change first colon of path to | because path substitution is greedy
+    # change first colon of path to | because path substitution is greedy
     PATH=${PATH/:/|}
-    #remove everything up to | from path
+    # remove everything up to | from path
     PATH=${PATH/*|/}
     LIB_SYSTEM_PATH=$(python -c "$GET_PYTHON_LIB_CMD")
     PATH=$ORIGINAL_PATH
