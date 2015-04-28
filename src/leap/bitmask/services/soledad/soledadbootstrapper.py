@@ -22,7 +22,6 @@ import os
 import socket
 import sys
 
-from ssl import SSLError
 from sqlite3 import ProgrammingError as sqlite_ProgrammingError
 
 from u1db import errors as u1db_errors
@@ -621,14 +620,17 @@ class Syncer(object):
         # for debugging.
         self._sync_deferred = self._soledad.sync(defer_decryption=True)
         self._sync_deferred.addCallbacks(self._success, self._error)
-        reactor.callLater(self.WAIT_MAX_SECONDS, self._timeout)
+        self._timeout_delayed_call = reactor.callLater(self.WAIT_MAX_SECONDS,
+                                                       self._timeout)
 
     def _success(self, result):
         logger.debug("Soledad has been synced!")
+        self._timeout_delayed_call.cancel()
         self._callback_deferred.callback(result)
         # so long, and thanks for all the fish
 
     def _error(self, failure):
+        self._timeout_delayed_call.cancel()
         if failure.check(InvalidAuthTokenError):
             logger.error('Invalid auth token while trying to self Soledad')
             self._signaler.signal(
@@ -638,22 +640,11 @@ class Syncer(object):
                            sqlcipher_ProgrammingError):
             logger.exception("%r" % (failure.value,))
             self._callback_deferred.fail(failure)
-        elif failure.check(SSLError):
-            logger.error("%r" % (failure.value,))
-            self._retry()
-        elif failure.check(u1db_errors.InvalidGeneration):
-            logger.error("%r" % (failure.value,))
-            self._retry()
         else:
-            logger.exception("Unhandled error while syncing "
-                             "soledad: %r" % (failure.value,))
+            logger.error("%r" % (failure.value,))
             self._retry()
 
     def _timeout(self):
-        if not self._soledad.syncing:
-            # timeout only if is still syncing
-            return
-
         # maybe it's my connection, but I'm getting
         # ssl handshake timeouts and read errors quite often.
         # A particularly big sync is a disaster.
@@ -666,7 +657,7 @@ class Syncer(object):
 
     def _retry(self):
         self._tries += 1
-        if self._tries > self.MAX_SYNC_RETRIES:
+        if self._tries < self.MAX_SYNC_RETRIES:
             msg = "Sync failed, retrying... (retry {0} of {1})".format(
                 self._tries, self.MAX_SYNC_RETRIES)
             logger.warning(msg)
