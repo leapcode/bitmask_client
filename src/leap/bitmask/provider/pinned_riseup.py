@@ -22,7 +22,7 @@ DOMAIN = "riseup.net"
 
 PROVIDER_JSON = """
 {
-  "api_uri": "https://api.black.riseup.net:4430",
+  "api_uri": "https://api.black.riseup.net:443",
   "api_version": "1",
   "ca_cert_fingerprint": "SHA256: a5244308a1374709a9afce95e3ae47c1b44bc2398c0a70ccbf8b3a8a97f29494",
   "ca_cert_uri": "https://black.riseup.net/ca.crt",
