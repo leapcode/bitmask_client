@@ -25,7 +25,7 @@ from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services import get_service_display_name, MX_SERVICE
 from leap.common.check import leap_assert, leap_assert_type
 from leap.common.events import register
-from leap.common.events import events_pb2 as proto
+from leap.common.events import catalog
 
 from ui_mail_status import Ui_MailStatusWidget
 
@@ -38,7 +38,7 @@ class MailStatusWidget(QtGui.QWidget):
     """
     _soledad_event = QtCore.Signal(object)
     _smtp_event = QtCore.Signal(object)
-    _imap_event = QtCore.Signal(object)
+    _imap_event = QtCore.Signal(object, object)
     _keymanager_event = QtCore.Signal(object)
 
     def __init__(self, parent=None):
@@ -70,51 +70,39 @@ class MailStatusWidget(QtGui.QWidget):
         self.ERROR_ICON_TRAY = None
         self._set_mail_icons()
 
-        register(signal=proto.KEYMANAGER_LOOKING_FOR_KEY,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.KEYMANAGER_LOOKING_FOR_KEY,
+                 callback=self._mail_handle_keymanager_events)
 
-        register(signal=proto.KEYMANAGER_KEY_FOUND,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.KEYMANAGER_KEY_FOUND,
+                 callback=self._mail_handle_keymanager_events)
 
-        # register(signal=proto.KEYMANAGER_KEY_NOT_FOUND,
-        #          callback=self._mail_handle_keymanager_events,
-        #          reqcbk=lambda req, resp: None)
+        # register(event=catalog.KEYMANAGER_KEY_NOT_FOUND,
+        #          callback=self._mail_handle_keymanager_events)
 
-        register(signal=proto.KEYMANAGER_STARTED_KEY_GENERATION,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.KEYMANAGER_STARTED_KEY_GENERATION,
+                 callback=self._mail_handle_keymanager_events)
 
-        register(signal=proto.KEYMANAGER_FINISHED_KEY_GENERATION,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.KEYMANAGER_FINISHED_KEY_GENERATION,
+                 callback=self._mail_handle_keymanager_events)
 
-        register(signal=proto.KEYMANAGER_DONE_UPLOADING_KEYS,
-                 callback=self._mail_handle_keymanager_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.KEYMANAGER_DONE_UPLOADING_KEYS,
+                 callback=self._mail_handle_keymanager_events)
 
-        register(signal=proto.SOLEDAD_DONE_DOWNLOADING_KEYS,
-                 callback=self._mail_handle_soledad_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.SOLEDAD_DONE_DOWNLOADING_KEYS,
+                 callback=self._mail_handle_soledad_events)
 
-        register(signal=proto.SOLEDAD_DONE_UPLOADING_KEYS,
-                 callback=self._mail_handle_soledad_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.SOLEDAD_DONE_UPLOADING_KEYS,
+                 callback=self._mail_handle_soledad_events)
 
-        register(signal=proto.IMAP_UNREAD_MAIL,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
-        register(signal=proto.IMAP_SERVICE_STARTED,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
-        register(signal=proto.SMTP_SERVICE_STARTED,
-                 callback=self._mail_handle_imap_events,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.MAIL_UNREAD_MESSAGES,
+                 callback=self._mail_handle_imap_events)
+        register(event=catalog.IMAP_SERVICE_STARTED,
+                 callback=self._mail_handle_imap_events)
+        register(event=catalog.SMTP_SERVICE_STARTED,
+                 callback=self._mail_handle_imap_events)
 
-        register(signal=proto.SOLEDAD_INVALID_AUTH_TOKEN,
-                 callback=self.set_soledad_invalid_auth_token,
-                 reqcbk=lambda req, resp: None)
+        register(event=catalog.SOLEDAD_INVALID_AUTH_TOKEN,
+                 callback=self.set_soledad_invalid_auth_token)
 
         self._soledad_event.connect(
             self._mail_handle_soledad_events_slot)
@@ -194,12 +182,14 @@ class MailStatusWidget(QtGui.QWidget):
         msg = self.tr("There was an unexpected problem with Soledad.")
         self._set_mail_status(msg, ready=-1)
 
-    def set_soledad_invalid_auth_token(self):
+    def set_soledad_invalid_auth_token(self, event, content):
         """
-        TRIGGERS:
-            SoledadBootstrapper.soledad_invalid_token
-
         This method is called when the auth token is invalid
+
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
         msg = self.tr("Invalid auth token, try logging in again.")
         self._set_mail_status(msg, ready=-1)
@@ -239,58 +229,62 @@ class MailStatusWidget(QtGui.QWidget):
         self._action_mail_status.setText(tray_status)
         self._update_systray_tooltip()
 
-    def _mail_handle_soledad_events(self, req):
+    def _mail_handle_soledad_events(self, event, content):
         """
         Callback for handling events that are emitted from Soledad
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        self._soledad_event.emit(req)
+        self._soledad_event.emit(event)
 
-    def _mail_handle_soledad_events_slot(self, req):
+    def _mail_handle_soledad_events_slot(self, event):
         """
         TRIGGERS:
             _mail_handle_soledad_events
 
         Reacts to an Soledad event
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
         """
         self._set_mail_status(self.tr("Starting..."), ready=1)
 
         ext_status = ""
 
-        if req.event == proto.SOLEDAD_DONE_UPLOADING_KEYS:
+        if event == catalog.SOLEDAD_DONE_UPLOADING_KEYS:
             ext_status = self.tr("Soledad has started...")
-        elif req.event == proto.SOLEDAD_DONE_DOWNLOADING_KEYS:
+        elif event == catalog.SOLEDAD_DONE_DOWNLOADING_KEYS:
             ext_status = self.tr("Soledad is starting, please wait...")
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"
-                        % (req.event))
+                        % (event))
 
         self._set_mail_status(ext_status, ready=1)
 
-    def _mail_handle_keymanager_events(self, req):
+    def _mail_handle_keymanager_events(self, event, content):
         """
         Callback for the KeyManager events
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        self._keymanager_event.emit(req)
+        self._keymanager_event.emit(event)
 
-    def _mail_handle_keymanager_events_slot(self, req):
+    def _mail_handle_keymanager_events_slot(self, event):
         """
         TRIGGERS:
             _mail_handle_keymanager_events
 
         Reacts to an KeyManager event
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
         """
         # We want to ignore this kind of events once everything has
         # started
@@ -299,88 +293,92 @@ class MailStatusWidget(QtGui.QWidget):
 
         ext_status = ""
 
-        if req.event == proto.KEYMANAGER_LOOKING_FOR_KEY:
+        if event == catalog.KEYMANAGER_LOOKING_FOR_KEY:
             ext_status = self.tr("Initial sync in progress, please wait...")
-        elif req.event == proto.KEYMANAGER_KEY_FOUND:
+        elif event == catalog.KEYMANAGER_KEY_FOUND:
             ext_status = self.tr("Found key! Starting mail...")
-        # elif req.event == proto.KEYMANAGER_KEY_NOT_FOUND:
+        # elif event == catalog.KEYMANAGER_KEY_NOT_FOUND:
         #     ext_status = self.tr("Key not found!")
-        elif req.event == proto.KEYMANAGER_STARTED_KEY_GENERATION:
+        elif event == catalog.KEYMANAGER_STARTED_KEY_GENERATION:
             ext_status = self.tr(
                 "Generating new key, this may take a few minutes.")
-        elif req.event == proto.KEYMANAGER_FINISHED_KEY_GENERATION:
+        elif event == catalog.KEYMANAGER_FINISHED_KEY_GENERATION:
             ext_status = self.tr("Finished generating key!")
-        elif req.event == proto.KEYMANAGER_DONE_UPLOADING_KEYS:
+        elif event == catalog.KEYMANAGER_DONE_UPLOADING_KEYS:
             ext_status = self.tr("Starting mail...")
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"
-                        % (req.event))
+                        % (event))
 
         self._set_mail_status(ext_status, ready=1)
 
-    def _mail_handle_smtp_events(self, req):
+    def _mail_handle_smtp_events(self, event):
         """
         Callback for the SMTP events
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
         """
-        self._smtp_event.emit(req)
+        self._smtp_event.emit(event)
 
-    def _mail_handle_smtp_events_slot(self, req):
+    def _mail_handle_smtp_events_slot(self, event):
         """
         TRIGGERS:
             _mail_handle_smtp_events
 
         Reacts to an SMTP event
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
         """
         ext_status = ""
 
-        if req.event == proto.SMTP_SERVICE_STARTED:
+        if event == catalog.SMTP_SERVICE_STARTED:
             self._smtp_started = True
-        elif req.event == proto.SMTP_SERVICE_FAILED_TO_START:
+        elif event == catalog.SMTP_SERVICE_FAILED_TO_START:
             ext_status = self.tr("SMTP failed to start, check the logs.")
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"
-                        % (req.event))
+                        % (event))
 
         self._set_mail_status(ext_status, ready=2)
 
     # ----- XXX deprecate (move to mail conductor)
 
-    def _mail_handle_imap_events(self, req):
+    def _mail_handle_imap_events(self, event, content):
         """
         Callback for the IMAP events
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        self._imap_event.emit(req)
+        self._imap_event.emit(event, content)
 
-    def _mail_handle_imap_events_slot(self, req):
+    def _mail_handle_imap_events_slot(self, event, content):
         """
         TRIGGERS:
             _mail_handle_imap_events
 
         Reacts to an IMAP event
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
         ext_status = None
 
-        if req.event == proto.IMAP_UNREAD_MAIL:
+        if event == catalog.MAIL_UNREAD_MESSAGES:
             # By now, the semantics of the UNREAD_MAIL event are
             # limited to mails with the Unread flag *in the Inbox".
             # We could make this configurable to include all unread mail
             # or all unread mail in subscribed folders.
             if self._started:
-                count = req.content
+                count = content
                 if count != "0":
                     status = self.tr("{0} Unread Emails "
                                      "in your Inbox").format(count)
@@ -390,7 +388,7 @@ class MailStatusWidget(QtGui.QWidget):
                     self._set_mail_status(status, ready=2)
                 else:
                     self._set_mail_status("", ready=2)
-        elif req.event == proto.IMAP_SERVICE_STARTED:
+        elif event == catalog.IMAP_SERVICE_STARTED:
             self._imap_started = True
         if ext_status is not None:
             self._set_mail_status(ext_status, ready=1)

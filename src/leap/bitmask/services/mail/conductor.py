@@ -24,7 +24,7 @@ from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
 from leap.bitmask.services.mail.emailfirewall import get_email_firewall
 
-from leap.common.events import events_pb2 as leap_events
+from leap.common.events import catalog
 from leap.common.events import register as leap_register
 
 
@@ -42,15 +42,12 @@ class IMAPControl(object):
         self.imap_machine = None
         self.imap_connection = None
 
-        leap_register(signal=leap_events.IMAP_SERVICE_STARTED,
-                      callback=self._handle_imap_events,
-                      reqcbk=lambda req, resp: None)
-        leap_register(signal=leap_events.IMAP_SERVICE_FAILED_TO_START,
-                      callback=self._handle_imap_events,
-                      reqcbk=lambda req, resp: None)
-        leap_register(signal=leap_events.IMAP_CLIENT_LOGIN,
-                      callback=self._handle_imap_events,
-                      reqcbk=lambda req, resp: None)
+        leap_register(event=catalog.IMAP_SERVICE_STARTED,
+                      callback=self._handle_imap_events)
+        leap_register(event=catalog.IMAP_SERVICE_FAILED_TO_START,
+                      callback=self._handle_imap_events)
+        leap_register(event=catalog.IMAP_CLIENT_LOGIN,
+                      callback=self._handle_imap_events)
 
     def set_imap_connection(self, imap_connection):
         """
@@ -77,18 +74,20 @@ class IMAPControl(object):
 
         self._backend.imap_stop_service()
 
-    def _handle_imap_events(self, req):
+    def _handle_imap_events(self, event, content):
         """
         Callback handler for the IMAP events
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        if req.event == leap_events.IMAP_SERVICE_STARTED:
+        if event == catalog.IMAP_SERVICE_STARTED:
             self._on_imap_connected()
-        elif req.event == leap_events.IMAP_SERVICE_FAILED_TO_START:
+        elif event == catalog.IMAP_SERVICE_FAILED_TO_START:
             self._on_imap_failed()
-        elif req.event == leap_events.IMAP_CLIENT_LOGIN:
+        elif event == catalog.IMAP_CLIENT_LOGIN:
             self._on_mail_client_logged_in()
 
     def _on_mail_client_logged_in(self):
@@ -124,12 +123,10 @@ class SMTPControl(object):
         self.smtp_connection = None
         self.smtp_machine = None
 
-        leap_register(signal=leap_events.SMTP_SERVICE_STARTED,
-                      callback=self._handle_smtp_events,
-                      reqcbk=lambda req, resp: None)
-        leap_register(signal=leap_events.SMTP_SERVICE_FAILED_TO_START,
-                      callback=self._handle_smtp_events,
-                      reqcbk=lambda req, resp: None)
+        leap_register(event=catalog.SMTP_SERVICE_STARTED,
+                      callback=self._handle_smtp_events)
+        leap_register(event=catalog.SMTP_SERVICE_FAILED_TO_START,
+                      callback=self._handle_smtp_events)
 
     def set_smtp_connection(self, smtp_connection):
         """
@@ -158,16 +155,18 @@ class SMTPControl(object):
         self.smtp_connection.qtsigs.disconnecting_signal.emit()
         self._backend.smtp_stop_service()
 
-    def _handle_smtp_events(self, req):
+    def _handle_smtp_events(self, event, content):
         """
         Callback handler for the SMTP events.
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        if req.event == leap_events.SMTP_SERVICE_STARTED:
+        if event == catalog.SMTP_SERVICE_STARTED:
             self.on_smtp_connected()
-        elif req.event == leap_events.SMTP_SERVICE_FAILED_TO_START:
+        elif event == catalog.SMTP_SERVICE_FAILED_TO_START:
             self.on_smtp_failed()
 
     def on_smtp_connecting(self):

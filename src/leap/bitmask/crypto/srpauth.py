@@ -37,8 +37,8 @@ from leap.bitmask.util import request_helpers as reqhelper
 from leap.bitmask.util.compat import requests_has_max_retries
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.common.check import leap_assert
-from leap.common.events import signal as events_signal
-from leap.common.events import events_pb2 as proto
+from leap.common.events import emit, catalog
+
 
 logger = logging.getLogger(__name__)
 
@@ -395,9 +395,7 @@ class SRPAuthImpl(object):
                          (json_content,))
             raise SRPAuthBadDataFromServer()
 
-        events_signal(
-            proto.CLIENT_UID, content=uuid,
-            reqcbk=lambda req, res: None)  # make the rpc call async
+        emit(catalog.CLIENT_UID, uuid)  # make the rpc call async
 
         return M2
 
@@ -433,9 +431,8 @@ class SRPAuthImpl(object):
             logger.error("Bad cookie from server (missing _session_id)")
             raise SRPAuthNoSessionId()
 
-        events_signal(
-            proto.CLIENT_SESSION_ID, content=session_id,
-            reqcbk=lambda req, res: None)  # make the rpc call asynch
+        # make the rpc call async
+        emit(catalog.CLIENT_SESSION_ID, session_id)
 
         self.set_session_id(session_id)
         logger.debug("SUCCESS LOGIN")

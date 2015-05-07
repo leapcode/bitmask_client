@@ -63,7 +63,7 @@ from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 
 from leap.common.events import register
-from leap.common.events import events_pb2 as proto
+from leap.common.events import catalog
 
 from leap.mail.imap.service.imap import IMAP_PORT
 
@@ -107,12 +107,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         autostart.set_autostart(True)
 
         # register leap events ########################################
-        register(signal=proto.UPDATER_NEW_UPDATES,
-                 callback=self._new_updates_available,
-                 reqcbk=lambda req, resp: None)  # make rpc call async
-        register(signal=proto.RAISE_WINDOW,
-                 callback=self._on_raise_window_event,
-                 reqcbk=lambda req, resp: None)  # make rpc call async
+        register(event=catalog.UPDATER_NEW_UPDATES,
+                 callback=self._new_updates_available)  # make rpc call async
+        register(event=catalog.RAISE_WINDOW,
+                 callback=self._on_raise_window_event)  # make rpc call async
         # end register leap events ####################################
 
         self._updates_content = ""
@@ -682,29 +680,31 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     # updates
     #
 
-    def _new_updates_available(self, req):
+    def _new_updates_available(self, event, content):
         """
         Callback for the new updates event
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        self.new_updates.emit(req)
+        self.new_updates.emit(content)
 
-    def _react_to_new_updates(self, req):
+    def _react_to_new_updates(self, content):
         """
         TRIGGERS:
             self.new_updates
 
         Display the new updates label and sets the updates_content
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param content: The content of the event.
+        :type content: list
         """
         self.moveToThread(QtCore.QCoreApplication.instance().thread())
         self.ui.lblNewUpdates.setVisible(True)
         self.ui.btnMore.setVisible(True)
-        self._updates_content = req.content
+        self._updates_content = content
 
     def _updates_details(self):
         """
@@ -1570,9 +1570,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     # window handling methods
     #
 
-    def _on_raise_window_event(self, req):
+    def _on_raise_window_event(self, event, content):
         """
         Callback for the raise window event
+
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
         if IS_WIN:
             locks.raise_window_ack()

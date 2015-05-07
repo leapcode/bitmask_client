@@ -154,7 +154,7 @@ def start_app():
     # do_mail_plumbing(opts)
 
     try:
-        event_server.ensure_server(event_server.SERVER_PORT)
+        event_server.ensure_server()
     except Exception as e:
         # We don't even have logger configured in here
         print "Could not ensure server: %r" % (e,)
