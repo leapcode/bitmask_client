@@ -57,7 +57,6 @@ from leap.bitmask.services.mail import plumber
 from leap.bitmask.util import leap_argparse, flags_to_dict
 from leap.bitmask.util.requirement_checker import check_requirements
 
-from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
 
 import codecs
@@ -152,12 +151,6 @@ def start_app():
     # and show logs there. it normally will exit there if we got that path.
     # XXX mail repair commands disabled for now
     # do_mail_plumbing(opts)
-
-    try:
-        event_server.ensure_server()
-    except Exception as e:
-        # We don't even have logger configured in here
-        print "Could not ensure server: %r" % (e,)
 
     PLAY_NICE = os.environ.get("LEAP_NICE")
     if PLAY_NICE and PLAY_NICE.isdigit():

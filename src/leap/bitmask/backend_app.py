@@ -21,6 +21,8 @@ import logging
 import multiprocessing
 import signal
 
+from leap.common.events import server as event_server
+
 from leap.bitmask.backend.leapbackend import LeapBackend
 from leap.bitmask.backend.utils import generate_zmq_certificates
 from leap.bitmask.config import flags
@@ -67,6 +69,9 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
 
     if flags_dict is not None:
         dict_to_flags(flags_dict)
+
+    # start the events server
+    event_server.ensure_server()
 
     backend = LeapBackend(bypass_checks=bypass_checks,
                           frontend_pid=frontend_pid)
