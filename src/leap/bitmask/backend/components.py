@@ -829,7 +829,6 @@ class Soledad(object):
             logger.debug("Cancelling soledad defer.")
             self._soledad_defer.cancel()
             self._soledad_defer = None
-            zope.proxy.setProxiedObject(self._soledad_proxy, None)
 
     def close(self):
         """
