@@ -202,6 +202,7 @@ def check_polkit():
 
     try:
         LinuxPolicyChecker.maybe_pkexec()
+        return True
     except Exception:
         logger.error("No polkit agent running.")
 
