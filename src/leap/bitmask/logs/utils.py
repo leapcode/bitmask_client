@@ -1,80 +1,57 @@
 import logging
 import sys
 
+from leap.bitmask.config import flags
 from leap.bitmask.logs import LOG_FORMAT
 from leap.bitmask.logs.log_silencer import SelectiveSilencerFilter
-from leap.bitmask.logs.leap_log_handler import LeapLogHandler
+from leap.bitmask.logs.safezmqhandler import SafeZMQHandler
 from leap.bitmask.logs.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
 
+import logbook
+from logbook.more import ColorizedStderrHandler
 
-def create_logger(debug=False, logfile=None, replace_stdout=True):
-    """
-    Create the logger and attach the handlers.
 
-    :param debug: the level of the messages that we should log
-    :type debug: bool
-    :param logfile: the file name of where we should to save the logs
-    :type logfile: str
-    :return: the new logger with the attached handlers.
-    :rtype: logging.Logger
-    """
-    # TODO: get severity from command line args
-    if debug:
-        level = logging.DEBUG
-    else:
-        level = logging.WARNING
+def get_logger(debug=True, logfile=None, replace_stdout=True):
+    level = logbook.WARNING
+    if flags.DEBUG:
+        level = logbook.NOTSET
 
-    # Create logger and formatter
-    logger = logging.getLogger(name='leap')
-    logger.setLevel(level)
-    formatter = logging.Formatter(LOG_FORMAT)
-
-    # Console handler
-    try:
-        import coloredlogs
-        console = coloredlogs.ColoredStreamHandler(level=level)
-    except ImportError:
-        console = logging.StreamHandler()
-        console.setLevel(level)
-        console.setFormatter(formatter)
-        using_coloredlog = False
-    else:
-        using_coloredlog = True
-
-    if using_coloredlog:
-        replace_stdout = False
+    # This handler consumes logs not handled by the others
+    null_handler = logbook.NullHandler(bubble=False)
+    null_handler.push_application()
 
     silencer = SelectiveSilencerFilter()
-    console.addFilter(silencer)
-    logger.addHandler(console)
-    logger.debug('Console handler plugged!')
 
-    # LEAP custom handler
-    leap_handler = LeapLogHandler()
-    leap_handler.setLevel(level)
-    leap_handler.addFilter(silencer)
-    logger.addHandler(leap_handler)
-    logger.debug('Leap handler plugged!')
+    zmq_handler = SafeZMQHandler('tcp://127.0.0.1:5000', multi=True,
+                                 level=level, filter=silencer.filter)
+    zmq_handler.push_application()
 
-    # File handler
-    if logfile is not None:
-        logger.debug('Setting logfile to %s ', logfile)
-        fileh = logging.FileHandler(logfile)
-        fileh.setLevel(logging.DEBUG)
-        fileh.setFormatter(formatter)
-        fileh.addFilter(silencer)
-        logger.addHandler(fileh)
-        logger.debug('File handler plugged!')
+    file_handler = logbook.FileHandler('bitmask.log', format_string=LOG_FORMAT,
+                                       bubble=True, filter=silencer.filter)
+    file_handler.push_application()
 
-    if replace_stdout:
-        replace_stdout_stderr_with_logging(logger)
+    # don't use simple stream, go for colored log handler instead
+    # stream_handler = logbook.StreamHandler(sys.stdout,
+    #                                        format_string=LOG_FORMAT,
+    #                                        bubble=True)
+    # stream_handler.push_application()
+    stream_handler = ColorizedStderrHandler(
+        level=level, format_string=LOG_FORMAT, bubble=True,
+        filter=silencer.filter)
+    stream_handler.push_application()
+
+    logger = logbook.Logger('leap')
 
     return logger
 
 
 def replace_stdout_stderr_with_logging(logger):
     """
+    NOTE:
+        we are not using this right now (see commented lines on app.py),
+        this needs to be reviewed since the log handler has changed.
+
     Replace:
         - the standard output
         - the standard error

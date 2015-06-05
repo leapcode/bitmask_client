@@ -32,3 +32,4 @@ leap.mail>=0.3.9
 oauth
 
 taskthread
+logbook

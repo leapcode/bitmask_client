@@ -38,9 +38,6 @@ def build_parser():
                         help='Displays Bitmask version and exits.')
 
     # files
-    parser.add_argument('-l', '--logfile', metavar="LOG FILE", nargs='?',
-                        action="store", dest="log_file",
-                        help='Optional log file.')
     parser.add_argument('-m', '--mail-logfile',
                         metavar="MAIL LOG FILE", nargs='?',
                         action="store", dest="mail_log_file",

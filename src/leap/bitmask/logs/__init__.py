@@ -1,3 +1,3 @@
-# levelname length == 8, since 'CRITICAL' is the longest
-LOG_FORMAT = ('%(asctime)s - %(levelname)-8s - '
-              'L#%(lineno)-4s : %(name)s:%(funcName)s() - %(message)s')
+LOG_FORMAT = (u'[{record.time:%Y-%m-%d %H:%M:%S}] '
+              u'{record.level_name: <8} - L#{record.lineno: <4} : '
+              u'{record.module}:{record.func_name} - {record.message}')

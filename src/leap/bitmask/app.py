@@ -124,7 +124,6 @@ def start_app():
     options = {
         'start_hidden': opts.start_hidden,
         'debug': opts.debug,
-        'log_file': opts.log_file,
     }
 
     flags.STANDALONE = opts.standalone
@@ -137,15 +136,19 @@ def start_app():
 
     flags.CA_CERT_FILE = opts.ca_cert_file
 
-    replace_stdout = True
+    flags.DEBUG = opts.debug
+
+    logger = get_logger()
+
+    # NOTE: since we are not using this right now, the code that replaces the
+    # stdout needs to be reviewed when we enable this again
+    # replace_stdout = True
 
     # XXX mail repair commands disabled for now
     # if opts.repair or opts.import_maildir:
     #    We don't want too much clutter on the comand mode
     #    this could be more generic with a Command class.
     #    replace_stdout = False
-
-    logger = create_logger(opts.debug, opts.log_file, replace_stdout)
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.

@@ -17,14 +17,13 @@
 """
 Filter for leap logs.
 """
-import logging
 import os
 import re
 
 from leap.bitmask.util import get_path_prefix
 
 
-class SelectiveSilencerFilter(logging.Filter):
+class SelectiveSilencerFilter(object):
     """
     Configurable filter for root leap logger.
 
@@ -75,7 +74,7 @@ class SelectiveSilencerFilter(logging.Filter):
         return map(lambda line: re.sub('\s', '', line),
                    lines)
 
-    def filter(self, record):
+    def filter(self, record, handler):
         """
         Implements the filter functionality for this Filter
 
@@ -86,7 +85,10 @@ class SelectiveSilencerFilter(logging.Filter):
         """
         if not self.rules:
             return True
-        logger_path = record.name
+        logger_path = record.module
+        if logger_path is None:
+            return True
+
         for path in self.rules:
             if logger_path.startswith(path):
                 return False
