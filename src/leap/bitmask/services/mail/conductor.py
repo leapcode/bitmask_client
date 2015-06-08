@@ -94,7 +94,9 @@ class IMAPControl(object):
         """
         On mail client logged in, fetch incoming mail.
         """
-        self._controller.imap_service_fetch()
+        # XXX needs to be adapted to the new-ish incoming mail service.
+        # Doing nothing for now, this could be moved to mail package itself.
+        logger.debug("A MUA has logged in, should react by forcing a fetch.")
 
     def _on_imap_connecting(self):
         """
