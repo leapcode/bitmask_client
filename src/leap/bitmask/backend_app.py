@@ -70,8 +70,13 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     if flags_dict is not None:
         dict_to_flags(flags_dict)
 
-    # start the events server
-    event_server.ensure_server()
+    # HACK we should be able to run the ensure_server anyway but right now it
+    # breaks if we run it twice.
+    if not flags.STANDALONE:
+        # start the events server
+        # This is not needed for the standalone bundle since the launcher takes
+        # care of it.
+        event_server.ensure_server()
 
     backend = LeapBackend(bypass_checks=bypass_checks,
                           frontend_pid=frontend_pid)
