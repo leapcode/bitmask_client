@@ -18,8 +18,6 @@
 """
 Abstract bootstrapper implementation
 """
-import logging
-
 import requests
 
 from functools import partial
@@ -30,9 +28,10 @@ from twisted.python import log
 from twisted.internet import threads
 from twisted.internet.defer import CancelledError
 
+from leap.bitmask.logs.utils import get_logger
 from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class AbstractBootstrapper(QtCore.QObject):

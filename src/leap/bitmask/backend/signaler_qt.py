@@ -33,9 +33,9 @@ except ImportError:
 from leap.bitmask.backend.api import SIGNALS
 from leap.bitmask.backend.utils import get_frontend_certificates
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class SignalerQt(QtCore.QObject):

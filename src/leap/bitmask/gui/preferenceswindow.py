@@ -18,18 +18,17 @@
 """
 Preferences window
 """
-import logging
-
 from PySide import QtCore, QtGui
 
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.bitmask.gui.preferences_account_page import PreferencesAccountPage
 from leap.bitmask.gui.preferences_vpn_page import PreferencesVpnPage
 from leap.bitmask.gui.preferences_email_page import PreferencesEmailPage
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class PreferencesWindow(QtGui.QDialog):

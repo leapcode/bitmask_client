@@ -16,12 +16,12 @@
 """
 Widget for "email" preferences
 """
-import logging
+from PySide import QtGui
 
-from PySide import QtCore, QtGui
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.ui_preferences_email_page import Ui_PreferencesEmailPage
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class PreferencesEmailPage(QtGui.QWidget):

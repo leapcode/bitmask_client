@@ -17,11 +17,11 @@
 """
 SMTP bootstrapping
 """
-import logging
 import os
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.certs import download_client_cert
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.mail.smtpconfig import SMTPConfig
@@ -31,7 +31,7 @@ from leap.common import certs as leap_certs
 from leap.common.check import leap_assert
 from leap.common.files import check_and_fix_urw_only
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class NoSMTPHosts(Exception):

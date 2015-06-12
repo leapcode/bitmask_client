@@ -30,8 +30,6 @@ The login sequence is the following:
         - on success: _authentication_finished
 
 """
-import logging
-
 from keyring.errors import InitError as KeyringInitError
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
@@ -41,6 +39,7 @@ from ui_login import Ui_LoginWidget
 from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.util import make_address
 from leap.bitmask.util.credentials import USERNAME_REGEX
@@ -48,7 +47,7 @@ from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.keyring_helpers import get_keyring
 from leap.common.check import leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class LoginState(object):

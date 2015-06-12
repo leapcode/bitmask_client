@@ -18,18 +18,18 @@
 """
 Provider configuration
 """
-import logging
 import os
 
 from leap.bitmask import provider
 from leap.bitmask.config import flags
 from leap.bitmask.config.provider_spec import leap_provider_spec
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import get_service_display_name
 from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_check
 from leap.common.config.baseconfig import BaseConfig, LocalizedKey
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class MissingCACert(Exception):

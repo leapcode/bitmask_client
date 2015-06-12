@@ -17,16 +17,16 @@
 """
 Initialization of imap service
 """
-import logging
 import os
 import sys
 
+from leap.bitmask.logs.utils import get_logger
 from leap.mail.constants import INBOX_NAME
 from leap.mail.imap.service import imap
 from leap.mail.incoming.service import IncomingMail, INCOMING_CHECK_PERIOD
 from twisted.python import log
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 # The name of the environment variable that has to be
 # set to override the default time value, in seconds.

@@ -17,14 +17,13 @@
 """
 Advanced Key Management
 """
-import logging
+from PySide import QtGui
 
-from PySide import QtCore, QtGui
-
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import get_service_display_name, MX_SERVICE
 from ui_advanced_key_management import Ui_AdvancedKeyManagement
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class AdvancedKeyManagement(QtGui.QDialog):

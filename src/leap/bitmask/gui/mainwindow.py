@@ -17,7 +17,6 @@
 """
 Main window for Bitmask.
 """
-import logging
 import time
 
 from datetime import datetime
@@ -34,10 +33,11 @@ from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.eip_status import EIPStatusWidget
-from leap.bitmask.gui.loggerwindow import LoggerWindow
+from leap.bitmask.gui.logwindow import LoggerWindow
 from leap.bitmask.gui.login import LoginWidget
 from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
@@ -60,7 +60,6 @@ from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 
 from leap.bitmask.util import autostart, make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
-from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 
 from leap.common.events import register
 from leap.common.events import catalog
@@ -70,7 +69,8 @@ from leap.mail.imap.service.imap import IMAP_PORT
 from ui_mainwindow import Ui_MainWindow
 
 QtDelayedCall = QtCore.QTimer.singleShot
-logger = logging.getLogger(__name__)
+
+logger = get_logger()
 
 
 class MainWindow(QtGui.QMainWindow, SignalTracker):
@@ -492,21 +492,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._wizard = None
 
-    def _get_leap_logging_handler(self):
-        """
-        Gets the leap handler from the top level logger
-
-        :return: a logging handler or None
-        :rtype: LeapLogHandler or None
-        """
-        # TODO this can be a function, does not need
-        # to be a method.
-        leap_logger = logging.getLogger('leap')
-        for h in leap_logger.handlers:
-            if isinstance(h, LeapLogHandler):
-                return h
-        return None
-
     def _show_logger_window(self):
         """
         TRIGGERS:
@@ -515,13 +500,8 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         Display the window with the history of messages logged until now
         and displays the new ones on arrival.
         """
-        leap_log_handler = self._get_leap_logging_handler()
-        if leap_log_handler is None:
-            logger.error('Leap logger handler not found')
-            return
-        else:
-            lw = LoggerWindow(self, handler=leap_log_handler)
-            lw.show()
+        lw = LoggerWindow(self)
+        lw.show()
 
     def _show_AKM(self):
         """

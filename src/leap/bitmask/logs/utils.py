@@ -12,7 +12,7 @@ import logbook
 from logbook.more import ColorizedStderrHandler
 
 
-def get_logger(debug=True, logfile=None, replace_stdout=True):
+def get_logger():
     level = logbook.WARNING
     if flags.DEBUG:
         level = logbook.NOTSET

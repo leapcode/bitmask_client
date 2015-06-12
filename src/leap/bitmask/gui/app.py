@@ -18,15 +18,14 @@ A single App instances holds the signals that are shared among different
 frontend UI components. The App also keeps a reference to the backend object
 and the signaler get signals from the backend.
 """
-import logging
-
 from PySide import QtCore, QtGui
 
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.backend.backend_proxy import BackendProxy
 from leap.bitmask.backend.leapsignaler import LeapSignaler
+from leap.bitmask.logs.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class App(QtGui.QWidget):

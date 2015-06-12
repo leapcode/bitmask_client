@@ -17,10 +17,9 @@
 """
 Mail Status Panel widget implementation
 """
-import logging
-
 from PySide import QtCore, QtGui
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.services import get_service_display_name, MX_SERVICE
 from leap.common.check import leap_assert, leap_assert_type
@@ -29,7 +28,7 @@ from leap.common.events import catalog
 
 from ui_mail_status import Ui_MailStatusWidget
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class MailStatusWidget(QtGui.QWidget):

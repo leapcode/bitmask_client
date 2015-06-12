@@ -18,13 +18,13 @@
 Backend settings
 """
 import ConfigParser
-import logging
 import os
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 # We need this one available for the default decorator
 GATEWAY_AUTOMATIC = "Automatic"

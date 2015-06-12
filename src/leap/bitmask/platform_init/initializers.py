@@ -17,7 +17,6 @@
 """
 Platform-dependant initialization code.
 """
-import logging
 import os
 import platform
 import stat
@@ -32,9 +31,9 @@ from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip.darwinvpnlauncher import DarwinVPNLauncher
 from leap.bitmask.util import first
 from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
+from leap.bitmask.logs.utils import get_logger
 
-
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 # NOTE we could use a deferToThread here, but should
 # be aware of this bug: http://www.themacaque.com/?p=1067

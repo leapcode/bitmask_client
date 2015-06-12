@@ -17,7 +17,6 @@
 """
 Soledad bootstrapping
 """
-import logging
 import os
 import socket
 import sys
@@ -32,6 +31,7 @@ from pysqlcipher.dbapi2 import ProgrammingError as sqlcipher_ProgrammingError
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
@@ -46,7 +46,7 @@ from leap.soledad.common.errors import InvalidAuthTokenError
 from leap.soledad.client import Soledad
 from leap.soledad.client.secrets import BootstrapSequenceError
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 """
 These mocks are replicated from imap tests and the repair utility.

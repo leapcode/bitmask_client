@@ -17,11 +17,9 @@
 """
 Backend components
 """
-
 # TODO [ ] Get rid of all this deferToThread mess, or at least contain
 #          all of it into its own threadpool.
 
-import logging
 import os
 import socket
 import time
@@ -38,9 +36,10 @@ from leap.bitmask.backend.settings import Settings, GATEWAY_AUTOMATIC
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init import IS_LINUX
-from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.provider.pinned import PinnedProviders
+from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.services import get_supported
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
@@ -66,7 +65,7 @@ from leap.keymanager import openpgp
 from leap.soledad.client.secrets import PassphraseTooShort
 from leap.soledad.client.secrets import NoStorageSecret
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class ILEAPComponent(zope.interface.Interface):

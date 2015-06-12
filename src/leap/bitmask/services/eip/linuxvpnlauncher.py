@@ -18,11 +18,11 @@
 Linux VPN launcher implementation.
 """
 import commands
-import logging
 import os
 import sys
 
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util.privilege_policies import LinuxPolicyChecker
 from leap.bitmask.util.privilege_policies import NoPolkitAuthAgentAvailable
 from leap.bitmask.util.privilege_policies import NoPkexecAvailable
@@ -31,7 +31,7 @@ from leap.bitmask.services.eip.vpnlauncher import VPNLauncherException
 from leap.bitmask.util import get_path_prefix, force_eval
 from leap.bitmask.util import first
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 COM = commands
 

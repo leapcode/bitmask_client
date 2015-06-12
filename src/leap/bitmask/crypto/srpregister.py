@@ -26,11 +26,12 @@ from PySide import QtCore
 from urlparse import urlparse
 
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util.constants import SIGNUP_TIMEOUT
 from leap.bitmask.util.request_helpers import get_content
 from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class SRPRegisterImpl:

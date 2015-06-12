@@ -39,19 +39,18 @@
 # M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
 # M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
 #                (thanks to: http://www.glassgiant.com/ascii/)
+
 import atexit
 import multiprocessing
 import os
 import sys
 
-
-from leap.bitmask.backend.backend_proxy import BackendProxy
-
 from leap.bitmask import __version__ as VERSION
+from leap.bitmask.backend.backend_proxy import BackendProxy
+from leap.bitmask.backend_app import run_backend
 from leap.bitmask.config import flags
 from leap.bitmask.frontend_app import run_frontend
-from leap.bitmask.backend_app import run_backend
-from leap.bitmask.logs.utils import create_logger
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
 from leap.bitmask.util import leap_argparse, flags_to_dict
@@ -171,8 +170,8 @@ def start_app():
     check_requirements()
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    logger.info('Bitmask version %s', VERSION)
-    logger.info('leap.mail version %s', MAIL_VERSION)
+    logger.info('Bitmask version %s' % VERSION)
+    logger.info('leap.mail version %s' % MAIL_VERSION)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')

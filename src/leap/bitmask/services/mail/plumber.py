@@ -30,6 +30,7 @@ from twisted.internet import defer
 
 from leap.bitmask.backend.settings import Settings
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.services.soledad.soledadbootstrapper import get_db_paths
 from leap.bitmask.util import flatten, get_path_prefix
@@ -37,8 +38,7 @@ from leap.bitmask.util import flatten, get_path_prefix
 from leap.mail.imap.account import IMAPAccount
 from leap.soledad.client import Soledad
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = get_logger()
 
 
 def initialize_soledad(uuid, email, passwd,

@@ -17,7 +17,6 @@
 """
 Services module.
 """
-import logging
 import os
 import sys
 
@@ -25,6 +24,7 @@ from PySide import QtCore
 
 from leap.bitmask.config import flags
 from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.bitmask.util.privilege_policies import is_missing_policy_permissions
 from leap.bitmask.util.request_helpers import get_content
@@ -34,7 +34,7 @@ from leap.common.check import leap_assert
 from leap.common.config.baseconfig import BaseConfig
 from leap.common.files import get_mtime
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 EIP_SERVICE = u"openvpn"

@@ -17,16 +17,15 @@
 """
 State machines for the Bitmask app.
 """
-import logging
-
 from PySide import QtCore
 from PySide.QtCore import QStateMachine, QState, Signal
 from PySide.QtCore import QObject
 
 from leap.bitmask.services import connections
 from leap.common.check import leap_assert_type
+from leap.bitmask.logs.utils import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 _tr = QObject().tr
 

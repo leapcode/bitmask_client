@@ -14,9 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 import binascii
-import logging
 import threading
 import sys
 
@@ -33,14 +31,14 @@ from twisted.internet import threads
 from twisted.internet.defer import CancelledError
 
 from leap.bitmask.backend.settings import Settings
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import request_helpers as reqhelper
 from leap.bitmask.util.compat import requests_has_max_retries
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.common.check import leap_assert
 from leap.common.events import emit, catalog
 
-
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class SRPAuthenticationError(Exception):

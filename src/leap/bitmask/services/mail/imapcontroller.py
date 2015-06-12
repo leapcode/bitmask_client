@@ -17,12 +17,10 @@
 """
 IMAP service controller.
 """
-import logging
-
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services.mail import imap
 
-
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class IMAPController(object):

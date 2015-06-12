@@ -17,7 +17,6 @@
 """
 First run wizard
 """
-import logging
 import random
 
 from functools import partial
@@ -30,6 +29,7 @@ from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.services import get_service_display_name, get_supported
 from leap.bitmask.util.credentials import password_checks, username_checks
@@ -39,7 +39,7 @@ from leap.bitmask.util.keyring_helpers import has_keyring
 from ui_wizard import Ui_Wizard
 
 QtDelayedCall = QtCore.QTimer.singleShot
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class Wizard(QtGui.QWizard, SignalTracker):

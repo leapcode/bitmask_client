@@ -19,14 +19,14 @@
 Change password dialog window
 """
 
-from PySide import QtCore, QtGui
-from leap.bitmask.util.credentials import password_checks
+from PySide import QtGui
 
+from leap.bitmask.logs.utils import get_logger
+from leap.bitmask.util.credentials import password_checks
 from leap.bitmask.gui.ui_password_change import Ui_PasswordChange
 from leap.bitmask.gui.flashable import Flashable
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class PasswordWindow(QtGui.QDialog, Flashable):

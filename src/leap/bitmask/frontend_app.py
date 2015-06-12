@@ -28,10 +28,10 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask.config import flags
 from leap.bitmask.gui.mainwindow import MainWindow
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import dict_to_flags
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 def signal_handler(window, pid, signum, frame):

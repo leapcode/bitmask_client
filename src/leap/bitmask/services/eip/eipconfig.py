@@ -26,12 +26,13 @@ import ipaddr
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import ServiceConfig
 from leap.bitmask.services.eip.eipspec import get_schema
 from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 def get_eipconfig_path(domain, relative=True):

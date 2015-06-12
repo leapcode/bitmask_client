@@ -17,8 +17,6 @@
 """
 Keyring helpers.
 """
-import logging
-
 try:
     import keyring
     from keyring.backends.file import EncryptedKeyring, PlaintextKeyring
@@ -35,7 +33,8 @@ except Exception:
     keyring = None
 
 
-logger = logging.getLogger(__name__)
+from leap.bitmask.logs.utils import get_logger
+logger = get_logger()
 
 
 def _get_keyring_with_fallback():

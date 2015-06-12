@@ -17,9 +17,8 @@
 """
 Mail Services Conductor
 """
-import logging
-
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
 from leap.bitmask.services.mail.emailfirewall import get_email_firewall
@@ -28,7 +27,7 @@ from leap.common.events import catalog
 from leap.common.events import register as leap_register
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class IMAPControl(object):

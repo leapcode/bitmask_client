@@ -16,16 +16,16 @@
 """
 Widget for "account" preferences
 """
-import logging
-
 from functools import partial
 
 from PySide import QtCore, QtGui
+
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.ui_preferences_account_page import Ui_PreferencesAccountPage
 from leap.bitmask.gui.passwordwindow import PasswordWindow
 from leap.bitmask.services import get_service_display_name
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class PreferencesAccountPage(QtGui.QWidget):

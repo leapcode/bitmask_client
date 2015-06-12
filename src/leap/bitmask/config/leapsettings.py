@@ -18,14 +18,14 @@
 QSettings abstraction.
 """
 import os
-import logging
 
 from PySide import QtCore
 
 from leap.common.check import leap_assert, leap_assert_type
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import get_path_prefix
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 def to_bool(val):

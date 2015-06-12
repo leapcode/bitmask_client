@@ -19,7 +19,6 @@ Platform independant VPN launcher interface.
 """
 import getpass
 import hashlib
-import logging
 import os
 import stat
 
@@ -27,6 +26,7 @@ from abc import ABCMeta, abstractmethod
 from functools import partial
 
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.backend.settings import Settings, GATEWAY_AUTOMATIC
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.platform_init import IS_LINUX
@@ -35,7 +35,7 @@ from leap.bitmask.util import force_eval
 from leap.common.check import leap_assert, leap_assert_type
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class VPNLauncherException(Exception):

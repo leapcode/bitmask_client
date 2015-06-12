@@ -17,7 +17,6 @@
 
 # FIXME this is missing module documentation. It would be fine to say a couple
 # of lines about the whole backend architecture.
-
 import json
 import os
 import time
@@ -34,12 +33,12 @@ except ImportError:
     pass
 
 from leap.bitmask.backend.api import API, PING_REQUEST
+from leap.bitmask.backend.signaler import Signaler
 from leap.bitmask.backend.utils import get_backend_certificates
 from leap.bitmask.config import flags
-from leap.bitmask.backend.signaler import Signaler
+from leap.bitmask.logs.utils import get_logger
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class TxZmqREPConnection(object):

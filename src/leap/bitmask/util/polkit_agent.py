@@ -17,14 +17,14 @@
 """
 Daemonizes polkit authentication agent.
 """
-import logging
 import os
 import subprocess
 
 import daemon
 
 # TODO --- logger won't work when daemoninzed. Log to syslog instead?
-logger = logging.getLogger(__name__)
+from leap.bitmask.logs.utils import get_logger
+logger = get_logger()
 
 POLKIT_PATHS = (
     '/usr/lib/lxpolkit/lxpolkit',

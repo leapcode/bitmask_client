@@ -17,11 +17,11 @@
 """
 Utilities for handling multi-platform file locking mechanisms
 """
-import logging
 import errno
 import os
 import platform
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init import IS_WIN, IS_UNIX
 from leap.common.events import emit, catalog
 
@@ -37,7 +37,7 @@ else:  # WINDOWS
 
     from leap.bitmask.util import get_modification_ts, update_modification_ts
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 if IS_UNIX:
 

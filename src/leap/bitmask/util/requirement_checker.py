@@ -18,9 +18,7 @@
 """
 Utility to check the needed requirements.
 """
-
 import os
-import logging
 
 from pkg_resources import (DistributionNotFound,
                            get_distribution,
@@ -28,7 +26,9 @@ from pkg_resources import (DistributionNotFound,
                            resource_stream,
                            VersionConflict)
 
-logger = logging.getLogger(__name__)
+from leap.bitmask.logs.utils import get_logger
+
+logger = get_logger()
 
 
 def get_requirements():

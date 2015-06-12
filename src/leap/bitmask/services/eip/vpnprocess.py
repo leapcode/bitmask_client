@@ -18,7 +18,6 @@
 VPN Manager, spawned in a custom processProtocol.
 """
 import commands
-import logging
 import os
 import shutil
 import socket
@@ -39,6 +38,7 @@ except ImportError:
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip import linuxvpnlauncher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
@@ -47,12 +47,11 @@ from leap.bitmask.util import first, force_eval
 from leap.bitmask.platform_init import IS_MAC, IS_LINUX
 from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
-vpnlog = logging.getLogger('leap.openvpn')
-
 from twisted.internet import defer, protocol, reactor
 from twisted.internet import error as internet_error
 from twisted.internet.task import LoopingCall
+
+logger = get_logger()
 
 
 class VPNObserver(object):
@@ -884,7 +883,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         """
         # truncate the newline
         line = data[:-1]
-        vpnlog.info(line)
+        logger.info(line)
         self._vpn_observer.watch(line)
 
     def processExited(self, reason):
