@@ -73,7 +73,15 @@ def kill_the_children():
     parent = psutil.Process(me)
     print "Killing all the children processes..."
 
-    for child in parent.get_children(recursive=True):
+    children = None
+    try:
+        # for psutil 0.2.x
+        children = parent.get_children(recursive=True)
+    except:
+        # for psutil 0.3.x
+        children = parent.children(recursive=True)
+
+    for child in children:
         try:
             child.terminate()
         except Exception as exc:
