@@ -1,0 +1,8 @@
+- Feature #7139 - Use logbook zmq handler to centralize logging
+- Feature #7140 - Implement a thread-safe zmq handler for logbook
+- Feature #7141 - Add log handler to display colored logs on the terminal
+- Feature #7142 - Add log handler to store logs on bitmask.log
+- Feature #7143 - Adapt existing log filter/silencer to the new logbook handler
+- Feature #7144 - Replace logging handler with logbook handler bitmask-wide
+- Feature #7180 - Add log rotation for bitmask.log
+- Feature #7184 - Forward twisted logs to logging and handle logging logs with logbook
