@@ -36,7 +36,7 @@ from logbook.more import ColorizedStderrHandler
 BITMASK_LOG_FILE = os.path.join(get_path_prefix(), "leap", 'bitmask.log')
 
 
-def get_logger():
+def get_logger(perform_rollover=False):
     """
     Push to the app stack the needed handlers and return a Logger object.
 
@@ -56,9 +56,13 @@ def get_logger():
                                  level=level, filter=silencer.filter)
     zmq_handler.push_application()
 
-    file_handler = logbook.FileHandler(BITMASK_LOG_FILE,
-                                       format_string=LOG_FORMAT, bubble=True,
-                                       filter=silencer.filter)
+    file_handler = logbook.RotatingFileHandler(
+        BITMASK_LOG_FILE, format_string=LOG_FORMAT, bubble=True,
+        filter=silencer.filter, max_size=sys.maxint)
+
+    if perform_rollover:
+        file_handler.perform_rollover()
+
     file_handler.push_application()
 
     # don't use simple stream, go for colored log handler instead

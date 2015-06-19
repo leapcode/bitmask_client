@@ -145,7 +145,7 @@ def start_app():
 
     flags.DEBUG = opts.debug
 
-    logger = get_logger()
+    logger = get_logger(perform_rollover=True)
 
     # NOTE: since we are not using this right now, the code that replaces the
     # stdout needs to be reviewed when we enable this again
