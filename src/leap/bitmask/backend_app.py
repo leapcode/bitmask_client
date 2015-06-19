@@ -25,6 +25,7 @@ from leap.common.events import server as event_server
 from leap.bitmask.backend.leapbackend import LeapBackend
 from leap.bitmask.backend.utils import generate_zmq_certificates
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import dict_to_flags
 
 
@@ -54,11 +55,18 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     :param flags_dict: a dict containing the flag values set on app start.
     :type flags_dict: dict
     """
+    # In the backend, we want all the components to log into logbook
+    # that is: logging handlers and twisted logs
+    from logbook.compat import redirect_logging
+    from twisted.python.log import PythonLoggingObserver
+    redirect_logging()
+    observer = PythonLoggingObserver()
+    observer.start()
+
     # NOTE: this needs to be used here, within the call since this function is
     # executed in a different process and it seems that the process/thread
     # identification isn't working 100%
-    from leap.bitmask.logs.utils import get_logger
-    logger = get_logger()
+    logger = get_logger()  # noqa
 
     # The backend is the one who always creates the certificates. Either if it
     # is run separately or in a process in the same app as the frontend.

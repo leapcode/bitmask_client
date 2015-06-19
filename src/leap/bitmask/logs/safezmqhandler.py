@@ -39,6 +39,19 @@ class SafeZMQHandler(ZeroMQHandler):
 
     def __init__(self, uri=None, level=NOTSET, filter=None, bubble=False,
                  context=None, multi=False):
+        """
+        Safe zmq handler constructor that calls the ZeroMQHandler constructor
+        and does some extra initializations.
+        """
+        # The current `SafeZMQHandler` uses the `ZeroMQHandler` constructor
+        # which creates a socket each time.
+        # The purpose of the `self._sockets` attribute is to prevent cases in
+        # which we use the same logger in different threads. For instance when
+        # we (in the same file) `deferToThread` a method/function, we are using
+        # the same logger/socket without calling get_logger again.
+        # If we want to reuse the socket, we need to rewrite this constructor
+        # instead of calling the ZeroMQHandler's one.
+        # The best approach may be to inherit directly from `logbook.Handler`.
 
         ZeroMQHandler.__init__(self, uri, level, filter, bubble, context,
                                multi)
