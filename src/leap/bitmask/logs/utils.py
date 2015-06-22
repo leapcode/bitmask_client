@@ -28,12 +28,17 @@ from leap.bitmask.logs.safezmqhandler import SafeZMQHandler
 # from leap.bitmask.logs.streamtologger import StreamToLogger
 from leap.bitmask.platform_init import IS_WIN
 from leap.bitmask.util import get_path_prefix
+from leap.common.files import mkdir_p
 
 import logbook
 from logbook.more import ColorizedStderrHandler
 
 
-BITMASK_LOG_FILE = os.path.join(get_path_prefix(), "leap", 'bitmask.log')
+# NOTE: make sure that the folder exists, the logger is created before saving
+# settings on the first run.
+_base = os.path.join(get_path_prefix(), "leap")
+mkdir_p(_base)
+BITMASK_LOG_FILE = os.path.join(_base, 'bitmask.log')
 
 
 def get_logger(perform_rollover=False):
