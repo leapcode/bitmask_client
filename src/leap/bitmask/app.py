@@ -41,6 +41,7 @@
 #                (thanks to: http://www.glassgiant.com/ascii/)
 
 import atexit
+import commands
 import multiprocessing
 import os
 import sys
@@ -117,6 +118,17 @@ def do_mail_plumbing(opts):
     # XXX catch when import is used w/o acct
 
 
+def log_lsb_release_info(logger):
+    """
+    Attempt to log distribution info from the lsb_release utility
+    """
+    if commands.getoutput('which lsb_release'):
+        distro_info = commands.getoutput('lsb_release -a').split('\n')[-4:]
+        logger.info("LSB Release info:")
+        for line in distro_info:
+            logger.info(line)
+
+
 def start_app():
     """
     Starts the main event loop and launches the main window.
@@ -180,6 +192,7 @@ def start_app():
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
     logger.info('Bitmask version %s' % VERSION)
     logger.info('leap.mail version %s' % MAIL_VERSION)
+    log_lsb_release_info(logger)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     logger.info('Starting app')
