@@ -18,24 +18,31 @@
 Filter for leap logs.
 """
 import os
-import re
 
 from leap.bitmask.util import get_path_prefix
 
 
 class SelectiveSilencerFilter(object):
     """
-    Configurable filter for root leap logger.
+    Configurable log filter for a Logbook logger.
 
-    If you want to ignore components from the logging, just add them,
-    one by line, to ~/.config/leap/leap.dev.conf
+    To include certain logs add them to:
+    ~/.config/leap/leap_log_inclusion.dev.conf
+
+    To exclude certain logs add them to:
+    ~/.config/leap/leap_log_exclusion.dev.conf
+
+    The log filtering is based on how the module name starts.
+    In case of no inclusion or exclusion files are detected the default rules
+    will be used.
     """
     # TODO we can augment this by properly parsing the log-silencer file
     # and having different sections: ignore, levels, ...
 
     # TODO use ConfigParser to unify sections [log-ignore] [log-debug] etc
 
-    CONFIG_NAME = "leap.dev.conf"
+    INCLUSION_CONFIG_FILE = "leap_log_inclusion.dev.conf"
+    EXCLUSION_CONFIG_FILE = "leap_log_exclusion.dev.conf"
 
     # Components to be completely silenced in the main bitmask logs.
     # You probably should think twice before adding a component to
@@ -43,9 +50,17 @@ class SelectiveSilencerFilter(object):
     # only in those cases in which we gain more from silencing them than from
     # having their logs into the main log file that the user will likely send
     # to us.
-    SILENCER_RULES = (
+    EXCLUSION_RULES = (
         'leap.common.events',
         'leap.common.decorators',
+    )
+
+    # This tuple list the module names that we want to display, any different
+    # namespace will be filtered out.
+    INCLUSION_RULES = (
+        '__main__',
+        'leap.',  # right now we just want to include logs from leap modules
+        'twisted.',
     )
 
     def __init__(self):
@@ -53,26 +68,29 @@ class SelectiveSilencerFilter(object):
         Tries to load silencer rules from the default path,
         or load from the SILENCER_RULES tuple if not found.
         """
-        self.rules = None
-        if os.path.isfile(self._rules_path):
-            self.rules = self._load_rules()
-        if not self.rules:
-            self.rules = self.SILENCER_RULES
+        self._inclusion_path = os.path.join(get_path_prefix(), "leap",
+                                            self.INCLUSION_CONFIG_FILE)
 
-    @property
-    def _rules_path(self):
-        """
-        The configuration file for custom ignore rules.
-        """
-        return os.path.join(get_path_prefix(), "leap", self.CONFIG_NAME)
+        self._exclusion_path = os.path.join(get_path_prefix(), "leap",
+                                            self.EXCLUSION_CONFIG_FILE)
+
+        self._load_rules()
 
     def _load_rules(self):
         """
-        Loads a list of paths to be ignored from the logging.
+        Load the inclusion and exclusion rules from the config files.
         """
-        lines = open(self._rules_path).readlines()
-        return map(lambda line: re.sub('\s', '', line),
-                   lines)
+        try:
+            with open(self._inclusion_path) as f:
+                self._inclusion_rules = f.read().splitlines()
+        except IOError:
+            self._inclusion_rules = self.INCLUSION_RULES
+
+        try:
+            with open(self._exclusion_path) as f:
+                self._exclusion_rules = f.read().splitlines()
+        except IOError:
+            self._exclusion_rules = self.EXCLUSION_RULES
 
     def filter(self, record, handler):
         """
@@ -83,13 +101,25 @@ class SelectiveSilencerFilter(object):
         :returns: a bool indicating whether the record should be logged or not.
         :rtype: bool
         """
-        if not self.rules:
-            return True
+        if not self._inclusion_rules and not self._exclusion_rules:
+            return True  # do not filter if there are no rules
+
         logger_path = record.module
         if logger_path is None:
-            return True
+            return True  # we can't filter if there is no module info
 
-        for path in self.rules:
+        # exclude paths that ARE NOT listed in ANY of the inclusion rules
+        match = False
+        for path in self._inclusion_rules:
+            if logger_path.startswith(path):
+                match = True
+
+        if not match:
+            return False
+
+        # exclude paths that ARE listed in the exclusion rules
+        for path in self._exclusion_rules:
             if logger_path.startswith(path):
                 return False
+
         return True
