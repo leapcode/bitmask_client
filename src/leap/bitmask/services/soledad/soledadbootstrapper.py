@@ -615,7 +615,7 @@ class Syncer(object):
         return self._callback_deferred
 
     def _try_sync(self):
-        logger.debug("BOOTSTRAPPER: trying to self Soledad....")
+        logger.debug("BOOTSTRAPPER: trying to sync Soledad....")
         # pass defer_decryption=False to get inline decryption
         # for debugging.
         self._sync_deferred = self._soledad.sync(defer_decryption=True)
@@ -632,7 +632,7 @@ class Syncer(object):
     def _error(self, failure):
         self._timeout_delayed_call.cancel()
         if failure.check(InvalidAuthTokenError):
-            logger.error('Invalid auth token while trying to self Soledad')
+            logger.error('Invalid auth token while trying to sync Soledad')
             self._signaler.signal(
                 self._signaler.soledad_invalid_auth_token)
             self._callback_deferred.fail(failure)
