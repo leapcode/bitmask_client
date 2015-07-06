@@ -33,7 +33,7 @@ from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 
 from leap.bitmask.config import flags
-from leap.bitmask.logs.utils import get_logger
+from leap.bitmask.logs.utils import get_logger, LOG_CONTROLLER
 
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
 from leap.bitmask.gui.eip_status import EIPStatusWidget
@@ -739,6 +739,8 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                 self.raise_()
 
         self._show_hide_unsupported_services()
+
+        LOG_CONTROLLER.start_logbook_subscriber()
 
         # XXX - HACK, kind of...
         # With the 1ms QTimer.singleShot call we schedule the call right after
@@ -1707,6 +1709,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._leap_signaler.stop()
 
+        LOG_CONTROLLER.stop_logbook_subscriber()
         self._backend.stop()
         time.sleep(0.05)  # give the thread a little time to finish.
 

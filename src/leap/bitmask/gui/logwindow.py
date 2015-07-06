@@ -23,92 +23,14 @@ import cgi
 from PySide import QtCore, QtGui
 
 import logbook
-from logbook.queues import ZeroMQSubscriber
 
 from ui_loggerwindow import Ui_LoggerWindow
 
-from leap.bitmask.logs import LOG_FORMAT
-from leap.bitmask.logs.utils import get_logger
+from leap.bitmask.logs.utils import get_logger, LOG_CONTROLLER
 from leap.bitmask.util.constants import PASTEBIN_API_DEV_KEY
 from leap.bitmask.util import pastebin
 
 logger = get_logger()
-
-# log history global variable used to store received logs through different
-# opened instances of this window
-_LOGS_HISTORY = []
-
-
-class QtLogHandler(logbook.Handler,  logbook.StringFormatterHandlerMixin):
-    """
-    Custom log handler which emits a log record with the message properly
-    formatted using a Qt Signal.
-    """
-
-    class _QtSignaler(QtCore.QObject):
-        """
-        inline class used to hold the `new_log` Signal, if this is used
-        directly in the outside class it fails due how PySide works.
-
-        This is the message we get if not use this method:
-        TypeError: Error when calling the metaclass bases
-            metaclass conflict: the metaclass of a derived class must be a
-            (non-strict) subclass of the metaclasses of all its bases
-
-        """
-        new_log = QtCore.Signal(object)
-
-        def emit(self, data):
-            """
-            emit the `new_log` Signal with the given `data` parameter.
-
-            :param data: the data to emit along with the signal.
-            :type data: object
-            """
-            # WARNING: the new-style connection does NOT work because PySide
-            # translates the emit method to self.emit, and that collides with
-            # the emit method for logging.Handler
-            # self.new_log.emit(log_item)
-            QtCore.QObject.emit(self, QtCore.SIGNAL('new_log(PyObject)'), data)
-
-    def __init__(self, level=logbook.NOTSET, format_string=None,
-                 encoding=None, filter=None, bubble=False):
-
-        logbook.Handler.__init__(self, level, filter, bubble)
-        logbook.StringFormatterHandlerMixin.__init__(self, format_string)
-
-        self.qt = self._QtSignaler()
-
-    def __enter__(self):
-        return logbook.Handler.__enter__(self)
-
-    def __exit__(self, exc_type, exc_value, tb):
-        return logbook.Handler.__exit__(self, exc_type, exc_value, tb)
-
-    def emit(self, record):
-        """
-        Emit the specified logging record using a Qt Signal.
-        Also add it to the history in order to be able to access it later.
-
-        :param record: the record to emit
-        :type record: logbook.LogRecord
-        """
-        global _LOGS_HISTORY
-        record.msg = self.format(record)
-        # NOTE: not optimal approach, we may want to look at
-        # bisect.insort with a custom approach to use key or
-        # http://code.activestate.com/recipes/577197-sortedcollection/
-        # Sort logs on arrival, logs transmitted over zmq may arrive unsorted.
-        _LOGS_HISTORY.append(record)
-        _LOGS_HISTORY = sorted(_LOGS_HISTORY, key=lambda r: r.time)
-
-        # XXX: emitting the record on arrival does not allow us to sort here so
-        # in the GUI the logs may arrive with with some time sort problem.
-        # We should implement a sort-on-arrive for the log window.
-        # Maybe we should switch to a tablewidget item that sort automatically
-        # by timestamp.
-        # As a user workaround you can close/open the log window
-        self.qt.emit(record)
 
 
 class LoggerWindow(QtGui.QDialog):
@@ -147,19 +69,8 @@ class LoggerWindow(QtGui.QDialog):
 
         self._set_logs_to_display()
 
-        self._my_handler = QtLogHandler(format_string=LOG_FORMAT)
-        self._my_handler.qt.new_log.connect(self._add_log_line)
-
+        LOG_CONTROLLER.new_log.connect(self._add_log_line)
         self._load_history()
-        self._connect_to_logbook()
-
-    def _connect_to_logbook(self):
-        """
-        Run in the background the log receiver.
-        """
-        subscriber = ZeroMQSubscriber('tcp://127.0.0.1:5000', multi=True)
-        self._logbook_controller = subscriber.dispatch_in_background(
-            self._my_handler)
 
     def _add_log_line(self, log):
         """
@@ -201,7 +112,7 @@ class LoggerWindow(QtGui.QDialog):
         self._set_logs_to_display()
         self.ui.txtLogHistory.clear()
         current_history = []
-        for record in _LOGS_HISTORY:
+        for record in LOG_CONTROLLER.get_logs():
             self._add_log_line(record)
             current_history.append(record.msg)
 
@@ -334,27 +245,3 @@ class LoggerWindow(QtGui.QDialog):
         self._paste_thread = QtCore.QThread()
         self._paste_thread.run = lambda: do_pastebin()
         self._paste_thread.start()
-
-    def closeEvent(self, e):
-        """
-        Disconnect logger on close.
-        """
-        self._disconnect_logger()
-        e.accept()
-
-    def reject(self):
-        """
-        Disconnect logger on reject.
-        """
-        self._disconnect_logger()
-        QtGui.QDialog.reject(self)
-
-    def _disconnect_logger(self):
-        """
-        Stop the background thread that receives messages through zmq, also
-        close the subscriber socket.
-        This allows us to re-create the subscriber when we reopen this window
-        without getting an error at trying to connect twice to the zmq port.
-        """
-        self._logbook_controller.stop()
-        self._logbook_controller.subscriber.close()
