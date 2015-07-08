@@ -188,15 +188,17 @@ class QtLogHandler(logbook.Handler,  logbook.StringFormatterHandlerMixin):
 class _LogController(object):
     def __init__(self):
         self._qt_handler = QtLogHandler(format_string=LOG_FORMAT)
+        self._logbook_controller = None
         self.new_log = self._qt_handler.qt.new_log
 
     def start_logbook_subscriber(self):
         """
         Run in the background the log receiver.
         """
-        subscriber = ZeroMQSubscriber('tcp://127.0.0.1:5000', multi=True)
-        self._logbook_controller = subscriber.dispatch_in_background(
-            self._qt_handler)
+        if self._logbook_controller is None:
+            subscriber = ZeroMQSubscriber('tcp://127.0.0.1:5000', multi=True)
+            self._logbook_controller = subscriber.dispatch_in_background(
+                self._qt_handler)
 
     def stop_logbook_subscriber(self):
         """
@@ -205,8 +207,10 @@ class _LogController(object):
         This allows us to re-create the subscriber when we reopen this window
         without getting an error at trying to connect twice to the zmq port.
         """
-        self._logbook_controller.stop()
-        self._logbook_controller.subscriber.close()
+        if self._logbook_controller is not None:
+            self._logbook_controller.stop()
+            self._logbook_controller.subscriber.close()
+            self._logbook_controller = None
 
     def get_logs(self):
         return self._qt_handler.logs

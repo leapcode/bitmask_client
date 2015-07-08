@@ -1,0 +1,2 @@
+- Closes bug #7273 - ZMQError: address already in use - logbook subscriber already started.
+- Closes bug - logbook subscriber stop fails if not started.
