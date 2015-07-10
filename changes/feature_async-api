@@ -1,3 +1,0 @@
-- Add support to the new async-api of soledad
-- Add support to the new async-api of keymanager (Closes: 6368)
-- Refactor soledad sync to do it the twisted way (Closes: #6536, #6691, #6658)

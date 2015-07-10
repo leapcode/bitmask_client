@@ -1,1 +1,0 @@
-- Don't run the event server on the backend for the standalone bundle since the launcher takes care of that. Closes #7126.

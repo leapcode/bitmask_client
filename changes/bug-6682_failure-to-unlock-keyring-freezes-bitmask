@@ -1,1 +1,0 @@
-- Handle user cancel keyring open operation, this prevents a bitmask freeze. Closes bug #6682.

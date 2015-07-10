@@ -1,1 +1,0 @@
-- Run the zmq log subscriber in the background to avoid hitting the zmq's buffer limits. Closes #7222.

@@ -1,1 +1,0 @@
-- Bugfix: Fix the bootstrap script for developers so it works on Fedora/RHEL systems where there is /usr/lib64 for python libs.

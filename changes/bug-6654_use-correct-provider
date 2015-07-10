@@ -1,1 +1,0 @@
-- #6654: Regression fix, login attempt is made against previously selected provider.
