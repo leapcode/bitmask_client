@@ -25,8 +25,9 @@ pyzmq
 txzmq
 
 leap.soledad.client>=0.6.0
-leap.keymanager>=0.3.8
-leap.mail>=0.3.9
+leap.keymanager>=0.4.0
+leap.mail>=0.4.0rc1
+leap.common>=0.4.0
 
 # Remove this when u1db fixes its dependency on oauth
 oauth
