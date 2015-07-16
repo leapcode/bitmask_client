@@ -48,7 +48,7 @@ All code ready to be merged into the integration branch is expected to:
 
 * Have tests
 * Be documented
-* Pass existing tests: do **run_tests.sh** and **tox -v**. All feature branches are automagically built by our `buildbot farm <http://lemur.leap.se:8010/grid>`_. So please check your branch is green before merging it it to `develop`. Rebasing against the current tip of the integration when possible is preferred in order to keep a clean history.
+* Pass existing tests: do **run_tests.sh** and **tox -v**. Rebasing against the current tip of the integration when possible is preferred in order to keep a clean history.
 
 Using Github
 ------------
