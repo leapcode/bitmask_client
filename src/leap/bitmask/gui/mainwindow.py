@@ -985,7 +985,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             "manager or download it from <a href='{0}'>"
             "addons.mozilla.org</a>.".format(thunderbird_extension_url))
         manual_text = self.tr(
-            "Alternately, you can manually configure "
+            "Alternatively, you can manually configure "
             "your mail client to use Bitmask Email with these options:")
         manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
         manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
