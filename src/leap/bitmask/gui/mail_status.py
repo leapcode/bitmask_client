@@ -71,27 +71,23 @@ class MailStatusWidget(QtGui.QWidget):
 
         register(event=catalog.KEYMANAGER_LOOKING_FOR_KEY,
                  callback=self._mail_handle_keymanager_events)
-
         register(event=catalog.KEYMANAGER_KEY_FOUND,
                  callback=self._mail_handle_keymanager_events)
-
-        # register(event=catalog.KEYMANAGER_KEY_NOT_FOUND,
-        #          callback=self._mail_handle_keymanager_events)
-
+        register(event=catalog.KEYMANAGER_KEY_NOT_FOUND,
+                 callback=self._mail_handle_keymanager_events)
         register(event=catalog.KEYMANAGER_STARTED_KEY_GENERATION,
                  callback=self._mail_handle_keymanager_events)
-
         register(event=catalog.KEYMANAGER_FINISHED_KEY_GENERATION,
                  callback=self._mail_handle_keymanager_events)
-
         register(event=catalog.KEYMANAGER_DONE_UPLOADING_KEYS,
                  callback=self._mail_handle_keymanager_events)
 
         register(event=catalog.SOLEDAD_DONE_DOWNLOADING_KEYS,
                  callback=self._mail_handle_soledad_events)
-
         register(event=catalog.SOLEDAD_DONE_UPLOADING_KEYS,
                  callback=self._mail_handle_soledad_events)
+        register(event=catalog.SOLEDAD_INVALID_AUTH_TOKEN,
+                 callback=self.set_soledad_invalid_auth_token)
 
         register(event=catalog.MAIL_UNREAD_MESSAGES,
                  callback=self._mail_handle_imap_events)
@@ -99,9 +95,6 @@ class MailStatusWidget(QtGui.QWidget):
                  callback=self._mail_handle_imap_events)
         register(event=catalog.SMTP_SERVICE_STARTED,
                  callback=self._mail_handle_imap_events)
-
-        register(event=catalog.SOLEDAD_INVALID_AUTH_TOKEN,
-                 callback=self.set_soledad_invalid_auth_token)
 
         self._soledad_event.connect(
             self._mail_handle_soledad_events_slot)
@@ -296,8 +289,9 @@ class MailStatusWidget(QtGui.QWidget):
             ext_status = self.tr("Initial sync in progress, please wait...")
         elif event == catalog.KEYMANAGER_KEY_FOUND:
             ext_status = self.tr("Found key! Starting mail...")
-        # elif event == catalog.KEYMANAGER_KEY_NOT_FOUND:
-        #     ext_status = self.tr("Key not found!")
+        elif event == catalog.KEYMANAGER_KEY_NOT_FOUND:
+            ext_status = self.tr(
+                "Key not found...")
         elif event == catalog.KEYMANAGER_STARTED_KEY_GENERATION:
             ext_status = self.tr(
                 "Generating new key, this may take a few minutes.")
@@ -306,10 +300,7 @@ class MailStatusWidget(QtGui.QWidget):
         elif event == catalog.KEYMANAGER_DONE_UPLOADING_KEYS:
             ext_status = self.tr("Starting mail...")
         else:
-            leap_assert(False,
-                        "Don't know how to handle this state: %s"
-                        % (event))
-
+            logger.warning("don't know to to handle %s" % (event,))
         self._set_mail_status(ext_status, ready=1)
 
     def _mail_handle_smtp_events(self, event):
