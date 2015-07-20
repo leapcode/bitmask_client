@@ -86,7 +86,12 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
         # start the events server
         # This is not needed for the standalone bundle since the launcher takes
         # care of it.
-        event_server.ensure_server()
+        try:
+            from twisted.internet import reactor
+            reactor.callWhenRunning(reactor.callLater, 0,
+                                    event_server.ensure_server)
+        except Exception as e:
+            logger.error("Could not ensure server: %r" % (e,))
 
     backend = LeapBackend(bypass_checks=bypass_checks,
                           frontend_pid=frontend_pid)
