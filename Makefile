@@ -131,5 +131,10 @@ all_leap_develop:
 all_leap_release_tags:
 	pkg/scripts/checkout_leap_versions.sh
 
+sumo_tarball:
+	python setup.py sdist --sumo
+	git checkout -- src/leap/__init__.py
+	rm -rf src/leap/soledad
+
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
