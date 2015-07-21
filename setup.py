@@ -274,6 +274,14 @@ class cmd_sdist(versioneer_sdist):
         # We need to copy the requirements to the specified path
         # so that the client has a copy to do the startup checks.
         copy_reqs(base_dir, withsrc=True)
+        with open(os.path.join(base_dir,
+                               'src', 'leap', '__init__.py'),
+                  'w') as nuke_top_init:
+            nuke_top_init.write('')
+        with open(os.path.join(base_dir,
+                               'src', 'leap', 'soledad', '__init__.py'),
+                  'w') as nuke_soledad_ns:
+            nuke_soledad_ns.write('')
 
     def make_distribution(self):
         # add our extra files to the list just before building the
@@ -301,8 +309,6 @@ class cmd_sdist(versioneer_sdist):
                 self.filelist.extend(all_module_files)
                 freeze_pkg_ver(
                     src_path + "/_version.py", vdict[module], "sumo")
-            with open('src/leap/__init__.py', 'w') as nuke_top_init:
-                nuke_top_init.write('')
 
             # In addition, we want the tarball/zipfile to have -SUMO in the
             # name, and the unpacked directory to have -SUMO too. The easiest
