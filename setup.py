@@ -149,6 +149,21 @@ def freeze_pkg_ver(path, version_short, version_full):
 cmdclass["freeze_debianver"] = freeze_debianver
 parsed_reqs = utils.parse_requirements()
 
+if utils.is_develop_mode():
+    print("")
+    print ("[WARNING] Skipping leap-specific dependencies "
+           "because development mode is detected.")
+    print ("[WARNING] You can install "
+           "the latest published versions with "
+           "'pip install -r pkg/requirements-leap.pip'")
+    print ("[WARNING] Or you can instead do 'python setup.py develop' "
+           "from the parent folder of each one of them.")
+    print("")
+else:
+    parsed_reqs += utils.parse_requirements(
+        reqfiles=["pkg/requirements-leap.pip"])
+
+
 leap_launcher = 'bitmask=leap.bitmask.app:start_app'
 
 from setuptools.command.develop import develop as _develop
@@ -467,6 +482,7 @@ if IS_MAC:
 
     import py2app.recipes
     py2app.recipes.jsonschema = jsonschema_recipe()
+
 
 setup(
     name="leap.bitmask",
