@@ -447,15 +447,20 @@ IS_MAC = _system == "Darwin"
 
 data_files = []
 
+
 if IS_LINUX:
     # XXX use check_for_permissions to install data
     # globally. Or make specific install command. See #3805
-    data_files = [
-        ("share/polkit-1/actions",
-         ["pkg/linux/polkit/se.leap.bitmask.policy"]),
-        ("/usr/sbin",
-         ["pkg/linux/bitmask-root"]),
-    ]
+    isset = lambda var: os.environ.get(var, None)
+    if isset('VIRTUAL_ENV') or isset('LEAP_SKIP_INIT'):
+        data_files = None
+    else:
+        data_files = [
+            ("share/polkit-1/actions",
+                ["pkg/linux/polkit/se.leap.bitmask.policy"]),
+            ("/usr/sbin",
+                ["pkg/linux/bitmask-root"]),
+        ]
 
 extra_options = {}
 
