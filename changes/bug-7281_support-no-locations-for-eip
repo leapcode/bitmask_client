@@ -1,0 +1,1 @@
+- Closes bug #7281. Support a provider not providing location for the eip gateways.

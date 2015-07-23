@@ -161,12 +161,17 @@ class VPNGatewaySelector(object):
     def get_gateways_country_code(self):
         """
         Return a dict with ipaddress -> country code mapping.
+        Return None if there are no locations specified.
 
-        :rtype: dict
+        :rtype: dict or None
         """
         country_codes = {}
 
         locations = self._eipconfig.get_locations()
+
+        if not locations:
+            return
+
         gateways = self._eipconfig.get_gateways()
 
         for idx, gateway in enumerate(gateways):

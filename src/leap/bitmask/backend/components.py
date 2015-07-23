@@ -628,7 +628,9 @@ class EIP(object):
         # this only works for selecting the first gateway, as we're
         # currently doing.
         ccodes = gateway_selector.get_gateways_country_code()
-        gateway_ccode = ccodes[gateways[0]]
+        gateway_ccode = ''  # '' instead of None due to needed signal argument
+        if ccodes is not None:
+            gateway_ccode = ccodes[gateways[0]]
 
         self._signaler.signal(self._signaler.eip_get_gateway_country_code,
                               gateway_ccode)
