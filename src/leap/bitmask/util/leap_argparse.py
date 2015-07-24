@@ -19,8 +19,6 @@ Parses the command line arguments passed to the application.
 """
 import argparse
 
-from leap.bitmask import IS_RELEASE_VERSION
-
 
 def build_parser():
     """
@@ -93,11 +91,10 @@ def build_parser():
     #                     '--to-mbox flag to import to folders other '
     #                     'than INBOX. Use with --acct')
 
-    if not IS_RELEASE_VERSION:
-        help_text = ("Bypasses the certificate check during provider "
-                     "bootstraping, for debugging development servers. "
-                     "Use at your own risk!")
-        parser.add_argument('--danger', action="store_true", help=help_text)
+    help_text = ("INSECURE: Bypasses the certificate check during provider "
+                 "bootstraping, for debugging development servers. "
+                 "USE AT YOUR OWN RISK!")
+    parser.add_argument('--danger', action="store_true", help=help_text)
 
     # optional cert file used to check domains with self signed certs.
     parser.add_argument('--ca-cert-file', metavar="/path/to/cacert.pem",
@@ -131,9 +128,5 @@ def get_options():
     """
     parser = build_parser()
     opts, unknown = parser.parse_known_args()
-
-    # we add this option manually since it's not defined for 'release version'
-    if IS_RELEASE_VERSION:
-        opts.danger = False
 
     return opts
