@@ -20,6 +20,8 @@ Start point for the Backend.
 import multiprocessing
 import signal
 
+from twisted.internet import reactor
+
 from leap.common.events import server as event_server
 
 from leap.bitmask.backend.leapbackend import LeapBackend
@@ -80,22 +82,23 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     if flags_dict is not None:
         dict_to_flags(flags_dict)
 
-    # HACK we should be able to run the ensure_server anyway but right now it
-    # breaks if we run it twice.
-    if not flags.STANDALONE:
-        # start the events server
-        # This is not needed for the standalone bundle since the launcher takes
-        # care of it.
-        try:
-            from twisted.internet import reactor
-            reactor.callWhenRunning(reactor.callLater, 0,
-                                    event_server.ensure_server)
-        except Exception as e:
-            logger.error("Could not ensure server: %r" % (e,))
+    reactor.callWhenRunning(start_events_and_updater, logger)
 
     backend = LeapBackend(bypass_checks=bypass_checks,
                           frontend_pid=frontend_pid)
     backend.run()
+
+
+def start_events_and_updater(logger):
+    event_server.ensure_server()
+
+    if flags.STANDALONE:
+        try:
+            from leap.bitmask.updater import Updater
+            updater = Updater()
+            updater.start()
+        except ImportError:
+            logger.error("Updates are not enabled in this distribution.")
 
 
 if __name__ == '__main__':
