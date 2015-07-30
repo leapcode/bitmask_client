@@ -1,59 +1,38 @@
 # -*- mode: python -*-
-a = Analysis(['pkg/pyinst/bitmask.py'],
-             pathex=['/home/kali/Virtualenvs/leap-pyinst/lib/python2.7/site-packages/zope', '/home/kali/Virtualenvs/leap-pyinst/lib/python2.7/site-packages/zope/interface', '/home/kali/Virtualenvs/leap-pyinst/lib/python2.7/site-packages/zope/proxy', '/home/kali/leap/bitmask_client/src/leap/bitmask'],
+
+block_cipher = None
+
+
+a = Analysis([os.path.join('pkg', 'pyinst', 'bitmask.py')],
              hiddenimports=[
 	     	'zope.interface', 'zope.proxy',
-		'leap.common',
-		'leap.common.config',
-		'PySide.QtCore', 'PySide.QtGui',
-		# not needed with latest develop pyinstaller
-		'cryptography.hazmat.bindings.openssl',
-		'cryptography.hazmat.bindings.openssl.aes',
-		'cryptography.hazmat.bindings.openssl.asn1',
-		'cryptography.hazmat.bindings.openssl.bignum',
-		'cryptography.hazmat.bindings.openssl.bio',
-		'cryptography.hazmat.bindings.openssl.cmac',
-		'cryptography.hazmat.bindings.openssl.cms',
-		'cryptography.hazmat.bindings.openssl.conf',
-		'cryptography.hazmat.bindings.openssl.crypto',
-		'cryptography.hazmat.bindings.openssl.dh',
-		'cryptography.hazmat.bindings.openssl.dsa',
-		'cryptography.hazmat.bindings.openssl.ec',
-		'cryptography.hazmat.bindings.openssl.ecdh',
-		'cryptography.hazmat.bindings.openssl.ecdsa',
-		'cryptography.hazmat.bindings.openssl.engine',
-		'cryptography.hazmat.bindings.openssl.err',
-		'cryptography.hazmat.bindings.openssl.evp',
-		'cryptography.hazmat.bindings.openssl.hmac',
-		'cryptography.hazmat.bindings.openssl.nid',
-		'cryptography.hazmat.bindings.openssl.objects',
-		'cryptography.hazmat.bindings.openssl.opensslv',
-		'cryptography.hazmat.bindings.openssl.osrandom_engine',
-		'cryptography.hazmat.bindings.openssl.pem',
-		'cryptography.hazmat.bindings.openssl.pkcs12',
-		'cryptography.hazmat.bindings.openssl.pkcs7',
-		'cryptography.hazmat.bindings.openssl.rand',
-		'cryptography.hazmat.bindings.openssl.rsa',
-		'cryptography.hazmat.bindings.openssl.ssl',
-		'cryptography.hazmat.bindings.openssl.x509name',
-		'cryptography.hazmat.bindings.openssl.x509',
-		'cryptography.hazmat.bindings.openssl.x509v3',
-		'cryptography.hazmat.bindings.openssl.x509_vfy'],
+		'PySide.QtCore', 'PySide.QtGui'],
              hookspath=None,
-             runtime_hooks=None)
-pyz = PYZ(a.pure)
+             runtime_hooks=None,
+             excludes=None,
+             cipher=block_cipher)
+pyz = PYZ(a.pure,
+             cipher=block_cipher)
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='bitmask',
           debug=False,
-          strip=None,
+          strip=False,
           upx=True,
-          console=True )
+          console=False )
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
                a.datas,
-               strip=None,
+               strip=False,
                upx=True,
                name='bitmask')
+if sys.platform.startswith("darwin"):
+	app = BUNDLE(coll,
+		     name=os.path.join(
+		      'dist', 'Bitmask.app'),
+                     appname='Bitmask',
+                     version='0.9.0rc2',
+		     icon='pkg/osx/bitmask.icns',
+		     bundle_identifier='bitmask-0.9.0rc2')

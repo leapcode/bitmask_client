@@ -57,6 +57,7 @@ ifndef RESOURCE_TIME
 	export RESOURCE_TIME=10
 endif
 
+CURDIR = $(shell pwd)
 #
 
 all : resources ui
@@ -122,13 +123,13 @@ install_wheel:
 gather_deps:
 	pipdeptree | pkg/scripts/filter-bitmask-deps
 
-all_leap_develop:
-	cd ../keymanager && git checkout develop
-	cd ../leap_common && git checkout develop
-	cd ../leap_mail && git checkout develop
-	cd ../soledad && git checkout develop
+install_base_deps:
+	for repo in leap_common keymanager leap_mail soledad/common soledad/client; do cd $(CURDIR)/../$$repo && pkg/pip_install_requirements.sh; done
 
-all_leap_release_tags:
+checkout_leapdeps_develop:
+	for repo in leap_common keymanager leap_mail soledad; do cd $(CURDIR)/../$$repo && git checkout develop; done
+
+checkout_leapdeps_release:
 	pkg/scripts/checkout_leap_versions.sh
 
 sumo_tarball:
@@ -136,7 +137,13 @@ sumo_tarball:
 	git checkout -- src/leap/__init__.py
 	rm -rf src/leap/soledad
 pyinst:
-	pyinstaller pkg/pyinst/bitmask.spec
+	pyinstaller -y pkg/pyinst/bitmask.spec
+	mkdir -p dist/bitmask/cryptography/hazmat/bindings/openssl/src/
+	cp pkg/pyinst/cryptography/* dist/bitmask/cryptography/hazmat/bindings/openssl/src
+	cp -r dist/bitmask/cryptography dist/Bitmask.app/Contents/Resources/
+
+clean_pkg:
+	rm -rf build dist
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
