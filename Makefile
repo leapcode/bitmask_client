@@ -125,6 +125,7 @@ gather_deps:
 
 install_base_deps:
 	for repo in leap_pycommon keymanager leap_mail soledad/common soledad/client; do cd $(CURDIR)/../$$repo && pkg/pip_install_requirements.sh; done
+	pkg/pip_install_requirements.sh
 
 checkout_leapdeps_develop:
 	for repo in leap_pycommon keymanager leap_mail soledad; do cd $(CURDIR)/../$$repo && git checkout develop; done
