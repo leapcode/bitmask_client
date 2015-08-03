@@ -132,7 +132,7 @@ checkout_leapdeps_develop:
 checkout_leapdeps_release:
 	pkg/scripts/checkout_leap_versions.sh
 
-sumo_tarball:
+sumo_tarball: checkout_leapdeps_release
 	python setup.py sdist --sumo
 	git checkout -- src/leap/__init__.py
 	rm -rf src/leap/soledad
