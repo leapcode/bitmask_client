@@ -124,10 +124,10 @@ gather_deps:
 	pipdeptree | pkg/scripts/filter-bitmask-deps
 
 install_base_deps:
-	for repo in leap_common keymanager leap_mail soledad/common soledad/client; do cd $(CURDIR)/../$$repo && pkg/pip_install_requirements.sh; done
+	for repo in leap_pycommon keymanager leap_mail soledad/common soledad/client; do cd $(CURDIR)/../$$repo && pkg/pip_install_requirements.sh; done
 
 checkout_leapdeps_develop:
-	for repo in leap_common keymanager leap_mail soledad; do cd $(CURDIR)/../$$repo && git checkout develop; done
+	for repo in leap_pycommon keymanager leap_mail soledad; do cd $(CURDIR)/../$$repo && git checkout develop; done
 
 checkout_leapdeps_release:
 	pkg/scripts/checkout_leap_versions.sh
