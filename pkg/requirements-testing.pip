@@ -7,12 +7,5 @@ mock
 unittest2  # TODO we should include this dep only for python2.6
 coverage
 pep8>=1.1
+flake8
 tox
-
-#sphinx>=1.1.2
-
-# double reqs
-# (the client already includes, which gives some errors)
-# -----------
-#twisted
-#zope.interface
