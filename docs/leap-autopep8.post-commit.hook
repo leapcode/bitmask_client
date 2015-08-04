@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Auto pep8 correction as a post-commit hook.
+# Thanks to http://victorlin.me/posts/2014/02/05/auto-post-commit-pep8-correction
+
+echo "[+] running autopep8..."
+FILES=$(git diff HEAD^ HEAD --name-only --diff-filter=ACM | grep -e '\.py$')
+ 
+for f in $FILES
+do
+    # auto pep8 correction
+    autopep8 --in-place $f
+done
+
+git status
