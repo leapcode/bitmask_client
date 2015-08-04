@@ -113,9 +113,7 @@ function run_pep8 {
   echo "Running pep8 ..."
   srcfiles="src/leap"
   # Just run PEP8 in current environment
-  pep8_opts="--ignore=E202,W602 --exclude=*_rc.py,ui_*,_version.py --repeat"
-
-  ${wrapper} pep8 ${pep8_opts} ${srcfiles}
+  ${wrapper} flake8 ${pep8_opts} ${srcfiles}
 }
 
 # XXX we cannot run tests that need X server
