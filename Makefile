@@ -44,6 +44,8 @@ LRELE = lrelease
 #################################
 # DO NOT EDIT FOLLOWING
 
+LEAP_REPOS = leap_pycommon keymanager leap_mail soledad
+
 COMPILED_UI = $(UI_FILES:%.ui=$(COMPILED_DIR)/ui_%.py)
 COMPILED_RESOURCES = $(RESOURCES:%.qrc=$(COMPILED_DIR)/%_rc.py)
 
@@ -58,7 +60,8 @@ ifndef RESOURCE_TIME
 endif
 
 CURDIR = $(shell pwd)
-#
+
+###########################################
 
 all : resources ui
 
@@ -76,6 +79,7 @@ $(COMPILED_DIR)/ui_%.py : $(UI_DIR)/%.ui
 
 $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
+
 
 manpages:
 	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
@@ -127,8 +131,11 @@ install_base_deps:
 	for repo in leap_pycommon keymanager leap_mail soledad/common soledad/client; do cd $(CURDIR)/../$$repo && pkg/pip_install_requirements.sh; done
 	pkg/pip_install_requirements.sh
 
+pull_leapdeps:
+	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git pull; done
+
 checkout_leapdeps_develop:
-	for repo in leap_pycommon keymanager leap_mail soledad; do cd $(CURDIR)/../$$repo && git checkout develop; done
+	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git checkout develop; done
 
 checkout_leapdeps_release:
 	pkg/scripts/checkout_leap_versions.sh
