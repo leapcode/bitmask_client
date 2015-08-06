@@ -39,12 +39,18 @@
 # M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
 # M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
 #                (thanks to: http://www.glassgiant.com/ascii/)
-
 import atexit
 import commands
 import multiprocessing
 import os
+import platform
 import sys
+
+if platform.system() == "Darwin":
+    # We need to tune maximum number of files, due to zmq usage
+    # we hit the limit.
+    import resource
+    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.backend.backend_proxy import BackendProxy
