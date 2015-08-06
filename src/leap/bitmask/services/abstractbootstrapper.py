@@ -25,7 +25,7 @@ from functools import partial
 from PySide import QtCore
 
 from twisted.python import log
-from twisted.internet import threads
+from twisted.internet import threads, reactor
 from twisted.internet.defer import CancelledError
 
 from leap.bitmask.logs.utils import get_logger
@@ -155,7 +155,8 @@ class AbstractBootstrapper(QtCore.QObject):
             data = {self.PASSED_KEY: True, self.ERROR_KEY: ""}
             if isinstance(signal, basestring):
                 if self._signaler is not None:
-                    self._signaler.signal(signal, data)
+                    reactor.callFromThread(
+                        self._signaler.signal, signal, data)
                 else:
                     logger.warning("Tried to notify but no signaler found")
             else:
