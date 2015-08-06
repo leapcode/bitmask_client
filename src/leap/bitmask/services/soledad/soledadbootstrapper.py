@@ -37,7 +37,8 @@ from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
 from leap.bitmask.util import first, is_file, is_empty_file, make_address
 from leap.bitmask.util import get_path_prefix
-from leap.bitmask.platform_init import IS_WIN
+from leap.bitmask.util import here
+from leap.bitmask.platform_init import IS_WIN, IS_MAC
 from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
@@ -439,6 +440,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
             except IndexError as e:
                 logger.debug("Couldn't find the gpg binary!")
                 logger.exception(e)
+        if IS_MAC:
+            gpgbin = os.path.abspath(
+                os.path.join(here(), "apps", "mail", "gpg"))
         leap_check(gpgbin is not None, "Could not find gpg binary")
         return gpgbin
 
