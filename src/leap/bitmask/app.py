@@ -60,7 +60,7 @@ from leap.bitmask.frontend_app import run_frontend
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
-from leap.bitmask.util import leap_argparse, flags_to_dict
+from leap.bitmask.util import leap_argparse, flags_to_dict, here
 from leap.bitmask.util.requirement_checker import check_requirements
 
 from leap.mail import __version__ as MAIL_VERSION
@@ -68,7 +68,6 @@ from leap.mail import __version__ as MAIL_VERSION
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
-
 import psutil
 
 
@@ -133,6 +132,15 @@ def log_lsb_release_info(logger):
         logger.info("LSB Release info:")
         for line in distro_info:
             logger.info(line)
+
+def fix_qtplugins_path():
+    # This is a small workaround for a bug in macholib, there is a slight typo
+    # in the path for the qt plugins that is added to the dynamic loader path
+    # in the libs.
+    if sys.platform in ('win32', 'darwin'):
+        from PySide import QtCore
+        plugins_path = os.path.join(os.path.dirname(here(QtCore)), 'plugins')
+        QtCore.QCoreApplication.setLibraryPaths([plugins_path])
 
 
 def start_app():
@@ -200,7 +208,6 @@ def start_app():
     logger.info('leap.mail version %s' % MAIL_VERSION)
     log_lsb_release_info(logger)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-
     logger.info('Starting app')
 
     backend_running = BackendProxy().check_online()
@@ -220,6 +227,7 @@ def start_app():
         backend_process.start()
         backend_pid = backend_process.pid
 
+    fix_qtplugins_path()
     run_frontend(options, flags_dict, backend_pid=backend_pid)
 
 
