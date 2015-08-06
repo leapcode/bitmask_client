@@ -51,6 +51,8 @@ def signal_handler(signum, frame):
 def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     """
     Run the backend for the application.
+    This is called from the main app.py entrypoint, and is run in a child
+    subprocess.
 
     :param bypass_checks: whether we should bypass the checks or not
     :type bypass_checks: bool
