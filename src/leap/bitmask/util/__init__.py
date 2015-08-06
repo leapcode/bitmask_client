@@ -20,6 +20,7 @@ Some small and handy functions.
 import datetime
 import itertools
 import os
+import sys
 
 from leap.bitmask.config import flags
 from leap.common.config import get_path_prefix as common_get_path_prefix
@@ -154,3 +155,14 @@ def flags_to_dict():
     values = dict((i, getattr(flags, i)) for i in items)
 
     return values
+
+def here(module=None):
+    if getattr(sys, 'frozen', False):
+        # we are running in a |PyInstaller| bundle
+        return sys._MEIPASS
+    else:
+        dirname = os.path.dirname
+        if module:
+	    return dirname(module.__file__)
+        else:
+            return dirname(__file__)
