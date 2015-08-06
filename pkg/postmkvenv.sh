@@ -23,6 +23,7 @@ VAR=( $(which -a $PYTHON_VERSION) )
 
 # this takes care of the /usr/lib vs /usr/lib64 differences between platforms
 GET_PYTHON_LIB_CMD="from distutils.sysconfig import get_python_lib; print (get_python_lib(plat_specific=True))"
+GET_PYSIDE_LIB_CMD="import PySide; print '/'.join(PySide.__path__[0].split('/')[:-1])"
 
 LIB_VIRTUALENV_PATH=$(python -c "$GET_PYTHON_LIB_CMD")
 
@@ -34,7 +35,7 @@ elif [[ $platform == 'darwin' ]]; then
     PATH=${PATH/:/|}
     # remove everything up to | from path
     PATH=${PATH/*|/}
-    LIB_SYSTEM_PATH=$(python -c "$GET_PYTHON_LIB_CMD")
+    LIB_SYSTEM_PATH=$(/usr/bin/python -c "$GET_PYSIDE_LIB_CMD")
     PATH=$ORIGINAL_PATH
 else
     echo "unsupported platform; not doing symlinks"
