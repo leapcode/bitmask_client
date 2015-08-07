@@ -73,8 +73,9 @@ class SRPRegisterImpl:
         :param password: password for this username
         :type password: str
 
-        :returns: if the registration went ok or not.
-        :rtype: bool
+        :returns: if the registration went ok or not, and the returned status
+                  code of of the request
+        :rtype: (bool, int)
         """
 
         username = username.lower().encode('utf-8')
