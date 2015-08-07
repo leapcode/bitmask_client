@@ -35,7 +35,7 @@ class MailStatusWidget(QtGui.QWidget):
     """
     Status widget that displays the state of the LEAP Mail service
     """
-    _soledad_event = QtCore.Signal(object)
+    _soledad_event = QtCore.Signal(object, object)
     _smtp_event = QtCore.Signal(object)
     _imap_event = QtCore.Signal(object, object)
     _keymanager_event = QtCore.Signal(object)
@@ -85,6 +85,10 @@ class MailStatusWidget(QtGui.QWidget):
         register(event=catalog.SOLEDAD_DONE_DOWNLOADING_KEYS,
                  callback=self._mail_handle_soledad_events)
         register(event=catalog.SOLEDAD_DONE_UPLOADING_KEYS,
+                 callback=self._mail_handle_soledad_events)
+        register(event=catalog.SOLEDAD_SYNC_RECEIVE_STATUS,
+                 callback=self._mail_handle_soledad_events)
+        register(event=catalog.SOLEDAD_SYNC_SEND_STATUS,
                  callback=self._mail_handle_soledad_events)
         register(event=catalog.SOLEDAD_INVALID_AUTH_TOKEN,
                  callback=self.set_soledad_invalid_auth_token)
@@ -228,11 +232,11 @@ class MailStatusWidget(QtGui.QWidget):
         :param event: The event that triggered the callback.
         :type event: str
         :param content: The content of the event.
-        :type content: list
+        :type content: dict
         """
-        self._soledad_event.emit(event)
+        self._soledad_event.emit(event, content)
 
-    def _mail_handle_soledad_events_slot(self, event):
+    def _mail_handle_soledad_events_slot(self, event, content):
         """
         TRIGGERS:
             _mail_handle_soledad_events
@@ -241,21 +245,44 @@ class MailStatusWidget(QtGui.QWidget):
 
         :param event: The event that triggered the callback.
         :type event: str
+        :param content: The content of the event.
+        :type content: dict
         """
         self._set_mail_status(self.tr("Starting..."), ready=1)
 
         ext_status = ""
+        ready = None
 
         if event == catalog.SOLEDAD_DONE_UPLOADING_KEYS:
             ext_status = self.tr("Soledad has started...")
+            ready = 1
         elif event == catalog.SOLEDAD_DONE_DOWNLOADING_KEYS:
             ext_status = self.tr("Soledad is starting, please wait...")
+            ready = 1
+        elif event == catalog.SOLEDAD_SYNC_RECEIVE_STATUS:
+            sync_progress = content['received'] * 100 / content['total']
+            if sync_progress < 100:
+                ext_status = self.tr("Sync: downloading ({0:02}%)")
+                ext_status = ext_status.format(sync_progress)
+            else:
+                ext_status = self.tr("Sync: download completed.")
+
+            ready = 2
+        elif event == catalog.SOLEDAD_SYNC_SEND_STATUS:
+            sync_progress = content['sent'] * 100 / content['total']
+            if sync_progress < 100:
+                ext_status = self.tr("Sync: uploading ({0:02}%)")
+                ext_status = ext_status.format(sync_progress)
+            else:
+                ext_status = self.tr("Sync: upload complete.")
+
+            ready = 2
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"
                         % (event))
 
-        self._set_mail_status(ext_status, ready=1)
+        self._set_mail_status(ext_status, ready=ready)
 
     def _mail_handle_keymanager_events(self, event, content):
         """
