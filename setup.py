@@ -94,6 +94,7 @@ from setuptools import Command
 
 
 class freeze_debianver(Command):
+
     """
     Freezes the version in a debian branch.
     To be used after merging the development branch onto the debian one.
@@ -184,6 +185,7 @@ def copy_reqs(path, withsrc=False):
 
 
 class cmd_develop(_develop):
+
     def run(self):
         # versioneer:
         versions = versioneer.get_versions(verbose=True)
@@ -198,6 +200,7 @@ cmdclass["develop"] = cmd_develop
 
 
 class cmd_binary_hash(Command):
+
     """
     Update the _binaries.py file with hashes for the different helpers.
     This is used from within the bundle.
@@ -261,6 +264,7 @@ versioneer_sdist = cmdclass['sdist']
 
 
 class cmd_build(versioneer_build):
+
     def run(self):
         versioneer_build.run(self)
         copy_reqs(self.build_lib)
