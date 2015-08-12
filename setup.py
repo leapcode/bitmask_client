@@ -322,8 +322,13 @@ class cmd_sdist(versioneer_sdist):
                     src_path)
                 all_module_files = list_recursively(src_path)
                 self.filelist.extend(all_module_files)
+                module_ver = vdict[module]
                 freeze_pkg_ver(
-                    src_path + "/_version.py", vdict[module], "sumo")
+                    src_path + "/_version.py",
+                    module_ver, "%s-sumo" % module_ver)
+            freeze_pkg_ver(
+                "src/leap/bitmask/_version.py",
+                VERSION, "%s-sumo" % VERSION)
 
             # In addition, we want the tarball/zipfile to have -SUMO in the
             # name, and the unpacked directory to have -SUMO too. The easiest
