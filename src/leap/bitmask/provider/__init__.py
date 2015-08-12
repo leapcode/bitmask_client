@@ -17,12 +17,15 @@
 """
 Provider utilities.
 """
+import logging
 import os
 
 from pkg_resources import parse_version
 
 from leap.bitmask import __short_version__ as BITMASK_VERSION
 from leap.common.check import leap_assert
+
+logger = logging.getLogger(__name__)
 
 
 # The currently supported API versions by the client.
@@ -62,4 +65,12 @@ def supports_client(minimum_version):
     :returns: True if that version is supported or False otherwise.
     :return type: bool
     """
-    return parse_version(minimum_version) <= parse_version(BITMASK_VERSION)
+    try:
+        min_ver = parse_version(minimum_version)
+        cur_ver = parse_version(BITMASK_VERSION)
+        supported = min_ver <= cur_ver
+    except TypeError as exc:
+        logger.error("Error while parsing versions")
+        logger.exception(exc)
+        supported = False
+    return supported
