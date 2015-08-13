@@ -144,11 +144,9 @@ sumo_tarball: checkout_leapdeps_release
 	python setup.py sdist --sumo
 	git checkout -- src/leap/__init__.py
 	rm -rf src/leap/soledad
+
 pyinst:
 	pyinstaller -y pkg/pyinst/bitmask.spec
-	mkdir -p dist/bitmask/cryptography/hazmat/bindings/openssl/src/
-	cp pkg/pyinst/cryptography/* dist/bitmask/cryptography/hazmat/bindings/openssl/src
-	cp -r dist/bitmask/cryptography dist/Bitmask.app/Contents/Resources/
 
 clean_pkg:
 	rm -rf build dist
