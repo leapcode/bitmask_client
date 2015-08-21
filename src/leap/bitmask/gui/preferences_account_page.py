@@ -21,9 +21,10 @@ from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask.logs.utils import get_logger
-from leap.bitmask.gui.ui_preferences_account_page import Ui_PreferencesAccountPage
+from leap.bitmask.gui import ui_preferences_account_page as ui_pref
 from leap.bitmask.gui.passwordwindow import PasswordWindow
 from leap.bitmask.services import get_service_display_name
+from leap.bitmask._components import HAS_EIP
 
 logger = get_logger()
 
@@ -42,7 +43,7 @@ class PreferencesAccountPage(QtGui.QWidget):
         :type app: App
         """
         QtGui.QWidget.__init__(self, parent)
-        self.ui = Ui_PreferencesAccountPage()
+        self.ui = ui_pref.Ui_PreferencesAccountPage()
         self.ui.setupUi(self)
 
         self.account = account
@@ -120,6 +121,8 @@ class PreferencesAccountPage(QtGui.QWidget):
         # add one checkbox per service and set the current value
         # from what is saved in settings.
         for service in services:
+            if not HAS_EIP and service == "openvpn":
+                continue
             try:
                 checkbox = QtGui.QCheckBox(
                     get_service_display_name(service), self)

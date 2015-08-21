@@ -35,6 +35,7 @@ from leap.bitmask.services import get_service_display_name, get_supported
 from leap.bitmask.util.credentials import password_checks, username_checks
 from leap.bitmask.util.credentials import USERNAME_REGEX
 from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.bitmask._components import HAS_EIP
 
 from ui_wizard import Ui_Wizard
 
@@ -690,6 +691,12 @@ class Wizard(QtGui.QWizard, SignalTracker):
                     checkbox.stateChanged.connect(
                         partial(self._service_selection_changed, service))
                     checkbox.setChecked(True)
+
+                    if service == "openvpn" and not HAS_EIP:
+                        # this is a mail-only build, we disable eip.
+                        checkbox.setEnabled(False)
+                        checkbox.setChecked(False)
+
                     self._shown_services.add(service)
             except ValueError:
                 logger.error(
