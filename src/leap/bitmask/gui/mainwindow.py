@@ -73,10 +73,12 @@ if HAS_MAIL:
     from leap.bitmask.services.mail import conductor as mail_conductor
     from leap.bitmask.services import MX_SERVICE
 
-
 QtDelayedCall = QtCore.QTimer.singleShot
 
 logger = get_logger()
+
+if not HAS_EIP:
+    BITMASK_MAIL_ONLY_ICON = ":/images/menubar-mask-icon.png"
 
 
 class MainWindow(QtGui.QMainWindow, SignalTracker):
@@ -874,11 +876,16 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             systrayMenu.addAction(self._action_mail_status)
             systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_quit)
+
         self._systray = SysTray(self)
         self._systray.setContextMenu(systrayMenu)
 
         if HAS_EIP:
             self._systray.setIcon(self._eip_status.ERROR_ICON_TRAY)
+        else:
+            mail_status_icon = QtGui.QPixmap(BITMASK_MAIL_ONLY_ICON)
+            self._systray.setIcon(mail_status_icon)
+
         self._systray.setVisible(True)
         self._systray.activated.connect(self._tray_activated)
 
