@@ -3,6 +3,29 @@
 Changelog
 ---------
 
+0.9.0rc2 August 27
+++++++++++++++++++
+
+Features
+~~~~~~~~
+- `#7250 <https://leap.se/code/issues/7250>`_: Enable '--danger' for stable versions.
+- `#7291 <https://leap.se/code/issues/7291>`_: Move the updater code from the launcher to the client.
+- `#7342 <https://leap.se/code/issues/7342>`_: Added apply_updates.py script for the pyinstaller bundle.
+- `#7353 <https://leap.se/code/issues/7353>`_: Add notifications of soledad sync progress to UI.
+- `#7356 <https://leap.se/code/issues/7356>`_: Allow to disable EIP component on build.
+
+Bugfixes
+~~~~~~~~
+- `#6594 <https://leap.se/code/issues/6594>`_: Handle disabled registration on provider.
+- `#7149 <https://leap.se/code/issues/7149>`_: Start the events server when reactor is running.
+- `#7273 <https://leap.se/code/issues/7273>`_: Logbook subscriber stop fails if not started.
+- `#7273 <https://leap.se/code/issues/7273>`_: ZMQError: address already in use - logbook subscriber already started.
+- `#7281 <https://leap.se/code/issues/7281>`_: Support a provider not providing location for the eip gateways.
+- `#7319 <https://leap.se/code/issues/7319>`_: Raise the maxfiles limit in OSX
+- `#7343 <https://leap.se/code/issues/7343>`_: Clean up and fix the tests.
+
+
+
 0.9.0rc1 July 10
 ++++++++++++++++
 
