@@ -1,9 +1,9 @@
-ANNOUNCING Bitmask 0.9.0rc1 release candidate
+ANNOUNCING Bitmask 0.9.0rc2 release candidate
 
 The LEAP team is pleased to announce  the immediate  availability of Bitmask
-0.9.0rc1, codename "we're not in kansas anymore"
+0.9.0rc2.
 
-This is the first public *release candidate* of the Bitmask client that
+This is the second public *release candidate* of the Bitmask client that
 supports our user friendly end to end encrypted mail service. Our work has
 focused on speed and scale optimization by adapting the underlying components
 (leap.keymanager and leap.mail) to use the new async API of Soledad. This
@@ -17,7 +17,7 @@ This is a release candidate aimed at getting more user feedback to influence
 our next round of development. We have a list of known issues that we are
 cranking through and will add more to the list as they come in.
 
-* Changelog: https://github.com/leapcode/bitmask_client/blob/0.9.0rc1/CHANGELOG.rst
+* Changelog: https://github.com/leapcode/bitmask_client/blob/0.9.0rc2/CHANGELOG.rst
 
 TESTING
 
@@ -52,6 +52,6 @@ trains, rooftops, rainforests, lonely islands and, always, beyond any border.
 
 The LEAP team,
 
-July 10, 2015
+August 27, 2015
 Somewhere in the middle of the intertubes.
 EOF
