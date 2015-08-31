@@ -17,37 +17,37 @@
 """
 Soledad bootstrapping
 """
-import logging
 import os
 import socket
 import sys
-import time
 
-from ssl import SSLError
 from sqlite3 import ProgrammingError as sqlite_ProgrammingError
 
 from u1db import errors as u1db_errors
-from twisted.internet import threads
+from twisted.internet import defer, reactor
 from zope.proxy import sameProxiedObjects
 from pysqlcipher.dbapi2 import ProgrammingError as sqlcipher_ProgrammingError
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.soledad.soledadconfig import SoledadConfig
 from leap.bitmask.util import first, is_file, is_empty_file, make_address
 from leap.bitmask.util import get_path_prefix
-from leap.bitmask.platform_init import IS_WIN
+from leap.bitmask.util import here
+from leap.bitmask.platform_init import IS_WIN, IS_MAC
 from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
 from leap.keymanager import KeyManager, openpgp
 from leap.keymanager.errors import KeyNotFound
 from leap.soledad.common.errors import InvalidAuthTokenError
-from leap.soledad.client import Soledad, BootstrapSequenceError
+from leap.soledad.client import Soledad
+from leap.soledad.client.secrets import BootstrapSequenceError
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 """
 These mocks are replicated from imap tests and the repair utility.
@@ -57,34 +57,6 @@ during the use of the offline mode.
 They should not be needed after we allow a null remote initialization in the
 soledad client, and a switch to remote sync-able mode during runtime.
 """
-
-
-class Mock(object):
-    """
-    A generic simple mock class
-    """
-    def __init__(self, return_value=None):
-        self._return = return_value
-
-    def __call__(self, *args, **kwargs):
-        return self._return
-
-
-class MockSharedDB(object):
-    """
-    Mocked  SharedDB object to replace in soledad before
-    instantiating it in offline mode.
-    """
-    get_doc = Mock()
-    put_doc = Mock()
-    lock = Mock(return_value=('atoken', 300))
-    unlock = Mock(return_value=True)
-
-    def __call__(self):
-        return self
-
-# TODO these exceptions could be moved to soledad itself
-# after settling this down.
 
 
 class SoledadSyncError(Exception):
@@ -132,10 +104,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
     PUBKEY_KEY = "user[public_key]"
 
     MAX_INIT_RETRIES = 10
-    MAX_SYNC_RETRIES = 10
-    WAIT_MAX_SECONDS = 600
-    # WAIT_STEP_SECONDS = 1
-    WAIT_STEP_SECONDS = 5
 
     def __init__(self, signaler=None):
         AbstractBootstrapper.__init__(self, signaler)
@@ -145,32 +113,35 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         self._provider_config = None
         self._soledad_config = None
-        self._keymanager = None
         self._download_if_needed = False
 
         self._user = ""
-        self._password = ""
+        self._password = u""
         self._address = ""
         self._uuid = ""
 
         self._srpauth = None
+
         self._soledad = None
+        self._keymanager = None
 
     @property
-    def keymanager(self):
-        return self._keymanager
+    def srpauth(self):
+        if flags.OFFLINE is True:
+            return None
+        if self._srpauth is None:
+            leap_assert(self._provider_config is not None,
+                        "We need a provider config")
+            self._srpauth = SRPAuth(self._provider_config)
+        return self._srpauth
 
     @property
     def soledad(self):
         return self._soledad
 
     @property
-    def srpauth(self):
-        if flags.OFFLINE is True:
-            return None
-        leap_assert(self._provider_config is not None,
-                    "We need a provider config")
-        return SRPAuth(self._provider_config)
+    def keymanager(self):
+        return self._keymanager
 
     # initialization
 
@@ -188,13 +159,18 @@ class SoledadBootstrapper(AbstractBootstrapper):
         self._address = username
         self._password = password
         self._uuid = uuid
-        try:
-            self.load_and_sync_soledad(uuid, offline=True)
-            self._signaler.signal(self._signaler.soledad_offline_finished)
-        except Exception as e:
+
+        def error(failure):
             # TODO: we should handle more specific exceptions in here
-            logger.exception(e)
+            logger.exception(failure.value)
             self._signaler.signal(self._signaler.soledad_offline_failed)
+
+        d = self.load_and_sync_soledad(uuid, offline=True)
+        d.addCallback(
+            lambda _: self._signaler.signal(
+                self._signaler.soledad_offline_finished))
+        d.addErrback(error)
+        return d
 
     def _get_soledad_local_params(self, uuid, offline=False):
         """
@@ -229,25 +205,19 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :return: server_url, cert_file
         :rtype: tuple
         """
-        if uuid is None:
-            uuid = self.srpauth.get_uuid()
-
         if offline is True:
             server_url = "http://localhost:9999/"
             cert_file = ""
         else:
+            if uuid is None:
+                uuid = self.srpauth.get_uuid()
             server_url = self._pick_server(uuid)
             cert_file = self._provider_config.get_ca_cert_path()
 
         return server_url, cert_file
 
-    def _soledad_sync_errback(self, failure):
-        failure.trap(InvalidAuthTokenError)
-        # in the case of an invalid token we have already turned off mail and
-        # warned the user in _do_soledad_sync()
-
     def _do_soledad_init(self, uuid, secrets_path, local_db_path,
-                         server_url, cert_file, token):
+                         server_url, cert_file, token, syncable):
         """
         Initialize soledad, retry if necessary and raise an exception if we
         can't succeed.
@@ -273,7 +243,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 logger.debug("Trying to init soledad....")
                 self._try_soledad_init(
                     uuid, secrets_path, local_db_path,
-                    server_url, cert_file, token)
+                    server_url, cert_file, token, syncable)
                 logger.debug("Soledad has been initialized.")
                 return
             except Exception as exc:
@@ -286,15 +256,19 @@ class SoledadBootstrapper(AbstractBootstrapper):
         logger.exception(exc)
         raise SoledadInitError()
 
-    def load_and_sync_soledad(self, uuid=None, offline=False):
+    def load_and_sync_soledad(self, uuid=u"", offline=False):
         """
         Once everthing is in the right place, we instantiate and sync
         Soledad
 
         :param uuid: the uuid of the user, used in offline mode.
-        :type uuid: unicode, or None.
+        :type uuid: unicode.
         :param offline: whether to instantiate soledad for offline use.
         :type offline: bool
+
+        :return: A Deferred which fires when soledad is sync, or which fails
+                 with SoledadInitError or SoledadSyncError
+        :rtype: defer.Deferred
         """
         local_param = self._get_soledad_local_params(uuid, offline)
         remote_param = self._get_soledad_server_params(uuid, offline)
@@ -302,34 +276,50 @@ class SoledadBootstrapper(AbstractBootstrapper):
         secrets_path, local_db_path, token = local_param
         server_url, cert_file = remote_param
 
+        if offline:
+            return self._load_soledad_nosync(
+                uuid, secrets_path, local_db_path, cert_file, token)
+
+        else:
+            return self._load_soledad_online(uuid, secrets_path, local_db_path,
+                                             server_url, cert_file, token)
+
+    def _load_soledad_online(self, uuid, secrets_path, local_db_path,
+                             server_url, cert_file, token):
+        syncable = True
         try:
             self._do_soledad_init(uuid, secrets_path, local_db_path,
-                                  server_url, cert_file, token)
-        except SoledadInitError:
+                                  server_url, cert_file, token, syncable)
+        except SoledadInitError as e:
             # re-raise the exceptions from try_init,
             # we're currently handling the retries from the
             # soledad-launcher in the gui.
-            raise
+            return defer.fail(e)
 
         leap_assert(not sameProxiedObjects(self._soledad, None),
                     "Null soledad, error while initializing")
 
-        if flags.OFFLINE:
-            self._init_keymanager(self._address, token)
-        else:
-            try:
-                address = make_address(
-                    self._user, self._provider_config.get_domain())
-                self._init_keymanager(address, token)
-                self._keymanager.get_key(
-                    address, openpgp.OpenPGPKey,
-                    private=True, fetch_remote=False)
-                d = threads.deferToThread(self._do_soledad_sync)
-                d.addErrback(self._soledad_sync_errback)
-            except KeyNotFound:
-                logger.debug("Key not found. Generating key for %s" %
-                             (address,))
-                self._do_soledad_sync()
+        address = make_address(
+            self._user, self._provider_config.get_domain())
+        syncer = Syncer(self._soledad, self._signaler)
+
+        d = self._init_keymanager(address, token)
+        d.addCallback(lambda _: syncer.sync())
+        d.addErrback(self._soledad_sync_errback)
+        return d
+
+    def _load_soledad_nosync(self, uuid, secrets_path, local_db_path,
+                             cert_file, token):
+        syncable = False
+        self._do_soledad_init(uuid, secrets_path, local_db_path,
+                              "", cert_file, token, syncable)
+        d = self._init_keymanager(self._address, token)
+        return d
+
+    def _soledad_sync_errback(self, failure):
+        failure.trap(InvalidAuthTokenError)
+        # in the case of an invalid token we have already turned off mail and
+        # warned the user
 
     def _pick_server(self, uuid):
         """
@@ -355,54 +345,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
         logger.debug("Using soledad server url: %s" % (server_url,))
         return server_url
 
-    def _do_soledad_sync(self):
-        """
-        Do several retries to get an initial soledad sync.
-        """
-        # and now, let's sync
-        sync_tries = self.MAX_SYNC_RETRIES
-        step = self.WAIT_STEP_SECONDS
-        max_wait = self.WAIT_MAX_SECONDS
-        while sync_tries > 0:
-            wait = 0
-            try:
-                logger.debug("Trying to sync soledad....")
-                self._try_soledad_sync()
-                while self.soledad.syncing:
-                    time.sleep(step)
-                    wait += step
-                    if wait >= max_wait:
-                        raise SoledadSyncError("timeout!")
-                logger.debug("Soledad has been synced!")
-                # so long, and thanks for all the fish
-                return
-            except SoledadSyncError:
-                # maybe it's my connection, but I'm getting
-                # ssl handshake timeouts and read errors quite often.
-                # A particularly big sync is a disaster.
-                # This deserves further investigation, maybe the
-                # retry strategy can be pushed to u1db, or at least
-                # it's something worthy to talk about with the
-                # ubuntu folks.
-                sync_tries += 1
-                msg = "Sync failed, retrying... (retry {0} of {1})".format(
-                    sync_tries, self.MAX_SYNC_RETRIES)
-                logger.warning(msg)
-                continue
-            except InvalidAuthTokenError:
-                self._signaler.signal(
-                    self._signaler.soledad_invalid_auth_token)
-                raise
-            except Exception as e:
-                # XXX release syncing lock
-                logger.exception("Unhandled error while syncing "
-                                 "soledad: %r" % (e,))
-                break
-
-        raise SoledadSyncError()
-
     def _try_soledad_init(self, uuid, secrets_path, local_db_path,
-                          server_url, cert_file, auth_token):
+                          server_url, cert_file, auth_token, syncable):
         """
         Try to initialize soledad.
 
@@ -425,9 +369,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
         # (issue #3309)
         encoding = sys.getfilesystemencoding()
 
-        # XXX We should get a flag in soledad itself
-        if flags.OFFLINE is True:
-            Soledad._shared_db = MockSharedDB()
         try:
             self._soledad = Soledad(
                 uuid,
@@ -437,7 +378,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 server_url=server_url,
                 cert_file=cert_file.encode(encoding),
                 auth_token=auth_token,
-                defer_encryption=True)
+                defer_encryption=True,
+                syncable=syncable)
 
         # XXX All these errors should be handled by soledad itself,
         # and return a subclass of SoledadInitializationFailed
@@ -455,34 +397,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
             logger.exception("Unhandled error while initializating "
                              "Soledad: %r" % (exc,))
             raise
-
-    def _try_soledad_sync(self):
-        """
-        Try to sync soledad.
-        Raises SoledadSyncError if not successful.
-        """
-        try:
-            logger.debug("BOOTSTRAPPER: trying to sync Soledad....")
-            # pass defer_decryption=False to get inline decryption
-            # for debugging.
-            self._soledad.sync(defer_decryption=True)
-        except SSLError as exc:
-            logger.error("%r" % (exc,))
-            raise SoledadSyncError("Failed to sync soledad")
-        except u1db_errors.InvalidGeneration as exc:
-            logger.error("%r" % (exc,))
-            raise SoledadSyncError("u1db: InvalidGeneration")
-        except (sqlite_ProgrammingError, sqlcipher_ProgrammingError) as e:
-            logger.exception("%r" % (e,))
-            raise
-        except InvalidAuthTokenError:
-            # token is invalid, probably expired
-            logger.error('Invalid auth token while trying to sync Soledad')
-            raise
-        except Exception as exc:
-            logger.exception("Unhandled error while syncing "
-                             "soledad: %r" % (exc,))
-            raise SoledadSyncError("Failed to sync soledad")
 
     def _download_config(self):
         """
@@ -526,6 +440,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
             except IndexError as e:
                 logger.debug("Couldn't find the gpg binary!")
                 logger.exception(e)
+        if IS_MAC:
+            gpgbin = os.path.abspath(
+                os.path.join(here(), "apps", "mail", "gpg"))
         leap_check(gpgbin is not None, "Could not find gpg binary")
         return gpgbin
 
@@ -537,12 +454,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :type address: str
         :param token: the auth token for accessing webapp.
         :type token: str
+        :rtype: Deferred
         """
-        srp_auth = self.srpauth
         logger.debug('initializing keymanager...')
 
-        if flags.OFFLINE is True:
-            args = (address, "https://localhost", self._soledad)
+        if flags.OFFLINE:
+            nickserver_uri = "https://localhost"
             kwargs = {
                 "ca_cert_path": "",
                 "api_uri": "",
@@ -551,45 +468,44 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 "gpgbinary": self._get_gpg_bin_path()
             }
         else:
-            args = (
-                address,
-                "https://nicknym.%s:6425" % (
-                    self._provider_config.get_domain(),),
-                self._soledad
-            )
+            nickserver_uri = "https://nicknym.%s:6425" % (
+                self._provider_config.get_domain(),)
             kwargs = {
                 "token": token,
                 "ca_cert_path": self._provider_config.get_ca_cert_path(),
                 "api_uri": self._provider_config.get_api_uri(),
                 "api_version": self._provider_config.get_api_version(),
-                "uid": srp_auth.get_uuid(),
+                "uid": self.srpauth.get_uuid(),
                 "gpgbinary": self._get_gpg_bin_path()
             }
-        try:
-            self._keymanager = KeyManager(*args, **kwargs)
-        except KeyNotFound:
-            logger.debug('key for %s not found.' % address)
-        except Exception as exc:
-            logger.exception(exc)
-            raise
+        self._keymanager = KeyManager(address, nickserver_uri, self._soledad,
+                                      **kwargs)
 
         if flags.OFFLINE is False:
             # make sure key is in server
             logger.debug('Trying to send key to server...')
-            try:
-                self._keymanager.send_key(openpgp.OpenPGPKey)
-            except KeyNotFound:
-                logger.debug('No key found for %s, will generate soon.'
-                             % address)
-            except Exception as exc:
-                logger.error("Error sending key to server.")
-                logger.exception(exc)
-                # but we do not raise
+
+            def send_errback(failure):
+                if failure.check(KeyNotFound):
+                    logger.debug(
+                        'No key found for %s, it might be because soledad not '
+                        'synced yet or it will generate it soon.' % address)
+                else:
+                    logger.error("Error sending key to server.")
+                    logger.exception(failure.value)
+                    # but we do not raise
+
+            d = self._keymanager.send_key(openpgp.OpenPGPKey)
+            d.addErrback(send_errback)
+            return d
+        else:
+            return defer.succeed(None)
 
     def _gen_key(self):
         """
         Generates the key pair if needed, uploads it to the webapp and
         nickserver
+        :rtype: Deferred
         """
         leap_assert(self._provider_config is not None,
                     "We need a provider configuration!")
@@ -600,30 +516,31 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self._user, self._provider_config.get_domain())
         logger.debug("Retrieving key for %s" % (address,))
 
-        try:
-            self._keymanager.get_key(
-                address, openpgp.OpenPGPKey, private=True, fetch_remote=False)
-            return
-        except KeyNotFound:
-            logger.debug("Key not found. Generating key for %s" % (address,))
+        def if_not_found_generate(failure):
+            failure.trap(KeyNotFound)
+            logger.debug("Key not found. Generating key for %s"
+                         % (address,))
+            d = self._keymanager.gen_key(openpgp.OpenPGPKey)
+            d.addCallbacks(send_key, log_key_error("generating"))
+            return d
 
-        # generate key
-        try:
-            self._keymanager.gen_key(openpgp.OpenPGPKey)
-        except Exception as exc:
-            logger.error("Error while generating key!")
-            logger.exception(exc)
-            raise
+        def send_key(_):
+            d = self._keymanager.send_key(openpgp.OpenPGPKey)
+            d.addCallbacks(
+                lambda _: logger.debug("Key generated successfully."),
+                log_key_error("sending"))
 
-        # send key
-        try:
-            self._keymanager.send_key(openpgp.OpenPGPKey)
-        except Exception as exc:
-            logger.error("Error while sending key!")
-            logger.exception(exc)
-            raise
+        def log_key_error(step):
+            def log_err(failure):
+                logger.error("Error while %s key!", (step,))
+                logger.exception(failure.value)
+                return failure
+            return log_err
 
-        logger.debug("Key generated successfully.")
+        d = self._keymanager.get_key(
+            address, openpgp.OpenPGPKey, private=True, fetch_remote=False)
+        d.addErrback(if_not_found_generate)
+        return d
 
     def run_soledad_setup_checks(self, provider_config, user, password,
                                  download_if_needed=False):
@@ -640,6 +557,8 @@ class SoledadBootstrapper(AbstractBootstrapper):
                                    files if the have changed since the
                                    time it was previously downloaded.
         :type download_if_needed: bool
+
+        :return: Deferred
         """
         leap_assert_type(provider_config, ProviderConfig)
 
@@ -651,25 +570,103 @@ class SoledadBootstrapper(AbstractBootstrapper):
 
         if flags.OFFLINE:
             signal_finished = self._signaler.soledad_offline_finished
-            signal_failed = self._signaler.soledad_offline_failed
-        else:
-            signal_finished = self._signaler.soledad_bootstrap_finished
-            signal_failed = self._signaler.soledad_bootstrap_failed
+            self._signaler.signal(signal_finished)
+            return defer.succeed(True)
+
+        signal_finished = self._signaler.soledad_bootstrap_finished
+        signal_failed = self._signaler.soledad_bootstrap_failed
 
         try:
+            # XXX FIXME make this async too! (use txrequests)
+            # Also, why the fuck would we want to download it *every time*?
+            # We should be fine by using last-time config, or at least
+            # trying it.
             self._download_config()
-
-            # soledad config is ok, let's proceed to load and sync soledad
             uuid = self.srpauth.get_uuid()
-            self.load_and_sync_soledad(uuid)
-
-            if not flags.OFFLINE:
-                self._gen_key()
-
-            self._signaler.signal(signal_finished)
         except Exception as e:
             # TODO: we should handle more specific exceptions in here
             self._soledad = None
             self._keymanager = None
-            logger.exception("Error while bootstrapping Soledad: %r" % (e, ))
+            logger.exception("Error while bootstrapping Soledad: %r" % (e,))
             self._signaler.signal(signal_failed)
+            return defer.succeed(None)
+
+        # soledad config is ok, let's proceed to load and sync soledad
+        d = self.load_and_sync_soledad(uuid)
+        d.addCallback(lambda _: self._gen_key())
+        d.addCallback(lambda _: self._signaler.signal(signal_finished))
+        return d
+
+
+class Syncer(object):
+    """
+    Takes care of retries, timeouts and other issues while syncing
+    """
+    # XXX: the timeout and proably all the stuff here should be moved to
+    #      soledad
+
+    MAX_SYNC_RETRIES = 10
+    WAIT_MAX_SECONDS = 600
+
+    def __init__(self, soledad, signaler):
+        self._tries = 0
+        self._soledad = soledad
+        self._signaler = signaler
+
+    def sync(self):
+        self._callback_deferred = defer.Deferred()
+        self._try_sync()
+        return self._callback_deferred
+
+    def _try_sync(self):
+        logger.debug("BOOTSTRAPPER: trying to sync Soledad....")
+        # pass defer_decryption=False to get inline decryption
+        # for debugging.
+        self._sync_deferred = self._soledad.sync(defer_decryption=True)
+        self._sync_deferred.addCallbacks(self._success, self._error)
+        self._timeout_delayed_call = reactor.callLater(self.WAIT_MAX_SECONDS,
+                                                       self._timeout)
+
+    def _success(self, result):
+        logger.debug("Soledad has been synced!")
+        self._timeout_delayed_call.cancel()
+        self._callback_deferred.callback(result)
+        # so long, and thanks for all the fish
+
+    def _error(self, failure):
+        self._timeout_delayed_call.cancel()
+        if failure.check(InvalidAuthTokenError):
+            logger.error('Invalid auth token while trying to sync Soledad')
+            self._signaler.signal(
+                self._signaler.soledad_invalid_auth_token)
+            self._callback_deferred.fail(failure)
+        elif failure.check(sqlite_ProgrammingError,
+                           sqlcipher_ProgrammingError):
+            logger.exception("%r" % (failure.value,))
+            self._callback_deferred.fail(failure)
+        else:
+            logger.error("%r" % (failure.value,))
+            self._retry()
+
+    def _timeout(self):
+        # maybe it's my connection, but I'm getting
+        # ssl handshake timeouts and read errors quite often.
+        # A particularly big sync is a disaster.
+        # This deserves further investigation, maybe the
+        # retry strategy can be pushed to u1db, or at least
+        # it's something worthy to talk about with the
+        # ubuntu folks.
+        self._sync_deferred.cancel()
+        self._retry()
+
+    def _retry(self):
+        self._tries += 1
+        if self._tries < self.MAX_SYNC_RETRIES:
+            msg = "Sync failed, retrying... (retry {0} of {1})".format(
+                self._tries, self.MAX_SYNC_RETRIES)
+            logger.warning(msg)
+            self._try_sync()
+        else:
+            logger.error("Sync failed {0} times".format(self._tries))
+            self._callback_deferred.errback(
+                SoledadSyncError("Too many retries"))

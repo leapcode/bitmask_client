@@ -73,7 +73,7 @@ def get_no_group_name():
             return None
 
 
-VERSION = "5"
+VERSION = "6"
 SCRIPT = "bitmask-root"
 NAMESERVER = "10.42.0.1"
 BITMASK_CHAIN = "bitmask"
@@ -85,7 +85,7 @@ LOCAL_INTERFACE = "lo"
 IMAP_PORT = "1984"
 SMTP_PORT = "2013"
 
-IP = "/bin/ip"
+IP = "/sbin/ip"
 IPTABLES = "/sbin/iptables"
 IP6TABLES = "/sbin/ip6tables"
 

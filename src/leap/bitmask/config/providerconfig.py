@@ -18,18 +18,18 @@
 """
 Provider configuration
 """
-import logging
 import os
 
 from leap.bitmask import provider
 from leap.bitmask.config import flags
 from leap.bitmask.config.provider_spec import leap_provider_spec
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import get_service_display_name
 from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_check
 from leap.common.config.baseconfig import BaseConfig, LocalizedKey
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class MissingCACert(Exception):
@@ -69,6 +69,7 @@ class ProviderConfig(BaseConfig):
         details["description"] = config.get_description(lang=lang)
         details["enrollment_policy"] = config.get_enrollment_policy()
         details["services"] = config.get_services()
+        details["allow_registration"] = config.get_allow_registration()
 
         services = []
         for service in config.get_services():
@@ -176,6 +177,15 @@ class ProviderConfig(BaseConfig):
         """
         services = self._safe_get_value("services")
         return services
+
+    def get_allow_registration(self):
+        """
+        Return whether the registration is allowed or not in the provider.
+
+        :rtype: bool
+        """
+        service = self._safe_get_value("service")
+        return service['allow_registration']
 
     def get_ca_cert_path(self, about_to_download=False):
         """

@@ -28,10 +28,10 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask.config import flags
 from leap.bitmask.gui.mainwindow import MainWindow
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import dict_to_flags
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 def signal_handler(window, pid, signum, frame):
@@ -51,7 +51,13 @@ def signal_handler(window, pid, signum, frame):
     if pid == my_pid:
         pname = multiprocessing.current_process().name
         logger.debug("{0}: SIGNAL #{1} catched.".format(pname, signum))
-        window.quit()
+        disable_autostart = True
+        if signum == 15:  # SIGTERM
+            # Do not disable autostart on SIGTERM since this is the signal that
+            # the system sends to bitmask when the user asks to do a system
+            # logout.
+            disable_autostart = False
+        window.quit(disable_autostart=disable_autostart)
 
 
 def run_frontend(options, flags_dict, backend_pid=None):

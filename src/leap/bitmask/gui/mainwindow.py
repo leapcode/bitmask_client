@@ -17,7 +17,6 @@
 """
 Main window for Bitmask.
 """
-import logging
 import time
 
 from datetime import datetime
@@ -34,12 +33,11 @@ from leap.bitmask import __version_hash__ as VERSION_HASH
 from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger, LOG_CONTROLLER
 
 from leap.bitmask.gui.advanced_key_management import AdvancedKeyManagement
-from leap.bitmask.gui.eip_status import EIPStatusWidget
-from leap.bitmask.gui.loggerwindow import LoggerWindow
+from leap.bitmask.gui.logwindow import LoggerWindow
 from leap.bitmask.gui.login import LoginWidget
-from leap.bitmask.gui.mail_status import MailStatusWidget
 from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.gui.systray import SysTray
@@ -53,24 +51,34 @@ from leap.bitmask.platform_init import locks
 from leap.bitmask.platform_init.initializers import init_platform
 from leap.bitmask.platform_init.initializers import init_signals
 
-from leap.bitmask.services.eip import conductor as eip_conductor
-from leap.bitmask.services.mail import conductor as mail_conductor
-
-from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
-
 from leap.bitmask.util import autostart, make_address
 from leap.bitmask.util.keyring_helpers import has_keyring
-from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 
 from leap.common.events import register
-from leap.common.events import events_pb2 as proto
+from leap.common.events import catalog
 
 from leap.mail.imap.service.imap import IMAP_PORT
 
 from ui_mainwindow import Ui_MainWindow
 
+from leap.bitmask._components import HAS_EIP, HAS_MAIL
+
+if HAS_EIP:
+    from leap.bitmask.gui.eip_status import EIPStatusWidget
+    from leap.bitmask.services.eip import conductor as eip_conductor
+    from leap.bitmask.services import EIP_SERVICE
+
+if HAS_MAIL:
+    from leap.bitmask.gui.mail_status import MailStatusWidget
+    from leap.bitmask.services.mail import conductor as mail_conductor
+    from leap.bitmask.services import MX_SERVICE
+
 QtDelayedCall = QtCore.QTimer.singleShot
-logger = logging.getLogger(__name__)
+
+logger = get_logger()
+
+if not HAS_EIP:
+    BITMASK_MAIL_ONLY_ICON = ":/images/menubar-mask-icon.png"
 
 
 class MainWindow(QtGui.QMainWindow, SignalTracker):
@@ -78,17 +86,19 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     Main window for login and presenting status updates to the user
     """
     # Signals
-    eip_needs_login = QtCore.Signal([])
+
     new_updates = QtCore.Signal(object)
     raise_window = QtCore.Signal([])
     soledad_ready = QtCore.Signal([])
     all_services_stopped = QtCore.Signal()
 
-    # We use this flag to detect abnormal terminations
-    user_stopped_eip = False
+    if HAS_EIP:
+        eip_needs_login = QtCore.Signal([])
+        # We use this flag to detect abnormal terminations
+        user_stopped_eip = False
 
-    # We give EIP some time to come up before starting soledad anyway
-    EIP_START_TIMEOUT = 60000  # in milliseconds
+        # We give EIP some time to come up before starting soledad anyway
+        EIP_START_TIMEOUT = 60000  # in milliseconds
 
     # We give the services some time to a halt before forcing quit.
     SERVICES_STOP_TIMEOUT = 3000  # in milliseconds
@@ -107,12 +117,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         autostart.set_autostart(True)
 
         # register leap events ########################################
-        register(signal=proto.UPDATER_NEW_UPDATES,
-                 callback=self._new_updates_available,
-                 reqcbk=lambda req, resp: None)  # make rpc call async
-        register(signal=proto.RAISE_WINDOW,
-                 callback=self._on_raise_window_event,
-                 reqcbk=lambda req, resp: None)  # make rpc call async
+        register(event=catalog.UPDATER_NEW_UPDATES,
+                 callback=self._new_updates_available)  # make rpc call async
+        register(event=catalog.RAISE_WINDOW,
+                 callback=self._on_raise_window_event)  # make rpc call async
         # end register leap events ####################################
 
         self._updates_content = ""
@@ -126,15 +134,17 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._backend = self.app.backend
         self._leap_signaler = self.app.signaler
         self._settings = self.app.settings
+        self._backend_settings = self._backend.settings
 
         # Login Widget
         self._login_widget = LoginWidget(self._backend,
                                          self._leap_signaler, self)
         self.ui.loginLayout.addWidget(self._login_widget)
 
-        # Mail Widget
-        self._mail_status = MailStatusWidget(self)
-        self.ui.mailLayout.addWidget(self._mail_status)
+        if HAS_MAIL:
+            # Mail Widget
+            self._mail_status = MailStatusWidget(self)
+            self.ui.mailLayout.addWidget(self._mail_status)
 
         # Provider List
         self._providers = Providers(self.ui.cmbProviders)
@@ -151,40 +161,42 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._providers.connect_provider_changed(self._on_provider_changed)
 
-        # EIP Control redux #########################################
-        self._eip_conductor = eip_conductor.EIPConductor(
-            self._settings, self._backend, self._leap_signaler)
-        self._eip_status = EIPStatusWidget(self, self._eip_conductor,
-                                           self._leap_signaler)
+        if HAS_EIP:
+            # EIP Control redux #########################################
+            self._eip_conductor = eip_conductor.EIPConductor(
+                self._settings, self._backend, self._leap_signaler)
+            self._eip_status = EIPStatusWidget(self, self._eip_conductor,
+                                               self._leap_signaler)
 
-        init_signals.eip_missing_helpers.connect(
-            self._disable_eip_missing_helpers)
+            init_signals.eip_missing_helpers.connect(
+                self._disable_eip_missing_helpers)
 
-        self.ui.eipLayout.addWidget(self._eip_status)
+            self.ui.eipLayout.addWidget(self._eip_status)
 
-        # XXX we should get rid of the circular refs
-        # conductor <-> status, right now keeping state on the widget ifself.
-        self._eip_conductor.add_eip_widget(self._eip_status)
+            # XXX we should get rid of the circular refs
+            # conductor <-> status,
+            # right now keeping state on the widget ifself.
+            self._eip_conductor.add_eip_widget(self._eip_status)
 
-        self._eip_conductor.connect_signals()
-        self._eip_conductor.qtsigs.connecting_signal.connect(
-            self._on_eip_connecting)
-        self._eip_conductor.qtsigs.connected_signal.connect(
-            self._on_eip_connection_connected)
-        self._eip_conductor.qtsigs.disconnected_signal.connect(
-            self._on_eip_connection_disconnected)
-        self._eip_conductor.qtsigs.connected_signal.connect(
-            self._maybe_run_soledad_setup_checks)
+            self._eip_conductor.connect_signals()
+            self._eip_conductor.qtsigs.connecting_signal.connect(
+                self._on_eip_connecting)
+            self._eip_conductor.qtsigs.connected_signal.connect(
+                self._on_eip_connection_connected)
+            self._eip_conductor.qtsigs.disconnected_signal.connect(
+                self._on_eip_connection_disconnected)
+            self._eip_conductor.qtsigs.connected_signal.connect(
+                self._maybe_run_soledad_setup_checks)
+
+            self.eip_needs_login.connect(self._eip_status.disable_eip_start)
+            self.eip_needs_login.connect(self._disable_eip_start_action)
+
+            # XXX all this info about state should move to eip conductor too
+            self._already_started_eip = False
+            self._trying_to_start_eip = False
 
         self._login_widget.login_offline_finished.connect(
             self._maybe_run_soledad_setup_checks)
-
-        self.eip_needs_login.connect(self._eip_status.disable_eip_start)
-        self.eip_needs_login.connect(self._disable_eip_start_action)
-
-        # XXX all this info about state should move to eip conductor too
-        self._already_started_eip = False
-        self._trying_to_start_eip = False
 
         self._soledad_started = False
 
@@ -210,15 +222,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.ui.action_wizard.triggered.connect(self._show_wizard)
         self.ui.action_show_logs.triggered.connect(self._show_logger_window)
 
-        # XXX hide the help menu since it only shows email information and
-        # right now we don't have stable mail and just confuses users.
-        self.ui.action_help.setVisible(False)
-        # self.ui.action_help.triggered.connect(self._help)
+        self.ui.action_help.setVisible(True)
+        self.ui.action_help.triggered.connect(self._help)
 
         self.ui.action_create_new_account.triggered.connect(
             self._on_provider_changed)
 
         # Action item hidden since we don't provide stable mail yet.
+        # TODO enable for 0.9.0 release??
         # self.ui.action_advanced_key_management.triggered.connect(
         #     self._show_AKM)
 
@@ -230,11 +241,16 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._systray = None
 
         # XXX separate actions into a different module.
-        self._action_mail_status = QtGui.QAction(self.tr("Mail is OFF"), self)
-        self._mail_status.set_action_mail_status(self._action_mail_status)
+        if HAS_MAIL:
+            self._action_mail_status = QtGui.QAction(
+                self.tr("Mail is OFF"), self)
+            self._mail_status.set_action_mail_status(
+                self._action_mail_status)
 
-        self._action_eip_startstop = QtGui.QAction("", self)
-        self._eip_status.set_action_eip_startstop(self._action_eip_startstop)
+        if HAS_EIP:
+            self._action_eip_startstop = QtGui.QAction("", self)
+            self._eip_status.set_action_eip_startstop(
+                self._action_eip_startstop)
 
         self._action_visible = QtGui.QAction(self.tr("Show Main Window"), self)
         self._action_visible.triggered.connect(self._ensure_visible)
@@ -272,19 +288,21 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._start_hidden = start_hidden
         self._backend_pid = backend_pid
 
-        self._mail_conductor = mail_conductor.MailConductor(self._backend)
-        self._mail_conductor.connect_mail_signals(self._mail_status)
+        if HAS_MAIL:
+            self._mail_conductor = mail_conductor.MailConductor(self._backend)
+            self._mail_conductor.connect_mail_signals(self._mail_status)
 
         if not init_platform():
             self.quit()
             return
 
         # start event machines from within the eip and mail conductors
-
         # TODO should encapsulate all actions into one object
-        self._eip_conductor.start_eip_machine(
-            action=self._action_eip_startstop)
-        self._mail_conductor.start_mail_machine()
+        if HAS_EIP:
+            self._eip_conductor.start_eip_machine(
+                action=self._action_eip_startstop)
+        if HAS_MAIL:
+            self._mail_conductor.start_mail_machine()
 
         if self._first_run():
             self._wizard_firstrun = True
@@ -363,17 +381,17 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # here.
         sig.srp_not_logged_in_error.connect(self._not_logged_in_error)
 
-        # EIP start signals ==============================================
-        self._eip_conductor.connect_backend_signals()
-        sig.eip_can_start.connect(self._backend_can_start_eip)
-        sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
+        if HAS_EIP:
+            # EIP start signals ==============================================
+            self._eip_conductor.connect_backend_signals()
+            sig.eip_can_start.connect(self._backend_can_start_eip)
+            sig.eip_cannot_start.connect(self._backend_cannot_start_eip)
 
-        sig.eip_dns_error.connect(self._eip_dns_error)
+            sig.eip_dns_error.connect(self._eip_dns_error)
 
-        sig.eip_get_gateway_country_code.connect(self._set_eip_provider)
-        sig.eip_no_gateway.connect(self._set_eip_provider)
-
-        # ==================================================================
+            sig.eip_get_gateway_country_code.connect(self._set_eip_provider)
+            sig.eip_no_gateway.connect(self._set_eip_provider)
+            # ==================================================================
 
         # Soledad signals
         # TODO delegate connection to soledad bootstrapper
@@ -491,24 +509,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             self._login_widget.set_password(possible_password)
             self._login()
         else:
-            self.eip_needs_login.emit()
+            if HAS_EIP:
+                self.eip_needs_login.emit()
 
         self._wizard = None
-
-    def _get_leap_logging_handler(self):
-        """
-        Gets the leap handler from the top level logger
-
-        :return: a logging handler or None
-        :rtype: LeapLogHandler or None
-        """
-        # TODO this can be a function, does not need
-        # to be a method.
-        leap_logger = logging.getLogger('leap')
-        for h in leap_logger.handlers:
-            if isinstance(h, LeapLogHandler):
-                return h
-        return None
 
     def _show_logger_window(self):
         """
@@ -518,13 +522,8 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         Display the window with the history of messages logged until now
         and displays the new ones on arrival.
         """
-        leap_log_handler = self._get_leap_logging_handler()
-        if leap_log_handler is None:
-            logger.error('Leap logger handler not found')
-            return
-        else:
-            lw = LoggerWindow(self, handler=leap_log_handler)
-            lw.show()
+        lw = LoggerWindow(self)
+        lw.show()
 
     def _show_AKM(self):
         """
@@ -589,22 +588,26 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             self._backend_cannot_start_eip()
             return
 
-        if EIP_SERVICE not in self.app.settings.get_enabled_services(domain):
-            self._eip_conductor.terminate()
+        services_enabled = self.app.settings.get_enabled_services(domain)
 
-            def hide():
+        if HAS_EIP:
+            if EIP_SERVICE not in services_enabled:
+                self._eip_conductor.terminate()
+
+                def hide():
+                    self.app.backend.eip_can_start(domain=domain)
+
+                QtDelayedCall(100, hide)
+                # ^^ VERY VERY Hacky, but with the simple state machine,
+                # there is no way to signal 'disconnect and then disable'
+
+            else:
+                settings = self.app.settings
+                self._trying_to_start_eip = settings.get_autostart_eip()
+                if not self._trying_to_start_eip:
+                    self._backend.eip_setup(provider=domain, skip_network=True)
+                # check if EIP can start (will trigger widget update)
                 self.app.backend.eip_can_start(domain=domain)
-
-            QtDelayedCall(100, hide)
-            # ^^ VERY VERY Hacky, but with the simple state machine,
-            # there is no way to signal 'disconnect and then disable'
-
-        else:
-            self._trying_to_start_eip = self.app.settings.get_autostart_eip()
-            if not self._trying_to_start_eip:
-                self._backend.eip_setup(provider=domain, skip_network=True)
-            # check if EIP can start (will trigger widget update)
-            self.app.backend.eip_can_start(domain=domain)
 
     def _backend_can_start_eip(self):
         """
@@ -656,15 +659,16 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if default_provider is not None:
             enabled_services = settings.get_enabled_services(default_provider)
 
-        if EIP_SERVICE in enabled_services:
-            # we don't have a usable provider
-            # so the user needs to log in first
-            self._eip_status.disable_eip_start()
-        else:
-            self._eip_status.disable_eip_start()
-            # NOTE: we shouldn't be setting the message here.
-            if not self._eip_status.missing_helpers:
-                self._eip_status.set_eip_status(self.tr("Disabled"))
+        if HAS_EIP:
+            if EIP_SERVICE in enabled_services:
+                # we don't have a usable provider
+                # so the user needs to log in first
+                self._eip_status.disable_eip_start()
+            else:
+                self._eip_status.disable_eip_start()
+                # NOTE: we shouldn't be setting the message here.
+                if not self._eip_status.missing_helpers:
+                    self._eip_status.set_eip_status(self.tr("Disabled"))
 
         # this state flag is responsible for deferring the login
         # so we must update it, otherwise we're in a deadlock.
@@ -683,29 +687,31 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     # updates
     #
 
-    def _new_updates_available(self, req):
+    def _new_updates_available(self, event, content):
         """
         Callback for the new updates event
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        self.new_updates.emit(req)
+        self.new_updates.emit(content)
 
-    def _react_to_new_updates(self, req):
+    def _react_to_new_updates(self, content):
         """
         TRIGGERS:
             self.new_updates
 
         Display the new updates label and sets the updates_content
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param content: The content of the event.
+        :type content: list
         """
         self.moveToThread(QtCore.QCoreApplication.instance().thread())
         self.ui.lblNewUpdates.setVisible(True)
         self.ui.btnMore.setVisible(True)
-        self._updates_content = req.content
+        self._updates_content = content
 
     def _updates_details(self):
         """
@@ -761,6 +767,8 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._show_hide_unsupported_services()
 
+        LOG_CONTROLLER.start_logbook_subscriber()
+
         # XXX - HACK, kind of...
         # With the 1ms QTimer.singleShot call we schedule the call right after
         # other signals waiting for the qt reactor to take control.
@@ -798,12 +806,13 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         only, the mail widget won't be displayed.
         """
         providers = self._settings.get_configured_providers()
-
         self._backend.provider_get_all_services(providers=providers)
 
     def _provider_get_all_services(self, services):
-        self._set_eip_visible(EIP_SERVICE in services)
-        self._set_mx_visible(MX_SERVICE in services)
+        if HAS_EIP:
+            self._set_eip_visible(EIP_SERVICE in services)
+        if HAS_MAIL:
+            self._set_mx_visible(MX_SERVICE in services)
 
     def _set_mx_visible(self, visible):
         """
@@ -856,23 +865,34 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         systrayMenu.addAction(self._action_visible)
         systrayMenu.addSeparator()
 
-        eip_status_label = u"{0}: {1}".format(
-            self._eip_conductor.eip_name, self.tr("OFF"))
-        self._eip_menu = eip_menu = systrayMenu.addMenu(eip_status_label)
-        eip_menu.addAction(self._action_eip_startstop)
-        self._eip_status.set_eip_status_menu(eip_menu)
-        systrayMenu.addSeparator()
-        systrayMenu.addAction(self._action_mail_status)
-        systrayMenu.addSeparator()
+        if HAS_EIP:
+            eip_status_label = u"{0}: {1}".format(
+                self._eip_conductor.eip_name, self.tr("OFF"))
+            self._eip_menu = eip_menu = systrayMenu.addMenu(eip_status_label)
+            eip_menu.addAction(self._action_eip_startstop)
+            self._eip_status.set_eip_status_menu(eip_menu)
+            systrayMenu.addSeparator()
+        if HAS_MAIL:
+            systrayMenu.addAction(self._action_mail_status)
+            systrayMenu.addSeparator()
         systrayMenu.addAction(self.ui.action_quit)
+
         self._systray = SysTray(self)
         self._systray.setContextMenu(systrayMenu)
-        self._systray.setIcon(self._eip_status.ERROR_ICON_TRAY)
+
+        if HAS_EIP:
+            self._systray.setIcon(self._eip_status.ERROR_ICON_TRAY)
+        else:
+            mail_status_icon = QtGui.QPixmap(BITMASK_MAIL_ONLY_ICON)
+            self._systray.setIcon(mail_status_icon)
+
         self._systray.setVisible(True)
         self._systray.activated.connect(self._tray_activated)
 
-        self._mail_status.set_systray(self._systray)
-        self._eip_status.set_systray(self._systray)
+        if HAS_EIP:
+            self._eip_status.set_systray(self._systray)
+        if HAS_MAIL:
+            self._mail_status.set_systray(self._systray)
 
         if self._start_hidden:
             hello = lambda: self._systray.showMessage(
@@ -1004,7 +1024,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             "manager or download it from <a href='{0}'>"
             "addons.mozilla.org</a>.".format(thunderbird_extension_url))
         manual_text = self.tr(
-            "Alternately, you can manually configure "
+            "Alternatively, you can manually configure "
             "your mail client to use Bitmask Email with these options:")
         manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
         manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
@@ -1055,7 +1075,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if not e.spontaneous():
             # if the system requested the `close` then we should quit.
             self._system_quit = True
-            self.quit()
+            self.quit(disable_autostart=False)
             return
 
         if QtGui.QSystemTrayIcon.isSystemTrayAvailable() and \
@@ -1112,8 +1132,11 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # TODO: we should handle the case that EIP is autostarting since we
         # won't get a warning until EIP has fully started.
         # TODO: we need to add a check for the mail status (smtp/imap/soledad)
-        something_runing = (self._login_widget.get_logged_user() is not None or
-                            self._already_started_eip)
+
+        something_runing = self._login_widget.get_logged_user() is not None
+        if HAS_EIP:
+            something_runing = something_runing or self._already_started_eip
+
         provider = self._providers.get_selected_provider()
         self._login_widget.set_provider(provider)
 
@@ -1192,22 +1215,34 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._disconnect_login_wait()
 
         user = self._login_widget.get_logged_user()
-        domain = self._providers.get_selected_provider()
-        full_user_id = make_address(user, domain)
-        self._mail_conductor.userid = full_user_id
-        self._start_eip_bootstrap()
+        # XXX the widget now gives us the full user id.
+        # this is confusing.
+
         self.ui.action_create_new_account.setEnabled(True)
 
-        # if soledad/mail is enabled:
-        if MX_SERVICE in self._enabled_services:
-            btn_enabled = self._login_widget.set_logout_btn_enabled
-            btn_enabled(False)
-            sig = self._leap_signaler
-            sig.soledad_bootstrap_failed.connect(lambda: btn_enabled(True))
-            sig.soledad_bootstrap_finished.connect(lambda: btn_enabled(True))
+        if HAS_EIP:
+            self._start_eip_bootstrap()
+        if HAS_MAIL:
+            # XXX the casting to str (needed by smtp gateway) should be done
+            # in a better place.
+            self._mail_conductor.userid = str(user)
+            if MX_SERVICE in self._enabled_services:
+                btn_enabled = self._login_widget.set_logout_btn_enabled
+                btn_enabled(False)
+                sig = self._leap_signaler
+                sig.soledad_bootstrap_failed.connect(
+                    lambda: btn_enabled(True))
+                sig.soledad_bootstrap_finished.connect(
+                    lambda: btn_enabled(True))
 
-        if MX_SERVICE not in self._provider_details['services']:
-            self._set_mx_visible(False)
+            if MX_SERVICE not in self._provider_details['services']:
+                self._set_mx_visible(False)
+
+            if not HAS_EIP:
+                # This has to be worked out in Bitmask 0.10.
+                # Since EIP won't start, we need to trigger
+                # the soledad setup service from here.
+                self._maybe_run_soledad_setup_checks()
 
     def _on_user_logged_out(self):
         """
@@ -1217,8 +1252,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         Switch the stackedWidget back to the login stage after
         logging out
         """
-        self._mail_conductor.stop_mail_services()
-        self._mail_status.mail_state_disabled()
+        if HAS_MAIL:
+            self._mail_conductor.stop_mail_services()
+            self._mail_status.mail_state_disabled()
         self._show_hide_unsupported_services()
 
     def _start_eip_bootstrap(self):
@@ -1312,10 +1348,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         if flags.OFFLINE:
             full_user_id = make_address(username, provider_domain)
-            uuid = self._settings.get_uuid(full_user_id)
+            uuid = self._backend_settings.get_uuid(full_user_id)
             self._mail_conductor.userid = full_user_id
 
-            if uuid is None:
+            if not uuid:
                 # We don't need more visibility at the moment,
                 # this is mostly for internal use/debug for now.
                 logger.warning("Sorry! Log-in at least one time.")
@@ -1479,9 +1515,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         missing_helpers = self._eip_status.missing_helpers
         already_started = self._already_started_eip
-        can_start = (should_start
-                     and not already_started
-                     and not missing_helpers)
+        can_start = (should_start and
+                     not already_started and
+                     not missing_helpers)
 
         if can_start:
             if self._eip_status.is_cold_start:
@@ -1518,7 +1554,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
                     msg = self.tr("Disabled")
                     self._eip_status.disable_eip_start()
                     self._eip_status.set_eip_status(msg)
+
             # eip will not start, so we start soledad anyway
+            # XXX This is the entry point for soledad startup.
             self._maybe_run_soledad_setup_checks()
 
     def _finish_eip_bootstrap(self, data):
@@ -1566,9 +1604,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     # window handling methods
     #
 
-    def _on_raise_window_event(self, req):
+    def _on_raise_window_event(self, event, content):
         """
         Callback for the raise window event
+
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
         if IS_WIN:
             locks.raise_window_ack()
@@ -1618,18 +1661,24 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         logger.debug('Terminating vpn')
         self._backend.eip_stop(shutdown=True)
 
-    def quit(self):
+    def quit(self, disable_autostart=True):
         """
         Start the quit sequence and wait for services to finish.
         Cleanup and close the main window before quitting.
+
+        :param disable_autostart: whether we should disable the autostart
+                                  feature or not
+        :type disable_autostart: bool
         """
         if self._quitting:
             return
 
+        if disable_autostart:
+            autostart.set_autostart(False)
+
         self._quitting = True
         self._close_to_tray = False
         logger.debug('Quitting...')
-        autostart.set_autostart(False)
 
         # first thing to do quitting, hide the mainwindow and show tooltip.
         self.hide()
@@ -1712,6 +1761,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         self._leap_signaler.stop()
 
+        LOG_CONTROLLER.stop_logbook_subscriber()
         self._backend.stop()
         time.sleep(0.05)  # give the thread a little time to finish.
 

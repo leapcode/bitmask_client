@@ -9,9 +9,7 @@ argparse
 requests>=1.1.0
 srp>=1.0.2
 pyopenssl
-
-# This won't be needed after we refactor leap.common.events to use zmq.
-python-dateutil
+coloredlogs
 
 psutil
 
@@ -24,11 +22,10 @@ zope.proxy
 # You will want to install this bundled if you don't have sodium in your system:
 # pip install pyzmq --install-option="--zmq=bundled"
 pyzmq
-
-leap.common>=0.3.7
-leap.soledad.client>=0.6.0
-leap.keymanager>=0.3.8
-leap.mail>=0.3.9
+txzmq
 
 # Remove this when u1db fixes its dependency on oauth
 oauth
+
+taskthread
+logbook

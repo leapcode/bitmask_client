@@ -1,33 +1,46 @@
-ANNOUNCING Bitmask, the Internet Encryption Toolkit, release 0.8.1.
+ANNOUNCING Bitmask 0.9.0rc2 release candidate
 
-The LEAP team is pleased to announce the immediate availability of version
-0.8.1 of Bitmask, the Internet Encryption Toolkit, a bugfix release for 0.8.0.
+The LEAP team is pleased to announce  the immediate  availability of Bitmask
+0.9.0rc2.
 
-This release includes a couple of important bugfixes and a secure ZMQ fallback
-for distros that does not have CurveZMQ available.
+This is the second public *release candidate* of the Bitmask client that
+supports our user friendly end to end encrypted mail service. Our work has
+focused on speed and scale optimization by adapting the underlying components
+(leap.keymanager and leap.mail) to use the new async API of Soledad. This
+reduces code complexity by making use of the reactor pattern and by having
+blocking code (i.e. general i/o) be executed asynchronously. We have revamped
+how bitmask frontend and backend communicates (this improves performance and
+prevent bugs), improved log handling for better bug reports, and much more (see
+the changelog file for a more detailed list).
 
-Currently, Bitmask desktop client only support Debian and Ubuntu Linux. Support
-for Mac, Windows, and other Linux distributions is coming.
+This is a release candidate aimed at getting more user feedback to influence
+our next round of development. We have a list of known issues that we are
+cranking through and will add more to the list as they come in.
 
-Upgrading:
+* Changelog: https://github.com/leapcode/bitmask_client/blob/0.9.0rc2/CHANGELOG.rst
 
-* From bundle: if you are running bundle version 0.7 or new then Bitmask should
-  update automatically.
+TESTING
 
-* From package: if you have added deb.bitmask.net to your sources.list, then
-  Bitmask should update automatically (make sure it is not commented out).
+* Setup Instructions: https://bitmask.net/help
 
-If you have a bundle version older than 0.7, please reinstall Bitmask.
+* Fresh install: https://dl.bitmask.net/client/linux/release-candidate/
+
+* Upgrading from bundle: if you are running bundle version 0.7 or new then
+  Bitmask should update automatically.
+
+* Upgrading from package: if you have added deb.bitmask.net to your
+  sources.list, then Bitmask should update automatically (make sure it is not
+  commented  out).
+
+Note: If you have a bundle version older than 0.7, please reinstall Bitmask.
+
+How to test: https://github.com/leapcode/bitmask_client/blob/develop/docs/testing-rcs.README
 
 LICENSE
 
 You may use Bitmask under the GNU General Public License, version 3 or, at your
 option, any later version. See the file "LICENSE" for the terms of the GNU
 General Public License, version 3.
-
-USAGE
-
-See https://bitmask.net/help
 
 HACKING
 
@@ -39,6 +52,6 @@ trains, rooftops, rainforests, lonely islands and, always, beyond any border.
 
 The LEAP team,
 
-February 25, 2015
+August 27, 2015
 Somewhere in the middle of the intertubes.
 EOF

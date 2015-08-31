@@ -17,17 +17,17 @@
 """
 Utilities for dealing with client certs
 """
-import logging
 import os
 
 from leap.bitmask.crypto.srpauth import SRPAuth
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util.constants import REQUEST_TIMEOUT
 from leap.common.files import check_and_fix_urw_only
 from leap.common.files import mkdir_p
 
 from leap.common import certs as leap_certs
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 def download_client_cert(provider_config, path, session):

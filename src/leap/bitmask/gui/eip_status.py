@@ -17,13 +17,12 @@
 """
 EIP Status Panel widget implementation
 """
-import logging
-
 from datetime import datetime
 from functools import partial
 
 from PySide import QtCore, QtGui
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import get_service_display_name, EIP_SERVICE
 from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask.util.averages import RateMovingAverage
@@ -32,7 +31,7 @@ from leap.common.check import leap_assert_type
 from ui_eip_status import Ui_EIPStatus
 
 QtDelayedCall = QtCore.QTimer.singleShot
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class EIPStatusWidget(QtGui.QWidget):

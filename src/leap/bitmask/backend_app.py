@@ -17,17 +17,18 @@
 """
 Start point for the Backend.
 """
-import logging
 import multiprocessing
 import signal
+
+from twisted.internet import reactor
+
+from leap.common.events import server as event_server
 
 from leap.bitmask.backend.leapbackend import LeapBackend
 from leap.bitmask.backend.utils import generate_zmq_certificates
 from leap.bitmask.config import flags
-from leap.bitmask.logs.utils import create_logger
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import dict_to_flags
-
-logger = logging.getLogger(__name__)
 
 
 def signal_handler(signum, frame):
@@ -44,18 +45,33 @@ def signal_handler(signum, frame):
     # In the future we may need to do the stop in here when the frontend and
     # the backend are run separately (without multiprocessing)
     pname = multiprocessing.current_process().name
-    logger.debug("{0}: SIGNAL #{1} catched.".format(pname, signum))
+    print "{0}: SIGNAL #{1} catched.".format(pname, signum)
 
 
 def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     """
     Run the backend for the application.
+    This is called from the main app.py entrypoint, and is run in a child
+    subprocess.
 
     :param bypass_checks: whether we should bypass the checks or not
     :type bypass_checks: bool
     :param flags_dict: a dict containing the flag values set on app start.
     :type flags_dict: dict
     """
+    # In the backend, we want all the components to log into logbook
+    # that is: logging handlers and twisted logs
+    from logbook.compat import redirect_logging
+    from twisted.python.log import PythonLoggingObserver
+    redirect_logging()
+    observer = PythonLoggingObserver()
+    observer.start()
+
+    # NOTE: this needs to be used here, within the call since this function is
+    # executed in a different process and it seems that the process/thread
+    # identification isn't working 100%
+    logger = get_logger()  # noqa
+
     # The backend is the one who always creates the certificates. Either if it
     # is run separately or in a process in the same app as the frontend.
     if flags.ZMQ_HAS_CURVE:
@@ -68,11 +84,24 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     if flags_dict is not None:
         dict_to_flags(flags_dict)
 
+    reactor.callWhenRunning(start_events_and_updater, logger)
+
     backend = LeapBackend(bypass_checks=bypass_checks,
                           frontend_pid=frontend_pid)
     backend.run()
 
 
+def start_events_and_updater(logger):
+    event_server.ensure_server()
+
+    if flags.STANDALONE:
+        try:
+            from leap.bitmask.updater import Updater
+            updater = Updater()
+            updater.start()
+        except ImportError:
+            logger.error("Updates are not enabled in this distribution.")
+
+
 if __name__ == '__main__':
-    logger = create_logger(debug=True)
     run_backend()

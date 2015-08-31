@@ -17,18 +17,17 @@
 """
 Mail Services Conductor
 """
-import logging
-
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
 from leap.bitmask.services.mail.emailfirewall import get_email_firewall
 
-from leap.common.events import events_pb2 as leap_events
+from leap.common.events import catalog
 from leap.common.events import register as leap_register
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class IMAPControl(object):
@@ -42,15 +41,12 @@ class IMAPControl(object):
         self.imap_machine = None
         self.imap_connection = None
 
-        leap_register(signal=leap_events.IMAP_SERVICE_STARTED,
-                      callback=self._handle_imap_events,
-                      reqcbk=lambda req, resp: None)
-        leap_register(signal=leap_events.IMAP_SERVICE_FAILED_TO_START,
-                      callback=self._handle_imap_events,
-                      reqcbk=lambda req, resp: None)
-        leap_register(signal=leap_events.IMAP_CLIENT_LOGIN,
-                      callback=self._handle_imap_events,
-                      reqcbk=lambda req, resp: None)
+        leap_register(event=catalog.IMAP_SERVICE_STARTED,
+                      callback=self._handle_imap_events)
+        leap_register(event=catalog.IMAP_SERVICE_FAILED_TO_START,
+                      callback=self._handle_imap_events)
+        leap_register(event=catalog.IMAP_CLIENT_LOGIN,
+                      callback=self._handle_imap_events)
 
     def set_imap_connection(self, imap_connection):
         """
@@ -77,25 +73,29 @@ class IMAPControl(object):
 
         self._backend.imap_stop_service()
 
-    def _handle_imap_events(self, req):
+    def _handle_imap_events(self, event, content):
         """
         Callback handler for the IMAP events
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        if req.event == leap_events.IMAP_SERVICE_STARTED:
+        if event == catalog.IMAP_SERVICE_STARTED:
             self._on_imap_connected()
-        elif req.event == leap_events.IMAP_SERVICE_FAILED_TO_START:
+        elif event == catalog.IMAP_SERVICE_FAILED_TO_START:
             self._on_imap_failed()
-        elif req.event == leap_events.IMAP_CLIENT_LOGIN:
+        elif event == catalog.IMAP_CLIENT_LOGIN:
             self._on_mail_client_logged_in()
 
     def _on_mail_client_logged_in(self):
         """
         On mail client logged in, fetch incoming mail.
         """
-        self._controller.imap_service_fetch()
+        # XXX needs to be adapted to the new-ish incoming mail service.
+        # Doing nothing for now, this could be moved to mail package itself.
+        logger.debug("A MUA has logged in, should react by forcing a fetch.")
 
     def _on_imap_connecting(self):
         """
@@ -124,12 +124,10 @@ class SMTPControl(object):
         self.smtp_connection = None
         self.smtp_machine = None
 
-        leap_register(signal=leap_events.SMTP_SERVICE_STARTED,
-                      callback=self._handle_smtp_events,
-                      reqcbk=lambda req, resp: None)
-        leap_register(signal=leap_events.SMTP_SERVICE_FAILED_TO_START,
-                      callback=self._handle_smtp_events,
-                      reqcbk=lambda req, resp: None)
+        leap_register(event=catalog.SMTP_SERVICE_STARTED,
+                      callback=self._handle_smtp_events)
+        leap_register(event=catalog.SMTP_SERVICE_FAILED_TO_START,
+                      callback=self._handle_smtp_events)
 
     def set_smtp_connection(self, smtp_connection):
         """
@@ -158,16 +156,18 @@ class SMTPControl(object):
         self.smtp_connection.qtsigs.disconnecting_signal.emit()
         self._backend.smtp_stop_service()
 
-    def _handle_smtp_events(self, req):
+    def _handle_smtp_events(self, event, content):
         """
         Callback handler for the SMTP events.
 
-        :param req: Request type
-        :type req: leap.common.events.events_pb2.SignalRequest
+        :param event: The event that triggered the callback.
+        :type event: str
+        :param content: The content of the event.
+        :type content: list
         """
-        if req.event == leap_events.SMTP_SERVICE_STARTED:
+        if event == catalog.SMTP_SERVICE_STARTED:
             self.on_smtp_connected()
-        elif req.event == leap_events.SMTP_SERVICE_FAILED_TO_START:
+        elif event == catalog.SMTP_SERVICE_FAILED_TO_START:
             self.on_smtp_failed()
 
     def on_smtp_connecting(self):
@@ -262,7 +262,7 @@ class MailConductor(IMAPControl, SMTPControl):
         if self._firewall is not None:
             self._firewall.start()
         if not offline:
-            logger.debug("not starting smtp in offline mode")
+            logger.debug("Starting smtp service...")
             self.start_smtp_service(download_if_needed=download_if_needed)
         self.start_imap_service()
 

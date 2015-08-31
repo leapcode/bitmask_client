@@ -1,0 +1,7 @@
+[bug|feat|docs|style|refactor|test|pkg|i18n] ...
+...
+
+- Resolves: #XYZ
+- Related: #XYZ
+- Documentation: #XYZ
+- Releases: XYZ

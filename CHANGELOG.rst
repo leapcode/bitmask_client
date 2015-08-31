@@ -3,6 +3,69 @@
 Changelog
 ---------
 
+0.9.0rc2 August 27
+++++++++++++++++++
+
+Features
+~~~~~~~~
+- `#7250 <https://leap.se/code/issues/7250>`_: Enable '--danger' for stable versions.
+- `#7291 <https://leap.se/code/issues/7291>`_: Move the updater code from the launcher to the client.
+- `#7342 <https://leap.se/code/issues/7342>`_: Added apply_updates.py script for the pyinstaller bundle.
+- `#7353 <https://leap.se/code/issues/7353>`_: Add notifications of soledad sync progress to UI.
+- `#7356 <https://leap.se/code/issues/7356>`_: Allow to disable EIP component on build.
+
+Bugfixes
+~~~~~~~~
+- `#6594 <https://leap.se/code/issues/6594>`_: Handle disabled registration on provider.
+- `#7149 <https://leap.se/code/issues/7149>`_: Start the events server when reactor is running.
+- `#7273 <https://leap.se/code/issues/7273>`_: Logbook subscriber stop fails if not started.
+- `#7273 <https://leap.se/code/issues/7273>`_: ZMQError: address already in use - logbook subscriber already started.
+- `#7281 <https://leap.se/code/issues/7281>`_: Support a provider not providing location for the eip gateways.
+- `#7319 <https://leap.se/code/issues/7319>`_: Raise the maxfiles limit in OSX
+- `#7343 <https://leap.se/code/issues/7343>`_: Clean up and fix the tests.
+
+
+
+0.9.0rc1 July 10
+++++++++++++++++
+
+Features
+~~~~~~~~
+- `#5526 <https://leap.se/code/issues/5526>`_: Make "check" button selected by default.
+- `#6359 <https://leap.se/code/issues/6359>`_: Adapt bitmask to the new events api on leap.common.
+- `#6360 <https://leap.se/code/issues/6360>`_: Use txzmq in backend.
+- `#6368 <https://leap.se/code/issues/6368>`_: Add support to the new async-api of keymanager.
+- `#6683 <https://leap.se/code/issues/6683>`_: Add ability to generate sumo tarball.
+- `#6713 <https://leap.se/code/issues/6713>`_: Add support for xfce-polkit agent.
+- `#6876 <https://leap.se/code/issues/6876>`_: Update api port for pinned riseup.
+- `#7139 <https://leap.se/code/issues/7139>`_: Use logbook zmq handler to centralize logging.
+- `#7140 <https://leap.se/code/issues/7140>`_: Implement a thread-safe zmq handler for logbook.
+- `#7141 <https://leap.se/code/issues/7141>`_: Add log handler to display colored logs on the terminal.
+- `#7142 <https://leap.se/code/issues/7142>`_: Add log handler to store logs on bitmask.log.
+- `#7143 <https://leap.se/code/issues/7143>`_: Adapt existing log filter/silencer to the new logbook handler.
+- `#7144 <https://leap.se/code/issues/7144>`_: Replace logging handler with logbook handler bitmask-wide.
+- `#7162 <https://leap.se/code/issues/7162>`_: Log LSB-release info if available.
+- `#7180 <https://leap.se/code/issues/7180>`_: Add log rotation for bitmask.log.
+- `#7184 <https://leap.se/code/issues/7184>`_: Forward twisted logs to logging and handle logging logs with logbook.
+- Add support to the new async-api of soledad
+
+Bugfixes
+~~~~~~~~
+- `#6418 <https://leap.se/code/issues/6418>`_: Cannot change preseeded providers if checks for one fail.
+- `#6424 <https://leap.se/code/issues/6424>`_: Do not disable autostart if the quit is triggered by a system logout.
+- `#6541 <https://leap.se/code/issues/6541>`_: Client must honor the ports specified in eip-service.json.
+- `#6654 <https://leap.se/code/issues/6654>`_: Regression fix, login attempt is made against previously selected provider.
+- `#6682 <https://leap.se/code/issues/6682>`_: Handle user cancel keyring open operation, this prevents a bitmask freeze.
+- `#6894 <https://leap.se/code/issues/6894>`_: Change 'ip' command location to support Fedora/RHEL distros.
+- `#7093 <https://leap.se/code/issues/7093>`_: Fix controller attribute error.
+- `#7126 <https://leap.se/code/issues/7126>`_: Don't run the event server on the backend for the standalone bundle since the launcher takes care of that.
+- `#7185 <https://leap.se/code/issues/7185>`_: Log contains exported PGP Private Key.
+- `#7222 <https://leap.se/code/issues/7222>`_: Run the zmq log subscriber in the background to avoid hitting the zmq's buffer limits.
+- `#6536 <https://leap.se/code/issues/6536>`_, `#6568 <https://leap.se/code/issues/6568>`_, `#6691 <https://leap.se/code/issues/6691>`_: Refactor soledad sync to do it the twisted way.
+- Fix the bootstrap script for developers so it works on Fedora/RHEL systems where there is /usr/lib64 for python libs.
+- Fix soledad bootstrap sync retries.
+
+
 0.8.1 February 25
 +++++++++++++++++
 

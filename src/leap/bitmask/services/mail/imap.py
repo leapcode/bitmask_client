@@ -17,14 +17,16 @@
 """
 Initialization of imap service
 """
-import logging
 import os
 import sys
 
+from leap.bitmask.logs.utils import get_logger
+from leap.mail.constants import INBOX_NAME
 from leap.mail.imap.service import imap
+from leap.mail.incoming.service import IncomingMail, INCOMING_CHECK_PERIOD
 from twisted.python import log
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 # The name of the environment variable that has to be
 # set to override the default time value, in seconds.
@@ -49,6 +51,9 @@ def get_mail_check_period():
         logger.warning("Unhandled error while getting %s: %r" % (
             INCOMING_CHECK_PERIOD_ENV,
             exc))
+
+    if period is None:
+        period = INCOMING_CHECK_PERIOD
     return period
 
 
@@ -61,12 +66,34 @@ def start_imap_service(*args, **kwargs):
     from leap.bitmask.config import flags
     logger.debug('Launching imap service')
 
-    override_period = get_mail_check_period()
-    if override_period:
-        kwargs['check_period'] = override_period
-
     if flags.MAIL_LOGFILE:
         log.startLogging(open(flags.MAIL_LOGFILE, 'w'))
         log.startLogging(sys.stdout)
 
     return imap.run_service(*args, **kwargs)
+
+
+def start_incoming_mail_service(keymanager, soledad, imap_factory, userid):
+    """
+    Initalizes and starts the incomming mail service.
+
+    :returns: a Deferred that will be fired with the IncomingMail instance
+    """
+    def setUpIncomingMail(inbox):
+        incoming_mail = IncomingMail(
+            keymanager,
+            soledad,
+            inbox.collection,
+            userid,
+            check_period=get_mail_check_period())
+        return incoming_mail
+
+    # XXX: do I really need to know here how to get a mailbox??
+    # XXX: ideally, the parent service in mail would take care of initializing
+    # the account, and passing the mailbox to the incoming service.
+    # In an even better world, we just would subscribe to a channel that would
+    # pass us the serialized object to be inserted.
+    acc = imap_factory.theAccount
+    d = acc.callWhenReady(lambda _: acc.getMailbox(INBOX_NAME))
+    d.addCallback(setUpIncomingMail)
+    return d

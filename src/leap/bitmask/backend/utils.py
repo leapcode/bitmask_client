@@ -17,7 +17,6 @@
 """
 Backend utilities to handle ZMQ certificates.
 """
-import logging
 import os
 import shutil
 import stat
@@ -30,11 +29,12 @@ except ImportError:
     pass
 
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import get_path_prefix
 from leap.common.files import mkdir_p
 from leap.common.check import leap_assert
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 KEYS_DIR = os.path.join(get_path_prefix(), 'leap', 'zmq_certificates')
 

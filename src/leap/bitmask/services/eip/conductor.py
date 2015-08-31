@@ -20,10 +20,9 @@ EIP Conductor module.
 This handles Qt Signals and triggers the calls to the backend,
 where the VPNProcess has been initialized.
 """
-import logging
-
 from PySide import QtCore
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services import EIP_SERVICE
 from leap.bitmask.services import get_service_display_name
@@ -31,7 +30,7 @@ from leap.bitmask.services.eip.connection import EIPConnection
 from leap.bitmask.platform_init import IS_MAC
 
 QtDelayedCall = QtCore.QTimer.singleShot
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class EIPConductor(object):

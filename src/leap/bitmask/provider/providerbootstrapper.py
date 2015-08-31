@@ -17,7 +17,6 @@
 """
 Provider bootstrapping
 """
-import logging
 import socket
 import os
 import sys
@@ -28,6 +27,7 @@ from leap.bitmask import provider
 from leap.bitmask import util
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig, MissingCACert
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.provider import get_provider_path
 from leap.bitmask.provider.pinned import PinnedProviders
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
@@ -38,7 +38,7 @@ from leap.common.certs import get_digest
 from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import check_and_fix_urw_only, get_mtime, mkdir_p
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class UnsupportedProviderAPI(Exception):

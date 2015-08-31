@@ -17,11 +17,11 @@
 """
 SMTP bootstrapping
 """
-import logging
 import os
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.certs import download_client_cert
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.mail.smtpconfig import SMTPConfig
@@ -31,7 +31,7 @@ from leap.common import certs as leap_certs
 from leap.common.check import leap_assert
 from leap.common.files import check_and_fix_urw_only
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class NoSMTPHosts(Exception):
@@ -120,6 +120,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
             self._provider_config, about_to_download=True)
 
         from leap.mail.smtp import setup_smtp_gateway
+
         self._smtp_service, self._smtp_port = setup_smtp_gateway(
             port=2013,
             userid=self._userid,
@@ -152,7 +153,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
         self._provider_config = ProviderConfig.get_provider_config(domain)
         self._keymanager = keymanager
         self._smtp_config = SMTPConfig()
-        self._userid = userid
+        self._userid = str(userid)
         self._download_if_needed = download_if_needed
 
         try:

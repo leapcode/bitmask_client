@@ -1,0 +1,4 @@
+leap.soledad.client>=0.6.0
+leap.keymanager>=0.4.0
+leap.mail>=0.4.0rc1
+leap.common>=0.4.0

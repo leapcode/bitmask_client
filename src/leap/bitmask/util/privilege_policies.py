@@ -19,7 +19,6 @@ Helpers to determine if the needed policies for privilege escalation
 are operative under this client run.
 """
 import commands
-import logging
 import os
 import subprocess
 import platform
@@ -28,10 +27,11 @@ import time
 from abc import ABCMeta, abstractmethod
 
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.common.check import leap_assert
 from leap.common.files import which
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class NoPolkitAuthAgentAvailable(Exception):
@@ -187,6 +187,7 @@ class LinuxPolicyChecker(PolicyChecker):
             'ps aux | grep "[l]xsession"',
             'ps aux | grep "[g]nome-shell"',
             'ps aux | grep "[f]ingerprint-polkit-agent"',
+            'ps aux | grep "[x]fce-polkit"',
         ]
         is_running = [commands.getoutput(cmd) for cmd in polkit_options]
 

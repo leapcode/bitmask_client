@@ -19,8 +19,6 @@ Parses the command line arguments passed to the application.
 """
 import argparse
 
-from leap.bitmask import IS_RELEASE_VERSION
-
 
 def build_parser():
     """
@@ -38,9 +36,6 @@ def build_parser():
                         help='Displays Bitmask version and exits.')
 
     # files
-    parser.add_argument('-l', '--logfile', metavar="LOG FILE", nargs='?',
-                        action="store", dest="log_file",
-                        help='Optional log file.')
     parser.add_argument('-m', '--mail-logfile',
                         metavar="MAIL LOG FILE", nargs='?',
                         action="store", dest="mail_log_file",
@@ -74,32 +69,32 @@ def build_parser():
                         help='Verbosity level for openvpn logs [1-6]')
 
     # mail stuff
-    # XXX Disabled right now since it's not tested after login refactor
-    # parser.add_argument('-o', '--offline', action="store_true",
-    #                     help='Starts Bitmask in offline mode: will not '
-    #                          'try to sync with remote replicas for email.')
+    parser.add_argument('-o', '--offline', action="store_true",
+                        help='Starts Bitmask in offline mode: will not '
+                             'try to sync with remote replicas for email.')
 
-    parser.add_argument('--acct', metavar="user@provider",
-                        nargs='?',
-                        action="store", dest="acct",
-                        help='Manipulate mailboxes for this account')
-    parser.add_argument('-r', '--repair-mailboxes', default=False,
-                        action="store_true", dest="repair",
-                        help='Repair mailboxes for a given account. '
-                             'Use when upgrading versions after a schema '
-                             'change. Use with --acct')
-    parser.add_argument('--import-maildir', metavar="/path/to/Maildir",
-                        nargs='?',
-                        action="store", dest="import_maildir",
-                        help='Import the given maildir. Use with the '
-                             '--to-mbox flag to import to folders other '
-                             'than INBOX. Use with --acct')
+    # XXX not yet updated to new mail api for mail 0.4.0
 
-    if not IS_RELEASE_VERSION:
-        help_text = ("Bypasses the certificate check during provider "
-                     "bootstraping, for debugging development servers. "
-                     "Use at your own risk!")
-        parser.add_argument('--danger', action="store_true", help=help_text)
+    # parser.add_argument('--acct', metavar="user@provider",
+    #                     nargs='?',
+    #                     action="store", dest="acct",
+    #                     help='Manipulate mailboxes for this account')
+    # parser.add_argument('-r', '--repair-mailboxes', default=False,
+    #                     action="store_true", dest="repair",
+    #                     help='Repair mailboxes for a given account. '
+    #                     'Use when upgrading versions after a schema '
+    #                     'change. Use with --acct')
+    # parser.add_argument('--import-maildir', metavar="/path/to/Maildir",
+    #                     nargs='?',
+    #                     action="store", dest="import_maildir",
+    #                     help='Import the given maildir. Use with the '
+    #                     '--to-mbox flag to import to folders other '
+    #                     'than INBOX. Use with --acct')
+
+    help_text = ("INSECURE: Bypasses the certificate check during provider "
+                 "bootstraping, for debugging development servers. "
+                 "USE AT YOUR OWN RISK!")
+    parser.add_argument('--danger', action="store_true", help=help_text)
 
     # optional cert file used to check domains with self signed certs.
     parser.add_argument('--ca-cert-file', metavar="/path/to/cacert.pem",
@@ -133,9 +128,5 @@ def get_options():
     """
     parser = build_parser()
     opts, unknown = parser.parse_known_args()
-
-    # we add this option manually since it's not defined for 'release version'
-    if IS_RELEASE_VERSION:
-        opts.danger = False
 
     return opts

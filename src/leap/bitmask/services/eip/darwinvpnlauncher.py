@@ -19,15 +19,15 @@ Darwin VPN launcher implementation.
 """
 import commands
 import getpass
-import logging
 import os
 import sys
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncher
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncherException
 from leap.bitmask.util import get_path_prefix
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class EIPNoTunKextLoaded(VPNLauncherException):

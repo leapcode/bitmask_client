@@ -18,15 +18,14 @@
 """
 EIP Preferences window
 """
-import logging
-
 from functools import partial
 from PySide import QtCore, QtGui
 
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.ui_eippreferences import Ui_EIPPreferences
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class EIPPreferencesWindow(QtGui.QDialog):

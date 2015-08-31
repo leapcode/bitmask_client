@@ -43,6 +43,8 @@ LRELE = lrelease
 #################################
 # DO NOT EDIT FOLLOWING
 
+LEAP_REPOS = leap_pycommon keymanager leap_mail soledad
+
 COMPILED_UI = $(UI_FILES:%.ui=$(COMPILED_DIR)/ui_%.py)
 COMPILED_RESOURCES = $(RESOURCES:%.qrc=$(COMPILED_DIR)/%_rc.py)
 
@@ -56,7 +58,9 @@ ifndef RESOURCE_TIME
 	export RESOURCE_TIME=10
 endif
 
-#
+CURDIR = $(shell pwd)
+
+###########################################
 
 all : resources ui
 
@@ -75,11 +79,6 @@ $(COMPILED_DIR)/ui_%.py : $(UI_DIR)/%.ui
 $(COMPILED_DIR)/%_rc.py : $(RESOURCE_DIR)/%.qrc
 	$(PYRCC) $< -o $@
 
-deb:
-	#XXX finish this!
-	#should tag upstream/VERSION in upstream branch...
-	#@git tag -a upstream/$(DEBVER) -m "..."
-	@git-buildpackage --git-ignore-new --git-builder="debuild -us -uc -i'.*|bin|share|lib|local|include|\.git'"  --git-upstream-branch=upstream --git-upstream-tree=branch --git-debian-branch=debian
 
 manpages:
 	rst2man docs/man/bitmask.1.rst docs/man/bitmask.1
@@ -123,6 +122,46 @@ gather_wheels:
 install_wheel:
 	# if it's the first time, you'll need to get_wheels first
 	pip install --pre --use-wheel --no-index --find-links=../wheelhouse -r pkg/requirements.pip
+
+gather_deps:
+	pipdeptree | pkg/scripts/filter-bitmask-deps
+
+install_base_deps:
+	for repo in leap_pycommon keymanager leap_mail soledad/common soledad/client; do cd $(CURDIR)/../$$repo && pkg/pip_install_requirements.sh; done
+	pkg/pip_install_requirements.sh
+
+pull_leapdeps:
+	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git pull; done
+
+checkout_leapdeps_develop:
+	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git checkout develop; done
+
+checkout_leapdeps_release:
+	pkg/scripts/checkout_leap_versions.sh
+
+sumo_tarball_release: checkout_leapdeps_release
+	python setup.py sdist --sumo
+	git checkout -- src/leap/__init__.py
+	git checkout -- src/leap/bitmask/_version.py
+	rm -rf src/leap/soledad
+
+# XXX We need two sets of sumo-tarballs: the one published for a release
+# (that will pick the pinned leap deps), and the other which will be used
+# for the nightly builds.
+# TODO change naming scheme for sumo-latest: should include date (in case
+# bitmask is not updated bu the dependencies are)
+
+sumo_tarball_latest: checkout_leapdeps_develop pull_leapdeps
+	python setup.py sdist --sumo   # --latest
+	git checkout -- src/leap/__init__.py
+	git checkout -- src/leap/bitmask/_version.py
+	rm -rf src/leap/soledad
+
+pyinst:
+	pyinstaller -y pkg/pyinst/bitmask.spec
+
+clean_pkg:
+	rm -rf build dist
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)

@@ -1,0 +1,20 @@
+hacks
+-----
+**because nobody's perfect, at least the first time**
+
+missing osrandom_engine header
+===============================
+
+1. extract osrandom_engine.* from original cryptography tarball:
+
+cp /src/cryptography/hazmat/bindings/openssl/src/osrandom_engine.h /tmp
+cp /src/cryptography/hazmat/bindings/openssl/src/osrandom_engine.c /tmp
+
+cd dist/bitmask
+mkdir -p cryptography/hazmat/bindings/openssl/src
+cp /tmp/osrandom_engine.* cryptography/hazmat/bindings/openssl/src
+
+missing dbschema.sql
+====================
+mkdir -p u1db/backends
+cp ~VIRTUAL_ENV/lib/python2.7/site-packages/u1db/backends/dbschema.sql u1db/backends

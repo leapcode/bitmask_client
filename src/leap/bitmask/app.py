@@ -39,30 +39,35 @@
 # M:::::::::::~NMMM7???7MMMM:::::::::::::::::::::::NMMMI??I7MMMM:::::::::::::M
 # M::::::::::::::7MMMMMMM+:::::::::::::::::::::::::::?MMMMMMMZ:::::::::::::::M
 #                (thanks to: http://www.glassgiant.com/ascii/)
+import atexit
+import commands
 import multiprocessing
 import os
+import platform
 import sys
 
-
-from leap.bitmask.backend.backend_proxy import BackendProxy
+if platform.system() == "Darwin":
+    # We need to tune maximum number of files, due to zmq usage
+    # we hit the limit.
+    import resource
+    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
 
 from leap.bitmask import __version__ as VERSION
+from leap.bitmask.backend.backend_proxy import BackendProxy
+from leap.bitmask.backend_app import run_backend
 from leap.bitmask.config import flags
 from leap.bitmask.frontend_app import run_frontend
-from leap.bitmask.backend_app import run_backend
-from leap.bitmask.logs.utils import create_logger
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init.locks import we_are_the_one_and_only
 from leap.bitmask.services.mail import plumber
-from leap.bitmask.util import leap_argparse, flags_to_dict
+from leap.bitmask.util import leap_argparse, flags_to_dict, here
 from leap.bitmask.util.requirement_checker import check_requirements
 
-from leap.common.events import server as event_server
 from leap.mail import __version__ as MAIL_VERSION
 
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
-
 import psutil
 
 
@@ -73,7 +78,16 @@ def kill_the_children():
     me = os.getpid()
     parent = psutil.Process(me)
     print "Killing all the children processes..."
-    for child in parent.get_children(recursive=True):
+
+    children = None
+    try:
+        # for psutil 0.2.x
+        children = parent.get_children(recursive=True)
+    except:
+        # for psutil 0.3.x
+        children = parent.children(recursive=True)
+
+    for child in children:
         try:
             child.terminate()
         except Exception as exc:
@@ -81,7 +95,7 @@ def kill_the_children():
 
 # XXX This is currently broken, but we need to fix it to avoid
 # orphaned processes in case of a crash.
-# atexit.register(kill_the_children)
+atexit.register(kill_the_children)
 
 
 def do_display_version(opts):
@@ -109,6 +123,26 @@ def do_mail_plumbing(opts):
     # XXX catch when import is used w/o acct
 
 
+def log_lsb_release_info(logger):
+    """
+    Attempt to log distribution info from the lsb_release utility
+    """
+    if commands.getoutput('which lsb_release'):
+        distro_info = commands.getoutput('lsb_release -a').split('\n')[-4:]
+        logger.info("LSB Release info:")
+        for line in distro_info:
+            logger.info(line)
+
+def fix_qtplugins_path():
+    # This is a small workaround for a bug in macholib, there is a slight typo
+    # in the path for the qt plugins that is added to the dynamic loader path
+    # in the libs.
+    if sys.platform in ('win32', 'darwin'):
+        from PySide import QtCore
+        plugins_path = os.path.join(os.path.dirname(here(QtCore)), 'plugins')
+        QtCore.QCoreApplication.setLibraryPaths([plugins_path])
+
+
 def start_app():
     """
     Starts the main event loop and launches the main window.
@@ -123,13 +157,10 @@ def start_app():
     options = {
         'start_hidden': opts.start_hidden,
         'debug': opts.debug,
-        'log_file': opts.log_file,
     }
 
     flags.STANDALONE = opts.standalone
-    # XXX Disabled right now since it's not tested after login refactor
-    # flags.OFFLINE = opts.offline
-    flags.OFFLINE = False
+    flags.OFFLINE = opts.offline
     flags.MAIL_LOGFILE = opts.mail_log_file
     flags.APP_VERSION_CHECK = opts.app_version_check
     flags.API_VERSION_CHECK = opts.api_version_check
@@ -138,23 +169,24 @@ def start_app():
 
     flags.CA_CERT_FILE = opts.ca_cert_file
 
-    replace_stdout = True
-    if opts.repair or opts.import_maildir:
-        # We don't want too much clutter on the comand mode
-        # this could be more generic with a Command class.
-        replace_stdout = False
+    flags.DEBUG = opts.debug
 
-    logger = create_logger(opts.debug, opts.log_file, replace_stdout)
+    logger = get_logger(perform_rollover=True)
+
+    # NOTE: since we are not using this right now, the code that replaces the
+    # stdout needs to be reviewed when we enable this again
+    # replace_stdout = True
+
+    # XXX mail repair commands disabled for now
+    # if opts.repair or opts.import_maildir:
+    #    We don't want too much clutter on the comand mode
+    #    this could be more generic with a Command class.
+    #    replace_stdout = False
 
     # ok, we got logging in place, we can satisfy mail plumbing requests
     # and show logs there. it normally will exit there if we got that path.
-    do_mail_plumbing(opts)
-
-    try:
-        event_server.ensure_server(event_server.SERVER_PORT)
-    except Exception as e:
-        # We don't even have logger configured in here
-        print "Could not ensure server: %r" % (e,)
+    # XXX mail repair commands disabled for now
+    # do_mail_plumbing(opts)
 
     PLAY_NICE = os.environ.get("LEAP_NICE")
     if PLAY_NICE and PLAY_NICE.isdigit():
@@ -172,10 +204,10 @@ def start_app():
     check_requirements()
 
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    logger.info('Bitmask version %s', VERSION)
-    logger.info('leap.mail version %s', MAIL_VERSION)
+    logger.info('Bitmask version %s' % VERSION)
+    logger.info('leap.mail version %s' % MAIL_VERSION)
+    log_lsb_release_info(logger)
     logger.info('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-
     logger.info('Starting app')
 
     backend_running = BackendProxy().check_online()
@@ -195,6 +227,7 @@ def start_app():
         backend_process.start()
         backend_pid = backend_process.pid
 
+    fix_qtplugins_path()
     run_frontend(options, flags_dict, backend_pid=backend_pid)
 
 

@@ -17,14 +17,13 @@
 """
 Utilities for handling multi-platform file locking mechanisms
 """
-import logging
 import errno
 import os
 import platform
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init import IS_WIN, IS_UNIX
-from leap.common.events import signal as signal_event
-from leap.common.events import events_pb2 as proto
+from leap.common.events import emit, catalog
 
 if IS_UNIX:
     from fcntl import flock, LOCK_EX, LOCK_NB
@@ -38,7 +37,7 @@ else:  # WINDOWS
 
     from leap.bitmask.util import get_modification_ts, update_modification_ts
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 if IS_UNIX:
 
@@ -364,7 +363,7 @@ def we_are_the_one_and_only():
         locker.get_lock()
         we_are_the_one = locker.locked_by_us
         if not we_are_the_one:
-            signal_event(proto.RAISE_WINDOW)
+            emit(catalog.RAISE_WINDOW)
         return we_are_the_one
 
     elif IS_WIN:
@@ -385,7 +384,7 @@ def we_are_the_one_and_only():
 
         # let's assume it's a stalled lock
         we_are_the_one = True
-        signal_event(proto.RAISE_WINDOW)
+        emit(catalog.RAISE_WINDOW)
 
         while check_interval():
             if get_modification_ts(lock_path) > ts:

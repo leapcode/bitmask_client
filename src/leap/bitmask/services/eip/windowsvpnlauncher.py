@@ -17,12 +17,11 @@
 """
 Windows VPN launcher implementation.
 """
-import logging
-
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services.eip.vpnlauncher import VPNLauncher
 from leap.common.check import leap_assert
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class WindowsVPNLauncher(VPNLauncher):

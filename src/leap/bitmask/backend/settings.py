@@ -18,13 +18,13 @@
 Backend settings
 """
 import ConfigParser
-import logging
 import os
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 # We need this one available for the default decorator
 GATEWAY_AUTOMATIC = "Automatic"
@@ -122,37 +122,36 @@ class Settings(object):
         self._settings.set(provider, self.GATEWAY_KEY, gateway)
         self._save()
 
-    def get_uuid(self, username):
+    def get_uuid(self, full_user_id):
         """
         Gets the uuid for a given username.
 
-        :param username: the full user identifier in the form user@provider
-        :type username: basestring
+        :param full_user_id: the full user identifier in the form user@provider
+        :type full_user_id: basestring
         """
-        leap_assert("@" in username,
+        leap_assert("@" in full_user_id,
                     "Expected username in the form user@provider")
-        user, provider = username.split('@')
+        username, provider = full_user_id.split('@')
+        return self._get_value(provider, full_user_id, "")
 
-        return self._get_value(provider, username, "")
-
-    def set_uuid(self, username, value):
+    def set_uuid(self, full_user_id, value):
         """
         Sets the uuid for a given username.
 
-        :param username: the full user identifier in the form user@provider
-        :type username: str or unicode
+        :param full_user_id: the full user identifier in the form user@provider
+        :type full_user_id: str or unicode
         :param value: the uuid to save or None to remove it
         :type value: str or unicode or None
         """
-        leap_assert("@" in username,
+        leap_assert("@" in full_user_id,
                     "Expected username in the form user@provider")
-        user, provider = username.split('@')
+        user, provider = full_user_id.split('@')
 
         if value is None:
-            self._settings.remove_option(provider, username)
+            self._settings.remove_option(provider, full_user_id)
         else:
             leap_assert(len(value) > 0, "We cannot save an empty uuid")
             self._add_section(provider)
-            self._settings.set(provider, username, value)
+            self._settings.set(provider, full_user_id, value)
 
         self._save()

@@ -58,3 +58,7 @@ SKIP_WIZARD_CHECKS = False
 
 # This flag tells us whether the current pyzmq supports using CurveZMQ or not.
 ZMQ_HAS_CURVE = None
+
+# Store the needed loglevel globally since the logger handlers goes through
+# threads and processes
+DEBUG = False

@@ -30,8 +30,7 @@ The login sequence is the following:
         - on success: _authentication_finished
 
 """
-import logging
-
+from keyring.errors import InitError as KeyringInitError
 from PySide import QtCore, QtGui
 from ui_login import Ui_LoginWidget
 
@@ -40,6 +39,7 @@ from ui_login import Ui_LoginWidget
 from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.util import make_address
 from leap.bitmask.util.credentials import USERNAME_REGEX
@@ -47,7 +47,7 @@ from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.bitmask.util.keyring_helpers import get_keyring
 from leap.common.check import leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class LoginState(object):
@@ -365,6 +365,9 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
                 # Only save the username if it was saved correctly in
                 # the keyring
                 self._settings.set_user(full_user_id)
+            except KeyringInitError as e:
+                logger.error("Failed to unlock keyring, maybe the user "
+                             "cancelled the operation {0!r}".format(e))
             except Exception as e:
                 logger.exception("Problem saving data to keyring. %r" % (e,))
 
@@ -653,6 +656,9 @@ class LoginWidget(QtGui.QWidget, SignalTracker):
             saved_password = keyring.get_password(self.KEYRING_KEY, u_user)
         except ValueError as e:
             logger.debug("Incorrect Password. %r." % (e,))
+        except KeyringInitError as e:
+            logger.error("Failed to unlock keyring, maybe the user "
+                         "cancelled the operation {0!r}".format(e))
 
         if saved_password is not None:
             self.set_password(saved_password)

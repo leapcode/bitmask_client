@@ -17,7 +17,6 @@
 """
 First run wizard
 """
-import logging
 import random
 
 from functools import partial
@@ -30,16 +29,18 @@ from leap.bitmask.backend.leapbackend import ERROR_KEY, PASSED_KEY
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.leapsettings import LeapSettings
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.services import get_service_display_name, get_supported
 from leap.bitmask.util.credentials import password_checks, username_checks
 from leap.bitmask.util.credentials import USERNAME_REGEX
 from leap.bitmask.util.keyring_helpers import has_keyring
+from leap.bitmask._components import HAS_EIP
 
 from ui_wizard import Ui_Wizard
 
 QtDelayedCall = QtCore.QTimer.singleShot
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class Wizard(QtGui.QWizard, SignalTracker):
@@ -264,6 +265,20 @@ class Wizard(QtGui.QWizard, SignalTracker):
         if reset:
             self._reset_provider_check()
 
+    def _provider_widget_set_enabled(self, enabled):
+        """
+        Enable/Disable the provider widget.
+        The widget to use depends on whether the used decided to use an
+        existing provider or a new one.
+
+        :param enabled: the new state for the widget
+        :type enabled: bool
+        """
+        if self.ui.rbNewProvider.isChecked():
+            self.ui.lnProvider.setEnabled(enabled)
+        else:
+            self.ui.cbProviders.setEnabled(enabled)
+
     def _focus_username(self):
         """
         Focus at the username lineedit for the registration page
@@ -371,6 +386,19 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self._set_register_status(error_msg, error=True)
         self.ui.btnRegister.setEnabled(True)
 
+    def _registration_disabled(self):
+        """
+        TRIGGERS:
+            self._backend.signaler.srp_registration_disabled
+
+        The registration is disabled in the current provider.
+        """
+        self._username = self._password = None
+
+        error_msg = self.tr("The registration is disabled for this provider.")
+        self._set_register_status(error_msg, error=True)
+        self.ui.btnRegister.setEnabled(True)
+
     def _registration_taken(self):
         """
         TRIGGERS:
@@ -439,11 +467,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
         self.ui.grpCheckProvider.setVisible(True)
         self.ui.btnCheck.setEnabled(False)
 
-        # Disable provider widget
-        if self.ui.rbNewProvider.isChecked():
-            self.ui.lnProvider.setEnabled(False)
-        else:
-            self.ui.cbProviders.setEnabled(False)
+        self._provider_widget_set_enabled(False)
 
         self.button(QtGui.QWizard.BackButton).clearFocus()
 
@@ -510,7 +534,7 @@ class Wizard(QtGui.QWizard, SignalTracker):
             self.ui.lblHTTPS.setPixmap(self.QUESTION_ICON)
         self.ui.lblProviderSelectStatus.setText(status)
         self.ui.btnCheck.setEnabled(not passed)
-        self.ui.lnProvider.setEnabled(not passed)
+        self._provider_widget_set_enabled(not passed)
 
     def _https_connection(self, data):
         """
@@ -529,7 +553,8 @@ class Wizard(QtGui.QWizard, SignalTracker):
         else:
             self.ui.lblProviderInfo.setPixmap(self.QUESTION_ICON)
         self.ui.btnCheck.setEnabled(not passed)
-        self.ui.lnProvider.setEnabled(not passed)
+
+        self._provider_widget_set_enabled(not passed)
 
     def _download_provider_info(self, data):
         """
@@ -558,13 +583,9 @@ class Wizard(QtGui.QWizard, SignalTracker):
             status = self.tr("<font color='red'><b>Not a valid provider"
                              "</b></font>")
             self.ui.lblProviderSelectStatus.setText(status)
-        self.ui.btnCheck.setEnabled(True)
 
-        # Enable provider widget
-        if self.ui.rbNewProvider.isChecked():
-            self.ui.lnProvider.setEnabled(True)
-        else:
-            self.ui.cbProviders.setEnabled(True)
+        self.ui.btnCheck.setEnabled(True)
+        self._provider_widget_set_enabled(True)
 
     def _provider_get_details(self, details):
         """
@@ -574,6 +595,22 @@ class Wizard(QtGui.QWizard, SignalTracker):
         :type details: dict
         """
         self._provider_details = details
+        self._check_registration_allowed()
+
+    def _check_registration_allowed(self):
+        """
+        Check whether the provider allows new users registration or not.
+        If it is not allowed we display a message and prevent the user moving
+        forward on the wizard.
+        """
+        if self._show_register:  # user wants to register a new account
+            if not self._provider_details['allow_registration']:
+                logger.debug("Registration not allowed")
+                status = ("<font color='red'><b>" +
+                          self.tr("The provider has disabled registration") +
+                          "</b></font>")
+                self.ui.lblProviderSelectStatus.setText(status)
+                self.button(QtGui.QWizard.NextButton).setEnabled(False)
 
     def _download_ca_cert(self, data):
         """
@@ -654,6 +691,12 @@ class Wizard(QtGui.QWizard, SignalTracker):
                     checkbox.stateChanged.connect(
                         partial(self._service_selection_changed, service))
                     checkbox.setChecked(True)
+
+                    if service == "openvpn" and not HAS_EIP:
+                        # this is a mail-only build, we disable eip.
+                        checkbox.setEnabled(False)
+                        checkbox.setChecked(False)
+
                     self._shown_services.add(service)
             except ValueError:
                 logger.error(
@@ -675,9 +718,11 @@ class Wizard(QtGui.QWizard, SignalTracker):
             skip = self.ui.rbExistingProvider.isChecked()
             if not self._provider_checks_ok:
                 self._enable_check()
+                self.ui.btnCheck.setFocus()
                 self._skip_provider_checks(skip)
             else:
                 self._enable_check(reset=False)
+                self._check_registration_allowed()
 
         if pageId == self.SETUP_PROVIDER_PAGE:
             if not self._provider_setup_ok:
@@ -757,5 +802,6 @@ class Wizard(QtGui.QWizard, SignalTracker):
         conntrack(sig.prov_check_api_certificate, self._check_api_certificate)
 
         conntrack(sig.srp_registration_finished, self._registration_finished)
+        conntrack(sig.srp_registration_disabled, self._registration_disabled)
         conntrack(sig.srp_registration_failed, self._registration_failed)
         conntrack(sig.srp_registration_taken, self._registration_taken)

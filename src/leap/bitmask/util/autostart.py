@@ -17,14 +17,14 @@
 """
 Helpers to enable/disable bitmask's autostart.
 """
-import logging
 import os
 
 from leap.bitmask.config import flags
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init import IS_LINUX
 from leap.common.files import mkdir_p
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 DESKTOP_ENTRY = """\

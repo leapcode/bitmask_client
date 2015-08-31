@@ -17,13 +17,12 @@
 """
 Pinned Providers
 """
-import logging
-
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.provider import pinned_calyx
 from leap.bitmask.provider import pinned_demobitmask
 from leap.bitmask.provider import pinned_riseup
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class PinnedProviders(object):

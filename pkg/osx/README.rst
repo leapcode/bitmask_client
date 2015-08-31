@@ -1,31 +1,28 @@
 environment setup in osx
 ========================
-(I rm'd my README by mistake at some point. Re-do).
+
+TODO:: REALLY old notes, adapting to newest flow.
 
 basically you need this to setup your environment:
 
 # check and consolidate
 
-# install xcode and macports 
-# port -v selfupdate
-# port install python26
-# port install python_select
-# port select python python26
-# port install py26-pyqt4
-# port install py26-pip
-# port install py26-virtualenv
-# port install git-core
-# port install platypus
-# port install upx
+# install xcode and homebrew
+
+# brew install python2.7
+# brew install python-virtualenwrapper
+# brew install qt
+# brew install git
+# brew install platypus
+# brew install upx
 
 Requirements
 ============
 pyinstaller
 -----------
-Expected in ~/pyinstaller
 
-You need the development version.
-Tested with: 2.0.373
+You need the development version. do `python setup.py develop` inside your
+virtualenv.
 
 platypus (tested with latest macports)
 

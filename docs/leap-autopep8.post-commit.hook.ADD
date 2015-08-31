@@ -1,0 +1,2 @@
+ #!/bin/sh
+ cd .git/hooks && ln -s ../../docs/leap-autopep8.post-commit.hook post-commit

@@ -26,9 +26,8 @@ import os
 import sys
 
 from mock import MagicMock
-from nose.twistedtools import reactor, deferred
+from nose.twistedtools import reactor
 from twisted.python import log
-from twisted.internet import threads
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto import srpregister, srpauth
@@ -111,10 +110,10 @@ class SRPTestCase(unittest.TestCase):
             raise ImproperlyConfiguredError(
                 "Could not load test provider config")
 
-        register = srpregister.SRPRegister(provider_config=provider)
-        self.assertEquals(register._port, "443")
+        register = srpregister.SRPRegister(provider_config=provider,
+                                           register_path="users")
+        self.assertEquals(register._srp_register._port, "443")
 
-    @deferred()
     def test_wrong_cert(self):
         provider = ProviderConfig()
         loaded = provider.load(path=os.path.join(
@@ -129,13 +128,11 @@ class SRPTestCase(unittest.TestCase):
             raise ImproperlyConfiguredError(
                 "Could not load test provider config")
 
-        register = srpregister.SRPRegister(provider_config=provider)
-        d = threads.deferToThread(register.register_user, "foouser_firsttime",
-                                  "barpass")
-        d.addCallback(self.assertFalse)
-        return d
+        register = srpregister.SRPRegister(provider_config=provider,
+                                           register_path="users")
+        ok = register.register_user("foouser_firsttime", "barpass")
+        self.assertFalse(ok)
 
-    @deferred()
     def test_register_user(self):
         """
         Checks if the registration of an unused name works as expected when
@@ -143,31 +140,17 @@ class SRPTestCase(unittest.TestCase):
         when we request a user that is taken.
         """
         # pristine registration
-        d = threads.deferToThread(self.register.register_user,
-                                  "foouser_firsttime",
-                                  "barpass")
-        d.addCallback(self.assertTrue)
-        return d
+        ok = self.register.register_user("foouser_firsttime", "barpass")
+        self.assertTrue(ok)
 
-    @deferred()
     def test_second_register_user(self):
         # second registration attempt with the same user should return errors
-        d = threads.deferToThread(self.register.register_user,
-                                  "foouser_second",
-                                  "barpass")
-        d.addCallback(self.assertTrue)
+        ok = self.register.register_user("foouser_second", "barpass")
+        self.assertTrue(ok)
 
-        # FIXME currently we are catching this in an upper layer,
-        # we could bring the error validation to the SRPRegister class
-        def register_wrapper(_):
-            return threads.deferToThread(self.register.register_user,
-                                         "foouser_second",
-                                         "barpass")
-        d.addCallback(register_wrapper)
-        d.addCallback(self.assertFalse)
-        return d
+        ok = self.register.register_user("foouser_second", "barpass")
+        self.assertFalse(ok)
 
-    @deferred()
     def test_correct_http_uri(self):
         """
         Checks that registration autocorrect http uris to https ones.
@@ -187,15 +170,14 @@ class SRPTestCase(unittest.TestCase):
             raise ImproperlyConfiguredError(
                 "Could not load test provider config")
 
-        register = srpregister.SRPRegister(provider_config=provider)
+        register = srpregister.SRPRegister(provider_config=provider,
+                                           register_path="users")
 
         # ... and we check that we're correctly taking the HTTPS protocol
         # instead
-        reg_uri = register._get_registration_uri()
+        reg_uri = register._srp_register._get_registration_uri()
         self.assertEquals(reg_uri, HTTPS_URI)
-        register._get_registration_uri = MagicMock(return_value=HTTPS_URI)
-        d = threads.deferToThread(register.register_user, "test_failhttp",
-                                  "barpass")
-        d.addCallback(self.assertTrue)
-
-        return d
+        register._srp_register._get_registration_uri = MagicMock(
+            return_value=HTTPS_URI)
+        ok = register.register_user("test_failhttp", "barpass")
+        self.assertTrue(ok)

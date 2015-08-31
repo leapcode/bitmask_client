@@ -4,8 +4,11 @@
 # Add your changes here so we can properly update
 # requirements.pip during the release process.
 # (leave header when resetting)
+#
+# When bumping it during the release cycle
+# remember to update also pkg/leap_versions.txt
 #################################################
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
-leap.keymanager>=0.4.0
+leap.mail>=0.4.0  # this is not tagged/released yet

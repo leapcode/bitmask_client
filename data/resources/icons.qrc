@@ -3,6 +3,7 @@
 
     <!-- used as window icon -->
     <file>../images/mask-icon.png</file>
+    <file>../images/menubar-mask-icon.png</file>
 
     <!-- round status icons -->
     <file>../images/black/off.svg</file>

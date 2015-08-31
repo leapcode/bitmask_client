@@ -17,12 +17,10 @@
 """
 IMAP service controller.
 """
-import logging
-
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services.mail import imap
 
-
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class IMAPController(object):
@@ -43,9 +41,12 @@ class IMAPController(object):
         self._soledad = soledad
         self._keymanager = keymanager
 
-        self.imap_service = None
+        # XXX: this should live in its own controller
+        # or, better, just be managed by a composite Mail Service in
+        # leap.mail.
         self.imap_port = None
         self.imap_factory = None
+        self.incoming_mail_service = None
 
     def start_imap_service(self, userid, offline=False):
         """
@@ -58,46 +59,53 @@ class IMAPController(object):
         """
         logger.debug('Starting imap service')
 
-        self.imap_service, self.imap_port, \
-            self.imap_factory = imap.start_imap_service(
-                self._soledad,
-                self._keymanager,
-                userid=userid,
-                offline=offline)
+        self.imap_port, self.imap_factory = imap.start_imap_service(
+            self._soledad,
+            userid=userid)
+
+        def start_incoming_service(incoming_mail):
+            d = incoming_mail.startService()
+            d.addCallback(lambda started: incoming_mail)
+            return d
+
+        def assign_incoming_service(incoming_mail):
+            self.incoming_mail_service = incoming_mail
+            return incoming_mail
 
         if offline is False:
-            logger.debug("Starting loop")
-            self.imap_service.start_loop()
+            d = imap.start_incoming_mail_service(
+                self._keymanager,
+                self._soledad,
+                self.imap_factory,
+                userid)
+            d.addCallback(start_incoming_service)
+            d.addCallback(assign_incoming_service)
+            d.addErrback(lambda f: logger.error(f.printTraceback()))
 
-    def stop_imap_service(self, cv):
+    def stop_imap_service(self):
         """
         Stop IMAP service (fetcher, factory and port).
-
-        :param cv: A condition variable to which we can signal when imap
-                   indeed stops.
-        :type cv: threading.Condition
         """
-        if self.imap_service is not None:
+        if self.incoming_mail_service is not None:
             # Stop the loop call in the fetcher
-            self.imap_service.stop()
-            self.imap_service = None
 
+            # XXX BUG -- the deletion of the reference should be made
+            # after stopService() triggers its deferred (ie, cleanup has been
+            # made)
+            self.incoming_mail_service.stopService()
+            self.incoming_mail_service = None
+
+        if self.imap_port is not None:
             # Stop listening on the IMAP port
             self.imap_port.stopListening()
 
             # Stop the protocol
-            self.imap_factory.theAccount.closed = True
-            self.imap_factory.doStop(cv)
-        else:
-            # Release the condition variable so the caller doesn't have to wait
-            cv.acquire()
-            cv.notify()
-            cv.release()
+            self.imap_factory.doStop()
 
     def fetch_incoming_mail(self):
         """
         Fetch incoming mail.
         """
-        if self.imap_service:
+        if self.incoming_mail_service is not None:
             logger.debug('Client connected, fetching mail...')
-            self.imap_service.fetch()
+            self.incoming_mail_service.fetch()

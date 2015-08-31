@@ -146,6 +146,7 @@ SIGNALS = (
     "srp_password_change_badpw",
     "srp_password_change_error",
     "srp_password_change_ok",
+    "srp_registration_disabled",
     "srp_registration_failed",
     "srp_registration_finished",
     "srp_registration_taken",

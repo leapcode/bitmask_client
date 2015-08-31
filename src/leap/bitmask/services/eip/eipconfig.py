@@ -26,12 +26,13 @@ import ipaddr
 
 from leap.bitmask.config import flags
 from leap.bitmask.config.providerconfig import ProviderConfig
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import ServiceConfig
 from leap.bitmask.services.eip.eipspec import get_schema
 from leap.bitmask.util import get_path_prefix
 from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 def get_eipconfig_path(domain, relative=True):
@@ -160,12 +161,17 @@ class VPNGatewaySelector(object):
     def get_gateways_country_code(self):
         """
         Return a dict with ipaddress -> country code mapping.
+        Return None if there are no locations specified.
 
-        :rtype: dict
+        :rtype: dict or None
         """
         country_codes = {}
 
         locations = self._eipconfig.get_locations()
+
+        if not locations:
+            return
+
         gateways = self._eipconfig.get_gateways()
 
         for idx, gateway in enumerate(gateways):
@@ -301,6 +307,24 @@ class EIPConfig(ServiceConfig):
         except ValueError:
             logger.error("Invalid ip address in config: %s" % (ip_addr_str,))
             return None
+
+    def get_gateway_ports(self, index=0):
+        """
+        Return the ports of the gateway.
+
+        :param index: the gateway number to get the ports from
+        :type index: int
+
+        :rtype: list of int
+        """
+        gateways = self.get_gateways()
+        leap_assert(len(gateways) > 0, "We don't have any gateway!")
+        if index > len(gateways):
+            index = 0
+            logger.warning("Provided an unknown gateway index %s, " +
+                           "defaulting to 0")
+
+        return gateways[index]["capabilities"]["ports"]
 
     def get_client_cert_path(self,
                              providerconfig=None,

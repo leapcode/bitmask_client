@@ -43,7 +43,7 @@
     <string>Welcome to Bitmask</string>
    </property>
    <property name="subTitle">
-    <string> </string>
+    <string/>
    </property>
    <attribute name="pageId">
     <string notr="true">0</string>
@@ -59,7 +59,7 @@
     <item row="0" column="0">
      <widget class="QLabel" name="label_3">
       <property name="text">
-       <string></string>
+       <string/>
       </property>
       <property name="textFormat">
        <enum>Qt::RichText</enum>
@@ -112,7 +112,7 @@
     <string>Choose a provider</string>
    </property>
    <property name="subTitle">
-    <string> </string>
+    <string/>
    </property>
    <attribute name="pageId">
     <string notr="true">1</string>
@@ -187,14 +187,14 @@
            <height>22</height>
           </size>
          </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
           <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -218,14 +218,14 @@
            <height>22</height>
           </size>
          </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
           <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -249,14 +249,14 @@
            <height>22</height>
           </size>
          </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
           <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -363,6 +363,12 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnCheck">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
             <string>Check</string>
            </property>
@@ -380,7 +386,7 @@
     <string>About this provider</string>
    </property>
    <property name="subTitle">
-    <string> </string>
+    <string/>
    </property>
    <attribute name="pageId">
     <string notr="true">2</string>
@@ -522,7 +528,7 @@
     <string>Provider setup</string>
    </property>
    <property name="subTitle">
-    <string> </string>
+    <string/>
    </property>
    <attribute name="pageId">
     <string notr="true">3</string>
@@ -590,14 +596,14 @@
            <height>22</height>
           </size>
          </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
           <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -621,14 +627,14 @@
            <height>22</height>
           </size>
          </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
           <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -673,14 +679,14 @@
            <height>22</height>
           </size>
          </property>
-         <property name="scaledContents">
-          <bool>true</bool>
-         </property>
          <property name="text">
           <string/>
          </property>
          <property name="pixmap">
           <pixmap resource="../../../../../data/resources/icons.qrc">:/images/black/22/question.png</pixmap>
+         </property>
+         <property name="scaledContents">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -720,7 +726,7 @@
     <string>Register new user</string>
    </property>
    <property name="subTitle">
-    <string> </string>
+    <string/>
    </property>
    <attribute name="pageId">
     <string notr="true">4</string>
@@ -845,7 +851,7 @@
     <string>Service selection</string>
    </property>
    <property name="subTitle">
-    <string> </string>
+    <string/>
    </property>
    <attribute name="pageId">
     <string notr="true">5</string>

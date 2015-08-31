@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# loggerwindow.py
+# logwindow.py
 # Copyright (C) 2013 LEAP
 #
 # This program is free software: you can redistribute it and/or modify
@@ -19,18 +19,18 @@
 History log window
 """
 import cgi
-import logging
 
 from PySide import QtCore, QtGui
 
+import logbook
+
 from ui_loggerwindow import Ui_LoggerWindow
 
+from leap.bitmask.logs.utils import get_logger, LOG_CONTROLLER
 from leap.bitmask.util.constants import PASTEBIN_API_DEV_KEY
-from leap.bitmask.logs.leap_log_handler import LeapLogHandler
 from leap.bitmask.util import pastebin
-from leap.common.check import leap_assert, leap_assert_type
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class LoggerWindow(QtGui.QDialog):
@@ -40,16 +40,11 @@ class LoggerWindow(QtGui.QDialog):
     _paste_ok = QtCore.Signal(object)
     _paste_error = QtCore.Signal(object)
 
-    def __init__(self, parent, handler):
+    def __init__(self, parent):
         """
-        Initialize the widget with the custom handler.
-
-        :param handler: Custom handler that supports history and signal.
-        :type handler: LeapLogHandler.
+        Initialize the widget.
         """
         QtGui.QDialog.__init__(self, parent)
-        leap_assert(handler, "We need a handler for the logger window")
-        leap_assert_type(handler, LeapLogHandler)
 
         # Load UI
         self.ui = Ui_LoggerWindow()
@@ -72,36 +67,27 @@ class LoggerWindow(QtGui.QDialog):
         self._current_filter = ""
         self._current_history = ""
 
-        # Load logging history and connect logger with the widget
-        self._logging_handler = handler
-        self._connect_to_handler()
-        self._load_history()
+        self._set_logs_to_display()
 
-    def _connect_to_handler(self):
-        """
-        This method connects the loggerwindow with the handler through a
-        signal communicate the logger events.
-        """
-        self._logging_handler.new_log.connect(self._add_log_line)
+        LOG_CONTROLLER.new_log.connect(self._add_log_line)
+        self._load_history()
 
     def _add_log_line(self, log):
         """
         Adds a line to the history, only if it's in the desired levels to show.
 
         :param log: a log record to be inserted in the widget
-        :type log: a dict with RECORD_KEY and MESSAGE_KEY.
-            the record contains the LogRecord of the logging module,
-            the message contains the formatted message for the log.
+        :type log: Logbook.LogRecord.
         """
         html_style = {
-            logging.DEBUG: "background: #CDFFFF;",
-            logging.INFO: "background: white;",
-            logging.WARNING: "background: #FFFF66;",
-            logging.ERROR: "background: red; color: white;",
-            logging.CRITICAL: "background: red; color: white; font: bold;"
+            logbook.DEBUG: "background: #CDFFFF;",
+            logbook.INFO: "background: white;",
+            logbook.WARNING: "background: #FFFF66;",
+            logbook.ERROR: "background: red; color: white;",
+            logbook.CRITICAL: "background: red; color: white; font: bold;"
         }
-        level = log[LeapLogHandler.RECORD_KEY].levelno
-        message = cgi.escape(log[LeapLogHandler.MESSAGE_KEY])
+        level = log.level
+        message = cgi.escape(log.msg)
 
         if self._logs_to_display[level]:
             open_tag = "<tr style='" + html_style[level] + "'>"
@@ -125,12 +111,10 @@ class LoggerWindow(QtGui.QDialog):
         """
         self._set_logs_to_display()
         self.ui.txtLogHistory.clear()
-        history = self._logging_handler.log_history
         current_history = []
-        for line in history:
-            self._add_log_line(line)
-            message = line[LeapLogHandler.MESSAGE_KEY]
-            current_history.append(message)
+        for record in LOG_CONTROLLER.get_logs():
+            self._add_log_line(record)
+            current_history.append(record.msg)
 
         self._current_history = "\n".join(current_history)
 
@@ -139,11 +123,11 @@ class LoggerWindow(QtGui.QDialog):
         Sets the logs_to_display dict getting the toggled options from the ui
         """
         self._logs_to_display = {
-            logging.DEBUG: self.ui.btnDebug.isChecked(),
-            logging.INFO: self.ui.btnInfo.isChecked(),
-            logging.WARNING: self.ui.btnWarning.isChecked(),
-            logging.ERROR: self.ui.btnError.isChecked(),
-            logging.CRITICAL: self.ui.btnCritical.isChecked()
+            logbook.DEBUG: self.ui.btnDebug.isChecked(),
+            logbook.INFO: self.ui.btnInfo.isChecked(),
+            logbook.WARNING: self.ui.btnWarning.isChecked(),
+            logbook.ERROR: self.ui.btnError.isChecked(),
+            logbook.CRITICAL: self.ui.btnCritical.isChecked()
         }
 
     def _filter_by(self, text):

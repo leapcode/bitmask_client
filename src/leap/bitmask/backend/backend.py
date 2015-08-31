@@ -17,17 +17,15 @@
 
 # FIXME this is missing module documentation. It would be fine to say a couple
 # of lines about the whole backend architecture.
-# TODO use txzmq bindings instead.
-
 import json
 import os
-import threading
 import time
 
 import psutil
 
-from twisted.internet import defer, reactor, threads
+from twisted.internet import defer, reactor, threads, task
 
+import txzmq
 import zmq
 try:
     from zmq.auth.thread import ThreadAuthenticator
@@ -35,12 +33,69 @@ except ImportError:
     pass
 
 from leap.bitmask.backend.api import API, PING_REQUEST
+from leap.bitmask.backend.signaler import Signaler
 from leap.bitmask.backend.utils import get_backend_certificates
 from leap.bitmask.config import flags
-from leap.bitmask.backend.signaler import Signaler
+from leap.bitmask.logs.utils import get_logger
 
-import logging
-logger = logging.getLogger(__name__)
+logger = get_logger()
+
+
+class TxZmqREPConnection(object):
+    """
+    A twisted based zmq rep connection.
+    """
+
+    def __init__(self, server_address, process_request):
+        """
+        Initialize the connection.
+
+        :param server_address: The address of the backend zmq server.
+        :type server: str
+        :param process_request: A callable used to process incoming requests.
+        :type process_request: callable(messageParts)
+        """
+        self._server_address = server_address
+        self._process_request = process_request
+        self._zmq_factory = None
+        self._zmq_connection = None
+        self._init_txzmq()
+
+    def _init_txzmq(self):
+        """
+        Configure the txzmq components and connection.
+        """
+        self._zmq_factory = txzmq.ZmqFactory()
+        self._zmq_factory.registerForShutdown()
+        self._zmq_connection = txzmq.ZmqREPConnection(self._zmq_factory)
+
+        context = self._zmq_factory.context
+        socket = self._zmq_connection.socket
+
+        def _gotMessage(messageId, messageParts):
+            self._zmq_connection.reply(messageId, "OK")
+            self._process_request(messageParts)
+
+        self._zmq_connection.gotMessage = _gotMessage
+
+        if flags.ZMQ_HAS_CURVE:
+            # Start an authenticator for this context.
+            auth = ThreadAuthenticator(context)
+            auth.start()
+            # XXX do not hardcode this here.
+            auth.allow('127.0.0.1')
+
+            # Tell authenticator to use the certificate in a directory
+            auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
+            public, secret = get_backend_certificates()
+            socket.curve_publickey = public
+            socket.curve_secretkey = secret
+            socket.curve_server = True  # must come before bind
+
+        proto, addr = self._server_address.split('://')  # tcp/ipc, ip/socket
+        socket.bind(self._server_address)
+        if proto == 'ipc':
+            os.chmod(addr, 0600)
 
 
 class Backend(object):
@@ -65,67 +120,11 @@ class Backend(object):
         Backend constructor, create needed instances.
         """
         self._signaler = Signaler()
-
         self._frontend_pid = frontend_pid
-
-        self._do_work = threading.Event()  # used to stop the worker thread.
-        self._zmq_socket = None
-
+        self._frontend_checker = None
         self._ongoing_defers = []
-        self._init_zmq()
-
-    def _init_zmq(self):
-        """
-        Configure the zmq components and connection.
-        """
-        context = zmq.Context()
-        socket = context.socket(zmq.REP)
-
-        if flags.ZMQ_HAS_CURVE:
-            # Start an authenticator for this context.
-            auth = ThreadAuthenticator(context)
-            auth.start()
-            # XXX do not hardcode this here.
-            auth.allow('127.0.0.1')
-
-            # Tell authenticator to use the certificate in a directory
-            auth.configure_curve(domain='*', location=zmq.auth.CURVE_ALLOW_ANY)
-            public, secret = get_backend_certificates()
-            socket.curve_publickey = public
-            socket.curve_secretkey = secret
-            socket.curve_server = True  # must come before bind
-
-        socket.bind(self.BIND_ADDR)
-        if not flags.ZMQ_HAS_CURVE:
-            os.chmod(self.SOCKET_FILE, 0600)
-
-        self._zmq_socket = socket
-
-    def _worker(self):
-        """
-        Receive requests and send it to process.
-
-        Note: we use a simple while since is less resource consuming than a
-        Twisted's LoopingCall.
-        """
-        pid = self._frontend_pid
-        check_wait = 0
-        while self._do_work.is_set():
-            # Wait for next request from client
-            try:
-                request = self._zmq_socket.recv(zmq.NOBLOCK)
-                self._zmq_socket.send("OK")
-                # logger.debug("Received request: '{0}'".format(request))
-                self._process_request(request)
-            except zmq.ZMQError as e:
-                if e.errno != zmq.EAGAIN:
-                    raise
-            time.sleep(0.01)
-
-            check_wait += 0.01
-            if pid is not None and check_wait > self.PING_INTERVAL:
-                check_wait = 0
-                self._check_frontend_alive()
+        self._zmq_connection = TxZmqREPConnection(
+            self.BIND_ADDR, self._process_request)
 
     def _check_frontend_alive(self):
         """
@@ -160,25 +159,27 @@ class Backend(object):
         for d in self._ongoing_defers:
             d.cancel()
 
+        logger.debug("Stopping the Twisted reactor...")
         reactor.stop()
-        logger.debug("Twisted reactor stopped.")
 
     def run(self):
         """
         Start the ZMQ server and run the loop to handle requests.
         """
         self._signaler.start()
-        self._do_work.set()
-        threads.deferToThread(self._worker)
+        self._frontend_checker = task.LoopingCall(self._check_frontend_alive)
+        self._frontend_checker.start(self.PING_INTERVAL)
+        logger.debug("Starting Twisted reactor.")
         reactor.run()
+        logger.debug("Finished Twisted reactor.")
 
     def stop(self):
         """
         Stop the server and the zmq request parse loop.
         """
-        logger.debug("STOP received.")
+        logger.debug("Stopping the backend...")
         self._signaler.stop()
-        self._do_work.clear()
+        self._frontend_checker.stop()
         threads.deferToThread(self._stop_reactor)
 
     def _process_request(self, request_json):

@@ -18,18 +18,18 @@
 """
 Preferences window
 """
-import logging
-
 from PySide import QtCore, QtGui
 
-from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
+from leap.bitmask.services import EIP_SERVICE
+from leap.bitmask._components import HAS_EIP
 
+from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.ui_preferences import Ui_Preferences
 from leap.bitmask.gui.preferences_account_page import PreferencesAccountPage
 from leap.bitmask.gui.preferences_vpn_page import PreferencesVpnPage
 from leap.bitmask.gui.preferences_email_page import PreferencesEmailPage
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 
 class PreferencesWindow(QtGui.QDialog):
@@ -121,7 +121,8 @@ class PreferencesWindow(QtGui.QDialog):
         """
         Adds the pages for the different configuration categories.
         """
-        self._account_page = PreferencesAccountPage(self, self.account, self.app)
+        self._account_page = PreferencesAccountPage(
+            self, self.account, self.app)
         self._vpn_page = PreferencesVpnPage(self, self.account, self.app)
         self._email_page = PreferencesEmailPage(self, self.account, self.app)
 
@@ -179,6 +180,7 @@ class PreferencesWindow(QtGui.QDialog):
         if account != self.account:
             return
 
-        self._vpn_item.setHidden(not EIP_SERVICE in services)
+        if HAS_EIP:
+            self._vpn_item.setHidden(EIP_SERVICE not in services)
         # self._email_item.setHidden(not MX_SERVICE in services)
         # ^^ disable email for now, there is nothing there yet.
