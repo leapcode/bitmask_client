@@ -158,7 +158,7 @@ install_dependencies() {
     # install defined 3rd party dependencies for every package
     for package in $PACKAGES; do
         cd $REPOS_ROOT/$package
-        pkg/pip_install_requirements.sh
+        pkg/pip_install_requirements.sh --use-leap-wheels
     done
 
     # symlink system's PySide inside the venv
