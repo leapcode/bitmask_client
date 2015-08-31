@@ -5,14 +5,12 @@ Maintainer: Ben Carrillo <ben@futeisha.org>
 Standards-Version: 3.9.6
 Uploaders: Micah Anderson <micah@debian.org>
 Homepage: https://leap.se
-#Vcs-Git: git://git.debian.org/python-applications-team/leap-client.git
-#Vcs-Browser: http://git.debian.org/?p=python-applications-team/leap-client.git;a=summary
 Build-Depends: debhelper (>= 8.0.0), dh-python, python (>=2.6), python-setuptools,
                pep8,
                python-sphinx (>= 1.0.7+dfsg), docutils-common, python-nose, python-mock,
                python-requests (>= 1.2.3), python-srp, python-crypto, python-keyring, python-xdg,
                python-jsonschema (>= 0.7.0), python-psutil, python-openssl,
-               python-dateutil, python-argparse, python-netifaces, pyside-tools,
+               python-dateutil, python-argparse, pyside-tools,
                xvfb, xauth
 X-Python-Version: >= 2.6
 
@@ -27,27 +25,28 @@ Depends:
   python-dateutil,
   python-daemon,
   python-argparse,
+  python-logbook,
   python-psutil,
-  python-netifaces,
   python-requests (>= 1.2.3-1),
-  python-xdg,
   python-jsonschema (>= 0.7.0),
 # temporal pinning until libsodium is in debian
   python-zmq (>= 14.4.1-1.1),
+  python-txzmq,
   python-setuptools,
+  python-zope.proxy,
   openvpn,
   python-pyside.qtcore, 
   python-pyside.qtgui,
   python-pyside.qtsvg,
   python-twisted-core,
   python-leap-common,
-  leap-mail (>= 0.3.11),
+  leap-mail (>= 0.3.99),
   soledad-client
 # Let's skip the Thunderbird Extension, which is installed by default, until we do a public
 # mail release.
 # Recommends: xul-ext-bitmask
 Suggests: policykit-1-gnome
-Enhances: openvpn
+Enhances: openvpn, gnupg
 Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
  LEAP (LEAP Encryption Access Project) develops a plan to secure everyday
  communication, breaking down into discrete services.

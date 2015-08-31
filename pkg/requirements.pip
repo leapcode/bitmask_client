@@ -9,7 +9,7 @@ argparse
 requests>=1.1.0
 srp>=1.0.2
 pyopenssl
-coloredlogs
+#coloredlogs
 
 psutil
 
@@ -27,5 +27,5 @@ txzmq
 # Remove this when u1db fixes its dependency on oauth
 oauth
 
-taskthread
+#taskthread
 logbook
