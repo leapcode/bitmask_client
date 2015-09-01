@@ -1,6 +1,5 @@
 [Desktop Entry]
 Version=1.0
-Encoding=UTF-8
 Type=Application
 Name=Bitmask
 Comment=Secure Communication
@@ -12,3 +11,4 @@ Icon=bitmask
 Categories=Network;Application;
 StartupNotify=true
 X-AppInstall-Package=bitmask
+Keywords=email;messaging;encryption;vpn;leap

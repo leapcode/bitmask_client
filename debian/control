@@ -47,11 +47,21 @@ Depends:
 # Recommends: xul-ext-bitmask
 Suggests: policykit-1-gnome
 Enhances: openvpn, gnupg
-Description: Provides the desktop client for the LEAP Encryption Access Project Platform.
- LEAP (LEAP Encryption Access Project) develops a plan to secure everyday
- communication, breaking down into discrete services.
+Description: Provides the desktop client for LEAP 
+ The LEAP project aims to secure everyday communication.
  .
- The client for the current phase gives support to the EIP Service. The
- Encrypted Internet Proxy) provides circumvention, location anonymization, and
- traffic encryption in a hassle-free, automatically self-configuring fashion,
- and has an enhanced level of security.
+ This client is necessary for users to run on their local machines for:
+ .
+ * The LEAP VPN service which provides circumvention, location anonymization,
+ and traffic encryption in a hassle-free, automatically self-configuring
+ fashion, and has an enhanced level of security.
+ .
+ * The LEAP email service which provides full end-to-end client-encrypted email,
+ quietly handling the complexities of public key encryption and allowing for
+ backward compatibility with legacy email when necessary. Email is encrypted and
+ stored so only the recipient can read it, both locally and when synchronized
+ with the server; all message relay among service providers is required to be
+ encrypted when possible; and public keys are automatically discovered and
+ validated.
+
+
