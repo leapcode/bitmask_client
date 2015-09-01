@@ -136,6 +136,7 @@ pull_leapdeps:
 
 checkout_leapdeps_develop:
 	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git checkout develop; done
+	git checkout develop
 
 checkout_leapdeps_release:
 	pkg/scripts/checkout_leap_versions.sh
