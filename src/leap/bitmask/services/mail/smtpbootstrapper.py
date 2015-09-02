@@ -87,7 +87,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
         logger.debug("Using hostname %s for SMTP" % (hostname,))
 
         client_cert_path = self._smtp_config.get_client_cert_path(
-            self._provider_config, about_to_download=True)
+            self._userid, self._provider_config, about_to_download=True)
 
         if not is_file(client_cert_path):
             # For re-download if something is wrong with the cert
@@ -101,7 +101,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
 
             download_client_cert(self._provider_config,
                                  client_cert_path,
-                                 self._session)
+                                 self._session, kind="smtp")
 
     def _start_smtp_service(self):
         """
@@ -117,7 +117,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
         host = hosts[hostname][self.IP_KEY].encode("utf-8")
         port = hosts[hostname][self.PORT_KEY]
         client_cert_path = self._smtp_config.get_client_cert_path(
-            self._provider_config, about_to_download=True)
+            self._userid, self._provider_config, about_to_download=True)
 
         from leap.mail.smtp import setup_smtp_gateway
 
