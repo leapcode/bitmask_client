@@ -17,7 +17,10 @@
 """
 Main window for Bitmask.
 """
+import os
 import time
+
+import ConfigParser
 
 from datetime import datetime
 
@@ -781,6 +784,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         if self._wizard:
             self._load_from_wizard()
         else:
+            if self._load_credentials_from_env():
+                self._login()
+                return
+
             domain = self._settings.get_provider()
             if domain is not None:
                 self._providers.select_provider_by_name(domain)
@@ -795,6 +802,35 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             if saved_user is not None and has_keyring():
                 if self._login_widget.load_user_from_keyring(saved_user):
                     self._login()
+
+    def _load_credentials_from_env(self):
+        """
+        Load username and password into the login widget from a file specified
+        in an environment variable. This is useful for test purposes.
+
+        :return: True if credentials were loaded, False otherwise
+        :rtype: bool
+        """
+        credentials = os.environ.get("BITMASK_CREDENTIALS")
+
+        if credentials is None:
+            return False
+
+        try:
+            config = ConfigParser.ConfigParser()
+            config.read(credentials)
+            username, domain = config.get('Credentials', 'username').split('@')
+            password = config.get('Credentials', 'password')
+        except Exception, e:
+            print "Error reading credentials file: {0}".format(e)
+            return False
+
+        self._providers.select_provider_by_name(domain)
+        self._login_widget.set_provider(domain)
+        self._login_widget.set_user(username)
+        self._login_widget.set_password(password)
+
+        return True
 
     def _show_hide_unsupported_services(self):
         """
