@@ -1640,14 +1640,12 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     # window handling methods
     #
 
-    def _on_raise_window_event(self, event, content):
+    def _on_raise_window_event(self, event):
         """
         Callback for the raise window event
 
         :param event: The event that triggered the callback.
         :type event: str
-        :param content: The content of the event.
-        :type content: list
         """
         if IS_WIN:
             locks.raise_window_ack()
