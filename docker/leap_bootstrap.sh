@@ -48,7 +48,7 @@ apt_install_dependencies() {
     status="installing system dependencies"
     echo "${cc_green}Status: $status...${cc_normal}"
     set -x
-    sudo apt-get install -y git python-dev python-setuptools python-virtualenv python-pip libssl-dev python-openssl libsqlite3-dev g++ openvpn pyside-tools python-pyside libffi-dev
+    sudo apt-get install -y git python-dev python-setuptools python-virtualenv python-pip libssl-dev python-openssl libsqlite3-dev g++ openvpn pyside-tools python-pyside libffi-dev libzmq-dev
     set +x
 }
 

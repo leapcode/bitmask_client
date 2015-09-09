@@ -8,6 +8,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     libffi-dev \
     libsqlite3-dev \
     libssl-dev \
+    libzmq-dev \
     openvpn \
     pyside-tools \
     python-dev \
