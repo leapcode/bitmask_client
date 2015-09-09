@@ -3,9 +3,8 @@ Bitmask
 
 *your internet encryption toolkit*
 
-.. image:: https://pypip.in/v/leap.bitmask/badge.png
-        :target: https://crate.io/packages/leap.bitmask
-.. image:: https://pypip.in/d/leap.bitmask/badge.png
+.. image:: https://badge.fury.io/py/leap.bitmask.svg
+    :target: http://badge.fury.io/py/leap.bitmask
 
 **Bitmask** is the multiplatform desktop client for the services offered by
 `the LEAP Platform`_.
