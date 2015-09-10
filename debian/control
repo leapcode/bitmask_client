@@ -31,7 +31,7 @@ Depends:
   python-jsonschema (>= 0.7.0),
 # temporal pinning until libsodium is in debian
   python-zmq (>= 14.4.1-1.1),
-  python-txzmq,
+  python-txzmq (>= 0.7.3),
   python-setuptools,
   python-zope.proxy,
   openvpn,

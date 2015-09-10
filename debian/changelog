@@ -4,6 +4,7 @@ bitmask (0.9.0~rc2) unstable; urgency=medium
   * Update debian/control Description
   * Remove deprecated Encoding key in debian/bitmask.desktop
   * Add Keywords entry to debian/bitmask.desktop
+  * Add explicit dependency on python-txzmq
 
  -- Micah Anderson <micah@debian.org>  Tue, 01 Sep 2015 14:57:24 -0400
 
