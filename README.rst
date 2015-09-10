@@ -33,3 +33,10 @@ License
 Bitmask is released under the terms of the `GNU GPL version 3`_ or later.
 
 .. _`GNU GPL version 3`: http://www.gnu.org/licenses/gpl.txt
+
+Contributing
+============
+
+We welcome contributions! see  the `Contribution guidelines
+<https://github.com/leapcode/bitmask_client/blob/develop/CONTRIBUTING.rst>`_
+
