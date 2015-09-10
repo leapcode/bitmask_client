@@ -5,6 +5,7 @@ bitmask (0.9.0~rc2) unstable; urgency=medium
   * Remove deprecated Encoding key in debian/bitmask.desktop
   * Add Keywords entry to debian/bitmask.desktop
   * Add explicit dependency on python-txzmq
+  * Cherry-pick b3e9606 for compatibility with logbook <= 0.7.0
 
  -- Micah Anderson <micah@debian.org>  Tue, 01 Sep 2015 14:57:24 -0400
 
