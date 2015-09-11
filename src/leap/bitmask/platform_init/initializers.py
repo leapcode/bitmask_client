@@ -368,6 +368,9 @@ def DarwinInitializer():
     Raise a dialog in case that the osx tuntap driver has not been found
     in the registry, asking the user for permission to install the driver
     """
+    logger.debug("Skipping darwin initialization, only-mail build")
+    return True
+
     # XXX split this function into several
 
     TUNTAP_NOTFOUND_MSG = NOTFOUND_MSG % (

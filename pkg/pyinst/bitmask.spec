@@ -33,8 +33,8 @@ exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
           name='bitmask',
-          debug=False,
-          strip=False,
+          debug=True,
+          strip=None,
           upx=True,
           console=False,
           icon='../../data/images/mask-icon.ico')
@@ -50,6 +50,6 @@ if sys.platform.startswith("darwin"):
 		     name=os.path.join(
 		      'dist', 'Bitmask.app'),
                      appname='Bitmask',
-                     version='0.9.2alpha1',
+                     version='0.9.0rc4',
 		     icon='pkg/osx/bitmask.icns',
-		     bundle_identifier='bitmask-0.9.2alpha1')
+		     bundle_identifier='bitmask-0.9.0rc4')
