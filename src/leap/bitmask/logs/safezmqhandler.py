@@ -19,7 +19,7 @@ A thread-safe zmq handler for LogBook.
 """
 import json
 import threading
-from distutils import LooseVersion
+from distutils.version import LooseVersion
 
 from logbook.queues import ZeroMQHandler
 from logbook import NOTSET
