@@ -19,11 +19,9 @@ A thread-safe zmq handler for LogBook.
 """
 import json
 import threading
-from distutils.version import LooseVersion
 
 from logbook.queues import ZeroMQHandler
 from logbook import NOTSET
-from logbook import __version__ as LOGBOOK_VERSION
 
 import zmq
 
@@ -55,12 +53,7 @@ class SafeZMQHandler(ZeroMQHandler):
         # instead of calling the ZeroMQHandler's one.
         # The best approach may be to inherit directly from `logbook.Handler`.
 
-        args = (self, uri, level, filter, bubble, context)
-
-        # Workaround for an API change: version 0.6.0 in trusty doesn't accepts
-        # the multi parameter.
-        if LooseVersion(LOGBOOK_VERSION) >= LooseVersion('0.7.0'):
-            args += (multi,)
+        args = (self, uri, level, filter, bubble, context, multi)
         ZeroMQHandler.__init__(*args)
 
         current_id = self._get_caller_id()
