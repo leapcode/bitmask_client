@@ -25,7 +25,7 @@ Depends:
   python-dateutil,
   python-daemon,
   python-argparse,
-  python-logbook,
+  python-logbook (>= 0.7.0-1),
   python-psutil,
   python-requests (>= 1.2.3-1),
   python-jsonschema (>= 0.7.0),
