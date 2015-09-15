@@ -28,4 +28,4 @@ txzmq
 oauth
 
 taskthread
-logbook
+logbook>=0.7.0
