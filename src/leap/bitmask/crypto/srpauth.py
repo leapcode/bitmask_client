@@ -552,12 +552,19 @@ class SRPAuthImpl(object):
                                     self._provider_config.
                                     get_api_version(),
                                     "logout")
+        cookies = {self.SESSION_ID_KEY: self.get_session_id()}
+        headers = {
+            self.AUTHORIZATION_KEY:
+            "Token token={0}".format(self.get_token())
+        }
         try:
-            self._session.delete(logout_url,
-                                 data=self.get_session_id(),
-                                 verify=self._provider_config.
-                                 get_ca_cert_path(),
-                                 timeout=REQUEST_TIMEOUT)
+            res = self._session.delete(
+                logout_url,
+                cookies=cookies,
+                headers=headers,
+                verify=self._provider_config.
+                get_ca_cert_path(),
+                timeout=REQUEST_TIMEOUT)
         except Exception as e:
             logger.warning("Something went wrong with the logout: %r" %
                            (e,))
@@ -568,7 +575,10 @@ class SRPAuthImpl(object):
             self.set_token(None)
             # Also reset the session
             self._session = self._fetcher.session()
-            logger.debug("Successfully logged out.")
+            if res.status_code == 204:
+                logger.debug("Successfully logged out.")
+            else:
+                logger.debug("Logout status code: %s" % res.status_code)
 
     def set_session_id(self, session_id):
         with self._session_id_lock:
