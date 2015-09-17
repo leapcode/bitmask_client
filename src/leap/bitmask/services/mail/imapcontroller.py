@@ -27,6 +27,7 @@ class IMAPController(object):
     """
     IMAP Controller.
     """
+
     def __init__(self, soledad, keymanager):
         """
         Initialize IMAP variables.
@@ -63,12 +64,11 @@ class IMAPController(object):
             self._soledad,
             userid=userid)
 
-        def start_incoming_service(incoming_mail):
-            d = incoming_mail.startService()
-            d.addCallback(lambda started: incoming_mail)
-            return d
-
-        def assign_incoming_service(incoming_mail):
+        def start_and_assign_incoming_service(incoming_mail):
+            # this returns a deferred that will be called when the looping call
+            # is stopped, we could add any shutdown/cleanup callback to that
+            # deferred, but unused by the moment.
+            incoming_mail.startService()
             self.incoming_mail_service = incoming_mail
             return incoming_mail
 
@@ -78,8 +78,7 @@ class IMAPController(object):
                 self._soledad,
                 self.imap_factory,
                 userid)
-            d.addCallback(start_incoming_service)
-            d.addCallback(assign_incoming_service)
+            d.addCallback(start_and_assign_incoming_service)
             d.addErrback(lambda f: logger.error(f.printTraceback()))
 
     def stop_imap_service(self):
