@@ -96,7 +96,8 @@ class EIPStatusWidget(QtGui.QWidget):
 
         # Action for the systray
         self._eip_disabled_action = QtGui.QAction(
-            u"{0} is {1}".format(self._service_name, self.tr("disabled")), self)
+            u"{0} is {1}".format(
+                self._service_name, self.tr("disabled")), self)
 
     def connect_backend_signals(self):
         """

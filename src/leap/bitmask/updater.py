@@ -50,6 +50,7 @@ DELAY_KEY = "updater_delay"
 
 
 class Updater(threading.Thread):
+
     def __init__(self):
         """
         Initialize the list of mirrors, paths and other TUF dependencies from
@@ -162,7 +163,8 @@ class Updater(threading.Thread):
         """
         Find the remote repo path deneding on the platform.
 
-        :return: the path to add to the remote repo url for the specific platform.
+        :return: the path to add to the remote repo url for the specific
+                 platform.
         :rtype: str
 
         :raises NotImplemented: When the system where bitmask is running is not

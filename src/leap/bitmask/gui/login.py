@@ -19,10 +19,12 @@ Login widget implementation
 
 The login sequence is the following:
     - _do_login
-    - backend.provider_setup (check_name_resolution, check_https, download_provider_info)
+    - backend.provider_setup (
+        check_name_resolution, check_https, download_provider_info)
         - on error:   _provider_setup_intermediate
         - on success: _load_provider_config
-    - backend.provider_bootstrap (download_ca_cert, check_ca_fingerprint, check_api_certificate)
+    - backend.provider_bootstrap (
+        download_ca_cert, check_ca_fingerprint, check_api_certificate)
         - on error:   _provider_setup_intermediate
         - on success: _provider_config_loaded
     - backend.user_login
