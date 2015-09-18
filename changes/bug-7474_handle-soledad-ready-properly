@@ -1,0 +1,1 @@
+- Track soledad ready state on a shared place for easy access. Enable password change window. Closes bug #7474.

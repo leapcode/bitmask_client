@@ -201,8 +201,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._login_widget.login_offline_finished.connect(
             self._maybe_run_soledad_setup_checks)
 
-        self._soledad_started = False
-
         # This is created once we have a valid provider config
         self._logged_in_offline = False
 
@@ -544,7 +542,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         # XXX: handle differently not logged in user?
         akm = AdvancedKeyManagement(self, mx_provided, logged_user,
-                                    self._backend, self._soledad_started)
+                                    self._backend, self.app.soledad_started)
         akm.show()
 
     def _show_preferences(self):
@@ -1238,7 +1236,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._backend.soledad_cancel_bootstrap()
         self._backend.soledad_close()
 
-        self._soledad_started = False
+        self.app.soledad_started = True
 
     def _on_user_logged_in(self):
         """
@@ -1414,7 +1412,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         """
         logger.debug("Done bootstrapping Soledad")
 
-        self._soledad_started = True
+        self.app.soledad_started = True
         self.soledad_ready.emit()
 
     ###################################################################

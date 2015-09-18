@@ -70,7 +70,7 @@ class PreferencesWindow(QtGui.QDialog):
 
         # only allow a single preferences window at a time.
         if PreferencesWindow._current_window is not None:
-            PreferencesWindow._current_window.close_window()
+            PreferencesWindow._current_window.close()
         PreferencesWindow._current_window = self
 
     def _add_icons(self):
