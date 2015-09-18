@@ -203,6 +203,12 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         new_password = self.ui.new_password_lineedit.text()
         logger.debug("SRP password changed successfully.")
 
+        # FIXME ---- both changes need to be made atomically!
+        # if there is some problem changing password in soledad (for instance,
+        # it checks for length), any exception raised will be lost and we will
+        # have an inconsistent state between soledad and srp passwords.
+        # We need to implement rollaback.
+
         if self.is_soledad_needed():
             self._backend.soledad_change_password(new_password=new_password)
         else:

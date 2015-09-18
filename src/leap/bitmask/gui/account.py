@@ -43,7 +43,7 @@ class Account():
         return self._settings.get_enabled_services(self.domain)
 
     def is_email_enabled(self):
-        MX_SERVICE in self.services()
+        return MX_SERVICE in self.services()
 
     def is_eip_enabled(self):
-        EIP_SERVICE in self.services()
+        return EIP_SERVICE in self.services()
