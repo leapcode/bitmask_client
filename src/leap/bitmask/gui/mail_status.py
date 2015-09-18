@@ -53,6 +53,8 @@ class MailStatusWidget(QtGui.QWidget):
         self._disabled = True
         self._started = False
 
+        self._unread_mails = 0
+
         self.ui = Ui_MailStatusWidget()
         self.ui.setupUi(self)
 
@@ -92,6 +94,8 @@ class MailStatusWidget(QtGui.QWidget):
                  callback=self._mail_handle_soledad_events)
         register(event=catalog.SOLEDAD_INVALID_AUTH_TOKEN,
                  callback=self.set_soledad_invalid_auth_token)
+        register(event=catalog.SOLEDAD_DONE_DATA_SYNC,
+                 callback=self._mail_handle_soledad_events)
 
         register(event=catalog.MAIL_UNREAD_MESSAGES,
                  callback=self._mail_handle_imap_events)
@@ -277,6 +281,14 @@ class MailStatusWidget(QtGui.QWidget):
                 ext_status = self.tr("Sync: upload complete.")
 
             ready = 2
+        elif event == catalog.SOLEDAD_DONE_DATA_SYNC:
+            if self._unread_mails > 0:
+                self._show_unread_mails()
+                return
+            else:
+                ext_status = self.tr("Sync: completed.")
+
+            ready = 2
         else:
             leap_assert(False,
                         "Don't know how to handle this state: %s"
@@ -395,20 +407,32 @@ class MailStatusWidget(QtGui.QWidget):
             # We could make this configurable to include all unread mail
             # or all unread mail in subscribed folders.
             if self._started:
-                count = content
-                if count != "0":
-                    status = self.tr("{0} Unread Emails "
-                                     "in your Inbox").format(count)
-                    if count == "1":
-                        status = self.tr("1 Unread Email in your Inbox")
+                try:
+                    self._unread_mails = int(content)
+                except:
+                    self._unread_mails = 0
 
-                    self._set_mail_status(status, ready=2)
-                else:
-                    self._set_mail_status("", ready=2)
+                self._show_unread_mails()
         elif event == catalog.IMAP_SERVICE_STARTED:
             self._imap_started = True
         if ext_status is not None:
             self._set_mail_status(ext_status, ready=1)
+
+    def _show_unread_mails(self):
+        """
+        Show the user the amount of unread emails.
+        """
+        count = self._unread_mails
+
+        if count > 0:
+            status = self.tr("{0} Unread Emails "
+                             "in your Inbox").format(count)
+            if count == 1:
+                status = self.tr("1 Unread Email in your Inbox")
+
+            self._set_mail_status(status, ready=2)
+        else:
+            self._set_mail_status("", ready=2)
 
     def about_to_start(self):
         """
