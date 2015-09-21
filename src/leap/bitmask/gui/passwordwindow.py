@@ -210,7 +210,7 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         # We need to implement rollaback.
 
         if self.is_soledad_needed():
-            self._backend.soledad_change_password(new_password=new_password)
+            self.app.backend.soledad_change_password(new_password=new_password)
         else:
             self._change_password_success()
 
