@@ -18,6 +18,9 @@
 SMTP bootstrapping
 """
 import os
+import warnings
+
+from requests.exceptions import HTTPError
 
 from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.crypto.certs import download_client_cert
@@ -99,9 +102,25 @@ class SMTPBootstrapper(AbstractBootstrapper):
                 check_and_fix_urw_only(client_cert_path)
                 return
 
-            download_client_cert(self._provider_config,
-                                 client_cert_path,
-                                 self._session, kind="smtp")
+            try:
+                download_client_cert(self._provider_config,
+                                     client_cert_path,
+                                     self._session, kind="smtp")
+            except HTTPError as exc:
+                if exc.message.startswith('403 Client Error'):
+                    logger.debug(
+                        'Auth problem downloading smtp certificate... '
+                        'It might be a provider problem, will try '
+                        'fetching from vpn pool')
+                    warnings.warn(
+                        'Compatibility hack for platform 0.7 not fully '
+                        'supporting smtp certificates. Will be deprecated in '
+                        'bitmask 0.10')
+                    download_client_cert(self._provider_config,
+                                         client_cert_path,
+                                         self._session, kind="vpn")
+                else:
+                    raise
 
     def _start_smtp_service(self):
         """
