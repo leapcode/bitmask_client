@@ -3,6 +3,26 @@
 Changelog
 ---------
 
+0.9.0rc3 September 22
++++++++++++++++++++++
+
+Features
+~~~~~~~~
+- `#4284 <https://leap.se/code/issues/4284>`_: Download specific smtp certificate from provider, instead of using the vpn one.
+- `#7414 <https://leap.se/code/issues/7414>`_: Remove taskthread dependency, replace with custom (and small) code.
+- `#7419 <https://leap.se/code/issues/7419>`_: Load credentials from environment variables and trigger login.
+
+
+Bugfixes
+~~~~~~~~
+- `#7415 <https://leap.se/code/issues/7415>`_: Fix wrong argument number on window raise event.
+- `#7448 <https://leap.se/code/issues/7448>`_: Fix hangs during logout.
+- `#7453 <https://leap.se/code/issues/7453>`_: After a complete sync show the user the amount of unread emails.
+- `#7470 <https://leap.se/code/issues/7470>`_: Fix bug with password change.
+- `#7474 <https://leap.se/code/issues/7474>`_: Track soledad ready state on a shared place for easy access. Enable password change window.
+- Authenticate properly logout calls to API.
+
+
 0.9.0rc2 August 27
 ++++++++++++++++++
 
