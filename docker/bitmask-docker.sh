@@ -81,13 +81,14 @@ help() {
     echo ">> Bitmask on docker"
     echo "Run the bitmask app in a docker container."
     echo
-    echo "Usage: $0 {init bitmask.json | update | run | help }"
+    echo "Usage: $0 {init bitmask.json | update bitmask.json | build | shell | run | help}"
+    echo        
+    echo "  ?.json : The bitmask*.json file describes the version that will be used for each repo."
     echo
     echo "    init : Clone repositories, install dependencies, and get bitmask ready to be used."
-    echo "           The bitmask.json file contains the version that will be used for each repo."
+    echo "  update : Update the repositories and install new deps (if needed)."
     echo "   build : Build the docker image for bitmask."
     echo "   shell : Run a shell inside a bitmask docker container (useful to debug)."
-    echo "  update : Update the repositories and install new deps (if needed)."
     echo "     run : Run the client (any extra parameters will be sent to the app)."
     echo "    help : Show this help"
     echo
