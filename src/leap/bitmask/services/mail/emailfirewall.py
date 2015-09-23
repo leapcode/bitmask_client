@@ -34,6 +34,11 @@ def get_email_firewall():
     """
     Return the email firewall handler for the current platform.
     """
+    # disable email firewall on a docker container so we can access from an
+    # external MUA
+    if os.environ.get("LEAP_DOCKERIZED"):
+        return None
+
     if not (IS_LINUX):
         error_msg = "Email firewall not implemented for this platform."
         raise NotImplementedError(error_msg)

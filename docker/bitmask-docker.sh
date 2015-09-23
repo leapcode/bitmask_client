@@ -14,8 +14,8 @@ run(){
         CREDS_OPTS="-e BITMASK_CREDENTIALS=/data/credentials.ini -v $BITMASK_CREDENTIALS:/data/credentials.ini"
     fi
 
+    # NOTE: to use containerized VPN from the host you need to add `--net host`
     docker run --rm -it \
-        --net host \
         --privileged \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=unix$DISPLAY \
@@ -23,6 +23,7 @@ run(){
         -v `pwd`/data/:/data/ -v `pwd`:/SHARED/ \
         -v `pwd`/data/config:/root/.config/leap \
         -p 1984:1984 -p 2013:2013 \
+        -e LEAP_DOCKERIZED=1 \
         --name bitmask \
         test/bitmask run $@
 
@@ -44,14 +45,15 @@ run(){
 shell(){
     xhost local:root
 
+    # NOTE: to use containerized VPN from the host you need to add `--net host`
     docker run --rm -it \
-        --net host \
         --privileged \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=unix$DISPLAY \
         -v `pwd`/data/:/data/ -v `pwd`:/SHARED/ \
         -v `pwd`/data/config:/root/.config/leap \
         -p 1984:1984 -p 2013:2013 \
+        -e LEAP_DOCKERIZED=1 \
         --name bitmask \
         --entrypoint=bash \
         test/bitmask
