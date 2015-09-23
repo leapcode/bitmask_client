@@ -94,8 +94,10 @@ Pull Requests
 * Fork our repo
 * Work your code in a separate branch
 * Create a pull request against ``develop``
-* Tests should pass
-* The code needs to be pep8 compliant
+* All tests should pass
+* The code needs to be pep8 compliant (run ``pep8 .`` from the top folder)
+* Remember to add an entry in the ``changes/`` folder, from where the CHANGELOG
+  for a given release is gathered.
 
 Git Commit Messages
 -------------------
@@ -113,6 +115,15 @@ http://chris.beams.io/posts/git-commit/
 
 Template for commits
 --------------------
+
+You can activate a standard template for your commits on this repo with:
+
+::
+
+    git config commit.template docs/leap-commit-template
+
+
+The template looks like this:
 
 ::
 
