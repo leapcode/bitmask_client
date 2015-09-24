@@ -112,7 +112,7 @@ def replace_stdout_stderr_with_logging(logger=None):
         log.startLogging(sys.stdout)
 
 
-class QtLogHandler(logbook.Handler,  logbook.StringFormatterHandlerMixin):
+class QtLogHandler(logbook.Handler, logbook.StringFormatterHandlerMixin):
     """
     Custom log handler which emits a log record with the message properly
     formatted using a Qt Signal.
@@ -186,6 +186,7 @@ class QtLogHandler(logbook.Handler,  logbook.StringFormatterHandlerMixin):
 
 
 class _LogController(object):
+
     def __init__(self):
         self._qt_handler = QtLogHandler(format_string=LOG_FORMAT)
         self._logbook_controller = None

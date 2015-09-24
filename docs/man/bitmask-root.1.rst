@@ -35,8 +35,8 @@ openvpn
 
 **start** [ARGS]       Starts openvpn. All args are passed to openvpn, and
                        filtered against a list of allowed args. If the next
-                       argument is `restart`, the firewall will not be teared
-                       down in the case of errors lauching openvpn.
+                       argument is `restart`, the firewall will not be torn
+                       down in the case of errors launching openvpn.
 
 **stop**               Stops openvpn.
 

@@ -27,8 +27,6 @@ import zmq
 from zmq.eventloop import ioloop
 from zmq.eventloop import zmqstream
 
-from taskthread import TimerTask
-
 from leap.bitmask.backend.api import API, STOP_REQUEST, PING_REQUEST
 from leap.bitmask.backend.settings import Settings
 from leap.bitmask.backend.utils import generate_zmq_certificates_if_needed
@@ -141,7 +139,8 @@ class BackendProxy(object):
         self._do_work = threading.Event()
         self._work_lock = threading.Lock()
         self._connection = ZmqREQConnection(self.SERVER, self._set_online)
-        self._heartbeat = TimerTask(self._ping, delay=self.PING_INTERVAL)
+        self._heartbeat = threading.Timer(self.PING_INTERVAL,
+                                          self._heartbeat_loop)
         self._ping_event = threading.Event()
         self.online = False
         self.settings = Settings()
@@ -197,16 +196,24 @@ class BackendProxy(object):
         """
         with self._work_lock:  # avoid sending after connection was closed
             self._do_work.clear()
-            self._heartbeat.stop()
+            self._heartbeat.cancel()
         self._connection.stop()
         logger.debug("BackendProxy worker stopped.")
 
-    def _ping(self):
+    def _heartbeat_loop(self):
         """
-        Heartbeat helper.
-        Sends a PING request just to know that the server is alive.
+        Sends a PING request every PING_INTERVAL just to know that the server
+        is alive.
         """
         self._send_request(PING_REQUEST)
+
+        # lets acquire the lock to prevent heartbeat timer to get cancel while
+        # we set a new one
+        with self._work_lock:
+            if self._do_work.is_set():
+                self._heartbeat = threading.Timer(self.PING_INTERVAL,
+                                                  self._heartbeat_loop)
+                self._heartbeat.start()
 
     def _api_call(self, *args, **kwargs):
         """

@@ -71,9 +71,10 @@ class PasswordWindow(QtGui.QDialog, Flashable):
             self.ui.cancel_button.setEnabled(True)
             self.flash_error(self.tr("Please log in to change your password."))
 
-        if self.is_soledad_needed() and not self._soledad_ready:
+        if self.is_soledad_needed() and not self.app.soledad_started:
             self._enable_password_widgets(False)
             self.ui.cancel_button.setEnabled(True)
+
             self.flash_message(
                 self.tr("Please wait for data storage to be ready."))
 
@@ -146,7 +147,6 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         sig.soledad_password_change_error.connect(
             self._soledad_change_password_problem)
 
-        self._soledad_ready = False
         sig.soledad_bootstrap_finished.connect(self._on_soledad_ready)
 
     def _change_password(self):
@@ -203,8 +203,14 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         new_password = self.ui.new_password_lineedit.text()
         logger.debug("SRP password changed successfully.")
 
+        # FIXME ---- both changes need to be made atomically!
+        # if there is some problem changing password in soledad (for instance,
+        # it checks for length), any exception raised will be lost and we will
+        # have an inconsistent state between soledad and srp passwords.
+        # We need to implement rollaback.
+
         if self.is_soledad_needed():
-            self._backend.soledad_change_password(new_password=new_password)
+            self.app.backend.soledad_change_password(new_password=new_password)
         else:
             self._change_password_success()
 
@@ -263,4 +269,3 @@ class PasswordWindow(QtGui.QDialog, Flashable):
             Signaler.soledad_bootstrap_finished
         """
         self._enable_password_widgets(True)
-        self._soledad_ready = True

@@ -27,5 +27,4 @@ txzmq
 # Remove this when u1db fixes its dependency on oauth
 oauth
 
-#taskthread
-logbook
+logbook>=0.7.0

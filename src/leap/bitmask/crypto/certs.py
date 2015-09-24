@@ -30,7 +30,7 @@ from leap.common import certs as leap_certs
 logger = get_logger()
 
 
-def download_client_cert(provider_config, path, session):
+def download_client_cert(provider_config, path, session, kind="vpn"):
     """
     Downloads the client certificate for each service.
 
@@ -41,32 +41,45 @@ def download_client_cert(provider_config, path, session):
     :param session: a fetcher.session instance. For the moment we only
                    support requests.sessions
     :type session: requests.sessions.Session
+    :param kind: the kind of certificate being requested. Valid values are
+                 "vpn" or "smtp".
+    :type kind: string
     """
-    # TODO we should implement the @with_srp_auth decorator
-    # again.
     srp_auth = SRPAuth(provider_config)
     session_id = srp_auth.get_session_id()
     token = srp_auth.get_token()
     cookies = None
     if session_id is not None:
         cookies = {"_session_id": session_id}
-    cert_uri = "%s/%s/cert" % (
+
+    if kind == "vpn":
+        cert_uri_template = "%s/%s/cert"
+        method = 'get'
+        params = {}
+    elif kind == 'smtp':
+        cert_uri_template = "%s/%s/smtp_cert"
+        method = 'post'
+        params = {'address': srp_auth.get_username()}
+    else:
+        raise ValueError("Incorrect value passed to kind parameter")
+
+    cert_uri = cert_uri_template % (
         provider_config.get_api_uri(),
         provider_config.get_api_version())
-    logger.debug('getting cert from uri: %s' % cert_uri)
+
+    logger.debug('getting %s cert from uri: %s' % (kind, cert_uri))
 
     headers = {}
 
     # API v2 will only support token auth, but in v1 we can send both
     if token is not None:
-        headers["Authorization"] = 'Token token="{0}"'.format(token)
+        headers["Authorization"] = 'Token token={0}'.format(token)
 
-    res = session.get(cert_uri,
-                      verify=provider_config
-                      .get_ca_cert_path(),
-                      cookies=cookies,
-                      timeout=REQUEST_TIMEOUT,
-                      headers=headers)
+    call = getattr(session, method)
+    res = call(cert_uri, verify=provider_config.get_ca_cert_path(),
+               cookies=cookies, params=params,
+               timeout=REQUEST_TIMEOUT,
+               headers=headers, data=params)
     res.raise_for_status()
     client_cert = res.content
 
@@ -74,7 +87,6 @@ def download_client_cert(provider_config, path, session):
         # XXX raise more specific exception.
         raise Exception("The downloaded certificate is not a "
                         "valid PEM file")
-
     mkdir_p(os.path.dirname(path))
 
     try:

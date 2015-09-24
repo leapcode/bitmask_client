@@ -43,6 +43,8 @@ class App(QtGui.QWidget):
         self.signaler = LeapSignaler()
         self.signaler.start()
 
+        self.soledad_started = False
+
         # periodically check if the backend is alive
         self._backend_checker = QtCore.QTimer(self)
         self._backend_checker.timeout.connect(self._check_backend_status)

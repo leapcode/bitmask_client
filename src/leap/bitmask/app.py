@@ -133,6 +133,7 @@ def log_lsb_release_info(logger):
         for line in distro_info:
             logger.info(line)
 
+
 def fix_qtplugins_path():
     # This is a small workaround for a bug in macholib, there is a slight typo
     # in the path for the qt plugins that is added to the dynamic loader path

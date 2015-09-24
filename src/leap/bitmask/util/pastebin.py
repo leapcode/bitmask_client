@@ -366,7 +366,9 @@ class PastebinAPI(object):
         Usage Example::
             from pastebin import PastebinAPI
             x = PastebinAPI()
-            details = x.user_details('453a994e0e2f1efae07f8759e59e075b', 'c57a18e6c0ae228cd4bd16fe36da381a')
+            details = x.user_details(
+                '453a994e0e2f1efae07f8759e59e075b',
+                'c57a18e6c0ae228cd4bd16fe36da381a')
             print details
             <user>
             <user_name>MonkeyPuzzle</user_name>
@@ -486,7 +488,8 @@ class PastebinAPI(object):
             <paste>
             <paste_key>DLiSspYT</paste_key>
             <paste_date>1332714730</paste_date>
-            <paste_title>Pastebin.py - Python 3.2 Pastebin.com API</paste_title>
+            <paste_title>Pastebin.py -
+              Python 3.2 Pastebin.com API</paste_title>
             <paste_size>25300</paste_size>
             <paste_expire_date>0</paste_expire_date>
             <paste_private>0</paste_private>
@@ -609,7 +612,6 @@ class PastebinAPI(object):
     def paste(self, api_dev_key, api_paste_code,
               api_user_key=None, paste_name=None, paste_format=None,
               paste_private=None, paste_expire_date=None):
-
         """Submit a code snippet to Pastebin using the new API.
 
 

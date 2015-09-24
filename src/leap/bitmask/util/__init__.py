@@ -156,6 +156,7 @@ def flags_to_dict():
 
     return values
 
+
 def here(module=None):
     if getattr(sys, 'frozen', False):
         # we are running in a |PyInstaller| bundle
@@ -163,6 +164,6 @@ def here(module=None):
     else:
         dirname = os.path.dirname
         if module:
-	    return dirname(module.__file__)
+            return dirname(module.__file__)
         else:
             return dirname(__file__)

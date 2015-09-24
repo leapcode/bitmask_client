@@ -53,19 +53,24 @@ class SMTPConfig(ServiceConfig):
         return self._safe_get_value("locations")
 
     def get_client_cert_path(self,
+                             userid,
                              providerconfig=None,
                              about_to_download=False):
         """
         Returns the path to the certificate used by smtp
+        :param userid: the user id, in user@provider form
         """
 
+        leap_assert(userid, "Need an userid")
         leap_assert(providerconfig, "We need a provider")
         leap_assert_type(providerconfig, ProviderConfig)
+
+        username = userid.split("@")[0]
 
         cert_path = os.path.join(get_path_prefix(),
                                  "leap", "providers",
                                  providerconfig.get_domain(),
-                                 "keys", "client", "smtp.pem")
+                                 "keys", "client", "smtp_%s.pem" % username)
 
         if not about_to_download:
             leap_assert(os.path.exists(cert_path),
