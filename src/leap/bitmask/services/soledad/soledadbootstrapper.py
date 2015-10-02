@@ -253,6 +253,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 logger.warning(msg)
                 continue
 
+        self._signaler.signal(self._signaler.soledad_bootstrap_failed)
         logger.exception(exc)
         raise SoledadInitError()
 
@@ -668,5 +669,6 @@ class Syncer(object):
             self._try_sync()
         else:
             logger.error("Sync failed {0} times".format(self._tries))
+            self._signaler.signal(self._signaler.soledad_bootstrap_failed)
             self._callback_deferred.errback(
                 SoledadSyncError("Too many retries"))
