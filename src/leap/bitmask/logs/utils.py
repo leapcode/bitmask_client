@@ -55,7 +55,7 @@ def get_logger(perform_rollover=False):
         level = logbook.NOTSET
 
     # This handler consumes logs not handled by the others
-    null_handler = logbook.NullHandler(bubble=False)
+    null_handler = logbook.NullHandler()
     null_handler.push_application()
 
     silencer = SelectiveSilencerFilter()
