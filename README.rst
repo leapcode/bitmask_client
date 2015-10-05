@@ -5,6 +5,9 @@ Bitmask
 
 .. image:: https://badge.fury.io/py/leap.bitmask.svg
     :target: http://badge.fury.io/py/leap.bitmask
+.. image:: https://img.shields.io/badge/IRC-leap-blue.svg
+   :target: http://webchat.freenode.net/?channels=%23leap&uio=d4
+   :alt: IRC
 
 **Bitmask** is the multiplatform desktop client for the services offered by
 `the LEAP Platform`_.
