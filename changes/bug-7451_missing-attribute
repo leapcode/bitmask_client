@@ -1,1 +1,0 @@
-- Assign the timeout 'call later' before starting the sync to prevent race conditions. Related to #7451.
