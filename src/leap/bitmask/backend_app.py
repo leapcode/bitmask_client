@@ -72,6 +72,9 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     # identification isn't working 100%
     logger = get_logger()  # noqa
 
+    if flags_dict is not None:
+        dict_to_flags(flags_dict)
+
     # The backend is the one who always creates the certificates. Either if it
     # is run separately or in a process in the same app as the frontend.
     if flags.ZMQ_HAS_CURVE:
@@ -80,9 +83,6 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     # ignore SIGINT since app.py takes care of signaling SIGTERM to us.
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal_handler)
-
-    if flags_dict is not None:
-        dict_to_flags(flags_dict)
 
     reactor.callWhenRunning(start_events_and_updater, logger)
 
