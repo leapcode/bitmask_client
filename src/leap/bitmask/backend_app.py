@@ -67,13 +67,13 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     observer = PythonLoggingObserver()
     observer.start()
 
+    if flags_dict is not None:
+        dict_to_flags(flags_dict)
+
     # NOTE: this needs to be used here, within the call since this function is
     # executed in a different process and it seems that the process/thread
     # identification isn't working 100%
     logger = get_logger()  # noqa
-
-    if flags_dict is not None:
-        dict_to_flags(flags_dict)
 
     # The backend is the one who always creates the certificates. Either if it
     # is run separately or in a process in the same app as the frontend.
