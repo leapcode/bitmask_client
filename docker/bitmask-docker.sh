@@ -14,8 +14,8 @@ run(){
         CREDS_OPTS="-e BITMASK_CREDENTIALS=/data/credentials.ini -v $BITMASK_CREDENTIALS:/data/credentials.ini"
     fi
 
+    # NOTE: to use containerized VPN from the host you need to add `--net host`
     docker run --rm -it \
-        --net host \
         --privileged \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=unix$DISPLAY \
@@ -23,6 +23,7 @@ run(){
         -v `pwd`/data/:/data/ -v `pwd`:/SHARED/ \
         -v `pwd`/data/config:/root/.config/leap \
         -p 1984:1984 -p 2013:2013 \
+        -e LEAP_DOCKERIZED=1 \
         --name bitmask \
         test/bitmask run $@
 
@@ -44,14 +45,15 @@ run(){
 shell(){
     xhost local:root
 
+    # NOTE: to use containerized VPN from the host you need to add `--net host`
     docker run --rm -it \
-        --net host \
         --privileged \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=unix$DISPLAY \
         -v `pwd`/data/:/data/ -v `pwd`:/SHARED/ \
         -v `pwd`/data/config:/root/.config/leap \
         -p 1984:1984 -p 2013:2013 \
+        -e LEAP_DOCKERIZED=1 \
         --name bitmask \
         --entrypoint=bash \
         test/bitmask
@@ -81,13 +83,14 @@ help() {
     echo ">> Bitmask on docker"
     echo "Run the bitmask app in a docker container."
     echo
-    echo "Usage: $0 {init bitmask.json | update | run | help }"
+    echo "Usage: $0 {init bitmask.json | update bitmask.json | build | shell | run | help}"
+    echo        
+    echo "  ?.json : The bitmask*.json file describes the version that will be used for each repo."
     echo
     echo "    init : Clone repositories, install dependencies, and get bitmask ready to be used."
-    echo "           The bitmask.json file contains the version that will be used for each repo."
+    echo "  update : Update the repositories and install new deps (if needed)."
     echo "   build : Build the docker image for bitmask."
     echo "   shell : Run a shell inside a bitmask docker container (useful to debug)."
-    echo "  update : Update the repositories and install new deps (if needed)."
     echo "     run : Run the client (any extra parameters will be sent to the app)."
     echo "    help : Show this help"
     echo

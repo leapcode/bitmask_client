@@ -3,6 +3,20 @@
 Changelog
 ---------
 
+0.9.0rc4 October 05
++++++++++++++++++++
+
+Features
+~~~~~~~~
+- `#7471 <https://leap.se/code/issues/7471>`_: Disable email firewall if we are running inside a docker container.
+
+Bugfixes
+~~~~~~~~
+- `#7451 <https://leap.se/code/issues/7451>`_: Assign the timeout 'call later' before starting the sync to prevent race conditions.
+- `#7503 <https://leap.se/code/issues/7503>`_: Handle soledad init fail after several retries.
+- Remove bubble argument from the logbook NullHandler
+
+
 0.9.0rc3 September 22
 +++++++++++++++++++++
 

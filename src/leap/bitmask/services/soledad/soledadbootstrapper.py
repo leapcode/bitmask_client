@@ -253,6 +253,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 logger.warning(msg)
                 continue
 
+        self._signaler.signal(self._signaler.soledad_bootstrap_failed)
         logger.exception(exc)
         raise SoledadInitError()
 
@@ -622,10 +623,10 @@ class Syncer(object):
         logger.debug("BOOTSTRAPPER: trying to sync Soledad....")
         # pass defer_decryption=False to get inline decryption
         # for debugging.
-        self._sync_deferred = self._soledad.sync(defer_decryption=True)
-        self._sync_deferred.addCallbacks(self._success, self._error)
         self._timeout_delayed_call = reactor.callLater(self.WAIT_MAX_SECONDS,
                                                        self._timeout)
+        self._sync_deferred = self._soledad.sync(defer_decryption=True)
+        self._sync_deferred.addCallbacks(self._success, self._error)
 
     def _success(self, result):
         logger.debug("Soledad has been synced!")
@@ -668,5 +669,6 @@ class Syncer(object):
             self._try_sync()
         else:
             logger.error("Sync failed {0} times".format(self._tries))
+            self._signaler.signal(self._signaler.soledad_bootstrap_failed)
             self._callback_deferred.errback(
                 SoledadSyncError("Too many retries"))
