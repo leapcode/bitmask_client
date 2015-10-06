@@ -38,7 +38,7 @@ Depends:
   python-pyside.qtcore, 
   python-pyside.qtgui,
   python-pyside.qtsvg,
-  python-twisted-core,
+  python-twisted-core (>= 14.0.2),
   python-leap-common,
   leap-mail (>= 0.3.99),
   soledad-client
