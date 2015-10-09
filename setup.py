@@ -24,6 +24,7 @@ import hashlib
 import sys
 import os
 import re
+import sys
 
 if not sys.version_info[0] == 2:
     print("[ERROR] Sorry, Python 3 is not supported (yet). "
@@ -150,7 +151,7 @@ def freeze_pkg_ver(path, version_short, version_full):
 cmdclass["freeze_debianver"] = freeze_debianver
 parsed_reqs = utils.parse_requirements()
 
-if utils.is_develop_mode():
+if utils.is_develop_mode() or IS_SUMO:
     print("")
     print ("[WARNING] Skipping leap-specific dependencies "
            "because development mode is detected.")
@@ -268,6 +269,12 @@ class cmd_build(versioneer_build):
     def run(self):
         versioneer_build.run(self)
         copy_reqs(self.build_lib)
+
+
+if sys.argv[:1] == '--sumo':
+    IS_SUMO = True
+else:
+    IS_SUMO = False
 
 
 class cmd_sdist(versioneer_sdist):
