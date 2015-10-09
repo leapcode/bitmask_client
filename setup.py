@@ -500,7 +500,7 @@ setup(
         'src',
         exclude=['ez_setup', 'setup', 'examples', 'tests']),
     namespace_packages=["leap"],
-    package_data={'': ['util/*.txt']},
+    package_data={'': ['util/*.txt', '*.pem']},
     include_package_data=True,
     # not being used? -- setuptools does not like it.
     # looks like debhelper is honoring it...
