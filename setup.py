@@ -148,6 +148,11 @@ def freeze_pkg_ver(path, version_short, version_full):
         f.write(subst_template)
 
 
+if sys.argv[:1] == '--sumo':
+    IS_SUMO = True
+else:
+    IS_SUMO = False
+
 cmdclass["freeze_debianver"] = freeze_debianver
 parsed_reqs = utils.parse_requirements()
 
@@ -270,11 +275,6 @@ class cmd_build(versioneer_build):
         versioneer_build.run(self)
         copy_reqs(self.build_lib)
 
-
-if sys.argv[:1] == '--sumo':
-    IS_SUMO = True
-else:
-    IS_SUMO = False
 
 
 class cmd_sdist(versioneer_sdist):
