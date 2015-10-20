@@ -68,103 +68,103 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="119"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="118"/>
         <source>Open keys file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="230"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="229"/>
         <source>Input/Output error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="156"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="155"/>
         <source>There was an error accessing the file.
 Import canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="166"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="165"/>
         <source>Data mismatch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="169"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="168"/>
         <source>The public and private key should have the same address and fingerprint.
 Import canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="179"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="178"/>
         <source>Missing key</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="182"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="181"/>
         <source>You need to provide the public AND private key in the same file.
 Import canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="192"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="191"/>
         <source>Address mismatch</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="195"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="194"/>
         <source>The identity for the key needs to be the same as your user address.
 Import canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="143"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="142"/>
         <source>Import Successful</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="144"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="143"/>
         <source>The key pair was imported successfully.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="202"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="201"/>
         <source>Save keys file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="218"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="217"/>
         <source>Export Successful</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="220"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="219"/>
         <source>The key pair was exported successfully.
 Please, store your private key in a safe place.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="232"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="231"/>
         <source>There was an error accessing the file.
 Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="59"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="58"/>
         <source>The provider that you are using does not support {0}.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="65"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="64"/>
         <source>To use this, you need to enable/start {0}.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="110"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="109"/>
         <source>&lt;span style=&apos;color:#0000FF;&apos;&gt;NOTE&lt;/span&gt;: </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="125"/>
+        <location filename="../src/leap/bitmask/gui/advanced_key_management.py" line="124"/>
         <source>Are you sure that you want to replace the current key pair with the imported?</source>
         <translation type="unfinished"></translation>
     </message>
@@ -193,27 +193,27 @@ Export canceled.</source>
 <context>
     <name>EIPPreferencesWindow</name>
     <message>
-        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="48"/>
+        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="47"/>
         <source>Automatic</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="157"/>
+        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="156"/>
         <source>Gateway settings for provider &apos;{0}&apos; saved.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="231"/>
+        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="230"/>
         <source>There was a problem with configuration files.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="124"/>
+        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="123"/>
         <source> (uninitialized)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="245"/>
+        <location filename="../src/leap/bitmask/gui/eip_preferenceswindow.py" line="244"/>
         <source>This is an uninitialized provider, please log in first.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -470,7 +470,7 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="164"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="148"/>
         <source>Save As</source>
         <translation type="unfinished"></translation>
     </message>
@@ -485,37 +485,37 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="195"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="179"/>
         <source>Send to Pastebin.com</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="192"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="176"/>
         <source>Sending to pastebin...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="207"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="191"/>
         <source>Your pastebin link &lt;a href=&apos;{0}&apos;&gt;{0}&lt;/a&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="212"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="196"/>
         <source>Pastebin OK</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="227"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="211"/>
         <source>Sending logs to Pastebin failed!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="233"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="217"/>
         <source>Pastebin Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/loggerwindow.py" line="232"/>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="216"/>
         <source>Maximum amount of submissions reached for today.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -543,12 +543,12 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="298"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="300"/>
         <source>Log In</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="293"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="295"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
@@ -558,77 +558,77 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="602"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="607"/>
         <source>Logout</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="326"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="328"/>
         <source>Please select a valid provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="330"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="332"/>
         <source>Please provide a valid username</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="334"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="336"/>
         <source>Please provide a valid password</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="343"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="345"/>
         <source>Logging in...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="599"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="604"/>
         <source>Logging out...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="401"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="406"/>
         <source>Waiting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="440"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="445"/>
         <source>Log in cancelled by the user.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="460"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="465"/>
         <source>Unable to login: Problem with provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="531"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="536"/>
         <source>Succeeded</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="614"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="619"/>
         <source>Something went wrong with the logout.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="689"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="697"/>
         <source>Unknown error.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="693"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="701"/>
         <source>There was a server problem with authentication.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="697"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="705"/>
         <source>Could not establish a connection.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/login.py" line="701"/>
+        <location filename="../src/leap/bitmask/gui/login.py" line="709"/>
         <source>Invalid username or password.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -651,123 +651,153 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="195"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="183"/>
         <source>There was an unexpected problem with Soledad.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="425"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="464"/>
         <source>OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="222"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="212"/>
         <source>Mail is OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="231"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="221"/>
         <source>Mail is starting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="445"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="484"/>
         <source>ON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="235"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="225"/>
         <source>Mail is ON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="238"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="228"/>
         <source>Mail is disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="433"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="472"/>
         <source>Starting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="267"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="262"/>
         <source>Soledad has started...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="269"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="265"/>
         <source>Soledad is starting, please wait...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="308"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="331"/>
         <source>Found key! Starting mail...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="313"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="339"/>
         <source>Finished generating key!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="315"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="341"/>
         <source>Starting mail...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="347"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="370"/>
         <source>SMTP failed to start, check the logs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="403"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="442"/>
         <source>About to start, please wait...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="410"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="449"/>
         <source>Disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="166"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="154"/>
         <source>{0}: OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="452"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="491"/>
         <source>You must be logged in to use {0}.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="311"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="337"/>
         <source>Generating new key, this may take a few minutes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="386"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="429"/>
         <source>{0} Unread Emails in your Inbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="390"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="433"/>
         <source>1 Unread Email in your Inbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="439"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="478"/>
         <source>Disconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="462"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="501"/>
         <source>Invalid auth token, try logging in again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="304"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="329"/>
         <source>Initial sync in progress, please wait...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="270"/>
+        <source>Sync: downloading ({0:02}%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="274"/>
+        <source>Sync: download completed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="279"/>
+        <source>Sync: uploading ({0:02}%)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="283"/>
+        <source>Sync: upload complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="291"/>
+        <source>Sync: completed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="334"/>
+        <source>Key not found...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -784,7 +814,7 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="851"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="895"/>
         <source>Help</source>
         <translation type="unfinished"></translation>
     </message>
@@ -804,33 +834,33 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="731"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="738"/>
         <source> The following components will be updated:
 %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="734"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="741"/>
         <source>Updates available</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="239"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="256"/>
         <source>Show Main Window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1491"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1562"/>
         <source>Starting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1514"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1585"/>
         <source>Not supported</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1518"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1589"/>
         <source>Disabled</source>
         <translation type="unfinished"></translation>
     </message>
@@ -845,27 +875,27 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="233"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="247"/>
         <source>Mail is OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="722"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="729"/>
         <source>The Bitmask app is ready to update, please restart the application.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="964"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1019"/>
         <source>About Bitmask - %s</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1535"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1608"/>
         <source>There was a problem with the provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1556"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1629"/>
         <source>Unable to connect: Problem with provider</source>
         <translation type="unfinished"></translation>
     </message>
@@ -885,7 +915,7 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="226"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="238"/>
         <source>File</source>
         <translation type="unfinished"></translation>
     </message>
@@ -895,137 +925,132 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="859"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="904"/>
         <source>OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1025"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1080"/>
         <source>Bitmask Help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1037"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1092"/>
         <source>The current client version is not supported by this provider.&lt;br&gt;Please update to latest version.&lt;br&gt;&lt;br&gt;You can get the latest version from &lt;a href=&apos;{0}&apos;&gt;{1}&lt;/a&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1038"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1093"/>
         <source>Update Needed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1048"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1103"/>
         <source>This provider is not compatible with the client.&lt;br&gt;&lt;br&gt;Error: API version incompatible.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1048"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1103"/>
         <source>Incompatible Provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="305"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="324"/>
         <source>Application error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="307"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="326"/>
         <source>You are trying to do an operation that requires logging in first.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="878"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="933"/>
         <source>Hello!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="879"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="934"/>
         <source>Bitmask has started in the tray.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1445"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1516"/>
         <source>The server at {0} can&apos;t be found, because the DNS lookup failed. DNS is the network service that translates a website&apos;s name to its Internet address. Either your computer is having trouble connecting to the network, or you are missing some helper files that are needed to securely use DNS while {1} is active. To install these helper files, quit this application and start it again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1447"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1518"/>
         <source>Connection Error</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1637"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1719"/>
         <source>Quitting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1638"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1720"/>
         <source>Bitmask is quitting, please wait.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="992"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1047"/>
         <source>bitmask.net/help</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1000"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1055"/>
         <source>Email quick reference</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1004"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1059"/>
         <source>For Thunderbird, you can use the Bitmask extension. Search for &quot;Bitmask&quot; in the add-on manager or download it from &lt;a href=&apos;{0}&apos;&gt;addons.mozilla.org&lt;/a&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1008"/>
-        <source>Alternately, you can manually configure your mail client to use Bitmask Email with these options:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1008"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1063"/>
         <source>IMAP: localhost, port {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1009"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1064"/>
         <source>SMTP: localhost, port {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1011"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1066"/>
         <source>Username: your full email address</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1013"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1068"/>
         <source>Password: any non-empty text</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1022"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1077"/>
         <source>&lt;p&gt;&lt;strong&gt;{0}&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;{1}&lt;/p&gt;&lt;p&gt;{2}&lt;ul&gt;&lt;li&gt;&amp;nbsp;{3}&lt;/li&gt;&lt;li&gt;&amp;nbsp;{4}&lt;/li&gt;&lt;li&gt;&amp;nbsp;{5}&lt;/li&gt;&lt;li&gt;&amp;nbsp;{6}&lt;/li&gt;&lt;/ul&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1129"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1187"/>
         <source>Stop services</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1129"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1187"/>
         <source>Do you want to stop all services?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1133"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1191"/>
         <source>In order to change the provider, the running services needs to be stopped.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1513"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1584"/>
         <source>Disabled: missing helper files</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1035,8 +1060,13 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="978"/>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1033"/>
         <source>Version: &lt;b&gt;{ver}&lt;/b&gt; ({ver_hash})&lt;br&gt;&lt;br&gt;{greet}Bitmask is the Desktop client application for the LEAP platform, supporting encrypted internet proxy.&lt;br&gt;&lt;br&gt;LEAP is a non-profit dedicated to giving all internet users access to secure communication. Our focus is on adapting encryption technology to make it easy to use and widely available.&lt;br&gt;&lt;br&gt;&lt;a href=&apos;https://leap.se&apos;&gt;More about LEAP&lt;/a&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1063"/>
+        <source>Alternatively, you can manually configure your mail client to use Bitmask Email with these options:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1091,17 +1121,17 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="78"/>
+        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="79"/>
         <source>Please wait for data storage to be ready.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="107"/>
+        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="108"/>
         <source>Changing password...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="122"/>
+        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="123"/>
         <source>Password changed successfully.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1111,12 +1141,12 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="219"/>
+        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="225"/>
         <source>There was a problem changing the password.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="231"/>
+        <location filename="../src/leap/bitmask/gui/passwordwindow.py" line="237"/>
         <source>You did not enter a correct current password.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1172,7 +1202,7 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/preferences_account_page.py" line="62"/>
+        <location filename="../src/leap/bitmask/gui/preferences_account_page.py" line="63"/>
         <source>You must be logged in to change your password.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1275,7 +1305,7 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="367"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="373"/>
         <source>Check</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1295,132 +1325,132 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="392"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="398"/>
         <source>Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="424"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="430"/>
         <source>Desc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="434"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="440"/>
         <source>&lt;b&gt;Services offered:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="444"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="450"/>
         <source>services</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="464"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="470"/>
         <source>&lt;b&gt;Enrollment policy:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="474"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="480"/>
         <source>policy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="494"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="500"/>
         <source>&lt;b&gt;URL:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="504"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="510"/>
         <source>URL</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="511"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="517"/>
         <source>&lt;b&gt;Description:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="522"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="528"/>
         <source>Provider setup</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="570"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="576"/>
         <source>Setting up provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="720"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="726"/>
         <source>Register new user</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="738"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="744"/>
         <source>&lt;b&gt;Password:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="765"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="771"/>
         <source>&lt;b&gt;Re-enter password:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="775"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="781"/>
         <source>Register</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="821"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="827"/>
         <source>Remember my username and password</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="845"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="851"/>
         <source>Service selection</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="122"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="123"/>
         <source>&amp;Next &gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="124"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="125"/>
         <source>Connect</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="301"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="316"/>
         <source>Starting registration...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="345"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="360"/>
         <source>User %s successfully registered.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="509"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="533"/>
         <source>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;Non-existent provider&lt;/b&gt;&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="527"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="551"/>
         <source>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;%s&lt;/b&gt;&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="554"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="579"/>
         <source>Unable to load provider configuration</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="560"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="585"/>
         <source>&lt;font color=&apos;red&apos;&gt;&lt;b&gt;Not a valid provider&lt;/b&gt;&lt;/font&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="661"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="704"/>
         <source>Something went wrong while trying to load service %s</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1430,7 +1460,7 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="808"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="814"/>
         <source>&lt;b&gt;Username:&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1450,22 +1480,22 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="371"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="386"/>
         <source>Something has gone wrong. Please try again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="384"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="412"/>
         <source>The requested username is taken, choose another.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="640"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="677"/>
         <source>Services by {0}</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/wizard.py" line="701"/>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="746"/>
         <source>Register a new user with {0}</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1490,28 +1520,38 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="380"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="386"/>
         <source>About this provider</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="547"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="553"/>
         <source>Bitmask is attempting to establish a secure connection with this provider for the first time.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="638"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="644"/>
         <source>Fetching provider credentials.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="645"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="651"/>
         <source>Do we trust these credentials?</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="652"/>
+        <location filename="../src/leap/bitmask/gui/ui/wizard.ui" line="658"/>
         <source>Connecting to provider.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="399"/>
+        <source>The registration is disabled for this provider.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/wizard.py" line="611"/>
+        <source>The provider has disabled registration</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1538,12 +1578,12 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="161"/>
+        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="160"/>
         <source>Problem installing files</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="162"/>
+        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="161"/>
         <source>Some of the files could not be copied.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1553,7 +1593,7 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="107"/>
+        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="106"/>
         <source>Missing helper files</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1589,17 +1629,17 @@ Export canceled.</source>
 <context>
     <name>self._eip_status</name>
     <message>
-        <location filename="../src/leap/bitmask/services/eip/conductor.py" line="200"/>
+        <location filename="../src/leap/bitmask/services/eip/conductor.py" line="199"/>
         <source>{0} is restarting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/services/eip/conductor.py" line="308"/>
+        <location filename="../src/leap/bitmask/services/eip/conductor.py" line="307"/>
         <source>{0} could not be launched because you did not authenticate properly.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/services/eip/conductor.py" line="322"/>
+        <location filename="../src/leap/bitmask/services/eip/conductor.py" line="321"/>
         <source>{0} finished in an unexpected manner!</source>
         <translation type="unfinished"></translation>
     </message>
