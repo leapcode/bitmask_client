@@ -20,6 +20,7 @@ Pinned Providers
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.provider import pinned_calyx
 from leap.bitmask.provider import pinned_demobitmask
+from leap.bitmask.provider import pinned_mailbitmask
 from leap.bitmask.provider import pinned_riseup
 
 logger = get_logger()
@@ -46,7 +47,11 @@ class PinnedProviders(object):
         pinned_riseup.DOMAIN: {
             CONFIG_KEY: pinned_riseup.PROVIDER_JSON,
             CACERT_KEY: pinned_riseup.CACERT_PEM,
-        }
+        },
+        pinned_mailbitmask.DOMAIN: {
+            CONFIG_KEY: pinned_mailbitmask.PROVIDER_JSON,
+            CACERT_KEY: pinned_mailbitmask.CACERT_PEM,
+        },
     }
 
     def __init__(self):
