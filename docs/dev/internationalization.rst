@@ -105,6 +105,11 @@ If you want to try it, just set your LANG environment variable::
     $ LANG=es_ES bitmask
 
 
+Or, sometimes you'll need::
+
+    $ LC_ALL=es LANG=es bitmask
+
+
 Translating the Documentation
 ------------------------------
 
