@@ -11,4 +11,3 @@
 #
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
-leap.mail>=0.4.0  # this is not tagged/released yet
