@@ -1,3 +1,0 @@
-- Store zmq certs in the right path. Related #7512.
-- Store logs in the right place. Related #7512.
-- Pass on standalone flag to common. Related #7512.
