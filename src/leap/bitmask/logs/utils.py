@@ -37,19 +37,18 @@ from logbook.more import ColorizedStderrHandler
 from logbook.queues import ZeroMQSubscriber
 
 
-# NOTE: make sure that the folder exists, the logger is created before saving
-# settings on the first run.
-_base = os.path.join(get_path_prefix(), "leap")
-mkdir_p(_base)
-BITMASK_LOG_FILE = os.path.join(_base, 'bitmask.log')
-
-
 def get_logger(perform_rollover=False):
     """
     Push to the app stack the needed handlers and return a Logger object.
 
     :rtype: logbook.Logger
     """
+    # NOTE: make sure that the folder exists, the logger is created before
+    # saving settings on the first run.
+    _base = os.path.join(get_path_prefix(), "leap")
+    mkdir_p(_base)
+    bitmask_log_file = os.path.join(_base, 'bitmask.log')
+
     level = logbook.WARNING
     if flags.DEBUG:
         level = logbook.NOTSET
@@ -65,7 +64,7 @@ def get_logger(perform_rollover=False):
     zmq_handler.push_application()
 
     file_handler = logbook.RotatingFileHandler(
-        BITMASK_LOG_FILE, format_string=LOG_FORMAT, bubble=True,
+        bitmask_log_file, format_string=LOG_FORMAT, bubble=True,
         filter=silencer.filter, max_size=sys.maxint)
 
     if perform_rollover:

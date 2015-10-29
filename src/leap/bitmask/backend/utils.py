@@ -36,7 +36,14 @@ from leap.common.check import leap_assert
 
 logger = get_logger()
 
-KEYS_DIR = os.path.join(get_path_prefix(), 'leap', 'zmq_certificates')
+
+def _get_keys_dir():
+    """
+    Return the path where the ZMQ certificates should be stored.
+
+    :rtype: str
+    """
+    return os.path.join(get_path_prefix(), 'leap', 'zmq_certificates')
 
 
 def _zmq_has_curve():
@@ -79,17 +86,18 @@ def generate_zmq_certificates():
     """
     leap_assert(flags.ZMQ_HAS_CURVE, "CurveZMQ not supported!")
 
+    keys_dir = _get_keys_dir()
     # Create directory for certificates, remove old content if necessary
-    if os.path.exists(KEYS_DIR):
-        shutil.rmtree(KEYS_DIR)
-    mkdir_p(KEYS_DIR)
+    if os.path.exists(keys_dir):
+        shutil.rmtree(keys_dir)
+    mkdir_p(keys_dir)
     # set permissions to: 0700 (U:rwx G:--- O:---)
-    os.chmod(KEYS_DIR, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    os.chmod(keys_dir, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 
     # create new keys in certificates dir
     # public_file, secret_file = create_certificates(...)
-    zmq.auth.create_certificates(KEYS_DIR, "frontend")
-    zmq.auth.create_certificates(KEYS_DIR, "backend")
+    zmq.auth.create_certificates(keys_dir, "frontend")
+    zmq.auth.create_certificates(keys_dir, "backend")
 
 
 def get_frontend_certificates():
@@ -98,7 +106,8 @@ def get_frontend_certificates():
     """
     leap_assert(flags.ZMQ_HAS_CURVE, "CurveZMQ not supported!")
 
-    frontend_secret_file = os.path.join(KEYS_DIR, "frontend.key_secret")
+    keys_dir = _get_keys_dir()
+    frontend_secret_file = os.path.join(keys_dir, "frontend.key_secret")
     public, secret = zmq.auth.load_certificate(frontend_secret_file)
     return public, secret
 
@@ -109,7 +118,8 @@ def get_backend_certificates(base_dir='.'):
     """
     leap_assert(flags.ZMQ_HAS_CURVE, "CurveZMQ not supported!")
 
-    backend_secret_file = os.path.join(KEYS_DIR, "backend.key_secret")
+    keys_dir = _get_keys_dir()
+    backend_secret_file = os.path.join(keys_dir, "backend.key_secret")
     public, secret = zmq.auth.load_certificate(backend_secret_file)
     return public, secret
 
@@ -120,8 +130,9 @@ def _certificates_exist():
 
     :rtype: bool
     """
-    frontend_secret_file = os.path.join(KEYS_DIR, "frontend.key_secret")
-    backend_secret_file = os.path.join(KEYS_DIR, "backend.key_secret")
+    keys_dir = _get_keys_dir()
+    frontend_secret_file = os.path.join(keys_dir, "frontend.key_secret")
+    backend_secret_file = os.path.join(keys_dir, "backend.key_secret")
     return os.path.isfile(frontend_secret_file) and \
         os.path.isfile(backend_secret_file)
 

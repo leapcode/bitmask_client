@@ -63,6 +63,8 @@ from leap.bitmask.services.mail import plumber
 from leap.bitmask.util import leap_argparse, flags_to_dict, here
 from leap.bitmask.util.requirement_checker import check_requirements
 
+from leap.common.config import flags as common_flags
+
 from leap.mail import __version__ as MAIL_VERSION
 
 import codecs
@@ -171,6 +173,8 @@ def start_app():
     flags.CA_CERT_FILE = opts.ca_cert_file
 
     flags.DEBUG = opts.debug
+
+    common_flags.STANDALONE = flags.STANDALONE
 
     logger = get_logger(perform_rollover=True)
 

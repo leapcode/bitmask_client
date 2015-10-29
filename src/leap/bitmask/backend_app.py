@@ -22,6 +22,7 @@ import signal
 
 from twisted.internet import reactor
 
+from leap.common.config import flags as common_flags
 from leap.common.events import server as event_server
 
 from leap.bitmask.backend.leapbackend import LeapBackend
@@ -67,6 +68,11 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     observer = PythonLoggingObserver()
     observer.start()
 
+    if flags_dict is not None:
+        dict_to_flags(flags_dict)
+
+    common_flags.STANDALONE = flags.STANDALONE
+
     # NOTE: this needs to be used here, within the call since this function is
     # executed in a different process and it seems that the process/thread
     # identification isn't working 100%
@@ -80,9 +86,6 @@ def run_backend(bypass_checks=False, flags_dict=None, frontend_pid=None):
     # ignore SIGINT since app.py takes care of signaling SIGTERM to us.
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal_handler)
-
-    if flags_dict is not None:
-        dict_to_flags(flags_dict)
 
     reactor.callWhenRunning(start_events_and_updater, logger)
 

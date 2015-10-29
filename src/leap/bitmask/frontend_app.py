@@ -31,10 +31,8 @@ from leap.bitmask.gui.mainwindow import MainWindow
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.util import dict_to_flags
 
-logger = get_logger()
 
-
-def signal_handler(window, pid, signum, frame):
+def signal_handler(window, pid, logger, signum, frame):
     """
     Signal handler that quits the running app cleanly.
 
@@ -42,6 +40,8 @@ def signal_handler(window, pid, signum, frame):
     :type window: MainWindow
     :param pid: process id of the main process.
     :type pid: int
+    :param logger: the logger object to use for logging
+    :type logger: logbook.Logger
     :param signum: number of the signal received (e.g. SIGINT -> 2)
     :type signum: int
     :param frame: current stack frame
@@ -70,6 +70,7 @@ def run_frontend(options, flags_dict, backend_pid=None):
     :type flags_dict: dict
     """
     dict_to_flags(flags_dict)
+    logger = get_logger()
 
     start_hidden = options["start_hidden"]
 
@@ -120,7 +121,7 @@ def run_frontend(options, flags_dict, backend_pid=None):
     window = MainWindow(start_hidden=start_hidden, backend_pid=backend_pid)
 
     my_pid = os.getpid()
-    sig_handler = partial(signal_handler, window, my_pid)
+    sig_handler = partial(signal_handler, window, my_pid, logger)
     signal.signal(signal.SIGINT, sig_handler)
     signal.signal(signal.SIGTERM, sig_handler)
 
