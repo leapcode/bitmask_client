@@ -298,14 +298,20 @@ class cmd_sdist(versioneer_sdist):
         # We need to copy the requirements to the specified path
         # so that the client has a copy to do the startup checks.
         copy_reqs(base_dir, withsrc=True)
-        with open(os.path.join(base_dir,
-                               'src', 'leap', '__init__.py'),
-                  'w') as nuke_top_init:
-            nuke_top_init.write('')
-        with open(os.path.join(base_dir,
-                               'src', 'leap', 'soledad', '__init__.py'),
-                  'w') as nuke_soledad_ns:
-            nuke_soledad_ns.write('')
+        try:
+            with open(os.path.join(base_dir,
+                                   'src', 'leap', '__init__.py'),
+                      'w') as nuke_top_init:
+                nuke_top_init.write('')
+        except Exception:
+            pass
+        try:
+            with open(os.path.join(base_dir,
+                                   'src', 'leap', 'soledad', '__init__.py'),
+                      'w') as nuke_soledad_ns:
+                nuke_soledad_ns.write('')
+        except Exception:
+            pass
 
     def make_distribution(self):
         # add our extra files to the list just before building the
@@ -359,7 +365,10 @@ class cmd_sdist(versioneer_sdist):
             for module in self.leap_sumo_packages:
                 # check, just in case...
                 if module and module != "bitmask":
-                    shutil.rmtree("src/leap/" + _fix_namespace(module))
+                    try:
+                        shutil.rmtree("src/leap/" + _fix_namespace(module))
+                    except Exception:
+                        pass
 
 
 import shutil
