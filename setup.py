@@ -57,14 +57,13 @@ setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
 
 trove_classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: X11 Applications :: Qt",
     "Intended Audience :: End Users/Desktop",
     ("License :: OSI Approved :: GNU General "
      "Public License v3 or later (GPLv3+)"),
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 2.6",
     "Programming Language :: Python :: 2.7",
     "Topic :: Security",
     'Topic :: Security :: Cryptography',
@@ -274,7 +273,6 @@ class cmd_build(versioneer_build):
     def run(self):
         versioneer_build.run(self)
         copy_reqs(self.build_lib)
-
 
 
 class cmd_sdist(versioneer_sdist):
