@@ -1,6 +1,6 @@
-bitmask (0.9.0~rc4) unstable; urgency=medium
+bitmask (0.9.0) unstable; urgency=medium
 
-  * Update to 0.9.0rc4 release.
+  * Update to 0.9.0 release.
   * Update debian/control Description
   * Remove deprecated Encoding key in debian/bitmask.desktop
   * Add Keywords entry to debian/bitmask.desktop
@@ -9,7 +9,7 @@ bitmask (0.9.0~rc4) unstable; urgency=medium
   * Add versioned dependency on python-twisted-core
   * Add Recommends on thunderbird extension
 
- -- Micah Anderson <micah@debian.org>  Tue, 06 Oct 2015 15:52:12 -0400
+ -- Ben Carrillo <ben@futeisha.org>  Thu, 29 Oct 2015 12:16:57 -0400
 
 bitmask (0.8.1) unstable; urgency=medium
 
