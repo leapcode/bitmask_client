@@ -1,20 +1,23 @@
 0.9.0 October 28
 ++++++++++++++++
 
-We are very pleased to announce Bitmask stable 0.9.0 :tada:.
+We were very pleased to announce Bitmask stable 0.9.0 :tada:.
 
-It's been 9 months since we released our latest stable version, we have been
-working a lot and trying out several release candidates in the way.
+Here is a report that details some of the work we did along the way. It's been
+9 months since we released our latest stable version. Its been a long and
+steady haul with multiple release candidates.
 
-Using the latest Bitmask you'll be able to use our encrypted email service, now
-in beta state!
+Using the latest Bitmask, Linux users will be able to use our encrypted email
+service, now in beta state! A Mac release is imminent and a windows release is
+underway.
 
-NOTE: beta means that we expect not to break but we don't promise you won't get
-any headache or lose some email, so please be careful.
+Currently we have a test provider for mail @ https://mail.bitmask.net This
+provider is already bundled with Bitmask for easy access on the wizard. Please
+help us test this and file bug reports here:
+https://leap.se/code/projects/report-issues
 
-Currently we have a test provider for mail usage hosted on
-https://mail.bitmask.net this provider is already bundled with Bitmask for easy
-access on the wizard.
+NOTE: beta means that we expect things not to break but we don't promise you
+won't get any headaches or lose some email, so please be careful.
 
 ----
 
