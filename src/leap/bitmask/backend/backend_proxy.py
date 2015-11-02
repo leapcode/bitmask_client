@@ -25,6 +25,7 @@ import threading
 
 import zmq
 from zmq.eventloop import ioloop
+from zmq.eventloop.minitornado.ioloop import PollIOLoop
 from zmq.eventloop import zmqstream
 
 from leap.bitmask.backend.api import API, STOP_REQUEST, PING_REQUEST
@@ -34,7 +35,18 @@ from leap.bitmask.backend.utils import get_backend_certificates
 from leap.bitmask.config import flags
 from leap.bitmask.logs.utils import get_logger
 
+
 logger = get_logger()
+
+
+class _ZMQIOLoop(ioloop.ZMQIOLoop):
+    """
+    Returns a global ``IOLoop`` instance, but forcing the use of the embedded
+    minitornado.
+    """
+    @staticmethod
+    def instance():
+        return PollIOLoop.instance()
 
 
 class ZmqREQConnection(threading.Thread):
@@ -67,7 +79,7 @@ class ZmqREQConnection(threading.Thread):
         socket = context.socket(zmq.REQ)
 
         # we use zmq's eventloop in order to asynchronously send requests
-        loop = ioloop.ZMQIOLoop.current()
+        loop = _ZMQIOLoop.instance()
         self._stream = zmqstream.ZMQStream(socket, loop)
 
         if flags.ZMQ_HAS_CURVE:
