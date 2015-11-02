@@ -10,6 +10,7 @@ I've added a new category `Misc` so we can track doc/style/packaging stuff.
 
 Features
 ~~~~~~~~
+- `#7542 <https://leap.se/code/issues/7542>`_: Pin mail.bitmask.net provider. Closes feature #7542.
 - `#1234 <https://leap.se/code/issues/1234>`_: Description of the new feature corresponding with issue #1234.
 - New feature without related issue number.
 
@@ -23,3 +24,8 @@ Misc
 ~~~~
 - `#1236 <https://leap.se/code/issues/1236>`_: Description of the new feature corresponding with issue #1236.
 - Some change without issue number.
+
+Known Issues
+~~~~~~~~~~~~
+
+- `#1236 <https://leap.se/code/issues/1236>`_: Description of the known issue corresponding with issue #1236.
