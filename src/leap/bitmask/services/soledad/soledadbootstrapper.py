@@ -444,7 +444,20 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if IS_MAC:
             gpgbin = os.path.abspath(
                 os.path.join(here(), "apps", "mail", "gpg"))
-        leap_check(gpgbin is not None, "Could not find gpg binary")
+        if gpgbin is None:
+            try:
+                gpgbin_options = which("gpg2")
+                # gnupg checks that the path to the binary is not a
+                # symlink, so we need to filter those and come up with
+                # just one option.
+                for opt in gpgbin_options:
+                    if not os.path.islink(opt):
+                        gpgbin = opt
+                        break
+            except IndexError as e:
+                logger.debug("Couldn't find the gpg2 binary!")
+                logger.exception(e)
+        leap_check(gpgbin is not None, "Could not find gpg2 binary")
         return gpgbin
 
     def _init_keymanager(self, address, token):

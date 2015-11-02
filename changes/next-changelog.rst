@@ -17,6 +17,7 @@ Features
 Bugfixes
 ~~~~~~~~
 - `#7562 <https://leap.se/code/issues/7562>`_: use zmq embedded minitornado, instead of system lib.
+- `#7563 <https://leap.se/code/issues/7563>`_: use gpg2 binary if gpg not found
 - `#1235 <https://leap.se/code/issues/1235>`_: Description for the fixed stuff corresponding with issue #1235.
 - Bugfix without related issue number.
 
