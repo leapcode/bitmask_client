@@ -10,6 +10,7 @@ I've added a new category `Misc` so we can track doc/style/packaging stuff.
 
 Features
 ~~~~~~~~
+- `#7563 <https://leap.se/code/issues/7563>`_: support the use of gnupg2
 - `#7542 <https://leap.se/code/issues/7542>`_: Pin mail.bitmask.net provider. Closes feature #7542.
 - `#1234 <https://leap.se/code/issues/1234>`_: Description of the new feature corresponding with issue #1234.
 - New feature without related issue number.
@@ -17,7 +18,6 @@ Features
 Bugfixes
 ~~~~~~~~
 - `#7562 <https://leap.se/code/issues/7562>`_: use zmq embedded minitornado, instead of system lib.
-- `#7563 <https://leap.se/code/issues/7563>`_: use gpg2 binary if gpg not found
 - `#1235 <https://leap.se/code/issues/1235>`_: Description for the fixed stuff corresponding with issue #1235.
 - Bugfix without related issue number.
 
