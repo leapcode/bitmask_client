@@ -8,6 +8,7 @@ bitmask (0.9.0) unstable; urgency=medium
   * Add versioned dependency on python-logbook
   * Add versioned dependency on python-twisted-core
   * Add Recommends on thunderbird extension
+  * Cherry-pick 9362e25 to avoid using system tornado in zmq.
 
  -- Ben Carrillo <ben@futeisha.org>  Thu, 29 Oct 2015 12:16:57 -0400
 
