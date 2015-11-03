@@ -444,20 +444,21 @@ class SoledadBootstrapper(AbstractBootstrapper):
         if IS_MAC:
             gpgbin = os.path.abspath(
                 os.path.join(here(), "apps", "mail", "gpg"))
+
+        # During the transition towards gpg2, we can look for /usr/bin/gpg1
+        # binary, in case it was renamed using dpkg-divert or manually.
+        # We could just pick gpg2, but we need to solve #7564 first.
         if gpgbin is None:
             try:
-                gpgbin_options = which("gpg2")
-                # gnupg checks that the path to the binary is not a
-                # symlink, so we need to filter those and come up with
-                # just one option.
+                gpgbin_options = which("gpg1")
                 for opt in gpgbin_options:
                     if not os.path.islink(opt):
                         gpgbin = opt
                         break
             except IndexError as e:
-                logger.debug("Couldn't find the gpg2 binary!")
+                logger.debug("Couldn't find the gpg1 binary!")
                 logger.exception(e)
-        leap_check(gpgbin is not None, "Could not find gpg2 binary")
+        leap_check(gpgbin is not None, "Could not find gpg1 binary")
         return gpgbin
 
     def _init_keymanager(self, address, token):
