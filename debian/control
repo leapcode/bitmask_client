@@ -41,7 +41,10 @@ Depends:
   python-twisted-core (>= 14.0.2),
   python-leap-common,
   leap-mail (>= 0.3.99),
-  soledad-client
+  soledad-client,
+# This is a workaround to broken python-srp in wily.
+# We should remove libssl-dev when #7566 is solved
+  libssl-dev
 Recommends: xul-ext-bitmask
 Suggests: policykit-1-gnome
 Enhances: openvpn, gnupg
