@@ -1,4 +1,4 @@
-0.9.1 - xxx
+0.9.2 - xxx
 +++++++++++++++++++++++++++++++
 
 Please add lines to this file, they will be moved to the CHANGELOG.rst during
@@ -10,14 +10,11 @@ I've added a new category `Misc` so we can track doc/style/packaging stuff.
 
 Features
 ~~~~~~~~
-- `#7542 <https://leap.se/code/issues/7542>`_: Pin mail.bitmask.net provider. Closes feature #7542.
 - `#1234 <https://leap.se/code/issues/1234>`_: Description of the new feature corresponding with issue #1234.
 - New feature without related issue number.
 
 Bugfixes
 ~~~~~~~~
-- `#7563 <https://leap.se/code/issues/7563>`_: try to look for /usr/bin/gpg1
-- `#7562 <https://leap.se/code/issues/7562>`_: use zmq embedded minitornado, instead of system lib.
 - `#1235 <https://leap.se/code/issues/1235>`_: Description for the fixed stuff corresponding with issue #1235.
 - Bugfix without related issue number.
 
@@ -28,5 +25,4 @@ Misc
 
 Known Issues
 ~~~~~~~~~~~~
-
 - `#1236 <https://leap.se/code/issues/1236>`_: Description of the known issue corresponding with issue #1236.
