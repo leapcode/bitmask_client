@@ -7,9 +7,9 @@ privileged helper for bitmask, the encrypted internet access toolkit.
 ------------------------------------------------------------------------
 
 :Author: LEAP Encryption Access Project https://leap.se
-:Date:   2014-06-05
+:Date:   2015-11-03
 :Copyright: GPLv3+
-:Version: 0.5.2
+:Version: 0.9.1
 :Manual section: 1
 :Manual group: General Commands Manual
 
@@ -42,7 +42,7 @@ openvpn
 
 
 firewall
----------
+--------
 
 **start** [GATEWAYS]   Starts the firewall. GATEWAYS is a list of EIP
                        gateways to allow in the firewall.
@@ -53,7 +53,7 @@ firewall
 
 
 fw-email
----------
+--------
 
 **start** UID          Starts the email firewall. UID is the user name or unix
                        id that will have access to the email.
@@ -71,4 +71,4 @@ version
 BUGS
 ====
 
-Please report any bugs to https://leap.se/code
+Please report any bugs to https://leap.se/code/projects/report-issues

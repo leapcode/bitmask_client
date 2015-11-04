@@ -6,10 +6,10 @@ bitmask
 graphical client to control LEAP, the encrypted internet access toolkit.
 ------------------------------------------------------------------------
 
-:Author: LEAP Encryption Access Project https://leap.se
-:Date:   2014-06-05
+:Author: The LEAP Encryption Access Project https://leap.se
+:Date:   2015-11-03
 :Copyright: GPLv3+
-:Version: 0.5.2
+:Version: 0.9.1
 :Manual section: 1
 :Manual group: General Commands Manual
 
@@ -108,4 +108,4 @@ GUI options
 BUGS
 ====
 
-Please report any bugs to https://leap.se/code
+Please report any bugs to https://leap.se/code/projects/report-issues
