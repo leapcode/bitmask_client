@@ -113,7 +113,7 @@ class IMAPControl(object):
         """
         Callback for IMAP failed state.
         """
-        self.imap_connection.qtsigs.connetion_aborted_signal.emit()
+        self.imap_connection.qtsigs.connection_aborted_signal.emit()
 
 
 class SMTPControl(object):
