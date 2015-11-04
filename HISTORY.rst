@@ -7,6 +7,87 @@ History
 2015
 ====
 
+0.9.1 November 03 - "the day of the calaca"
++++++++++++++++++++++++++++++++++++++++++++
+
+Features
+~~~~~~~~
+- `#7542 <https://leap.se/code/issues/7542>`_: Pin mail.bitmask.net provider. Closes feature #7542.
+
+Bugfixes
+~~~~~~~~
+- `#7563 <https://leap.se/code/issues/7563>`_: try to look for /usr/bin/gpg1
+- `#7562 <https://leap.se/code/issues/7562>`_: use zmq embedded minitornado, instead of system lib.
+
+0.9.0 October 28
+++++++++++++++++
+
+Features
+~~~~~~~~
+
+- `#4284 <https://leap.se/code/issues/4284>`_: Download specific smtp certificate from provider, instead of using the vpn one.
+- `#5526 <https://leap.se/code/issues/5526>`_: Make "check" button selected by default.
+- `#6359 <https://leap.se/code/issues/6359>`_: Adapt bitmask to the new events api on leap.common.
+- `#6360 <https://leap.se/code/issues/6360>`_: Use txzmq in backend.
+- `#6368 <https://leap.se/code/issues/6368>`_: Add support to the new async-api of keymanager.
+- `#6683 <https://leap.se/code/issues/6683>`_: Add ability to generate sumo tarball.
+- `#6713 <https://leap.se/code/issues/6713>`_: Add support for xfce-polkit agent.
+- `#6876 <https://leap.se/code/issues/6876>`_: Update api port for pinned riseup.
+- `#7139 <https://leap.se/code/issues/7139>`_: Use logbook zmq handler to centralize logging.
+- `#7140 <https://leap.se/code/issues/7140>`_: Implement a thread-safe zmq handler for logbook.
+- `#7141 <https://leap.se/code/issues/7141>`_: Add log handler to display colored logs on the terminal.
+- `#7142 <https://leap.se/code/issues/7142>`_: Add log handler to store logs on bitmask.log.
+- `#7143 <https://leap.se/code/issues/7143>`_: Adapt existing log filter/silencer to the new logbook handler.
+- `#7144 <https://leap.se/code/issues/7144>`_: Replace logging handler with logbook handler bitmask-wide.
+- `#7162 <https://leap.se/code/issues/7162>`_: Log LSB-release info if available.
+- `#7180 <https://leap.se/code/issues/7180>`_: Add log rotation for bitmask.log.
+- `#7184 <https://leap.se/code/issues/7184>`_: Forward twisted logs to logging and handle logging logs with logbook.
+- `#7250 <https://leap.se/code/issues/7250>`_: Enable '--danger' for stable versions.
+- `#7291 <https://leap.se/code/issues/7291>`_: Move the updater code from the launcher to the client.
+- `#7342 <https://leap.se/code/issues/7342>`_: Added apply_updates.py script for the pyinstaller bundle.
+- `#7353 <https://leap.se/code/issues/7353>`_: Add notifications of soledad sync progress to UI.
+- `#7356 <https://leap.se/code/issues/7356>`_: Allow to disable EIP component on build.
+- `#7414 <https://leap.se/code/issues/7414>`_: Remove taskthread dependency, replace with custom (and small) code.
+- `#7419 <https://leap.se/code/issues/7419>`_: Load credentials from environment variables and trigger login.
+- `#7471 <https://leap.se/code/issues/7471>`_: Disable email firewall if we are running inside a docker container.
+- Add support to the new async-api of soledad
+
+Bugfixes
+~~~~~~~~
+
+- `#6418 <https://leap.se/code/issues/6418>`_: Cannot change preseeded providers if checks for one fail.
+- `#6424 <https://leap.se/code/issues/6424>`_: Do not disable autostart if the quit is triggered by a system logout.
+- `#6536 <https://leap.se/code/issues/6536>`_, `#6568 <https://leap.se/code/issues/6568>`_, `#6691 <https://leap.se/code/issues/6691>`_: Refactor soledad sync to do it the twisted way.
+- `#6541 <https://leap.se/code/issues/6541>`_: Client must honor the ports specified in eip-service.json.
+- `#6594 <https://leap.se/code/issues/6594>`_: Handle disabled registration on provider.
+- `#6654 <https://leap.se/code/issues/6654>`_: Regression fix, login attempt is made against previously selected provider.
+- `#6682 <https://leap.se/code/issues/6682>`_: Handle user cancel keyring open operation, this prevents a bitmask freeze.
+- `#6894 <https://leap.se/code/issues/6894>`_: Change 'ip' command location to support Fedora/RHEL distros.
+- `#7093 <https://leap.se/code/issues/7093>`_: Fix controller attribute error.
+- `#7126 <https://leap.se/code/issues/7126>`_: Don't run the event server on the backend for the standalone bundle since the launcher takes care of that.
+- `#7149 <https://leap.se/code/issues/7149>`_: Start the events server when reactor is running.
+- `#7185 <https://leap.se/code/issues/7185>`_: Log contains exported PGP Private Key.
+- `#7222 <https://leap.se/code/issues/7222>`_: Run the zmq log subscriber in the background to avoid hitting the zmq's buffer limits.
+- `#7273 <https://leap.se/code/issues/7273>`_: Logbook subscriber stop fails if not started.
+- `#7273 <https://leap.se/code/issues/7273>`_: ZMQError: address already in use - logbook subscriber already started.
+- `#7281 <https://leap.se/code/issues/7281>`_: Support a provider not providing location for the eip gateways.
+- `#7319 <https://leap.se/code/issues/7319>`_: Raise the maxfiles limit in OSX
+- `#7343 <https://leap.se/code/issues/7343>`_: Clean up and fix the tests.
+- `#7415 <https://leap.se/code/issues/7415>`_: Fix wrong argument number on window raise event.
+- `#7448 <https://leap.se/code/issues/7448>`_: Fix hangs during logout.
+- `#7451 <https://leap.se/code/issues/7451>`_: Assign the timeout 'call later' before starting the sync to prevent race conditions.
+- `#7453 <https://leap.se/code/issues/7453>`_: After a complete sync show the user the amount of unread emails.
+- `#7470 <https://leap.se/code/issues/7470>`_: Fix bug with password change.
+- `#7474 <https://leap.se/code/issues/7474>`_: Track soledad ready state on a shared place for easy access. Enable password change window.
+- `#7503 <https://leap.se/code/issues/7503>`_: Handle soledad init fail after several retries.
+- `#7512 <https://leap.se/code/issues/7512>`_: Pass on standalone flag to common.
+- `#7512 <https://leap.se/code/issues/7512>`_: Store logs in the right place.
+- `#7512 <https://leap.se/code/issues/7512>`_: Store zmq certs in the right path.
+- Authenticate properly logout calls to API.
+- Fix soledad bootstrap sync retries.
+- Fix the bootstrap script for developers so it works on Fedora/RHEL systems where there is /usr/lib64 for python libs.
+- Remove bubble argument from the logbook NullHandler
+
 0.8.1 February 25
 +++++++++++++++++
 

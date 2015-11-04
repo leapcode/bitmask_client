@@ -3,6 +3,18 @@
 Changelog
 ---------
 
+0.9.1 November 03 - "the day of the calaca"
++++++++++++++++++++++++++++++++++++++++++++
+
+Features
+~~~~~~~~
+- `#7542 <https://leap.se/code/issues/7542>`_: Pin mail.bitmask.net provider. Closes feature #7542.
+
+Bugfixes
+~~~~~~~~
+- `#7563 <https://leap.se/code/issues/7563>`_: try to look for /usr/bin/gpg1
+- `#7562 <https://leap.se/code/issues/7562>`_: use zmq embedded minitornado, instead of system lib.
+
 0.9.0 October 28
 ++++++++++++++++
 

@@ -58,6 +58,8 @@ class MailStatusWidget(QtGui.QWidget):
         self.ui = Ui_MailStatusWidget()
         self.ui.setupUi(self)
 
+        self.ui.lblMailReadyHelp.setVisible(False)
+
         # set systray tooltip status
         self._mx_status = ""
         self._service_name = get_service_display_name(MX_SERVICE)
@@ -102,6 +104,8 @@ class MailStatusWidget(QtGui.QWidget):
         register(event=catalog.IMAP_SERVICE_STARTED,
                  callback=self._mail_handle_imap_events)
         register(event=catalog.SMTP_SERVICE_STARTED,
+                 callback=self._mail_handle_imap_events)
+        register(event=catalog.IMAP_CLIENT_LOGIN,
                  callback=self._mail_handle_imap_events)
 
         self._soledad_event.connect(
@@ -415,6 +419,10 @@ class MailStatusWidget(QtGui.QWidget):
                 self._show_unread_mails()
         elif event == catalog.IMAP_SERVICE_STARTED:
             self._imap_started = True
+        elif event == catalog.IMAP_CLIENT_LOGIN:
+            # If a MUA has logged in then we don't need to show this.
+            self._hide_mail_ready_help()
+
         if ext_status is not None:
             self._set_mail_status(ext_status, ready=1)
 
@@ -482,6 +490,15 @@ class MailStatusWidget(QtGui.QWidget):
         Display the correct UI for the connected state.
         """
         self._set_mail_status(self.tr("ON"), 2)
+
+        # this help message will hide when the MUA connects
+        self.ui.lblMailReadyHelp.setVisible(True)
+
+    def _hide_mail_ready_help(self):
+        """
+        Hide the mail help message on the UI.
+        """
+        self.ui.lblMailReadyHelp.setVisible(False)
 
     def mail_state_disabled(self):
         """
