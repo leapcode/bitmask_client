@@ -10,6 +10,7 @@ I've added a new category `Misc` so we can track doc/style/packaging stuff.
 
 Features
 ~~~~~~~~
+- `#7552 <https://leap.se/code/issues/7552>`_: Improve UI message and add some margin above the msg box.
 - `#1234 <https://leap.se/code/issues/1234>`_: Description of the new feature corresponding with issue #1234.
 - New feature without related issue number.
 
