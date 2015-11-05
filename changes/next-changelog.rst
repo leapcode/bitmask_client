@@ -17,6 +17,7 @@ Features
 Bugfixes
 ~~~~~~~~
 - `#7568 <https://leap.se/code/issues/7568>`_: Fix typo on signal name.
+- `#7583 <https://leap.se/code/issues/7583>`_: Fix set_soledad_auth_token event callback signature.
 - `#1235 <https://leap.se/code/issues/1235>`_: Description for the fixed stuff corresponding with issue #1235.
 - Bugfix without related issue number.
 

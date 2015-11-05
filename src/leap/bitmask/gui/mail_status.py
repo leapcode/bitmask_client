@@ -186,7 +186,7 @@ class MailStatusWidget(QtGui.QWidget):
         msg = self.tr("There was an unexpected problem with Soledad.")
         self._set_mail_status(msg, ready=-1)
 
-    def set_soledad_invalid_auth_token(self, event, content):
+    def set_soledad_invalid_auth_token(self, event, content=None):
         """
         This method is called when the auth token is invalid
 
