@@ -8,6 +8,9 @@ Bitmask
 .. image:: https://img.shields.io/badge/IRC-leap-blue.svg
    :target: http://webchat.freenode.net/?channels=%23leap&uio=d4
    :alt: IRC
+.. image:: https://img.shields.io/badge/IRC-bitmask_(es)-blue.svg
+   :target: http://webchat.freenode.net/?channels=%23bitmask-es&uio=d4
+   :alt: IRC-es
 
 **Bitmask** is the multiplatform desktop client for the services offered by
 `the LEAP Platform`_.
@@ -36,6 +39,13 @@ License
 Bitmask is released under the terms of the `GNU GPL version 3`_ or later.
 
 .. _`GNU GPL version 3`: http://www.gnu.org/licenses/gpl.txt
+
+Bugs
+====
+
+Please report any bugs `in our bug tracker`_.
+
+.. _`in our bug tracker`: https://leap.se/code/projects/report-issues 
 
 Contributing
 ============
