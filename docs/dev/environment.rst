@@ -34,7 +34,7 @@ Bitmask depends on these base libraries:
 
 Debian
 ^^^^^^
-In debian-based systems, you can get everything you need:
+In Debian-based systems, you can get everything you need:
 
 .. include:: quickstart.rst
    :start-after: begin-debian-deps
@@ -82,7 +82,7 @@ Avoid compiling PySide inside a virtualenv
 
 If you attempt to install PySide inside a virtualenv as part of the rest of the dependencies using pip, basically it will take ages to compile.
 
-As a workaround, you can run the following script after creating your virtualenv. It will symlink to your global PySide installation (*this is the recommended way if you are running a debian-based system*)::
+As a workaround, you can run the following script after creating your virtualenv. It will symlink to your global PySide installation (*this is the recommended way if you are running a Debian-based system*)::
 
     (bitmask)$ pkg/postmkvenv.sh
 

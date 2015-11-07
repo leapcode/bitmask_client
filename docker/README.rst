@@ -21,10 +21,10 @@ will be used to run bitmask.
 python dependencies, running bitmask, etc.
 
 
-debian/
+Debian/
 -------
 
-``apt-bitmask.sh`` script that installs bitmask from the debian packages.
+``apt-bitmask.sh`` script that installs bitmask from the Debian packages.
 
 ``bitmask-on-docker.sh`` installs bitmask and runs it in a dummy X server,
 waits a little and takes a screenshot.
@@ -32,7 +32,7 @@ waits a little and takes a screenshot.
 ``leap-experimental.key`` is needed by ``apt-bitmask.sh`` to ``apt-key add``
 and verify apt sources.
 
-``run-docker-for-bitmask.sh`` is a helper script that runs an ubuntu/debian
+``run-docker-for-bitmask.sh`` is a helper script that runs an Ubuntu/Debian
 container ready to run the ``apt-bitmask.sh`` command, it does (among other
 stuff) X11 forwarding to display Bitmask UI on the host linux.
 

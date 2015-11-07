@@ -1622,7 +1622,7 @@ Export canceled.</source>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="440"/>
-        <source>Reinstall your debian packages, or make sure you place them by hand.</source>
+        <source>Reinstall your Debian packages, or make sure you place them by hand.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -126,7 +126,7 @@ def check_missing():
     if alert_missing and not flags.STANDALONE:
         # We refuse to install missing stuff if not running with standalone
         # flag. Right now we rely on the flag alone, but we can disable this
-        # by overwriting some constant from within the debian package.
+        # by overwriting some constant from within the Debian package.
         alert_missing = False
         complain_missing = True
 
