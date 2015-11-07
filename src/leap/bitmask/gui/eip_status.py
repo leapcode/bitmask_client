@@ -733,7 +733,7 @@ class EIPStatusWidget(QtGui.QWidget):
         self.set_eip_status(
             # XXX this should change to polkit-kde where
             # applicable.
-            self.tr("We could not find any authentication agent in your "
+            self.tr("We could not find any authentication agent on your "
                     "system.<br/>Make sure you have "
                     "<b>polkit-gnome-authentication-agent-1</b> running and "
                     "try again."),
