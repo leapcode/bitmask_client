@@ -465,7 +465,7 @@ def _get_missing_complain_dialog(stuff):
                 self.setLayout(mainLayout)
 
     msg = ComplainDialog()
-    msg.setWindowTitle(msg.tr("Missing Bitmask helpers"))
+    msg.setWindowTitle(msg.tr("Missing Bitmask helper files"))
     return msg
 
 
