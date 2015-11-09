@@ -410,7 +410,7 @@ Export canceled.</source>
     </message>
     <message>
         <location filename="../src/leap/bitmask/gui/eip_status.py" line="739"/>
-        <source>We could not find any authentication agent in your system.&lt;br/&gt;Make sure you have &lt;b&gt;polkit-gnome-authentication-agent-1&lt;/b&gt; running and try again.</source>
+        <source>We could not find any authentication agent on your system.&lt;br/&gt;Make sure you have &lt;b&gt;polkit-gnome-authentication-agent-1&lt;/b&gt; running and try again.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -490,18 +490,8 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/logwindow.py" line="176"/>
-        <source>Sending to pastebin...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/leap/bitmask/gui/logwindow.py" line="191"/>
         <source>Your pastebin link &lt;a href=&apos;{0}&apos;&gt;{0}&lt;/a&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/leap/bitmask/gui/logwindow.py" line="196"/>
-        <source>Pastebin OK</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -517,6 +507,16 @@ Export canceled.</source>
     <message>
         <location filename="../src/leap/bitmask/gui/logwindow.py" line="216"/>
         <source>Maximum amount of submissions reached for today.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="176"/>
+        <source>Sending to Pastebin.com&#xe2;&#x80;&#xa6;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/logwindow.py" line="196"/>
+        <source>Pastebin is OK</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -641,163 +641,168 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="47"/>
+        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="131"/>
         <source>You must login to use encrypted email.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="79"/>
+        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="50"/>
         <source>Email</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="183"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="187"/>
         <source>There was an unexpected problem with Soledad.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="464"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="472"/>
         <source>OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="212"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="216"/>
         <source>Mail is OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="221"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="225"/>
         <source>Mail is starting</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="484"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="492"/>
         <source>ON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="225"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="229"/>
         <source>Mail is ON</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="228"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="232"/>
         <source>Mail is disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="472"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="480"/>
         <source>Starting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="262"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="266"/>
         <source>Soledad has started...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="265"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="269"/>
         <source>Soledad is starting, please wait...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="331"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="335"/>
         <source>Found key! Starting mail...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="339"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="343"/>
         <source>Finished generating key!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="341"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="345"/>
         <source>Starting mail...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="370"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="374"/>
         <source>SMTP failed to start, check the logs.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="442"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="450"/>
         <source>About to start, please wait...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="449"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="457"/>
         <source>Disabled</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="154"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="158"/>
         <source>{0}: OFF</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="491"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="508"/>
         <source>You must be logged in to use {0}.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="337"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="341"/>
         <source>Generating new key, this may take a few minutes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="429"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="437"/>
         <source>{0} Unread Emails in your Inbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="433"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="441"/>
         <source>1 Unread Email in your Inbox</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="478"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="486"/>
         <source>Disconnecting...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="501"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="518"/>
         <source>Invalid auth token, try logging in again.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="329"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="333"/>
         <source>Initial sync in progress, please wait...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="270"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="274"/>
         <source>Sync: downloading ({0:02}%)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="274"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="278"/>
         <source>Sync: download completed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="279"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="283"/>
         <source>Sync: uploading ({0:02}%)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="283"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="287"/>
         <source>Sync: upload complete.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="291"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="295"/>
         <source>Sync: completed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mail_status.py" line="334"/>
+        <location filename="../src/leap/bitmask/gui/mail_status.py" line="338"/>
         <source>Key not found...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/gui/ui/mail_status.ui" line="93"/>
+        <source>Bitmask is ready to encrypt your email. Go to &lt;a href=&quot;https://bitmask.net/en/help/email&quot;&gt;https://bitmask.net/en/help/email&lt;/a&gt; for email application setup instructions.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1060,13 +1065,13 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1033"/>
-        <source>Version: &lt;b&gt;{ver}&lt;/b&gt; ({ver_hash})&lt;br&gt;&lt;br&gt;{greet}Bitmask is the Desktop client application for the LEAP platform, supporting encrypted internet proxy.&lt;br&gt;&lt;br&gt;LEAP is a non-profit dedicated to giving all internet users access to secure communication. Our focus is on adapting encryption technology to make it easy to use and widely available.&lt;br&gt;&lt;br&gt;&lt;a href=&apos;https://leap.se&apos;&gt;More about LEAP&lt;/a&gt;</source>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1063"/>
+        <source>Alternatively, you can manually configure your mail client to use Bitmask Email with these options:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1063"/>
-        <source>Alternatively, you can manually configure your mail client to use Bitmask Email with these options:</source>
+        <location filename="../src/leap/bitmask/gui/mainwindow.py" line="1033"/>
+        <source>Version: &lt;b&gt;{ver}&lt;/b&gt; ({ver_hash})&lt;br&gt;&lt;br&gt;{greet}Bitmask is the Desktop client application for the LEAP platform, supporting Encrypted Internet Proxy and &lt;a href=&apos;https://bitmask.net/help/email&apos;&gt; Encrypted Email&lt;/a&gt;.&lt;br&gt;&lt;br&gt;LEAP is a non-profit dedicated to giving all internet users access to secure communication. Our focus is on adapting encryption technology to make it easy to use and widely available.&lt;br&gt;&lt;br&gt;&lt;a href=&apos;https://leap.se&apos;&gt;More about LEAP&lt;/a&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1598,11 +1603,6 @@ Export canceled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="468"/>
-        <source>Missing Bitmask helpers</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="209"/>
         <source>No polkit agent running</source>
         <translation type="unfinished"></translation>
@@ -1610,6 +1610,11 @@ Export canceled.</source>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="214"/>
         <source>There is no polkit agent running and it is needed to run the Bitmask services.&lt;br&gt;Take a look at the &lt;a href=&quot;https://leap.se/en/docs/client/known-issues&quot;&gt;known issues&lt;/a&gt; page</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/leap/bitmask/platform_init/initializers.py" line="468"/>
+        <source>Missing Bitmask helper files</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1622,7 +1627,7 @@ Export canceled.</source>
     </message>
     <message>
         <location filename="../src/leap/bitmask/platform_init/initializers.py" line="440"/>
-        <source>Reinstall your Debian packages, or make sure you place them by hand.</source>
+        <source>Reinstall your debian packages, or make sure you place them by hand.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
