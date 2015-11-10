@@ -21,6 +21,7 @@ Bugfixes
 - `#7585 <https://leap.se/code/issues/7585>`_: Open email help link on browser.
 - `#7598 <https://leap.se/code/issues/7598>`_: Fix errback on InvalidAuthToken.
 - `#1235 <https://leap.se/code/issues/1235>`_: Description for the fixed stuff corresponding with issue #1235.
+- Do not translate 'https' text on QLabel.
 - Bugfix without related issue number.
 
 Misc
