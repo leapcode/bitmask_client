@@ -654,7 +654,7 @@ class Syncer(object):
             logger.error('Invalid auth token while trying to sync Soledad')
             self._signaler.signal(
                 self._signaler.soledad_invalid_auth_token)
-            self._callback_deferred.fail(failure)
+            self._callback_deferred.errback(failure)
         elif failure.check(sqlite_ProgrammingError,
                            sqlcipher_ProgrammingError):
             logger.exception("%r" % (failure.value,))
