@@ -20,6 +20,7 @@ distro(){
         ['qiana']='trusty'
         ['rebecca']='trusty'
         ['rafaela']='trusty'
+        ['sana']='jessie'
     )
 
     # if name is in the above list -> replace
@@ -116,8 +117,7 @@ else  # $REPO == 'experimental'
     apt-key add leap-experimental.key
 fi
 
-echo "deb http://deb.leap.se/$REPO $DISTRO main" > /etc/apt/sources.list.d/bitmask.list
-echo "deb-src http://deb.leap.se/$REPO $DISTRO main" >> /etc/apt/sources.list.d/bitmask.list
+echo "deb http://deb.bitmask.net/$REPO $DISTRO main" > /etc/apt/sources.list.d/bitmask.list
 
 apt-get update
 apt-get install -y bitmask
