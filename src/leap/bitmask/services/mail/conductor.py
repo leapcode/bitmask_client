@@ -34,6 +34,7 @@ class IMAPControl(object):
     """
     Methods related to IMAP control.
     """
+
     def __init__(self):
         """
         Initializes smtp variables.
@@ -118,6 +119,7 @@ class IMAPControl(object):
 
 
 class SMTPControl(object):
+
     def __init__(self):
         """
         Initializes smtp variables.
