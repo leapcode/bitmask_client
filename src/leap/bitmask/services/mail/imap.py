@@ -61,7 +61,7 @@ def start_imap_service(*args, **kwargs):
     """
     Initializes and run imap service.
 
-    :returns: twisted.internet.task.LoopingCall instance
+    :returns: LeapIMAPFactory instance
     """
     from leap.bitmask.config import flags
     logger.debug('Launching imap service')
