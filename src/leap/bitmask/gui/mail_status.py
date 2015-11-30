@@ -233,12 +233,15 @@ class MailStatusWidget(QtGui.QWidget):
         self._action_mail_status.setText(tray_status)
         self._update_systray_tooltip()
 
-    def _mail_handle_soledad_events(self, event, content):
+    def _mail_handle_soledad_events(self, event, user_data, content=""):
         """
         Callback for handling events that are emitted from Soledad
 
         :param event: The event that triggered the callback.
         :type event: str
+        :param user_id: The user_data of the soledad user. Ignored right now,
+                     since we're only contemplating single-user in soledad.
+        :type user_id: dict
         :param content: The content of the event.
         :type content: dict
         """
@@ -346,7 +349,7 @@ class MailStatusWidget(QtGui.QWidget):
             logger.warning("don't know to to handle %s" % (event,))
         self._set_mail_status(ext_status, ready=1)
 
-    def _mail_handle_smtp_events(self, event):
+    def _mail_handle_smtp_events(self, event, content=""):
         """
         Callback for the SMTP events
 
@@ -380,12 +383,14 @@ class MailStatusWidget(QtGui.QWidget):
 
     # ----- XXX deprecate (move to mail conductor)
 
-    def _mail_handle_imap_events(self, event, content):
+    def _mail_handle_imap_events(self, event, uuid, content=""):
         """
         Callback for the IMAP events
 
         :param event: The event that triggered the callback.
         :type event: str
+        :param uuid: The UUID for the user. Ignored right now.
+        :type uuid: str
         :param content: The content of the event.
         :type content: list
         """

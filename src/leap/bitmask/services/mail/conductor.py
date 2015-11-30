@@ -73,12 +73,13 @@ class IMAPControl(object):
 
         self._backend.imap_stop_service()
 
-    def _handle_imap_events(self, event, content):
+    def _handle_imap_events(self, event, userid=None, content=None):
         """
         Callback handler for the IMAP events
 
         :param event: The event that triggered the callback.
         :type event: str
+        :param userid: The user id of the logged in user. Ignored.
         :param content: The content of the event.
         :type content: list
         """
