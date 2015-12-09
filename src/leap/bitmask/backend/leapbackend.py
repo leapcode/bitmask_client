@@ -35,6 +35,7 @@ class LeapBackend(Backend):
     """
     Backend server subclass, used to implement the API methods.
     """
+
     def __init__(self, bypass_checks=False, frontend_pid=None):
         """
         Constructor for the backend.
@@ -437,6 +438,12 @@ class LeapBackend(Backend):
         Signals:
         """
         self._soledad.load_offline(username, password, uuid)
+
+    def soledad_get_service_token(self, service):
+        """
+        Attempt to get an authentication token for a given service.
+        """
+        self._soledad.get_service_token(service)
 
     def soledad_cancel_bootstrap(self):
         """

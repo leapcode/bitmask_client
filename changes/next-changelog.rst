@@ -1,4 +1,4 @@
-0.9.2 - xxx
+0.10.0 - xxx
 +++++++++++++++++++++++++++++++
 
 Please add lines to this file, they will be moved to the CHANGELOG.rst during
@@ -11,8 +11,9 @@ I've added a new category `Misc` so we can track doc/style/packaging stuff.
 Features
 ~~~~~~~~
 - `#7552 <https://leap.se/code/issues/7552>`_: Improve UI message and add some margin above the msg box.
-- `#7552 <https://leap.se/code/issues/7552>`_: Improve UI message and add some margin above the msg box.
 - `#7656 <https://leap.se/code/issues/7656>`_: Adapt to multi-user aware events.
+- `#4469 <https://leap.se/code/issues/4469>`_: Display randomly generated service token on the Help Window.
+- `#1234 <https://leap.se/code/issues/1234>`_: Description of the new feature corresponding with issue #1234.
 - New feature without related issue number.
 
 Bugfixes

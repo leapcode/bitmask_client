@@ -407,6 +407,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         sig.soledad_invalid_auth_token.connect(
             self._mail_status.set_soledad_invalid_auth_token)
 
+        self._service_tokens = {}
+        sig.soledad_got_service_token.connect(
+            self._set_service_tokens)
+
         # TODO: connect this with something
         # sig.soledad_cancelled_bootstrap.connect()
 
@@ -1033,6 +1037,13 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10], greet=greet)
         QtGui.QMessageBox.about(self, title, msg)
 
+    def _set_service_tokens(self, data):
+        """
+        Set the received service token.
+        """
+        service, token = data
+        self._service_tokens[service] = token
+
     def _help(self):
         """
         TRIGGERS:
@@ -1063,7 +1074,12 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
         manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
         manual_username = self.tr("Username: your full email address")
-        manual_password = self.tr("Password: any non-empty text")
+
+        # TODO this should be a widget that allows to be copied to the
+        # clipboard.
+        imap_token = (self._service_tokens.get('imap', None)
+                      or "??? (log in to unlock)")
+        manual_password = self.tr("Password: ") + "%s" % (imap_token, )
 
         msg = help_url + self.tr(
             "<p><strong>{0}</strong></p>"

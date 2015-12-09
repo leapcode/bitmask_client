@@ -763,6 +763,7 @@ class Soledad(object):
         self._signaler = signaler
         self._soledad_bootstrapper = SoledadBootstrapper(signaler)
         self._soledad_defer = None
+        self._service_tokens = {}
 
     def bootstrap(self, username, domain, password):
         """
@@ -786,12 +787,28 @@ class Soledad(object):
                 provider_config, username, password,
                 download_if_needed=True)
             self._soledad_defer.addCallback(self._set_proxies_cb)
+            self._soledad_defer.addCallback(self._set_service_tokens_cb)
         else:
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.soledad_bootstrap_failed)
             logger.error("Could not load provider configuration.")
 
         return self._soledad_defer
+
+    def _set_service_tokens_cb(self, result):
+
+        def register_imap_token(imap_token):
+            self._service_tokens['imap'] = imap_token
+            if self._signaler is not None:
+                self._signaler.signal(
+                    self._signaler.soledad_got_service_token,
+                    ('imap', imap_token))
+
+        sol = self._soledad_bootstrapper.soledad
+        d = sol.get_or_create_service_token('imap')
+        d.addCallback(register_imap_token)
+        d.addCallback(lambda _: result)
+        return d
 
     def _set_proxies_cb(self, _):
         """
@@ -802,6 +819,12 @@ class Soledad(object):
                                     self._soledad_bootstrapper.soledad)
         zope.proxy.setProxiedObject(self._keymanager_proxy,
                                     self._soledad_bootstrapper.keymanager)
+
+    def get_service_token(self, service):
+        """
+        Get an authentication token for a given service.
+        """
+        return self._service_tokens.get(service, '')
 
     def load_offline(self, username, password, uuid):
         """
