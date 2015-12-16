@@ -1075,11 +1075,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
         manual_username = self.tr("Username: your full email address")
 
-        # TODO this should be a widget that allows to be copied to the
-        # clipboard.
-        imap_token = (self._service_tokens.get('imap', None)
-                      or "??? (log in to unlock)")
-        manual_password = self.tr("Password: ") + "%s" % (imap_token, )
+        # FIXME on i3, this doens't allow to mouse-select.
+        # Switch to a dialog in which we can set the QLabel
+        imap_token = (self._service_tokens.get('imap', None) or
+                      "??? (log in to unlock)")
+        smtp_token = (self._service_tokens.get('smtp', None) or
+                      "??? (log in to unlock)")
+        imap_password = self.tr("IMAP Password:") + " %s" % (imap_token,)
+        smtp_password = self.tr("SMTP Password:") + " %s" % (smtp_token,)
 
         msg = help_url + self.tr(
             "<p><strong>{0}</strong></p>"
@@ -1090,9 +1093,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             "<li>&nbsp;{4}</li>"
             "<li>&nbsp;{5}</li>"
             "<li>&nbsp;{6}</li>"
+            "<li>&nbsp;{7}</li>"
             "</ul></p>").format(email_quick_reference, thunderbird_text,
                                 manual_text, manual_imap, manual_smtp,
-                                manual_username, manual_password)
+                                manual_username, imap_password, smtp_password)
         QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
     def _needs_update(self):

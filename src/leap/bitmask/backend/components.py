@@ -797,16 +797,19 @@ class Soledad(object):
 
     def _set_service_tokens_cb(self, result):
 
-        def register_imap_token(imap_token):
-            self._service_tokens['imap'] = imap_token
+        def register_service_token(token, service):
+            self._service_tokens[service] = token
             if self._signaler is not None:
                 self._signaler.signal(
                     self._signaler.soledad_got_service_token,
-                    ('imap', imap_token))
+                    (service, token))
 
         sol = self._soledad_bootstrapper.soledad
         d = sol.get_or_create_service_token('imap')
-        d.addCallback(register_imap_token)
+        d.addCallback(register_service_token, 'imap')
+        d.addCallback(
+            lambda _: sol.get_or_create_service_token('smtp'))
+        d.addCallback(register_service_token, 'smtp')
         d.addCallback(lambda _: result)
         return d
 
@@ -1035,7 +1038,8 @@ class Mail(object):
         """
         return threads.deferToThread(
             self._smtp_bootstrapper.start_smtp_service,
-            self._keymanager_proxy, full_user_id, download_if_needed)
+            self._soledad_proxy, self._keymanager_proxy, full_user_id,
+            download_if_needed)
 
     def start_imap_service(self, full_user_id, offline=False):
         """
