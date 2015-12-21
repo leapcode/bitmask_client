@@ -984,7 +984,8 @@ class Keymanager(object):
         List all the keys stored in the local DB.
         """
         def signal_details(public_key):
-            details = (public_key.key_id, public_key.fingerprint)
+            # XXX: We should avoid the key-id
+            details = (public_key.fingerprint[-16:], public_key.fingerprint)
             self._signaler.signal(self._signaler.keymanager_key_details,
                                   details)
 
