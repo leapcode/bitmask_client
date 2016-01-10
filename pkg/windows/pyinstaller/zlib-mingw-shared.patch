@@ -1,0 +1,10 @@
+diff -Naur ../zlib-1.2.8-org/win32/Makefile.gcc ./win32/Makefile.gcc
+--- ../zlib-1.2.8-org/win32/Makefile.gcc	2008-10-23 17:44:36.000000000 +0000
++++ ./win32/Makefile.gcc	2015-12-06 19:20:00.449471787 +0000
+@@ -37,6 +37,6 @@
+ # Set to 1 if shared object needs to be installed
+ #
+-SHARED_MODE=0
++SHARED_MODE=1
+
+ #LOC = -DASMV

@@ -1,0 +1,2 @@
+!define PKGNAME bitmask
+!include .\bitmask.nsh

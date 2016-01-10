@@ -3,17 +3,32 @@ import sys
 
 block_cipher = None
 
-
-a = Analysis([os.path.join('bitmask.py')],
+a = Analysis(['bitmask.py'],
              hiddenimports=[
-	     	'zope.interface', 'zope.proxy',
-		'PySide.QtCore', 'PySide.QtGui', 'PySide.QtWebKit'],
+               'zope.interface', 'zope.proxy',
+               'PySide.QtCore', 'PySide.QtGui',
+               'pysqlcipher', 'service_identity',
+               'leap.common', 'leap.bitmask'
+               ],
+             binaries=None,
+             datas=None,
              hookspath=None,
              runtime_hooks=None,
              excludes=None,
+             win_no_prefer_redirects=None,
+             win_private_assemblies=None,
              cipher=block_cipher)
-pyz = PYZ(a.pure,
+pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+
+# Binary files you need to include in the form of:
+# (<destination>, <source>, '<TYPE>')
+
+# Data files you want to include, in the form of:
+# (<destination>, <source>, '<TYPE>')
+data = [
+  ('qt.conf', 'qt.conf', 'DATA')
+]
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
@@ -21,12 +36,13 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=True,
-          console=False )
+          console=False,
+          icon='../../data/images/mask-icon.ico')
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
                a.datas,
-               strip=False,
+               strip=None,
                upx=True,
                name='bitmask')
 if sys.platform.startswith("darwin"):
