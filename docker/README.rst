@@ -6,11 +6,9 @@ Here we have several tools that leverages docker to ease Bitmask testing.
 ``bitmask-docker.sh`` is a helper script to ``build`` and ``run`` the bitmask app,
 here is an example usage::
 
-    $ ./bitmask-docker build  # build docker image
-    $ ./bitmask-docker init ro bitmask-nightly.json  # initialize all the stuff needed
-    # ....
-    $ ./bitmask-docker.sh run
-
+    $ ./bitmask-docker.sh build                      # build docker image
+    $ ./bitmask-docker.sh init bitmask-nightly.json  # initialize (takes time)
+    $ ./bitmask-docker.sh run                        # run bitmask in docker
 
 ``bitmask-nightly.json`` is the version specifier for each bitmask component that
 will be used to run bitmask.
