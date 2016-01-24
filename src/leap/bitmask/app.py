@@ -223,9 +223,9 @@ def start_app():
     backend_pid = None
     if not backend_running:
         frontend_pid = os.getpid()
-        backend = lambda: run_backend(opts.danger, flags_dict, frontend_pid)
-        backend_process = multiprocessing.Process(target=backend,
-                                                  name='Backend')
+        backend_process = multiprocessing.Process(target=run_backend,
+                                                  name='Backend',
+                                                  args=(opts.danger, flags_dict, frontend_pid))
         # we don't set the 'daemon mode' since we need to start child processes
         # in the backend
         # backend_process.daemon = True
