@@ -23,6 +23,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import time
 
 from itertools import chain, repeat
 
@@ -41,6 +42,7 @@ from leap.bitmask.config.providerconfig import ProviderConfig
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services.eip import get_vpn_launcher
 from leap.bitmask.services.eip import linuxvpnlauncher
+from leap.bitmask.services.eip import darwinvpnlauncher
 from leap.bitmask.services.eip.eipconfig import EIPConfig
 from leap.bitmask.services.eip.udstelnet import UDSTelnet
 from leap.bitmask.util import first, force_eval
@@ -145,7 +147,7 @@ class VPN(object):
     demand.
     """
     TERMINATE_MAXTRIES = 10
-    TERMINATE_WAIT = 1  # secs
+    TERMINATE_WAIT = 2  # secs
 
     OPENVPN_VERB = "openvpn_verb"
 
@@ -173,7 +175,7 @@ class VPN(object):
         :param kwargs: kwargs to be passed to the VPNProcess
         :type kwargs: dict
         """
-        logger.debug('VPN: start')
+        logger.debug('VPN: start ---------------------------------------------------')
         self._user_stopped = False
         self._stop_pollers()
         kwargs['openvpn_verb'] = self._openvpn_verb
@@ -181,22 +183,6 @@ class VPN(object):
 
         restart = kwargs.pop('restart', False)
 
-        # start the main vpn subprocess
-        vpnproc = VPNProcess(*args, **kwargs)
-
-        if vpnproc.get_openvpn_process():
-            logger.info("Another vpn process is running. Will try to stop it.")
-            vpnproc.stop_if_already_running()
-
-        # we try to bring the firewall up
-        if IS_LINUX:
-            gateways = vpnproc.getGateways()
-            firewall_up = self._launch_firewall(gateways,
-                                                restart=restart)
-            if not restart and not firewall_up:
-                logger.error("Could not bring firewall up, "
-                             "aborting openvpn launch.")
-                return
 
         # FIXME it would be good to document where the
         # errors here are catched, since we currently handle them
@@ -211,18 +197,56 @@ class VPN(object):
         # the ping-pong to the frontend, and without adding any logical checks
         # in the frontend. We should just communicate UI changes to frontend,
         # and abstract us away from anything else.
-        try:
+
+        # TODO factor this out to the platform-launchers
+
+        if IS_LINUX:
+            # start the main vpn subprocess
+            vpnproc = VPNProcess(*args, **kwargs)
             cmd = vpnproc.getCommand()
-        except Exception as e:
-            logger.error("Error while getting vpn command... {0!r}".format(e))
-            raise
+
+            if vpnproc.get_openvpn_process():
+                logger.info("Another vpn process is running. Will try to stop it.")
+                vpnproc.stop_if_already_running()
+
+            # we try to bring the firewall up
+            gateways = vpnproc.getGateways()
+            firewall_up = self._launch_firewall_linux(
+                gateways, restart=restart)
+            if not restart and not firewall_up:
+                logger.error("Could not bring firewall up, "
+                             "aborting openvpn launch.")
+                return
+
+        if IS_MAC:
+            # start the main vpn subprocess
+            vpnproc = VPNCanary(*args, **kwargs)
+
+            # we try to bring the firewall up
+            gateways = vpnproc.getGateways()
+            firewall_up = self._launch_firewall_osx(
+                gateways, restart=restart)
+            if not restart and not firewall_up:
+                logger.error("Could not bring firewall up, "
+                             "aborting openvpn launch.")
+                return
+
+            helper = darwinvpnlauncher.DarwinHelperCommand()
+            cmd = vpnproc.getVPNCommand()
+            result = helper.send('openvpn_start %s' % ' '.join(cmd))
+
+        # TODO Windows version -- should be similar to osx.
 
         env = os.environ
         for key, val in vpnproc.vpn_env.items():
             env[key] = val
 
-        reactor.spawnProcess(vpnproc, cmd[0], cmd, env)
+        cmd = vpnproc.getCommand()
+        running_proc = reactor.spawnProcess(vpnproc, cmd[0], cmd, env)
+        vpnproc.pid = running_proc.pid
         self._vpnproc = vpnproc
+        
+
 
         # add pollers for status and state
         # this could be extended to a collection of
@@ -233,9 +257,9 @@ class VPN(object):
         self._pollers.extend(poll_list)
         self._start_pollers()
 
-    def _launch_firewall(self, gateways, restart=False):
+    def _launch_firewall_linux(self, gateways, restart=False):
         """
-        Launch the firewall using the privileged wrapper.
+        Launch the firewall using the privileged wrapper (linux).
 
         :param gateways:
         :type gateways: list
@@ -254,40 +278,63 @@ class VPN(object):
         exitCode = subprocess.call(cmd + gateways)
         return True if exitCode is 0 else False
 
+    def _launch_firewall_osx(self, gateways, restart=False):
+        cmd = 'firewall_start %s' % ' '.join(gateways)
+        helper = darwinvpnlauncher.DarwinHelperCommand()
+        result = helper.send(cmd)
+        return True
+
+    # TODO -- write LINUX/OSX VERSION too ------------------------------------
     def is_fw_down(self):
         """
         Return whether the firewall is down or not.
 
         :rtype: bool
         """
-        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
-        fw_up_cmd = "pkexec {0} firewall isup".format(BM_ROOT)
-        fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
-        return fw_is_down()
+        if IS_LINUX:
+            BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+            fw_up_cmd = "pkexec {0} firewall isup".format(BM_ROOT)
+            fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
+            return fw_is_down()
+
+        if IS_MAC:
+            cmd = 'firewall_isup'
+            helper = darwinvpnlauncher.DarwinHelperCommand()
+            result = helper.send(cmd)
+            return True
+
 
     def tear_down_firewall(self):
         """
         Tear the firewall down using the privileged wrapper.
         """
         if IS_MAC:
-            # We don't support Mac so far
+            cmd = 'firewall_stop'
+            helper = darwinvpnlauncher.DarwinHelperCommand()
+            result = helper.send(cmd)
             return True
-        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
-        exitCode = subprocess.call(["pkexec",
-                                    BM_ROOT, "firewall", "stop"])
-        return True if exitCode is 0 else False
+
+        if IS_LINUX:
+            BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+            exitCode = subprocess.call(["pkexec",
+                                        BM_ROOT, "firewall", "stop"])
+            return True if exitCode is 0 else False
 
     def bitmask_root_vpn_down(self):
         """
         Bring openvpn down using the privileged wrapper.
         """
         if IS_MAC:
-            # We don't support Mac so far
+            cmd = 'openvpn_stop'
+            helper = darwinvpnlauncher.DarwinHelperCommand()
+            result = helper.send(cmd)
             return True
-        BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
-        exitCode = subprocess.call(["pkexec",
-                                    BM_ROOT, "openvpn", "stop"])
-        return True if exitCode is 0 else False
+
+        if IS_LINUX:
+            BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+            exitCode = subprocess.call(["pkexec",
+                                        BM_ROOT, "openvpn", "stop"])
+            return True if exitCode is 0 else False
 
     def _kill_if_left_alive(self, tries=0):
         """
@@ -297,18 +344,18 @@ class VPN(object):
         :param tries: counter of tries, used in recursion
         :type tries: int
         """
+        # we try to tear the firewall down
+        if (IS_LINUX or IS_MAC) and self._user_stopped:
+            logger.debug('trying to bring firewall down...')
+            firewall_down = self.tear_down_firewall()
+            if firewall_down:
+                logger.debug("Firewall down")
+            else:
+                logger.warning("Could not tear firewall down")
+
         while tries < self.TERMINATE_MAXTRIES:
             if self._vpnproc.transport.pid is None:
                 logger.debug("Process has been happily terminated.")
-
-                # we try to tear the firewall down
-                if IS_LINUX and self._user_stopped:
-                    firewall_down = self.tear_down_firewall()
-                    if firewall_down:
-                        logger.debug("Firewall down")
-                    else:
-                        logger.warning("Could not tear firewall down")
-
                 return
             else:
                 logger.debug("Process did not die, waiting...")
@@ -813,6 +860,8 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
     programmatically.
     """
 
+    pid = None
+
     def __init__(self, eipconfig, providerconfig, socket_host, socket_port,
                  signaler, openvpn_verb):
         """
@@ -861,7 +910,7 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         self._vpn_observer = VPNObserver(signaler)
         self.is_restart = False
 
-    # processProtocol methods
+    # ProcessProtocol methods
 
     def connectionMade(self):
         """
@@ -893,8 +942,11 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
         .. seeAlso: `http://twistedmatrix.com/documents/13.0.0/api/twisted.internet.protocol.ProcessProtocol.html` # noqa
         """
         exit_code = reason.value.exitCode
+
         if isinstance(exit_code, int):
             logger.debug("processExited, status %d" % (exit_code,))
+        else:
+            exit_code = 0
         self._signaler.signal(
             self._signaler.eip_process_finished, exit_code)
         self._alive = False
@@ -976,3 +1028,41 @@ class VPNProcess(protocol.ProcessProtocol, VPNManager):
             self.transport.signalProcess('KILL')
         except internet_error.ProcessExitedAlready:
             logger.debug('Process Exited Already')
+
+
+class VPNCanary(VPNProcess):
+
+    """
+    This is a Canary Process that does not run openvpn itself, but it's
+    notified by the privileged process when the process dies.
+
+    This is an ugly workaround to allow the qt signals and the processprotocol
+    to live happily together until we refactor EIP out of the qt model
+    completely.
+    """
+
+    def connectionMade(self):
+        VPNProcess.connectionMade(self)
+        reactor.callLater(2, self.registerPID)
+
+    def registerPID(self):
+        helper = darwinvpnlauncher.DarwinHelperCommand()
+        cmd = 'openvpn_set_watcher %s' % self.pid
+        result = helper.send(cmd)
+
+    def killProcess(self):
+        helper = darwinvpnlauncher.DarwinHelperCommand()
+        cmd = 'openvpn_force_stop'
+        result = helper.send(cmd)
+
+    def getVPNCommand(self):
+        return VPNProcess.getCommand(self)
+
+    def getCommand(self):
+        canary = '''import sys, signal, time
+def receive_signal(signum, stack):
+    sys.exit()
+signal.signal(signal.SIGTERM, receive_signal)
+while True:
+    time.sleep(60)'''
+        return ['python', '-c', '%s' % canary]

@@ -647,7 +647,7 @@ class EIP(object):
         :param domain: the domain for the provider to check
         :type domain: str
         """
-        if not LinuxPolicyChecker.is_up():
+        if IS_LINUX and not LinuxPolicyChecker.is_up():
             logger.error("No polkit agent running.")
             return False
 

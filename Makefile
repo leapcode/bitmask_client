@@ -153,8 +153,18 @@ include pkg/branding/branding.mk
 pyinst_osx: pyinst
 	mv dist/Bitmask.app/Contents/MacOS/bitmask dist/Bitmask.app/Contents/MacOS/bitmask-app
 	cp pkg/osx/bitmask-wrapper dist/Bitmask.app/Contents/MacOS/bitmask
+	mkdir -p dist/Bitmask.app/Contents/Resources/bitmask-helper
+	cp pkg/osx/client.up.sh dist/Bitmask.app/Contents/Resources/
+	cp pkg/osx/client.down.sh dist/Bitmask.app/Contents/Resources/
+	cp pkg/osx/bitmask-helper dist/Bitmask.app/Contents/Resources/bitmask-helper/
+	cp pkg/osx/bitmask.pf.conf dist/Bitmask.app/Contents/Resources/bitmask-helper/
+	cp pkg/osx/se.leap.bitmask-helper.plist dist/Bitmask.app/Contents/Resources/bitmask-helper/	
+	cp pkg/osx/post-inst.sh dist/Bitmask.app/Contents/Resources/bitmask-helper/	
+	cp pkg/osx/daemon.py dist/Bitmask.app/Contents/Resources/bitmask-helper/	
 	# XXX hack... this contains the gpg binary (brew), but we need to build it from sources.
 	cp -r src/leap/bitmask/util/apps dist/Bitmask.app/Contents/MacOS/
+	# XXX hack... this contains the openvpn binary (brew), but we need to build it from sources.
+	cp -r src/leap/bitmask/util/openvpn.leap dist/Bitmask.app/Contents/Resources/
 	# XXX this should be taken care of by pyinstaller data collector
 	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/leap/common/cacert.pem dist/Bitmask.app/Contents/MacOS/
 
