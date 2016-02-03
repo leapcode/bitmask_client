@@ -257,36 +257,19 @@ def WindowsInitializer():
     if not _windows_has_tap_device():
         msg = QtGui.QMessageBox()
         msg.setWindowTitle(msg.tr("TAP Driver"))
-        msg.setText(msg.tr("Bitmask needs to install the necessary drivers "
-                           "for Encrypted Internet to work. Would you like to "
-                           "proceed?"))
+        msg.setText(msg.tr("Bitmask needs a TAP Driver installed "
+                           "for Encrypted Internet to work. Please reinstall "
+                           "bitmask-client to proceed."))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
                                       "needs a TAP device installed and none "
-                                      "has been found. This will ask for "
-                                      "administrative privileges."))
-        msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-        msg.setDefaultButton(QtGui.QMessageBox.Yes)
-        ret = msg.exec_()
-
-        if ret == QtGui.QMessageBox.Yes:
-            # XXX should do this only if executed inside bundle.
-            # Let's assume it's the only way it's gonna be executed under win
-            # by now.
-            driver_path = os.path.join(os.getcwd(),
-                                       "apps",
-                                       "eip",
-                                       "tap_driver")
-            dev_installer = os.path.join(driver_path,
-                                         "devcon.exe")
-            if os.path.isfile(dev_installer) and \
-                    stat.S_IXUSR & os.stat(dev_installer)[stat.ST_MODE] != 0:
-                inf_path = os.path.join(driver_path,
-                                        "OemWin2k.inf")
-                cmd = [dev_installer, "install", inf_path, "tap0901"]
-                ret = subprocess.call(cmd, stdout=subprocess.PIPE, shell=True)
-            else:
-                logger.error("Tried to install TAP driver, but the installer "
-                             "is not found or not executable")
+                                      "has been found. The bitmask-client "
+                                      "installer prompts for installing the "
+                                      "TAP Driver."))
+        msg.setStandardButtons(QtGui.QMessageBox.Ok)
+        logger.error('TAP Drivers not installed')
+        msg.exec_()
+        return False
+    return True
 
 #
 # Darwin initializer functions

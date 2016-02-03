@@ -302,6 +302,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             self._mail_conductor.connect_mail_signals(self._mail_status)
 
         if not init_platform():
+            logger.critical('init_platform failed, quitting application.')
             self.quit()
             return
 
