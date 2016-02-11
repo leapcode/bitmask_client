@@ -43,6 +43,8 @@ LRELE = lrelease
 # pyinst dist dir
 
 DIST = dist/bitmask/
+DIST_OSX = dist/Bitmask.app/
+DIST_OSX_RES = dist/Bitmask.app/Contents/Resources/
 NEXT_VERSION = $(shell cat pkg/next-version)
 DIST_VERSION = dist/bitmask-$(NEXT_VERSION)/
 GIT_COMMIT = $(shell git rev-parse HEAD)
@@ -95,78 +97,11 @@ manpages:
 apidocs:
 	@sphinx-apidoc -o docs/api src/leap/bitmask
 
-do_cprofile:
-	python -m cProfile -o bitmask.cprofile src/leap/bitmask/app.py --debug -N
-
-view_cprofile:
-	cprofilev bitmask.cprofile
-
-mailprofile:
-	gprof2dot -f pstats /tmp/leap_mail_profile.pstats -n 0.2 -e 0.2 | dot -Tpdf -o /tmp/leap_mail_profile.pdf
-
-do_lineprof:
-	LEAP_PROFILE_IMAPCMD=1 LEAP_MAIL_MANHOLE=1 kernprof.py -l src/leap/bitmask/app.py --debug
-
-do_lineprof_offline:
-	LEAP_PROFILE_IMAPCMD=1 LEAP_MAIL_MANHOLE=1 kernprof.py -l src/leap/bitmask/app.py --offline --debug -N
-
-view_lineprof:
-	@python -m line_profiler app.py.lprof | $(EDITOR) -
-
-resource_graph:
-	#./pkg/scripts/monitor_resource.zsh `ps aux | grep app.py | head -1 | awk '{print $$2}'` $(RESOURCE_TIME)
-	./pkg/scripts/monitor_resource.zsh `pgrep bitmask` $(RESOURCE_TIME)
-	display bitmask-resources.png
-
-get_wheels:
-	pip install --upgrade setuptools
-	pip install --upgrade pip
-	pip install wheel
-
-gather_wheels:
-	pip wheel --wheel-dir=../wheelhouse pyzmq --build-option "--zmq=bundled"
-	# because fuck u1db externals, that's why...
-	pip wheel --wheel-dir=../wheelhouse --allow-external dirspec --allow-unverified dirspec --allow-external u1db --allow-unverified u1db -r pkg/requirements.pip
-
-install_wheel:
-	# if it's the first time, you'll need to get_wheels first
-	pip install --pre --use-wheel --no-index --find-links=../wheelhouse -r pkg/requirements.pip
-
-gather_deps:
-	pipdeptree | pkg/scripts/filter-bitmask-deps
-
-install_base_deps:
-	for repo in leap_pycommon keymanager leap_mail soledad/common soledad/client; do cd $(CURDIR)/../$$repo && pkg/pip_install_requirements.sh; done
-	pkg/pip_install_requirements.sh
-
-pull_leapdeps:
-	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git pull; done
-
-checkout_leapdeps_develop:
-	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git checkout develop; done
-	git checkout develop
-
+include pkg/deps.mk
+include pkg/tools/profile.mk
 include pkg/sumo-tarballs.mk
 include pkg/pyinst/pyinst-build.mk
 include pkg/branding/branding.mk
-
-pyinst_osx: pyinst
-	mv dist/Bitmask.app/Contents/MacOS/bitmask dist/Bitmask.app/Contents/MacOS/bitmask-app
-	cp pkg/osx/bitmask-wrapper dist/Bitmask.app/Contents/MacOS/bitmask
-	mkdir -p dist/Bitmask.app/Contents/Resources/bitmask-helper
-	cp pkg/osx/client.up.sh dist/Bitmask.app/Contents/Resources/
-	cp pkg/osx/client.down.sh dist/Bitmask.app/Contents/Resources/
-	cp pkg/osx/bitmask-helper dist/Bitmask.app/Contents/Resources/bitmask-helper/
-	cp pkg/osx/bitmask.pf.conf dist/Bitmask.app/Contents/Resources/bitmask-helper/
-	cp pkg/osx/se.leap.bitmask-helper.plist dist/Bitmask.app/Contents/Resources/bitmask-helper/	
-	cp pkg/osx/post-inst.sh dist/Bitmask.app/Contents/Resources/bitmask-helper/	
-	cp pkg/osx/daemon.py dist/Bitmask.app/Contents/Resources/bitmask-helper/	
-	# XXX hack... this contains the gpg binary (brew), but we need to build it from sources.
-	cp -r src/leap/bitmask/util/apps dist/Bitmask.app/Contents/MacOS/
-	# XXX hack... this contains the openvpn binary (brew), but we need to build it from sources.
-	cp -r src/leap/bitmask/util/openvpn.leap dist/Bitmask.app/Contents/Resources/
-	# XXX this should be taken care of by pyinstaller data collector
-	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/leap/common/cacert.pem dist/Bitmask.app/Contents/MacOS/
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
