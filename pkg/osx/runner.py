@@ -37,7 +37,7 @@ from .daemon import (basestring, unicode)
 from .daemon import DaemonContext
 from .daemon import _chain_exception_from_existing_exception_context
 
-
+
 class DaemonRunnerError(Exception):
     """ Abstract base class for errors from DaemonRunner. """
 
@@ -65,7 +65,7 @@ class DaemonRunnerStartFailureError(DaemonRunnerError, RuntimeError):
 class DaemonRunnerStopFailureError(DaemonRunnerError, RuntimeError):
     """ Raised when failure stopping DaemonRunner. """
 
-
+
 class DaemonRunner:
     """ Controller for a callable running in a separate background process.
 
@@ -110,12 +110,12 @@ class DaemonRunner:
         self.daemon_context.stdin = open(app.stdin_path, 'rt')
         self.daemon_context.stdout = open(app.stdout_path, 'w+t')
         self.daemon_context.stderr = open(
-                app.stderr_path, 'w+t', buffering=0)
+            app.stderr_path, 'w+t', buffering=0)
 
         self.pidfile = None
         if app.pidfile_path is not None:
             self.pidfile = make_pidlockfile(
-                    app.pidfile_path, app.pidfile_timeout)
+                app.pidfile_path, app.pidfile_timeout)
         self.daemon_context.pidfile = self.pidfile
 
     def _usage_exit(self, argv):
@@ -130,7 +130,7 @@ class DaemonRunner:
         usage_exit_code = 2
         action_usage = "|".join(self.action_funcs.keys())
         message = "usage: {progname} {usage}".format(
-                progname=progname, usage=action_usage)
+            progname=progname, usage=action_usage)
         emit_message(message)
         sys.exit(usage_exit_code)
 
@@ -175,8 +175,8 @@ class DaemonRunner:
             self.daemon_context.open()
         except lockfile.AlreadyLocked:
             error = DaemonRunnerStartFailureError(
-                    "PID file {pidfile.path!r} already locked".format(
-                        pidfile=self.pidfile))
+                "PID file {pidfile.path!r} already locked".format(
+                    pidfile=self.pidfile))
             raise error
 
         pid = os.getpid()
@@ -198,8 +198,8 @@ class DaemonRunner:
             os.kill(pid, signal.SIGTERM)
         except OSError as exc:
             error = DaemonRunnerStopFailureError(
-                    "Failed to terminate {pid:d}: {exc}".format(
-                        pid=pid, exc=exc))
+                "Failed to terminate {pid:d}: {exc}".format(
+                    pid=pid, exc=exc))
             raise error
 
     def _stop(self):
@@ -212,8 +212,8 @@ class DaemonRunner:
             """
         if not self.pidfile.is_locked():
             error = DaemonRunnerStopFailureError(
-                    "PID file {pidfile.path!r} not locked".format(
-                        pidfile=self.pidfile))
+                "PID file {pidfile.path!r} not locked".format(
+                    pidfile=self.pidfile))
             raise error
 
         if is_pidfile_stale(self.pidfile):
@@ -228,10 +228,10 @@ class DaemonRunner:
         self._start()
 
     action_funcs = {
-            'start': _start,
-            'stop': _stop,
-            'restart': _restart,
-            }
+        'start': _start,
+        'stop': _stop,
+        'restart': _restart,
+    }
 
     def _get_action_func(self):
         """ Get the function for the specified action.
@@ -249,8 +249,8 @@ class DaemonRunner:
             func = self.action_funcs[self.action]
         except KeyError:
             error = DaemonRunnerInvalidActionError(
-                    "Unknown action: {action!r}".format(
-                        action=self.action))
+                "Unknown action: {action!r}".format(
+                    action=self.action))
             raise error
         return func
 
@@ -279,11 +279,11 @@ def make_pidlockfile(path, acquire_timeout):
     """ Make a PIDLockFile instance with the given filesystem path. """
     if not isinstance(path, basestring):
         error = ValueError("Not a filesystem path: {path!r}".format(
-                path=path))
+            path=path))
         raise error
     if not os.path.isabs(path):
         error = ValueError("Not an absolute path: {path!r}".format(
-                path=path))
+            path=path))
         raise error
     lockfile = pidfile.TimeoutPIDLockFile(path, acquire_timeout)
 
@@ -316,7 +316,7 @@ def is_pidfile_stale(pidfile):
 
     return result
 
-
+
 # Local variables:
 # coding: utf-8
 # mode: python

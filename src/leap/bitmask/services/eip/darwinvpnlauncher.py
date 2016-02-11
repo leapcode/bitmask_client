@@ -54,7 +54,7 @@ class DarwinHelperCommand(object):
         self._connect()
         sock = self._sock
         data = ""
-        
+
         command = cmd + ' ' + args + '/CMD'
 
         try:
@@ -75,7 +75,6 @@ class DarwinVPNLauncher(VPNLauncher):
     DOWN_SCRIPT = None
 
     # TODO -- move this to bitmask-helper
-
 
     # Hardcode the installation path for OSX for security, openvpn is
     # run as root
@@ -126,7 +125,6 @@ class DarwinVPNLauncher(VPNLauncher):
             os.path.join(os.getcwd(), "../../Contents/Resources"))
 
         return os.path.join(resources_path, "bitmask.tiff")
-
 
     # TODO deprecate ---------------------------------------------------------
     @classmethod

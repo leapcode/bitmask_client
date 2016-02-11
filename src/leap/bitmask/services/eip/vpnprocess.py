@@ -175,14 +175,14 @@ class VPN(object):
         :param kwargs: kwargs to be passed to the VPNProcess
         :type kwargs: dict
         """
-        logger.debug('VPN: start ---------------------------------------------------')
+        logger.debug(
+            'VPN: start ---------------------------------------------------')
         self._user_stopped = False
         self._stop_pollers()
         kwargs['openvpn_verb'] = self._openvpn_verb
         kwargs['signaler'] = self._signaler
 
         restart = kwargs.pop('restart', False)
-
 
         # FIXME it would be good to document where the
         # errors here are catched, since we currently handle them
@@ -206,7 +206,8 @@ class VPN(object):
             cmd = vpnproc.getCommand()
 
             if vpnproc.get_openvpn_process():
-                logger.info("Another vpn process is running. Will try to stop it.")
+                logger.info(
+                    "Another vpn process is running. Will try to stop it.")
                 vpnproc.stop_if_already_running()
 
             # we try to bring the firewall up
@@ -245,8 +246,6 @@ class VPN(object):
         running_proc = reactor.spawnProcess(vpnproc, cmd[0], cmd, env)
         vpnproc.pid = running_proc.pid
         self._vpnproc = vpnproc
-        
-
 
         # add pollers for status and state
         # this could be extended to a collection of
@@ -292,7 +291,8 @@ class VPN(object):
         :rtype: bool
         """
         if IS_LINUX:
-            BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+            BM_ROOT = force_eval(
+                linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
             fw_up_cmd = "pkexec {0} firewall isup".format(BM_ROOT)
             fw_is_down = lambda: commands.getstatusoutput(fw_up_cmd)[0] == 256
             return fw_is_down()
@@ -302,7 +302,6 @@ class VPN(object):
             helper = darwinvpnlauncher.DarwinHelperCommand()
             result = helper.send(cmd)
             return True
-
 
     def tear_down_firewall(self):
         """
@@ -315,7 +314,8 @@ class VPN(object):
             return True
 
         if IS_LINUX:
-            BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+            BM_ROOT = force_eval(
+                linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
             exitCode = subprocess.call(["pkexec",
                                         BM_ROOT, "firewall", "stop"])
             return True if exitCode is 0 else False
@@ -331,7 +331,8 @@ class VPN(object):
             return True
 
         if IS_LINUX:
-            BM_ROOT = force_eval(linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
+            BM_ROOT = force_eval(
+                linuxvpnlauncher.LinuxVPNLauncher.BITMASK_ROOT)
             exitCode = subprocess.call(["pkexec",
                                         BM_ROOT, "openvpn", "stop"])
             return True if exitCode is 0 else False

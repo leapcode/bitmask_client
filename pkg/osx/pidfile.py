@@ -17,7 +17,7 @@ from __future__ import (absolute_import, unicode_literals)
 
 from lockfile.pidlockfile import PIDLockFile
 
-
+
 class TimeoutPIDLockFile(PIDLockFile, object):
     """ Lockfile with default timeout, implemented as a Unix PID file.
 
@@ -59,7 +59,7 @@ class TimeoutPIDLockFile(PIDLockFile, object):
             timeout = self.acquire_timeout
         super(TimeoutPIDLockFile, self).acquire(timeout, *args, **kwargs)
 
-
+
 # Local variables:
 # coding: utf-8
 # mode: python

@@ -36,7 +36,7 @@ except NameError:
     basestring = str
     unicode = str
 
-
+
 class DaemonError(Exception):
     """ Base exception class for errors from this module. """
 
@@ -56,7 +56,7 @@ class DaemonOSEnvironmentError(DaemonError, OSError):
 class DaemonProcessDetachError(DaemonError, OSError):
     """ Exception raised when process detach fails. """
 
-
+
 class DaemonContext:
     """ Context for turning the current program into a daemon process.
 
@@ -245,7 +245,7 @@ class DaemonContext:
             stdout=None,
             stderr=None,
             signal_map=None,
-            ):
+    ):
         """ Set up a new instance. """
         self.chroot_directory = chroot_directory
         self.working_directory = working_directory
@@ -427,8 +427,8 @@ class DaemonContext:
 
             """
         exception = SystemExit(
-                "Terminating on signal {signal_number!r}".format(
-                    signal_number=signal_number))
+            "Terminating on signal {signal_number!r}".format(
+                signal_number=signal_number))
         raise exception
 
     def _get_exclude_file_descriptors(self):
@@ -454,8 +454,8 @@ class DaemonContext:
         if files_preserve is None:
             files_preserve = []
         files_preserve.extend(
-                item for item in [self.stdin, self.stdout, self.stderr]
-                if hasattr(item, 'fileno'))
+            item for item in [self.stdin, self.stdout, self.stderr]
+            if hasattr(item, 'fileno'))
 
         exclude_descriptors = set()
         for item in files_preserve:
@@ -502,8 +502,8 @@ class DaemonContext:
 
             """
         signal_handler_map = dict(
-                (signal_number, self._make_signal_handler(target))
-                for (signal_number, target) in self.signal_map.items())
+            (signal_number, self._make_signal_handler(target))
+            for (signal_number, target) in self.signal_map.items())
         return signal_handler_map
 
 
@@ -529,7 +529,7 @@ def _get_file_descriptor(obj):
 
     return file_descriptor
 
-
+
 def change_working_directory(directory):
     """ Change the working directory of this process.
 
@@ -541,7 +541,7 @@ def change_working_directory(directory):
         os.chdir(directory)
     except Exception as exc:
         error = DaemonOSEnvironmentError(
-                "Unable to change working directory ({exc})".format(exc=exc))
+            "Unable to change working directory ({exc})".format(exc=exc))
         raise error
 
 
@@ -561,7 +561,7 @@ def change_root_directory(directory):
         os.chroot(directory)
     except Exception as exc:
         error = DaemonOSEnvironmentError(
-                "Unable to change root directory ({exc})".format(exc=exc))
+            "Unable to change root directory ({exc})".format(exc=exc))
         raise error
 
 
@@ -576,7 +576,7 @@ def change_file_creation_mask(mask):
         os.umask(mask)
     except Exception as exc:
         error = DaemonOSEnvironmentError(
-                "Unable to change file creation mask ({exc})".format(exc=exc))
+            "Unable to change file creation mask ({exc})".format(exc=exc))
         raise error
 
 
@@ -597,10 +597,10 @@ def change_process_owner(uid, gid):
         os.setuid(uid)
     except Exception as exc:
         error = DaemonOSEnvironmentError(
-                "Unable to change process owner ({exc})".format(exc=exc))
+            "Unable to change process owner ({exc})".format(exc=exc))
         raise error
 
-
+
 def prevent_core_dump():
     """ Prevent this process from generating a core dump.
 
@@ -618,15 +618,15 @@ def prevent_core_dump():
         core_limit_prev = resource.getrlimit(core_resource)
     except ValueError as exc:
         error = DaemonOSEnvironmentError(
-                "System does not support RLIMIT_CORE resource limit"
-                " ({exc})".format(exc=exc))
+            "System does not support RLIMIT_CORE resource limit"
+            " ({exc})".format(exc=exc))
         raise error
 
     # Set hard and soft limits to zero, i.e. no core dump at all.
     core_limit = (0, 0)
     resource.setrlimit(core_resource, core_limit)
 
-
+
 def detach_process_context():
     """ Detach the process context from parent and session.
 
@@ -656,15 +656,15 @@ def detach_process_context():
                 os._exit(0)
         except OSError as exc:
             error = DaemonProcessDetachError(
-                    "{message}: [{exc.errno:d}] {exc.strerror}".format(
-                        message=error_message, exc=exc))
+                "{message}: [{exc.errno:d}] {exc.strerror}".format(
+                    message=error_message, exc=exc))
             raise error
 
     fork_then_exit_parent(error_message="Failed first fork")
     os.setsid()
     fork_then_exit_parent(error_message="Failed second fork")
 
-
+
 def is_process_started_by_init():
     """ Determine whether the current process is started by `init`.
 
@@ -700,7 +700,7 @@ def is_socket(fd):
 
     try:
         socket_type = file_socket.getsockopt(
-                socket.SOL_SOCKET, socket.SO_TYPE)
+            socket.SOL_SOCKET, socket.SO_TYPE)
     except socket.error as exc:
         exc_errno = exc.args[0]
         if exc_errno == errno.ENOTSOCK:
@@ -759,7 +759,7 @@ def is_detach_process_context_required():
 
     return result
 
-
+
 def close_file_descriptor_if_open(fd):
     """ Close a file descriptor if already open.
 
@@ -778,12 +778,13 @@ def close_file_descriptor_if_open(fd):
             pass
         else:
             error = DaemonOSEnvironmentError(
-                    "Failed to close file descriptor {fd:d} ({exc})".format(
-                        fd=fd, exc=exc))
+                "Failed to close file descriptor {fd:d} ({exc})".format(
+                    fd=fd, exc=exc))
             raise error
 
 
 MAXFD = 2048
+
 
 def get_maximum_file_descriptors():
     """ Get the maximum number of open file descriptors for this process.
@@ -820,7 +821,7 @@ def close_all_open_files(exclude=set()):
         if fd not in exclude:
             close_file_descriptor_if_open(fd)
 
-
+
 def redirect_stream(system_stream, target_stream):
     """ Redirect a system stream to a specified file.
 
@@ -844,7 +845,7 @@ def redirect_stream(system_stream, target_stream):
         target_fd = target_stream.fileno()
     os.dup2(target_fd, system_stream.fileno())
 
-
+
 def make_default_signal_map():
     """ Make the default signal map for this system.
 
@@ -855,15 +856,15 @@ def make_default_signal_map():
 
         """
     name_map = {
-            'SIGTSTP': None,
-            'SIGTTIN': None,
-            'SIGTTOU': None,
-            'SIGTERM': 'terminate',
-            }
+        'SIGTSTP': None,
+        'SIGTTIN': None,
+        'SIGTTOU': None,
+        'SIGTERM': 'terminate',
+    }
     signal_map = dict(
-            (getattr(signal, name), target)
-            for (name, target) in name_map.items()
-            if hasattr(signal, name))
+        (getattr(signal, name), target)
+        for (name, target) in name_map.items()
+        if hasattr(signal, name))
 
     return signal_map
 
@@ -895,7 +896,7 @@ def register_atexit_function(func):
         """
     atexit.register(func)
 
-
+
 def _chain_exception_from_existing_exception_context(exc, as_cause=False):
     """ Decorate the specified exception with the existing exception context.
 
@@ -918,7 +919,7 @@ def _chain_exception_from_existing_exception_context(exc, as_cause=False):
         exc.__context__ = existing_exc
     exc.__traceback__ = existing_traceback
 
-
+
 # Local variables:
 # coding: utf-8
 # mode: python

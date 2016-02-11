@@ -21,9 +21,10 @@ import datetime
 
 import pkg_resources
 
-
+
 distribution_name = "python-daemon"
 version_info_filename = "version_info.json"
+
 
 def get_distribution_version_info(filename=version_info_filename):
     """ Get the version info from the installed distribution.
@@ -37,10 +38,10 @@ def get_distribution_version_info(filename=version_info_filename):
 
         """
     version_info = {
-            'release_date': "UNKNOWN",
-            'version': "UNKNOWN",
-            'maintainer': "UNKNOWN",
-            }
+        'release_date': "UNKNOWN",
+        'version': "UNKNOWN",
+        'maintainer': "UNKNOWN",
+    }
 
     try:
         distribution = pkg_resources.get_distribution(distribution_name)
@@ -58,11 +59,12 @@ version_info = get_distribution_version_info()
 
 version_installed = version_info['version']
 
-
+
 rfc822_person_regex = re.compile(
-        "^(?P<name>[^<]+) <(?P<email>[^>]+)>$")
+    "^(?P<name>[^<]+) <(?P<email>[^>]+)>$")
 
 ParsedPerson = collections.namedtuple('ParsedPerson', ['name', 'email'])
+
 
 def parse_person_field(value):
     """ Parse a person field into name and email address.
@@ -80,18 +82,18 @@ def parse_person_field(value):
     if len(value):
         if match is not None:
             result = ParsedPerson(
-                    name=match.group('name'),
-                    email=match.group('email'))
+                name=match.group('name'),
+                email=match.group('email'))
         else:
             result = ParsedPerson(name=value, email=None)
 
-    return result    
+    return result
 
 author_name = "Ben Finney"
 author_email = "ben+python@benfinney.id.au"
 author = "{name} <{email}>".format(name=author_name, email=author_email)
 
-
+
 class YearRange:
     """ A range of years spanning a period. """
 
@@ -140,11 +142,11 @@ build_date = version_info['release_date']
 copyright_year_range = make_year_range(copyright_year_begin, build_date)
 
 copyright = "Copyright © {year_range} {author} and others".format(
-        year_range=copyright_year_range, author=author)
+    year_range=copyright_year_range, author=author)
 license = "Apache-2"
 url = "https://alioth.debian.org/projects/python-daemon/"
 
-
+
 # Local variables:
 # coding: utf-8
 # mode: python
