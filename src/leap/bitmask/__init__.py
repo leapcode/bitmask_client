@@ -38,11 +38,15 @@ def _is_release_version(version_str):
     :rtype: bool
     """
     parts = __version__.split('.')
-    patch = parts[2]
+    try:
+        patch = parts[2]
+    except IndexError:
+        return False
     return patch.isdigit()
 
 
 from ._version import get_versions
 __version__ = get_versions()['version']
+__version_hash__ = get_versions()['full-revisionid']
 IS_RELEASE_VERSION = _is_release_version(__version__)
 del get_versions

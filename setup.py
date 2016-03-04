@@ -24,7 +24,8 @@ import hashlib
 import sys
 import os
 import re
-import sys
+
+from distutils.command.build import build as _build
 
 if not sys.version_info[0] == 2:
     print("[ERROR] Sorry, Python 3 is not supported (yet). "
@@ -259,16 +260,16 @@ BITMASK_ROOT = "{bitmask}"
 cmdclass["hash_binaries"] = cmd_binary_hash
 
 
-# next two classes need to augment the versioneer modified ones
+# sdist class need to augment the versioneer modified ones
 
-versioneer_build = cmdclass['build_py']
+#_build = cmdclass['build_py']
 versioneer_sdist = cmdclass['sdist']
 
 
-class cmd_build(versioneer_build):
+class cmd_build(_build):
 
     def run(self):
-        versioneer_build.run(self)
+        _build.run(self)
         copy_reqs(self.build_lib)
 
 
