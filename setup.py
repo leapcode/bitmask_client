@@ -32,7 +32,6 @@ from distutils.command.build import build as _build
 from setuptools import Command
 from setuptools.command.develop import develop as _develop
 
-
 from pkg import utils
 
 import versioneer
