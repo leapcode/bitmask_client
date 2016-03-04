@@ -41,10 +41,6 @@ except ImportError:
 from pkg import utils
 
 import versioneer
-versioneer.versionfile_source = 'src/leap/bitmask/_version.py'
-versioneer.versionfile_build = 'leap/bitmask/_version.py'
-versioneer.tag_prefix = ''  # tags are like 1.2.0
-versioneer.parentdir_prefix = 'leap.bitmask-'
 
 
 # The following import avoids the premature unloading of the `util` submodule
@@ -78,7 +74,7 @@ DOWNLOAD_BASE = ('https://github.com/leapcode/bitmask_client/'
                  'archive/%s.tar.gz')
 _versions = versioneer.get_versions()
 VERSION = _versions['version']
-VERSION_FULL = _versions['full']
+VERSION_REVISION = _versions['full-revisionid']
 DOWNLOAD_URL = ""
 
 # get the short version for the download url
@@ -108,12 +104,13 @@ class freeze_debianver(Command):
 # of this file.
 
 version_version = '{version}'
-version_full = '{version_full}'
+version_revisionid = '{version_revision}'
 """
     templatefun = r"""
 
 def get_versions(default={}, verbose=False):
-        return {'version': version_version, 'full': version_full}
+        return {'version': version_version,
+                'full-revisionid': version_revisionid}
 """
 
     def initialize_options(self):
@@ -130,7 +127,7 @@ def get_versions(default={}, verbose=False):
             return
         subst_template = self.template.format(
             version=VERSION_SHORT,
-            version_full=VERSION_FULL) + self.templatefun
+            version_full=VERSION_REVISION) + self.templatefun
         with open(versioneer.versionfile_source, 'w') as f:
             f.write(subst_template)
 
@@ -264,7 +261,7 @@ cmdclass["hash_binaries"] = cmd_binary_hash
 
 # next two classes need to augment the versioneer modified ones
 
-versioneer_build = cmdclass['build']
+versioneer_build = cmdclass['build_py']
 versioneer_sdist = cmdclass['sdist']
 
 
