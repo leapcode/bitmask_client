@@ -15,7 +15,6 @@ ui_*.py
 !.gitattributes
 bin/
 build/
-core
 dist/
 docs/_build
 docs/covhtml
