@@ -170,9 +170,6 @@ else:
         reqfiles=["pkg/requirements-leap.pip"])
 
 
-leap_launcher = 'bitmask=leap.bitmask.app:start_app'
-
-
 def copy_reqs(path, withsrc=False):
     # add a copy of the processed requirements to the package
     _reqpath = ('leap', 'bitmask', 'util', 'reqs.txt')
@@ -480,6 +477,10 @@ if IS_LINUX:
 
 extra_options = {}
 
+gui_launcher = 'bitmask=leap.bitmask.app:start_app'
+bitmask_cli = 'bitmask_cli=leap.bitmask.cli.bitmask_cli:main'
+
+
 setup(
     name="leap.bitmask",
     package_dir={"": "src"},
@@ -515,7 +516,7 @@ setup(
     zip_safe=False,
     platforms="all",
     entry_points={
-        'console_scripts': [leap_launcher]
+        'console_scripts': [gui_launcher, bitmask_cli]
     },
     **extra_options
 )
