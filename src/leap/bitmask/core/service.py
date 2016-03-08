@@ -22,16 +22,14 @@ import resource
 from twisted.internet import reactor
 from twisted.python import log
 
-from leap.bonafide.service import BonafideService
-
+from leap.bitmask import __version__
 from leap.bitmask.core import configurable
 from leap.bitmask.core import mail_services
 from leap.bitmask.core import _zmq
 from leap.bitmask.core import websocket
-from leap.bitmask.core._version import get_versions
-
+from leap.bonafide.service import BonafideService
 from leap.common.events import server as event_server
-from leap.vpn import EIPService
+#from leap.vpn import EIPService
 
 
 class BitmaskBackend(configurable.ConfigurableService):
@@ -96,7 +94,9 @@ class BitmaskBackend(configurable.ConfigurableService):
         self._maybe_start_service('mail', service, self.basedir)
 
     def init_eip(self):
-        self._maybe_start_service('eip', EIPService)
+        # FIXME -- land EIP into leap.vpn
+        pass
+        #self._maybe_start_service('eip', EIPService)
 
     def init_zmq(self):
         zs = _zmq.ZMQServerService(self)
@@ -139,7 +139,7 @@ class BitmaskBackend(configurable.ConfigurableService):
         return " ".join(status_messages)
 
     def do_version(self):
-        version = get_versions()['version']
+        version = __version__
         return 'BitmaskCore: %s' % version
 
     def do_shutdown(self):
