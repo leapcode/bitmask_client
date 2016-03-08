@@ -35,3 +35,7 @@ def run_bitmaskd():
     ]
     print '[+] launching bitmaskd...'
     run()
+
+
+if __name__ == "__main__":
+    run_bitmaskd()
