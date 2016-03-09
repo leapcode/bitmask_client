@@ -330,7 +330,7 @@ class KeymanagerService(service.Service, HookableService):
                 log.msg('Passing a new SRP Token to Keymanager: %s' % userid)
                 container.set_remote_auth_token(userid, token)
             else:
-                log.msg('storing the keymanager token...')
+                log.msg('storing the keymanager token... %s ' % token)
                 self.tokens[userid] = token
 
     # commands
