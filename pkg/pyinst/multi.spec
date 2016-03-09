@@ -13,7 +13,6 @@ gui_a = Analysis(['bitmask.py'],
              excludes=None,
              cipher=block_cipher)
 cli_a = Analysis(['bitmask_cli'],
-             pathex=['/home/kali/leap/bitmask_client/pkg/pyinst'],
              binaries=None,
              datas=None,
              hiddenimports=[
@@ -24,9 +23,21 @@ cli_a = Analysis(['bitmask_cli'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
+daemon_a = Analysis(['bitmaskd'],
+             binaries=None,
+             datas=None,
+             hiddenimports=[
+	     	'leap.bitmask.core.service'],
+             hookspath=[],
+             runtime_hooks=[],
+             excludes=[],
+             win_no_prefer_redirects=False,
+             win_private_assemblies=False,
+             cipher=block_cipher)
 
 MERGE( (gui_a, 'bitmask', 'bitmask'),
-       (cli_a, 'bitmask_cli', 'bitmask'))
+       (cli_a, 'bitmask_cli', 'bitmask'),
+       (daemon_a, 'bitmaskd', 'bitmaskd'))
 
 gui_pyz = PYZ(gui_a.pure, gui_a.zipped_data, cipher=block_cipher)
 gui_exe = EXE(gui_pyz,
@@ -41,6 +52,11 @@ cli_exe = EXE(cli_pyz,
           exclude_binaries=True,
           name='bitmask_cli', debug=False, strip=False,
           upx=True, console=True)
+daemon_pyz = PYZ(daemon_a.pure, daemon_a.zipped_data, cipher=block_cipher)
+daemon_exe = EXE(daemon_pyz,
+          daemon_a.scripts,
+          exclude_binaries=True,
+          name='bitmaskd', debug=False, strip=False, upx=True, console=True )
 
 gui_coll = COLLECT(gui_exe,
                gui_a.binaries,
@@ -52,3 +68,8 @@ cli_coll = COLLECT(cli_exe,
                cli_a.zipfiles,
                cli_a.datas,
                strip=False, upx=True, name='bitmask_cli')
+daemon_coll = COLLECT(daemon_exe,
+               daemon_a.binaries,
+               daemon_a.zipfiles,
+               daemon_a.datas,
+               strip=False, upx=True, name='bitmaskd')
