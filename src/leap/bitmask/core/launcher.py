@@ -18,9 +18,10 @@
 Run bitmask daemon.
 """
 from twisted.scripts.twistd import run
-from os.path import join, dirname
+from os.path import join
 from sys import argv
 
+from leap.bitmask.util import here
 from leap.bitmask import core
 
 
@@ -28,7 +29,7 @@ def run_bitmaskd():
     # TODO --- configure where to put the logs... (get --logfile, --logdir
     # from the bitmask_cli
     argv[1:] = [
-        '-y', join(dirname(core.__file__), "bitmaskd.tac"),
+        '-y', join(here(core), "bitmaskd.tac"),
         '--pidfile', '/tmp/bitmaskd.pid',
         '--logfile', '/tmp/bitmaskd.log',
         '--umask=0022',
