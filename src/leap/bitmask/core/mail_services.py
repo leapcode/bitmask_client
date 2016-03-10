@@ -135,9 +135,7 @@ def is_service_ready(service, provider):
     return has_service and has_config and is_enabled
 
 
-class SoledadService(service.Service, HookableService):
-
-    subscribed_to_hooks = ('on_bonafide_auth', 'on_passphrase_entry')
+class SoledadService(HookableService):
 
     def __init__(self, basedir):
         service.Service.__init__(self)
@@ -286,9 +284,7 @@ class KeymanagerContainer(Container):
             provider=provider)
 
 
-class KeymanagerService(service.Service, HookableService):
-
-    subscribed_to_hooks = ('on_new_soledad_instance', 'on_bonafide_auth')
+class KeymanagerService(HookableService):
 
     def __init__(self, basedir='~/.config/leap'):
         service.Service.__init__(self)
