@@ -29,7 +29,6 @@ from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.mail.smtpconfig import SMTPConfig
-from leap.bitmask.util import is_file
 
 from leap.common import certs as leap_certs
 from leap.common.check import leap_assert
@@ -93,11 +92,13 @@ class SMTPBootstrapper(AbstractBootstrapper):
         client_cert_path = self._smtp_config.get_client_cert_path(
             self._userid, self._provider_config, about_to_download=True)
 
-        if not is_file(client_cert_path):
+        needs_download = leap_certs.should_redownload(client_cert_path)
+
+        if needs_download:
             # For re-download if something is wrong with the cert
+            # FIXME this doesn't read well. should reword the logic here.
             self._download_if_needed = (
-                self._download_if_needed and
-                not leap_certs.should_redownload(client_cert_path))
+                self._download_if_needed and not needs_download)
 
             if self._download_if_needed and os.path.isfile(client_cert_path):
                 check_and_fix_urw_only(client_cert_path)

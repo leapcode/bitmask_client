@@ -24,8 +24,10 @@ Bugfixes
 - `#7583 <https://leap.se/code/issues/7583>`_: Fix set_soledad_auth_token event callback signature.
 - `#7585 <https://leap.se/code/issues/7585>`_: Open email help link on browser.
 - `#7598 <https://leap.se/code/issues/7598>`_: Fix errback on InvalidAuthToken.
-- `#1235 <https://leap.se/code/issues/1235>`_: Description for the fixed stuff corresponding with issue #1235.
+- `#7869 <https://leap.se/code/issues/7869>`_: Redownload smtp certificate if needed.
 - Do not translate 'https' text on QLabel.
+
+- `#1235 <https://leap.se/code/issues/1235>`_: Description for the fixed stuff corresponding with issue #1235.
 - Bugfix without related issue number.
 
 Misc
