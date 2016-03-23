@@ -70,6 +70,7 @@ class LeapSettings(object):
     PINNED_KEY = "Pinned"
     SKIPFIRSTRUN_KEY = "SkipFirstRun"
     UUIDFORUSER_KEY = "%s/%s_uuid"
+    PIXELMAIL_KEY = "Pixmail"
 
     # values
     GATEWAY_AUTOMATIC = "Automatic"
@@ -352,4 +353,12 @@ class LeapSettings(object):
         :type skip: bool
         """
         leap_assert_type(skip, bool)
-        self._settings.setValue(self.SKIPFIRSTRUN_KEY, skip)
+        self._settings.setvalue(self.skipfirstrun_key, skip)
+
+    def get_pixelmail_enabled(self):
+        return to_bool(self._settings.value(self.PIXELMAIL_KEY, False))
+
+    def set_pixelmail_enabled(self, enabled):
+        leap_assert_type(enabled, bool)
+        self._settings.setvalue(self.PIXELMAIL_KEY, enabled)
+        

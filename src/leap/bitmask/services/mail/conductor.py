@@ -18,6 +18,7 @@
 Mail Services Conductor
 """
 from leap.bitmask.config import flags
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
@@ -279,8 +280,10 @@ class MailConductor(IMAPControl, SMTPControl, PixelatedControl):
             self.start_smtp_service(download_if_needed=download_if_needed)
         self.start_imap_service()
 
-        # TODO --- check if it's enabled!!!
-        self.start_pixelated_service()
+        settings = LeapSettings()
+        pixelmail = settings.get_pixelmail_enabled()
+        if pixelmail:
+            self.start_pixelated_service()
 
         self._mail_services_started = True
 
