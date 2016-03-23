@@ -315,6 +315,7 @@
     </property>
     <addaction name="action_create_new_account"/>
     <addaction name="action_advanced_key_management"/>
+    <addaction name="action_pixelated_mail"/>
     <addaction name="separator"/>
     <addaction name="action_preferences"/>
     <addaction name="separator"/>
@@ -368,6 +369,11 @@
   <action name="action_create_new_account">
    <property name="text">
     <string>Create a new account...</string>
+   </property>
+  </action>
+  <action name="action_pixelated_mail">
+   <property name="text">
+    <string>Bitmask Webmail</string>
    </property>
   </action>
   <action name="action_advanced_key_management">
