@@ -42,6 +42,8 @@ API = (
     "keymanager_export_keys",
     "keymanager_get_key_details",
     "keymanager_list_keys",
+    "pixelated_start_service",
+    "pixelated_stop_service",
     "provider_bootstrap",
     "provider_cancel_setup",
     "provider_get_all_services",

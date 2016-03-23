@@ -26,7 +26,7 @@ import time
 
 from functools import partial
 
-from twisted.internet import threads, defer
+from twisted.internet import threads, defer, reactor
 from twisted.python import log
 
 import zope.interface
@@ -38,6 +38,7 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init import IS_LINUX
+from leap.bitmask.pix import start_pixelated_user_agent
 from leap.bitmask.provider.pinned import PinnedProviders
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
 from leap.bitmask.services import get_supported
@@ -1085,6 +1086,16 @@ class Mail(object):
         :rtype: twisted.internet.defer.Deferred
         """
         return threads.deferToThread(self._stop_imap_service)
+
+    def start_pixelated_service(self, full_user_id):
+        reactor.callFromThread(
+            start_pixelated_user_agent,
+            full_user_id,
+            self._soledad_proxy,
+            self._keymanager_proxy)
+
+    def stop_pixelated_service(self):
+        pass
 
 
 class Authenticate(object):

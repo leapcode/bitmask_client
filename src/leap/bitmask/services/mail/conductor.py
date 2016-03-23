@@ -192,7 +192,17 @@ class SMTPControl(object):
         self.smtp_connection.qtsigs.connection_aborted_signal.emit()
 
 
-class MailConductor(IMAPControl, SMTPControl):
+class PixelatedControl(object):
+
+    def start_pixelated_service(self):
+        self._backend.pixelated_start_service(
+            full_user_id=self.userid)
+
+    def stop_pixelated_service(self):
+        pass
+
+
+class MailConductor(IMAPControl, SMTPControl, PixelatedControl):
     """
     This class encapsulates everything related to the initialization and
     process control for the mail services.
@@ -268,6 +278,9 @@ class MailConductor(IMAPControl, SMTPControl):
             logger.debug("Starting smtp service...")
             self.start_smtp_service(download_if_needed=download_if_needed)
         self.start_imap_service()
+
+        # TODO --- check if it's enabled!!!
+        self.start_pixelated_service()
 
         self._mail_services_started = True
 

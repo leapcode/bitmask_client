@@ -531,6 +531,12 @@ class LeapBackend(Backend):
         """
         self._mail.stop_imap_service()
 
+    def pixelated_start_service(self, full_user_id):
+        self._mail.start_pixelated_service(full_user_id)
+
+    def pixelated_stop_service(self):
+        self._mail.stop_pixelated_service()
+
     def settings_set_selected_gateway(self, provider, gateway):
         """
         Set the selected gateway for a given provider.
