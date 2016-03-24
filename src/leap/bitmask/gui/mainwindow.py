@@ -222,6 +222,10 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self.ui.action_preferences.triggered.connect(self._show_preferences)
         self.ui.action_pixelated_mail.triggered.connect(
             self._show_pixelated_browser)
+
+        pixelated_enabled = self._settings.get_pixelmail_enabled()
+        self.ui.action_pixelated_mail.setVisible(pixelated_enabled)
+
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._show_wizard)
