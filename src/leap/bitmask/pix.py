@@ -19,12 +19,15 @@ Pixelated plugin integration.
 """
 import json
 import os
+import sys
 
 from twisted.internet import defer
 from twisted.python import log
 
 from leap.bitmask.util import get_path_prefix
 from leap.mail.imap.account import IMAPAccount
+
+import pixelated_www
 
 from pixelated.adapter.mailstore import LeapMailStore
 from pixelated.adapter.welcome_mail import add_welcome_mail
@@ -49,12 +52,19 @@ def start_pixelated_user_agent(userid, soledad, keymanager):
 
     services_factory = SingleUserServicesFactory(
         UserAgentMode(is_single_user=True))
-    resource = RootResource(services_factory)
 
+    if getattr(sys, 'frozen', False):
+        # we are running in a |PyInstaller| bundle
+        static_folder = os.path.join(sys._MEIPASS, 'pixelated_www')
+    else:
+        static_folder = os.path.abspath(pixelated_www.__path__)
+
+    resource = RootResource(services_factory, static_folder=static_folder)
+
+    config.host = 'localhost'
     config.port = 9090
     config.sslkey = None
     config.sslcert = None
-    config.host = 'localhost'
 
     deferred = _start_in_single_user_mode(
         leap_session, config,
