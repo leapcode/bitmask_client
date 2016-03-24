@@ -17,11 +17,13 @@
 """
 Pixelated plugin integration.
 """
+import json
 import os
 
 from twisted.internet import defer
 from twisted.python import log
 
+from leap.bitmask.util import get_path_prefix
 from leap.mail.imap.account import IMAPAccount
 
 from pixelated.adapter.mailstore import LeapMailStore
@@ -37,13 +39,11 @@ from pixelated.resources.root_resource import RootResource
 
 def start_pixelated_user_agent(userid, soledad, keymanager):
 
-    print 'STARTING PIXELATED USER AGENT...'
-
     leap_session = LeapSessionAdapter(
         userid, soledad, keymanager)
 
     config = Config()
-    leap_home = os.path.expanduser('~/.config/leap')
+    leap_home = os.path.join(get_path_prefix(), 'leap')
     config.leap_home = leap_home
     leap_session.config = config
 
@@ -62,6 +62,20 @@ def start_pixelated_user_agent(userid, soledad, keymanager):
     return deferred
 
 
+def get_smtp_config(provider):
+    config_path = os.path.join(
+        get_path_prefix(), 'leap', 'providers', provider, 'smtp-service.json')
+    json_config = json.loads(open(config_path).read())
+    chosen_host = json_config['hosts'].keys()[0]
+    hostname = json_config['hosts'][chosen_host]['hostname']
+    port = json_config['hosts'][chosen_host]['port']
+
+    config = Config()
+    config.host = hostname
+    config.port = port
+    return config
+
+
 class LeapSessionAdapter(object):
 
     def __init__(self, userid, soledad, keymanager):
@@ -69,6 +83,7 @@ class LeapSessionAdapter(object):
 
         self.soledad = soledad
 
+        # FIXME this expects a keymanager-like instance
         self.nicknym = Config()
         self.nicknym.keymanager = keymanager
 
@@ -77,22 +92,23 @@ class LeapSessionAdapter(object):
         self.user_auth = Config()
         self.user_auth.uuid = soledad.uuid
 
-        # XXX what is this?? path to smtp-service?
-        # self.config = provider.config
-        # self.provider = provider
-
         self.fresh_account = False
         self.incoming_mail_fetcher = None
         self.account = IMAPAccount(userid, soledad, defer.Deferred())
 
         username, provider = userid.split('@')
-        smtp_client_cert = os.path.expanduser(
-            '~/.config/leap/providers/{provider}/keys/'
-            'client/smtp_{username}.pem'.format(
-                provider=provider, username=username))
-        # TODO --- get from config
-        smtp_host = 'antelope.mail.bitmask.net'
-        smtp_port = 2013
+        smtp_client_cert = os.path.join(
+            get_path_prefix(),
+            'leap', 'providers', provider, 'keys',
+            'client',
+            'smtp_{username}.pem'.format(
+                username=username))
+
+        assert(os.path.isfile(smtp_client_cert))
+
+        smtp_config = get_smtp_config(provider)
+        smtp_host = smtp_config.host
+        smtp_port = smtp_config.port
 
         self.smtp_config = LeapSMTPConfig(
             userid,
