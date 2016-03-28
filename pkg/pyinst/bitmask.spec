@@ -1,12 +1,13 @@
 # -*- mode: python -*-
+import sys
 
 block_cipher = None
 
 
-a = Analysis([os.path.join('pkg', 'pyinst', 'bitmask.py')],
+a = Analysis([os.path.join('bitmask.py')],
              hiddenimports=[
 	     	'zope.interface', 'zope.proxy',
-		'PySide.QtCore', 'PySide.QtGui'],
+		'PySide.QtCore', 'PySide.QtGui', 'PySide.QtWebKit'],
              hookspath=None,
              runtime_hooks=None,
              excludes=None,
@@ -33,6 +34,6 @@ if sys.platform.startswith("darwin"):
 		     name=os.path.join(
 		      'dist', 'Bitmask.app'),
                      appname='Bitmask',
-                     version='0.9.0rc2',
+                     version='0.9.2alpha1',
 		     icon='pkg/osx/bitmask.icns',
-		     bundle_identifier='bitmask-0.9.0rc2')
+		     bundle_identifier='bitmask-0.9.2alpha1')
