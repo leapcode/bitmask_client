@@ -167,6 +167,32 @@ sumo_tarball_latest: checkout_leapdeps_develop pull_leapdeps setup_without_names
 pyinst:
 	pyinstaller -y pkg/pyinst/bitmask.spec
 
+pyinst-hacks:
+	cp ../leap_common/src/leap/common/cacert.pem dist/bitmask/
+	mkdir -p dist/bitmask/pysqlcipher
+	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/pysqlcipher/_sqlite.so dist/bitmask/pysqlcipher 
+	cp -r $(VIRTUAL_ENV)/lib/python2.7/site-packages/pixelated_www dist/bitmask/
+
+pyinst-wrapper:
+	mv dist/bitmask/bitmask dist/bitmask/bitmask-app
+	cp pkg/linux/bitmask-launcher dist/bitmask/bitmask
+	cp pkg/PixelatedWebmail.README dist/bitmask
+
+pyinst-trim:
+	rm dist/bitmask/libQtOpenGL.so.4
+	rm dist/bitmask/libQtSql.so.4
+	rm dist/bitmask/libQt3Support.so.4
+	rm dist/bitmask/libnvidia-glcore.so.352.79
+	rm dist/bitmask/libgstvideo-1.0.so.0
+	rm dist/bitmask/libgstaudio-1.0.so.0
+	rm dist/bitmask/libgstreamer-1.0.so.0
+	rm dist/bitmask/libnvidia-tls.so.352.79
+	rm dist/bitmask/libaudio.so.2
+
+pyinst-dist:
+	rm -rf dist/bitmask/config
+	cd dist/ && tar cvzf Bitmask.0.9.2.alpha1.tar.gz bitmask
+
 clean_pkg:
 	rm -rf build dist
 
