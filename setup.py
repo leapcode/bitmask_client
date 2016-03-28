@@ -105,13 +105,13 @@ class freeze_debianver(Command):
 # of this file.
 
 version_version = '{version}'
-version_revisionid = '{version_revision}'
+full_revisionid = '{full_revisionid}'
 """
     templatefun = r"""
 
 def get_versions(default={}, verbose=False):
         return {'version': version_version,
-                'full-revisionid': version_revisionid}
+                'full-revisionid': full_revisionid}
 """
 
     def initialize_options(self):
@@ -128,8 +128,9 @@ def get_versions(default={}, verbose=False):
             return
         subst_template = self.template.format(
             version=VERSION_SHORT,
-            version_full=VERSION_REVISION) + self.templatefun
-        with open(versioneer.versionfile_source, 'w') as f:
+            full_revisionid=VERSION_REVISION) + self.templatefun
+        versioneer_cfg = versioneer.get_config_from_root('.')
+        with open(versioneer_cfg.versionfile_source, 'w') as f:
             f.write(subst_template)
 
 
