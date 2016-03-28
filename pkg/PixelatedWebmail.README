@@ -1,0 +1,38 @@
+How to enable Pixelated Webmail
+-------------------------------
+
+WARNING! This is an experimental feature.
+It can expose your mail to *any* user with access to your machine, since there
+is no authentication in place at the moment. It could even eat your data. You
+have been warned.
+
+Ok, how do I enable this wonderful feature?
+-------------------------------------------
+
+First, run the bundle for a first time, and ensure that you can register a new
+account with a mail-enabled provider (for instance, mail.bitmask.net).
+
+Then, you have to edit a config file living inside the bundle folders. You have
+to add "Pixmail=true" under the [General] section, like this:
+
+config/leap/leap.conf:
+
+[General]
+SkipFirstRun=true
+Provider=mail.bitmask.net
+Pixmail=true
+
+[mail.bitmask.net]
+Services=mx
+
+Then, run bitmask again:
+
+./bitmask --debug
+
+And a new "Bitmask Webmail" option should have appeared under the "Bitmask"
+menu.
+
+If you want to disable the Webmail functionality, just set the Pixmail property
+to 'false'.
+
+Enjoy your local and encrypted pixelated webmail!
