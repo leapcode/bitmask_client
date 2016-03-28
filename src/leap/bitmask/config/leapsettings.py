@@ -353,7 +353,7 @@ class LeapSettings(object):
         :type skip: bool
         """
         leap_assert_type(skip, bool)
-        self._settings.setvalue(self.skipfirstrun_key, skip)
+        self._settings.setValue(self.SKIPFIRSTRUN_KEY, skip)
 
     def get_pixelmail_enabled(self):
         return to_bool(self._settings.value(self.PIXELMAIL_KEY, False))
