@@ -331,6 +331,9 @@ class SoledadBootstrapper(AbstractBootstrapper):
         :returns: the server url
         :rtype: unicode
         """
+        if not self._soledad_config:
+            self._soledad_config = SoledadConfig()
+
         # TODO: Select server based on timezone (issue #3308)
         server_dict = self._soledad_config.get_hosts()
 
