@@ -6,4 +6,4 @@
 [ -f libQtGui.so.4 ] || ln -s libQtGui.so.4.orig libQtGui.so.4
 cat /etc/os-release | grep ID | grep -i ubuntu && unlink libQtCore.so.4 && unlink libQtGui.so.4
 
-./bitmask-app "$@"
+./bitmask-app --standalone "$@"
