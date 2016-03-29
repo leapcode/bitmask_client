@@ -14,6 +14,7 @@ Features
 - `#7656 <https://leap.se/code/issues/7656>`_: Adapt to multi-user aware events.
 - `#4469 <https://leap.se/code/issues/4469>`_: Display randomly generated service token on the Help Window.
 - Use cred-based authentication on SMTP.
+- Experimental support for the Pixelated WebMail.
 
 - `#1234 <https://leap.se/code/issues/1234>`_: Description of the new feature corresponding with issue #1234.
 - New feature without related issue number.
