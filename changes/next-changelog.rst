@@ -13,6 +13,7 @@ Features
 - `#7552 <https://leap.se/code/issues/7552>`_: Improve UI message and add some margin above the msg box.
 - `#7656 <https://leap.se/code/issues/7656>`_: Adapt to multi-user aware events.
 - `#4469 <https://leap.se/code/issues/4469>`_: Display randomly generated service token on the Help Window.
+- `#6041 <https://leap.se/code/issues/6041>`_: Write service tokens to a file to allow email clients to read them from there.
 - Use cred-based authentication on SMTP.
 - Experimental support for the Pixelated WebMail.
 

@@ -20,8 +20,11 @@ Backend components
 # TODO [ ] Get rid of all this deferToThread mess, or at least contain
 #          all of it into its own threadpool.
 
+import json
 import os
+import shutil
 import socket
+import tempfile
 import time
 
 from functools import partial
@@ -789,6 +792,8 @@ class Soledad(object):
                 download_if_needed=True)
             self._soledad_defer.addCallback(self._set_proxies_cb)
             self._soledad_defer.addCallback(self._set_service_tokens_cb)
+            self._soledad_defer.addCallback(self._write_tokens_file,
+                                            username, domain)
         else:
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.soledad_bootstrap_failed)
@@ -810,6 +815,23 @@ class Soledad(object):
         d.addCallback(register_service_token, 'mail_auth')
         d.addCallback(lambda _: result)
         return d
+
+    def _write_tokens_file(self, result, username, domain):
+        tokens_folder = os.path.join(tempfile.gettempdir(), "bitmask_tokens")
+        if os.path.exists(tokens_folder):
+            try:
+                shutil.rmtree(tokens_folder)
+            except OSError as e:
+                logger.error("Can't remove tokens folder %s: %s"
+                             % (tokens_folder, e))
+                return
+        os.mkdir(tokens_folder, 0700)
+
+        tokens_path = os.path.join(tokens_folder,
+                                   "%s@%s.json" % (username, domain))
+        with open(tokens_path, 'w') as ftokens:
+            json.dump(self._service_tokens, ftokens)
+        return result
 
     def _set_proxies_cb(self, _):
         """
