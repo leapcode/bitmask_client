@@ -40,6 +40,9 @@ PYRCC = pyside-rcc
 PYLUP = pyside-lupdate
 LRELE = lrelease
 
+# pyinst dist dir
+DIST = dist/bitmask/
+
 
 #################################
 # DO NOT EDIT FOLLOWING
@@ -165,33 +168,41 @@ sumo_tarball_latest: checkout_leapdeps_develop pull_leapdeps setup_without_names
 	git checkout -- setup.py
 
 pyinst:
+	echo "MAKE SURE OF FREEZING VERSION FIRST!"
 	pyinstaller -y pkg/pyinst/bitmask.spec
 
 pyinst-hacks:
-	cp ../leap_common/src/leap/common/cacert.pem dist/bitmask/
-	mkdir -p dist/bitmask/pysqlcipher
-	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/pysqlcipher/_sqlite.so dist/bitmask/pysqlcipher 
-	cp -r $(VIRTUAL_ENV)/lib/python2.7/site-packages/pixelated_www dist/bitmask/
-
-pyinst-wrapper:
-	mv dist/bitmask/bitmask dist/bitmask/bitmask-app
-	cp pkg/linux/bitmask-launcher dist/bitmask/bitmask
-	cp pkg/PixelatedWebmail.README dist/bitmask
+	cp ../leap_common/src/leap/common/cacert.pem $(DIST)
+	mkdir -p $(DIST)pysqlcipher
+	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/pysqlcipher/_sqlite.so $(DIST)pysqlcipher 
+	cp -r $(VIRTUAL_ENV)/lib/python2.7/site-packages/pixelated_www $(DIST)
 
 pyinst-trim:
-	rm dist/bitmask/libQtOpenGL.so.4
-	rm dist/bitmask/libQtSql.so.4
-	rm dist/bitmask/libQt3Support.so.4
-	rm dist/bitmask/libnvidia-glcore.so.352.79
-	rm dist/bitmask/libgstvideo-1.0.so.0
-	rm dist/bitmask/libgstaudio-1.0.so.0
-	rm dist/bitmask/libgstreamer-1.0.so.0
-	rm dist/bitmask/libnvidia-tls.so.352.79
-	rm dist/bitmask/libaudio.so.2
+	rm -f $(DIST)libQtOpenGL.so.4
+	rm -f $(DIST)libQtSql.so.4
+	rm -f $(DIST)libQt3Support.so.4
+	rm -f $(DIST)libaudio.so.2
+	rm -f $(DIST)libnvidia-*
+	#rm -f dist/bitmask/libgstvideo-1.0.so.0
+	#rm -f dist/bitmask/libgstaudio0.0.so.0
+	#rm -f dist/bitmask/libgstreamer-1.0.so.0
+
+pyinst-wrapper:
+	mv $(DIST)libQtCore.so.4 $(DIST)libQtCore.so.4.orig
+	mv $(DIST)libQtGui.so.4 $(DIST)libQtGui.so.4.orig
+	mv $(DIST)libQtNetwork.so.4 $(DIST)libQtNetwork.so.4.orig
+	mv $(DIST)libQtSvg.so.4 $(DIST)libQtSvg.so.4.orig
+	mv $(DIST)libQtWebKit.so.4 $(DIST)libQtWebKit.so.4.orig
+	mv $(DIST)libQtXmlPatterns.so.4 $(DIST)libQtXmlPatterns.so.4.orig
+	mv $(DIST)libQtXml.so.4 $(DIST)libQtXml.so.4.orig
+	mv $(DIST)bitmask $(DIST)bitmask-app
+	cp pkg/linux/bitmask-launcher $(DIST)bitmask
+	cp pkg/PixelatedWebmail.README $(DIST)
+
 
 pyinst-dist:
-	rm -rf dist/bitmask/config
-	cd dist/ && tar cvzf Bitmask.0.9.2.alpha1.tar.gz bitmask
+	rm -rf $(DIST)config
+	cd dist/ && tar cvzf Bitmask.0.9.2.alpha2.tar.gz bitmask
 
 clean_pkg:
 	rm -rf build dist
