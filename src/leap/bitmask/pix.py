@@ -27,17 +27,21 @@ from twisted.python import log
 from leap.bitmask.util import get_path_prefix
 from leap.mail.imap.account import IMAPAccount
 
-import pixelated_www
+try:
+    import pixelated_www
 
-from pixelated.adapter.mailstore import LeapMailStore
-from pixelated.adapter.welcome_mail import add_welcome_mail
-from pixelated.application import SingleUserServicesFactory
-from pixelated.application import UserAgentMode
-from pixelated.application import start_site
-from pixelated.bitmask_libraries.smtp import LeapSMTPConfig
-from pixelated.bitmask_libraries.session import SessionCache
-from pixelated.config import services
-from pixelated.resources.root_resource import RootResource
+    from pixelated.adapter.mailstore import LeapMailStore
+    from pixelated.adapter.welcome_mail import add_welcome_mail
+    from pixelated.application import SingleUserServicesFactory
+    from pixelated.application import UserAgentMode
+    from pixelated.application import start_site
+    from pixelated.bitmask_libraries.smtp import LeapSMTPConfig
+    from pixelated.bitmask_libraries.session import SessionCache
+    from pixelated.config import services
+    from pixelated.resources.root_resource import RootResource
+    HAS_PIXELATED = True
+except ImportError:
+    HAS_PIXELATED = False
 
 
 def start_pixelated_user_agent(userid, soledad, keymanager):

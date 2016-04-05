@@ -118,7 +118,8 @@ setup_develop() {
     # hack to solve gnupg version problem
     pip uninstall -y gnupg && pip install gnupg
 
-    pip install -r pkg/requirements-pixelated.pip
+    # XXX this fails in trusty; see #8009
+    # pip install -r pkg/requirements-pixelated.pip
     set +x
     echo "${cc_green}Status: $status done.${cc_normal}"
 }
