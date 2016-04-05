@@ -1,5 +1,7 @@
 pyinst:
-	echo "MAKE SURE OF FREEZING VERSION FIRST!"
+	echo "*********************************************"
+	echo "MAKE SURE OF MANUALLY FREEZING VERSION FIRST!"
+	echo "*********************************************"
 	pyinstaller -y pkg/pyinst/bitmask.spec
 
 pyinst-hacks:
@@ -19,6 +21,7 @@ pyinst-trim:
 	#rm -f dist/bitmask/libgstreamer-1.0.so.0
 
 pyinst-wrapper:
+	# TODO this *is* an ugly hack, See #7352
 	mv $(DIST)libQtCore.so.4 $(DIST)libQtCore.so.4.orig
 	mv $(DIST)libQtGui.so.4 $(DIST)libQtGui.so.4.orig
 	mv $(DIST)libQtNetwork.so.4 $(DIST)libQtNetwork.so.4.orig
@@ -28,12 +31,26 @@ pyinst-wrapper:
 	mv $(DIST)libQtXml.so.4 $(DIST)libQtXml.so.4.orig
 	mv $(DIST)bitmask $(DIST)bitmask-app
 	cp pkg/linux/bitmask-launcher $(DIST)bitmask
-	cp pkg/PixelatedWebmail.README $(DIST)
 
-
-pyinst-dist:
+pyinst-cleanup:
 	rm -rf $(DIST)config
-	cd dist/ && tar cvzf Bitmask.0.9.2.alpha2.tar.gz bitmask
+	mkdir -p $(DIST_VERSION)
+	mv $(DIST) $(DIST_VERSION)libs
+	cd pkg/launcher && make 
+	mv pkg/launcher/bitmask $(DIST_VERSION)
+
+pyinst-distribution-data:
+	cp release-notes.rst $(DIST_VERSION)
+	cp pkg/PixelatedWebmail.README $(DIST_VERSION)
+	cp LICENSE $(DIST_VERSION)
+
+pyinst-tar:
+	cd dist/ && tar cvzf Bitmask.$(NEXT_VERSION).tar.gz bitmask-$(NEXT_VERSION)
+
+pyinst-sign:
+	# TODO ---- get LEAP_MAINTAINER from environment
+
+pyinst-linux: pyinst pyinst-hacks pyinst-trim pyinst-wrapper pyinst-cleanup pyinst-distribution-data pyinst-tar
 
 clean_pkg:
 	rm -rf build dist

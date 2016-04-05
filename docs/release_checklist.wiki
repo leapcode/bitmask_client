@@ -1,6 +1,7 @@
 ﻿= Bitmask Release Checklist (*) =
   * [ ] Check that all tests are passing!
   * [ ] Check that the version in bitmask_client/pkg/linux/bitmask-root is bumped if needed.
+  * [ ] Update pkg/next-release
   * [ ] Tag everything
     * Should be done for the following packages, in order:
       * [ ] 1. leap.common
@@ -31,7 +32,7 @@
     * [ ] git push origin master; git push origin X.Y.Z
     * [ ] git checkout develop && git merge master && git push origin develop
   * [ ] Build and upload bundles
-    * [ ] Use the scripts under pkg/<os>/ to build the the bundles.
+    * [ ] Use 'make pyinst-linux' to build bundles.
     * [ ] Sign them with gpg -a --sign --detach-sign <path/to/bundle>
     * [ ] Upload bundle and signature to downloads.leap.se/client/<os>/Bitmask-<os>-<ver>.(tar.bz2,dmg,zip)
     * [ ] Update symbolic link for latest upload and signature:
