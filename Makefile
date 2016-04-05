@@ -141,71 +141,8 @@ checkout_leapdeps_develop:
 	for repo in $(LEAP_REPOS); do cd $(CURDIR)/../$$repo && git checkout develop; done
 	git checkout develop
 
-checkout_leapdeps_release:
-	pkg/scripts/checkout_leap_versions.sh
-
-setup_without_namespace:
-	awk '!/namespace_packages*/' setup.py > file && mv file setup.py
-
-sumo_tarball_release: checkout_leapdeps_release setup_without_namespace
-	python setup.py sdist --sumo
-	git checkout -- src/leap/__init__.py
-	git checkout -- src/leap/bitmask/_version.py
-	rm -rf src/leap/soledad
-	git checkout -- setup.py
-
-# XXX We need two sets of sumo-tarballs: the one published for a release
-# (that will pick the pinned leap deps), and the other which will be used
-# for the nightly builds.
-# TODO change naming scheme for sumo-latest: should include date (in case
-# bitmask is not updated bu the dependencies are)
-
-sumo_tarball_latest: checkout_leapdeps_develop pull_leapdeps setup_without_namespace
-	python setup.py sdist --sumo   # --latest
-	git checkout -- src/leap/__init__.py
-	git checkout -- src/leap/bitmask/_version.py
-	rm -rf src/leap/soledad
-	git checkout -- setup.py
-
-pyinst:
-	echo "MAKE SURE OF FREEZING VERSION FIRST!"
-	pyinstaller -y pkg/pyinst/bitmask.spec
-
-pyinst-hacks:
-	cp ../leap_common/src/leap/common/cacert.pem $(DIST)
-	mkdir -p $(DIST)pysqlcipher
-	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/pysqlcipher/_sqlite.so $(DIST)pysqlcipher 
-	cp -r $(VIRTUAL_ENV)/lib/python2.7/site-packages/pixelated_www $(DIST)
-
-pyinst-trim:
-	rm -f $(DIST)libQtOpenGL.so.4
-	rm -f $(DIST)libQtSql.so.4
-	rm -f $(DIST)libQt3Support.so.4
-	rm -f $(DIST)libaudio.so.2
-	rm -f $(DIST)libnvidia-*
-	#rm -f dist/bitmask/libgstvideo-1.0.so.0
-	#rm -f dist/bitmask/libgstaudio0.0.so.0
-	#rm -f dist/bitmask/libgstreamer-1.0.so.0
-
-pyinst-wrapper:
-	mv $(DIST)libQtCore.so.4 $(DIST)libQtCore.so.4.orig
-	mv $(DIST)libQtGui.so.4 $(DIST)libQtGui.so.4.orig
-	mv $(DIST)libQtNetwork.so.4 $(DIST)libQtNetwork.so.4.orig
-	mv $(DIST)libQtSvg.so.4 $(DIST)libQtSvg.so.4.orig
-	mv $(DIST)libQtWebKit.so.4 $(DIST)libQtWebKit.so.4.orig
-	mv $(DIST)libQtXmlPatterns.so.4 $(DIST)libQtXmlPatterns.so.4.orig
-	mv $(DIST)libQtXml.so.4 $(DIST)libQtXml.so.4.orig
-	mv $(DIST)bitmask $(DIST)bitmask-app
-	cp pkg/linux/bitmask-launcher $(DIST)bitmask
-	cp pkg/PixelatedWebmail.README $(DIST)
-
-
-pyinst-dist:
-	rm -rf $(DIST)config
-	cd dist/ && tar cvzf Bitmask.0.9.2.alpha2.tar.gz bitmask
-
-clean_pkg:
-	rm -rf build dist
+include pkg/sumo-tarballs.mk
+include pkg/pyinst/pyinst-build.mk
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
