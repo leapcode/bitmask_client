@@ -1,8 +1,13 @@
-pyinst:
-	echo "*********************************************"
-	echo "MAKE SURE OF MANUALLY FREEZING VERSION FIRST!"
-	echo "*********************************************"
+freeze-ver:
+	cp pkg/version-template src/leap/bitmask/_version.py
+	sed  -i 's/^version_version\(.*\)/version_version = "$(NEXT_VERSION)"/'  src/leap/bitmask/_version.py
+	sed  -i 's/^full_revisionid\(.*\)/full_revisionid = "$(GIT_COMMIT)"/' src/leap/bitmask/_version.py
+
+pyinst: freeze-ver
 	pyinstaller -y pkg/pyinst/bitmask.spec
+
+reset-ver:
+	git checkout -- src/leap/bitmask/_version.py
 
 pyinst-hacks:
 	cp ../leap_common/src/leap/common/cacert.pem $(DIST)
@@ -44,13 +49,28 @@ pyinst-distribution-data:
 	cp pkg/PixelatedWebmail.README $(DIST_VERSION)
 	cp LICENSE $(DIST_VERSION)
 
+pyinst-linux-helpers:
+	mkdir -p $(DIST_VERSION)apps/eip/files
+	# TODO compile static
+	cp /usr/sbin/openvpn $(DIST_VERSION)apps/eip/files/leap-openvpn
+	cp pkg/linux/bitmask-root $(DIST_VERSION)apps/eip/files/
+	cp pkg/linux/leap-install-helper.sh $(DIST_VERSION)apps/eip/files/
+	cp pkg/linux/polkit/se.leap.bitmask.bundle.policy $(DIST_VERSION)apps/eip/files/
+	mkdir -p $(DIST_VERSION)apps/mail
+	# TODO compile static
+	cp /usr/bin/gpg $(DIST_VERSION)apps/mail
+
 pyinst-tar:
 	cd dist/ && tar cvzf Bitmask.$(NEXT_VERSION).tar.gz bitmask-$(NEXT_VERSION)
 
 pyinst-sign:
-	# TODO ---- get LEAP_MAINTAINER from environment
+	gpg2 -a --sign --detach-sign dist/Bitmask.$(NEXT_VERSION).tar.gz 
 
-pyinst-linux: pyinst pyinst-hacks pyinst-trim pyinst-wrapper pyinst-cleanup pyinst-distribution-data pyinst-tar
+pyinst-upload:
+	scp dist/Bitmask.$(NEXT_VERSION).* salmon.leap.se:./ 
+
+#pyinst-linux: pyinst pyinst-hacks pyinst-trim pyinst-wrapper pyinst-cleanup pyinst-distribution-data pyinst-tar
+pyinst-linux: pyinst reset-ver pyinst-hacks pyinst-trim pyinst-cleanup pyinst-distribution-data pyinst-linux-helpers pyinst-tar
 
 clean_pkg:
 	rm -rf build dist

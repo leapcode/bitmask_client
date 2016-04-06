@@ -45,6 +45,7 @@ LRELE = lrelease
 DIST = dist/bitmask/
 NEXT_VERSION = $(shell cat pkg/next-version)
 DIST_VERSION = dist/bitmask-$(NEXT_VERSION)/
+GIT_COMMIT = $(shell git rev-parse HEAD)
 
 
 #################################
