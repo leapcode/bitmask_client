@@ -482,7 +482,7 @@ def _linux_install_missing_scripts(badexec, notfound):
     """
     success = False
     installer_path = os.path.abspath(
-        os.path.join(os.getcwd(), "apps", "eip", "files"))
+        os.path.join(os.getcwd(), "..", "apps", "eip", "files"))
 
     install_helper = "leap-install-helper.sh"
     install_helper_path = os.path.join(installer_path, install_helper)
