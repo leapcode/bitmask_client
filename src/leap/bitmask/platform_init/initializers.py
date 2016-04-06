@@ -440,29 +440,29 @@ def _get_missing_complain_dialog(stuff):
     class ComplainDialog(QtGui.QDialog):
 
         def __init__(self, parent=None):
-                super(ComplainDialog, self).__init__(parent)
+            super(ComplainDialog, self).__init__(parent)
 
-                label = QtGui.QLabel(msgstr.NO_HELPERS)
-                label.setAlignment(QtCore.Qt.AlignLeft)
+            label = QtGui.QLabel(msgstr.NO_HELPERS)
+            label.setAlignment(QtCore.Qt.AlignLeft)
 
-                label2 = QtGui.QLabel(msgstr.EXPLAIN)
-                label2.setAlignment(QtCore.Qt.AlignLeft)
+            label2 = QtGui.QLabel(msgstr.EXPLAIN)
+            label2.setAlignment(QtCore.Qt.AlignLeft)
 
-                textedit = QtGui.QTextEdit()
-                textedit.setText("\n".join(stuff))
+            textedit = QtGui.QTextEdit()
+            textedit.setText("\n".join(stuff))
 
-                ok = QtGui.QPushButton()
-                ok.setText(self.tr("Ok, thanks"))
-                self.ok = ok
-                self.ok.clicked.connect(self.close)
+            ok = QtGui.QPushButton()
+            ok.setText(self.tr("Ok, thanks"))
+            self.ok = ok
+            self.ok.clicked.connect(self.close)
 
-                mainLayout = QtGui.QGridLayout()
-                mainLayout.addWidget(label, 0, 0)
-                mainLayout.addWidget(label2, 1, 0)
-                mainLayout.addWidget(textedit, 2, 0)
-                mainLayout.addWidget(ok, 3, 0)
+            mainLayout = QtGui.QGridLayout()
+            mainLayout.addWidget(label, 0, 0)
+            mainLayout.addWidget(label2, 1, 0)
+            mainLayout.addWidget(textedit, 2, 0)
+            mainLayout.addWidget(ok, 3, 0)
 
-                self.setLayout(mainLayout)
+            self.setLayout(mainLayout)
 
     msg = ComplainDialog()
     msg.setWindowTitle(msg.tr("Missing Bitmask helper files"))
