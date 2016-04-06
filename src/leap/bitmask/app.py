@@ -163,6 +163,9 @@ def start_app():
     }
 
     flags.STANDALONE = opts.standalone
+    if getattr(sys, 'frozen', False):
+        flags.STANDALONE = True
+
     flags.OFFLINE = opts.offline
     flags.MAIL_LOGFILE = opts.mail_log_file
     flags.APP_VERSION_CHECK = opts.app_version_check
