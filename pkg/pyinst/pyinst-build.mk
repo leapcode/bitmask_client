@@ -40,7 +40,7 @@ pyinst-wrapper:
 pyinst-cleanup:
 	rm -rf $(DIST)config
 	mkdir -p $(DIST_VERSION)
-	mv $(DIST) $(DIST_VERSION)libs
+	mv $(DIST) $(DIST_VERSION)lib
 	cd pkg/launcher && make 
 	mv pkg/launcher/bitmask $(DIST_VERSION)
 

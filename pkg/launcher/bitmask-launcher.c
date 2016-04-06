@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-char* const bitmask_path = "libs";
+char* const bitmask_path = "lib";
 char* const entrypoint = "bitmask";
 
 int main(int argc, char *argv[])
