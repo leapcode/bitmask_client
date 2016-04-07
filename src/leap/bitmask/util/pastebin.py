@@ -25,12 +25,12 @@
 
 #############################################################################
 
+import urllib
+
 
 __ALL__ = ['delete_paste', 'user_details', 'trending', 'pastes_by_user',
            'generate_user_key', 'paste', 'Pastebin', 'PastebinError',
            'PostLimitError']
-
-import urllib
 
 
 class PastebinError(RuntimeError):

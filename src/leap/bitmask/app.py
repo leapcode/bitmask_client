@@ -46,11 +46,7 @@ import os
 import platform
 import sys
 
-if platform.system() == "Darwin":
-    # We need to tune maximum number of files, due to zmq usage
-    # we hit the limit.
-    import resource
-    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
+import psutil
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.backend.backend_proxy import BackendProxy
@@ -70,7 +66,12 @@ from leap.mail import __version__ as MAIL_VERSION
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
-import psutil
+
+if platform.system() == "Darwin":
+    # We need to tune maximum number of files, due to zmq usage
+    # we hit the limit.
+    import resource
+    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
 
 
 def kill_the_children():
@@ -226,9 +227,10 @@ def start_app():
     backend_pid = None
     if not backend_running:
         frontend_pid = os.getpid()
-        backend_process = multiprocessing.Process(target=run_backend,
-                                                  name='Backend',
-                                                  args=(opts.danger, flags_dict, frontend_pid))
+        backend_process = multiprocessing.Process(
+            target=run_backend,
+            name='Backend',
+            args=(opts.danger, flags_dict, frontend_pid))
         # we don't set the 'daemon mode' since we need to start child processes
         # in the backend
         # backend_process.daemon = True

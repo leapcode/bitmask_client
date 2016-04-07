@@ -361,4 +361,3 @@ class LeapSettings(object):
     def set_pixelmail_enabled(self, enabled):
         leap_assert_type(enabled, bool)
         self._settings.setvalue(self.PIXELMAIL_KEY, enabled)
-        

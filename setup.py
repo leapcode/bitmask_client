@@ -20,18 +20,29 @@ Setup file for bitmask.
 """
 from __future__ import print_function
 
+import glob
 import hashlib
-import sys
 import os
+import platform
 import re
+import shutil
+import sys
 
 from distutils.command.build import build as _build
 from setuptools import Command
+from setuptools.command.develop import develop as _develop
 
-if not sys.version_info[0] == 2:
-    print("[ERROR] Sorry, Python 3 is not supported (yet). "
-          "Try running with python2: python2 setup.py ...")
-    exit()
+
+from pkg import utils
+
+import versioneer
+
+# The following import avoids the premature unloading of the `util` submodule
+# when running tests, which would cause an error when nose finishes tests and
+# calls the exit function of the multiprocessing module.
+from multiprocessing import util
+assert(util)
+
 
 try:
     from setuptools import setup, find_packages
@@ -40,16 +51,11 @@ except ImportError:
     distribute_setup.use_setuptools()
     from setuptools import setup, find_packages
 
-from pkg import utils
+if not sys.version_info[0] == 2:
+    print("[ERROR] Sorry, Python 3 is not supported (yet). "
+          "Try running with python2: python2 setup.py ...")
+    exit()
 
-import versioneer
-
-
-# The following import avoids the premature unloading of the `util` submodule
-# when running tests, which would cause an error when nose finishes tests and
-# calls the exit function of the multiprocessing module.
-from multiprocessing import util
-assert(util)
 
 setup_root = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(setup_root, "src"))
@@ -166,8 +172,6 @@ else:
 
 
 leap_launcher = 'bitmask=leap.bitmask.app:start_app'
-
-from setuptools.command.develop import develop as _develop
 
 
 def copy_reqs(path, withsrc=False):
@@ -365,10 +369,6 @@ class cmd_sdist(versioneer_sdist):
                         pass
 
 
-import shutil
-import glob
-
-
 def _get_leap_versions():
     versions = {}
     with open("pkg/leap_versions.txt") as vf:
@@ -457,7 +457,6 @@ def copy_recursively(source_folder, destination_folder):
 cmdclass["build"] = cmd_build
 cmdclass["sdist"] = cmd_sdist
 
-import platform
 _system = platform.system()
 IS_LINUX = _system == "Linux"
 IS_MAC = _system == "Darwin"

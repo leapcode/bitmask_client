@@ -19,6 +19,8 @@ Init file for leap.bitmask
 
 Initializes version and app info.
 """
+from ._version import get_versions
+
 # HACK: This is a hack so that py2app copies _scrypt.so to the right
 # place, it can't be technically imported, but that doesn't matter
 # because the import is never executed
@@ -45,7 +47,6 @@ def _is_release_version(version_str):
     return patch.isdigit()
 
 
-from ._version import get_versions
 __version__ = get_versions()['version']
 __version_hash__ = get_versions()['full-revisionid']
 IS_RELEASE_VERSION = _is_release_version(__version__)
