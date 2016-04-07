@@ -15,7 +15,7 @@ account with a mail-enabled provider (for instance, mail.bitmask.net).
 Then, you have to edit a config file living inside the bundle folders. You have
 to add "Pixmail=true" under the [General] section, like this:
 
-config/leap/leap.conf:
+lib/config/leap/leap.conf:
 
 [General]
 SkipFirstRun=true
