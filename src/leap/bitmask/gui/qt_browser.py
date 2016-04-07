@@ -26,8 +26,14 @@ PIXELATED_URI = 'http://localhost:9090'
 class PixelatedWindow(QtGui.QDialog):
 
     def __init__(self, parent):
-        QtGui.QDialog.__init__(self, parent)
-        self.web = QtWebKit.QWebView(self)
-        self.web.load(QtCore.QUrl(PIXELATED_URI))
+        super(PixelatedWindow, self).__init__(parent)
+        self.view = QtWebKit.QWebView(self)
+
+        layout = QtGui.QGridLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.view)
+        self.setLayout(layout)
         self.setWindowTitle('Bitmask/Pixelated WebMail')
-        self.web.show()
+
+    def load_app(self):
+        self.view.load(QtCore.QUrl(PIXELATED_URI))

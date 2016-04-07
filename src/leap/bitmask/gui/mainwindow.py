@@ -579,6 +579,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
     def _show_pixelated_browser(self):
         win = PixelatedWindow(self)
         win.show()
+        win.load_app()
 
     def _update_eip_enabled_status(self, account=None, services=None):
         """
