@@ -1089,12 +1089,11 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         # FIXME on i3, this doens't allow to mouse-select.
         # Switch to a dialog in which we can set the QLabel
-        imap_token = (self._service_tokens.get('imap', None) or
-                      "??? (log in to unlock)")
-        smtp_token = (self._service_tokens.get('smtp', None) or
-                      "??? (log in to unlock)")
-        imap_password = self.tr("IMAP Password:") + " %s" % (imap_token,)
-        smtp_password = self.tr("SMTP Password:") + " %s" % (smtp_token,)
+        mail_auth_token = (
+            self._service_tokens.get('mail_auth', None) or
+            "??? (log in to unlock)")
+        mail_password = self.tr("IMAP/SMTP Password:") + " %s" % (
+            mail_auth_token,)
 
         msg = help_url + self.tr(
             "<p><strong>{0}</strong></p>"
@@ -1105,10 +1104,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             "<li>&nbsp;{4}</li>"
             "<li>&nbsp;{5}</li>"
             "<li>&nbsp;{6}</li>"
-            "<li>&nbsp;{7}</li>"
             "</ul></p>").format(email_quick_reference, thunderbird_text,
                                 manual_text, manual_imap, manual_smtp,
-                                manual_username, imap_password, smtp_password)
+                                manual_username, mail_password)
         QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
     def _needs_update(self):

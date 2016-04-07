@@ -806,11 +806,8 @@ class Soledad(object):
                     (service, token))
 
         sol = self._soledad_bootstrapper.soledad
-        d = sol.get_or_create_service_token('imap')
-        d.addCallback(register_service_token, 'imap')
-        d.addCallback(
-            lambda _: sol.get_or_create_service_token('smtp'))
-        d.addCallback(register_service_token, 'smtp')
+        d = sol.get_or_create_service_token('mail_auth')
+        d.addCallback(register_service_token, 'mail_auth')
         d.addCallback(lambda _: result)
         return d
 
