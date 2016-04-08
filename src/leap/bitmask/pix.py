@@ -61,7 +61,7 @@ def start_pixelated_user_agent(userid, soledad, keymanager):
         # we are running in a |PyInstaller| bundle
         static_folder = os.path.join(sys._MEIPASS, 'pixelated_www')
     else:
-        static_folder = os.path.abspath(pixelated_www.__path__)
+        static_folder = os.path.abspath(pixelated_www.__path__[0])
 
     resource = RootResource(services_factory, static_folder=static_folder)
 
