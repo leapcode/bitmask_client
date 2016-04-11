@@ -74,6 +74,11 @@ if platform.system() == "Darwin":
     resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
 
 
+def qt_hack_ubuntu():
+    """Export an env var to avoid gui corruption, see #8028"""
+    os.environ['QT_GRAPHICSSYSTEM'] = 'native'
+
+
 def kill_the_children():
     """
     Make sure no lingering subprocesses are left in case of a bad termination.
@@ -151,6 +156,8 @@ def start_app():
     """
     Starts the main event loop and launches the main window.
     """
+    qt_hack_ubuntu()
+
     # Ignore the signals since we handle them in the subprocesses
     # signal.signal(signal.SIGINT, signal.SIG_IGN)
 
