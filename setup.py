@@ -219,6 +219,7 @@ class cmd_binary_hash(Command):
         pass
 
     def run(self, *args):
+        # TODO check gnupg binary too.
 
         OPENVPN_BIN = os.environ.get('OPENVPN_BIN', None)
         BITMASK_ROOT = os.environ.get('BITMASK_ROOT', None)

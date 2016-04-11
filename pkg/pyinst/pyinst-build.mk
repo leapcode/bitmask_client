@@ -3,7 +3,11 @@ freeze-ver:
 	sed  -i 's/^version_version\(.*\)/version_version = "$(NEXT_VERSION)"/'  src/leap/bitmask/_version.py
 	sed  -i 's/^full_revisionid\(.*\)/full_revisionid = "$(GIT_COMMIT)"/' src/leap/bitmask/_version.py
 
-pyinst: freeze-ver
+hash-binaries:
+	# TODO get from a build dir
+	OPENVPN_BIN=/usr/sbin/openvpn BITMASK_ROOT=pkg/linux/bitmask-root python setup.py hash_binaries
+
+pyinst: freeze-ver hash-binaries
 	pyinstaller -y pkg/pyinst/bitmask.spec
 
 reset-ver:
