@@ -29,18 +29,6 @@ pyinst-trim:
 	#rm -f dist/bitmask/libgstaudio0.0.so.0
 	#rm -f dist/bitmask/libgstreamer-1.0.so.0
 
-pyinst-wrapper:
-	# TODO this *is* an ugly hack, See #7352
-	mv $(DIST)libQtCore.so.4 $(DIST)libQtCore.so.4.orig
-	mv $(DIST)libQtGui.so.4 $(DIST)libQtGui.so.4.orig
-	mv $(DIST)libQtNetwork.so.4 $(DIST)libQtNetwork.so.4.orig
-	mv $(DIST)libQtSvg.so.4 $(DIST)libQtSvg.so.4.orig
-	mv $(DIST)libQtWebKit.so.4 $(DIST)libQtWebKit.so.4.orig
-	mv $(DIST)libQtXmlPatterns.so.4 $(DIST)libQtXmlPatterns.so.4.orig
-	mv $(DIST)libQtXml.so.4 $(DIST)libQtXml.so.4.orig
-	mv $(DIST)bitmask $(DIST)bitmask-app
-	cp pkg/linux/bitmask-launcher $(DIST)bitmask
-
 pyinst-cleanup:
 	rm -rf $(DIST)config
 	mkdir -p $(DIST_VERSION)
@@ -73,7 +61,6 @@ pyinst-sign:
 pyinst-upload:
 	scp dist/Bitmask.$(NEXT_VERSION).* salmon.leap.se:./ 
 
-#pyinst-linux: pyinst pyinst-hacks pyinst-trim pyinst-wrapper pyinst-cleanup pyinst-distribution-data pyinst-tar
 pyinst-linux: pyinst reset-ver pyinst-hacks pyinst-trim pyinst-cleanup pyinst-distribution-data pyinst-linux-helpers pyinst-tar
 
 clean_pkg:
