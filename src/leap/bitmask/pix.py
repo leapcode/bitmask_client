@@ -25,11 +25,10 @@ from twisted.internet import defer
 from twisted.python import log
 
 from leap.bitmask.util import get_path_prefix
-from leap.mail.imap.account import IMAPAccount
+from leap.mail.mail import Account
+from leap.keymanager import openpgp, KeyNotFound
 
 try:
-    import pixelated_www
-
     from pixelated.adapter.mailstore import LeapMailStore
     from pixelated.adapter.welcome_mail import add_welcome_mail
     from pixelated.application import SingleUserServicesFactory
@@ -39,6 +38,7 @@ try:
     from pixelated.bitmask_libraries.session import SessionCache
     from pixelated.config import services
     from pixelated.resources.root_resource import RootResource
+    import pixelated_www
     HAS_PIXELATED = True
 except ImportError:
     HAS_PIXELATED = False
@@ -70,10 +70,11 @@ def start_pixelated_user_agent(userid, soledad, keymanager):
     config.sslkey = None
     config.sslcert = None
 
-    deferred = _start_in_single_user_mode(
-        leap_session, config,
-        resource, services_factory)
-    return deferred
+    d = leap_session.account.callWhenReady(
+        lambda _: _start_in_single_user_mode(
+            leap_session, config,
+            resource, services_factory))
+    return d
 
 
 def get_smtp_config(provider):
@@ -90,6 +91,39 @@ def get_smtp_config(provider):
     return config
 
 
+class NickNym(object):
+
+    def __init__(self, keymanager, userid):
+        self._email = userid
+        self.keymanager = keymanager
+
+    @defer.inlineCallbacks
+    def generate_openpgp_key(self):
+        key_present = yield self._key_exists(self._email)
+        if not key_present:
+            yield self._gen_key()
+        yield self._send_key_to_leap()
+
+    @defer.inlineCallbacks
+    def _key_exists(self, email):
+        try:
+            yield self.fetch_key(email, private=True, fetch_remote=False)
+            defer.returnValue(True)
+        except KeyNotFound:
+            defer.returnValue(False)
+
+    def fetch_key(self, email, private=False, fetch_remote=True):
+        return self.keymanager.get_key(
+            email, openpgp.OpenPGPKey,
+            private=private, fetch_remote=fetch_remote)
+
+    def _gen_key(self):
+        return self.keymanager.gen_key(openpgp.OpenPGPKey)
+
+    def _send_key_to_leap(self):
+        return self.keymanager.send_key(openpgp.OpenPGPKey)
+
+
 class LeapSessionAdapter(object):
 
     def __init__(self, userid, soledad, keymanager):
@@ -97,10 +131,8 @@ class LeapSessionAdapter(object):
 
         self.soledad = soledad
 
-        # FIXME this expects a keymanager-like instance
-        self.nicknym = Config()
-        self.nicknym.keymanager = keymanager
-
+        # XXX this needs to be converged with our public apis.
+        self.nicknym = NickNym(keymanager, userid)
         self.mail_store = LeapMailStore(soledad)
 
         self.user_auth = Config()
@@ -108,7 +140,7 @@ class LeapSessionAdapter(object):
 
         self.fresh_account = False
         self.incoming_mail_fetcher = None
-        self.account = IMAPAccount(userid, soledad, defer.Deferred())
+        self.account = Account(soledad)
 
         username, provider = userid.split('@')
         smtp_client_cert = os.path.join(
