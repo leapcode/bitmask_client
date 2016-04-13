@@ -147,6 +147,7 @@ checkout_leapdeps_develop:
 
 include pkg/sumo-tarballs.mk
 include pkg/pyinst/pyinst-build.mk
+include pkg/branding/branding.mk
 
 clean :
 	$(RM) $(COMPILED_UI) $(COMPILED_RESOURCES) $(COMPILED_UI:.py=.pyc) $(COMPILED_RESOURCES:.py=.pyc)
