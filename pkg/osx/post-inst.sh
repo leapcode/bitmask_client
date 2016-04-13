@@ -1,5 +1,4 @@
 #!/bin/sh
-
 # Bitmask Post-Instalation script
 
 cp se.leap.bitmask-helper.plist /Library/LaunchDaemons/
