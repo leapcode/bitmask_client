@@ -16,8 +16,10 @@ reset-ver:
 pyinst-hacks:
 	cp ../leap_common/src/leap/common/cacert.pem $(DIST)
 	mkdir -p $(DIST)pysqlcipher
+	mkdir -p $(DIST)pixelated
 	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/pysqlcipher/_sqlite.so $(DIST)pysqlcipher 
 	cp -r $(VIRTUAL_ENV)/lib/python2.7/site-packages/pixelated_www $(DIST)
+	cp -r $(VIRTUAL_ENV)/lib/python2.7/site-packages/pixelated/assets/ $(DIST)pixelated
 
 pyinst-trim:
 	rm -f $(DIST)libQtOpenGL.so.4
