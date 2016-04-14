@@ -44,7 +44,7 @@ from leap.bitmask.platform_init import IS_LINUX
 from leap.bitmask import pix
 from leap.bitmask.provider.pinned import PinnedProviders
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
-from leap.bitmask.services import get_supported
+from leap.bitmask.services import get_supported, EIP_SERVICE
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
@@ -651,8 +651,10 @@ class EIP(object):
             logger.error("No polkit agent running.")
             return False
 
-        eip_config = eipconfig.EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
+        if EIP_SERVICE not in provider_config.get_services():
+            return False
+        eip_config = eipconfig.EIPConfig()
 
         api_version = provider_config.get_api_version()
         eip_config.set_api_version(api_version)
