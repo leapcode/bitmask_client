@@ -4,8 +4,7 @@ freeze-ver:
 	sed  -i 's/^full_revisionid\(.*\)/full_revisionid = "$(GIT_COMMIT)"/' src/leap/bitmask/_version.py
 
 hash-binaries:
-	# TODO get from a build dir
-	OPENVPN_BIN=/usr/sbin/openvpn BITMASK_ROOT=pkg/linux/bitmask-root python setup.py hash_binaries
+	OPENVPN_BIN=$(LEAP_BUILD_DIR)openvpn BITMASK_ROOT=pkg/linux/bitmask-root python setup.py hash_binaries
 
 pyinst: freeze-ver hash-binaries
 	pyinstaller -y pkg/pyinst/bitmask.spec
@@ -47,14 +46,12 @@ pyinst-distribution-data:
 
 pyinst-linux-helpers:
 	mkdir -p $(DIST_VERSION)apps/eip/files
-	# TODO compile static
-	cp /usr/sbin/openvpn $(DIST_VERSION)apps/eip/files/leap-openvpn
+	cp $(LEAP_BUILD_DIR)openvpn $(DIST_VERSION)apps/eip/files/leap-openvpn
 	cp pkg/linux/bitmask-root $(DIST_VERSION)apps/eip/files/
 	cp pkg/linux/leap-install-helper.sh $(DIST_VERSION)apps/eip/files/
 	cp pkg/linux/polkit/se.leap.bitmask.bundle.policy $(DIST_VERSION)apps/eip/files/
 	mkdir -p $(DIST_VERSION)apps/mail
-	# TODO compile static
-	cp /usr/bin/gpg $(DIST_VERSION)apps/mail
+	cp $(LEAP_BUILD_DIR)gpg $(DIST_VERSION)apps/mail
 
 pyinst-tar:
 	cd dist/ && tar cvzf Bitmask.$(NEXT_VERSION).tar.gz bitmask-$(NEXT_VERSION)
