@@ -75,8 +75,9 @@ if platform.system() == "Darwin":
 
 
 def qt_hack_ubuntu():
-    """Export an env var to avoid gui corruption, see #8028"""
+    """Export two env vars to avoid gui corruption, see #8028"""
     os.environ['QT_GRAPHICSSYSTEM'] = 'native'
+    os.environ['LIBOVERLAY_SCROLLBAR'] = '0'
 
 
 def kill_the_children():
