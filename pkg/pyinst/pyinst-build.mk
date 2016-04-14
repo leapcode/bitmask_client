@@ -60,7 +60,7 @@ pyinst-sign:
 	gpg2 -a --sign --detach-sign dist/Bitmask.$(NEXT_VERSION).tar.gz 
 
 pyinst-upload:
-	scp dist/Bitmask.$(NEXT_VERSION).* salmon.leap.se:./ 
+	rsync --rsh='ssh' -avztlpog --progress --partial dist/Bitmask.$(NEXT_VERSION).* salmon.leap.se:./
 
 pyinst-linux: pyinst reset-ver pyinst-hacks pyinst-trim pyinst-cleanup pyinst-distribution-data pyinst-linux-helpers pyinst-tar
 
