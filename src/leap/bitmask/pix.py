@@ -140,7 +140,7 @@ class LeapSessionAdapter(object):
 
         self.fresh_account = False
         self.incoming_mail_fetcher = None
-        self.account = Account(soledad)
+        self.account = Account(soledad, userid)
 
         username, provider = userid.split('@')
         smtp_client_cert = os.path.join(

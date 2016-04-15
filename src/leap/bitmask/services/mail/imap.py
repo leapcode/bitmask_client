@@ -91,7 +91,7 @@ def start_incoming_mail_service(keymanager, soledad, userid):
             check_period=get_mail_check_period())
         return incoming_mail
 
-    acc = Account(soledad)
+    acc = Account(soledad, userid)
     d = acc.callWhenReady(lambda _: acc.get_collection_by_mailbox(INBOX_NAME))
     d.addCallback(setUpIncomingMail)
     d.addErrback(log.err)
