@@ -1,7 +1,7 @@
 freeze-ver:
 	cp pkg/version-template src/leap/bitmask/_version.py
-	sed  -i 's/^version_version\(.*\)/version_version = "$(NEXT_VERSION)"/'  src/leap/bitmask/_version.py
-	sed  -i 's/^full_revisionid\(.*\)/full_revisionid = "$(GIT_COMMIT)"/' src/leap/bitmask/_version.py
+	sed  -i ' ' 's/^version_version\(.*\)/version_version = "$(NEXT_VERSION)"/'  src/leap/bitmask/_version.py
+	sed  -i ' ' "s/^full_revisionid\(.*\)/full_revisionid='$(GIT_COMMIT)'/" src/leap/bitmask/_version.py
 
 hash-binaries:
 	OPENVPN_BIN=$(LEAP_BUILD_DIR)openvpn BITMASK_ROOT=pkg/linux/bitmask-root python setup.py hash_binaries
@@ -58,12 +58,12 @@ pyinst-helpers-linux:
 
 pyinst-helpers-osx:
 	mkdir -p $(DIST_OSX_RES)bitmask-helper
-	mkdir $(DIST_OSX)Contents/MacOS/apps/mail
+	mkdir -p $(DIST_OSX)Contents/MacOS/apps/mail
 	cp pkg/osx/client.up.sh $(DIST_OSX_RES)
 	cp pkg/osx/client.down.sh $(DIST_OSX_RES)
 	cp pkg/osx/bitmask-helper $(DIST_OSX_RES)bitmask-helper/
 	cp pkg/osx/bitmask.pf.conf $(DIST_OSX_RES)bitmask-helper/
-	cp pkg/osx/se.leap.bitmask-helper.$(DIST_OSX_RES)bitmask-helper/	
+	cp pkg/osx/se.leap.bitmask-helper.plist $(DIST_OSX_RES)bitmask-helper/	
 	cp pkg/osx/post-inst.sh $(DIST_OSX_RES)bitmask-helper/	
 	cp pkg/osx/daemon.py $(DIST_OSX_RES)bitmask-helper/	
 	cp /opt/homebrew-cask/Caskroom/tuntap/20150118/tuntap_20150118.pkg $(DIST_OSX_RES)
