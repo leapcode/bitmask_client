@@ -448,6 +448,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # Refer to http://www.themacaque.com/?p=1067 for funny details.
         self._wizard.show()
         if IS_MAC:
+            # XXX hack. For some reason, there's a signal that doesn't arrive
+            # on time, so that the next button is disabled. See #8041
+            self._wizard.page(self._wizard.INTRO_PAGE).set_completed()
             self._wizard.raise_()
         self._settings.set_skip_first_run(True)
 
