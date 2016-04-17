@@ -30,6 +30,7 @@ function buildSource() {
   CBUILD=i686-pc-linux-gnu \
   ./build \
   || die 'build openvpn from source failed'
+  mkdir -p ${absolute_executable_path}
   cp -r image/openvpn ${absolute_executable_path}/openvpn
   popd
 }
