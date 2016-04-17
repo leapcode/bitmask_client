@@ -46,7 +46,15 @@ import os
 import platform
 import sys
 
-import psutil
+
+if platform.system() == "Darwin":
+    # XXX please ignore pep8 complains, this needs to be executed
+    # early.
+    # We need to tune maximum number of files, due to zmq usage
+    # we hit the limit.
+    import resource
+    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
+
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.backend.backend_proxy import BackendProxy
@@ -66,13 +74,7 @@ from leap.mail import __version__ as MAIL_VERSION
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
-
-if platform.system() == "Darwin":
-    # We need to tune maximum number of files, due to zmq usage
-    # we hit the limit.
-    import resource
-    resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
-
+import psutil
 
 def qt_hack_ubuntu():
     """Export two env vars to avoid gui corruption, see #8028"""
@@ -172,8 +174,11 @@ def start_app():
     }
 
     flags.STANDALONE = opts.standalone
-    if getattr(sys, 'frozen', False):
-        flags.STANDALONE = True
+
+    if platform.system() != 'Darwin':
+        # XXX this hangs the OSX bundles.
+        if getattr(sys, 'frozen', False):
+            flags.STANDALONE = True
 
     flags.OFFLINE = opts.offline
     flags.MAIL_LOGFILE = opts.mail_log_file

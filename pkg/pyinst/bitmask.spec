@@ -51,6 +51,7 @@ if sys.platform.startswith("darwin"):
 		     name=os.path.join(
 		      'dist', 'Bitmask.app'),
                      appname='Bitmask',
-                     version='0.9.0.alpha7',
+                     # TODO get this from ../next-version.txt
+                     version='0.9.0.rc1',
 		     icon='pkg/osx/bitmask.icns',
 		     bundle_identifier='bitmask-0.9.0alpha7')
