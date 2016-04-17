@@ -3,10 +3,11 @@ import sys
 
 block_cipher = None
 
+# TODO remove QtWebKit for bundles that don't ship pixelated???
 a = Analysis(['bitmask.py'],
              hiddenimports=[
                'zope.interface', 'zope.proxy',
-               'PySide.QtCore', 'PySide.QtGui',
+               'PySide.QtCore', 'PySide.QtGui', 'PySide.QtWebKit',
                'pysqlcipher', 'service_identity',
                'leap.common', 'leap.bitmask'
                ],
@@ -50,6 +51,6 @@ if sys.platform.startswith("darwin"):
 		     name=os.path.join(
 		      'dist', 'Bitmask.app'),
                      appname='Bitmask',
-                     version='0.9.0rc4',
+                     version='0.9.0.alpha7',
 		     icon='pkg/osx/bitmask.icns',
-		     bundle_identifier='bitmask-0.9.0rc4')
+		     bundle_identifier='bitmask-0.9.0alpha7')

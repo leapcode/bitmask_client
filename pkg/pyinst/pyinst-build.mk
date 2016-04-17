@@ -25,7 +25,10 @@ pyinst-hacks-linux:
 
 pyinst-hacks-osx:
 	# XXX this should be taken care of by pyinstaller data collector
+	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/leap/common/cacert.pem $(DIST)
 	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/leap/common/cacert.pem $(DIST_OSX)Contents/MacOS/
+	mv $(DIST_OSX)Contents/MacOS/bitmask $(DIST_OSX)Contents/MacOS/bitmask-app
+	cp pkg/osx/bitmask-wrapper $(DIST_OSX)Contents/MacOS/bitmask
 	# XXX need the rest???
 
 pyinst-trim:
