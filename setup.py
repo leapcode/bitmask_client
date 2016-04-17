@@ -143,7 +143,7 @@ def freeze_pkg_ver(path, version_short, version_full):
     """
     subst_template = freeze_debianver.template.format(
         version=version_short,
-        version_full=version_full) + freeze_debianver.templatefun
+        full_revisionid=version_full) + freeze_debianver.templatefun
     with open(path, 'w') as f:
         f.write(subst_template)
 
