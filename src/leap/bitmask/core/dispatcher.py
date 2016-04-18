@@ -84,6 +84,7 @@ class CommandDispatcher(object):
         return d
 
     def do_EIP(self, *parts):
+
         subcmd = parts[1]
         eip_label = 'eip'
 

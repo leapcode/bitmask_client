@@ -1,3 +1,19 @@
+# -*- coding: utf-8 -*-
+# mail_services.py
+# Copyright (C) 2016 LEAP Encryption Acess Project
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 Mail services.
 
@@ -6,7 +22,6 @@ This should be moved to the different packages when it stabilizes.
 """
 import json
 import os
-from glob import glob
 from collections import defaultdict
 from collections import namedtuple
 
@@ -26,31 +41,30 @@ from leap.mail.incoming.service import IncomingMail, INCOMING_CHECK_PERIOD
 from leap.mail import smtp
 
 from leap.bitmask.core.uuid_map import UserMap
+from leap.bitmask.core.configurable import DEFAULT_BASEDIR
 
 
 class Container(object):
 
-    def __init__(self):
+    def __init__(self, service=None):
         self._instances = defaultdict(None)
+        if service is not None:
+            self.service = service
 
     def get_instance(self, key):
         return self._instances.get(key, None)
+
+    def add_instance(self, key, data):
+        self._instances[key] = data
 
 
 class ImproperlyConfigured(Exception):
     pass
 
 
-def get_all_soledad_uuids():
-    return [os.path.split(p)[-1].split('.db')[0] for p in
-            glob(os.path.expanduser('~/.config/leap/soledad/*.db'))]
-    # FIXME do not hardcode basedir
-
-
 class SoledadContainer(Container):
 
-    def __init__(self, basedir='~/.config/leap'):
-        # FIXME do not hardcode basedir
+    def __init__(self, basedir=DEFAULT_BASEDIR):
         self._basedir = os.path.expanduser(basedir)
         self._usermap = UserMap()
         super(SoledadContainer, self).__init__()
@@ -75,19 +89,17 @@ class SoledadContainer(Container):
             uuid, passphrase, soledad_path, soledad_url,
             cert_path, token)
 
-        self._instances[userid] = soledad
+        self.add_instances(userid, soledad)
 
         data = {'user': userid, 'uuid': uuid, 'token': token,
                 'soledad': soledad}
         self.service.trigger_hook('on_new_soledad_instance', **data)
 
-    def _create_soledad_instance(self, uuid, passphrase, basedir, server_url,
-                                 cert_file, token):
+    def _create_soledad_instance(self, uuid, passphrase, soledad_path,
+                                 server_url, cert_file, token):
         # setup soledad info
-        secrets_path = os.path.join(
-            basedir, '%s.secret' % uuid)
-        local_db_path = os.path.join(
-            basedir, '%s.db' % uuid)
+        secrets_path = os.path.join(soledad_path, '%s.secret' % uuid)
+        local_db_path = os.path.join(soledad_path, '%s.db' % uuid)
 
         if token is None:
             syncable = False
@@ -143,8 +155,7 @@ class SoledadService(HookableService):
 
     def startService(self):
         log.msg('Starting Soledad Service')
-        self._container = SoledadContainer()
-        self._container.service = self
+        self._container = SoledadContainer(service=self)
         super(SoledadService, self).startService()
 
     # hooks
@@ -209,7 +220,7 @@ class KeymanagerContainer(Container):
 
     def _on_keymanager_ready_cb(self, keymanager, userid, soledad):
         # TODO use onready-deferreds instead
-        self._instances[userid] = keymanager
+        self.add_instance(userid, keymanager)
 
         log.msg("Adding Keymanager instance for: %s" % userid)
         data = {'userid': userid, 'soledad': soledad, 'keymanager': keymanager}
@@ -264,6 +275,11 @@ class KeymanagerContainer(Container):
             token = self.service.tokens.get(userid)
 
         km_args = (userid, nickserver_uri, soledad)
+
+        # TODO use the method in
+        # services.soledadbootstrapper._get_gpg_bin_path.
+        # That should probably live in keymanager package.
+
         km_kwargs = {
             "token": token, "uid": uuid,
             "api_uri": api_uri, "api_version": "1",
@@ -373,10 +389,12 @@ class StandardMailService(service.MultiService, HookableService):
 
     def initializeChildrenServices(self):
         self.addService(IMAPService(self._soledad_sessions))
-        self.addService(IncomingMailService(self))
         self.addService(SMTPService(
             self._soledad_sessions, self._keymanager_sessions,
             self._sendmail_opts))
+        # TODO adapt the service to receive soledad/keymanager sessions object.
+        # See also the TODO before IncomingMailService.startInstance
+        self.addService(IncomingMailService(self))
 
     def startService(self):
         log.msg('Starting Mail Service...')
@@ -438,6 +456,7 @@ class StandardMailService(service.MultiService, HookableService):
         if not active_user:
             return defer.succeed('NO ACTIVE USER')
         token = self._imap_tokens.get(active_user)
+        # TODO return just the tuple, no format.
         return defer.succeed("IMAP TOKEN (%s): %s" % (active_user, token))
 
     def get_smtp_token(self):
@@ -445,6 +464,7 @@ class StandardMailService(service.MultiService, HookableService):
         if not active_user:
             return defer.succeed('NO ACTIVE USER')
         token = self._smtp_tokens.get(active_user)
+        # TODO return just the tuple, no format.
         return defer.succeed("SMTP TOKEN (%s): %s" % (active_user, token))
 
     def do_get_smtp_cert_path(self, userid):
@@ -560,7 +580,7 @@ class IncomingMailService(service.Service):
             if start_sync:
                 incoming_instance.startService()
 
-        acc = Account(soledad)
+        acc = Account(soledad, userid)
         d = acc.callWhenReady(
             lambda _: acc.get_collection_by_mailbox(INBOX_NAME))
         d.addCallback(setUpIncomingMail)
