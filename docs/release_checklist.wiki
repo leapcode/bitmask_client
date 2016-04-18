@@ -19,34 +19,35 @@
 
     * NOTE: It's assumed that origin is the leap.se repo
      
-    * [ ] export version: export RELEASE=0.9.0
     * [ ] git fetch origin
     * [ ] git tag -l, and see the latest tagged version (unless it's not a minor version bump, in which case, just bump to it)
+    * [ ] export version: export RELEASE=0.9.0
     * [ ] git checkout `release/0.9.x`
 	- NOTE: the release branch is created when the first release candidate
 	  is tagged, after that the bugfixes and features that are meant to be
 	  shipped with the specific version that we are targetting are merged in that branch
-    * [ ] git checkout -b release/$RELEASE
+    * [ ] git checkout -b release/$RELEASE (this is a LOCAL branch, never published).
  	* [ ] (maybe) cherry-pick specific commits
 	* [ ] (maybe) add special fixes for this release
 
     * [ ] Review pkg/requirements.pip for everything, update if needed (that's why the order).
           - See whatever has been introduced in changes/VERSION_COMPAT
           - Reset changes/VERSION_COMPAT
-    * [ ] git commit -am "Update requirements file."
+          - Bump all the leap-requirements altogether.
+    * [ ] git commit -am "Update requirements file"
 
-    * [ ] Fold in changes files into the CHANGELOG
-          - NOTE: For leap.soledad, the CHANGELOG entries should be divided per package (common, client, server). See older releases for reference.
-          - Helper bash line: for i in $(ls changes); do cat changes/$i; echo; done
-    * [ ] git rm changes/feature*; git rm changes/bug*
-    * [ ] git commit -m "Fold in changes."
+    * [ ] Merge changes/next-changelog.rst into the CHANGELOG
+          - NOTE: in leap.soledad, 3 sections (common, client, server).
+    * [ ] reset changes/next-changelog.rst
+    * [ ] git commit -S -m "[pkg] Update changelog"
 
-    * [ ] git tag --sign $RELEASE -m "Tag leap.bitmask version $RELEASE"
+    * [ ] git tag --sign $RELEASE -m "Tag version $RELEASE"
 
     * If everything went ok, push the changes, and merge back into master&develop:
+    	* [ ] git checkout release/0.9.x && git merge $RELEASE
     	* [ ] git push origin release/0.9.x
         * [ ] git push origin $RELEASE
-    	* [ ] git checkout master && git pull origin master && git merge --no-ff $RELEASE --no-edit
+    	* [ ] git checkout master && git pull origin master && git merge --no-edit $RELEASE
     	* [ ] git checkout develop && git merge $RELEASE && git push origin develop
 
   == Bundles ==
