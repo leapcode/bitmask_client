@@ -68,11 +68,11 @@ pyinst-helpers-osx:
 	cp pkg/osx/bitmask.pf.conf $(DIST_OSX_RES)bitmask-helper/
 	cp pkg/osx/se.leap.bitmask-helper.plist $(DIST_OSX_RES)bitmask-helper/	
 	cp pkg/osx/post-inst.sh $(DIST_OSX_RES)bitmask-helper/	
-	cp pkg/osx/daemon.py $(DIST_OSX_RES)bitmask-helper/	
+	cp pkg/osx/daemon/daemon.py $(DIST_OSX_RES)bitmask-helper/	
 	cp /opt/homebrew-cask/Caskroom/tuntap/20150118/tuntap_20150118.pkg $(DIST_OSX_RES)
 	# TODO make the build script put it there
-	cp ~/leap_thirdparty_build/openvpn.leap.polarssl $(DIST_OSX_RES)openvpn.leap
-	cp ~/leap_thirdparty_build/gpg $(DIST_OSX)Contents/MacOS/apps/mail/
+	cp $(LEAP_BUILD_DIR)openvpn.leap.polarssl $(DIST_OSX_RES)openvpn.leap
+	cp $(LEAP_BUILD_DIR)gpg $(DIST_OSX)Contents/MacOS/apps/mail/
 
 pyinst-tar:
 	cd dist/ && tar cvzf Bitmask.$(NEXT_VERSION).tar.gz bitmask-$(NEXT_VERSION)
