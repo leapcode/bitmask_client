@@ -1,5 +1,10 @@
 freeze-ver:
 	cp pkg/version-template src/leap/bitmask/_version.py
+	sed  -i 's/^version_version\(.*\)/version_version = "$(NEXT_VERSION)"/'  src/leap/bitmask/_version.py
+	sed  -i "s/^full_revisionid\(.*\)/full_revisionid='$(GIT_COMMIT)'/" src/leap/bitmask/_version.py
+
+freeze-ver-osx:
+	cp pkg/version-template src/leap/bitmask/_version.py
 	sed  -i ' ' 's/^version_version\(.*\)/version_version = "$(NEXT_VERSION)"/'  src/leap/bitmask/_version.py
 	sed  -i ' ' "s/^full_revisionid\(.*\)/full_revisionid='$(GIT_COMMIT)'/" src/leap/bitmask/_version.py
 
@@ -7,6 +12,9 @@ hash-binaries:
 	OPENVPN_BIN=$(LEAP_BUILD_DIR)openvpn BITMASK_ROOT=pkg/linux/bitmask-root python setup.py hash_binaries
 
 pyinst: freeze-ver hash-binaries
+	pyinstaller -y pkg/pyinst/bitmask.spec
+
+pyinst_osx: freeze-ver-osx hash-binaries
 	pyinstaller -y pkg/pyinst/bitmask.spec
 
 reset-ver:
@@ -85,7 +93,7 @@ pyinst-upload:
 
 pyinst-linux: pyinst reset-ver pyinst-hacks-linux pyinst-trim pyinst-cleanup pyinst-distribution-data pyinst-helpers-linux pyinst-tar
 
-pyinst-osx: pyinst reset-ver pyinst-hacks-osx pyinst-helpers-osx
+pyinst-osx: pyinst_osx reset-ver pyinst-hacks-osx pyinst-helpers-osx
 
 clean_pkg:
 	rm -rf build dist
