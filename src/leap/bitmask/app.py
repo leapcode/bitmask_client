@@ -76,6 +76,7 @@ codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
 import psutil
 
+
 def qt_hack_ubuntu():
     """Export two env vars to avoid gui corruption, see #8028"""
     os.environ['QT_GRAPHICSSYSTEM'] = 'native'

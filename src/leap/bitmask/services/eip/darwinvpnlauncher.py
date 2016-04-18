@@ -112,7 +112,8 @@ class DarwinVPNLauncher(VPNLauncher):
         :returns: True if kext is loaded, False otherwise.
         :rtype: bool
         """
-        loaded = bool(commands.getoutput('kextstat | grep "net.sf.tuntaposx.tun"'))
+        loaded = bool(commands.getoutput(
+            'kextstat | grep "net.sf.tuntaposx.tun"'))
         if not loaded:
             logger.error("tuntaposx extension not loaded!")
         return loaded
