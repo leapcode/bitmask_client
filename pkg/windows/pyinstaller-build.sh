@@ -46,7 +46,7 @@ function addMingwDlls() {
 }
 # cleanup the temporary build path for subsequent executes
 function cleanup() {
-  rm -r ${temporary_build_path} 2>/dev/null
+  rm -rf ${temporary_build_path} 2>/dev/null
 }
 # create files that are not part of the repository but are needed
 # in the windows environment:
@@ -71,7 +71,8 @@ function createInstallablesDependencies() {
   # hacks that are hard to debug
   applyPatches ${versioned_build_path}
   pushd ${versioned_build_path} > /dev/null
-  wine python setup.py update_files || die 'setup.py update_files failed'
+  # XXX what's this update_files command?
+  #wine python setup.py update_files || die 'setup.py update_files failed'
   wine python setup.py build || die 'setup.py build failed'
   wine python setup.py install || die 'setup.py install failed'
   popd
