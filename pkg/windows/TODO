@@ -1,0 +1,15 @@
+TODO
+====
+
+fix python-code (0.9.1) that fails on windows:
+- fix the race condition for the backend/frontend startup.
+  spawning the backend takes time. with a introduced 15s timeout
+  it was possible to ensure the backend is up. It would be ideal
+  if the backend could signal the app to continue loading the frontend
+- fix the ~/leap/events/zmq_certificates/public_keys/server.key
+- fix logger (& remove hack in pyinstaller-build.sh:228)
+- fix pysqlcipher (/LIB:,https get not working in setup.py, remove hack
+  in pyinstaller-build:164)
+- merge bitmask_root from https://github.com/alirezamirzaeiyan/bitmask-root
+
+create similar infrastructure for osx dmg, preferably run on osx for compressed dmg
