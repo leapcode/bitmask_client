@@ -41,6 +41,7 @@ To see the loaded rules:
 
 """
 import os
+import re
 import socket
 import signal
 import subprocess
