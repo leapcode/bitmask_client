@@ -16,6 +16,7 @@ Features
 - `#6041 <https://leap.se/code/issues/6041>`_: Write service tokens to a file to allow email clients to read them from there.
 - Use cred-based authentication on SMTP.
 - Experimental support for the Pixelated WebMail.
+- Add email panel to preferences window.
 - Ability to launch detached bitmask.core daemon, and a simplistic bitmask_cli. Not used by the main client yet.
 
 - `#1234 <https://leap.se/code/issues/1234>`_: Description of the new feature corresponding with issue #1234.
