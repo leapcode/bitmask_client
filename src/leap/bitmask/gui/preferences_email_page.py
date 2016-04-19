@@ -18,14 +18,13 @@ Widget for "email" preferences
 """
 from PySide import QtCore, QtGui
 
-from datetime import datetime
-
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.ui_preferences_email_page import Ui_PreferencesEmailPage
 from leap.bitmask.gui.preferences_page import PreferencesPage
 from leap.mail.imap.service.imap import IMAP_PORT
 
 logger = get_logger()
+
 
 class PreferencesEmailPage(PreferencesPage):
 
@@ -46,11 +45,11 @@ class PreferencesEmailPage(PreferencesPage):
 
         # the only way to set the tab titles is to re-add them:
         self.ui.email_tabs.addTab(self.ui.config_tab,
-          self.tr("Mail Client"))
+                                  self.tr("Mail Client"))
         self.ui.email_tabs.addTab(self.ui.my_key_tab,
-          self.tr("My Key"))
+                                  self.tr("My Key"))
         self.ui.email_tabs.addTab(self.ui.other_keys_tab,
-          self.tr("Other Keys"))
+                                  self.tr("Other Keys"))
 
         # set mail client configuration help text
         lang = QtCore.QLocale.system().name().replace('_', '-')
@@ -61,7 +60,7 @@ class PreferencesEmailPage(PreferencesPage):
             "For Thunderbird, you can use the Bitmask extension. "
             "Search for \"Bitmask\" in the add-on manager or "
             "download it from <a href='{0}'>addons.mozilla.org</a>.".format(
-            thunderbird_extension_url)))
+                thunderbird_extension_url)))
         self.ui.mail_client_label.setText(self.tr(
             "Alternatively, you can manually configure your mail client to "
             "use Bitmask Email with these options:"))
@@ -70,7 +69,6 @@ class PreferencesEmailPage(PreferencesPage):
             0, QtGui.QHeaderView.Stretch)
 
         self.setup_connections()
-
 
     def setup_connections(self):
         """
@@ -106,7 +104,7 @@ class PreferencesEmailPage(PreferencesPage):
             self.ui.message_label.setText(
                 self.tr('You must be logged in to edit email settings.'))
         else:
-            self.ui.import_button.setVisible(False) # hide this until working
+            self.ui.import_button.setVisible(False)  # hide this until working
             self.ui.message_label.setVisible(False)
             self.ui.email_tabs.setVisible(True)
             smtp_port = 2013
@@ -128,7 +126,7 @@ class PreferencesEmailPage(PreferencesPage):
         Set the current user's key details into the gui.
         """
         self.ui.fingerprint_edit.setPlainText(
-          self._format_fingerprint(details["fingerprint"]))
+            self._format_fingerprint(details["fingerprint"]))
         self.ui.expiration_edit.setText(details["expiry_date"])
         self.ui.uid_edit.setText(" ".join(details["uids"]))
         self.ui.public_key_edit.setPlainText(details["key_data"])
@@ -139,8 +137,8 @@ class PreferencesEmailPage(PreferencesPage):
         produces, wrapped to two lines.
         """
         fp = fingerprint.upper()
-        fp_list = [fp[i:i+4] for i in range(0, len(fp), 4)]
-        fp_wrapped =  " ".join(fp_list[0:5]) + "\n" + " ".join(fp_list[5:10])
+        fp_list = [fp[i:i + 4] for i in range(0, len(fp), 4)]
+        fp_wrapped = " ".join(fp_list[0:5]) + "\n" + " ".join(fp_list[5:10])
         return fp_wrapped
 
     def _export_keys(self):
@@ -156,8 +154,8 @@ class PreferencesEmailPage(PreferencesPage):
             if not file_name.endswith('.pem'):
                 file_name += '.pem'
             self.app.backend.keymanager_export_keys(
-              username=self.account.address,
-              filename=file_name)
+                username=self.account.address,
+                filename=file_name)
         else:
             logger.debug('Export canceled by the user.')
 
@@ -186,9 +184,9 @@ class PreferencesEmailPage(PreferencesPage):
                     "Export canceled."))
 
     def _import_keys(self):
-      """
-      not yet supported
-      """
+        """
+        not yet supported
+        """
 
     def _keymanager_keys_list(self, keys):
         """
@@ -203,5 +201,7 @@ class PreferencesEmailPage(PreferencesPage):
         for key in keys:
             row = self.ui.keys_table.rowCount()
             self.ui.keys_table.insertRow(row)
-            self.ui.keys_table.setItem(row, 0, QtGui.QTableWidgetItem(key.address))
-            self.ui.keys_table.setItem(row, 1, QtGui.QTableWidgetItem(key.fingerprint))
+            self.ui.keys_table.setItem(
+                row, 0, QtGui.QTableWidgetItem(key.address))
+            self.ui.keys_table.setItem(
+                row, 1, QtGui.QTableWidgetItem(key.fingerprint))

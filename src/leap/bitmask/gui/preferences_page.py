@@ -14,10 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-base class for preference pages
+Base class for preference pages
 """
 
-from PySide import QtCore, QtGui
+from PySide import QtGui
+
 
 class PreferencesPage(QtGui.QWidget):
 
@@ -47,4 +48,3 @@ class PreferencesPage(QtGui.QWidget):
         disconnect signals
         must be overridden by subclass
         """
-

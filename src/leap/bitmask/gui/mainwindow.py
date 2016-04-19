@@ -154,11 +154,11 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._providers = Providers(self.ui.cmbProviders)
 
         ##
-        ## tmphack: important state information about the application is stored
-        ## in widgets. Rather than rewrite the UI, for now we simulate this
-        ## info being stored in an application object:
+        # tmphack: important state information about the application is stored
+        # in widgets. Rather than rewrite the UI, for now we simulate this
+        # info being stored in an application object:
         ##
-        self.app.login_state      = self._login_widget._state
+        self.app.login_state = self._login_widget._state
         self.app.providers_widget = self._providers
 
         # Qt Signal Connections #####################################

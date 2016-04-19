@@ -29,6 +29,7 @@ from leap.bitmask.gui.preferences_email_page import PreferencesEmailPage
 
 logger = get_logger()
 
+
 class PreferencesWindow(QtGui.QDialog):
 
     """
@@ -122,7 +123,7 @@ class PreferencesWindow(QtGui.QDialog):
         """
         Adds the pages for the different configuration categories.
         """
-        self._remove_pages() # in case different account was loaded.
+        self._remove_pages()  # in case different account was loaded.
 
         # load placeholder widgets if the page should not be loaded.
         # the order of the pages is important, and must match the order
@@ -197,8 +198,8 @@ class PreferencesWindow(QtGui.QDialog):
         Close this dialog and destroy it.
         """
         PreferencesWindow._current_window = None
-        self._teardown_connections();
-        self._remove_pages();
+        self._teardown_connections()
+        self._remove_pages()
         self.deleteLater()
 
     def _change_page(self, current, previous):

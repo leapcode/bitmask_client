@@ -29,7 +29,7 @@ from leap.bitmask.core import _zmq
 from leap.bitmask.core import websocket
 from leap.bonafide.service import BonafideService
 from leap.common.events import server as event_server
-#from leap.vpn import EIPService
+# from leap.vpn import EIPService
 
 
 class BitmaskBackend(configurable.ConfigurableService):
@@ -96,7 +96,7 @@ class BitmaskBackend(configurable.ConfigurableService):
     def init_eip(self):
         # FIXME -- land EIP into leap.vpn
         pass
-        #self._maybe_start_service('eip', EIPService)
+        # self._maybe_start_service('eip', EIPService)
 
     def init_zmq(self):
         zs = _zmq.ZMQServerService(self)

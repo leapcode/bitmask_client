@@ -69,7 +69,6 @@ class PreferencesAccountPage(PreferencesPage):
         self.app.signaler.prov_get_supported_services.connect(
             self._load_services)
 
-
     def teardown_connections(self):
         """
         disconnect signals

@@ -60,8 +60,8 @@ class App(QtGui.QWidget):
 
     def current_account(self):
         """
-        Alas, the only definitive account information is buried in the memory of
-        QT widgets.
+        Alas, the only definitive account information is buried in the memory
+        of QT widgets.
 
         :returns: an object representing the current user account.
         :rtype: Account

@@ -20,9 +20,9 @@ Widget for "vpn" preferences
 from PySide import QtCore, QtGui
 from leap.bitmask.gui.ui_preferences_vpn_page import Ui_PreferencesVpnPage
 
-from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.flashable import Flashable
 from leap.bitmask.gui.preferences_page import PreferencesPage
+
 
 class PreferencesVpnPage(PreferencesPage, Flashable):
 

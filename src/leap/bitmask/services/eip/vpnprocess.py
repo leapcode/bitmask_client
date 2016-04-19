@@ -23,7 +23,6 @@ import shutil
 import socket
 import subprocess
 import sys
-import time
 
 from itertools import chain, repeat
 

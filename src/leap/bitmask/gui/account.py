@@ -22,6 +22,7 @@ from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.services import EIP_SERVICE, MX_SERVICE
 from leap.bitmask._components import HAS_EIP, HAS_MAIL
 
+
 class Account():
 
     def __init__(self, username, domain):

@@ -40,6 +40,7 @@ class SignallingState(QState):
     """
     A state that emits a custom signal on entry.
     """
+
     def __init__(self, signal, parent=None, name=None):
         """
         Initializer.
@@ -134,6 +135,7 @@ class States(object):
 
 
 class CompositeEvent(QtCore.QEvent):
+
     def __init__(self):
         super(CompositeEvent, self).__init__(
             QtCore.QEvent.Type(self.ID))
@@ -174,6 +176,7 @@ class Events(QtCore.QObject):
     A Wrapper object for containing the events that will be
     posted to a composite state machine.
     """
+
     def __init__(self, parent=None):
         """
         Initializes the QObject with the given parent.
@@ -289,6 +292,7 @@ class ConnectionMachineBuilder(object):
     """
     Builder class for state machines made from LEAPConnections.
     """
+
     def __init__(self, connection):
         """
         :param connection: an instance of a concrete LEAPConnection
@@ -352,7 +356,6 @@ class ConnectionMachineBuilder(object):
         :rtype: QStateMachine
         """
         # TODO split this method in smaller utility functions.
-        parent = kwargs.get('parent', None)
 
         # 1. create machine
         machine = CompositeMachine()
