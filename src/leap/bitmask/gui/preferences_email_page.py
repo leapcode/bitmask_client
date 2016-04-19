@@ -18,10 +18,13 @@ Widget for "email" preferences
 """
 from PySide import QtCore, QtGui
 
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui.ui_preferences_email_page import Ui_PreferencesEmailPage
 from leap.bitmask.gui.preferences_page import PreferencesPage
+from leap.bitmask.pix import HAS_PIXELATED
 from leap.mail.imap.service.imap import IMAP_PORT
+
 
 logger = get_logger()
 
@@ -40,6 +43,7 @@ class PreferencesEmailPage(PreferencesPage):
         :type app: App
         """
         PreferencesPage.__init__(self, parent, account, app)
+        self.settings = LeapSettings()
         self.ui = Ui_PreferencesEmailPage()
         self.ui.setupUi(self)
 
@@ -65,6 +69,16 @@ class PreferencesEmailPage(PreferencesPage):
             "Alternatively, you can manually configure your mail client to "
             "use Bitmask Email with these options:"))
 
+        self.ui.webmail_label.setText(self.tr(
+            "This distribution of Bitmask ships an experimental integration "
+            "of the <a href='https://pixelated-project.org/'>Pixelated "
+            "Webmail</a>. It is not stable yet, but you can enable it to help "
+            "beta-testing it. (Needs restart!)"))
+        webmail_enabled = self.settings.get_pixelmail_enabled()
+        self.ui.webmail_checkbox.setChecked(webmail_enabled)
+        if not HAS_PIXELATED:
+            self.ui.webmail_box.setVisible(False)
+
         self.ui.keys_table.horizontalHeader().setResizeMode(
             0, QtGui.QHeaderView.Stretch)
 
@@ -81,6 +95,7 @@ class PreferencesEmailPage(PreferencesPage):
             self._keymanager_export_error)
         self.ui.import_button.clicked.connect(self._import_keys)
         self.ui.export_button.clicked.connect(self._export_keys)
+        self.ui.webmail_checkbox.stateChanged.connect(self._toggle_webmail)
 
     def teardown_connections(self):
         """
@@ -205,3 +220,7 @@ class PreferencesEmailPage(PreferencesPage):
                 row, 0, QtGui.QTableWidgetItem(key.address))
             self.ui.keys_table.setItem(
                 row, 1, QtGui.QTableWidgetItem(key.fingerprint))
+
+    def _toggle_webmail(self, state):
+        value = True if state == QtCore.Qt.Checked else False
+        self.settings.set_pixelmail_enabled(value)

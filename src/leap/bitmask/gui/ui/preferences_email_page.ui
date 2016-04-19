@@ -23,7 +23,7 @@
    <item>
     <widget class="QTabWidget" name="email_tabs">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="config_tab">
       <property name="accessibleName">
@@ -35,7 +35,7 @@
       <attribute name="title">
        <string>Tab 1</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
+      <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
         <widget class="QGroupBox" name="thunderbird_box">
          <property name="title">
@@ -328,6 +328,32 @@
              </widget>
             </item>
            </layout>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="webmail_box">
+         <property name="title">
+          <string>Webmail Configuration</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QCheckBox" name="webmail_checkbox">
+            <property name="text">
+             <string>Enable Bitmask Webmail (beta)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="webmail_label">
+            <property name="text">
+             <string>webmail info</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
