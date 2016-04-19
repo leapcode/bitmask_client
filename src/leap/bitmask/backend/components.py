@@ -576,8 +576,10 @@ class EIP(object):
                     self._signaler.eip_uninitialized_provider)
             return
 
-        eip_config = eipconfig.EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
+        if EIP_SERVICE not in provider_config.get_services():
+            return
+        eip_config = eipconfig.EIPConfig()
 
         api_version = provider_config.get_api_version()
         eip_config.set_api_version(api_version)
@@ -1003,13 +1005,11 @@ class Keymanager(object):
 
     def get_key_details(self, username):
         """
-        List all the keys stored in the local DB.
+        Get information on our primary key pair
         """
         def signal_details(public_key):
-            # XXX: We should avoid the key-id
-            details = (public_key.fingerprint[-16:], public_key.fingerprint)
             self._signaler.signal(self._signaler.keymanager_key_details,
-                                  details)
+                                  public_key.get_dict())
 
         d = self._keymanager_proxy.get_key(username,
                                            openpgp.OpenPGPKey)
@@ -1215,15 +1215,13 @@ class Authenticate(object):
 
     def get_logged_in_status(self):
         """
-        Signal if the user is currently logged in or not.
+        Signal if the user is currently logged in or not. If logged in,
+        authenticated username is passed as argument to the signal.
         """
         if self._signaler is None:
             return
 
-        signal = None
         if self._is_logged_in():
-            signal = self._signaler.srp_status_logged_in
+            self._signaler.signal(self._signaler.srp_status_logged_in)
         else:
-            signal = self._signaler.srp_status_not_logged_in
-
-        self._signaler.signal(signal)
+            self._signaler.signal(self._signaler.srp_status_not_logged_in)

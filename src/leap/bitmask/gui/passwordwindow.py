@@ -83,7 +83,7 @@ class PasswordWindow(QtGui.QDialog, Flashable):
         Returns true if the current account needs to change the soledad
         password as well as the SRP password.
         """
-        return self.account.is_email_enabled()
+        return self.account.has_email()
 
     #
     # MANAGE WIDGETS

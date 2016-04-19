@@ -46,7 +46,6 @@ from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.providers import Providers
-from leap.bitmask.gui.account import Account
 from leap.bitmask.gui.app import App
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
@@ -153,6 +152,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         # Provider List
         self._providers = Providers(self.ui.cmbProviders)
+
+        ##
+        ## tmphack: important state information about the application is stored
+        ## in widgets. Rather than rewrite the UI, for now we simulate this
+        ## info being stored in an application object:
+        ##
+        self.app.login_state      = self._login_widget._state
+        self.app.providers_widget = self._providers
 
         # Qt Signal Connections #####################################
         # TODO separate logic from ui signals.
@@ -416,10 +423,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         sig.soledad_invalid_auth_token.connect(
             self._mail_status.set_soledad_invalid_auth_token)
 
-        self._service_tokens = {}
-        sig.soledad_got_service_token.connect(
-            self._set_service_tokens)
-
         # TODO: connect this with something
         # sig.soledad_cancelled_bootstrap.connect()
 
@@ -569,15 +572,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         Display the preferences window.
         """
-        logged_user = self._login_widget.get_logged_user()
-        if logged_user is not None:
-            user, domain = logged_user.split('@')
-        else:
-            user = None
-            domain = self._providers.get_selected_provider()
-
-        account = Account(user, domain)
-        pref_win = PreferencesWindow(self, account, self.app)
+        pref_win = PreferencesWindow(self, self.app)
         pref_win.show()
 
     def _show_pixelated_browser(self):
@@ -1054,13 +1049,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10], greet=greet)
         QtGui.QMessageBox.about(self, title, msg)
 
-    def _set_service_tokens(self, data):
-        """
-        Set the received service token.
-        """
-        service, token = data
-        self._service_tokens[service] = token
-
     def _help(self):
         """
         TRIGGERS:
@@ -1095,7 +1083,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # FIXME on i3, this doens't allow to mouse-select.
         # Switch to a dialog in which we can set the QLabel
         mail_auth_token = (
-            self._service_tokens.get('mail_auth', None) or
+            self.app.service_tokens.get('mail_auth', None) or
             "??? (log in to unlock)")
         mail_password = self.tr("IMAP/SMTP Password:") + " %s" % (
             mail_auth_token,)
