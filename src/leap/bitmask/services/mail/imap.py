@@ -94,5 +94,4 @@ def start_incoming_mail_service(keymanager, soledad, userid):
     acc = Account(soledad, userid)
     d = acc.callWhenReady(lambda _: acc.get_collection_by_mailbox(INBOX_NAME))
     d.addCallback(setUpIncomingMail)
-    d.addErrback(log.err)
     return d
