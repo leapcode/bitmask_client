@@ -41,4 +41,5 @@ Misc
 
 Known Issues
 ~~~~~~~~~~~~
+- `#8057 <https://leap.se/code/issues/8057>`_: Logging out twice produces a segfault in Qt
 - `#1236 <https://leap.se/code/issues/1236>`_: Description of the known issue corresponding with issue #1236.
