@@ -90,6 +90,8 @@ class PreferencesEmailPage(PreferencesPage):
         connect signals
         """
         self.app.signaler.keymanager_key_details.connect(self._key_details)
+        self.app.signaler.keymanager_keys_list.connect(
+            self._keymanager_keys_list)
         self.app.signaler.keymanager_export_ok.connect(
             self._keymanager_export_ok)
         self.app.signaler.keymanager_export_error.connect(
@@ -218,9 +220,9 @@ class PreferencesEmailPage(PreferencesPage):
             row = self.ui.keys_table.rowCount()
             self.ui.keys_table.insertRow(row)
             self.ui.keys_table.setItem(
-                row, 0, QtGui.QTableWidgetItem(key.address))
+                row, 0, QtGui.QTableWidgetItem(" ".join(key["uids"])))
             self.ui.keys_table.setItem(
-                row, 1, QtGui.QTableWidgetItem(key.fingerprint))
+                row, 1, QtGui.QTableWidgetItem(key["fingerprint"]))
 
     def _toggle_webmail(self, state):
         value = True if state == QtCore.Qt.Checked else False
