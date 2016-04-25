@@ -33,7 +33,7 @@ class PixelatedWindow(QtGui.QDialog):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.view)
         self.setLayout(layout)
-        self.setWindowTitle('Bitmask/Pixelated WebMail')
+        self.setWindowTitle('Bitmask Mail')
 
     def load_app(self):
         self.view.load(QtCore.QUrl(PIXELATED_URI))

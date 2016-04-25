@@ -71,9 +71,10 @@ class PreferencesEmailPage(PreferencesPage):
 
         self.ui.webmail_label.setText(self.tr(
             "This distribution of Bitmask ships an experimental integration "
-            "of the <a href='https://pixelated-project.org/'>Pixelated "
-            "Webmail</a>. It is not stable yet, but you can enable it to help "
-            "beta-testing it. (Needs restart!)"))
+            "of <a href='https://pixelated-project.org/'>Pixelated "
+            "Mail</a>. Note: at the current state, anyone with access to "
+            "your device can read your mail without authentication, "
+            "by opening a browser pointing to http://localhost:9090 "))
         webmail_enabled = self.settings.get_pixelmail_enabled()
         self.ui.webmail_checkbox.setChecked(webmail_enabled)
         if not HAS_PIXELATED:
