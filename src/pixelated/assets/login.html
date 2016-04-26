@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:t="http://twistedmatrix.com/ns/twisted.web.template/0.1">
+<head>
+    <title>Pixelated - Login</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="icon" type="image/png" href="/startup-assets/favicon.png" />
+    <link rel="stylesheet" type="text/css" href="/startup-assets/normalize.min.css" />
+    <link rel="stylesheet" type="text/css" href="/startup-assets/pixelated.css" />
+    <link rel="stylesheet" type="text/css" href="/startup-assets/opensans.css" />
+</head>
+<body>
+<div class="content">
+    <div class="login">
+
+        <img class="logo" src="/startup-assets/pixelated-logo-orange.svg" alt="Pixelated logo"/>
+
+        <p t:render="error_msg" class="error" ></p>
+
+
+        <form class="standard" id="login_form" action="/login" method="post">
+            <input type="text" name="username" id="email" class="text-field" placeholder="username" tabindex="1"
+                   autofocus="" />
+            <input type="password" name="password" id="password" class="text-field" placeholder="password"
+                   tabindex="2" autocomplete="off" />
+
+            <input type="submit" name="login" value="Login" class="button" tabindex="3" />
+
+        </form>
+    </div>
+    <div class="disclaimer">
+        <div t:render="disclaimer"></div>
+    </div>
+</div>
+</body>
+
+</html>

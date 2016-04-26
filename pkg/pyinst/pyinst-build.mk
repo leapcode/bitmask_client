@@ -22,7 +22,8 @@ reset-ver:
 
 pyinst-hacks-linux:
 	# XXX this should be taken care of by pyinstaller data collector
-	cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/leap/common/cacert.pem $(DIST)
+	#cp $(VIRTUAL_ENV)/lib/python2.7/site-packages/leap/common/cacert.pem $(DIST)
+	cp ../leap_common/src/leap/common/cacert.pem $(DIST)
 	mkdir -p $(DIST)pysqlcipher
 	mkdir -p $(DIST)pixelated
 	mkdir -p $(DIST)twisted/web

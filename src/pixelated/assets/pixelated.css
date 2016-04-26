@@ -1,0 +1,128 @@
+body {
+    font-family: "Open Sans", "Microsoft YaHei", "Hiragino Sans GB", "Hiragino Sans GB W3", "微软雅黑", "Helvetica Neue", Arial, sans-serif;
+    background-color: #EAEAEA;
+    height: 100vh;
+    color: #3E3A37;
+
+    background-image: url("hive-bg.png");
+    background-repeat: repeat;
+}
+
+.content {
+    height: 100vh;
+    width: 100%;
+}
+
+.error {
+    color: #D72A25;
+    margin: 10px 0 0 0;
+}
+
+.message-panel {
+  width: 100%;
+  margin: 10px auto;
+  z-index: 10000;
+  text-align: center;
+  }
+
+.message-panel span{
+    background: #F7E8AF;
+    padding: 5px 60px;
+    border: 1px solid #f2db81;
+    color: #987b0f;
+    box-shadow: 1px 1px 3px #69560b;
+}
+
+.message-panel.message-panel-small span{
+    padding: 5px 0px;
+    display: inline-block;
+    width: 100%;
+}
+
+.login {
+    display: block;
+    width: 240px;
+    margin: auto;
+    padding: 45px 40px 35px 40px;
+    background-color: #FFF;
+    margin-top: 2%;
+    margin-bottom: 2%;
+}
+
+form#login_form {
+  padding: 10px 0;
+}
+
+.disclaimer {
+    display: block;
+    margin-top: 10%;
+    width: 50%;
+    margin: auto;
+    background-color: #2BA6CB;
+    color: #FFFFFF;
+    font-weight: 300;
+    font-size: 0.8rem;
+    padding: 1em;
+    margin-bottom: 20px;
+}
+
+.disclaimer li {
+    margin-top: 1em;
+}
+
+.logo {
+  width: 100%;
+  height: auto;
+}
+
+input {
+    display: block;
+    margin: 10px 0;
+    padding-left: 5px;
+}
+
+input.text-field {
+  width: 97%;
+}
+
+button, .button, input[type=button] {
+  cursor: pointer;
+  margin: 0 0 1.25rem;
+  border: none;
+  position: relative;
+  text-decoration: none;
+  text-align: center;
+  -webkit-appearance: none;
+  display: inline-block;
+  padding: 0.4rem 1.1rem;
+  font-size: 0.9rem;
+  background-color: #2ba6cb;
+  border-color: #2285a2;
+  color: white;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+  -ms-border-radius: 2px;
+  -o-border-radius: 2px;
+  border-radius: 2px;
+}
+
+button:hover, button:focus, .button:hover, .button:focus, input[type=button]:hover, input[type=button]:focus {
+  background-color: #2285a2;
+  outline: none;
+  color: white;
+}
+
+ul.accounts {
+  margin-bottom: 5%;
+}
+
+ul.accounts li {
+  display: inline-block;
+  list-style: none;
+  margin-right: 35px;
+  margin-top: 0px;
+}
+
+ul.accounts li span {
+  font-weight: bold;
+}

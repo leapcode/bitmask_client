@@ -3,3 +3,11 @@ pkg/linux/polkit/se.leap.bitmask.policy usr/share/polkit-1/actions/
 debian/bitmask.xpm usr/share/pixmaps
 debian/bitmask.desktop usr/share/applications
 debian/icons/hicolor usr/share/icons
+
+# pixelated hacks!!!
+src/pixelated usr/lib/python2.7/dist-packages/
+src/pixelated_www usr/lib/python2.7/dist-packages/
+src/leap/bitmask/auth/auth.py usr/lib/python2.7/dist-packages/leap/
+src/leap/bitmask/auth/exceptions.py usr/lib/python2.7/dist-packages/leap/
+src/leap/bitmask/auth/srp_session.py usr/lib/python2.7/dist-packages/leap/
+
