@@ -20,6 +20,7 @@ distro(){
         ['qiana']='trusty'
         ['rebecca']='trusty'
         ['rafaela']='trusty'
+        ['sana']='jessie'
     )
 
     # if name is in the above list -> replace
@@ -30,15 +31,16 @@ distro(){
 
 is_supported(){
     distros=(
-        'wheezy'  # Debian 7 - stable
+        # 'wheezy'  # Debian 7 - stable
         'jessie'  # Debian 8 - testing
         'sid'     # Debian unstable
-        'quantal' # Ubuntu 12.10
-        'raring'  # Ubuntu 13.04
-        'saucy'   # Ubuntu 13.10
-        'trusty'  # Ubuntu 14.04
-        'utopic'  # Ubuntu 14.10
+        # 'quantal' # Ubuntu 12.10
+        # 'raring'  # Ubuntu 13.04
+        # 'saucy'   # Ubuntu 13.10
+        # 'trusty'  # Ubuntu 14.04
+        # 'utopic'  # Ubuntu 14.10
         'vivid'   # Ubuntu 15.04
+        'wily'    # Ubuntu 15.10
     )
 
     my_distro=`distro`
@@ -115,8 +117,7 @@ else  # $REPO == 'experimental'
     apt-key add leap-experimental.key
 fi
 
-echo "deb http://deb.leap.se/$REPO $DISTRO main" > /etc/apt/sources.list.d/bitmask.list
-echo "deb-src http://deb.leap.se/$REPO $DISTRO main" >> /etc/apt/sources.list.d/bitmask.list
+echo "deb http://deb.bitmask.net/$REPO $DISTRO main" > /etc/apt/sources.list.d/bitmask.list
 
 apt-get update
 apt-get install -y bitmask

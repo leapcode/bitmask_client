@@ -3,7 +3,7 @@
 Debian
 ======
 
-This section documents all related to the debian package.
+This section documents all related to the Debian package.
 
 
 Dependencies

@@ -20,6 +20,7 @@ Darwin VPN launcher implementation.
 import commands
 import getpass
 import os
+import socket
 import sys
 
 from leap.bitmask.logs.utils import get_logger
@@ -34,17 +35,46 @@ class EIPNoTunKextLoaded(VPNLauncherException):
     pass
 
 
+class DarwinHelperCommand(object):
+
+    SOCKET_ADDR = '/tmp/bitmask-helper.socket'
+
+    def __init__(self):
+        pass
+
+    def _connect(self):
+        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            self._sock.connect(self.SOCKET_ADDR)
+        except socket.error, msg:
+            raise RuntimeError(msg)
+
+    def send(self, cmd, args=''):
+        # TODO check cmd is in allowed list
+        self._connect()
+        sock = self._sock
+        data = ""
+
+        command = cmd + ' ' + args + '/CMD'
+
+        try:
+            sock.sendall(command)
+            while '\n' not in data:
+                data += sock.recv(32)
+        finally:
+            sock.close()
+
+        return data
+
+
 class DarwinVPNLauncher(VPNLauncher):
     """
     VPN launcher for the Darwin Platform
     """
-    COCOASUDO = "cocoasudo"
-    # XXX need the good old magic translate for these strings
-    # (look for magic in 0.2.0 release)
-    SUDO_MSG = ("Bitmask needs administrative privileges to run "
-                "Encrypted Internet.")
-    INSTALL_MSG = ("\"Bitmask needs administrative privileges to install "
-                   "missing scripts and fix permissions.\"")
+    UP_SCRIPT = None
+    DOWN_SCRIPT = None
+
+    # TODO -- move this to bitmask-helper
 
     # Hardcode the installation path for OSX for security, openvpn is
     # run as root
@@ -56,14 +86,9 @@ class DarwinVPNLauncher(VPNLauncher):
         INSTALL_PATH_ESCAPED,)
     OPENVPN_BIN_PATH = "%s/Contents/Resources/%s" % (INSTALL_PATH,
                                                      OPENVPN_BIN)
-
-    UP_SCRIPT = "%s/client.up.sh" % (OPENVPN_PATH,)
-    DOWN_SCRIPT = "%s/client.down.sh" % (OPENVPN_PATH,)
-    OPENVPN_DOWN_PLUGIN = '%s/openvpn-down-root.so' % (OPENVPN_PATH,)
-
-    UPDOWN_FILES = (UP_SCRIPT, DOWN_SCRIPT, OPENVPN_DOWN_PLUGIN)
     OTHER_FILES = []
 
+    # TODO deprecate ------------------------------------------------
     @classmethod
     def cmd_for_missing_scripts(kls, frompath):
         """
@@ -87,7 +112,11 @@ class DarwinVPNLauncher(VPNLauncher):
         :returns: True if kext is loaded, False otherwise.
         :rtype: bool
         """
-        return bool(commands.getoutput('kextstat | grep "leap.tun"'))
+        loaded = bool(commands.getoutput(
+            'kextstat | grep "net.sf.tuntaposx.tun"'))
+        if not loaded:
+            logger.error("tuntaposx extension not loaded!")
+        return loaded
 
     @classmethod
     def _get_icon_path(kls):
@@ -101,6 +130,7 @@ class DarwinVPNLauncher(VPNLauncher):
 
         return os.path.join(resources_path, "bitmask.tiff")
 
+    # TODO deprecate ---------------------------------------------------------
     @classmethod
     def get_cocoasudo_ovpn_cmd(kls):
         """
@@ -120,6 +150,7 @@ class DarwinVPNLauncher(VPNLauncher):
 
         return kls.COCOASUDO, args
 
+    # TODO deprecate ---------------------------------------------------------
     @classmethod
     def get_cocoasudo_installmissing_cmd(kls):
         """
@@ -171,12 +202,6 @@ class DarwinVPNLauncher(VPNLauncher):
         # we use `super` in order to send the class to use
         command = super(DarwinVPNLauncher, kls).get_vpn_command(
             eipconfig, providerconfig, socket_host, socket_port, openvpn_verb)
-
-        cocoa, cargs = kls.get_cocoasudo_ovpn_cmd()
-        cargs.extend(command)
-        command = cargs
-        command.insert(0, cocoa)
-
         command.extend(['--setenv', "LEAPUSER", getpass.getuser()])
 
         return command

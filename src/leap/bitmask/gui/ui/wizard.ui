@@ -316,7 +316,7 @@
        <item row="1" column="1">
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>https://</string>
+          <string notr="true">https://</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -339,7 +339,7 @@
        <item row="0" column="1">
         <widget class="QLabel" name="label_8">
          <property name="text">
-          <string>https://</string>
+          <string notr="true">https://</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

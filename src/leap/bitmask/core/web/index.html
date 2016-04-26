@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Bitmask WebSockets Endpoint</title>
+      <script type="text/javascript">
+         var sock = null;
+         var ellog = null;
+
+         window.onload = function() {
+
+            ellog = document.getElementById('log');
+
+            var wsuri;
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://127.0.0.1:8080/ws";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":8080/bitmask";
+            }
+
+            if ("WebSocket" in window) {
+               sock = new WebSocket(wsuri);
+            } else if ("MozWebSocket" in window) {
+               sock = new MozWebSocket(wsuri);
+            } else {
+               log("Browser does not support WebSocket!");
+               window.location = "http://autobahn.ws/unsupportedbrowser";
+            }
+
+            if (sock) {
+               sock.onopen = function() {
+                  log("Connected to " + wsuri);
+               }
+
+               sock.onclose = function(e) {
+                  log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
+                  sock = null;
+               }
+
+               sock.onmessage = function(e) {
+                  log("[res] " + e.data + '\n');
+               }
+            }
+         };
+
+         function send() {
+            var msg = document.getElementById('message').value;
+            if (sock) {
+               sock.send(msg);
+               log("[cmd] " + msg);
+            } else {
+               log("Not connected.");
+            }
+         };
+
+         function log(m) {
+            ellog.innerHTML += m + '\n';
+            ellog.scrollTop = ellog.scrollHeight;
+         };
+      </script>
+   </head>
+   <body>
+      <h1>Bitmask Control Panel</h1>
+      <noscript>You must enable JavaScript</noscript>
+      <form>
+         <p>Command: <input id="message" type="text" size="50" maxlength="50" value="status"></p>
+      </form>
+      <button onclick='send();'>Send Command</button>
+      <pre id="log" style="height: 20em; overflow-y: scroll; background-color: #faa;"></pre>
+   </body>
+</html>

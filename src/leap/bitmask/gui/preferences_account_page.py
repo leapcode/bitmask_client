@@ -22,6 +22,7 @@ from PySide import QtCore, QtGui
 
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui import ui_preferences_account_page as ui_pref
+from leap.bitmask.gui.preferences_page import PreferencesPage
 from leap.bitmask.gui.passwordwindow import PasswordWindow
 from leap.bitmask.services import get_service_display_name
 from leap.bitmask._components import HAS_EIP
@@ -29,7 +30,7 @@ from leap.bitmask._components import HAS_EIP
 logger = get_logger()
 
 
-class PreferencesAccountPage(QtGui.QWidget):
+class PreferencesAccountPage(PreferencesPage):
 
     def __init__(self, parent, account, app):
         """
@@ -42,20 +43,15 @@ class PreferencesAccountPage(QtGui.QWidget):
         :param app: the current App object
         :type app: App
         """
-        QtGui.QWidget.__init__(self, parent)
+        PreferencesPage.__init__(self, parent, account, app)
         self.ui = ui_pref.Ui_PreferencesAccountPage()
         self.ui.setupUi(self)
-
-        self.account = account
-        self.app = app
 
         self._selected_services = set()
         self.ui.change_password_label.setVisible(False)
         self.ui.provider_services_label.setVisible(False)
 
-        self.ui.change_password_button.clicked.connect(
-            self._show_change_password)
-        app.signaler.prov_get_supported_services.connect(self._load_services)
+        self.setup_connections()
         app.backend.provider_get_supported_services(domain=account.domain)
 
         if account.username is None:
@@ -63,6 +59,24 @@ class PreferencesAccountPage(QtGui.QWidget):
                 self.tr('You must be logged in to change your password.'))
             self.ui.change_password_label.setVisible(True)
             self.ui.change_password_button.setEnabled(False)
+
+    def setup_connections(self):
+        """
+        connect signals
+        """
+        self.ui.change_password_button.clicked.connect(
+            self._show_change_password)
+        self.app.signaler.prov_get_supported_services.connect(
+            self._load_services)
+
+    def teardown_connections(self):
+        """
+        disconnect signals
+        """
+        self.ui.change_password_button.clicked.disconnect(
+            self._show_change_password)
+        self.app.signaler.prov_get_supported_services.disconnect(
+            self._load_services)
 
     def _service_selection_changed(self, service, state):
         """

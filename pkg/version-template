@@ -1,0 +1,8 @@
+version_version = "xxx"
+full_revisionid = 'deadbeef'
+
+
+def get_versions(default={}, verbose=False):
+            return {'version': version_version,
+                    'full-revisionid': full_revisionid}
+

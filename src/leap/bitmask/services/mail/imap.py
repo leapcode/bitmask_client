@@ -20,11 +20,14 @@ Initialization of imap service
 import os
 import sys
 
+from twisted.python import log
+
 from leap.bitmask.logs.utils import get_logger
 from leap.mail.constants import INBOX_NAME
 from leap.mail.imap.service import imap
 from leap.mail.incoming.service import IncomingMail, INCOMING_CHECK_PERIOD
-from twisted.python import log
+from leap.mail.mail import Account
+
 
 logger = get_logger()
 
@@ -57,11 +60,13 @@ def get_mail_check_period():
     return period
 
 
-def start_imap_service(*args, **kwargs):
+def start_imap_service(soledad_sessions):
     """
     Initializes and run imap service.
 
-    :returns: twisted.internet.task.LoopingCall instance
+    :returns: the port as returned by the reactor when starts listening, and
+              the factory for the protocol.
+    :rtype: tuple
     """
     from leap.bitmask.config import flags
     logger.debug('Launching imap service')
@@ -70,10 +75,10 @@ def start_imap_service(*args, **kwargs):
         log.startLogging(open(flags.MAIL_LOGFILE, 'w'))
         log.startLogging(sys.stdout)
 
-    return imap.run_service(*args, **kwargs)
+    return imap.run_service(soledad_sessions)
 
 
-def start_incoming_mail_service(keymanager, soledad, imap_factory, userid):
+def start_incoming_mail_service(keymanager, soledad, userid):
     """
     Initalizes and starts the incomming mail service.
 
@@ -81,19 +86,12 @@ def start_incoming_mail_service(keymanager, soledad, imap_factory, userid):
     """
     def setUpIncomingMail(inbox):
         incoming_mail = IncomingMail(
-            keymanager,
-            soledad,
-            inbox.collection,
-            userid,
+            keymanager, soledad,
+            inbox, userid,
             check_period=get_mail_check_period())
         return incoming_mail
 
-    # XXX: do I really need to know here how to get a mailbox??
-    # XXX: ideally, the parent service in mail would take care of initializing
-    # the account, and passing the mailbox to the incoming service.
-    # In an even better world, we just would subscribe to a channel that would
-    # pass us the serialized object to be inserted.
-    acc = imap_factory.theAccount
-    d = acc.callWhenReady(lambda _: acc.getMailbox(INBOX_NAME))
+    acc = Account(soledad, userid)
+    d = acc.callWhenReady(lambda _: acc.get_collection_by_mailbox(INBOX_NAME))
     d.addCallback(setUpIncomingMail)
     return d

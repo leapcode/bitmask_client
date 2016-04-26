@@ -60,9 +60,9 @@ class IMAPController(object):
         """
         logger.debug('Starting imap service')
 
+        soledad_sessions = {userid: self._soledad}
         self.imap_port, self.imap_factory = imap.start_imap_service(
-            self._soledad,
-            userid=userid)
+            soledad_sessions)
 
         def start_and_assign_incoming_service(incoming_mail):
             # this returns a deferred that will be called when the looping call
@@ -74,9 +74,7 @@ class IMAPController(object):
 
         if offline is False:
             d = imap.start_incoming_mail_service(
-                self._keymanager,
-                self._soledad,
-                self.imap_factory,
+                self._keymanager, self._soledad,
                 userid)
             d.addCallback(start_and_assign_incoming_service)
             d.addErrback(lambda f: logger.error(f.printTraceback()))

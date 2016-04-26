@@ -1,0 +1,14 @@
+--- setup.py.org	2014-11-12 16:38:07.000000000 +0000
++++ setup.py	2016-01-23 14:08:13.255261595 +0000
+@@ -192,10 +192,7 @@
+                 ext.define_macros.append(("inline", "__inline"))
+
+                 # Configure the linker
+-                ext.extra_link_args.append("libeay32.lib")
+-                ext.extra_link_args.append(
+-                    "/LIBPATH:" + os.path.join(openssl, "lib")
+-                )
++                ext.extra_link_args.append("-lcrypto")
+             else:
+                 ext.extra_link_args.append("-lcrypto")
+

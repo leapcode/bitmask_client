@@ -126,7 +126,7 @@ def check_missing():
     if alert_missing and not flags.STANDALONE:
         # We refuse to install missing stuff if not running with standalone
         # flag. Right now we rely on the flag alone, but we can disable this
-        # by overwriting some constant from within the debian package.
+        # by overwriting some constant from within the Debian package.
         alert_missing = False
         complain_missing = True
 
@@ -257,36 +257,19 @@ def WindowsInitializer():
     if not _windows_has_tap_device():
         msg = QtGui.QMessageBox()
         msg.setWindowTitle(msg.tr("TAP Driver"))
-        msg.setText(msg.tr("Bitmask needs to install the necessary drivers "
-                           "for Encrypted Internet to work. Would you like to "
-                           "proceed?"))
+        msg.setText(msg.tr("Bitmask needs a TAP Driver installed "
+                           "for Encrypted Internet to work. Please reinstall "
+                           "bitmask-client to proceed."))
         msg.setInformativeText(msg.tr("Encrypted Internet uses VPN, which "
                                       "needs a TAP device installed and none "
-                                      "has been found. This will ask for "
-                                      "administrative privileges."))
-        msg.setStandardButtons(QtGui.QMessageBox.Yes | QtGui.QMessageBox.No)
-        msg.setDefaultButton(QtGui.QMessageBox.Yes)
-        ret = msg.exec_()
-
-        if ret == QtGui.QMessageBox.Yes:
-            # XXX should do this only if executed inside bundle.
-            # Let's assume it's the only way it's gonna be executed under win
-            # by now.
-            driver_path = os.path.join(os.getcwd(),
-                                       "apps",
-                                       "eip",
-                                       "tap_driver")
-            dev_installer = os.path.join(driver_path,
-                                         "devcon.exe")
-            if os.path.isfile(dev_installer) and \
-                    stat.S_IXUSR & os.stat(dev_installer)[stat.ST_MODE] != 0:
-                inf_path = os.path.join(driver_path,
-                                        "OemWin2k.inf")
-                cmd = [dev_installer, "install", inf_path, "tap0901"]
-                ret = subprocess.call(cmd, stdout=subprocess.PIPE, shell=True)
-            else:
-                logger.error("Tried to install TAP driver, but the installer "
-                             "is not found or not executable")
+                                      "has been found. The bitmask-client "
+                                      "installer prompts for installing the "
+                                      "TAP Driver."))
+        msg.setStandardButtons(QtGui.QMessageBox.Ok)
+        logger.error('TAP Drivers not installed')
+        msg.exec_()
+        return False
+    return True
 
 #
 # Darwin initializer functions
@@ -368,6 +351,9 @@ def DarwinInitializer():
     Raise a dialog in case that the osx tuntap driver has not been found
     in the registry, asking the user for permission to install the driver
     """
+    logger.debug("Skipping darwin initialization, only-mail build")
+    return True
+
     # XXX split this function into several
 
     TUNTAP_NOTFOUND_MSG = NOTFOUND_MSG % (
@@ -440,32 +426,32 @@ def _get_missing_complain_dialog(stuff):
     class ComplainDialog(QtGui.QDialog):
 
         def __init__(self, parent=None):
-                super(ComplainDialog, self).__init__(parent)
+            super(ComplainDialog, self).__init__(parent)
 
-                label = QtGui.QLabel(msgstr.NO_HELPERS)
-                label.setAlignment(QtCore.Qt.AlignLeft)
+            label = QtGui.QLabel(msgstr.NO_HELPERS)
+            label.setAlignment(QtCore.Qt.AlignLeft)
 
-                label2 = QtGui.QLabel(msgstr.EXPLAIN)
-                label2.setAlignment(QtCore.Qt.AlignLeft)
+            label2 = QtGui.QLabel(msgstr.EXPLAIN)
+            label2.setAlignment(QtCore.Qt.AlignLeft)
 
-                textedit = QtGui.QTextEdit()
-                textedit.setText("\n".join(stuff))
+            textedit = QtGui.QTextEdit()
+            textedit.setText("\n".join(stuff))
 
-                ok = QtGui.QPushButton()
-                ok.setText(self.tr("Ok, thanks"))
-                self.ok = ok
-                self.ok.clicked.connect(self.close)
+            ok = QtGui.QPushButton()
+            ok.setText(self.tr("Ok, thanks"))
+            self.ok = ok
+            self.ok.clicked.connect(self.close)
 
-                mainLayout = QtGui.QGridLayout()
-                mainLayout.addWidget(label, 0, 0)
-                mainLayout.addWidget(label2, 1, 0)
-                mainLayout.addWidget(textedit, 2, 0)
-                mainLayout.addWidget(ok, 3, 0)
+            mainLayout = QtGui.QGridLayout()
+            mainLayout.addWidget(label, 0, 0)
+            mainLayout.addWidget(label2, 1, 0)
+            mainLayout.addWidget(textedit, 2, 0)
+            mainLayout.addWidget(ok, 3, 0)
 
-                self.setLayout(mainLayout)
+            self.setLayout(mainLayout)
 
     msg = ComplainDialog()
-    msg.setWindowTitle(msg.tr("Missing Bitmask helpers"))
+    msg.setWindowTitle(msg.tr("Missing Bitmask helper files"))
     return msg
 
 
@@ -482,7 +468,7 @@ def _linux_install_missing_scripts(badexec, notfound):
     """
     success = False
     installer_path = os.path.abspath(
-        os.path.join(os.getcwd(), "apps", "eip", "files"))
+        os.path.join(os.getcwd(), "..", "apps", "eip", "files"))
 
     install_helper = "leap-install-helper.sh"
     install_helper_path = os.path.join(installer_path, install_helper)

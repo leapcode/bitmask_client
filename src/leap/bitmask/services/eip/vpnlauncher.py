@@ -29,7 +29,7 @@ from leap.bitmask.config import flags
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.backend.settings import Settings, GATEWAY_AUTOMATIC
 from leap.bitmask.config.providerconfig import ProviderConfig
-from leap.bitmask.platform_init import IS_LINUX
+from leap.bitmask.platform_init import IS_LINUX, IS_MAC
 from leap.bitmask.services.eip.eipconfig import EIPConfig, VPNGatewaySelector
 from leap.bitmask.util import force_eval
 from leap.common.check import leap_assert, leap_assert_type
@@ -286,8 +286,8 @@ class VPNLauncher(object):
         :rtype: list
         """
         # FIXME
-        # XXX remove method when we ditch UPDOWN in osx and win too
-        if IS_LINUX:
+        # XXX remove method when we ditch UPDOWN in win too
+        if IS_LINUX or IS_MAC:
             return []
         else:
             leap_assert(kls.UPDOWN_FILES is not None,
@@ -308,7 +308,7 @@ class VPNLauncher(object):
         """
         leap_assert(kls.OTHER_FILES is not None,
                     "Need to define OTHER_FILES for this particular "
-                    "auncher before calling this method")
+                    "launcher before calling this method")
         other = force_eval(kls.OTHER_FILES)
         file_exist = partial(_has_other_files, warn=False)
 

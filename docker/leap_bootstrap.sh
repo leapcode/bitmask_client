@@ -271,6 +271,10 @@ EOF
     install_dependencies
     setup_develop
 
+    cd $REPOS_ROOT/bitmask_client/
+    make
+    cd -
+
     set +x
     echo "${cc_green}Status: $status done!${cc_normal}"
 }

@@ -46,7 +46,6 @@ from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.providers import Providers
-from leap.bitmask.gui.account import Account
 from leap.bitmask.gui.app import App
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
@@ -59,6 +58,8 @@ from leap.bitmask.util.keyring_helpers import has_keyring
 
 from leap.common.events import register
 from leap.common.events import catalog
+
+from .qt_browser import PixelatedWindow
 
 from leap.mail.imap.service.imap import IMAP_PORT
 
@@ -152,6 +153,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # Provider List
         self._providers = Providers(self.ui.cmbProviders)
 
+        ##
+        # tmphack: important state information about the application is stored
+        # in widgets. Rather than rewrite the UI, for now we simulate this
+        # info being stored in an application object:
+        ##
+        self.app.login_state = self._login_widget._state
+        self.app.providers_widget = self._providers
+
         # Qt Signal Connections #####################################
         # TODO separate logic from ui signals.
 
@@ -218,6 +227,12 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._backend_connect()
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
+        self.ui.action_pixelated_mail.triggered.connect(
+            self._show_pixelated_browser)
+
+        pixelated_enabled = self._settings.get_pixelmail_enabled()
+        self.ui.action_pixelated_mail.setVisible(pixelated_enabled)
+
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._show_wizard)
@@ -294,6 +309,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             self._mail_conductor.connect_mail_signals(self._mail_status)
 
         if not init_platform():
+            logger.critical('init_platform failed, quitting application.')
             self.quit()
             return
 
@@ -436,6 +452,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # Refer to http://www.themacaque.com/?p=1067 for funny details.
         self._wizard.show()
         if IS_MAC:
+            # XXX hack. For some reason, there's a signal that doesn't arrive
+            # on time, so that the next button is disabled. See #8041
+            self._wizard.page(self._wizard.INTRO_PAGE).set_completed()
             self._wizard.raise_()
         self._settings.set_skip_first_run(True)
 
@@ -553,16 +572,13 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         Display the preferences window.
         """
-        logged_user = self._login_widget.get_logged_user()
-        if logged_user is not None:
-            user, domain = logged_user.split('@')
-        else:
-            user = None
-            domain = self._providers.get_selected_provider()
-
-        account = Account(user, domain)
-        pref_win = PreferencesWindow(self, account, self.app)
+        pref_win = PreferencesWindow(self, self.app)
         pref_win.show()
+
+    def _show_pixelated_browser(self):
+        win = PixelatedWindow(self)
+        win.show()
+        win.load_app()
 
     def _update_eip_enabled_status(self, account=None, services=None):
         """
@@ -1063,7 +1079,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
         manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
         manual_username = self.tr("Username: your full email address")
-        manual_password = self.tr("Password: any non-empty text")
+
+        # FIXME on i3, this doens't allow to mouse-select.
+        # Switch to a dialog in which we can set the QLabel
+        mail_auth_token = (
+            self.app.service_tokens.get('mail_auth', None) or
+            "??? (log in to unlock)")
+        mail_password = self.tr("IMAP/SMTP Password:") + " %s" % (
+            mail_auth_token,)
 
         msg = help_url + self.tr(
             "<p><strong>{0}</strong></p>"
@@ -1076,7 +1099,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             "<li>&nbsp;{6}</li>"
             "</ul></p>").format(email_quick_reference, thunderbird_text,
                                 manual_text, manual_imap, manual_smtp,
-                                manual_username, manual_password)
+                                manual_username, mail_password)
         QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
 
     def _needs_update(self):

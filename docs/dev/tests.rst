@@ -16,7 +16,7 @@ Testing dependencies
 have a look at ``pkg/test-requirements.pip``
 The ``./run_tests.sh`` command should install all of them in your virtualenv for you.
 
-If you prefer to install them system wide, this should do in a debian system::
+If you prefer to install them system wide, this should do in a Debian system::
 
     $ apt-get install python-nose python-mock python-coverage
 

@@ -15,7 +15,6 @@ ui_*.py
 !.gitattributes
 bin/
 build/
-core
 dist/
 docs/_build
 docs/covhtml
@@ -39,3 +38,4 @@ data/bitmask.pro
 bitmask-resources.png
 
 docker/data
+leap_thirdparty_build

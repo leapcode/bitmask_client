@@ -20,11 +20,11 @@ Widget for "vpn" preferences
 from PySide import QtCore, QtGui
 from leap.bitmask.gui.ui_preferences_vpn_page import Ui_PreferencesVpnPage
 
-from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.gui.flashable import Flashable
+from leap.bitmask.gui.preferences_page import PreferencesPage
 
 
-class PreferencesVpnPage(QtGui.QWidget, Flashable):
+class PreferencesVpnPage(PreferencesPage, Flashable):
 
     """
     Page in the preferences window that shows VPN settings
@@ -41,11 +41,8 @@ class PreferencesVpnPage(QtGui.QWidget, Flashable):
         :param app: shared App instance
         :type app: App
         """
-        QtGui.QWidget.__init__(self, parent)
+        PreferencesPage.__init__(self, parent, account, app)
         self.AUTOMATIC_GATEWAY_LABEL = self.tr("Automatic")
-
-        self.account = account
-        self.app = app
 
         # Load UI
         self.ui = Ui_PreferencesVpnPage()
@@ -53,7 +50,15 @@ class PreferencesVpnPage(QtGui.QWidget, Flashable):
         self.ui.flash_label.setVisible(False)
         self.hide_flash()
 
-        # Connections
+        self.setup_connections()
+
+        # Trigger update
+        self.app.backend.eip_get_gateways_list(domain=self.account.domain)
+
+    def setup_connections(self):
+        """
+        connect signals
+        """
         self.ui.gateways_list.clicked.connect(self._save_selected_gateway)
         sig = self.app.signaler
         sig.eip_get_gateways_list.connect(self._update_gateways_list)
@@ -61,8 +66,16 @@ class PreferencesVpnPage(QtGui.QWidget, Flashable):
         sig.eip_uninitialized_provider.connect(
             self._gateways_list_uninitialized)
 
-        # Trigger update
-        self.app.backend.eip_get_gateways_list(domain=self.account.domain)
+    def teardown_connections(self):
+        """
+        disconnect signals
+        """
+        self.ui.gateways_list.clicked.disconnect(self._save_selected_gateway)
+        sig = self.app.signaler
+        sig.eip_get_gateways_list.disconnect(self._update_gateways_list)
+        sig.eip_get_gateways_list_error.disconnect(self._gateways_list_error)
+        sig.eip_uninitialized_provider.disconnect(
+            self._gateways_list_uninitialized)
 
     def _save_selected_gateway(self, index):
         """

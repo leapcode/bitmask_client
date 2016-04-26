@@ -15,8 +15,8 @@ Bugfixes
 - `#7563 <https://leap.se/code/issues/7563>`_: try to look for /usr/bin/gpg1
 - `#7562 <https://leap.se/code/issues/7562>`_: use zmq embedded minitornado, instead of system lib.
 
-0.9.0 October 28
-++++++++++++++++
+0.9.0 October 28 - "not in kansas anymore"
+++++++++++++++++++++++++++++++++++++++++++
 
 Features
 ~~~~~~~~

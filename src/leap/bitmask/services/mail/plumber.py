@@ -60,6 +60,7 @@ def initialize_soledad(uuid, email, passwd,
     cert_file = ""
 
     class Mock(object):
+
         def __init__(self, return_value=None):
             self._return = return_value
 
@@ -140,7 +141,7 @@ class MBOXPlumber(object):
         self.sol = initialize_soledad(
             self.uuid, self.userid, self.passwd,
             secrets, localdb, "/tmp", "/tmp")
-        self.acct = IMAPAccount(self.userid, self.sol)
+        self.acct = IMAPAccount(self.sol, self.userid)
         return True
 
     #

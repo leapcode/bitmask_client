@@ -154,6 +154,9 @@ def download_service_config(provider_config, service_config,
     # Not modified
     service_path = ("leap", "providers", provider_config.get_domain(),
                     service_json)
+
+    service_config.__class__.standalone = flags.STANDALONE
+
     if res.status_code == 304:
         logger.debug(
             "{0} definition has not been modified".format(
