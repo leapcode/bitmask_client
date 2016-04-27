@@ -7,7 +7,7 @@
 # This special exception was added by Craig Small in version 0.37 of dh-make.
 #
 # Uncomment this to turn on verbose mode.
-#DH_VERBOSE=1
+DH_VERBOSE=1
 DEB_BUILD_OPTIONS=nocheck
 package=bitmask
 
@@ -22,6 +22,8 @@ override_dh_prep:
 	rst2man docs/man/bitmask-root.1.rst docs/man/bitmask-root.1
 
 	dh_prep
+	mv src/leap.bitmask.egg-info src/leap.bitmask.egg-info.orig
+
 	# this will re-generate the resource files and locales.
 	make -f ./Makefile
 
@@ -30,8 +32,8 @@ ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
 # run tests!
 #
 
-test-python%:
-	xvfb-run ./run_tests.sh -x -N
+#test-python%:
+#	xvfb-run ./run_tests.sh -x -N
 
 override_dh_auto_test: $(PYTHON2:%=test-python%) $(PYTHON3:%=test-python%)
 endif
@@ -41,14 +43,13 @@ endif
 build-python%:
 	python$* setup.py build
 
-#override_dh_auto_build: $(PYTHON3:%=build-python%)
-#        dh_auto_build
+override_dh_auto_build: $(PYTHON3:%=build-python%)
+	dh_auto_build
 
-install-python%:
-	python$* setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb
-
-#override_dh_auto_install: $(PYTHON3:%=install-python%)
-#        dh_auto_install
+override_dh_install:
+	dh_install -Xbitmask/core -Xbitmask/cli
+	rm -rf src/leap.bitmask.egg-info
+	mv src/leap.bitmask.egg-info.orig src/leap.bitmask.egg-info
 
 # build and install sphinx docs
 # 
@@ -68,9 +69,12 @@ override_dh_auto_clean:
 	rm -rf .tox
 	rm -rf bin
 	rm -rf build
+	rm -rf dist
 	rm -rf lib/
 	rm -rf docs/_build 
 	rm -rf *.egg-info
+	rm -rf .eggs/
 	rm -f docs/man/bitmask.1
 	rm -f docs/man/bitmask-root.1
 	rm -rf docs/covhtml
+	rm -rf docker
