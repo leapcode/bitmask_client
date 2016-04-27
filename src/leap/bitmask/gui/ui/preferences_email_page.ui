@@ -581,7 +581,7 @@
          </column>
          <column>
           <property name="text">
-           <string>Key ID</string>
+           <string>Fingerprint</string>
           </property>
          </column>
         </widget>

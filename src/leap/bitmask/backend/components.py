@@ -994,14 +994,14 @@ class Keymanager(object):
         d.addCallback(export)
         d.addErrback(log_error)
 
+    @defer.inlineCallbacks
     def list_keys(self):
         """
         List all the keys stored in the local DB.
         """
-        d = self._keymanager_proxy.get_all_keys()
-        d.addCallback(
-            lambda keys:
-            self._signaler.signal(self._signaler.keymanager_keys_list, keys))
+        keys = yield self._keymanager_proxy.get_all_keys()
+        keydicts = [dict(key) for key in keys]
+        self._signaler.signal(self._signaler.keymanager_keys_list, keydicts)
 
     def get_key_details(self, username):
         """
@@ -1009,7 +1009,7 @@ class Keymanager(object):
         """
         def signal_details(public_key):
             self._signaler.signal(self._signaler.keymanager_key_details,
-                                  public_key.get_dict())
+                                  dict(public_key))
 
         d = self._keymanager_proxy.get_key(username,
                                            openpgp.OpenPGPKey)
