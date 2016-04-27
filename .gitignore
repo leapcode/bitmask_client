@@ -37,5 +37,5 @@ CHANGELOG~
 data/bitmask.pro
 bitmask-resources.png
 
-docker/data
+docker/
 leap_thirdparty_build
