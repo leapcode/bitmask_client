@@ -67,7 +67,8 @@ Description: Provides the desktop client for LEAP
 Package: bitmask-core
 Architecture: all
 Depends: python-twisted-core,
-  python-zope.interface
+  python-zope.interface,
+  leap-bonafide
 Suggests: bitmask-cli
 Provides: leap.bitmask.core, ${python:Provides}
 # Replaces: ...
