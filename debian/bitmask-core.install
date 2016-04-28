@@ -1,2 +1,2 @@
 /usr/bin/bitmaskd
-src/leap/bitmask/core usr/lib/python2.7/dist-packages/leap/bitmask/
+/usr/lib/python2.7/dist-packages/leap/bitmask/core/
