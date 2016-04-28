@@ -4,3 +4,4 @@ leap.mail leap-mail ; PEP386
 leap.keymanager leap-keymanager
 leap.bitmask bitmask
 leap.bitmask-core bitmask-core
+leap.bonafide leap-bonafide
