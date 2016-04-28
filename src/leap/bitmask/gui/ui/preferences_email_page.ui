@@ -39,7 +39,7 @@
        <item>
         <widget class="QGroupBox" name="webmail_box">
          <property name="title">
-          <string>Bitmask Mail Configuration</string>
+          <string>Bitmask Mail</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
@@ -581,7 +581,7 @@
          </column>
          <column>
           <property name="text">
-           <string>Key ID</string>
+           <string>Fingerprint</string>
           </property>
          </column>
         </widget>

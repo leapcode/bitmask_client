@@ -373,7 +373,7 @@
   </action>
   <action name="action_pixelated_mail">
    <property name="text">
-    <string>Bitmask Webmail</string>
+    <string>Bitmask Mail</string>
    </property>
   </action>
   <action name="action_advanced_key_management">
