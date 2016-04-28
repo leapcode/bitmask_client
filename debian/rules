@@ -23,6 +23,8 @@ override_dh_prep:
 
 	dh_prep
 	mv src/leap.bitmask.egg-info src/leap.bitmask.egg-info.orig
+	mv src/leap/bitmask/core src/bitmask-core.orig
+	mv src/leap/bitmask/cli src/bitmask-cli.orig
 
 	# this will re-generate the resource files and locales.
 	make -f ./Makefile
@@ -43,13 +45,12 @@ endif
 build-python%:
 	python$* setup.py build
 
-override_dh_auto_build: $(PYTHON3:%=build-python%)
-	dh_auto_build
-
 override_dh_install:
-	dh_install -Xbitmask/core -Xbitmask/cli
+	dh_install
 	rm -rf src/leap.bitmask.egg-info
 	mv src/leap.bitmask.egg-info.orig src/leap.bitmask.egg-info
+	mv src/bitmask-core.orig src/leap/bitmask/core/
+	mv src/bitmask-cli.orig src/leap/bitmask/cli/
 
 # build and install sphinx docs
 # 
