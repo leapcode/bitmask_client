@@ -26,7 +26,6 @@ from leap.bitmask import __version__
 from leap.bitmask.core import configurable
 from leap.bitmask.core import mail_services
 from leap.bitmask.core import _zmq
-from leap.bitmask.core import websocket
 from leap.bonafide.service import BonafideService
 from leap.common.events import server as event_server
 # from leap.vpn import EIPService
@@ -103,6 +102,7 @@ class BitmaskBackend(configurable.ConfigurableService):
         zs.setServiceParent(self)
 
     def init_web(self):
+        from leap.bitmask.core import websocket
         ws = websocket.WebSocketsDispatcherService(self)
         ws.setServiceParent(self)
 
