@@ -17,17 +17,22 @@
 """
 Run bitmask daemon.
 """
-from twisted.scripts.twistd import run
 from os.path import join
 from sys import argv
 
+from twisted.scripts.twistd import run
+
 from leap.bitmask.util import here
 from leap.bitmask import core
+from leap.bitmask.core import flags
 
 
 def run_bitmaskd():
     # TODO --- configure where to put the logs... (get --logfile, --logdir
     # from the bitmask_cli
+    for (index, arg) in enumerate(argv):
+        if arg == '--backend':
+            flags.BACKEND = argv[index + 1]
     argv[1:] = [
         '-y', join(here(core), "bitmaskd.tac"),
         '--pidfile', '/tmp/bitmaskd.pid',

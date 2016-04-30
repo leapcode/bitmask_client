@@ -17,6 +17,7 @@
 """
 Bitmask-core Service.
 """
+import json
 import resource
 
 from twisted.internet import reactor
@@ -26,6 +27,7 @@ from leap.bitmask import __version__
 from leap.bitmask.core import configurable
 from leap.bitmask.core import mail_services
 from leap.bitmask.core import _zmq
+from leap.bitmask.core import flags
 from leap.bonafide.service import BonafideService
 from leap.common.events import server as event_server
 # from leap.vpn import EIPService
@@ -126,17 +128,18 @@ class BitmaskBackend(configurable.ConfigurableService):
         # we may want to make this tuple a class member
         services = ('soledad', 'keymanager', 'mail', 'eip')
 
-        status_messages = []
+        status = {}
         for name in services:
-            status = 'stopped'
+            _status = 'stopped'
             try:
                 if self.getServiceNamed(name).running:
-                    status = "running"
+                    _status = 'running'
             except KeyError:
                 pass
-            status_messages.append("[{}: {}]".format(name, status))
+            status[name] = _status
+        status['backend'] = flags.BACKEND
 
-        return " ".join(status_messages)
+        return json.dumps(status)
 
     def do_version(self):
         version = __version__
