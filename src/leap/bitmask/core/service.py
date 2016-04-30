@@ -33,7 +33,7 @@ from leap.common.events import server as event_server
 
 class BitmaskBackend(configurable.ConfigurableService):
 
-    def __init__(self, basedir='~/.config/leap'):
+    def __init__(self, basedir=configurable.DEFAULT_BASEDIR):
 
         configurable.ConfigurableService.__init__(self, basedir)
 

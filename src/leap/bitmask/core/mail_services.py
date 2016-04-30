@@ -302,7 +302,7 @@ class KeymanagerContainer(Container):
 
 class KeymanagerService(HookableService):
 
-    def __init__(self, basedir='~/.config/leap'):
+    def __init__(self, basedir=DEFAULT_BASEDIR):
         service.Service.__init__(self)
         self._basedir = basedir
 
@@ -507,7 +507,7 @@ class SMTPService(service.Service):
     name = 'smtp'
 
     def __init__(self, soledad_sessions, keymanager_sessions, sendmail_opts,
-                 basedir='~/.config/leap'):
+                 basedir=DEFAULT_BASEDIR):
 
         self._basedir = os.path.expanduser(basedir)
         port, factory = smtp.run_service(
