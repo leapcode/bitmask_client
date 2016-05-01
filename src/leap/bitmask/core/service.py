@@ -25,12 +25,22 @@ from twisted.python import log
 
 from leap.bitmask import __version__
 from leap.bitmask.core import configurable
-from leap.bitmask.core import mail_services
 from leap.bitmask.core import _zmq
 from leap.bitmask.core import flags
-from leap.bonafide.service import BonafideService
 from leap.common.events import server as event_server
 # from leap.vpn import EIPService
+
+
+backend = flags.BACKEND
+
+if backend == 'default':
+    from leap.bitmask.core import mail_services
+    from leap.bonafide.service import BonafideService
+elif backend == 'dummy':
+    from leap.bitmask.core.dummy import mail_services
+    from leap.bitmask.core.dummy import BonafideService
+else:
+    raise RuntimeError('Backend not supported')
 
 
 class BitmaskBackend(configurable.ConfigurableService):
@@ -38,6 +48,7 @@ class BitmaskBackend(configurable.ConfigurableService):
     def __init__(self, basedir=configurable.DEFAULT_BASEDIR):
 
         configurable.ConfigurableService.__init__(self, basedir)
+        self.core_commands = BackendCommands(self)
 
         def enabled(service):
             return self.get_config('services', service, False, boolean=True)
@@ -117,38 +128,19 @@ class BitmaskBackend(configurable.ConfigurableService):
             service.setServiceParent(self)
             return service
 
-    # General commands for the BitmaskBackend Core Service
-
     def do_stats(self):
-        log.msg('BitmaskCore Service STATS')
-        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
-        return 'BitmaskCore: [Mem usage: %s KB]' % (mem / 1024)
+        return self.core_commands.do_stats()
 
     def do_status(self):
-        # we may want to make this tuple a class member
-        services = ('soledad', 'keymanager', 'mail', 'eip')
-
-        status = {}
-        for name in services:
-            _status = 'stopped'
-            try:
-                if self.getServiceNamed(name).running:
-                    _status = 'running'
-            except KeyError:
-                pass
-            status[name] = _status
-        status['backend'] = flags.BACKEND
-
-        return json.dumps(status)
+        return self.core_commands.do_status()
 
     def do_version(self):
-        version = __version__
-        return 'BitmaskCore: %s' % version
+        return self.core_commands.do_version()
 
     def do_shutdown(self):
-        self.stopService()
-        reactor.callLater(1, reactor.stop)
-        return 'shutting down...'
+        return self.core_commands.do_shutdown()
+
+    # Service Toggling
 
     def do_enable_service(self, service):
         assert service in self.service_names
@@ -175,3 +167,43 @@ class BitmaskBackend(configurable.ConfigurableService):
         # TODO -- should stop also?
         self.set_config('services', service, 'False')
         return 'ok'
+
+
+class BackendCommands(object):
+
+    """
+    General commands for the BitmaskBackend Core Service.
+    """
+
+    def __init__(self, core):
+        self.core = core
+
+    def do_status(self):
+        # we may want to make this tuple a class member
+        services = ('soledad', 'keymanager', 'mail', 'eip')
+
+        status = {}
+        for name in services:
+            _status = 'stopped'
+            try:
+                if self.core.getServiceNamed(name).running:
+                    _status = 'running'
+            except KeyError:
+                pass
+            status[name] = _status
+        status['backend'] = flags.BACKEND
+
+        return json.dumps(status)
+
+    def do_version(self):
+        return {'version_core': __version__}
+
+    def do_stats(self):
+        log.msg('BitmaskCore Service STATS')
+        mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return {'mem_usage': '%s KB' % (mem / 1024)}
+
+    def do_shutdown(self):
+        self.core.stopService()
+        reactor.callLater(1, reactor.stop)
+        return {'shutdown': 'ok'}

@@ -64,10 +64,10 @@ class ImproperlyConfigured(Exception):
 
 class SoledadContainer(Container):
 
-    def __init__(self, basedir=DEFAULT_BASEDIR):
+    def __init__(self, service=None, basedir=DEFAULT_BASEDIR):
         self._basedir = os.path.expanduser(basedir)
         self._usermap = UserMap()
-        super(SoledadContainer, self).__init__()
+        super(SoledadContainer, self).__init__(service=service)
 
     def add_instance(self, userid, passphrase, uuid=None, token=None):
 
@@ -89,7 +89,7 @@ class SoledadContainer(Container):
             uuid, passphrase, soledad_path, soledad_url,
             cert_path, token)
 
-        self.add_instances(userid, soledad)
+        super(SoledadContainer, self).add_instance(userid, soledad)
 
         data = {'user': userid, 'uuid': uuid, 'token': token,
                 'soledad': soledad}
@@ -202,9 +202,9 @@ class SoledadService(HookableService):
 
 class KeymanagerContainer(Container):
 
-    def __init__(self, basedir):
+    def __init__(self, service=None, basedir=DEFAULT_BASEDIR):
         self._basedir = os.path.expanduser(basedir)
-        super(KeymanagerContainer, self).__init__()
+        super(KeymanagerContainer, self).__init__(service=service)
 
     def add_instance(self, userid, token, uuid, soledad):
 
