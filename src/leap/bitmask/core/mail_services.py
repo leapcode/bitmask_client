@@ -31,7 +31,7 @@ from twisted.python import log
 
 from leap.bonafide import config
 from leap.common.service_hooks import HookableService
-from leap.keymanager import KeyManager, openpgp
+from leap.keymanager import KeyManager
 from leap.keymanager.errors import KeyNotFound
 from leap.soledad.client.api import Soledad
 from leap.mail.constants import INBOX_NAME
@@ -234,7 +234,7 @@ class KeymanagerContainer(Container):
             # --------------------------------------------------------------
             failure.trap(KeyNotFound)
             log.msg("Core: Key not found. Generating key for %s" % (userid,))
-            d = keymanager.gen_key(openpgp.OpenPGPKey)
+            d = keymanager.gen_key()
             d.addCallbacks(send_key, log_key_error("generating"))
             return d
 
@@ -244,7 +244,7 @@ class KeymanagerContainer(Container):
             # but this hasn't been successfully uploaded. How do we know that?
             # XXX Should this be a method of bonafide instead?
             # -----------------------------------------------------------------
-            d = keymanager.send_key(openpgp.OpenPGPKey)
+            d = keymanager.send_key()
             d.addCallbacks(
                 lambda _: log.msg(
                     "Key generated successfully for %s" % userid),
@@ -258,8 +258,7 @@ class KeymanagerContainer(Container):
                 return failure
             return log_error
 
-        d = keymanager.get_key(
-            userid, openpgp.OpenPGPKey, private=True, fetch_remote=False)
+        d = keymanager.get_key(userid, private=True, fetch_remote=False)
         d.addErrback(if_not_found_generate)
         d.addCallback(lambda _: keymanager)
         return d

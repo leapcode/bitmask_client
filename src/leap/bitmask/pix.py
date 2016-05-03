@@ -26,7 +26,7 @@ from twisted.python import log
 
 from leap.bitmask.util import get_path_prefix
 from leap.mail.mail import Account
-from leap.keymanager import openpgp, KeyNotFound
+from leap.keymanager import KeyNotFound
 
 try:
     from pixelated.adapter.mailstore import LeapMailStore
@@ -114,14 +114,13 @@ class NickNym(object):
 
     def fetch_key(self, email, private=False, fetch_remote=True):
         return self.keymanager.get_key(
-            email, openpgp.OpenPGPKey,
-            private=private, fetch_remote=fetch_remote)
+            email, private=private, fetch_remote=fetch_remote)
 
     def _gen_key(self):
-        return self.keymanager.gen_key(openpgp.OpenPGPKey)
+        return self.keymanager.gen_key()
 
     def _send_key_to_leap(self):
-        return self.keymanager.send_key(openpgp.OpenPGPKey)
+        return self.keymanager.send_key()
 
 
 class LeapSessionAdapter(object):

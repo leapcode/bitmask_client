@@ -41,7 +41,7 @@ from leap.bitmask.util import here
 from leap.bitmask.platform_init import IS_WIN, IS_MAC
 from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
-from leap.keymanager import KeyManager, openpgp
+from leap.keymanager import KeyManager
 from leap.keymanager.errors import KeyNotFound
 from leap.soledad.common.errors import InvalidAuthTokenError
 from leap.soledad.client import Soledad
@@ -513,7 +513,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                     logger.exception(failure.value)
                     # but we do not raise
 
-            d = self._keymanager.send_key(openpgp.OpenPGPKey)
+            d = self._keymanager.send_key()
             d.addErrback(send_errback)
             return d
         else:
@@ -538,12 +538,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
             failure.trap(KeyNotFound)
             logger.debug("Key not found. Generating key for %s"
                          % (address,))
-            d = self._keymanager.gen_key(openpgp.OpenPGPKey)
+            d = self._keymanager.gen_key()
             d.addCallbacks(send_key, log_key_error("generating"))
             return d
 
         def send_key(_):
-            d = self._keymanager.send_key(openpgp.OpenPGPKey)
+            d = self._keymanager.send_key()
             d.addCallbacks(
                 lambda _: logger.debug("Key generated successfully."),
                 log_key_error("sending"))
@@ -555,8 +555,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
                 return failure
             return log_err
 
-        d = self._keymanager.get_key(
-            address, openpgp.OpenPGPKey, private=True, fetch_remote=False)
+        d = self._keymanager.get_key(address, private=True, fetch_remote=False)
         d.addErrback(if_not_found_generate)
         return d
 

@@ -987,9 +987,8 @@ class Keymanager(object):
                 "Error exporting key. {0!r}".format(failure.value))
             self._signaler.signal(self._signaler.keymanager_export_error)
 
-        dpub = keymanager.get_key(username, openpgp.OpenPGPKey)
-        dpriv = keymanager.get_key(username, openpgp.OpenPGPKey,
-                                   private=True)
+        dpub = keymanager.get_key(username)
+        dpriv = keymanager.get_key(username, private=True)
         d = defer.gatherResults([dpub, dpriv])
         d.addCallback(export)
         d.addErrback(log_error)
@@ -1011,8 +1010,7 @@ class Keymanager(object):
             self._signaler.signal(self._signaler.keymanager_key_details,
                                   dict(public_key))
 
-        d = self._keymanager_proxy.get_key(username,
-                                           openpgp.OpenPGPKey)
+        d = self._keymanager_proxy.get_key(username)
         d.addCallback(signal_details)
 
 
