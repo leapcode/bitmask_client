@@ -55,7 +55,6 @@ pyinst-cleanup:
 
 pyinst-distribution-data:
 	cp release-notes.rst $(DIST_VERSION)
-	cp pkg/PixelatedWebmail.README $(DIST_VERSION)
 	cp LICENSE $(DIST_VERSION)
 
 pyinst-helpers-linux:
