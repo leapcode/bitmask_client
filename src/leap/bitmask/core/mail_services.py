@@ -351,7 +351,7 @@ class KeymanagerService(HookableService):
         d = km.get_all_keys()
         d.addCallback(
             lambda keys: [
-                (key.uids, key.fingerprint) for key in keys])
+                (key.address, key.fingerprint) for key in keys])
         return d
 
 

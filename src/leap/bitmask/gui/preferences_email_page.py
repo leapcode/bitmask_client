@@ -219,8 +219,11 @@ class PreferencesEmailPage(PreferencesPage):
         for key in keys:
             row = self.ui.keys_table.rowCount()
             self.ui.keys_table.insertRow(row)
+            address = key["address"]
+            if not address:  # can be None if it's not active
+                address = "--"
             self.ui.keys_table.setItem(
-                row, 0, QtGui.QTableWidgetItem(" ".join(key["uids"])))
+                row, 0, QtGui.QTableWidgetItem(address))
             self.ui.keys_table.setItem(
                 row, 1, QtGui.QTableWidgetItem(key["fingerprint"]))
 
