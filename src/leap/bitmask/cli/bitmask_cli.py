@@ -325,7 +325,7 @@ def send_command(cli):
 
     s = get_zmq_connection()
 
-    d = s.sendMsg(*data, timeout=20)
+    d = s.sendMsg(*data, timeout=60)
     d.addCallback(cb)
     d.addCallback(lambda x: reactor.stop())
     d.addErrback(timeout_handler)

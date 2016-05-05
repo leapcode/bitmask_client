@@ -17,8 +17,10 @@
 """
 QtWebKit-based browser to display Pixelated User Agent
 """
+import os
+import urlparse
 
-from PySide import QtCore, QtWebKit, QtGui
+from PySide import QtCore, QtWebKit, QtGui, QtNetwork
 
 PIXELATED_URI = 'http://localhost:9090'
 
@@ -37,3 +39,29 @@ class PixelatedWindow(QtGui.QDialog):
 
     def load_app(self):
         self.view.load(QtCore.QUrl(PIXELATED_URI))
+        self.view.page().setForwardUnsupportedContent(True)
+        self.view.page().unsupportedContent.connect(self.download)
+
+        self.manager = QtNetwork.QNetworkAccessManager()
+        self.manager.finished.connect(self.finished)
+
+    def download(self, reply):
+        self.request = QtNetwork.QNetworkRequest(reply.url())
+        self.reply = self.manager.get(self.request)
+
+    def finished(self):
+        url = self.reply.url().toString()
+
+        filename = urlparse.parse_qs(url).get('filename', None)
+        if filename:
+            filename = filename[0]
+        name = filename or url
+
+        path = os.path.expanduser(os.path.join(
+            '~', unicode(name).split('/')[-1]))
+        destination = QtGui.QFileDialog.getSaveFileName(self, "Save", path)
+        if destination:
+            filename = destination[0]
+            with open(filename, 'wb') as f:
+                f.write(str(self.reply.readAll()))
+                f.close()
