@@ -1030,12 +1030,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         Display the About Bitmask dialog
         """
         today = datetime.now().date()
-        greet = ("Happy New 1984!... or not ;)<br><br>"
-                 if today.month == 1 and today.day < 15 else "")
         title = self.tr("About Bitmask - %s") % (VERSION,)
         msg = self.tr(
             "Version: <b>{ver}</b> ({ver_hash})<br>"
-            "<br>{greet}"
             "Bitmask is the Desktop client application for the LEAP "
             "platform, supporting Encrypted Internet Proxy "
             "and <a href='https://bitmask.net/help/email'> "
@@ -1046,7 +1043,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             "available.<br>"
             "<br>"
             "<a href='https://leap.se'>More about LEAP</a>")
-        msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10], greet=greet)
+        msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10])
         QtGui.QMessageBox.about(self, title, msg)
 
     def _help(self):
