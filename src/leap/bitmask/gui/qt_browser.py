@@ -37,6 +37,11 @@ class PixelatedWindow(QtGui.QDialog):
         self.setLayout(layout)
         self.setWindowTitle('Bitmask Mail')
 
+        # For the moment, we need to resize to a sensible default to avoid the
+        # "send" button to be out of view in the compose pane. This should be
+        # removed as soon as pixelated becomes size-responsive.
+        self.resize(800, 700)
+
     def load_app(self):
         self.view.load(QtCore.QUrl(PIXELATED_URI))
         self.view.page().setForwardUnsupportedContent(True)
