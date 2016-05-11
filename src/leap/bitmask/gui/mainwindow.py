@@ -1054,53 +1054,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         TRIGGERS:
             self.ui.action_help.triggered
 
-        Display the Bitmask help dialog.
+        Open bitmask.net/help
         """
-        # TODO: don't hardcode!
-        smtp_port = 2013
-
-        help_url = "<p><a href='https://{0}'>{0}</a></p>".format(
-            self.tr("bitmask.net/help"))
-
-        lang = QtCore.QLocale.system().name().replace('_', '-')
-        thunderbird_extension_url = \
-            "https://addons.mozilla.org/{0}/" \
-            "thunderbird/addon/bitmask/".format(lang)
-
-        email_quick_reference = self.tr("Email quick reference")
-        thunderbird_text = self.tr(
-            "For Thunderbird, you can use the "
-            "Bitmask extension. Search for \"Bitmask\" in the add-on "
-            "manager or download it from <a href='{0}'>"
-            "addons.mozilla.org</a>.".format(thunderbird_extension_url))
-        manual_text = self.tr(
-            "Alternatively, you can manually configure "
-            "your mail client to use Bitmask Email with these options:")
-        manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
-        manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
-        manual_username = self.tr("Username: your full email address")
-
-        # FIXME on i3, this doens't allow to mouse-select.
-        # Switch to a dialog in which we can set the QLabel
-        mail_auth_token = (
-            self.app.service_tokens.get('mail_auth', None) or
-            "??? (log in to unlock)")
-        mail_password = self.tr("IMAP/SMTP Password:") + " %s" % (
-            mail_auth_token,)
-
-        msg = help_url + self.tr(
-            "<p><strong>{0}</strong></p>"
-            "<p>{1}</p>"
-            "<p>{2}"
-            "<ul>"
-            "<li>&nbsp;{3}</li>"
-            "<li>&nbsp;{4}</li>"
-            "<li>&nbsp;{5}</li>"
-            "<li>&nbsp;{6}</li>"
-            "</ul></p>").format(email_quick_reference, thunderbird_text,
-                                manual_text, manual_imap, manual_smtp,
-                                manual_username, mail_password)
-        QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
+        QtGui.QDesktopServices.openUrl("https://bitmask.net/help")
 
     def _needs_update(self):
         """
