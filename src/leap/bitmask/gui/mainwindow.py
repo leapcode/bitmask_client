@@ -59,8 +59,6 @@ from leap.bitmask.util.keyring_helpers import has_keyring
 from leap.common.events import register
 from leap.common.events import catalog
 
-from .qt_browser import PixelatedWindow
-
 from leap.mail.imap.service.imap import IMAP_PORT
 
 from ui_mainwindow import Ui_MainWindow
@@ -227,11 +225,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._backend_connect()
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
-        self.ui.action_pixelated_mail.triggered.connect(
-            self._show_pixelated_browser)
-
-        pixelated_enabled = self._settings.get_pixelmail_enabled()
-        self.ui.action_pixelated_mail.setVisible(pixelated_enabled)
 
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
@@ -574,11 +567,6 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         """
         pref_win = PreferencesWindow(self, self.app)
         pref_win.show()
-
-    def _show_pixelated_browser(self):
-        win = PixelatedWindow(self)
-        win.show()
-        win.load_app()
 
     def _update_eip_enabled_status(self, account=None, services=None):
         """
