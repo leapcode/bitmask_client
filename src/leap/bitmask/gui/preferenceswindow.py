@@ -39,9 +39,9 @@ class PreferencesWindow(QtGui.QDialog):
     _current_window = None  # currently visible preferences window
 
     _panels = {
-      "account": 0,
-      "vpn": 1,
-      "email": 2
+        "account": 0,
+        "vpn": 1,
+        "email": 2
     }
 
     def __init__(self, parent, app):
@@ -254,4 +254,3 @@ class PreferencesWindow(QtGui.QDialog):
         index = PreferencesWindow._panels[page]
         self.ui.nav_widget.setCurrentRow(index)
         self.ui.pages_widget.setCurrentIndex(index)
-

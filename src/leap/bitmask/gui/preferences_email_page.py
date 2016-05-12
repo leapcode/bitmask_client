@@ -121,7 +121,7 @@ class PreferencesEmailPage(PreferencesPage):
             webmail_enabled = self.settings.get_pixelmail_enabled()
             self.ui.webmail_checkbox.setChecked(webmail_enabled)
             if not HAS_PIXELATED:
-               self.ui.webmail_box.setVisible(False)
+                self.ui.webmail_box.setVisible(False)
             self.ui.import_button.setVisible(False)  # hide this until working
             self.ui.message_label.setVisible(False)
             self.ui.email_tabs.setVisible(True)

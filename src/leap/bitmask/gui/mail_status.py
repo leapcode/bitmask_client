@@ -459,7 +459,7 @@ class MailStatusWidget(QtGui.QWidget):
             self._imap_started = True
         # this is disabled for now, because this event was being
         # triggered at weird times.
-        #elif event == catalog.IMAP_CLIENT_LOGIN:
+        # elif event == catalog.IMAP_CLIENT_LOGIN:
         #    self._hide_mail_ready()
 
         if ext_status is not None:
