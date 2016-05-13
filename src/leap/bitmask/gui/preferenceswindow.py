@@ -38,6 +38,12 @@ class PreferencesWindow(QtGui.QDialog):
 
     _current_window = None  # currently visible preferences window
 
+    _panels = {
+        "account": 0,
+        "vpn": 1,
+        "email": 2
+    }
+
     def __init__(self, parent, app):
         """
         :param parent: parent object of the PreferencesWindow.
@@ -240,3 +246,11 @@ class PreferencesWindow(QtGui.QDialog):
         Triggered by get srp_status_logged_in, srp_status_not_logged_in
         """
         self._set_account(self.app.current_account())
+
+    def set_page(self, page):
+        """
+        Jump to a particular page
+        """
+        index = PreferencesWindow._panels[page]
+        self.ui.nav_widget.setCurrentRow(index)
+        self.ui.pages_widget.setCurrentIndex(index)

@@ -65,20 +65,16 @@ class PreferencesEmailPage(PreferencesPage):
             "Search for \"Bitmask\" in the add-on manager or "
             "download it from <a href='{0}'>addons.mozilla.org</a>.".format(
                 thunderbird_extension_url)))
+
         self.ui.mail_client_label.setText(self.tr(
             "Alternatively, you can manually configure your mail client to "
-            "use Bitmask Email with these options:"))
+            "use Bitmask with these options:"))
 
         self.ui.webmail_label.setText(self.tr(
-            "This distribution of Bitmask ships an experimental integration "
-            "of <a href='https://pixelated-project.org/'>Pixelated "
-            "Mail</a>. Note: at the current state, anyone with access to "
-            "your device can read your mail without authentication, "
-            "by opening a browser pointing to http://localhost:9090 "))
-        webmail_enabled = self.settings.get_pixelmail_enabled()
-        self.ui.webmail_checkbox.setChecked(webmail_enabled)
-        if not HAS_PIXELATED:
-            self.ui.webmail_box.setVisible(False)
+            "Bitmask Mail is an integrated mail client based "
+            "on <a href='https://pixelated-project.org/'>Pixelated "
+            "User Agent</a>. If enabled, any user on your device "
+            "can read your mail by opening http://localhost:9090"))
 
         self.ui.keys_table.horizontalHeader().setResizeMode(
             0, QtGui.QHeaderView.Stretch)
@@ -122,6 +118,10 @@ class PreferencesEmailPage(PreferencesPage):
             self.ui.message_label.setText(
                 self.tr('You must be logged in to edit email settings.'))
         else:
+            webmail_enabled = self.settings.get_pixelmail_enabled()
+            self.ui.webmail_checkbox.setChecked(webmail_enabled)
+            if not HAS_PIXELATED:
+                self.ui.webmail_box.setVisible(False)
             self.ui.import_button.setVisible(False)  # hide this until working
             self.ui.message_label.setVisible(False)
             self.ui.email_tabs.setVisible(True)

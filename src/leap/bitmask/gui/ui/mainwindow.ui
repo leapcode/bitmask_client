@@ -75,7 +75,7 @@
          <x>0</x>
          <y>0</y>
          <width>524</width>
-         <height>549</height>
+         <height>541</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout">
@@ -306,7 +306,7 @@
      <x>0</x>
      <y>0</y>
      <width>524</width>
-     <height>21</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -315,7 +315,6 @@
     </property>
     <addaction name="action_create_new_account"/>
     <addaction name="action_advanced_key_management"/>
-    <addaction name="action_pixelated_mail"/>
     <addaction name="separator"/>
     <addaction name="action_preferences"/>
     <addaction name="separator"/>
@@ -369,11 +368,6 @@
   <action name="action_create_new_account">
    <property name="text">
     <string>Create a new account...</string>
-   </property>
-  </action>
-  <action name="action_pixelated_mail">
-   <property name="text">
-    <string>Bitmask Mail</string>
    </property>
   </action>
   <action name="action_advanced_key_management">

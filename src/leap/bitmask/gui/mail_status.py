@@ -26,7 +26,9 @@ from leap.common.check import leap_assert, leap_assert_type
 from leap.common.events import register
 from leap.common.events import catalog
 
+from leap.bitmask.gui.preferenceswindow import PreferencesWindow
 from ui_mail_status import Ui_MailStatusWidget
+from .qt_browser import PixelatedWindow
 
 logger = get_logger()
 
@@ -52,13 +54,21 @@ class MailStatusWidget(QtGui.QWidget):
         self._systray = None
         self._disabled = True
         self._started = False
+        self._mainwindow = parent
 
         self._unread_mails = 0
 
         self.ui = Ui_MailStatusWidget()
         self.ui.setupUi(self)
 
-        self.ui.lblMailReadyHelp.setVisible(False)
+        self.ui.email_ready.setVisible(False)
+        self.ui.configure_button.clicked.connect(
+            self._show_configure)
+        self.ui.open_mail_button.clicked.connect(
+            self._show_pix_ua)
+        if not self._mainwindow._settings.get_pixelmail_enabled():
+            self.ui.open_mail_button.setVisible(False)
+            self.ui.or_label.setVisible(False)
 
         # set systray tooltip status
         self._mx_status = ""
@@ -144,7 +154,23 @@ class MailStatusWidget(QtGui.QWidget):
         self.CONNECTED_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[1])
         self.ERROR_ICON_TRAY = QtGui.QPixmap(EIP_ICONS_TRAY[2])
 
-    # Systray and actions
+    #
+    # Button actions
+    #
+
+    def _show_configure(self):
+        pref_win = PreferencesWindow(self._mainwindow, self._mainwindow.app)
+        pref_win.set_page("email")
+        pref_win.show()
+
+    def _show_pix_ua(self):
+        win = PixelatedWindow(self._mainwindow)
+        win.show()
+        win.load_app()
+
+    #
+    # Systray
+    #
 
     def set_systray(self, systray):
         """
@@ -165,6 +191,10 @@ class MailStatusWidget(QtGui.QWidget):
         if self._systray is not None:
             mx_status = u"{0}: {1}".format(self._service_name, self._mx_status)
             self._systray.set_service_tooltip(MX_SERVICE, mx_status)
+
+    #
+    # Status
+    #
 
     def set_action_mail_status(self, action_mail_status):
         """
@@ -228,6 +258,9 @@ class MailStatusWidget(QtGui.QWidget):
             tray_status = self.tr('Mail is ON')
         elif ready < 0:
             tray_status = self.tr("Mail is disabled")
+
+        if ready < 1:
+            self._hide_mail_ready()
 
         self.ui.lblMailStatusIcon.setPixmap(icon)
         self._action_mail_status.setText(tray_status)
@@ -424,9 +457,10 @@ class MailStatusWidget(QtGui.QWidget):
                 self._show_unread_mails()
         elif event == catalog.IMAP_SERVICE_STARTED:
             self._imap_started = True
-        elif event == catalog.IMAP_CLIENT_LOGIN:
-            # If a MUA has logged in then we don't need to show this.
-            self._hide_mail_ready_help()
+        # this is disabled for now, because this event was being
+        # triggered at weird times.
+        # elif event == catalog.IMAP_CLIENT_LOGIN:
+        #    self._hide_mail_ready()
 
         if ext_status is not None:
             self._set_mail_status(ext_status, ready=1)
@@ -495,15 +529,13 @@ class MailStatusWidget(QtGui.QWidget):
         Display the correct UI for the connected state.
         """
         self._set_mail_status(self.tr("ON"), 2)
+        self.ui.email_ready.setVisible(True)
 
-        # this help message will hide when the MUA connects
-        self.ui.lblMailReadyHelp.setVisible(True)
-
-    def _hide_mail_ready_help(self):
+    def _hide_mail_ready(self):
         """
         Hide the mail help message on the UI.
         """
-        self.ui.lblMailReadyHelp.setVisible(False)
+        self.ui.email_ready.setVisible(False)
 
     def mail_state_disabled(self):
         """
