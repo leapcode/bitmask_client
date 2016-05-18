@@ -18,6 +18,7 @@
 Mail Services Conductor
 """
 from leap.bitmask.config import flags
+from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.gui import statemachines
 from leap.bitmask.services.mail import connection as mail_connection
@@ -34,6 +35,7 @@ class IMAPControl(object):
     """
     Methods related to IMAP control.
     """
+
     def __init__(self):
         """
         Initializes smtp variables.
@@ -73,12 +75,13 @@ class IMAPControl(object):
 
         self._backend.imap_stop_service()
 
-    def _handle_imap_events(self, event, content):
+    def _handle_imap_events(self, event, userid=None, content=None):
         """
         Callback handler for the IMAP events
 
         :param event: The event that triggered the callback.
         :type event: str
+        :param userid: The user id of the logged in user. Ignored.
         :param content: The content of the event.
         :type content: list
         """
@@ -113,10 +116,11 @@ class IMAPControl(object):
         """
         Callback for IMAP failed state.
         """
-        self.imap_connection.qtsigs.connetion_aborted_signal.emit()
+        self.imap_connection.qtsigs.connection_aborted_signal.emit()
 
 
 class SMTPControl(object):
+
     def __init__(self):
         """
         Initializes smtp variables.
@@ -189,7 +193,17 @@ class SMTPControl(object):
         self.smtp_connection.qtsigs.connection_aborted_signal.emit()
 
 
-class MailConductor(IMAPControl, SMTPControl):
+class PixelatedControl(object):
+
+    def start_pixelated_service(self):
+        self._backend.pixelated_start_service(
+            full_user_id=self.userid)
+
+    def stop_pixelated_service(self):
+        pass
+
+
+class MailConductor(IMAPControl, SMTPControl, PixelatedControl):
     """
     This class encapsulates everything related to the initialization and
     process control for the mail services.
@@ -265,6 +279,11 @@ class MailConductor(IMAPControl, SMTPControl):
             logger.debug("Starting smtp service...")
             self.start_smtp_service(download_if_needed=download_if_needed)
         self.start_imap_service()
+
+        settings = LeapSettings()
+        pixelmail = settings.get_pixelmail_enabled()
+        if pixelmail:
+            self.start_pixelated_service()
 
         self._mail_services_started = True
 

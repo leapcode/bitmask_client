@@ -94,6 +94,7 @@ class AdvancedKeyManagement(QtGui.QDialog):
         """
         Set the current user's key details into the gui.
         """
+        # XXX: We should avoid the key-id
         self.ui.leKeyID.setText(details[0])
         self.ui.leFingerprint.setText(details[1])
 
@@ -246,7 +247,7 @@ class AdvancedKeyManagement(QtGui.QDialog):
             row = keys_table.rowCount()
             keys_table.insertRow(row)
             keys_table.setItem(row, 0, QtGui.QTableWidgetItem(key.address))
-            keys_table.setItem(row, 1, QtGui.QTableWidgetItem(key.key_id))
+            keys_table.setItem(row, 1, QtGui.QTableWidgetItem(key.fingerprint))
 
     def _backend_connect(self):
         """

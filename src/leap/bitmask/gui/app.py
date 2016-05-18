@@ -20,6 +20,7 @@ and the signaler get signals from the backend.
 """
 from PySide import QtCore, QtGui
 
+from leap.bitmask.gui.account import Account
 from leap.bitmask.config.leapsettings import LeapSettings
 from leap.bitmask.backend.backend_proxy import BackendProxy
 from leap.bitmask.backend.leapsignaler import LeapSignaler
@@ -44,11 +45,36 @@ class App(QtGui.QWidget):
         self.signaler.start()
 
         self.soledad_started = False
+        self.service_tokens = {}
+        self.login_state = None
+        self.providers_widget = None
 
         # periodically check if the backend is alive
         self._backend_checker = QtCore.QTimer(self)
         self._backend_checker.timeout.connect(self._check_backend_status)
         self._backend_checker.start(2000)
+
+        # store the service tokens for later use, once they are known.
+        self.signaler.soledad_got_service_token.connect(
+            self._set_service_tokens)
+
+    def current_account(self):
+        """
+        Alas, the only definitive account information is buried in the memory
+        of QT widgets.
+
+        :returns: an object representing the current user account.
+        :rtype: Account
+        """
+        if self.login_state is None or self.providers_widget is None:
+            return None
+
+        if self.login_state.full_logged_username is not None:
+            username, domain = self.login_state.full_logged_username.split('@')
+            return Account(username, domain)
+        else:
+            domain = self.providers_widget.get_selected_provider()
+            return Account(None, domain)
 
     def _check_backend_status(self):
         """
@@ -64,3 +90,11 @@ class App(QtGui.QWidget):
                 self.tr("There is a problem contacting the backend, please "
                         "restart Bitmask."))
             self._backend_checker.stop()
+
+    def _set_service_tokens(self, data):
+        """
+        Triggered by signal soledad_got_service_token.
+        Saves the service tokens.
+        """
+        service, token = data
+        self.service_tokens[service] = token

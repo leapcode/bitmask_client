@@ -6,11 +6,9 @@ Here we have several tools that leverages docker to ease Bitmask testing.
 ``bitmask-docker.sh`` is a helper script to ``build`` and ``run`` the bitmask app,
 here is an example usage::
 
-    $ ./bitmask-docker build  # build docker image
-    $ ./bitmask-docker init ro bitmask-nightly.json  # initialize all the stuff needed
-    # ....
-    $ ./bitmask-docker.sh run
-
+    $ ./bitmask-docker.sh build                      # build docker image
+    $ ./bitmask-docker.sh init bitmask-nightly.json  # initialize (takes time)
+    $ ./bitmask-docker.sh run                        # run bitmask in docker
 
 ``bitmask-nightly.json`` is the version specifier for each bitmask component that
 will be used to run bitmask.
@@ -21,10 +19,10 @@ will be used to run bitmask.
 python dependencies, running bitmask, etc.
 
 
-debian/
+Debian/
 -------
 
-``apt-bitmask.sh`` script that installs bitmask from the debian packages.
+``apt-bitmask.sh`` script that installs bitmask from the Debian packages.
 
 ``bitmask-on-docker.sh`` installs bitmask and runs it in a dummy X server,
 waits a little and takes a screenshot.
@@ -32,7 +30,7 @@ waits a little and takes a screenshot.
 ``leap-experimental.key`` is needed by ``apt-bitmask.sh`` to ``apt-key add``
 and verify apt sources.
 
-``run-docker-for-bitmask.sh`` is a helper script that runs an ubuntu/debian
+``run-docker-for-bitmask.sh`` is a helper script that runs an Ubuntu/Debian
 container ready to run the ``apt-bitmask.sh`` command, it does (among other
 stuff) X11 forwarding to display Bitmask UI on the host linux.
 

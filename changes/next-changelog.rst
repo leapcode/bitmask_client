@@ -1,4 +1,4 @@
-0.9.2 - xxx
+0.10.0 - xxx
 +++++++++++++++++++++++++++++++
 
 Please add lines to this file, they will be moved to the CHANGELOG.rst during
@@ -25,4 +25,3 @@ Misc
 
 Known Issues
 ~~~~~~~~~~~~
-- `#1236 <https://leap.se/code/issues/1236>`_: Description of the known issue corresponding with issue #1236.

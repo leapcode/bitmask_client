@@ -12,3 +12,4 @@ include src/leap/bitmask/crypto/tests/wrongcert.pem
 
 include src/leap/bitmask/gui/ui_*.py
 include src/leap/bitmask/gui/*_rc.py
+include src/leap/bitmask/_version.py

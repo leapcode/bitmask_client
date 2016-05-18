@@ -24,8 +24,9 @@ try:
         EncryptedKeyring,
         PlaintextKeyring
     ]
-    canuse = lambda kr: (kr is not None
-                         and kr.__class__ not in OBSOLETE_KEYRINGS)
+    canuse = lambda kr: (
+        kr is not None and
+        kr.__class__ not in OBSOLETE_KEYRINGS)
 
 except Exception:
     # Problems when importing keyring! It might be a problem binding to the

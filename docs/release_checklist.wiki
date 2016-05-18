@@ -1,47 +1,90 @@
-﻿= Bitmask Release Checklist (*) =
+﻿= Bitmask Release Checklist =
+
+  == CI check ==
   * [ ] Check that all tests are passing!
-  * [ ] Check that the version in bitmask_client/pkg/linux/bitmask-root is bumped if needed.
-  * [ ] Tag everything
-    * Should be done for the following packages, in order:
+  * [ ] Fix any broken tests.
+
+  == Version bumps and Tagging ==
+  * [ ] Update pkg/next-release
+  * [ ] Update release-notes.rst in leap.bitmask if needed.
+  * [ ] Update version in bitmask_client/pkg/linux/bitmask-root if needed.
+  
+  * [ ] Tag everything. Should be done for the following packages, in order:
       * [ ] 1. leap.common
       * [ ] 2. leap.keymanager
       * [ ] 3. leap.soledad
       * [ ] 4. leap.mail
       * [ ] 5. leap.bitmask
       * [ ] 6. leap.mx
+
     * NOTE: It's assumed that origin is the leap.se repo
+     
     * [ ] git fetch origin
     * [ ] git tag -l, and see the latest tagged version (unless it's not a minor version bump, in which case, just bump to it)
-    * [ ] Checkout release-X.Y.Z (locally, never pushed)
-    * [ ] Update relnotes.txt in leap.bitmask if needed.
+    * [ ] export version: export RELEASE=0.9.0
+    * [ ] git checkout `release/0.9.x`
+	- NOTE: the release branch is created when the first release candidate
+	  is tagged, after that the bugfixes and features that are meant to be
+	  shipped with the specific version that we are targetting are merged in that branch
+    * [ ] git checkout -b release/$RELEASE (this is a LOCAL branch, never published).
+ 	* [ ] (maybe) cherry-pick specific commits
+	* [ ] (maybe) add special fixes for this release
 
-    * [ ] Review pkg/requirements.pip for everything and update if needed (that's why the order).
+    * [ ] Review pkg/requirements.pip for everything, update if needed (that's why the order).
           - See whatever has been introduced in changes/VERSION_COMPAT
           - Reset changes/VERSION_COMPAT
-    * [ ] git commit -av  # we should add a commit message here...
+          - Bump all the leap-requirements altogether.
+    * [ ] git commit -am "Update requirements file"
 
-    * [ ] Fold in changes files into the CHANGELOG
-          - NOTE: For leap.soledad, the CHANGELOG entries should be divided per package (common, client, server). See older releases for reference.
-          - Helper bash line: for i in $(ls changes); do cat changes/$i; echo; done
-    * [ ] git rm changes/feature*; git rm changes/bug*
-    * [ ] git commit -m "Fold in changes."
+    * [ ] Merge changes/next-changelog.rst into the CHANGELOG
+          - NOTE: in leap.soledad, 3 sections (common, client, server).
+    * [ ] reset changes/next-changelog.rst
+    * [ ] git commit -S -m "[pkg] Update changelog"
 
-    * [ ] git checkout master && git pull origin master && git merge --no-ff release-X.Y.Z --no-edit
-    * [ ] git tag -s X.Y.Z -m "Tag <package> version X.Y.Z" # (note the -s so that it's a signed tag and -m to specify the message for the tag)
-    * [ ] git push origin master; git push origin X.Y.Z
-    * [ ] git checkout develop && git merge master && git push origin develop
+    * [ ] git tag --sign $RELEASE -m "Tag version $RELEASE"
+
+    * If everything went ok, push the changes, and merge back into master&develop:
+    	* [ ] git checkout release/0.9.x && git merge $RELEASE
+    	* [ ] git push origin release/0.9.x
+        * [ ] git push origin $RELEASE
+    	* [ ] git checkout master && git pull origin master && git merge --no-edit $RELEASE
+    	* [ ] git checkout develop && git merge $RELEASE && git push origin develop
+
+  == Bundles ==
   * [ ] Build and upload bundles
-    * [ ] Use the scripts under pkg/<os>/ to build the the bundles.
-    * [ ] Sign them with gpg -a --sign --detach-sign <path/to/bundle>
+    * [ ] Use 'make pyinst-linux' to build bundles.
+    * [ ] Sign: make pyinst-sign
     * [ ] Upload bundle and signature to downloads.leap.se/client/<os>/Bitmask-<os>-<ver>.(tar.bz2,dmg,zip)
+      * [ ] make pyinst-upload
     * [ ] Update symbolic link for latest upload and signature:
     	* [ ] ~/public/client/Bitmask-<os>-latest
     	* [ ] ~/public/client/Bitmask-<os>-latest.asc
-  * [ ] Announce
+
+    === TUF: Relese candidate bundles: RC# (skipped for now) ===
+	* [ ] Upload the TUF unstable repo
+	* [ ] Upload bundle to staging for release-candidate
+	* [ ] Sign the bundles, move it to client downloads (micah)
+	* [ ] Update symlinks for -latest
+	* [ ] Fix all show stoppers
+
+    === TUF: Stable bundles (skipped for now) ===
+	* [ ] Upload the TUF Stable Repo to staging
+	* [ ] Upload bundle to staging for stable
+	* [ ] move and sign the TUF repo (kwadro)
+	* [ ] Sign the bundles, move it to client downloads (micah)
+	* [ ] Update symlinks for -latest
+  
+  == Debian packages ==
+  * TBD...
+  
+  == Pypi upload ==
+  * [ ]  python setup.py sdist upload --sign -i kali@leap.se -r pypi
+
+  == Announcing ==
+  * [ ] Announce (use release-notes.rst)
     * [ ] Mail leap@lists.riseup.net
-
-Notes
------
-(*) this checklist kindly borrowed from tahoe-lafs documentation =)
-
-For a good reference look at http://nvie.com/posts/a-successful-git-branching-model/
+    * [ ] Twitter
+    * [ ] Gnusocial
+    * [ ] Post in leap.se
+    * [ ] reddit
+    * [ ] hackernews

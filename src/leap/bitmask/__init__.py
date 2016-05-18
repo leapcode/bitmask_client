@@ -19,11 +19,7 @@ Init file for leap.bitmask
 
 Initializes version and app info.
 """
-import re
-
-from pkg_resources import parse_version
-
-from leap.bitmask.util import first
+from ._version import get_versions
 
 # HACK: This is a hack so that py2app copies _scrypt.so to the right
 # place, it can't be technically imported, but that doesn't matter
@@ -32,7 +28,7 @@ if False:
     import _scrypt  # noqa - skip 'not used' warning
 
 
-def _is_release_version(version):
+def _is_release_version(version_str):
     """
     Helper to determine whether a version is a final release or not.
     The release needs to be of the form: w.x.y.z containing only numbers
@@ -43,40 +39,15 @@ def _is_release_version(version):
     :returns: if the version is a release version or not.
     :rtype: bool
     """
-    parsed_version = parse_version(version)
-    not_number = 0
-    for x in parsed_version:
-        try:
-            int(x)
-        except:
-            not_number += 1
-
-    return not_number == 1
+    parts = __version__.split('.')
+    try:
+        patch = parts[2]
+    except IndexError:
+        return False
+    return patch.isdigit()
 
 
-__version__ = "unknown"
-IS_RELEASE_VERSION = False
-
-__short_version__ = "unknown"
-
-try:
-    from leap.bitmask._version import get_versions
-    __version__ = get_versions()['version']
-    __version_hash__ = get_versions()['full']
-    IS_RELEASE_VERSION = _is_release_version(__version__)
-    del get_versions
-except ImportError:
-    # running on a tree that has not run
-    # the setup.py setver
-    pass
-
-__appname__ = "unknown"
-try:
-    from leap.bitmask._appname import __appname__
-except ImportError:
-    # running on a tree that has not run
-    # the setup.py setver
-    pass
-
-__short_version__ = first(re.findall('\d+\.\d+\.\d+', __version__))
-__full_version__ = __appname__ + '/' + str(__version__)
+__version__ = get_versions()['version']
+__version_hash__ = get_versions()['full-revisionid']
+IS_RELEASE_VERSION = _is_release_version(__version__)
+del get_versions

@@ -20,13 +20,16 @@ Backend components
 # TODO [ ] Get rid of all this deferToThread mess, or at least contain
 #          all of it into its own threadpool.
 
+import json
 import os
+import shutil
 import socket
+import tempfile
 import time
 
 from functools import partial
 
-from twisted.internet import threads, defer
+from twisted.internet import threads, defer, reactor
 from twisted.python import log
 
 import zope.interface
@@ -38,9 +41,10 @@ from leap.bitmask.crypto.srpauth import SRPAuth
 from leap.bitmask.crypto.srpregister import SRPRegister
 from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.platform_init import IS_LINUX
+from leap.bitmask import pix
 from leap.bitmask.provider.pinned import PinnedProviders
 from leap.bitmask.provider.providerbootstrapper import ProviderBootstrapper
-from leap.bitmask.services import get_supported
+from leap.bitmask.services import get_supported, EIP_SERVICE
 from leap.bitmask.services.eip import eipconfig
 from leap.bitmask.services.eip import get_openvpn_management
 from leap.bitmask.services.eip.eipbootstrapper import EIPBootstrapper
@@ -572,8 +576,10 @@ class EIP(object):
                     self._signaler.eip_uninitialized_provider)
             return
 
-        eip_config = eipconfig.EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
+        if EIP_SERVICE not in provider_config.get_services():
+            return
+        eip_config = eipconfig.EIPConfig()
 
         api_version = provider_config.get_api_version()
         eip_config.set_api_version(api_version)
@@ -643,12 +649,14 @@ class EIP(object):
         :param domain: the domain for the provider to check
         :type domain: str
         """
-        if not LinuxPolicyChecker.is_up():
+        if IS_LINUX and not LinuxPolicyChecker.is_up():
             logger.error("No polkit agent running.")
             return False
 
-        eip_config = eipconfig.EIPConfig()
         provider_config = ProviderConfig.get_provider_config(domain)
+        if EIP_SERVICE not in provider_config.get_services():
+            return False
+        eip_config = eipconfig.EIPConfig()
 
         api_version = provider_config.get_api_version()
         eip_config.set_api_version(api_version)
@@ -763,6 +771,7 @@ class Soledad(object):
         self._signaler = signaler
         self._soledad_bootstrapper = SoledadBootstrapper(signaler)
         self._soledad_defer = None
+        self._service_tokens = {}
 
     def bootstrap(self, username, domain, password):
         """
@@ -786,12 +795,47 @@ class Soledad(object):
                 provider_config, username, password,
                 download_if_needed=True)
             self._soledad_defer.addCallback(self._set_proxies_cb)
+            self._soledad_defer.addCallback(self._set_service_tokens_cb)
+            self._soledad_defer.addCallback(self._write_tokens_file,
+                                            username, domain)
         else:
             if self._signaler is not None:
                 self._signaler.signal(self._signaler.soledad_bootstrap_failed)
             logger.error("Could not load provider configuration.")
 
         return self._soledad_defer
+
+    def _set_service_tokens_cb(self, result):
+
+        def register_service_token(token, service):
+            self._service_tokens[service] = token
+            if self._signaler is not None:
+                self._signaler.signal(
+                    self._signaler.soledad_got_service_token,
+                    (service, token))
+
+        sol = self._soledad_bootstrapper.soledad
+        d = sol.get_or_create_service_token('mail_auth')
+        d.addCallback(register_service_token, 'mail_auth')
+        d.addCallback(lambda _: result)
+        return d
+
+    def _write_tokens_file(self, result, username, domain):
+        tokens_folder = os.path.join(tempfile.gettempdir(), "bitmask_tokens")
+        if os.path.exists(tokens_folder):
+            try:
+                shutil.rmtree(tokens_folder)
+            except OSError as e:
+                logger.error("Can't remove tokens folder %s: %s"
+                             % (tokens_folder, e))
+                return
+        os.mkdir(tokens_folder, 0700)
+
+        tokens_path = os.path.join(tokens_folder,
+                                   "%s@%s.json" % (username, domain))
+        with open(tokens_path, 'w') as ftokens:
+            json.dump(self._service_tokens, ftokens)
+        return result
 
     def _set_proxies_cb(self, _):
         """
@@ -802,6 +846,12 @@ class Soledad(object):
                                     self._soledad_bootstrapper.soledad)
         zope.proxy.setProxiedObject(self._keymanager_proxy,
                                     self._soledad_bootstrapper.keymanager)
+
+    def get_service_token(self, service):
+        """
+        Get an authentication token for a given service.
+        """
+        return self._service_tokens.get(service, '')
 
     def load_offline(self, username, password, uuid):
         """
@@ -944,23 +994,22 @@ class Keymanager(object):
         d.addCallback(export)
         d.addErrback(log_error)
 
+    @defer.inlineCallbacks
     def list_keys(self):
         """
         List all the keys stored in the local DB.
         """
-        d = self._keymanager_proxy.get_all_keys()
-        d.addCallback(
-            lambda keys:
-            self._signaler.signal(self._signaler.keymanager_keys_list, keys))
+        keys = yield self._keymanager_proxy.get_all_keys()
+        keydicts = [dict(key) for key in keys]
+        self._signaler.signal(self._signaler.keymanager_keys_list, keydicts)
 
     def get_key_details(self, username):
         """
-        List all the keys stored in the local DB.
+        Get information on our primary key pair
         """
         def signal_details(public_key):
-            details = (public_key.key_id, public_key.fingerprint)
             self._signaler.signal(self._signaler.keymanager_key_details,
-                                  details)
+                                  dict(public_key))
 
         d = self._keymanager_proxy.get_key(username,
                                            openpgp.OpenPGPKey)
@@ -1012,7 +1061,8 @@ class Mail(object):
         """
         return threads.deferToThread(
             self._smtp_bootstrapper.start_smtp_service,
-            self._keymanager_proxy, full_user_id, download_if_needed)
+            self._soledad_proxy, self._keymanager_proxy, full_user_id,
+            download_if_needed)
 
     def start_imap_service(self, full_user_id, offline=False):
         """
@@ -1057,6 +1107,18 @@ class Mail(object):
         :rtype: twisted.internet.defer.Deferred
         """
         return threads.deferToThread(self._stop_imap_service)
+
+    def start_pixelated_service(self, full_user_id):
+        if pix.HAS_PIXELATED:
+            reactor.callFromThread(
+                pix.start_pixelated_user_agent,
+                full_user_id,
+                self._soledad_proxy,
+                self._keymanager_proxy)
+
+    def stop_pixelated_service(self):
+        # TODO stop it, somehow
+        pass
 
 
 class Authenticate(object):
@@ -1153,15 +1215,13 @@ class Authenticate(object):
 
     def get_logged_in_status(self):
         """
-        Signal if the user is currently logged in or not.
+        Signal if the user is currently logged in or not. If logged in,
+        authenticated username is passed as argument to the signal.
         """
         if self._signaler is None:
             return
 
-        signal = None
         if self._is_logged_in():
-            signal = self._signaler.srp_status_logged_in
+            self._signaler.signal(self._signaler.srp_status_logged_in)
         else:
-            signal = self._signaler.srp_status_not_logged_in
-
-        self._signaler.signal(signal)
+            self._signaler.signal(self._signaler.srp_status_not_logged_in)

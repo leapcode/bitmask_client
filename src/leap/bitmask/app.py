@@ -46,11 +46,15 @@ import os
 import platform
 import sys
 
+
 if platform.system() == "Darwin":
+    # XXX please ignore pep8 complains, this needs to be executed
+    # early.
     # We need to tune maximum number of files, due to zmq usage
     # we hit the limit.
     import resource
     resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
+
 
 from leap.bitmask import __version__ as VERSION
 from leap.bitmask.backend.backend_proxy import BackendProxy
@@ -71,6 +75,12 @@ import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
 import psutil
+
+
+def qt_hack_ubuntu():
+    """Export two env vars to avoid gui corruption, see #8028"""
+    os.environ['QT_GRAPHICSSYSTEM'] = 'native'
+    os.environ['LIBOVERLAY_SCROLLBAR'] = '0'
 
 
 def kill_the_children():
@@ -150,6 +160,8 @@ def start_app():
     """
     Starts the main event loop and launches the main window.
     """
+    qt_hack_ubuntu()
+
     # Ignore the signals since we handle them in the subprocesses
     # signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -163,6 +175,12 @@ def start_app():
     }
 
     flags.STANDALONE = opts.standalone
+
+    if platform.system() != 'Darwin':
+        # XXX this hangs the OSX bundles.
+        if getattr(sys, 'frozen', False):
+            flags.STANDALONE = True
+
     flags.OFFLINE = opts.offline
     flags.MAIL_LOGFILE = opts.mail_log_file
     flags.APP_VERSION_CHECK = opts.app_version_check
@@ -223,9 +241,10 @@ def start_app():
     backend_pid = None
     if not backend_running:
         frontend_pid = os.getpid()
-        backend = lambda: run_backend(opts.danger, flags_dict, frontend_pid)
-        backend_process = multiprocessing.Process(target=backend,
-                                                  name='Backend')
+        backend_process = multiprocessing.Process(
+            target=run_backend,
+            name='Backend',
+            args=(opts.danger, flags_dict, frontend_pid))
         # we don't set the 'daemon mode' since we need to start child processes
         # in the backend
         # backend_process.daemon = True
@@ -237,4 +256,5 @@ def start_app():
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     start_app()

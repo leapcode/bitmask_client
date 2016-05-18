@@ -1,0 +1,42 @@
+# mingw environment to build dependency binaries in a reproducible environment
+# https://wiki.debian.org/ReproducibleBuilds
+# service to build a windows executable using pyinstaller
+# utilizes wine and pyinstaller-build.sh to produce
+# build/executables/pyinstaller/bitmask/*
+# usage: docker-compose run --rm pyinstaller
+# non-zero exit code on failure
+pyinstaller:
+  build: pyinstaller
+  volumes:
+# bitmask sources
+    - ../../:/var/src/bitmask:ro
+# produced binaries
+    - ../../build:/var/build
+# service to build a windows-executable from openvpn sources
+# uses the openvpn-build infrastructure to produce
+# build/executables/openvpn/*
+# produces the openvpn.exe and provides openssl that is to be
+# used by pyinsaller
+# usage: docker-compose run --rm openvpn
+# non-zero exit code on failure
+openvpn:
+  build: openvpn
+  volumes:
+# bitmask sources
+    - ../../:/var/src/bitmask:ro
+# produced binaries
+    - ../../build:/var/build
+# service to compile a installer using nullsoft installer
+# nsis environment to build installer (exe) that contains all required binaries
+# for a clean, just installed windows machine
+# utilizes the debian makensis and installer-build to produce
+# dist/bitmask-VERSION.exe
+# usage: docker-compose run --rm installer
+# non-zero exit code on failure
+installer:
+  build: installer
+  volumes:
+# bitmask sources
+    - ../../:/var/src/bitmask:ro
+# produced installers - configured in bitmask.nsh
+    - ../../dist:/var/dist

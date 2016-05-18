@@ -22,7 +22,7 @@ import os
 
 from pkg_resources import parse_version
 
-from leap.bitmask import __short_version__ as BITMASK_VERSION
+from leap.bitmask import __version__ as BITMASK_VERSION
 from leap.common.check import leap_assert
 
 logger = logging.getLogger(__name__)

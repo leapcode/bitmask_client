@@ -19,6 +19,7 @@ SMTP bootstrapping
 """
 import os
 import warnings
+from collections import namedtuple
 
 from requests.exceptions import HTTPError
 
@@ -28,7 +29,6 @@ from leap.bitmask.logs.utils import get_logger
 from leap.bitmask.services import download_service_config
 from leap.bitmask.services.abstractbootstrapper import AbstractBootstrapper
 from leap.bitmask.services.mail.smtpconfig import SMTPConfig
-from leap.bitmask.util import is_file
 
 from leap.common import certs as leap_certs
 from leap.common.check import leap_assert
@@ -92,11 +92,13 @@ class SMTPBootstrapper(AbstractBootstrapper):
         client_cert_path = self._smtp_config.get_client_cert_path(
             self._userid, self._provider_config, about_to_download=True)
 
-        if not is_file(client_cert_path):
+        needs_download = leap_certs.should_redownload(client_cert_path)
+
+        if needs_download:
             # For re-download if something is wrong with the cert
+            # FIXME this doesn't read well. should reword the logic here.
             self._download_if_needed = (
-                self._download_if_needed and
-                not leap_certs.should_redownload(client_cert_path))
+                self._download_if_needed and not needs_download)
 
             if self._download_if_needed and os.path.isfile(client_cert_path):
                 check_and_fix_urw_only(client_cert_path)
@@ -127,9 +129,6 @@ class SMTPBootstrapper(AbstractBootstrapper):
         Start the smtp service using the downloaded configurations.
         """
         # TODO Make the encrypted_only configurable
-        # TODO pick local smtp port in a better way
-        # TODO remove hard-coded port and let leap.mail set
-        # the specific default.
         # TODO handle more than one host and define how to choose
         hosts = self._smtp_config.get_hosts()
         hostname = hosts.keys()[0]
@@ -138,19 +137,25 @@ class SMTPBootstrapper(AbstractBootstrapper):
         client_cert_path = self._smtp_config.get_client_cert_path(
             self._userid, self._provider_config, about_to_download=True)
 
-        from leap.mail.smtp import setup_smtp_gateway
+        # XXX this should be defined in leap.mail.smtp, it's in bitmask.core
+        # right now.
+        SendmailOpts = namedtuple(
+            'SendmailOpts', ['cert', 'key', 'hostname', 'port'])
 
-        self._smtp_service, self._smtp_port = setup_smtp_gateway(
-            port=2013,
-            userid=self._userid,
-            keymanager=self._keymanager,
-            smtp_host=host,
-            smtp_port=port,
-            smtp_cert=client_cert_path,
-            smtp_key=client_cert_path,
-            encrypted_only=False)
+        userid = self._userid
+        soledad_sessions = {userid: self._soledad}
+        keymanager_sessions = {userid: self._keymanager}
 
-    def start_smtp_service(self, keymanager, userid, download_if_needed=False):
+        key = cert = client_cert_path
+        opts = SendmailOpts(cert, key, host, port)
+        sendmail_opts = {userid: opts}
+
+        from leap.mail.smtp import run_service
+        self._smtp_service, self._smtp_port = run_service(
+            soledad_sessions, keymanager_sessions, sendmail_opts)
+
+    def start_smtp_service(self, soledad, keymanager, userid,
+                           download_if_needed=False):
         """
         Starts the SMTP service.
 
@@ -170,6 +175,7 @@ class SMTPBootstrapper(AbstractBootstrapper):
             raise MalformedUserId()
 
         self._provider_config = ProviderConfig.get_provider_config(domain)
+        self._soledad = soledad
         self._keymanager = keymanager
         self._smtp_config = SMTPConfig()
         self._userid = str(userid)

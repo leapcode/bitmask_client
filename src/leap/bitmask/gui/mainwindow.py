@@ -46,7 +46,6 @@ from leap.bitmask.gui.signaltracker import SignalTracker
 from leap.bitmask.gui.systray import SysTray
 from leap.bitmask.gui.wizard import Wizard
 from leap.bitmask.gui.providers import Providers
-from leap.bitmask.gui.account import Account
 from leap.bitmask.gui.app import App
 
 from leap.bitmask.platform_init import IS_WIN, IS_MAC, IS_LINUX
@@ -152,6 +151,14 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # Provider List
         self._providers = Providers(self.ui.cmbProviders)
 
+        ##
+        # tmphack: important state information about the application is stored
+        # in widgets. Rather than rewrite the UI, for now we simulate this
+        # info being stored in an application object:
+        ##
+        self.app.login_state = self._login_widget._state
+        self.app.providers_widget = self._providers
+
         # Qt Signal Connections #####################################
         # TODO separate logic from ui signals.
 
@@ -218,6 +225,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         self._backend_connect()
 
         self.ui.action_preferences.triggered.connect(self._show_preferences)
+
         self.ui.action_about_leap.triggered.connect(self._about)
         self.ui.action_quit.triggered.connect(self.quit)
         self.ui.action_wizard.triggered.connect(self._show_wizard)
@@ -294,6 +302,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             self._mail_conductor.connect_mail_signals(self._mail_status)
 
         if not init_platform():
+            logger.critical('init_platform failed, quitting application.')
             self.quit()
             return
 
@@ -436,6 +445,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         # Refer to http://www.themacaque.com/?p=1067 for funny details.
         self._wizard.show()
         if IS_MAC:
+            # XXX hack. For some reason, there's a signal that doesn't arrive
+            # on time, so that the next button is disabled. See #8041
+            self._wizard.page(self._wizard.INTRO_PAGE).set_completed()
             self._wizard.raise_()
         self._settings.set_skip_first_run(True)
 
@@ -553,15 +565,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
 
         Display the preferences window.
         """
-        logged_user = self._login_widget.get_logged_user()
-        if logged_user is not None:
-            user, domain = logged_user.split('@')
-        else:
-            user = None
-            domain = self._providers.get_selected_provider()
-
-        account = Account(user, domain)
-        pref_win = PreferencesWindow(self, account, self.app)
+        pref_win = PreferencesWindow(self, self.app)
         pref_win.show()
 
     def _update_eip_enabled_status(self, account=None, services=None):
@@ -1014,12 +1018,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         Display the About Bitmask dialog
         """
         today = datetime.now().date()
-        greet = ("Happy New 1984!... or not ;)<br><br>"
-                 if today.month == 1 and today.day < 15 else "")
         title = self.tr("About Bitmask - %s") % (VERSION,)
         msg = self.tr(
             "Version: <b>{ver}</b> ({ver_hash})<br>"
-            "<br>{greet}"
             "Bitmask is the Desktop client application for the LEAP "
             "platform, supporting Encrypted Internet Proxy "
             "and <a href='https://bitmask.net/help/email'> "
@@ -1030,7 +1031,7 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
             "available.<br>"
             "<br>"
             "<a href='https://leap.se'>More about LEAP</a>")
-        msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10], greet=greet)
+        msg = msg.format(ver=VERSION, ver_hash=VERSION_HASH[:10])
         QtGui.QMessageBox.about(self, title, msg)
 
     def _help(self):
@@ -1038,46 +1039,9 @@ class MainWindow(QtGui.QMainWindow, SignalTracker):
         TRIGGERS:
             self.ui.action_help.triggered
 
-        Display the Bitmask help dialog.
+        Open bitmask.net/help
         """
-        # TODO: don't hardcode!
-        smtp_port = 2013
-
-        help_url = "<p><a href='https://{0}'>{0}</a></p>".format(
-            self.tr("bitmask.net/help"))
-
-        lang = QtCore.QLocale.system().name().replace('_', '-')
-        thunderbird_extension_url = \
-            "https://addons.mozilla.org/{0}/" \
-            "thunderbird/addon/bitmask/".format(lang)
-
-        email_quick_reference = self.tr("Email quick reference")
-        thunderbird_text = self.tr(
-            "For Thunderbird, you can use the "
-            "Bitmask extension. Search for \"Bitmask\" in the add-on "
-            "manager or download it from <a href='{0}'>"
-            "addons.mozilla.org</a>.".format(thunderbird_extension_url))
-        manual_text = self.tr(
-            "Alternatively, you can manually configure "
-            "your mail client to use Bitmask Email with these options:")
-        manual_imap = self.tr("IMAP: localhost, port {0}".format(IMAP_PORT))
-        manual_smtp = self.tr("SMTP: localhost, port {0}".format(smtp_port))
-        manual_username = self.tr("Username: your full email address")
-        manual_password = self.tr("Password: any non-empty text")
-
-        msg = help_url + self.tr(
-            "<p><strong>{0}</strong></p>"
-            "<p>{1}</p>"
-            "<p>{2}"
-            "<ul>"
-            "<li>&nbsp;{3}</li>"
-            "<li>&nbsp;{4}</li>"
-            "<li>&nbsp;{5}</li>"
-            "<li>&nbsp;{6}</li>"
-            "</ul></p>").format(email_quick_reference, thunderbird_text,
-                                manual_text, manual_imap, manual_smtp,
-                                manual_username, manual_password)
-        QtGui.QMessageBox.about(self, self.tr("Bitmask Help"), msg)
+        QtGui.QDesktopServices.openUrl("https://bitmask.net/help")
 
     def _needs_update(self):
         """

@@ -35,6 +35,7 @@ class LeapBackend(Backend):
     """
     Backend server subclass, used to implement the API methods.
     """
+
     def __init__(self, bypass_checks=False, frontend_pid=None):
         """
         Constructor for the backend.
@@ -438,6 +439,12 @@ class LeapBackend(Backend):
         """
         self._soledad.load_offline(username, password, uuid)
 
+    def soledad_get_service_token(self, service):
+        """
+        Attempt to get an authentication token for a given service.
+        """
+        self._soledad.get_service_token(service)
+
     def soledad_cancel_bootstrap(self):
         """
         Cancel the ongoing soledad bootstrapping process (if any).
@@ -523,6 +530,12 @@ class LeapBackend(Backend):
             imap_stopped
         """
         self._mail.stop_imap_service()
+
+    def pixelated_start_service(self, full_user_id):
+        self._mail.start_pixelated_service(full_user_id)
+
+    def pixelated_stop_service(self):
+        self._mail.stop_pixelated_service()
 
     def settings_set_selected_gateway(self, provider, gateway):
         """

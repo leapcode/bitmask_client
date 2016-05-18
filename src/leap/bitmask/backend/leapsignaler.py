@@ -97,6 +97,7 @@ class LeapSignaler(SignalerQt):
     soledad_offline_finished = QtCore.Signal()
     soledad_password_change_error = QtCore.Signal()
     soledad_password_change_ok = QtCore.Signal()
+    soledad_got_service_token = QtCore.Signal(object)
 
     srp_auth_bad_user_or_password = QtCore.Signal()
     srp_auth_connection_error = QtCore.Signal()

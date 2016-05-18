@@ -173,7 +173,7 @@ class LoggerWindow(QtGui.QDialog):
         :type sending: bool
         """
         if sending:
-            self.ui.btnPastebin.setText(self.tr("Sending to pastebin..."))
+            self.ui.btnPastebin.setText(self.tr("Sending to Pastebin.com…"))
             self.ui.btnPastebin.setEnabled(False)
         else:
             self.ui.btnPastebin.setText(self.tr("Send to Pastebin.com"))
@@ -193,7 +193,7 @@ class LoggerWindow(QtGui.QDialog):
         # We save the dialog in an instance member to avoid dialog being
         # deleted right after we exit this method
         self._msgBox = msgBox = QtGui.QMessageBox(
-            QtGui.QMessageBox.Information, self.tr("Pastebin OK"), msg)
+            QtGui.QMessageBox.Information, self.tr("Pastebin is OK"), msg)
         msgBox.setWindowModality(QtCore.Qt.NonModal)
         msgBox.show()
 
