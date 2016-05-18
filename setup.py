@@ -105,14 +105,20 @@ class freeze_debianver(Command):
 # unpacked source archive. Distribution tarballs contain a pre-generated copy
 # of this file.
 
-version_version = '{version}'
-full_revisionid = '{full_revisionid}'
-"""
-    templatefun = r"""
+import json
+import sys
 
-def get_versions(default={}, verbose=False):
-        return {'version': version_version,
-                'full-revisionid': full_revisionid}
+version_json = '''
+{
+ "dirty": false,
+ "error": null,
+ "full-revisionid": "FULL_REVISIONID",
+ "version": "VERSION_STRING"
+}
+'''  # END VERSION_JSON
+
+def get_versions():
+    return json.loads(version_json)
 """
 
     def initialize_options(self):
@@ -127,14 +133,15 @@ def get_versions(default={}, verbose=False):
         if proceed != "y":
             print("He. You scared. Aborting.")
             return
-        subst_template = self.template.format(
-            version=VERSION_SHORT,
-            full_revisionid=VERSION_REVISION) + self.templatefun
+        subst_template = self.template.replace(
+            'VERSION_STRING', VERSION_SHORT).replace(
+            'FULL_REVISIONID', VERSION_REVISION)
         versioneer_cfg = versioneer.get_config_from_root('.')
         with open(versioneer_cfg.versionfile_source, 'w') as f:
             f.write(subst_template)
 
 
+# TODO -- needs update, see freeze_debianver above.
 def freeze_pkg_ver(path, version_short, version_full):
     """
     Freeze the _version in other modules, used during the gathering of
