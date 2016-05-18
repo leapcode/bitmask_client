@@ -41,6 +41,7 @@ Depends:
   python-leap-common,
   leap-mail (>= 0.4.1),
   soledad-client,
+  python-whoosh,
 # This is a workaround to broken python-srp in wily.
 # We should remove libssl-dev when #7566 is solved
   libssl-dev
