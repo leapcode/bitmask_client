@@ -228,35 +228,41 @@ def send_command(cli):
         data = ('stats',)
 
     elif cmd == 'user':
-        username = subargs.username
-        if username and '@' not in username:
-            error("Username ID must be in the form <user@example.org>",
+        if 1 != (subargs.active + subargs.create +
+                 subargs.authenticate + subargs.logout):
+            error('Use bitmask_cli user --help to see available subcommands',
                   stop=True)
             return
-        if not username:
-            username = ''
 
-        # TODO check that ONLY ONE FLAG is True
-        # TODO check that AT LEAST ONE FLAG is True
-
-        passwd = getpass.getpass()
         data = ['user']
 
         if subargs.active:
             data += ['active', '', '']
 
-        elif subargs.create:
-            data += ['signup', username, passwd]
-
-        elif subargs.authenticate:
-            data += ['authenticate', username, passwd]
-
-        elif subargs.logout:
-            data += ['logout', username]
-
         else:
-            error('Use bitmask_cli user --help to see available subcommands')
-            return
+            if subargs.create:
+                data.append('signup')
+            elif subargs.authenticate:
+                data.append('authenticate')
+            elif subargs.logout:
+                data.append('logout')
+
+            username = subargs.username
+            if username and '@' not in username:
+                error("Username ID must be in the form <user@example.org>",
+                      stop=True)
+                return
+            if not subargs.logout and not username:
+                error("Missing username ID but needed for this command",
+                      stop=True)
+                return
+            elif not username:
+                username = ''
+            data.append(username)
+
+            if not subargs.logout:
+                passwd = getpass.getpass()
+                data.append(passwd)
 
     elif cmd == 'mail':
         data = ['mail']
