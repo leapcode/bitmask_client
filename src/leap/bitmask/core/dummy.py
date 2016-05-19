@@ -73,7 +73,7 @@ class BonafideService(HookableService):
     def do_signup(self, user, password):
         return {'signup': 'ok', 'user': 'dummyuser@provider.example.org'}
 
-    def do_logout(self, user, password):
+    def do_logout(self, user):
         return {'logout': 'ok'}
 
     def do_get_active_user(self):

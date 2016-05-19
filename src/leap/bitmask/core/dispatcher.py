@@ -56,8 +56,8 @@ class UserCmd(SubCommand):
 
     @register_method("{'logout': 'ok'}")
     def do_LOGOUT(self, bonafide, *parts):
-        user, password = parts[2], parts[3]
-        d = defer.maybeDeferred(bonafide.do_logout, user, password)
+        user = parts[2]
+        d = defer.maybeDeferred(bonafide.do_logout, user)
         return d
 
     @register_method('str')

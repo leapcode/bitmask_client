@@ -252,7 +252,7 @@ def send_command(cli):
             data += ['authenticate', username, passwd]
 
         elif subargs.logout:
-            data += ['logout', username, passwd]
+            data += ['logout', username]
 
         else:
             error('Use bitmask_cli user --help to see available subcommands')
