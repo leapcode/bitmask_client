@@ -12,4 +12,4 @@
 # BEGIN DEPENDENCY LIST -------------------------
 # leap.foo.bar>=x.y.z
 
-leap.keymanager >= 0.5.1
+leap.keymanager >= 0.5.2
