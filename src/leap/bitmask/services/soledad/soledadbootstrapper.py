@@ -42,7 +42,7 @@ from leap.bitmask.platform_init import IS_WIN, IS_MAC
 from leap.common.check import leap_assert, leap_assert_type, leap_check
 from leap.common.files import which
 from leap.keymanager import KeyManager
-from leap.keymanager.errors import KeyNotFound
+from leap.keymanager.errors import KeyNotFound, KeyVersionError
 from leap.soledad.common.errors import InvalidAuthTokenError
 from leap.soledad.client import Soledad
 from leap.soledad.client.secrets import BootstrapSequenceError
@@ -534,6 +534,12 @@ class SoledadBootstrapper(AbstractBootstrapper):
             self._user, self._provider_config.get_domain())
         logger.debug("Retrieving key for %s" % (address,))
 
+        def if_version_error_skip(failure):
+            failure.trap(KeyVersionError)
+            logger.critical("Keyring was made by a version of KeyManager not "
+                            "supported (%s)" % (failure.getErrorMessage(),))
+            raise Exception("Version Error")
+
         def if_not_found_generate(failure):
             failure.trap(KeyNotFound)
             logger.debug("Key not found. Generating key for %s"
@@ -556,6 +562,7 @@ class SoledadBootstrapper(AbstractBootstrapper):
             return log_err
 
         d = self._keymanager.get_key(address, private=True, fetch_remote=False)
+        d.addErrback(if_version_error_skip)
         d.addErrback(if_not_found_generate)
         return d
 
@@ -591,7 +598,6 @@ class SoledadBootstrapper(AbstractBootstrapper):
             return defer.succeed(True)
 
         signal_finished = self._signaler.soledad_bootstrap_finished
-        signal_failed = self._signaler.soledad_bootstrap_failed
 
         try:
             # XXX FIXME make this async too! (use txrequests)
@@ -602,17 +608,22 @@ class SoledadBootstrapper(AbstractBootstrapper):
             uuid = self.srpauth.get_uuid()
         except Exception as e:
             # TODO: we should handle more specific exceptions in here
-            self._soledad = None
-            self._keymanager = None
-            logger.exception("Error while bootstrapping Soledad: %r" % (e,))
-            self._signaler.signal(signal_failed)
-            return defer.succeed(None)
+            return self._bootstrap_fail(e)
 
         # soledad config is ok, let's proceed to load and sync soledad
         d = self.load_and_sync_soledad(uuid)
         d.addCallback(lambda _: self._gen_key())
-        d.addCallback(lambda _: self._signaler.signal(signal_finished))
+        d.addCallbacks(lambda _: self._signaler.signal(signal_finished),
+                       self._bootstrap_fail)
         return d
+
+    def _bootstrap_fail(self, e):
+        signal_failed = self._signaler.soledad_bootstrap_failed
+        self._soledad = None
+        self._keymanager = None
+        logger.exception("Error while bootstrapping Soledad: %r" % (e,))
+        self._signaler.signal(signal_failed)
+        return defer.succeed(None)
 
 
 class Syncer(object):
