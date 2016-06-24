@@ -281,7 +281,8 @@ def send_command(cli):
             data += ['get_smtp_certificate']
 
         else:
-            error('Use bitmask_cli mail --help to see available subcommands')
+            error('Use bitmask_cli mail --help to see available subcommands',
+                  stop=True)
             return
 
     elif cmd == 'eip':
