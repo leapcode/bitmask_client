@@ -380,8 +380,7 @@ class StandardMailService(service.MultiService, HookableService):
         self._soledad_sessions = {}
         self._keymanager_sessions = {}
         self._sendmail_opts = {}
-        self._imap_tokens = {}
-        self._smtp_tokens = {}
+        self._service_tokens = {}
         self._active_user = None
         super(StandardMailService, self).__init__()
         self.initializeChildrenServices()
@@ -414,20 +413,12 @@ class StandardMailService(service.MultiService, HookableService):
         incoming = self.getServiceNamed('incoming_mail')
         incoming.startInstance(userid)
 
-        def registerIMAPToken(token):
-            self._imap_tokens[userid] = token
+        def registerToken(token):
+            self._service_tokens[userid] = token
             self._active_user = userid
-            return token
 
-        def registerSMTPToken(token):
-            self._smtp_tokens[userid] = token
-            return token
-
-        d = soledad.get_or_create_service_token('imap')
-        d.addCallback(registerIMAPToken)
-        d.addCallback(
-            lambda _: soledad.get_or_create_service_token('smtp'))
-        d.addCallback(registerSMTPToken)
+        d = soledad.get_or_create_service_token('mail_auth')
+        d.addCallback(registerToken)
         return d
 
     def stopInstance(self):
@@ -450,21 +441,13 @@ class StandardMailService(service.MultiService, HookableService):
     def do_status(self):
         return 'mail: %s' % 'running' if self.running else 'disabled'
 
-    def get_imap_token(self):
+    def get_token(self):
         active_user = self._active_user
         if not active_user:
             return defer.succeed('NO ACTIVE USER')
-        token = self._imap_tokens.get(active_user)
+        token = self._service_tokens.get(active_user)
         # TODO return just the tuple, no format.
-        return defer.succeed("IMAP TOKEN (%s): %s" % (active_user, token))
-
-    def get_smtp_token(self):
-        active_user = self._active_user
-        if not active_user:
-            return defer.succeed('NO ACTIVE USER')
-        token = self._smtp_tokens.get(active_user)
-        # TODO return just the tuple, no format.
-        return defer.succeed("SMTP TOKEN (%s): %s" % (active_user, token))
+        return defer.succeed("MAIL TOKEN (%s): %s" % (active_user, token))
 
     def do_get_smtp_cert_path(self, userid):
         username, provider = userid.split('@')

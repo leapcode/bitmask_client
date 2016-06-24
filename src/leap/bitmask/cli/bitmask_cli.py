@@ -107,10 +107,8 @@ GENERAL COMMANDS:
                             help='displays status about the mail service')
         parser.add_argument('--enable', action='store_true')
         parser.add_argument('--disable', action='store_true')
-        parser.add_argument('--get-imap-token', action='store_true',
-                            help='returns token for the IMAP service')
-        parser.add_argument('--get-smtp-token', action='store_true',
-                            help='returns token for the SMTP service')
+        parser.add_argument('--get-token', action='store_true',
+                            help='returns token for the mail service')
         parser.add_argument('--get-smtp-certificate', action='store_true',
                             help='downloads a new smtp certificate')
         parser.add_argument('--check-smtp-certificate', action='store_true',
@@ -276,11 +274,8 @@ def send_command(cli):
         elif subargs.disable:
             data += ['disable']
 
-        elif subargs.get_imap_token:
-            data += ['get_imap_token']
-
-        elif subargs.get_smtp_token:
-            data += ['get_smtp_token']
+        elif subargs.get_token:
+            data += ['get_token']
 
         elif subargs.get_smtp_certificate:
             data += ['get_smtp_certificate']

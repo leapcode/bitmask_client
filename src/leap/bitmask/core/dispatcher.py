@@ -104,28 +104,23 @@ class MailCmd(SubCommand):
     label = 'mail'
 
     @register_method('dict')
-    def do_ENABLE(self, service, *parts):
+    def do_ENABLE(self, service, *parts, **kw):
         d = service.do_enable_service(self.label)
         return d
 
     @register_method('dict')
-    def do_DISABLE(self, service, *parts):
+    def do_DISABLE(self, service, *parts, **kw):
         d = service.do_disable_service(self.label)
         return d
 
     @register_method('dict')
-    def do_STATUS(self, mail, *parts):
+    def do_STATUS(self, mail, *parts, **kw):
         d = mail.do_status()
         return d
 
     @register_method('dict')
-    def do_GET_IMAP_TOKEN(self, mail, *parts):
-        d = mail.get_imap_token()
-        return d
-
-    @register_method('dict')
-    def do_GET_SMTP_TOKEN(self, mail, *parts):
-        d = mail.get_smtp_token()
+    def do_GET_TOKEN(self, mail, *parts, **kw):
+        d = mail.get_token()
         return d
 
     @register_method('dict')
