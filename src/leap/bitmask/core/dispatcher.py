@@ -149,6 +149,23 @@ class MailCmd(SubCommand):
         return d
 
 
+class KeysCmd(SubCommand):
+
+    label = 'keys'
+
+    @register_method("[[str, str]]")
+    def do_LIST(self, service, *parts, **kw):
+        bonafide = kw['bonafide']
+        d = bonafide.do_get_active_user()
+        d.addCallback(service.do_list_keys)
+        return d
+
+    @register_method('str')
+    def do_EXPORT(self, service, *parts, **kw):
+        # TODO
+        return defer.succeed("")
+
+
 class CommandDispatcher(object):
 
     __metaclass__ = APICommand
@@ -161,6 +178,7 @@ class CommandDispatcher(object):
         self.subcommand_user = UserCmd()
         self.subcommand_eip = EIPCmd()
         self.subcommand_mail = MailCmd()
+        self.subcommand_keys = KeysCmd()
 
     # XXX --------------------------------------------
     # TODO move general services to another subclass
@@ -227,20 +245,19 @@ class CommandDispatcher(object):
         return d
 
     def do_KEYS(self, *parts):
-        subcmd = parts[1]
+        dispatch = self.subcommand_keys.dispatch
 
         keymanager_label = 'keymanager'
-        km = self._get_service(keymanager_label)
-        bf = self._get_service('bonafide')
+        keymanager = self._get_service(keymanager_label)
+        bonafide = self._get_service('bonafide')
+        kw = {'bonafide': bonafide}
 
-        if not km:
+        if not keymanager:
             return _format_result('keymanager: disabled')
 
-        if subcmd == 'list_keys':
-            d = bf.do_get_active_user()
-            d.addCallback(km.do_list_keys)
-            d.addCallbacks(_format_result, _format_error)
-            return d
+        d = dispatch(keymanager, *parts, **kw)
+        d.addCallbacks(_format_result, _format_error)
+        return d
 
     def dispatch(self, msg):
         cmd = msg[0]

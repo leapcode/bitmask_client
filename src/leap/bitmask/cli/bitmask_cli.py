@@ -136,11 +136,9 @@ GENERAL COMMANDS:
         parser = argparse.ArgumentParser(
             description='Bitmask Keymanager management service',
             prog='bitmask_cli keys')
-        parser.add_argument('--status', action='store_true',
-                            help='Display status about service')
-        parser.add_argument('--list-keys', action='store_true',
+        parser.add_argument('--list', action='store_true',
                             help='List all known keys')
-        parser.add_argument('--export-key', action='store_true',
+        parser.add_argument('--export', action='store_true',
                             help='Export the given key')
         args = parser.parse_args(sys.argv[2:])
         self.subargs = args
@@ -311,14 +309,11 @@ def send_command(cli):
     elif cmd == 'keys':
         data = ['keys']
 
-        if subargs.status:
-            data += ['status']
+        if subargs.list:
+            data += ['list']
 
-        elif subargs.list_keys:
-            data += ['list_keys']
-
-        elif subargs.export_key:
-            data += ['export_keys']
+        elif subargs.export:
+            data += ['export']
 
         else:
             error('Use bitmask_cli keys --help to see available subcommands',
