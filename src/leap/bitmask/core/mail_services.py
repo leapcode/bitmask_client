@@ -220,7 +220,7 @@ class KeymanagerContainer(Container):
 
     def _on_keymanager_ready_cb(self, keymanager, userid, soledad):
         # TODO use onready-deferreds instead
-        self.add_instance(userid, keymanager)
+        super(KeymanagerContainer, self).add_instance(userid, keymanager)
 
         log.msg("Adding Keymanager instance for: %s" % userid)
         data = {'userid': userid, 'soledad': soledad, 'keymanager': keymanager}
