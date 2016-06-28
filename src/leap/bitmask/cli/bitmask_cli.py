@@ -140,6 +140,8 @@ GENERAL COMMANDS:
                             help='List all known keys')
         parser.add_argument('--export', action='store_true',
                             help='Export the given key')
+        parser.add_argument('--delete', action='store_true',
+                            help='Delete the given key')
         parser.add_argument('address', nargs='?',
                             help='email address of the key')
         args = parser.parse_args(sys.argv[2:])
@@ -352,6 +354,9 @@ def send_command(cli):
         elif subargs.export:
             data += ['export']
             cb = do_print_key
+
+        elif subargs.delete:
+            data += ['delete']
 
         else:
             error('Use bitmask_cli keys --help to see available subcommands',

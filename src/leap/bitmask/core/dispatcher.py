@@ -171,6 +171,17 @@ class KeysCmd(SubCommand):
         d.addCallback(service.do_export, address)
         return d
 
+    @register_method('str')
+    def do_DELETE(self, service, *parts, **kw):
+        if len(parts) < 3:
+            return defer.fail("An email address is needed")
+        address = parts[2]
+
+        bonafide = kw['bonafide']
+        d = bonafide.do_get_active_user()
+        d.addCallback(service.do_delete, address)
+        return d
+
 
 class CommandDispatcher(object):
 

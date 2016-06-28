@@ -358,6 +358,13 @@ class KeymanagerService(HookableService):
         d.addCallback(lambda key: dict(key))
         return d
 
+    @defer.inlineCallbacks
+    def do_delete(self, userid, address):
+        km = self._container.get_instance(userid)
+        key = yield km.get_key(address, fetch_remote=False)
+        km.delete_key(key)
+        defer.returnValue(key.fingerprint)
+
 
 class StandardMailService(service.MultiService, HookableService):
     """
