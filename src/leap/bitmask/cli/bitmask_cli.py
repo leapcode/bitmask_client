@@ -194,6 +194,19 @@ def do_print_result(stuff):
         print Fore.RED + 'ERROR:' + '%s' % obj['error'] + Fore.RESET
 
 
+def do_print_key_list(stuff):
+    obj = json.loads(stuff[0])
+    if obj['error']:
+        do_print_result(stuff)
+        return
+
+    keys = obj['result']
+    print Fore.GREEN
+    for key in keys:
+        print key["fingerprint"] + " " + key['address']
+    print Fore.RESET
+
+
 def do_print_key(stuff):
     obj = json.loads(stuff[0])
     if obj['error']:
@@ -334,6 +347,7 @@ def send_command(cli):
 
         if subargs.list:
             data += ['list']
+            cb = do_print_key_list
 
         elif subargs.export:
             data += ['export']

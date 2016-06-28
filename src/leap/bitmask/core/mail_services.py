@@ -349,9 +349,7 @@ class KeymanagerService(HookableService):
     def do_list_keys(self, userid):
         km = self._container.get_instance(userid)
         d = km.get_all_keys()
-        d.addCallback(
-            lambda keys: [
-                (key.address, key.fingerprint) for key in keys])
+        d.addCallback(lambda keys: [dict(key) for key in keys])
         return d
 
     def do_export(self, userid, address):
