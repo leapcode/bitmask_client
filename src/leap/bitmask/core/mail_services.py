@@ -354,6 +354,12 @@ class KeymanagerService(HookableService):
                 (key.address, key.fingerprint) for key in keys])
         return d
 
+    def do_export(self, userid, address):
+        km = self._container.get_instance(userid)
+        d = km.get_key(address, fetch_remote=False)
+        d.addCallback(lambda key: dict(key))
+        return d
+
 
 class StandardMailService(service.MultiService, HookableService):
     """

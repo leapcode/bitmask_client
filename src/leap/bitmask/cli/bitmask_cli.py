@@ -140,6 +140,8 @@ GENERAL COMMANDS:
                             help='List all known keys')
         parser.add_argument('--export', action='store_true',
                             help='Export the given key')
+        parser.add_argument('address', nargs='?',
+                            help='email address of the key')
         args = parser.parse_args(sys.argv[2:])
         self.subargs = args
 
@@ -190,6 +192,27 @@ def do_print_result(stuff):
         print Fore.GREEN + '%s' % obj['result'] + Fore.RESET
     else:
         print Fore.RED + 'ERROR:' + '%s' % obj['error'] + Fore.RESET
+
+
+def do_print_key(stuff):
+    obj = json.loads(stuff[0])
+    if obj['error']:
+        do_print_result(stuff)
+        return
+
+    key = obj['result']
+    print Fore.GREEN
+    print "Uids:        " + ', '.join(key['uids'])
+    print "Fingerprint: " + key['fingerprint']
+    print "Length:      " + str(key['length'])
+    print "Expiration:  " + key['expiry_date']
+    print "Validation:  " + key['validation']
+    print("Used:        " + "sig:" + str(key['sign_used']) +
+          ", encr:" + str(key['encr_used']))
+    print "Refresed:    " + key['refreshed_at']
+    print Fore.RESET
+    print ""
+    print key['key_data']
 
 
 def send_command(cli):
@@ -314,11 +337,15 @@ def send_command(cli):
 
         elif subargs.export:
             data += ['export']
+            cb = do_print_key
 
         else:
             error('Use bitmask_cli keys --help to see available subcommands',
                   stop=True)
             return
+
+        if subargs.address:
+            data.append(subargs.address)
 
     s = get_zmq_connection()
 

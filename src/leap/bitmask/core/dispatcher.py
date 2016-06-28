@@ -162,8 +162,14 @@ class KeysCmd(SubCommand):
 
     @register_method('str')
     def do_EXPORT(self, service, *parts, **kw):
-        # TODO
-        return defer.succeed("")
+        if len(parts) < 3:
+            return defer.fail("An email address is needed")
+        address = parts[2]
+
+        bonafide = kw['bonafide']
+        d = bonafide.do_get_active_user()
+        d.addCallback(service.do_export, address)
+        return d
 
 
 class CommandDispatcher(object):
