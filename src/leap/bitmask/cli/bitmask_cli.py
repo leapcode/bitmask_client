@@ -136,6 +136,8 @@ GENERAL COMMANDS:
         parser = argparse.ArgumentParser(
             description='Bitmask Keymanager management service',
             prog='bitmask_cli keys')
+        parser.add_argument('--private', action='store_true',
+                            help='Use private keys (by default uses public)')
         parser.add_argument('--list', action='store_true',
                             help='List all known keys')
         parser.add_argument('--export', action='store_true',
@@ -365,6 +367,11 @@ def send_command(cli):
 
         if subargs.address:
             data.append(subargs.address)
+
+        if subargs.private:
+            data += ['private']
+        else:
+            data += ['public']
 
     s = get_zmq_connection()
 

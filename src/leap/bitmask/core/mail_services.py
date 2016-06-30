@@ -346,22 +346,22 @@ class KeymanagerService(HookableService):
 
     # commands
 
-    def do_list_keys(self, userid):
+    def do_list_keys(self, userid, private=False):
         km = self._container.get_instance(userid)
-        d = km.get_all_keys()
+        d = km.get_all_keys(private=private)
         d.addCallback(lambda keys: [dict(key) for key in keys])
         return d
 
-    def do_export(self, userid, address):
+    def do_export(self, userid, address, private=False):
         km = self._container.get_instance(userid)
-        d = km.get_key(address, fetch_remote=False)
+        d = km.get_key(address, private=private, fetch_remote=False)
         d.addCallback(lambda key: dict(key))
         return d
 
     @defer.inlineCallbacks
-    def do_delete(self, userid, address):
+    def do_delete(self, userid, address, private=False):
         km = self._container.get_instance(userid)
-        key = yield km.get_key(address, fetch_remote=False)
+        key = yield km.get_key(address, private=private, fetch_remote=False)
         km.delete_key(key)
         defer.returnValue(key.fingerprint)
 

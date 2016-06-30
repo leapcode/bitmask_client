@@ -153,22 +153,30 @@ class KeysCmd(SubCommand):
 
     label = 'keys'
 
-    @register_method("[[str, str]]")
+    @register_method("[dict]")
     def do_LIST(self, service, *parts, **kw):
+        private = False
+        if parts[-1] == 'private':
+            private = True
+
         bonafide = kw['bonafide']
         d = bonafide.do_get_active_user()
-        d.addCallback(service.do_list_keys)
+        d.addCallback(service.do_list_keys, private)
         return d
 
-    @register_method('str')
+    @register_method('dict')
     def do_EXPORT(self, service, *parts, **kw):
         if len(parts) < 3:
             return defer.fail("An email address is needed")
         address = parts[2]
 
+        private = False
+        if parts[-1] == 'private':
+            private = True
+
         bonafide = kw['bonafide']
         d = bonafide.do_get_active_user()
-        d.addCallback(service.do_export, address)
+        d.addCallback(service.do_export, address, private)
         return d
 
     @register_method('str')
@@ -177,9 +185,13 @@ class KeysCmd(SubCommand):
             return defer.fail("An email address is needed")
         address = parts[2]
 
+        private = False
+        if parts[-1] == 'private':
+            private = True
+
         bonafide = kw['bonafide']
         d = bonafide.do_get_active_user()
-        d.addCallback(service.do_delete, address)
+        d.addCallback(service.do_delete, address, private)
         return d
 
 
