@@ -179,6 +179,19 @@ class KeysCmd(SubCommand):
         d.addCallback(service.do_export, address, private)
         return d
 
+    @register_method('dict')
+    def do_ADD(self, service, *parts, **kw):
+        if len(parts) < 5:
+            return defer.fail("An email address is needed")
+        address = parts[2]
+        validation = parts[3]
+        rawkey = parts[4]
+
+        bonafide = kw['bonafide']
+        d = bonafide.do_get_active_user()
+        d.addCallback(service.do_add, address, rawkey, validation)
+        return d
+
     @register_method('str')
     def do_DELETE(self, service, *parts, **kw):
         if len(parts) < 3:

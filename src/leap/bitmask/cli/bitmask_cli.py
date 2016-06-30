@@ -31,6 +31,7 @@ from txzmq import ZmqFactory, ZmqREQConnection
 from txzmq import ZmqRequestTimeoutError
 
 from leap.bitmask.core import ENDPOINT
+from leap.keymanager.validation import ValidationLevels
 
 
 class BitmaskCLI(object):
@@ -136,14 +137,20 @@ GENERAL COMMANDS:
         parser = argparse.ArgumentParser(
             description='Bitmask Keymanager management service',
             prog='bitmask_cli keys')
-        parser.add_argument('--private', action='store_true',
-                            help='Use private keys (by default uses public)')
         parser.add_argument('--list', action='store_true',
                             help='List all known keys')
         parser.add_argument('--export', action='store_true',
                             help='Export the given key')
+        parser.add_argument('--import', action='store', metavar='file',
+                            dest='imprt',
+                            help='Import a key from the file')
         parser.add_argument('--delete', action='store_true',
                             help='Delete the given key')
+        parser.add_argument('--private', action='store_true',
+                            help='Use private keys (by default uses public)')
+        parser.add_argument('--validation', choices=list(ValidationLevels),
+                            default='Fingerprint',
+                            help='Validation level for the key')
         parser.add_argument('address', nargs='?',
                             help='email address of the key')
         args = parser.parse_args(sys.argv[2:])
@@ -354,19 +361,23 @@ def send_command(cli):
             cb = do_print_key_list
 
         elif subargs.export:
-            data += ['export']
+            data += ['export', subargs.address]
+            cb = do_print_key
+
+        elif subargs.imprt:
+            with open(subargs.imprt, 'r') as keyfile:
+                rawkey = keyfile.read()
+
+            data += ['add', subargs.address, subargs.validation, rawkey]
             cb = do_print_key
 
         elif subargs.delete:
-            data += ['delete']
+            data += ['delete', subargs.address]
 
         else:
             error('Use bitmask_cli keys --help to see available subcommands',
                   stop=True)
             return
-
-        if subargs.address:
-            data.append(subargs.address)
 
         if subargs.private:
             data += ['private']

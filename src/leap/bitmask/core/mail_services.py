@@ -33,6 +33,7 @@ from leap.bonafide import config
 from leap.common.service_hooks import HookableService
 from leap.keymanager import KeyManager
 from leap.keymanager.errors import KeyNotFound
+from leap.keymanager.validation import ValidationLevels
 from leap.soledad.client.api import Soledad
 from leap.mail.constants import INBOX_NAME
 from leap.mail.mail import Account
@@ -355,6 +356,14 @@ class KeymanagerService(HookableService):
     def do_export(self, userid, address, private=False):
         km = self._container.get_instance(userid)
         d = km.get_key(address, private=private, fetch_remote=False)
+        d.addCallback(lambda key: dict(key))
+        return d
+
+    def do_add(self, userid, address, rawkey, validation='Fingerprint'):
+        km = self._container.get_instance(userid)
+        validation = ValidationLevels.get(validation)
+        d = km.put_raw_key(rawkey, address, validation=validation)
+        d.addCallback(lambda _: km.get_key(address, fetch_remote=False))
         d.addCallback(lambda key: dict(key))
         return d
 
