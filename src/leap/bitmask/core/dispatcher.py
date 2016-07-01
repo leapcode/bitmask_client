@@ -180,7 +180,7 @@ class KeysCmd(SubCommand):
         return d
 
     @register_method('dict')
-    def do_ADD(self, service, *parts, **kw):
+    def do_INSERT(self, service, *parts, **kw):
         if len(parts) < 5:
             return defer.fail("An email address is needed")
         address = parts[2]
@@ -189,7 +189,7 @@ class KeysCmd(SubCommand):
 
         bonafide = kw['bonafide']
         d = bonafide.do_get_active_user()
-        d.addCallback(service.do_add, address, rawkey, validation)
+        d.addCallback(service.do_insert, address, rawkey, validation)
         return d
 
     @register_method('str')

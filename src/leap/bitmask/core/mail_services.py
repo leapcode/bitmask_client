@@ -359,7 +359,7 @@ class KeymanagerService(HookableService):
         d.addCallback(lambda key: dict(key))
         return d
 
-    def do_add(self, userid, address, rawkey, validation='Fingerprint'):
+    def do_insert(self, userid, address, rawkey, validation='Fingerprint'):
         km = self._container.get_instance(userid)
         validation = ValidationLevels.get(validation)
         d = km.put_raw_key(rawkey, address, validation=validation)
