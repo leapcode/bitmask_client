@@ -19,6 +19,7 @@ Depends:
   ${misc:Depends}, ${python:Depends},
   python-openssl,
   python-keyring (>= 0.9.2),
+  leap-keymanager (>= 0.5.1),
   python-srp,
   python-dateutil,
   python-daemon,
