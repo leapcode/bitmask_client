@@ -81,9 +81,9 @@ class Command(object):
         self.parser.print_help()
         return defer.succeed(None)
 
-    def _send(self, cb=_print_result):
+    def _send(self, printer=_print_result):
         d = self._conn.sendMsg(*self.data, timeout=60)
-        d.addCallback(self._check_err, cb)
+        d.addCallback(self._check_err, printer)
         d.addErrback(self._timeout_handler)
         return d
 
@@ -91,10 +91,10 @@ class Command(object):
         print Fore.RED + "[!] %s" % msg + Fore.RESET
         sys.exit(1)
 
-    def _check_err(self, stuff, cb):
+    def _check_err(self, stuff, printer):
         obj = json.loads(stuff[0])
         if not obj['error']:
-            return cb(obj['result'])
+            return printer(obj['result'])
         else:
             print Fore.RED + 'ERROR:' + '%s' % obj['error'] + Fore.RESET
 
