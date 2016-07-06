@@ -47,12 +47,12 @@ import platform
 import sys
 
 
-if platform.system() == "Darwin":
+if platform.system() == "Darwin":  # nopep8
     # XXX please ignore pep8 complains, this needs to be executed
     # early.
     # We need to tune maximum number of files, due to zmq usage
     # we hit the limit.
-    import resource
+    import resource  # nopep8
     resource.setrlimit(resource.RLIMIT_NOFILE, (4096, 10240))
 
 
@@ -74,7 +74,7 @@ from leap.mail import __version__ as MAIL_VERSION
 import codecs
 codecs.register(lambda name: codecs.lookup('utf-8')
                 if name == 'cp65001' else None)
-import psutil
+import psutil  # nopep8
 
 
 def qt_hack_ubuntu():
