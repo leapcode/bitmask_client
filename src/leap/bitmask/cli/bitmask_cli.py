@@ -18,6 +18,7 @@
 """
 Bitmask Command Line interface: zmq client.
 """
+import json
 import sys
 
 from colorama import Fore
@@ -31,30 +32,30 @@ from leap.bitmask.cli.user import User
 
 
 class BitmaskCLI(Command):
-    usage = '''bitmask_cli <command> [<args>]
+    usage = '''bitmaskctl <command> [<args>]
 
 Controls the Bitmask application.
 
 SERVICE COMMANDS:
 
-   user       Handles Bitmask accounts
-   mail       Bitmask Encrypted Mail
-   eip        Encrypted Internet Proxy
-   keys       Bitmask Keymanager
+  user       Handles Bitmask accounts
+  mail       Bitmask Encrypted Mail
+  eip        Encrypted Internet Proxy
+  keys       Bitmask Keymanager
 
 GENERAL COMMANDS:
 
-   version    prints version number and exit
-   launch     launch the Bitmask backend daemon
-   shutdown   shutdown Bitmask backend daemon
-   status     displays general status about the running Bitmask services
-   stats      show some debug info about bitmask-core
-   help       show this help message
+  version    prints version number and exit
+  launch     launch the Bitmask backend daemon
+  shutdown   shutdown Bitmask backend daemon
+  status     displays general status about the running Bitmask services
+  stats      show some debug info about bitmask-core
+  help       show this help message
 
 '''
-    epilog = ("Use 'bitmask_cli <command> help' to learn more "
+    epilog = ("Use 'bitmaskctl <command> help' to learn more "
               "about each command.")
-    commands = ['shutdown', 'status', 'stats']
+    commands = ['shutdown', 'stats']
 
     def user(self, raw_args):
         user = User()
@@ -82,9 +83,26 @@ GENERAL COMMANDS:
         return defer.succeed(None)
 
     def version(self, raw_args):
-        print Fore.GREEN + 'bitmask_cli: 0.0.1' + Fore.RESET
+        print(Fore.GREEN + 'bitmask_cli:  ' + Fore.RESET + '0.0.1')
         self.data = ['version']
-        return self._send()
+        return self._send(printer=self._print_version)
+
+    def _print_version(self, version):
+        corever = version['version_core']
+        print(Fore.GREEN + 'bitmask_core: ' + Fore.RESET + corever)
+
+    def status(self, raw_args):
+        self.data = ['status']
+        return self._send(printer=self._print_status)
+
+    def _print_status(self, status):
+        statusdict = json.loads(status)
+        for key, value in statusdict.items():
+            color = Fore.GREEN
+            if value == 'stopped':
+                color = Fore.RED
+            print(key.ljust(10) + ': ' + color +
+                  value + Fore.RESET)
 
 
 def execute():

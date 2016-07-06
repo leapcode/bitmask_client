@@ -22,13 +22,13 @@ import sys
 
 from colorama import Fore
 
-from leap.bitmask.cli.command import Command
+from leap.bitmask.cli.command import appname, Command
 from leap.keymanager.validation import ValidationLevels
 
 
 class Keys(Command):
     service = 'keys'
-    usage = '''%s keys <subcommand>
+    usage = '''{name} keys <subcommand>
 
 Bitmask Keymanager management service
 
@@ -38,8 +38,7 @@ SUBCOMMANDS:
    export     Export a given key
    insert     Insert a key to the key storage
    delete     Delete a key from the key storage
-
-''' % sys.argv[0]
+'''.format(name=appname)
 
     def list(self, raw_args):
         parser = argparse.ArgumentParser(
@@ -104,21 +103,22 @@ SUBCOMMANDS:
         return self._send()
 
     def _print_key_list(self, keys):
-        print Fore.GREEN
         for key in keys:
-            print key["fingerprint"] + " " + key['address']
-        print Fore.RESET
+            print(Fore.GREEN +
+                  key["fingerprint"] + " " + key['address'] +
+                  Fore.RESET)
 
     def _print_key(self, key):
-        print Fore.GREEN
-        print "Uids:        " + ', '.join(key['uids'])
-        print "Fingerprint: " + key['fingerprint']
-        print "Length:      " + str(key['length'])
-        print "Expiration:  " + key['expiry_date']
-        print "Validation:  " + key['validation']
-        print("Used:        " + "sig:" + str(key['sign_used']) +
-              ", encr:" + str(key['encr_used']))
-        print "Refresed:    " + key['refreshed_at']
-        print Fore.RESET
-        print ""
-        print key['key_data']
+        print(Fore.GREEN)
+        print("Uids:       " + ', '.join(key['uids']))
+        print("Fingerprint:" + key['fingerprint'])
+        print("Length:     " + str(key['length']))
+        print("Expiration: " + key['expiry_date'])
+        print("Validation: " + key['validation'])
+        print("Used:       " + "sig:" +
+              str(key['sign_used']) + ", encr:" +
+              str(key['encr_used']))
+        print("Refreshed:   " + key['refreshed_at'])
+        print(Fore.RESET)
+        print("")
+        print(key['key_data'])

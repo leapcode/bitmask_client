@@ -21,23 +21,23 @@ import argparse
 import getpass
 import sys
 
-from leap.bitmask.cli.command import Command
+from leap.bitmask.cli import command
 
 
-class User(Command):
+class User(command.Command):
     service = 'user'
-    usage = '''%s user <subcommand>
+    usage = '''{name} user <subcommand>
 
 Bitmask account service
 
 SUBCOMMANDS:
 
-   create     Register a new user, if possible
-   auth       Logs in gainst the provider
+   create     Registers new user, if possible
+   auth       Logs in against the provider
    logout     Ends any active session with the provider
    active     Shows the active user, if any
 
-''' % sys.argv[0]
+'''.format(name=command.appname)
 
     commands = ['active']
 
@@ -45,23 +45,24 @@ SUBCOMMANDS:
         username = self.username(raw_args)
         passwd = getpass.getpass()
         self.data += ['signup', username, passwd]
-        return self._send()
+        return self._send(printer=command.default_dict_printer)
 
     def auth(self, raw_args):
         username = self.username(raw_args)
         passwd = getpass.getpass()
         self.data += ['authenticate', username, passwd]
-        return self._send()
+        return self._send(printer=command.default_dict_printer)
 
     def logout(self, raw_args):
         username = self.username(raw_args)
         self.data += ['logout', username]
-        return self._send()
+        return self._send(printer=command.default_dict_printer)
 
     def username(self, raw_args):
+        args = tuple([command.appname] + sys.argv[1:3])
         parser = argparse.ArgumentParser(
             description='Bitmask user',
-            prog='%s %s %s' % tuple(sys.argv[:3]))
+            prog='%s %s %s' % args)
         parser.add_argument('username', nargs=1,
                             help='username ID, in the form <user@example.org>')
         subargs = parser.parse_args(raw_args)
