@@ -485,7 +485,7 @@ if IS_LINUX:
 extra_options = {}
 
 gui_launcher = 'bitmask=leap.bitmask.app:start_app'
-bitmask_cli = 'bitmask_cli=leap.bitmask.cli.bitmask_cli:main'
+bitmask_cli = 'bitmaskctl=leap.bitmask.cli.bitmask_cli:main'
 bitmaskd = 'bitmaskd=leap.bitmask.core.launcher:run_bitmaskd'
 
 
