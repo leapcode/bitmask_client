@@ -17,14 +17,14 @@
 """
 Bitmask Command Line interface: mail
 """
-from leap.bitmask.cli.command import appname, Command
+from leap.bitmask.cli import command
 
 
-class Mail(Command):
+class Mail(command.Command):
     service = 'mail'
     usage = '''{name} mail <subcommand>
 
-Bitmask Encrypted Email service
+Bitmask Encrypted Email Service
 
 SUBCOMMANDS:
 
@@ -34,7 +34,7 @@ SUBCOMMANDS:
    get-token            Returns token for the mail service
    get-smtp-certificate Downloads a new smtp certificate
 
-'''.format(name=appname)
+'''.format(name=command.appname)
 
     commands = ['enable', 'disable', 'status', 'get-token',
                 'get-smtp-certificate']

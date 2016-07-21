@@ -27,11 +27,11 @@ from twisted.internet import reactor, defer
 from leap.bitmask.cli.eip import Eip
 from leap.bitmask.cli.keys import Keys
 from leap.bitmask.cli.mail import Mail
-from leap.bitmask.cli.command import Command
+from leap.bitmask.cli import command
 from leap.bitmask.cli.user import User
 
 
-class BitmaskCLI(Command):
+class BitmaskCLI(command.Command):
     usage = '''bitmaskctl <command> [<args>]
 
 Controls the Bitmask application.
@@ -83,7 +83,7 @@ GENERAL COMMANDS:
         return defer.succeed(None)
 
     def version(self, raw_args):
-        print(Fore.GREEN + 'bitmask_cli:  ' + Fore.RESET + '0.0.1')
+        print(Fore.GREEN + 'bitmaskctl:  ' + Fore.RESET + '0.0.1')
         self.data = ['version']
         return self._send(printer=self._print_version)
 

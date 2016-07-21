@@ -22,11 +22,11 @@ import sys
 
 from colorama import Fore
 
-from leap.bitmask.cli.command import appname, Command
+from leap.bitmask.cli import command
 from leap.keymanager.validation import ValidationLevels
 
 
-class Keys(Command):
+class Keys(command.Command):
     service = 'keys'
     usage = '''{name} keys <subcommand>
 
@@ -38,7 +38,7 @@ SUBCOMMANDS:
    export     Export a given key
    insert     Insert a key to the key storage
    delete     Delete a key from the key storage
-'''.format(name=appname)
+'''.format(name=command.appname)
 
     def list(self, raw_args):
         parser = argparse.ArgumentParser(

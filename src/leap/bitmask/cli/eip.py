@@ -17,10 +17,10 @@
 """
 Bitmask Command Line interface: eip
 """
-from leap.bitmask.cli.command import appname, Command
+from leap.bitmask.cli import command
 
 
-class Eip(Command):
+class Eip(command.Command):
     service = 'eip'
     usage = '''{name} eip <subcommand>
 
@@ -32,6 +32,6 @@ SUBCOMMANDS:
    stop       Stop service
    status     Display status about service
 
-'''.format(name=appname)
+'''.format(name=command.appname)
 
     commands = ['start', 'stop', 'status']
