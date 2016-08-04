@@ -26,6 +26,7 @@ from twisted.python import log
 from leap.bitmask import __version__
 from leap.bitmask.core import configurable
 from leap.bitmask.core import _zmq
+from leap.bitmask.core import _web
 from leap.bitmask.core import flags
 from leap.common.events import server as event_server
 # from leap.vpn import EIPService
@@ -72,6 +73,9 @@ class BitmaskBackend(configurable.ConfigurableService):
         if enabled('web'):
             on_start(self.init_web)
 
+        if enabled('websockets'):
+            on_start(self.init_websockets)
+
     def init_events(self):
         event_server.ensure_server()
 
@@ -115,6 +119,10 @@ class BitmaskBackend(configurable.ConfigurableService):
         zs.setServiceParent(self)
 
     def init_web(self):
+        http = _web.HTTPDispatcherService(self)
+        http.setServiceParent(self)
+
+    def init_websockets(self):
         from leap.bitmask.core import websocket
         ws = websocket.WebSocketsDispatcherService(self)
         ws.setServiceParent(self)
@@ -159,6 +167,8 @@ class BitmaskBackend(configurable.ConfigurableService):
 
         elif service == 'web':
             self.init_web()
+
+        self.init_http()
 
         return 'ok'
 

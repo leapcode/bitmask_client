@@ -19,8 +19,17 @@ Command dispatcher.
 """
 import json
 
+try:
+    from Queue import Queue
+except ImportError:
+    from queue import Queue
+
 from twisted.internet import defer
 from twisted.python import failure, log
+
+from leap.common.events import register_async as register
+from leap.common.events import unregister_async as unregister
+from leap.common.events import catalog
 
 from .api import APICommand, register_method
 
@@ -45,25 +54,21 @@ class UserCmd(SubCommand):
     @register_method("{'srp_token': unicode, 'uuid': unicode}")
     def do_AUTHENTICATE(self, bonafide, *parts):
         user, password = parts[2], parts[3]
-        d = defer.maybeDeferred(bonafide.do_authenticate, user, password)
-        return d
+        return bonafide.do_authenticate(user, password)
 
     @register_method("{'signup': 'ok', 'user': str}")
     def do_SIGNUP(self, bonafide, *parts):
         user, password = parts[2], parts[3]
-        d = defer.maybeDeferred(bonafide.do_signup, user, password)
-        return d
+        return bonafide.do_signup(user, password)
 
     @register_method("{'logout': 'ok'}")
     def do_LOGOUT(self, bonafide, *parts):
         user = parts[2]
-        d = defer.maybeDeferred(bonafide.do_logout, user)
-        return d
+        bonafide.do_logout(user)
 
     @register_method('str')
     def do_ACTIVE(self, bonafide, *parts):
-        d = defer.maybeDeferred(bonafide.do_get_active_user)
-        return d
+        return bonafide.do_get_active_user()
 
 
 class EIPCmd(SubCommand):
@@ -209,6 +214,45 @@ class KeysCmd(SubCommand):
         return d
 
 
+class EventsCmd(SubCommand):
+
+    label = 'events'
+
+    def __init__(self):
+        self.queue = Queue()
+        self.waiting = []
+
+    @register_method("")
+    def do_REGISTER(self, _, *parts, **kw):
+        event = getattr(catalog, parts[2])
+        register(event, self._callback)
+
+    @register_method("")
+    def do_UNREGISTER(self, _, *parts, **kw):
+        event = getattr(catalog, parts[2])
+        unregister(event)
+
+    @register_method("(str, [])")
+    def do_POLL(self, _, *parts, **kw):
+        if not self.queue.empty():
+            return self.queue.get()
+
+        d = defer.Deferred()
+        self.waiting.append(d)
+        return d
+
+    @register_method("")
+    def _callback(self, event, *content):
+        payload = (str(event), content)
+        if not self.waiting:
+            self.queue.put(payload)
+            return
+
+        while self.waiting:
+            d = self.waiting.pop()
+            d.callback(payload)
+
+
 class CommandDispatcher(object):
 
     __metaclass__ = APICommand
@@ -222,6 +266,7 @@ class CommandDispatcher(object):
         self.subcommand_eip = EIPCmd()
         self.subcommand_mail = MailCmd()
         self.subcommand_keys = KeysCmd()
+        self.subcommand_events = EventsCmd()
 
     # XXX --------------------------------------------
     # TODO move general services to another subclass
@@ -299,6 +344,12 @@ class CommandDispatcher(object):
             return _format_result('keymanager: disabled')
 
         d = dispatch(keymanager, *parts, **kw)
+        d.addCallbacks(_format_result, _format_error)
+        return d
+
+    def do_EVENTS(self, *parts):
+        dispatch = self.subcommand_events.dispatch
+        d = dispatch(None, *parts)
         d.addCallbacks(_format_result, _format_error)
         return d
 

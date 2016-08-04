@@ -38,7 +38,7 @@ class MissingConfigEntry(Exception):
 class ConfigurableService(service.MultiService):
 
     config_file = u"bitmaskd.cfg"
-    service_names = ('mail', 'eip', 'zmq', 'web')
+    service_names = ('mail', 'eip', 'zmq', 'web', 'websockets')
 
     def __init__(self, basedir=DEFAULT_BASEDIR):
         service.MultiService.__init__(self)
@@ -102,5 +102,6 @@ DEFAULT_CONFIG = """
 mail = True
 eip = True
 zmq = True
-web = False
+web = True
+websockets = False
 """
