@@ -459,15 +459,15 @@ class StandardMailService(service.MultiService, HookableService):
     # commands
 
     def do_status(self):
-        return 'mail: %s' % 'running' if self.running else 'disabled'
+        status = 'running' if self.running else 'disabled'
+        return {'mail': status}
 
     def get_token(self):
         active_user = self._active_user
         if not active_user:
-            return defer.succeed('NO ACTIVE USER')
+            return defer.succeed({'user': None})
         token = self._service_tokens.get(active_user)
-        # TODO return just the tuple, no format.
-        return defer.succeed("MAIL TOKEN (%s): %s" % (active_user, token))
+        return defer.succeed({'user': active_user, 'token': token})
 
     def do_get_smtp_cert_path(self, userid):
         username, provider = userid.split('@')

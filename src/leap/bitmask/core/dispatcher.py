@@ -35,7 +35,7 @@ class SubCommand(object):
         _method = getattr(self, 'do_' + subcmd.upper(), None)
         if not _method:
             raise RuntimeError('No such subcommand')
-        return _method(service, *parts, **kw)
+        return defer.maybeDeferred(_method, service, *parts, **kw)
 
 
 class UserCmd(SubCommand):
@@ -105,6 +105,7 @@ class MailCmd(SubCommand):
 
     @register_method('dict')
     def do_ENABLE(self, service, *parts, **kw):
+        # FIXME -- service doesn't have this method
         d = service.do_enable_service(self.label)
         return d
 

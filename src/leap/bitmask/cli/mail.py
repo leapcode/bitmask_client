@@ -31,10 +31,10 @@ SUBCOMMANDS:
    enable               Start service
    disable              Stop service
    status               Display status about service
-   get-token            Returns token for the mail service
-   get-smtp-certificate Downloads a new smtp certificate
+   get_token            Returns token for the mail service
+   get_smtp_certificate Downloads a new smtp certificate
 
 '''.format(name=command.appname)
 
-    commands = ['enable', 'disable', 'status', 'get-token',
-                'get-smtp-certificate']
+    commands = ['enable', 'disable', 'status', 'get_token',
+                'get_smtp_certificate']
