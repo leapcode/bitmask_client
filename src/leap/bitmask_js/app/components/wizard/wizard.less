@@ -1,0 +1,36 @@
+.wizard .stage {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.wizard .stage .footer {
+  flex: 0 0 auto;
+  background-color: #ddd;
+  padding: 20px;
+  text-align: right;
+}
+
+.wizard .stage .header {
+  flex: 0 0 auto;
+  padding: 20px;
+  background-color: #333;
+  color: white;
+  font-size: 2em;
+  span {
+    margin-left: 10px;
+    font-size: 0.5em;
+  }
+}
+
+.wizard .stage .body {
+  flex: 1 1 auto;
+  padding: 20px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,208 @@
+// The space around account entries:
+@accounts-padding: 8px;
+@accounts-width: 200px;
+
+//
+// LAYOUT
+//
+
+.main-panel {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+
+  > .body {
+    flex: 1 1 auto;
+    overflow: auto;
+  }
+
+  .accounts {
+    flex: 0 0 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    display: flex;
+    flex-direction: column;
+    ul {
+      flex: 1 1 1000px;
+    }
+    .btn-toolbar {
+      flex: 0 0 auto;
+    }
+
+  }
+
+}
+
+//
+// Style
+//
+
+.main-panel > .body {
+  padding: 20px;
+}
+
+.main-panel .accounts {
+  background-color: #333;
+  width: @accounts-width;
+  padding: @accounts-padding;
+  padding-right: 0px;
+}
+
+.main-panel .accounts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.main-panel .accounts li {
+  position: relative;
+  cursor: pointer;
+  color: white;
+  padding: 15px;
+  background-color: #444;
+  margin-bottom: @accounts-padding;
+  border-top-left-radius: @accounts-padding;
+  border-bottom-left-radius: @accounts-padding;
+  z-index: 100;
+}
+
+.main-panel .accounts li span.domain {
+  display: block;
+  font-weight: bold;
+  //margin-left: 40px;
+}
+
+.main-panel .accounts li span.username {
+  display: block;
+  //margin-left: 40px;
+  //line-height: 7px;
+  //margin-bottom: 4px;
+}
+
+/*.main-panel .accounts li span.icon {
+  display: block;
+  height: 32px;
+  width: 32px;
+  background-color: #999;
+  float: left;
+}
+*/
+
+.main-panel .accounts li.active {
+  background-color: white;
+  color: #333;
+}
+
+.main-panel .accounts li.active span.arc {
+  display: block;
+  height: @accounts-padding;
+  width: @accounts-padding;
+  background-color: white;
+  position: absolute;
+  right: 0;
+}
+
+.main-panel .accounts li.active span.arc.top {
+  top: 0;
+  margin-top: -@accounts-padding;
+}
+.main-panel .accounts li.active span.arc.bottom {
+  bottom: 0;
+  margin-bottom: -@accounts-padding;
+}
+.main-panel .accounts li.active span.arc:after {
+  display: block;
+  content: "";
+  border-radius: 100%;
+  height: 0px;
+  width: 0px;
+  margin-left: -@accounts-padding;
+}
+.main-panel .accounts li.active span.arc.top:after {
+  border: @accounts-padding solid transparent;
+  border-right: @accounts-padding solid #333;
+  margin-top: -@accounts-padding;
+  transform: rotate(45deg);
+}
+.main-panel .accounts li.active span.arc.bottom:after {
+  border: @accounts-padding solid #333;
+}
+
+.main-panel .accounts .btn.expander {
+   margin-right: @accounts-padding;
+}
+
+
+//
+// SECTIONS
+//
+
+@icon-size: 32px;
+@status-size: 24px;
+@section-padding: 10px;
+
+// service sections layout
+
+.main-panel .service-section {
+  display: flex;
+  flex-direction: row;
+  > .icon {
+    flex: 0 0 auto;
+  }
+  > .body {
+    flex: 1 1 auto;
+  }
+  > .buttons {
+    flex: 0 0 auto;
+  }
+  > .status {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.main-panel .service-section div {
+  //outline: 1px solid rgba(0,0,0,0.1);
+}
+
+// service sections style
+
+.main-panel .service-section {
+  background: #f6f6f6;
+  border-radius: 4px;
+  padding: 10px;
+  &.wide-margin {
+    padding: 20px 20px 20px 10px; // arbitrary, looks nice
+  }
+  > .icon {
+    padding-right: @section-padding;
+    img {
+      width: @icon-size;
+      height: @icon-size;
+    }
+  }
+  > .body {
+    h1 {
+      margin: 0;
+      padding: 0;
+      font-size: @icon-size - 10;
+      line-height: @icon-size;
+    }
+  }
+  > .buttons {
+    padding-left: 10px;
+  }
+  > .status {
+    padding-left: @section-padding;
+    width: @section-padding + @status-size;
+    img {
+      width: @status-size;
+      height: @status-size;
+    }
+  }
+}
+

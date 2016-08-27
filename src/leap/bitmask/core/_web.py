@@ -46,7 +46,7 @@ class HTTPDispatcherService(service.Service):
 
     def startService(self):
         webdir = os.path.abspath(
-            pkg_resources.resource_filename("leap.bitmask.core", "web"))
+            pkg_resources.resource_filename("leap.bitmask_js", "public"))
         root = File(webdir)
 
         api = Api(CommandDispatcher(self._core))

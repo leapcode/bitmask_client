@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="32px"
+   height="32px"
+   id="svg4986"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="arrow-down.svg">
+  <defs
+     id="defs4988" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="11.197802"
+     inkscape:cx="16"
+     inkscape:cy="16"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:grid-bbox="true"
+     inkscape:document-units="px"
+     inkscape:window-width="869"
+     inkscape:window-height="648"
+     inkscape:window-x="1049"
+     inkscape:window-y="24"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata4991">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer">
+    <g
+       transform="matrix(0.38339748,0,0,0.40552158,-78.363595,-91.56011)"
+       style="font-size:72px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:FontAwesome;-inkscape-font-specification:FontAwesome"
+       id="text3021">
+      <path
+         inkscape:connector-curvature="0"
+         d="m 277.42382,253.6675 c -7e-5,1.41967 -0.4956,2.62503 -1.48661,3.61607 l -26.15625,26.15625 c -1.0179,1.01786 -2.23664,1.52679 -3.65625,1.52679 -1.44646,0 -2.65182,-0.50893 -3.61607,-1.52679 l -26.15625,-26.15625 c -1.01786,-0.96426 -1.52679,-2.16961 -1.52679,-3.61607 0,-1.41961 0.50893,-2.63836 1.52679,-3.65625 l 2.97321,-3.01339 c 1.04464,-0.99104 2.26338,-1.48657 3.65625,-1.48661 1.41963,4e-5 2.62499,0.49557 3.61607,1.48661 l 19.52679,19.52678 19.52678,-19.52678 c 0.99102,-0.99104 2.19638,-1.48657 3.61608,-1.48661 1.39279,4e-5 2.61154,0.49557 3.65625,1.48661 l 3.01339,3.01339 c 0.99101,1.04468 1.48654,2.26343 1.48661,3.65625"
+         id="path3147" />
+    </g>
+  </g>
+</svg>

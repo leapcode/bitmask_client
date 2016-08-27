@@ -1,0 +1,26 @@
+.spinner {
+  height: 18px;
+  display: inline-block;
+}
+
+.spinner > div {
+  width: 18px;
+  height: 18px;
+  background-color: #000;
+  vertical-align: middle;
+  border-radius: 100%;
+  display: inline-block;
+  animation: bouncedelay 1.5s infinite ease-in-out;
+  animation-fill-mode: both;
+}
+
+.spinner .spin1 { animation-delay: -.46s }
+.spinner .spin2 { animation-delay: -.24s }
+
+@keyframes bouncedelay {
+  0%, 80%, 100% {
+    transform: scale(0.5);
+  } 40% {
+    transform: scale(0.9);
+  }
+}

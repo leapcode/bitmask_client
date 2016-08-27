@@ -1,0 +1,59 @@
+body {
+  padding: 0;
+  margin: 0;
+}
+
+.debug-panel {
+  background-color: rgba(0,0,0,0.1);
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  z-index: 1000;
+  padding: 20px;
+}
+.debug-panel a {
+  cursor: pointer;
+  margin: 10px;
+}
+
+
+.area-light {
+  background-color: #f7f7f7;
+}
+.area-dark {
+  background-color: #e7e7e7;
+}
+.area-clear {
+  background-color: #fff;
+}
+
+/*
+ * Greeter
+ */
+.greeter {
+  border-color: #555;
+  border-width: 8px;
+}
+
+/*
+ * bootstrap
+ */
+
+.help-block {
+  margin: 2px 0 0 0;
+  font-size: small;
+  opacity: 0.7;
+}
+.btn.btn-inverse {
+  color: white;
+  background-color: #333;
+}
+.btn.btn-flat {
+  border-color: transparent;
+  background-color: transparent;
+}
+
+/*.btn.btn-default {
+  background-color: #eee !important;
+}
+*/
