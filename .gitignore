@@ -34,6 +34,9 @@ _trial_temp*
 config/*
 CHANGELOG~
 
+node_modules
+src/leap/bitmask_js/public
+
 data/bitmask.pro
 bitmask-resources.png
 
