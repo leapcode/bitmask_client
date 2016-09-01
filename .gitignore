@@ -19,7 +19,6 @@ dist/
 docs/_build
 docs/covhtml
 include/
-lib/
 local/
 share/
 pkg/osx/dist
