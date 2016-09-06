@@ -53,4 +53,6 @@ export default class PanelSwitcher extends React.Component {
   render_splash(props)  {return elem(Splash, props)}
   render_wizard(props)  {return elem(Wizard, props)}
   render_greeter(props) {return elem(GreeterPanel, props)}
-  render_main(props)    {return elem(MainPanel, props)}}
+  render_main(props)    {return elem(MainPanel, props)}
+
+}

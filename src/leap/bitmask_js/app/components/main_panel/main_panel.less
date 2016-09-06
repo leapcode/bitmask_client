@@ -1,5 +1,6 @@
 // The space around account entries:
 @accounts-padding: 8px;
+@accounts-corner: 6px;
 @accounts-width: 200px;
 
 //
@@ -10,26 +11,26 @@
   position: absolute;
   height: 100%;
   width: 100%;
-  display: flex;
-  flex-direction: row;
+  display: -webkit-flex;
+  -webkit-flex-direction: row;
 
   > .body {
-    flex: 1 1 auto;
+    -webkit-flex: 1 1 auto;
     overflow: auto;
   }
 
   .accounts {
-    flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
     overflow-y: auto;
     overflow-x: hidden;
 
-    display: flex;
-    flex-direction: column;
+    display: -webkit-flex;
+    -webkit-flex-direction: column;
     ul {
-      flex: 1 1 1000px;
+      -webkit-flex: 1 1 1000px;
     }
     .btn-toolbar {
-      flex: 0 0 auto;
+      -webkit-flex: 0 0 auto;
     }
 
   }
@@ -39,6 +40,7 @@
 //
 // Style
 //
+
 
 .main-panel > .body {
   padding: 20px;
@@ -64,8 +66,8 @@
   padding: 15px;
   background-color: #444;
   margin-bottom: @accounts-padding;
-  border-top-left-radius: @accounts-padding;
-  border-bottom-left-radius: @accounts-padding;
+  border-top-left-radius: @accounts-corner - 1;
+  border-bottom-left-radius: @accounts-corner - 1;
   z-index: 100;
 }
 
@@ -98,8 +100,8 @@
 
 .main-panel .accounts li.active span.arc {
   display: block;
-  height: @accounts-padding;
-  width: @accounts-padding;
+  height: @accounts-corner;
+  width: @accounts-corner;
   background-color: white;
   position: absolute;
   right: 0;
@@ -107,11 +109,11 @@
 
 .main-panel .accounts li.active span.arc.top {
   top: 0;
-  margin-top: -@accounts-padding;
+  margin-top: -@accounts-corner;
 }
 .main-panel .accounts li.active span.arc.bottom {
   bottom: 0;
-  margin-bottom: -@accounts-padding;
+  margin-bottom: -@accounts-corner;
 }
 .main-panel .accounts li.active span.arc:after {
   display: block;
@@ -119,22 +121,22 @@
   border-radius: 100%;
   height: 0px;
   width: 0px;
-  margin-left: -@accounts-padding;
+  margin-left: -@accounts-corner;
 }
 .main-panel .accounts li.active span.arc.top:after {
-  border: @accounts-padding solid transparent;
-  border-right: @accounts-padding solid #333;
-  margin-top: -@accounts-padding;
+  border: @accounts-corner solid transparent;
+  border-right: @accounts-corner solid #333;
+  margin-top: -@accounts-corner;
+  -webkit-transform: rotate(45deg);
   transform: rotate(45deg);
 }
 .main-panel .accounts li.active span.arc.bottom:after {
-  border: @accounts-padding solid #333;
+  border: @accounts-corner solid #333;
 }
 
 .main-panel .accounts .btn.expander {
    margin-right: @accounts-padding;
 }
-
 
 //
 // SECTIONS
@@ -147,22 +149,23 @@
 // service sections layout
 
 .main-panel .service-section {
-  display: flex;
-  flex-direction: row;
+  display: -webkit-flex;
+  -webkit-flex-direction: row;
   > .icon {
-    flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
   }
   > .body {
-    flex: 1 1 auto;
+    -webkit-flex: 1 1 auto;
   }
   > .buttons {
-    flex: 0 0 auto;
+    -webkit-flex: 0 0 auto;
   }
   > .status {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
+    -webkit-flex: 0 0 auto;
+    display: -webkit-flex;
+    -webkit-align-items: center;
   }
+
 }
 
 .main-panel .service-section div {
@@ -175,6 +178,7 @@
   background: #f6f6f6;
   border-radius: 4px;
   padding: 10px;
+  margin-bottom: 10px;
   &.wide-margin {
     padding: 20px 20px 20px 10px; // arbitrary, looks nice
   }

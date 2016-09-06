@@ -57,3 +57,24 @@ body {
   background-color: #eee !important;
 }
 */
+
+/*
+ * center component
+ */
+
+.center-container {
+  position: absolute;
+  display: -webkit-flex;
+  -webkit-flex-flow: row nowrap;
+  -webkit-justify-content: center;
+  -webkit-align-content: center;
+  -webkit-align-items: center;
+  top: 0px;
+  left: 0px;
+  height: 100%;
+  width: 100%;
+}
+
+.center-container .center-item {
+  -webkit-flex: 0 1 auto;
+}

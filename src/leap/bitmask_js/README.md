@@ -64,6 +64,8 @@ way. We have enabled these plugins:
 * babel-presets-stage-0: Allows the use of some ES7 proposals, even though
   these are not standardized yet. Makes classes nicer.
 
+* babel-polyfill: This is not part of the babel transpiling, but is distributed by babel. This polyfill will give you a full ES2015 environment even if the browser is missing some javascript features. We include this in the 'entry' option of the webpack config. https://babeljs.io/docs/usage/polyfill/
+
 **react**
 
 React is an efficient way to generate HTML views with Javascript. It allows you

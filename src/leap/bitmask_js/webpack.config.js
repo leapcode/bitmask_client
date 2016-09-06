@@ -4,7 +4,7 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 var config = {
   context: path.join(__dirname, 'app'),
-  entry: './main.js',
+  entry: ['babel-polyfill', './main.js'],
   output: {
     path: path.join(__dirname, 'public'),
     filename: 'app.bundle.js'
@@ -47,7 +47,7 @@ var config = {
       { from: 'img/*'},
       { from: 'index.html' },
       { from: '../node_modules/bootstrap/dist/css/bootstrap.min.css', to: 'css' },
-      { from: '../node_modules/bootstrap/dist/fonts/glyphicons-halflings-regular.woff2', to: 'fonts' },
+      { from: '../node_modules/bootstrap/dist/fonts/glyphicons-halflings-regular.woff', to: 'fonts' },
       { from: '../node_modules/zxcvbn/dist/zxcvbn.js', to: 'js' }
     ])
   ],

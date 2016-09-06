@@ -274,7 +274,7 @@ class Login extends React.Component {
     if (!this.maySubmit()) { return }
     this.setState({loading: true})
 
-    let account = new Account(this.state.username)
+    let account = Account.find(this.state.username)
     account.login(this.state.password).then(
       account => {
         this.setState({loading: false})

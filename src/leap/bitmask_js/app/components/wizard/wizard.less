@@ -3,12 +3,16 @@
   height: 100%;
   width: 100%;
 
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
+  -webkit-flex: 1;
   flex: 1;
 }
 
 .wizard .stage .footer {
+  -webkit-flex: 0 0 auto;
   flex: 0 0 auto;
   background-color: #ddd;
   padding: 20px;
@@ -16,6 +20,7 @@
 }
 
 .wizard .stage .header {
+  -webkit-flex: 0 0 auto;
   flex: 0 0 auto;
   padding: 20px;
   background-color: #333;
@@ -28,9 +33,12 @@
 }
 
 .wizard .stage .body {
+  -webkit-flex: 1 1 auto;
   flex: 1 1 auto;
   padding: 20px;
   overflow: auto;
+  display: -webkit-flex;
   display: flex;
+  -webkit-flex-direction: column;
   flex-direction: column;
 }

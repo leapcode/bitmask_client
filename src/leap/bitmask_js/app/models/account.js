@@ -8,11 +8,7 @@ import bitmask from 'lib/bitmask'
 export default class Account {
 
   constructor(address, props={}) {
-    if (!address.match('@')) {
-      this._address = '@' + address
-    } else {
-      this._address = address
-    }
+    this.address = address
     this._authenticated = props.authenticated
   }
 
@@ -34,12 +30,24 @@ export default class Account {
     return this._address
   }
 
+  set address(address) {
+    if (!address.match('@')) {
+      this._address = '@' + address
+    } else {
+      this._address = address
+    }
+  }
+
   get userpart() {
     return this._address.split('@')[0]
   }
 
   get authenticated() {
     return this._authenticated
+  }
+
+  get hasEmail() {
+    return true
   }
 
   //
@@ -71,6 +79,33 @@ export default class Account {
   }
 
   //
+  // returns the matching account in the list of accounts, or adds it
+  // if it is not already present.
+  //
+  static find(address) {
+    // search by full address
+    let account = Account.list.find(i => {
+      return i.address == address
+    })
+    // failing that, search by domain
+    if (!account) {
+      let domain = '@' + address.split('@')[1]
+      account = Account.list.find(i => {
+        return i.address == domain
+      })
+      if (account) {
+        account.address = address
+      }
+    }
+    // failing that, create new account
+    if (!account) {
+      account = new Account(address)
+      Account.list.push(account)
+    }
+    return account
+  }
+
+  //
   // returns a promise, fullfill is passed account object
   //
   static active() {
@@ -85,4 +120,24 @@ export default class Account {
     )
   }
 
+  static add(account) {
+    if (!Account.list.find(i => {return i.id == account.id})) {
+      Account.list.push(account)
+    }
+  }
+
+  static remove(account) {
+    Account.list = Account.list.filter(i => {
+      return i.id != account.id
+    })
+  }
+  //   return Account.list
+  //   return new Promise(function(resolve, reject) {
+  //     window.setTimeout(function() {
+  //       resolve(['@blah', '@lala'])
+  //     }, 1000)
+  //   })
+  // }
 }
+
+Account.list = []

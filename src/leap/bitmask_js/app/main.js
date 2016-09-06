@@ -1,3 +1,9 @@
+//
+// main entry point for app execution
+//
+// This is determined by the 'entry' option in webpack.config.js
+//
+
 import React from 'react'
 import ReactDOM from 'react-dom'
 
@@ -9,9 +15,6 @@ class Main extends React.Component {
     return React.createElement(PanelSwitcher)
   }
 
-  //
-  // main entry point for app execution
-  //
   componentDidMount() {
     App.start()
   }

@@ -10,12 +10,28 @@
   vertical-align: middle;
   border-radius: 100%;
   display: inline-block;
+  -webkit-animation: bouncedelay 1.5s infinite ease-in-out;
   animation: bouncedelay 1.5s infinite ease-in-out;
+  -webkit-animation-fill-mode: both;
   animation-fill-mode: both;
 }
 
-.spinner .spin1 { animation-delay: -.46s }
-.spinner .spin2 { animation-delay: -.24s }
+.spinner .spin1 {
+  -webkit-animation-delay: -.46s;
+  animation-delay: -.46s;
+}
+.spinner .spin2 {
+  -webkit-animation-delay: -.24s;
+  animation-delay: -.24s;
+}
+
+@-webkit-keyframes bouncedelay {
+  0%, 80%, 100% {
+    -webkit-transform: scale(0.5);
+  } 40% {
+    -webkit-transform: scale(0.9);
+  }
+}
 
 @keyframes bouncedelay {
   0%, 80%, 100% {

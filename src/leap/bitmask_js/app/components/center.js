@@ -4,22 +4,6 @@
 
 import React from 'react'
 
-const CONTAINER_CSS = {
-  position: 'absolute',
-  display: 'flex',
-  justifyContent: 'center',
-  alignContent: 'center',
-  alignItems: 'center',
-  top: "0px",
-  left: "0px",
-  height: "100%",
-  width: "100%"
-}
-
-const ITEM_CSS = {
-  flex: "0 1 auto"
-}
-
 class Center extends React.Component {
 
   static get defaultProps() {return{
@@ -31,9 +15,12 @@ class Center extends React.Component {
   }
 
   render() {
-    let style = this.props.width ? Object.assign({width: this.props.width + 'px'}, ITEM_CSS) : ITEM_CSS
+    let style = null
+    if (this.props.width) {
+      style = {width: this.props.width + 'px'}
+    }
     return (
-      <div className="center-container" style={CONTAINER_CSS}>
+      <div className="center-container">
         <div className="center-item" style={style}>
           {this.props.children}
         </div>

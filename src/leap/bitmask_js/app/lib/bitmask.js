@@ -27,6 +27,9 @@
  * finished or will fail if there was any error. Errors are always user readable
  * strings.
  */
+
+import Promise from 'promise'
+
 var bitmask = function(){
     var event_handlers = {};
 
