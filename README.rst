@@ -1,3 +1,10 @@
+Deprecation Notice
+==================
+
+This code is deprecated, the current version of Bitmask is developed in the `bitmask-dev`_ repo.
+
+.. _`bitmask-dev`: https://0xacab.org/leap/bitmask-dev
+
 Bitmask
 =======
 
